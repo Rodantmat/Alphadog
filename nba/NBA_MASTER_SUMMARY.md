@@ -45791,3 +45791,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T36`, `T37`, `T39`, `T40`, `T43`, `T47`, `T48`; **back to `0`/`3` from a clean count**: `T33`, `T34`, `T38` (from `1`/`3`), `T44` (from `2`/`3`).
 - **CLEAN → `1`/`3`**: `T35`, `T46`.
 - ✅ **CLOSED `3`/`3`**: `T41`, `T45` (passes 63–65: the hand-traced sample, the fresh sample, the exhaustive gap scan) · `T42` (pass 63).
+
+---
+
+# §P66 — PASS 66 (`2026-10-10`): THE GAP SCAN'S NEXT TIER ON THE LARGE TRANSCRIPTS; THE RE-RUN ON THE SMALL ONES
+*Angles (as NEXT set them):* (u4) on `T32`–`T37`, `T39`, every sentence whose longest unrecorded run is `15`–`24` words — `136` · `54` · `57` · `27` · `40` · `35` · `25`. A co-occurrence triage (do ≥ `60%` of the run's content words appear together within ~`700` characters of the record?) split them; every sentence it could not match (`108` · `43` · `40` · `22` · `26` · `30` · `18`) was read and its key phrases and figures checked across the eleven editable documents; the rest were accepted on the match. (v4) the gap scan re-run at ≥ `8` words on `T38`, `T40`, `T43`, `T44`, `T46`–`T48` after pass 65's additions: every remaining flag is one pass 65 traced and judged (paraphrase, or a judged class); no new flag.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (`§13b`'s verdict on Gemini's depth advice; the NBA-bar note) · **`T33`** (`§13j`'s cap reading; `§13k`'s Under-side role; `§18b`'s mechanism) · **`T34`** (`§26c`'s bounded claim and its `2024-25` stress floor; `§25d`'s day-count note) · **`T37`** (`§30t`'s stage; `§30w`'s sizing conclusion; `§31a`'s second proof) · **`T39`** (gate 1b's reading; the G2 parity paragraph).
+- ✅ **Clean on this angle:** `T35`, `T36` (the tier's unmatched sentences all on file — the drift literature, the bad-week structures, the replay figures, the scheduler and Underdog-formula records — or judged: `§30d`'s MLB slip shading); `T38`, `T40`, `T43`, `T44`, `T46`, `T47`, `T48` (v4).
+- ⚠ **Process slips:** the `§T33.7` / `§T34.8` method-wording corrections went out in parallel on the same file (seventh instance; both landed, verified on main). The first wording of this pass's bullets said "all N sentences traced" where the triage had accepted the matched ones — corrected by strike to state the method exactly. The hourly-rotation writer committed once mid-pass (`14:07Z`), touching only its own row; nothing of this pass was lost (re-read on main).
+- Every quotation added: `qdiff.py` `0` flags (`13` quotes).
+
+**Ledger**: pass `66` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T37`, `T39`.
+- **CLEAN → `1`/`3`**: `T36`, `T38`, `T40`, `T43`, `T44`, `T47`, `T48`. **CLEAN → `2`/`3`**: `T35`, `T46`.
+- ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
