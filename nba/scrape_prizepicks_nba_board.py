@@ -125,9 +125,12 @@ def main() -> int:
     for attempt in range(1, attempts + 1):
         blocked = False
         for url in URLS:
+            if budget.expired(10):
+                print(f"  [{attempt}] budget spent - no further candidates", flush=True)
+                break
             rec = {"url": url, "attempt": attempt}
             try:
-                r = requests.get(url, headers=HEADERS, proxies=proxies, timeout=timeout,
+                r = requests.get(url, headers=HEADERS, proxies=proxies, timeout=max(5, min(timeout, budget.left() - 5)),
                                  impersonate="chrome124")
                 rec["http_status"] = r.status_code
                 rec["bytes"] = len(r.content or b"")
