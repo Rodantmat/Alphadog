@@ -201,4 +201,7 @@ if __name__ == "__main__":
             raise TimeoutError("t")
         return "ok"
     assert call(flaky, tries=3, base=0.01) == "ok"
+    assert redact("GET /v4/sports?apiKey=abc123&x=1") == "GET /v4/sports?apiKey=***&x=1"
+    assert redact("http://user:pw@proxy.example:823") == "http://***:***@proxy.example:823"
+    assert "abc" not in redact("Max retries exceeded with url: /v1/props?api_key=abc'")
     print("net_retry self-test: OK")
