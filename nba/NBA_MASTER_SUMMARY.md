@@ -44781,3 +44781,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **`T42`** (`6` closing replies) — **NEW MATERIAL**, reopened: 🆕 **`§T42.6`** — why residential, the traffic estimate by pipeline, the provider comparison, the US flag.
 
 **Ledger**: `T40`, `T41`, `T42` pass `14` — **NEW MATERIAL**, each CLEAN `0`/`3`.
+
+**`T43`** — no closing replies in its window; stays ✅ CLOSED. **`T45`** — its one closing reply is quoted verbatim in `§T45.2` ⇒ **CLEAN**, stays ✅ CLOSED.
+**`T44`** (`13` replies) — **NEW MATERIAL**, reopened: 🆕 **`§T44.6`** — Betr `26` of `40` at the same line; the `board_tiers` switch verified `79,217` = `79,217`; Sleeper `79` legs at the first close capture.
+**`T46`** (`5` replies) — **NEW MATERIAL**, reopened: 🆕 **`§T46.5`** — the first Playoff-Unders table (PrizePicks `+9% / +78%`, the Underdog row later withdrawn); the `04:26 PT` validation timestamp.
+**`T47`** (`3` replies) — **NEW MATERIAL**, reopened: 🆕 inline in `§T47.0` #2 — gate counts `51` of `1,920` and `5` of `360`, per-season rows, Underdog's forward test `+66%` over `25` nights (no new heading).
+**`T48`** (`17` replies) — **NEW MATERIAL**, reopened: 🆕 **`§T48.4`** — ParlayAPI one-attempt, scraper retry loops longer than their step, the previous-day Betr archive.
+
+**PASS 14 COMPLETE (`2026-10-10`).** ⇒ **Reopened `0`/`3`**: `T32`–`T36`, `T38`–`T42`, `T44`, `T46`–`T48` · **open `0`/`3`**: `T37` · **✅ CLOSED** (unchanged): `T43`, `T45`, `S1`–`S9`. *The lesson of the pass*: the closing reply is the build chat's own summary to the owner, and it carries figures, stated stances and corrections that neither the arc tables nor the mechanical checks had reached — **sixteen of seventeen transcripts with replies yielded something**, and four standing statements in the twelve were wrong (two in `NBA_SYSTEM_DESIGN.md`, one in `NBA_BASELINE_CALIBRATION.md`, one stale live count in `NBA_DATABASE.md`), each corrected with the code or the live table beside it.
