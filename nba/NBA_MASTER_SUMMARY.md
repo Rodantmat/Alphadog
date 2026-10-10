@@ -45249,3 +45249,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `51` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P52 — PASS 52 (`2026-10-10`): (sss) EVERY DETECTOR RE-RUN ON THE FINISHED RECORD
+*Angle (sss):* `owners.py` (its pattern fixed to keep an export's trailing message: `67` owner messages, `0` unmatched), `coloc.py`, `onefig.py`, `senttrace.py` at `25%`, `qdiff.py` over all `231` quotations added since pass 34, `tscheck2.py`, and the RULE 6 scan.
+- 🆕 **`T36`** → `§T36.6` #9: four residuals `coloc.py` still raised — role stability's per-season splits as first found, the cushion's *"79% with or without the foul feature; foul rate alone +6"*, the first 2024-25 replay's pre-break *"−63%"*, and the same-team evidence's *"13.5k slips"*.
+- Everything else the detectors raise is accounted for: superseded first readings of the Underdog screenshots (`0.983` per pick, `0.92` same-game — on file in their final form), timing formulas, MLB prices, the memory dump, figures on file in another wording; `qdiff.py`'s `15` flags are the three struck pass-34 quotations, inner-quote renderings, and phrases quoted from these docs themselves (*"a later transcript"*, *"Correction of `§30i`"*); `tscheck2.py`'s `5` are the script's reach (`§P45`).
+- *Process slip*: pass 51's NEXT and census patches went out in parallel on this file; both landed (`4544f1e`, `2dfb7c5`), confirmed by grep.
+
+**Ledger**: pass `52` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
