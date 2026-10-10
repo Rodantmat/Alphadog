@@ -8,7 +8,7 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 > # 📑 **INDEX — `NBA_SYSTEM_ARCHITECTURE.md`**
 > **How the system is put together** — the stack, the stores, the worker universe, the repo layout,
 > and the constraints that shaped each choice.
-> 📏 **`137` sections · re-derived `2026-10-10` (RUN, `+1` = `§T32.2`; no duplicate headings)** · ~~**`136` sections · `2026-09-23`.**~~ 🆕 **`§T32.2` (end of file) — how the Betr board was reached from a GitHub runner (Turnstile / CSP / auth-proxy / geolocation / login), and six tool gotchas.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_ARCHITECTURE.md ``
+> 📏 **`138` sections · re-derived `2026-10-10` (RUN, `+1` = `§T34.8`, where the slip layer attaches)** · ~~`137` (`+1` = `§T32.2`; no duplicate headings)~~ · ~~**`136` sections · `2026-09-23`.**~~ 🆕 **`§T32.2` (end of file) — how the Betr board was reached from a GitHub runner (Turnstile / CSP / auth-proxy / geolocation / login), and six tool gotchas.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_ARCHITECTURE.md ``
 > | 🔑🔑 **WHY four load-bearing decisions were made** *(GitHub Actions · the trigger-file pattern · full isolation · where credentials live)* | **`§F5.3`** — *recovered from the only three transcripts where the reasoning stratum survives* |
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
