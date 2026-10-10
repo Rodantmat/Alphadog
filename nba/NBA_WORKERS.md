@@ -3587,4 +3587,28 @@ these twelve.**
 | `roi_curve.py` | `nba-roi-curve.yml` | read-only: the portfolio's exact expected ROI vs uniform leg-hit deficit |
 | *(test builds)* | `nba-star-under-test.yml` | 8 sequential builds (control + 3 thresholds × main / steals-free), comparison, test tables dropped |
 **Code added to `live_slip_engine.py`** (✅): `LS_MODE=edge` (break-even monitor; `LS_EDGE_CONFIRM_Z` `3.28`, `LS_EDGE_ALARM_Z` `−3.09`, `LS_EDGE_REBUILD`); **`MIN_BOARD_LEGS` / `LS_MIN_BOARD` `179`** (line `133`); **`STAR_UNDER_LINES`** + `star_under_weight()` (line `137`) → `live_slips.stake_weight`; the live loader's **team rule** (board-named teams, else the game-log/roster team that plays that day). **`ud_live_slip_engine.py`**: `UDL_MIN_BOARD` `178`. **`build_slip_engine.py`**: `SE_EXCL_STAR_UNDER` (test only, refuses without a table suffix; thresholds `SE_STAR_POINTS` / `SE_STAR_PRA` / `SE_STAR_COMBO`). **P2A**: *"Edge monitor (break-even, group-sequential)"* after the PrizePicks grade, before the Underdog grade, `continue-on-error`.
-*Later Underdog counterparts present today* — `nba-ud-edge-monitor-research.yml`, `nba-ud-edge-monitor-validate.yml` — are `T39` material.
+*Later Underdog counterparts present today* — `nba-ud-edge-monitor-research.yml`, `nba-ud-edge-monitor-validate.yml` — are `T39` material. → ✅ `§T39.4` below.
+
+---
+
+## 🆕 **§T39.4 — `T39` (`2026-10-04/07`): MONITORS, ROSTERS, THE ROLLED-BACK INTEGRATION TEST, AND THE GAP-PROGRAM TOOLS** *(source `T39`, `NBA_MASTER_SUMMARY.md` `§T39`; ✅ every script present and every workflow present, `2026-10-10`)*
+| script (`nba/`) | workflow | does |
+|---|---|---|
+| `ud_edge_monitor_research.py` | `nba-ud-edge-monitor-research.yml` / `-validate.yml` | UD break-even by thinning, group-sequential calibration; production-code validation |
+| `pp_breakeven_crosscheck.py` | `nba-pp-breakeven-crosscheck.yml` | PP thinning vs independence (rule fixed before the run: switch if > 1.0 pp) → `LS_EDGE_DELTA = −0.0899` |
+| **`integration_test_rollback.py`** | `nba-integration-test.yml` | **end-to-end on real slates in ONE transaction, rolled back**: PP pick → grade → edge; UD pick → grade → edge; asserts and restores `0 / 0 / 0 / 0` |
+| `roster_coverage_audit.py` | `nba-roster-coverage-audit.yml` | board player-days the builder could not project |
+| **`sync_current_rosters.py`** | `nba-roster-sync.yml` (dry-run default) | applies the same-morning `commonallplayers` scrape to `nba_ref.players` — team changes, new players; never deactivates; refuses a failed / `< 300`-player scrape |
+| `validate_roster_replay.py` | `nba-roster-replay-validate.yml` | the real builder replayed with a proxy roster — coverage old vs new |
+| `integer_line_research.py` | `nba-integer-line-research.yml` | G1 gate 1 / 1b (whole-number derivation, calibration, ties) |
+| `build_tier_map_wi.py` (+ `wi2` later) | `nba-tier-map-wi.yml` / `-wi2.yml` | G1 gate-2 test leg table (`tier_map_legs_wi`, dropped) |
+| `gate2_compare.py` | `nba-gate2-backtest.yml` | control vs test slip builds per strategy and portfolio |
+| **`fit_whole_number_recal.py`** | `nba-wn-recal-fit.yml` (dry-run default) | stores the whole-number recalibration in `nba_config.classification_config` |
+| **`build_whole_number_hp.py`** | `nba-wn-build.yml` (dry-run default) | → `nba_score.final_hp_derived` (`whole_number`) — history cross-fit, live pooled |
+| `ladder_depth_audit.py` | `nba-ladder-depth-audit.yml` | G2: unscored half-point board legs beyond the ladder |
+| *(research copies of both builders)* | `nba-ladder-tail-research.yml` | G2: the real builders at depth 24, reliability frame dumped before exit |
+| `rookie_prior_research.py` / `rookie_pricing_research.py` / `rookie_early_games_research.py` | `nba-rookie-pricing-research.yml`, `nba-rookie-early-research.yml` | G3 decided by evidence |
+| `distance_calibration_research.py` | `nba-distance-calibration.yml` | distance-aware calibration (adds nothing OOS) |
+| **`build_recalibration_map.py`** (v2) | `nba-recalibration-map.yml` (report default, gated write) | → `nba_score.recalibration_map` + `calibrated_p()` |
+**Production code changed in `T39`** (✅): `build_baseline_ladder.py` — **current-roster rule** (per-game roster = recent last-3 participants still on the team ∪ every current-roster player with history; missing file → old behaviour); `build_final_hp.py` — **`score_and_edge()`** at module level (bitwise-identical on 200,000 cases); `live_slip_engine.py` — `LS_EDGE_DELTA` fixed `−0.0899`, status filter `LIKE 'graded%' AND k < 100`, `late_pick` **removed** (prints its retirement reason); `ud_live_slip_engine.py` — per-leg outcomes in `legs_json`, `UDL_MODE=edge`, `UDL_EDGE_DELTA` `−10.84`; `archive_live_boards.py` — **explicit Underdog → canonical market-key table** (G4); `build_slip_engine.py` — **`SE_LEGS_TABLE`** (a non-default source requires a suffix) and a **tie-aware `grade()`** (identical to the old grade on `5,000` / `5,000` tie-free slips).
+**Pipeline steps added** (✅): **P2B** *"Refresh today's rosters (commonallplayers)"* (line `161`) and *"Apply today's rosters to nba_ref.players"* (`173`) — before the name map, injury report, ladder and `final_hp`; **P2B** *"Price whole-number board lines (final_hp_derived)"* (`476`, after `final_hp`, isolated); **P2A** *"Re-price yesterday's whole-number board lines"* (`308`) and *"Underdog edge monitor (break-even, group-sequential)"* (`363`).
