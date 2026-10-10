@@ -44395,3 +44395,24 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - **CLEAN `2`/`3`**: `T36`, `T39`.
 - **CLEAN `1`/`3`**: `T37`, `T38`, `T48`.
 - **CLEAN `0`/`3`** (pass 5 found NEW MATERIAL): `T32`, `T34`.
+
+---
+
+# §P6 — PASS 6 (`2026-10-10`) ON `T32`, `T34`, `T36`–`T39`, `T48`: THE RUNNING NARRATION'S FIGURES
+*Angle (l):* every sentence of the build chat's prose **between** tool calls (not only its closing reply) that carries two or more figures, kept when most of its figures appear nowhere in the twelve; each read in place.
+
+| transcript | what (l) surfaced | verdict |
+|---|---|---|
+| `T32` | cross-game independence check (joint `0.363` vs product `0.365`); the market-edge top band (model `0.653`, book `0.498`, realized `0.545`); referee crews `24.9–30.7` fouls/game; 5-pick Power `+59.8%` on `3,804` slips | all inside recorded findings (`§T32.9`, `§8m`/`§21a`, `§11`) or the `§T33.0`-voided ROI series — **CLEAN** |
+| `T34` | 🆕 the `§28` OOS figures behind *"two validated families"*: **weighted:steals 5-Flex OOS `+106%` (CI `+62%`…`+152%`), demon 5-Flex `+112%` (CI `+46%`…`+186%`)**, S1→OOS leaders (weighted:rebounds 4-Flex `+39% → +82%`, core 5-Flex `+38% → +75%`); the live rule *"nothing is staked before 50 slate days and 1,000 paper slips per strategy"* (the paper gate `§29c` later scales) — recorded here | **NEW MATERIAL** |
+| `T36` | 🆕 the first full 2024-25 replay: `+2,245` units on `2,209` slips, ROI `102%` → `NBA_DATABASE.md` `§P2.6` (✅ live status breakdown) | **NEW MATERIAL** |
+| `T37` | the UD validation tables (`§30q`/`§30s`/`§30t`) and the PP portfolio drawdown inputs (`~18` slips/day, `+5,322` units, real worst `136.6`) — the conclusions are in `§T37.2` (`§30x`: iid `167` vs `243–253`) | **CLEAN** |
+| `T38` | 🆕 the first realistic estimate (`06:56Z`: legs `56–57%`, PP `+5…+20%`, *"1-in-3 chance of a losing season"*), superseded by `§31m` within the hour → `NBA_SYSTEM_DESIGN.md` `§T38.7` | **NEW MATERIAL** |
+| `T39` | 🆕 the whole-number backfill as first written (`29,232` / `23,693` pairs; `96%` historical coverage; double-doubles excluded) → `NBA_DATABASE.md` | **NEW MATERIAL** |
+| `T48` | an NFL pick discussion and a quote of `PP_PAYOUT_FINDINGS.md` — both out of scope | **CLEAN** |
+
+**Ledger**: pass `6` complete (`2026-10-10`).
+- ✅ **CLOSED — CLEAN `3`/`3`**: none new this pass.
+- **CLEAN `2`/`3`**: `T37`, `T48`.
+- **CLEAN `1`/`3`**: `T32`.
+- **CLEAN `0`/`3`** (pass 6 found NEW MATERIAL): `T34`, `T36`, `T38`, `T39`.
