@@ -44543,3 +44543,9 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - 🆕 **The `0.62` frontier as told to the owner** (threshold as the dominant lever, the depth ladder, `27` of `73` days, *"4-pick is a trap"* contradicted, the two-profile split) → a new row in `§T32.11`.
 
 **Ledger**: `T32` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+**`T33`** (`23` closing replies, `09-29 06:37Z → 09-30 00:54Z`) — **NEW MATERIAL**, reopened:
+- 🆕 **`§T33.6`** — the decision detail the `§T33.2` arc table compressed: the same-prop turnovers correlation (`+0.0238`, with the `§15c` forward pointer), caps and the goblin side-by-side, the `7.2M`-row live-query ceiling, the ROI-vs-coverage shape, the first real-lines run's headline and the build chat's three stated expectations in one day (*"+30% to +70%"* → *"0 to +30%"* sizing → *"+40–50% … +19% floor"*), the `60`-observation eligibility artefact behind the "losing 2024-25", and the per-cell depth bands.
+- 🆕 **`NBA_DATABASE.md` `tier_map_summary`** — the band columns (`peak_pm`, `plateau_to` = within `0.02` of peak, `hold_be_to`, `lose_at`, `status`), ✅ code-checked and live-counted.
+
+**Ledger**: `T33` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
