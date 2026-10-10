@@ -2188,6 +2188,7 @@ Columns include `season`, `anchor`, `ladder_offset`, `p_more`, `p_less`, `proj_m
 (game_date, player_id, prop — 415 MB, 7.9M scans) · `baseline_history_lookup_idx`
 (game_date, player_id, prop, line) INCLUDE (proj_min, rate36, used_emp, role_tier) — 1,334 MB,
 **22.3M scans**, built 2026-09-19.
+→ 🆕 *`2026-10-10`: `baseline_history_lookup` was dropped on `2026-09-24` as a strict prefix of `baseline_history_lookup_idx`, and the loader no longer creates it (✅ live: absent) — `NBA_MASTER_SUMMARY.md` `§T27.8`; the list above was true when written.*
 
 ### `nba_score.final_hp` — ⚠ **19,215,200 rows LIVE (2026-09-20). Previously documented: 38.7M.**
 The final number per leg. `season, game_date, game_id, player_id, prop, line, side, ladder_offset,
