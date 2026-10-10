@@ -2563,3 +2563,27 @@ to stand: `§F2.16`'s "`0` env vars absent" is now known to be wrong by at least
 ⚠ **RULE 54.** *This is a code read, not a behavioural test. **It establishes what the scrapers
 SEND**, not what the books do with it, nor that a differently-scoped board would differ in content.*
 ***"The requests are California-scoped", never "the data is wrong."***
+
+---
+
+# §T32.2 — 🆕 **BEATING CLOUDFLARE TURNSTILE FROM A GITHUB RUNNER, AND SIX OTHER EXTERNAL-TOOL GOTCHAS LEARNED THE HARD WAY** *(source `T32`, `2026-09-28/29`, recovered from the owner's export — `NBA_MASTER_SUMMARY.md` `§T32.1`/`§T32.11`; recorded `2026-10-10`)*
+
+**The Betr board (`picks.betr.app`, GraphQL host `api.fantasy.betr.app`) sits behind four walls, and each needed a different tool.** Seventeen raw-HTTP probes had all `401`'d before this session; the fantasy endpoint that rejected every server request answered the owner's real browser with `200`.
+
+| wall | what failed | what worked | where it lives |
+|---|---|---|---|
+| **Cloudflare Turnstile** (`account.betr.app` "Verify you are human") | Playwright's vanilla Chromium loops on the checkbox forever (detectable as automation) | **SeleniumBase UC Mode** + `uc_gui_click_captcha()`; on a headless runner add **Xvfb** — UC + Xvfb on `ubuntu-latest` rendered the SPA (`84k`) with no CF markers | `betr_harvest.py`, `betr_harvest_cloud.py` |
+| **the page's Content-Security-Policy** | an injected in-page `fetch` to the fantasy host is blocked (*"Failed to fetch"*) or times out when the lobby reloads | **passive CDP capture** — let the app make its own `getUpcomingEventsV2` call and read the response off the network | same |
+| **authenticated residential proxy** | UC Mode's sub-resources fail through an authenticated proxy — SPA stuck at **`39` bytes** (also with a sticky US session) | a **local, unauthenticated forward proxy on the runner** (`python -m proxy --plugins proxy.plugin.ProxyPoolPlugin --proxy-pool <user>-country-us-session-<id>-lifetime-10:<pass>@<gateway>`) and Chromium pointed at `127.0.0.1` — the standard UC-Mode + auth-proxy workaround. *Shape only; the credential is never reproduced here.* | `probe_betr_cloud.py`, `betr_harvest_cloud.py` |
+| **geolocation gate** (`/AllowLocation?…onSelectUsState=`) | datacenter IP | residential proxy + **pick a US state in-page** | same |
+| **login wall** | every `/lobby` URL redirects to `/auth`; **no guest path exists** | seed a logged-in session from the GitHub secret **`BETR_SESSION_STATE`** (cookies + auth localStorage), exported once from the owner's PC | `betr_export_session.py` |
+
+⚠ **Six gotchas that cost real time in `T32`, recorded so they are not paid twice**
+1. **GitHub Actions secrets cap at `48 KB`.** The full browser session was `~290 KB` ⇒ the exporter writes a slim file (`10,688` bytes, `5` auth keys).
+2. **`raw.githubusercontent.com` caches by branch.** Three downloads of `…/main/nba/betr_harvest.py` served the OLD file to the owner minutes after a commit; only **SHA-pinned raw URLs** (`…/Alphadog/<commit-sha>/nba/…`) were reliable. *(And in Windows PowerShell `curl` is an alias for `Invoke-WebRequest`, and `$env:` is PowerShell-only — `cmd.exe` rejects it.)*
+3. **SeleniumBase's `execute_async_script` rejects extra arguments, and `BaseCase` has no `set_script_timeout`** — embed values in the JS string; use `set_default_timeout`.
+4. **The GitHub runner's job token needs `permissions: contents: write`** *and* the repo's Actions setting "Read and write" before a workflow can commit its own board file.
+5. **Bridge `call_gemini`: the default model `gemini-2.0-flash` is DEPRECATED and returns `404`** — every call must pass `model: "gemini-2.5-flash"` explicitly *(strategy doc `§6f`)*. **And the owner's stated reason Gemini is in the loop, verbatim `2026-09-29`: *"you tend to make assumptions, make guesses, do not research online … it's good to have a second opinion, like a doctor"*** — it is a challenger, not an authority (the same session refuted Gemini's goblin/Flex arithmetic on real data).
+6. **The trigger-file pattern again**: `nba/TRIGGER_NBA_PROBE.txt` + `.github/workflows/nba-probe.yml` (runs on a push to that path, executes the `script:` named inside it) is how the Chalkboard host probe ran — a third instance of the convention `§8b-ii` describes.
+
+🔐 **Credential practice, `2026-09-28 04:49Z`**: the owner offered to paste the session file into the chat; the build chat refused — *"pasting it into the chat puts your full account access into the transcript, which gets exported"* — and routed it clipboard → secret. ⚠ ***The export the owner later made (`2026-10-09`) is exactly such a transcript — the rule was right.***
