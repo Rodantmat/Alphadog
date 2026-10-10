@@ -43,23 +43,26 @@ STATS_HEADERS = {
 
 
 def fetch_bulk(url, result_set_name, proxies):
-    last_error = None
-    for attempt in range(1, 4):
-        try:
-            resp = requests.get(url, headers=STATS_HEADERS, timeout=60, proxies=proxies, impersonate="chrome124")
-            resp.raise_for_status()
-            body = resp.json()
-            rs = next((r for r in body.get("resultSets") or [] if r.get("name") == result_set_name), None)
-            if not rs:
-                return None, f"{result_set_name}_result_set_not_found"
-            headers = rs.get("headers", [])
-            rows = [dict(zip(headers, row)) for row in (rs.get("rowSet") or [])]
-            return rows, None
-        except Exception as exc:  # noqa: BLE001
-            last_error = str(exc)
-            if attempt < 3:
-                time.sleep(8)
-    return None, last_error
+    """stats.nba.com through the system retry policy (nba/net_retry.py, 2026-10-09): 4 attempts, full-jitter backoff
+    (was a fixed 8 s), 429/5xx/connection errors retried, a final 4xx returned at once (was retried like a transient)."""
+    from net_retry import RetryError, request
+    try:
+        resp = request("GET", url, session=requests, proxies=proxies, routes=("proxy",), tries=4, base=4, cap=30,
+                       timeout=60, label=f"stats {result_set_name}", headers=STATS_HEADERS, impersonate="chrome124")
+    except RetryError as exc:
+        return None, str(exc)
+    if resp.status_code != 200:
+        return None, f"http {resp.status_code}"
+    try:
+        body = resp.json()
+    except Exception as exc:  # noqa: BLE001
+        return None, f"not json: {str(exc)[:80]}"
+    rs = next((r for r in body.get("resultSets") or [] if r.get("name") == result_set_name), None)
+    if not rs:
+        return None, f"{result_set_name}_result_set_not_found"
+    headers = rs.get("headers", [])
+    rows = [dict(zip(headers, row)) for row in (rs.get("rowSet") or [])]
+    return rows, None
 
 
 def detect_current_season():
