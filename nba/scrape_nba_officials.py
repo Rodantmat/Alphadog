@@ -89,9 +89,11 @@ def main():
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     fetched_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
-        resp = requests.get(API_URL, params={
+        # system retry policy (nba/net_retry.py, 2026-10-09; it was ONE attempt): 3 attempts, full-jitter backoff
+        from net_retry import request
+        resp = request("GET", API_URL, session=requests, tries=3, base=3, cap=20, timeout=30, label="wikipedia officials", params={
             "action": "parse", "page": PAGE_TITLE, "prop": "wikitext", "format": "json"
-        }, headers=HEADERS, timeout=30)
+        }, headers=HEADERS)
         resp.raise_for_status()
         body = resp.json()
         wikitext = body["parse"]["wikitext"]["*"]
