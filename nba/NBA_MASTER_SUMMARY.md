@@ -47050,3 +47050,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `145` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T23` done (`8,611` sentences); next `T24`.
+
+# §P146 — PASS 146 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T24`
+*Angle (as NEXT set it):* (l9) `§P131`'s method on `T24`.
+- Tabulated in the shell before this line (the scan at pass 145's head): `T24` `81` of `226` sentences listed — **all `81` read and judged** (`T24` is a session record, not a dialogue).
+- On file, by substance: the prop universe and its composition (`1,088,192` real legs, `128,680` simulated Fantasy Score, `337,748` derived standards, `112,404` FGA / 3PA alternates, `1,606,151` usable), the Fantasy Score back-simulation (`32,170` player-nights), the derived-line research (`197,416` legs), the excluded play-in / playoff / Cup nights (`14,271` legs), the goblin-floor correction (`115,150` flagged, `1,024` keys repriced), the simulator objects and `leg_edge_map`, the Pritchard check. Judged out of scope by constraint: the `pp_*` pricing internals. Judged: build-performance notes below the docs' grain.
+- **Nothing new — `T24` clean in additional sweep `1`.** No commit other than this pass's landed since `c07f7aa9c` when this line was written. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `146` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T24` done (`8,692` sentences); next `T25`.
