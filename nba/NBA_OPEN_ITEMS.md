@@ -14153,7 +14153,7 @@ more than once must be in the glossary**."*
   return **0**
 
 ⇒ **No glossary content commit exists for the sweep of T12 through T18 — seven transcripts, every one
-CLOSED on "three consecutive clean passes."**
+CLOSED on "three consecutive clean passes."** ⚠ *Inexact: by their own rows in `NBA_MASTER_SUMMARY.md`'s `📍 TRANSCRIPT INDEX`, `T12`–`T17` closed on the standing closure judgment and only `T18` at `3`/`3` (`NBA_MASTER_SUMMARY.md` `§P128`).*
 🔑 **Why nine closure passes on T18 alone missed it**: ***every pass measured FINDINGS against a
 TRANSCRIPT; no pass measured the DELIVERABLE against its CHARTER.***
 **Severity: HIGH** — it is a named, mandated document with an explicit completeness rule, and it is
