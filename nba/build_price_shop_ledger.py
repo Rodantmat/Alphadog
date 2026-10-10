@@ -222,7 +222,7 @@ def main():
             m_eff = None if m is None else (m * ud_ref if app == 'underdog' else (m * sl_root if app == 'sleeper' else m))
             pxm = (p * m_eff) if (p is not None and m_eff is not None and same_line) else None
             gate = ((p - margin) * m_eff >= 1.0) if pxm is not None else None
-            root = ud_ref if app == 'underdog' else 1.0
+            root = ud_ref if app == 'underdog' else (sl_root if app == 'sleeper' else 1.0)
             m_star = (1.0 / (p_cell * root)) if (p_cell and m is not None) else None
             v_cell = (p_cell * m_eff) if (p_cell is not None and m_eff is not None and same_line) else None
             gate_cell = (v_cell >= 1.0 + cell_margin) if v_cell is not None else None
