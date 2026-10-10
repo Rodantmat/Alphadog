@@ -1,0 +1,60 @@
+name: NBA Browser Probe (no commit)
+
+# A probe that needs a REAL Chrome (SeleniumBase UC + Xvfb) through the residential proxy - the chain proven by the Betr
+# cloud harvest. Dispatch-only; runs the script named in the input and commits nothing. First use (2026-10-09):
+# nba/probe_pp_quote_browser.py - PrizePicks payout quotes from the app's own page context (DataDome blocks curl_cffi).
+
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: "Script under nba/ to run (needs Chrome)"
+        default: "probe_pp_quote_browser.py"
+      league:
+        description: "PP_LEAGUE for the PrizePicks probe (7 NBA, 3 WNBA)"
+        default: "7"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Resolve proxy (credential store first, secret as fallback)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store -> $(echo "$P" | sed 's#.*@##')"
+          else
+            echo "proxy: credential store has no proxy_url row - using the PROXY_URL secret"
+          fi
+      - name: System deps (Chrome fonts + Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2t64 libgbm1 || \
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2 libgbm1
+      - name: Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install seleniumbase "proxy.py" "psycopg[binary]" curl_cffi
+          sbase get chromedriver || true
+      - name: Run the probe
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          PP_LEAGUE: ${{ github.event.inputs.league }}
+          BETR_SESSION_ID: browserprobe1
+        run: |
+          echo "running ${{ github.event.inputs.script }}"
+          python "nba/${{ github.event.inputs.script }}"
