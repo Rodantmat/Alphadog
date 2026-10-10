@@ -58,7 +58,7 @@ constraints that shaped it. This is the operational spec.
 >
 > ### 🆕 §T26.13 — 🔑🔑 **`P2` DOES THE SAME WORK ELEVEN TIMES — AND THE HONEST LIMIT ON A DELTA**
 >
-> *`T26`, `2026-09-24`. **Read from the code, not from timings.***
+> *`T26`, ~~`2026-09-24`~~ `2026-09-23` `21:07Z` (date corrected `2026-10-10`, pass 113 → `NBA_MASTER_SUMMARY.md` `§T26.R2`). **Read from the code, not from timings.***
 >
 > 🔴 **THE STRUCTURE.** *The baseline builder is invoked **once per prop pair** — **`8` pairs, plus `3`
 > more for components = `11` invocations**. **Every invocation re-parses three seasons of player and
