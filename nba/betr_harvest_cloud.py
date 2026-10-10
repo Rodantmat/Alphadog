@@ -344,6 +344,33 @@ def clear_geo(sb, rounds=40):
     return answered
 
 
+def net_error(sb):
+    """True when the tab shows Chrome's own network-error page (a proxy tunnel failure: ERR_TUNNEL_CONNECTION_FAILED /
+    ERR_CONNECTION_CLOSED ...) instead of the app - body class 'neterror', or the title is just the host name."""
+    try:
+        src = sb.get_page_source() or ""; title = (sb.get_title() or "").strip()
+        return 'class="neterror"' in src or "neterror" in src[:5000] or title in ("picks.betr.app", "app.prizepicks.com")
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def open_alive(sb, url, tag, tries=4):
+    """Open url and, while Chrome shows its net-error page, reload (the residential proxy drops a tunnel now and then)."""
+    for i in range(tries):
+        try:
+            sb.uc_open_with_reconnect(url, reconnect_time=6 if i else 10)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  [{tag}] open failed: {str(exc)[:80]}", flush=True)
+        time.sleep(3)
+        if not net_error(sb):
+            if i:
+                print(f"  [{tag}] app reached after {i} reload(s) (proxy tunnel recovered)", flush=True)
+            return True
+        print(f"  [{tag}] Chrome net-error page (proxy tunnel failed) - reload {i + 1}/{tries - 1}", flush=True)
+        time.sleep(4 + 3 * i)
+    return False
+
+
 def where(sb, tag):
     """DIAGNOSTIC TRAIL (2026-10-09): every failure used to end in a bare 'NO BOARD'. Print where the browser actually is -
     URL, title, page size, and the tell-tales (Cloudflare challenge, /auth, the geo prompt, a proxy error page)."""
