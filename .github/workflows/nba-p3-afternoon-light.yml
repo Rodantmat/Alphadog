@@ -389,13 +389,16 @@ jobs:
           BOARDS_OK: ${{ steps.soft_boards.outputs.ok }}
           SKIP_SCRAPE: ${{ github.event.inputs.skip_scrape }}
         run: |
-          # only the boards THIS run captured are archived as the decision snapshot (betr's file comes from its own
-          # harvest workflow and is date-relabelled by the archiver); skip_scrape=true archives whatever is on disk.
+          # only the boards THIS run captured are archived as the decision snapshot; skip_scrape=true archives whatever is
+          # on disk. BETR (2026-10-09): no longer archived here - the file on P3's checkout is the PREVIOUS harvest (this
+          # run's harvest lands minutes later), so it was always yesterday's board; the harvest dispatched above archives
+          # its own board with label=window.
           if [ "$SKIP_SCRAPE" = "true" ]; then apps="prizepicks,underdog,sleeper,fliff,betr"; else
-            apps="betr"
-            [ -n "$BOARDS_OK" ] && apps="$BOARDS_OK,$apps"
-            [ "$PP_OUTCOME" = "success" ] && apps="prizepicks,$apps"
+            apps=""
+            [ -n "$BOARDS_OK" ] && apps="$BOARDS_OK"
+            [ "$PP_OUTCOME" = "success" ] && apps="prizepicks${apps:+,$apps}"
           fi
+          if [ -z "$apps" ]; then echo "::warning::no board captured this run - nothing to archive"; exit 0; fi
           echo "archiving apps: $apps"
           ARCHIVE_APPS="$apps" python nba/archive_live_boards.py
 
