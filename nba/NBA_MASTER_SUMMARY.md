@@ -46970,3 +46970,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `138` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T16` done (`4,840` sentences); next `T17`.
+
+# §P139 — PASS 139 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T17`
+*Angle (as NEXT set it):* (e9) `§P131`'s method on `T17`.
+- Tabulated in the shell before this line (the scan re-run at pass 138's head): `T17` `916` of `1,782` sentences listed — **all `916` read and judged** (its head overlaps `T16`'s tail, `2026-09-14` `05:02`–`05:13Z`).
+- On file, by substance: the market-implied matchup factors (`f_impl_own` / `f_impl_opp`, `r` `0.4637` vs `0.2364`, `41,497` player-games) and their replication, the scenario layer (`1,651` games, the `17%` most-likely branch, realised-branch-only storage), the N1 resolution model's arc (the final-status trap, AUC `0.478` → `0.630`, the ablation, the `75%` accuracy floor, market movement rejected at `73.5%`), the final engine and its leg counts, A3 / A4 / K1 rejected on `1,248,826` legs, the parity fix (`2,762` inherited cells, `3.7×`), the conformal confidence arc (the variance artifact, `0.627` → `0.996`, the tie defect, `95` → `412` values), the aleatoric / epistemic turn, the four indexes and the per-prop loop, the deduction model and its regression collapse, the `35×` fringe / iron-man gap. Judged: narration, research-source summaries (the availability study, CatBoost, conformal and binning literature, the data-quality frameworks, MACEst), job-progress counts and figures below the docs' grain.
+- 🆕 **Residue — `§T17.5`** (new `## T17` holder heading plus `### T17.5`, before `## T16`): the one-prop `final_hp` run that reported success, the `18:09Z` cause given for the `0.00405` figure beside the `3.7×` reading on file, and the fixed-cut elite tier's `0.357` average HP and its verdict. Every quotation checked verbatim in the shell. Pointers: entry row `17` (its "§T17.5 DOES NOT EXIST" note, kept and marked as true when written) and `NBA_BASELINE_CALIBRATION.md` after the `3.7×` passage.
+- **`T17` not clean** — additional sweep `1` stays not clean. Commits this pass, all `[skip ci]`: `5949c7f8c`, `678f7dc84`, `3b47fc3a4`, this ledger; no foreign commit since `c9697163e` when this line was written.
+
+**Ledger**: pass `139` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T17` done (`5,756` sentences); next `T18`.
