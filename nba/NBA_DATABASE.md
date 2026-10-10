@@ -3463,6 +3463,29 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕🔴 §T36.6 — **`T36` (`2026-10-02/03`): `nba_control` (THE SCHEDULER AND THE RUN-ONCE LEDGER), AND THE SLIP PROGRAM'S NEW `nba_score` TABLES** *(source `T36`, recovered transcript; live read-only `2026-10-10`)*
+**Schema `nba_control`** — operational control, not data. ✅ live columns:
+| table | columns | what writes it | live |
+|---|---|---|---|
+| **`pipeline_runs`** | `pipeline, run_key, claimed_at, source, github_run_id, status, finished_at, note` (PK `pipeline_runs_pkey`) | `nba/pipeline_claim.py` — the **run-once claim** (first job of every NBA pipeline) and `finish` | `25` rows; pipelines `P1`, `P2A`, `P2B`, `P3` |
+| **`scheduler_plan`** | `run_key, first_tip, p2a, p2b, p3, p3_deadline, computed_at` | the scheduler worker, once per day | `8` rows, last `run_key` `2026-10-09` |
+| **`scheduler_dispatches`** | `pipeline, run_key, slot, dispatched_at, ok, detail` | the worker — one row per dispatch, the guard against a double Cloudflare fire | `23` |
+| **`scheduler_log`** | `at, slot, pipeline, run_key, action, detail` | the worker (e.g. `dispatch_failed_will_retry`, v2.0.1) | `25` |
+| **`scheduler_switch`** | `id, enabled, updated_at, last_tick` | on/off switch + heartbeat | `enabled = true`; `last_tick` current |
+| `scheduler_test` | — | the one-off test slot (may only fire the audit workflow) | — |
+*(Also present in `nba_control`, not created in `T36`: `cert_fingerprints`, `job_runs`, `worker_run_log` — recorded when their transcript is read.)*
+**Schema `nba_score` — created in `T36`:**
+| table | grain / content | live |
+|---|---|---|
+| `injury_asof_pick` | per day × team × player: the injury status nearest the pick and the final status (pass 27) | `28,349` |
+| `leg_clv` | per engine leg: window line vs PrizePicks close — closing-line value (pass 30; found inert on PP) | `5,629` |
+| **`player_pf20`** — ⚠ **now a VIEW** | trailing-20 personal-foul rate per player-game; was a **static table ending `2026-04-12`**, turned into a view over the game log in `§29y` so P5's weekly rebuild keeps the low-foul key | view; `79,358` rows, max `game_date` `2026-04-12` (no regular-season games since) |
+| `replay6_2025_26`, `replay7_2025_26`, `replay2_2024_25` | saved acceptance-replay ledgers (`§29t`–`§29w`) | est. `3,015` / `2,918` / `2,862` |
+| **`ud_window_legs`** | the Underdog historical universe for the UD program: `season, game_date, event_id, pn, player_id, market_key, prop, kind, side, line, price, m` — **`m` = the certified payout modifier** (2024-25 recovered as `round(decimal(price)/√3, 2)`, exact on `210,155`/`210,155`); rebuilt to the regular-season window; `86` placeholder-price legs on `2025-01-07` excluded | `450,206` (2024-25 `240,051` / 2025-26 `210,155`, as stated) — ✅ both seasons present |
+⚠ **Board-table meaning change, recorded by the build chat (`§30d`/`§30h`)**: Underdog rows in the board archive carry **two meanings by origin** — Odds-API history (`price` = `√3 ×` modifier, an encoding; `multiplier` = the modifier) and live-archived rows (before the `§30h` fix: the *other product's* American price and **no modifier**; after it: `price` = the displayed price, `multiplier` = the payout modifier). A consumer must know which era a row is from.
+
+---
+
 ## 🆕 §T35.6 — **`T35` (`2026-10-01`): THE CALIBRATION TABLE, SHADOW AND `dup` STATUSES, AND THE TEST TABLES THAT CAME AND WENT** *(source `T35`, recovered transcript; live read-only `2026-10-10`)*
 - **`nba_score.live_strategy_calib`** — one row per strategy **plus `_ANCHOR_steals`** (the pooled steals-cell row H7 reads): `hist_max_dd, mc95_dd, mc99_dd, cusum_k, cusum_h_long, cusum_h_short, cert_leg_hit, backtest_days, backtest_legs, calibrated_at, streak95, streak99, hist_streak, sd_daily_hit`. **`sd_daily_hit` is the column the day-blocked H1/H7 z-tests divide by** (added in `T35`, `§29g`); the `cusum_*` columns are the retired `T34` design, still present. ✅ **Live**: `13` rows, all `calibrated_at` `2026-10-08`; `_ANCHOR_steals` `cert_leg_hit 0.634`, `sd_daily_hit 0.331`, `295` days. *(The build chat's `T35` figures — anchor `p0 0.630`, regular 5-Power MC95 dd `60` / streak `55` — differ from today's rows, which were re-calibrated later: regular 5-Power MC95 `72.0`, streak95 `61`.)*
 - **`nba_score.live_slips.status`** gains, in `T35`: **`placed_shadow` / `graded_shadow`** (a red strategy's never-staked slips, read only by the detectors) and **`dup`** (an identical slip already placed that day by another strategy; recorded, never staked). ✅ all three literals are in `live_slip_engine.py` today; `live_slips` is empty (`0` rows) so no live counts exist yet.
