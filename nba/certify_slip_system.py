@@ -242,7 +242,9 @@ def main():
     live_ok, live_detail = None, "fetch skipped"
     try:
         import urllib.request, re
-        html = urllib.request.urlopen(urllib.request.Request("https://www.prizepicks.com/ways-to-pick", headers={"User-Agent": "Mozilla/5.0"}), timeout=20).read().decode("utf-8", "ignore")
+        from net_retry import call as _retry_call   # retried (2026-10-09; it was one attempt)
+        html = _retry_call(lambda: urllib.request.urlopen(urllib.request.Request("https://www.prizepicks.com/ways-to-pick", headers={"User-Agent": "Mozilla/5.0"}), timeout=20).read().decode("utf-8", "ignore"),
+                           tries=3, base=3, cap=15, label="prizepicks ways-to-pick")
         txt = re.sub(r"<[^>]+>", " ", html)
         txt = re.sub(r"\s+", " ", txt)
         def grab(label):
