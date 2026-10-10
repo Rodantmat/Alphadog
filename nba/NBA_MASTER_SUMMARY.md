@@ -46815,3 +46815,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `128` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript (`T1`–`T48`, `S1`–`S9`), on the bases in `§P127`'s table.
+- *(Recorded here for the record: pass 128's STATE patch first struck only the opening words of the pass-127 item; a second patch the same pass struck the whole item.)*
+
+---
+
+# §P129 — PASS 129 (`2026-10-10`): `§P127`'S TABLE AGAINST THE TRANSCRIPTS' OWN CLOSING RECORDS
+*Angle (as NEXT set it):* (u8) for each of `T1`–`T18`, the closing section (or, where the transcript's sections live in a topical file, its closing block) read for the basis it actually used, against `§P127`'s table built from the index heads.
+- ✅ **The table holds for all `18`.** Closing records, by heading: `§T1.119` ("CLEAN · T1 CLOSED" — the two-direction judgment, the amended rule) · `§T2.19` ("CLEAN 3/3 — T2 CLOSES") · `§T3.14` ("2 DEFECTS FOUND AND FIXED · T3 CLOSES" — the amended rule) · `§T4.30`, `§T5.25`, `§T6.25`, `§T7.65`, `§T8.36`, `§T9.52`, `§T10.28` (each "CLEAN 3/3 — … CLOSES") · `§T11.59` (pass 58 clean after two non-clean passes — `1`/`3`, closed on the judgment) · the `T13` and `T14` closing headings ("Clean count 0/3 — CLOSED ON THE STANDING CLOSURE JUDGMENT, pre-registered two passes ahead"; `T12`'s row says the same) · `T15`–`T17` (their closure passes are in `NBA_OPEN_ITEMS.md`, `§T16.4` and `§T17.4`; their rows: "NOT ON THREE CLEAN PASSES") · `T18` (its row quotes the run log: "closed 2026-09-22 at 9 passes, CLEAN 3/3").
+- ✅ **The apparent `T7`/`T11` disagreement is not one.** "`T7`'s recorded precedent" in `T11`'s row is a rule about what counts as clean — `§T10.19c` quotes it, "if the passes produce only editorial corrections, close and say so" — not `T7`'s own basis; `T7` itself closed at `3`/`3` (`§T7.65`, passes 34–36). That quotation appears once in the twelve and its first statement was not found; recorded as it stands.
+- Judged: the "full sequential … CLEAN 3/3" sections of `T1`–`T9` (`§T1.58`, `§T2.20`, `§T3.18`, `§T4.20`, `§T5.15`, `§T6.16`, `§T7.29`, `§T8.21`, `§T9.15`) are the first sweep's closes, before the re-sweep the index rows name; the index rows record the later close. `T2`'s two section series (`§T2.9`–`§T2.19` twice) are a known duplicate id range of that era, read by heading text.
+- **Nothing corrected — a clean pass on the record.** No hourly-rotation or bot commit landed since `6f9276b65` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `129` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript (`T1`–`T48`, `S1`–`S9`), on the bases in `§P127`'s table, now checked against the closing records of `T1`–`T18`.
