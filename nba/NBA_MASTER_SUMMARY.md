@@ -43759,6 +43759,16 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` (the scheduler, run-once, P2A/P2B, the daily plan) · `NBA_WORKERS.md` `§T36.4` · `NBA_DATABASE.md` `§T36.6` (`nba_control.*`, `injury_asof_pick`, `leg_clv`, `player_pf20` view, replay tables, `ud_window_legs`) · `NBA_SYSTEM_DESIGN.md` `§T36.7` (low-foul key, gated week 2, rotation, calendar states, plans, leg filters, launch state) · `NBA_MULTIPLIERS.md` `§T36.3` (Underdog formula) · `NBA_BASELINE_CALIBRATION.md` `§T36.5` (foul-rate step, position, ranker list, CLV inert, early-season Under bias) · `NBA_GOBLIN_DEMON.md` `§T36.2` · `NBA_OPEN_ITEMS.md` `§T36 ITEMS` (+ `T26-20`, `T34-1` updates) · `NBA_RECIPE.md` `STEP 14e` · `NBA_GLOSSARY.md`.
 **Ledger**: `T36` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`.
 
+## §T36.5 — PASS 2 (`2026-10-10`, owner-message completeness): THE OWNER MESSAGES PASS 1 DID NOT QUOTE
+*Method as `§T32.13`; `4` unmatched — two are progress questions (`10-02 06:40` *"How long to finish?"*, `10-03 00:05` *"How long for the dry run result?"*). Times UTC. Answers AS STATED.*
+
+| time | owner, verbatim | the answer it drew *(build chat)* |
+|---|---|---|
+| `10-02 02:15` | *"Well, so we are one step ahead because we already found decent signals, continue, keep researching online, using Gemini, and keep progressing"* | 🆕 an adversarial Gemini review of the two live rules added **two guards**: the **drought rotation** now requires the **trailing-3 days to agree with the trailing-10** — false days `20 → 9`, identification unchanged, tested on the real series first; the **week-2 play** got an **intra-week kill switch** — *"three graded days below 50% stop it for the rest of the week"*, capping a wrong year at about three days of cap 1 *(the rotation's trailing-10 later became an EWMA — `§T36.2` `§29p`)* |
+| `10-03 04:47` | *"A bunch of them so you can analyze and figure out all you need"* (`9` screenshots, `IMG_6952`–`IMG_6960`) | 🆕 the **first** reading of them: Underdog shows each pick's own payout on the board (e.g. Kwan hits 0.5: `1.41×` higher, `2.45×` lower), and a slip *"pays the product of its picks' prices, shaded slightly"* — `0.967` for two picks from different games, `0.69–0.91` for the owner's same-game slips; plan: rebuild history from sportsbook consensus + `~7.7%` margin. ⚠ **Superseded the same night** by the formula of `NBA_MULTIPLIERS.md` `§T36.3` (`base(n) × ∏ mᵢ × C`) — recorded as a step on the path, not as a rule |
+
+**Ledger**: `T36` pass `2` (`2026-10-10`, owner-message completeness) — **NEW MATERIAL** (`§T36.5`: the two Gemini guards, the first screenshot reading), CLEAN `0`/`3`.
+
 ---
 
 # §T37 — `T37` · `2026-10-04-03-48-05-nba-wiring-audit-31x` *(recovered `2026-10-10` from the owner's claude.ai export)* — 🆕 **THE UNDERDOG PROGRAM END TO END (TIER MAP → CERTIFIER → SIGNALS → ENGINE → VALIDATION → REPRICING → PORTFOLIO → LIVE PAPER ENGINE), AND THE WIRING AUDIT THAT FOUND THE LIVE PICK READING A BACKTEST TABLE**
