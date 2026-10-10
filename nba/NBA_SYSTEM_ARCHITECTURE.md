@@ -2592,7 +2592,7 @@ SEND**, not what the books do with it, nor that a differently-scoped board would
 
 ## 🆕 §T34.8 — **WHERE THE SLIP LAYER ATTACHES TO THE DAILY PIPELINE (`T34` DESIGN)** *(source `T34`, `2026-10-01`, recovered transcript; AS STATED from `NBA_SLIP_BUILDING_STRATEGY.md` `§29a`–`§29c`; ✅ = live `2026-10-10`)*
 ```
-P1 (weekly retrain) ──► P5 weekly requal  (T34: Mon 20:00 UTC, "after P1")
+P1 (weekly static, Mon 19:00 UTC) ──► P5 weekly requal  (T34: Mon 20:00 UTC, "after P1")
 P2 (grade yesterday) ──► P4 GRADE         (T34: 16:30 UTC / 09:30 PT, 45 min after P2)
 P3 (score + archive window board) ──► P4 PICK (T34: 21:45 UTC / 14:45 PT, 30 min after P3)
 ```
