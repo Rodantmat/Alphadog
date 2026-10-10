@@ -1,1 +1,1 @@
-script: probe_sleeper_payout_config.py
+script: probe_price_shop_ledger.py
