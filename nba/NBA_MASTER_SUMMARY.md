@@ -46870,3 +46870,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `132` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way: `T1`–`T6` done (`940` sentences), nothing new; next `T7`–`T9`.
+
+---
+
+# §P133 — PASS 133 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T7`, `T8`, `T9` · 🆕 ONE RESIDUE IN `T9`
+*Angle (as NEXT set it):* (y8) `§P131`'s method on `T7`–`T9`.
+- Tabulated in the shell before this line: `T7` `263` of `733` sentences listed, `T8` `57` of `294`, `T9` `147` of `331` — **`467` read and judged** (`T7`'s tail and `T8`'s head overlap at `00:49`–`00:50Z` on `2026-09-09`, `T8`'s tail and `T9`'s head at `03:54`–`04:27Z`).
+- `T7` and `T8`: on file by substance — the completeness check and the `GAME_ID` prefix, the documentation checkpoint, `nba_season.py` and the split into `current_season()` / `active_stats_season()` (and the overwrite-with-zeros risk behind it), the measure types (`T7.10a`), `stat_decay_config`, the `100 MB` file split, the owner's ladder anchoring and the variation rules, the minutes mixture and derived spread, the blowout-as-mixture design, `P(start)`, the period-prop research, the macro-clusters, the shrinkage and Platt guards, the band cells and the compound `3PM` model. Judged: narration, waits, research-source summaries, the MLB tier count, run ids, the `T7` "Player Four Factors returns HTTP 500 / team Usage meaningless" endpoint notes (below grain; the built measure types are on file).
+- 🆕 **`T9` — three messages of `2026-09-09` (`04:59Z`, `05:27Z`, `05:56Z`) carried evidence the twelve did not**: rebounds ELITE closed out (dispersion not the cause — the answer to `§T8.15d`'s open "next"), the per-prop top-decile regression list behind every `k` (only steals' `17%` was on file), the zero-adjustment and its numbers, and why `λ = 0.5` for blocks and steals. ✅ Re-checked live by `SELECT` on `nba_config.classification_config`: `prior_strength_by_prop`, `zero_adjust_by_prop` and `shift_lambda_by_prop` hold the values and basis the transcript states. Recorded at **`§T9.14h`** (new); forward pointers from `§T8.15d`, `§T8.12c` and `NBA_BASELINE_CALIBRATION.md`'s known-misses lines. The rest of `T9` on file (the certification ladder, the period mixture, combos and the copula, the production builder).
+- ⚠ **Additional sweep `1` is therefore not clean** — under `§P130`'s working choice the three-sweep count stands at `0` and restarts after this sweep; sweep `1` continues to its end.
+- ⚠ A rule slip recorded: in pass 132, the STATE and NEXT patches went to this file in one message (the rule is one patch per message per file); both landed, checked on main.
+- No commit other than this pass's landed since `7d9d215ad` when this line was written (checked on main); line `23` is re-checked after the census commit. Italic quotations added are transcript text only (`§T9.14h`, the `T9` messages); the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `133` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean** (`§T9.14h`): `T1`–`T9` done (`1,407` sentences); next `T10`–`T12`.
