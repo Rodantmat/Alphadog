@@ -21356,8 +21356,8 @@
       "away_team_tricode": "HOU",
       "arena_name": "Venetian Arena",
       "arena_city": "Macao, China",
-      "game_status": 1,
-      "game_status_text": "8:00 am ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21371,8 +21371,8 @@
       "away_team_tricode": "MEM",
       "arena_name": "United Center",
       "arena_city": "Chicago",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
