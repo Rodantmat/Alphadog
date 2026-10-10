@@ -45146,3 +45146,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `40` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P41 — PASS 41 (`2026-10-10`): (hhh) THE OWNER STRATUM AGAIN
+*Angle (hhh):* `owners.py` re-counted `T36`'s `66` owner messages with six-word windows against the grown record (`31` are one- or two-word — `26` *"Continue"*, four *"Status"*, one *"Yes"* — plus *"How long to finish?"*, on file as a progress question); `qa.py` re-paired every owner question with the build chat's answer and checked the answer's figures.
+- 🆕 **`T36`**: one message only half on file — `07:10Z` *"Is it showing improvements? Did our deep research change and improve it?"*; the second sentence added in `§T36.1`.
+- `qa.py`: every answer's figures on file.
+
+**Ledger**: pass `41` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
