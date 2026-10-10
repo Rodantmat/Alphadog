@@ -46853,3 +46853,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `131` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way: `T1`–`T3` done, nothing new; next `T4`–`T6`.
+
+---
+
+# §P132 — PASS 132 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T4`, `T5`, `T6`
+*Angle (as NEXT set it):* (x8) `§P131`'s method on `T4`–`T6`.
+- Tabulated in the shell before this line: `T4` `162` of `323` sentences listed, `T5` `114` of `212`, `T6` `149` of `277` — **`425` read and judged** (`T4`'s tail and `T5`'s head overlap, `04:37`–`05:08Z` on `2026-09-03`, and `T5`'s tail and `T6`'s head, `22:11`–`22:21Z`; judged in both lists).
+- On file, by substance: the defender-distance shot quality and its figures (`2,244` bucket rows, `4,656` zone records, Jokić's `+8.06`, the `46.7%`–`58.9%` bucket range), the shot-locations object-not-list error, the splits families and the `WinsLosses` caution, the `3`–`5`-season answer and the per-game minimum, the traded-player `TEAM_ID = 0` total row, `MeasureType=Advanced` as `2` bulk calls instead of `1,230`, the baseline/enrichment separation and its caching reason, the `11:00` delta-daily slot against the `~2:00 AM ET` + `10`–`15` minute finalization bound, the three-season backfill (`79,358` / `7,380` / `9,948`), `playerindex` for position, Defense-vs-Position, `boxscoretraditionalv2` returning empty players and `v3` (`32,179` rows, `12,300` starters), the manual chunk load and the enum that had already refreshed, `dblink`/`plpython3u`, `boxscoresummaryv3` officials (`3,681` rows, `1,227`/`1,230` games, `83` officials) and the `if rows is not None` bug, the `8,000` lineup rows and the array-literal and primary-key fixes, the NBA injury-report PDFs, the `GAME_ID` prefix completeness check. Judged: narration, waits, options offered, research-source summaries (Gemini's phrasing of usage rate), batch sizes below the docs' grain.
+- **Nothing new — `T4`–`T6` clean in additional sweep `1`.** No commit other than this pass's landed since `457ddfeb6` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `132` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way: `T1`–`T6` done (`940` sentences), nothing new; next `T7`–`T9`.
