@@ -1202,3 +1202,53 @@ Each candidate was either executed or measured to its final-output effect and cl
   (2026-04-10 replay, 240 ledger rows). **Not yet exercised with data:** the Sleeper NBA board archive starts 10-07
   (preseason, no engine slips), so the Sleeper column was 0 listed in the replay — **10-20 check: the first in-season
   window ledger shows Sleeper legs priced at m × 0.959.**
+
+### PAYOUTS PROVEN APP BY APP — AND THE PRIZEPICKS FLEX GRADER FIXED (owner 2026-10-09 20:30 PT: "So now we have the proper PrizePicks and sleeper payouts up and running? Prove the other apps as well for the payouts, make sure everything is sharp. Season beginning is around the corner"; 20:32 Sleeper NBA board screenshot; 20:37 Underdog NBA Players-tab screenshots)
+- **Sleeper — board capture proven against the owner's screen.** `boards/sleeper_nba_current.json` (02:25Z, `api.sleeper.app/lines/available`)
+  vs the app at 03:31Z: LeBron PRA 31.5 1.83/1.73, Wembanyama 40.5 1.78/1.78, SGA 40.5 1.80/1.77, Brunson 35.5 1.72/1.85 —
+  identical; Cunningham 39.5 MORE-only 1.72 = our one-sided leg (`under_multiplier` null); the 🔥 counters = `pick_stats.total`
+  (SGA 493→497, Brunson 354→356 an hour later); Tatum moved 42.5 1.82/1.75 → 41.5 1.69/1.88 (Sleeper reprices live; overround
+  ≈12.4%, as measured in §31aa). **Still owed:** the entry rule on NBA (Max / Combo payout from the leg multipliers) — no
+  public quote endpoint; the owner was asked for three no-submit entry screens (cross-game 2-pick 3.257x product, 3-pick
+  6.124x product, a 4-pick with a same-game pair).
+- **Underdog — capture proven, tables proven, one entry check owed.** The scheduled NBA capture held 0 player legs off game
+  days (the lobby's per-match lines answer only for TODAY's matches; history: player legs only while preseason games were on,
+  up to 44 players on 10-08). Probe 38021327258/38021646701 (`nba/probe_ud_future_props.py`: the production scraper forced onto
+  2026-10-20 with the full stat sweep): all nine screenshot legs captured with the right lines (Tatum/George/White Points,
+  Rebounds, Assists; Points mains 1.87x = √3.5 × modifier 1.00 exactly). **What the app displays is Underdog's fantasy price**
+  (`fantasy_decimal` = `display_decimal`, the fantasy American odds: George AST MORE −182 = 1.55, LESS +113 = 2.13; White −176 =
+  1.57, +108 = 2.08 — exact). The payout modifier (`payout_multiplier`, two decimals) times √3.5 lands 0.01–0.02 off the
+  display in both directions on alternate-priced picks. Tables re-verified at the source (help center "Pick'em Standard &
+  Flex Entry Payouts", updated ~2 weeks ago): Standard 3.5/6.5/12/20/35/65/120, Flex 3.25/6/10/25/40/80, one loss
+  1.09/1.4/2.5/2.6/2.75/3, two losses 0.25/0.5/1 — identical to `build_ud_slip_engine.STD/FLEX` (2–8 picks). **Owed:** one
+  no-submit entry screen (George AST MORE 2.5 + Tatum PTS MORE 26.5: 2.87x = 3.5 × modifiers, our engine; 2.90x = product of
+  the displayed prices) to settle which number an entry pays; the probe file stays as the check.
+- **PrizePicks Power — proven out of sample.** The 48 MIXED live quotes of run 38020184454 (3–6 picks, 2–3 goblins/demons,
+  factors from the same run's LEG quotes): `pp_slip_power` best estimate mean |error| 2.0% (worst +5.6% over, −7.9% under);
+  `pp_slip_power_conservative` (what pricing uses) **never above the quote in 48/48** (closest 0.8% under, a 6-pick).
+- 🔴 **PrizePicks FLEX with goblins / demons — the certified grader was wrong, now fixed.** `build_slip_engine.grade` paid
+  FLEX[(n, hits)] × ∏(leg factors) on every Flex tier. PrizePicks' quotes (the 48 MIXED; all-demon probe 38021265189
+  `nba/probe_pp_demon_flex.py`, 40/40 answered; the 2026-09 WNBA mining) show the **partial tiers nearly flat** in the factor
+  product (3-Flex one miss ≈1.0x up to fp 3.4, 2.0x at fp 5.4, 3.5–3.75x at fp 11.7–13.1; 5-Flex one miss ≈2.0x up to fp 6.8,
+  8.5x at 9.8, 15–17.5x at 22–25; two misses 0.4x up to fp 6.8) and the **all-hit tier above** FLEX × fp (5-Flex fp 5.43: 87x vs
+  the grader's 42x). The grader overpaid the partial tiers 2–5x — and the demon strategies earned most of their certified
+  payout there (B_demon_3flex 2024-25: 79% of payout from the one-miss tier).
+  **Fix:** `nba_config.pp_slip_rules['flex_alt_tiers']` = per size and misses, the LOWER ENVELOPE of every quoted
+  (factor product, payout) — 917 quote tiers + 22 probe points, interpolated in ln(fp), clamped at the ends; validated on its own
+  quotes: mean model/quote 0.95, max 1.013 (3-decimal fp rounding). DB `nba_market.pp_flex_alt_payout()` + view
+  `pp_flex_alt_segments` (`nba/sql/pp_flex_alt_payout.sql`; 190/190 identical); Python `build_slip_engine.flex_alt_payout` (the ONE
+  grader for live, backtest, playoff unders, cross-checks); validator V3 null regrades with it; certifier L11 recomputes with it;
+  `nba/regrade_pp_flex_alt.py` re-priced all six `slip_engine_slips*` tables (488,474 slips; old payout KEPT in
+  `payout_grader_v1`) and now runs in P5 (step 3f) before certification; `nba/build_pp_flex_alt_tiers.py` rebuilds the envelope
+  after every payout-map run (never shrinks the evidence). Power and all-standard Flex unchanged.
+  **Effect on the live strategies (market-free twin, own cap, final week out; ROI before → after, 2024-25 / 2025-26):**
+  B_demon_3flex +52 / +90 → **−16 / +31**; B_demon_5flex +70 / +204 → **−22 / +84**; A_wsteals_5flex +69 / +96 → +36 / +79;
+  A_core_5flex (retired) +76 / +97 → +51 / +79; C_wstocks_4flex +55 / +79 → +31 / +66; A_wrebounds_4flex +49 / +93 → +38 / +88;
+  every Power strategy unchanged. All strategies are paper; P5 run 38023098995 (dispatched on the regraded tables) re-decides
+  verdicts — a FAIL turns a strategy red / cap 0 by the standing rule. PrizePicks' Playoff Unders slips are all-standard
+  (unaffected).
+- **Fliff / Betr — measurement-only apps, proof deferred to their NBA boards.** Fliff = sportsbook pricing (per-leg American odds →
+  decimal, a parlay multiplies); its NBA board is still team markets only. Betr publishes only "up to" totals by size (2 up to
+  3x … 8 up to 300x, review sites); its per-tier multiplier (REGULAR / BOOSTED / EDGE …) is not in the capture yet
+  (`BETR_BUILD_STATE` §8). Neither prices a placed slip; both are 10-20 checks (first NBA Betr harvest: capture the tier
+  multiplier field; Fliff: first player props + one parlay screen).
