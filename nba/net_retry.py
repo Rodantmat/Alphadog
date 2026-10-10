@@ -104,7 +104,7 @@ def request(method, url, *, session=None, proxies=None, routes=("direct",), trie
     else:   # imported only when no session is given: several workflows install curl_cffi but not requests
         import requests as sender
     ok = ok or (lambda r: r.status_code == 200)
-    label = label or url.split("?")[0][-70:]
+    label = redact(label or url.split("?")[0][-70:])
     routes = [r for r in routes if r == "direct" or (r == "proxy" and proxies)] or ["direct"]
     transient = TRANSIENT_STATUS | ({403} if retry_403 else set())
     last = None
