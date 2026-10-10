@@ -46321,3 +46321,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `96` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P97 — PASS 97 (`2026-10-10`): EVERY LOW-COVERAGE CLAUSE AFTER A DASH IN `T37`
+*Angle (as NEXT set it):* (g7) the clauses after a dash in `T37`'s strategy text, each scored on its own four-word coverage: `219` clauses, `92` below `0.5` on the recount at the start (the same as pass 96's count), each read in its sentence and judged from scratch. (h7) both scans re-run after the additions (≥ `5`: `180`; ≥ `4`: `204`): `0` new sentences; `2` runs changed wording on sentences already judged (`§30r`'s switches and builds — the position fix on file). The dash scan after the additions: `89` below `0.5`.
+- 🆕 Not on file (AS STATED, in `§T37.9`): three clauses — `§30j`'s break-even derivation, `§30r`'s purpose for its third build, `§30r`'s haircut rule.
+- Judged, not recorded: plans later run; restatements of figures on file; research-source summaries; cross-references; implementation notes; fragments of the reverse-transfer table.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-96 census commit: `qdiff.py` `0` flags (`3` quotes counted).
+
+**Ledger**: pass `97` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
