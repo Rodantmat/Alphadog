@@ -45075,3 +45075,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `34` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P35 — PASS 35 (`2026-10-10`): (bbb) `T36`'S FINAL REPLIES TRACED SENTENCE BY SENTENCE
+*Angle (bbb):* a script (`senttrace.py`) split all `67` final replies into sentences and checked each one's four-word runs and figures against the eleven editable docs; `395` sentences with under `15%` of their runs on file and an unmatched or absent figure, plus `5` with a figure missing, were each read and resolved. Most are connective prose (*"Continuing with the same two halves"*); the rest:
+- 🆕 **`T36`** → `§T36.6` #7: the week-2 play against the full engine's `−56` / `−40`; the three disciplines of the strong operations mapped to the system and the regime response; the `04:45Z` clean-pass count, the demon calendar and the two follow-ups; the leg foul rate stored for the monitor (✅ code); the 2024-25 opening night at cap 1, replay #7 vs #6 to Feb 25, the `reset` mode clearing the rotation state; the early-tip finding (`41` of `156` slates); scheduler v2's two deployed-code defects (✅ the retry code); the Underdog-Sportsbook reading and the formula's fit (`2.85` / `2.99` / `4.47 vs 4.48`, Flex `0.5–2.5%`).
+- Resolved as on file: the convexity table (`7.4` / `13.1`, in the pass-28 row), the drought identification (`6, 6, 8`, `20` false days), the league-identical control, the UD first read and the other-boards plan.
+
+**Ledger**: pass `35` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
