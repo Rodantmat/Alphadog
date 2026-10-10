@@ -362,7 +362,7 @@ that is the useful part.
 > HAS NOT RUN IT.** 🔑 ***Establish this before opening night: it is the single call that unblocks
 > `final_hp`, the prune and the history loader together.***
 > **Mechanism**: `P2` accepts an `asof` input; `P3` is re-run for the date. *`STEP 9` / `STEP 10` give
-> each pipeline's steps.* ~~⚠ **`P3` will abort on any `2026-27` date until `T23-2` is fixed.**~~ ✅ **`T23-2` FIXED `2026-09-24` — the season resolves from the date, so a replay of any date works.** ⚠ **`P2` also DELETES the slate by date and rewrites it, so a rerun REPLACES rather than stacks** *(`§T26.4`)*.
+> each pipeline's steps.* ~~⚠ **`P3` will abort on any `2026-27` date until `T23-2` is fixed.**~~ ✅ **`T23-2` FIXED ~~`2026-09-24`~~ `2026-09-23` *(date corrected pass 114 → `NBA_MASTER_SUMMARY.md` `§T26.R3`)* — the season resolves from the date, so a replay of any date works.** ⚠ **`P2` also DELETES the slate by date and rewrites it, so a rerun REPLACES rather than stacks** *(`§T26.4`)*.
 >
 > ### 4 · ⏰ **CHANGE A PIPELINE'S SCHEDULE** ~~*(add the `P2` cron)*~~
 >
