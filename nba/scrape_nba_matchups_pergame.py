@@ -56,18 +56,25 @@ def _walk(node, game_id, team_id, out):
 
 def fetch_game(session, game_id):
     url = f"https://stats.nba.com/stats/boxscorematchupsv3?GameID={game_id}&LeagueID=00&endPeriod=0&endRange=28800&rangeType=0&startPeriod=0&startRange=0"
-    for attempt in range(3):
+    # system retry policy (nba/net_retry.py, 2026-10-09): a 429 / 5xx used to be retried IMMEDIATELY (the sleep only ran
+    # on an exception) - three back-to-back hits on a rate limit. Now 3 attempts with full-jitter backoff on every
+    # transient answer; 400/404 stay final.
+    from net_retry import RetryError, request
+    try:
+        r = request("GET", url, session=session, tries=3, base=3, cap=20, timeout=60, label="stats matchups",
+                    headers=STATS_HEADERS, impersonate="chrome124")
+    except RetryError:
+        return None, "fetch_failed"
+    if r.status_code == 200:
         try:
-            r = session.get(url, headers=STATS_HEADERS, timeout=60, impersonate="chrome124")
-            if r.status_code == 200:
-                body = r.json()
-                probe = DATA / "nba_matchups_pergame_probe.json"
-                if not probe.exists(): probe.write_text(json.dumps({"game_id": game_id, "top_keys": list(body.keys()), "sample": json.dumps(body)[:30000]}))
-                out = []; _walk(body, game_id, None, out)
-                return out, None
-            if r.status_code in (404, 400): return [], f"http_{r.status_code}"
+            body = r.json()
         except Exception:  # noqa: BLE001
-            time.sleep(3 * (attempt + 1))
+            return None, "fetch_failed"
+        probe = DATA / "nba_matchups_pergame_probe.json"
+        if not probe.exists(): probe.write_text(json.dumps({"game_id": game_id, "top_keys": list(body.keys()), "sample": json.dumps(body)[:30000]}))
+        out = []; _walk(body, game_id, None, out)
+        return out, None
+    if r.status_code in (404, 400): return [], f"http_{r.status_code}"
     return None, "fetch_failed"
 
 
