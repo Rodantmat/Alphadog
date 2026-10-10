@@ -45111,3 +45111,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `36` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P37 — PASS 37 (`2026-10-10`): (ddd) `T36`'S WRITES TO CODE AND WORKFLOWS
+*Angle (ddd):* all `196` write calls in `T36` extracted; the `124` to code and workflow files (`live_slip_engine.py` `69`, `build_slip_engine.py` `10`, workflows `29`, the scheduler `5`, the Underdog scraper `5`, six single files) read commit message by commit message, each figure and rule checked against the docs, and the ones still current re-read in live code.
+- 🆕 **`T36`** → `§T36.6` #8: thirteen commit messages carried figures or rules the docs did not (the cap-3 points Power's portfolio effect; the EWMA's identification days; the side filter's per-season splits; All-Star week's splits; late-March slips 4–6; the leg filters' per-season hits; the low-foul key's per-strategy effect; the deadlock's `101` days; the calendar's label list and the `> 60`-day season split; plan B's three plays; blank-input defaults ✅; the morning capture's `now − 2 min` and game-day-only rule ✅; the Underdog modifier's `84%` reason ✅).
+- A count in the first write of `#8` was wrong (`118` code writes; the right figure is `124`) and corrected in the next commit.
+
+**Ledger**: pass `37` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
