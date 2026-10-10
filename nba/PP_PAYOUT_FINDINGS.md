@@ -224,6 +224,24 @@ the calibration ever had. The name-map defect is repaired in the calibration its
   (`PP_TRANSPORT=auto`); the browser quote retries once after a page reload; the board GET runs through `nba/net_retry.py`.
   When curl_cffi ships a current Chrome the cheap path comes back with no code change. Schedule: twice a day, both before
   the decision window (16:30 / 19:45 UTC), was every 6 h.
+- **THE CHEAP PATH IS BACK — primp, no browser, no proxy (owner 20:04 PT: "try more, research online, use Gemini insight
+  and you will find a way"; probe 38019790315 `nba/probe_pp_quote_cheap.py`, production run 38020184454).** Research: the
+  curl_cffi releases (newest preset chrome150; 0.16.3 notes Chrome 152 only via raw options), a 2026 DataDome guide
+  (fingerprint-current clients pass; lifted cookies do not), and Gemini 2.5 Pro (the datadome cookie is bound to the
+  fingerprint that earned it — so match the fingerprint, not the cookie). The probe echoed every client's fingerprint at
+  tls.peet.ws on the same exit IP: **real Chrome 154 JA4 `t13d1517h2_8daaf6152771_cb7bf5808d99`; primp `chrome_153` the
+  SAME JA4; curl_cffi chrome150 `t13d1516…` (one TLS extension short); the HTTP/2 Akamai fingerprint is identical for
+  all.** Quote POST results: primp chrome_153 **200 direct and 200 via the raw proxy**; chrome_152 / safari_26 /
+  firefox_147 200 direct; primp's default `chrome` (=147) 403 DataDome; curl_cffi with the real Chrome's own JA3 + H2 +
+  client hints copied in, with or without its cookies, still 403 (JA4 came out `t13d1512…` — curl cannot express the new
+  extension); partner-api host 403/404 for the POST. **`pp_payout_map.py` ladder is now primp → curl_cffi → real Chrome**
+  (`PrimpQuoter`: newest primp Chrome targets found at run time, egress the runner's own IP first then the raw proxy, a bare
+  403 counts as a wall; up to 3 probe quotes decide the rung). **Production run 38020184454 (80-quote sample budget):
+  `primp:chrome_153:direct` served all 78 quotes, 78 / 78 status 200 with tables, loaded (`new_rows=78`), and every one is
+  IDENTICAL (same picks, same Power / Flex tables) to the two real-Chrome runs earlier that evening (021920Z, 010104Z).**
+  Cost: a few KB per quote, ~2 min, zero metered proxy traffic; the browser stays as the last rung. Watch: when PrizePicks'
+  wall starts refusing chrome_153 (Chrome moves on), `pip --upgrade primp` brings the next target and the ladder falls to
+  the browser meanwhile — no silent blind period.
 - **The 10-20 "in-app" check, settled from PrizePicks' own quote engine (anonymous, prizepools, 2026-10-09):** all-standard
   **Power 2 = 3.0, 3 = 6.0, 4 = 10.0; Flex 2 = 2.0 / 0.5 (1 hit), 3-Flex = 3.0 / 1.0, 4-Flex = 6.0 / 1.5** — exactly the
   mined tables the engines use (`pp_flex_standard_payout`), not the help centre's 2.25 / 1.25 and 5 / 1.5. 5- and 6-pick from
