@@ -46773,3 +46773,20 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `125` complete (`2026-10-10`).
 - ✅ **CLOSED `3`/`3`**: every transcript (`T1`–`T48`, `S1`–`S9`); the from-scratch re-judgment of the closed-by-comparison lists is complete.
+
+---
+
+# §P126 — PASS 126 (`2026-10-10`): THE ENTRY ROWS' STATUS AUDIT
+*Angle (as NEXT set it):* (r8) every transcript status stated on this file's first screen, in its summary table (`T1`–`T26`) and in the `📍 TRANSCRIPT INDEX` (`1`–`48`), plus the other eleven files' entry blocks, checked against the ledgers and the run log; stale ones struck and corrected. Unstruck "open" phrases were listed in the shell by strike parity (an odd count of `~~` before the phrase means it is struck).
+- 🆕 **Seven rows behind their transcripts, corrected by nine patches** (counted in `git log` before this line):
+  - the summary table's `T26` row: its passes column had been moved to `37` with "CLOSED `3`/`3` in pass 117", but its status column still opened "⏳ OPEN … NONE clean — `20` passes", and its marker still read "🆕 ⏳" — both struck, `✅ CLOSED` written in front;
+  - the summary table's `T25` row: the "🆕 ⏳" marker beside a status column reading CLOSED `2026-09-26` — struck;
+  - the summary table's `T20` row: "Still `0/3` on the CLEAN COUNT", written at `§F7.5` (commit `77722239b`, `2026-09-23T08:08Z`); the run log's sweep-complete row (commit `b33978d75`, `17:21Z` the same day) reads "`T1`–`T24`, ALL `24` CLOSED at `3`/`3`", and both STATE rows list `T20` closed. Struck with that pointer. **That row does not name which three clean passes `T20`'s count rests on**, and none was found in this pass; recorded as stated, not inferred;
+  - the `2026-09-26` map header on the first screen ("`T26` still open at `29` passes", a header that says its count "is re-derived at each close") and the `2026-09-26` STATE row ("`T26` REMAINS OPEN", corrected once on `2026-09-29` to `31`) — each given a forward pointer to the close (`RULE 6`);
+  - the `TRANSCRIPT INDEX` rows `19` and `20`: under heads reading "`RULE 46` CLOSED — DO NOT RE-OPEN", three unstruck clauses still said the close was owed or that `T20` would be "held open at 0/3" — struck, each pointing at `§F7.13`.
+- Checked and left: index rows `1`–`18` and `21`–`48` (every head CLOSED; the "Clean count `0`/`3`" phrases in rows `12`–`14` sit beside "closed on the standing closure judgment", and those in rows `32`–`48` are old intake text inside their CLOSED rows' history chains); the summary rows `T1`–`T19`, `T21`–`T24` and the two `T19`+`T20` rows; the `2026-09-25` map header ("`T25` AND `T26` ARE OPEN"), dated and true on its date; `S1`–`S9`, which have no index rows and are carried CLOSED on the STATE row. In the other eleven files' entry blocks no transcript status is stated; the two status phrases found further in (`NBA_SYSTEM_DESIGN.md` "after T1–T18 closed", `NBA_OPEN_ITEMS.md` "the four transcripts closed at the SHORTEST pass counts") are historical and true.
+- One `T26` date stamp re-checked on the way and found right: `NBA_BASELINE_CALIBRATION.md`'s "`§T26.8` *(found `2026-09-24`, fixed same day)*" — ✅ the shape-parity fixes are commits `46fd396a1` (`19:58Z`) and `7b4aefa0e` (`20:38Z`) on `2026-09-24`, after `T26`'s span ended (`04:37Z`), so the date is right on either clock.
+- No hourly-rotation or bot commit landed since `501d3ed59` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `126` complete (`2026-10-10`).
+- ✅ **CLOSED `3`/`3`**: every transcript (`T1`–`T48`, `S1`–`S9`). The entry rows now agree with the ledgers, except that `T20`'s three clean passes are not named anywhere found (above).
