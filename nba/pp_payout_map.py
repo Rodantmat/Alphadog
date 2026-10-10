@@ -193,7 +193,7 @@ class Quoter:
                 st, txt = self._post(picks)
             except Exception as exc:  # noqa: BLE001
                 st, txt = -1, str(exc)[:200]
-            captcha = "captcha-delivery" in txt
+            captcha = "captcha-delivery" in txt or st == 403   # a bare 403 on the quote endpoint is the same wall
             if not captcha:
                 self.blocks = 0
                 break
