@@ -45627,3 +45627,25 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `59` complete (`2026-10-10`).
 - **NEW MATERIAL / REOPENED → `0`/`3`**: `T32`, `T33`, `T34`; `T37`, `T38`, `T39` (reopened from `3`/`3`).
 - **CLEAN → `2`/`3`**: `T35`, `T36`.
+
+---
+
+# §P60 — PASS 60 (`2026-10-10`): (e4) THE DEEP CHECK OF `T40`–`T42`, `T44`, `T46`–`T48`; (f4) CONFIRMATION ON `T37`–`T39`; NEW ANGLES ON `T32`–`T36`
+*Angles:* (e4) each remaining closed transcript's strategy/`COMPASS` additions through the figure checks, `colocT.py` where run, and the figure-free read where run (stated per section); (f4) `T37`–`T39` re-checked after passes 59's additions; `T32`–`T34` — `20` random strategy sentences each WITH figures, seed `60`, hand-traced; `T35`/`T36` — their `COMPASS` writes alone, line by line. A new tool: **`figmiss2.py`**, the figure check with number boundaries (a figure counted present only where it stands alone — `figmiss.py` had counted `2,744` present inside `7,762,744`, `3.62` inside `23.62`, `4,474` inside `4,474,899`).
+- 🆕 **`T40`** → `§T40.8` (the routing test's cutpoints, `board_scored`'s whole-number hole by date, the combos depth sample, gate 2b's per-strategy table, gate 2's deep-rung parity and result). **REOPENED.**
+- 🆕 **`T41`** → `§T41.9` (the determinism count, calibration moves, the `NOT_IN_TOP30` ranks, closing items, Underdog's `2,744` whole-number legs). **REOPENED.**
+- 🆕 **`T42`** → `§T42.9` (the referee API's shape, the reversion fix's `977.8` units, ET-of-tip dates, the `12` scrapers, the proxy economics without credentials). **REOPENED.**
+- 🆕 **`T44`** → `§T44.9` (what the postseason is, the research ranked by evidence, the proxy meter). **REOPENED.**
+- 🆕 **`T46`** → `§T46.8` (the playoff research figures, the candidate leg hits, `§31y`'s full layer table, the regular-season stress). **REOPENED.**
+- 🆕 **`T47`** → `§T47.9` (`§31z`'s walk-forward and stress table, `§31aa`'s exact pricing law, gates, cross-app legs and layer). **REOPENED.**
+- 🆕 **`T48`** → `§T48.9` (the twin by strategy, the gap's size, the feed's budget and baseline). **REOPENED.**
+- 🆕 **`T37`, `T39`** — the confirmation found more: `T37` two (`colocT.py`), `T39` four (`figmiss2.py` three, `colocT.py` one) → `§T37.9`, `§T39.9` pass-60 bullets. ✅ **`T38` — CLEAN** (`figmiss2.py` `0`; `colocT.py` `1` of `121`, the `−9.24` on file).
+- 🆕 **`T32`, `T33`, `T34`** — the figure-bearing samples found three, five and two passages not on file, and `figmiss2.py` five (`T33`) and two (`T34`) → the pass-60 bullets of `§T32.14`, `§T33.7`, `§T34.8`.
+- 🆕 **`T35` — REOPENED** by `figmiss2.py`: pass 18's directional-signature table was on file in part only → `§T35.6`; its `COMPASS` angle found one more passage. ✅ **`T36` — CLEAN, third consecutive**: `figmiss2.py` `9` of `412`, all the `§30d` MLB screenshot material judged at summary level since `§P52`; its `10` `COMPASS` writes read line by line — every figure present (`0` of `44`), every sentence traced; one detail judged the same way (*"formula re-run on all ten slips"* — the owner's MLB screenshot slips). **`T36` CLOSED `3`/`3`** (passes 58–60).
+- 🔧 **Process facts:** the `sa_extract.py` files used for `T35`/`T36` before this pass predated the tool's `COMPASS` handling (`10,681` vs `12,048` and `17,232` vs `19,030` words); `T32`–`T34`'s were current (byte-identical on re-extraction). Still owed, named for the next pass: `colocT.py` on `T46`–`T48` and the figure-free `runlen.py` read on `T44`, `T46`, `T47`, `T48`.
+- Every quotation added: `qdiff.py` `0` flags on every patch; no credential, proxy host or token text reproduced (checked by grep after the `T42`/`T44` patches).
+
+**Ledger**: pass `60` complete (`2026-10-10`).
+- **NEW MATERIAL / REOPENED → `0`/`3`**: `T32`, `T33`, `T34`, `T35` (reopened from `2`/`3`), `T37`, `T39`; `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48` (reopened from `3`/`3`).
+- **CLEAN → `1`/`3`**: `T38`.
+- ✅ **CLOSED `3`/`3`**: `T36`.
