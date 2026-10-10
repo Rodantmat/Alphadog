@@ -114,7 +114,7 @@ table's.***
 > # 📑 **INDEX — `NBA_OPEN_ITEMS.md`**
 > **Everything unresolved, and everything only the owner can decide.** *`ACT ON THIS` at the top of
 > this file is the whole decision surface; the rest is the evidence under it.*
-> 📏 **`958` sections · re-derived `2026-09-28`** *(was `957` earlier same day; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_OPEN_ITEMS.md ``
+> 📏 **`960` sections · re-derived `2026-10-10` (RUN)** *(`959` before this day's `§T32 ITEMS` heading — `1` of drift from a later edit was already present; `+1` this pass)* · ~~**`958` sections · re-derived `2026-09-28`**~~ *(was `957` earlier same day; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_OPEN_ITEMS.md ``
 >
 > 🆕🆕 **`2026-09-25` — `8` ITEMS CLOSED, `4` NEW ITEMS OPENED, AND THE RANKED BRIEF CHANGED SHAPE. READ THIS BEFORE THE BRIEF.**
 > | | |
