@@ -42909,7 +42909,7 @@ deadline itself.
 - **The configuration and result, AS STATED**: *"3-pick Power on the model's top standard legs (threshold 1.30), one leg per player per night, exact payouts, lines that never moved"* — `2024-25` `+14.2% ± 6.4%` (`162` nights / `1,882` slips), `2025-26` `+18.7% ± 6.1%` (`162` / `2,330`), both `+16.7% ± 4.4%` (`324` / `4,212`). The season figures match the grid's never-moved `1.30` · `3` cells (`+0.1419`, `+0.1867`).
 - **The two further checks**: on minutes leakage, *"The model's projected minutes miss real minutes by 5.5 minutes on average and land within one minute only 11% of the time. That's an honest projection."* On clustering, *"Counting each night as one observation, the result is still 3.8 standard errors above zero. It's volatile, though: half the nights lose."*
 - **Its own limit**: *"the model was designed while looking at these same seasons, so treat this as an upper bound."*
-- ⚠ So a slip-level standards backtest was run in `T23` itself, two days before `T24`'s; the two differ in nights, slips and ROI, and neither message compares them.
+- ⚠ So a slip-level standards backtest was run in `T23` itself, before `T24`'s *(⚠ first written "two days before" — `T24`'s own run date is not established here; corrected in the same pass)*; the two differ in nights, slips and ROI, and neither message compares them.
 
 # §T22.2 · §T22.3 · §T22.6 · §T22.7 · §T23.4 — 📋 **THE FIVE PASS RECORDS WHOSE CONTENT WENT TO THE SUBJECT DOCUMENTS**
 
