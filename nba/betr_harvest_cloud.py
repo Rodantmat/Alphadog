@@ -401,7 +401,13 @@ def main():
         kw["proxy"] = proxy_arg
     try:
         with SB(**kw) as sb:
-            open_alive(sb, URL, "first load")
+            if not open_alive(sb, URL, "first load"):
+                # the proxy never carried picks.betr.app (Chrome's net-error page on every reload) - stop now with the
+                # proxy verdict instead of walking a dead page into a misleading 'session' failure; the workflow retries
+                # exit 4 on a fresh sticky proxy session
+                print("NO BOARD: the proxy never carried picks.betr.app on the first load (net-error page on every reload). "
+                      "Exit 4 = retry on a fresh proxy session.", file=sys.stderr, flush=True)
+                sys.exit(4)
             enable_network(sb)
             where(sb, "first load")
             for _ in range(3):
