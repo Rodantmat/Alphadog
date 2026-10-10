@@ -45481,3 +45481,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `57` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`.
+
+# §P58 — PASS 58 (`2026-10-10`): (a4) THE FIGURE-FREE READ OF `T32`–`T34`; (b4) `T35`/`T36` CONFIRMATION
+*Angle (a4):* every sentence of the strategy text `T32`, `T33`, `T34` wrote that carries no figure and shares no five-word run with the docs (`runlen.py`: `596`, `185`, `240`), read against the record by section. *Angle (b4):* `figmiss.py` and `colocT.py` re-run on `T35` and `T36` after `§P56`'s additions, every flag matched to the accounted lists.
+- 🆕 **`T32`** → `§T32.14` (pass-58 bullet): `§6e`'s ranked NBA edges and traps, the engine rules stated with `§7`, `§8`'s proposed ranks and the tier-anchoring principle, `§9`'s live rank stack, `§11d`–`§11f`'s library entries, microstructure pattern, volume lesson and three failure modes, `§12`'s feature set and reading, `§13`'s caveats and `§13a`'s sign/magnitude finding.
+- 🆕 **`T33`** → `§T33.7` (pass-58 bullet): the honest backtest universe, the single-cell verdict, the portfolio within the cap, the selection curse, Underdog placement and why no Underdog-only backtest, the ordering gain's dilution, slate placeability, why no construction rescues hit-rate ranks, fewer-stronger-legs, the (tier, n-band) candidate definition.
+- 🆕 **`T34`** → `§T34.8` (pass-58 bullet): the single-leg break-even bar, the per-side trail kept as an input, *"Regression is in the price, not the player"*, Unders and minutes, the extender rule, the canonical stack and trap, the CTE check rewrite, *"data the system does not have"*, the survival margin, the state machine's downgrades, the never-auto-edited strategy list.
+- ✅ **`T35`, `T36` — CLEAN.** `figmiss.py`: `T35` `0` of `260`; `T36` `10` of `412`, every one on the accounted list (the `§30c` MLB reference, the `§30d` owner MLB screenshots at summary level — `§P52`). `colocT.py`: `T35` `3` of `461` (the H2/H3 bootstrap count, the 2021 research season, D1's `−188` — on file, `§P55`); `T36` `23` of `681`, each read in pass 56 and now on file in `§T36.6` #11–#12 or accounted (MLB screenshots, `§30d` table). No new material.
+- Every quotation added: `qdiff.py` `0` flags (`28`, `27` and the `T33` patch).
+
+**Ledger**: pass `58` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`.
+- **CLEAN → `1`/`3`**: `T35`, `T36`.
