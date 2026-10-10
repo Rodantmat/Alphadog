@@ -2170,3 +2170,15 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **local forward proxy** | an unauthenticated `proxy.py` on the runner relaying to the authenticated residential proxy — the UC-Mode + auth-proxy workaround | `NBA_SYSTEM_ARCHITECTURE.md` `§T32.2` |
 | **Path C** | the owner-PC Betr harvester (`betr_harvest.py`), kept as fallback | `NBA_WORKERS.md` `§T32.1` |
 | **phase 4.5** | the owner's review checkpoint before any auto-engine; why the `T32` builders are report-mode | `NBA_RECIPE.md` `STEP 14` |
+| **`line_source`** *(`real` / `simulated`)* | `prop_universe` column: a line actually posted on some board vs a line the system constructed (`8` simulated props) — filter it or the edge is fake | `NBA_DATABASE.md` `§T33.6` · `T33-1` |
+| **window board** | the PrizePicks board snapshot taken at the decision window (before the first tip) — the only legitimate backtest pool | `T33-2` · strategy `§17` |
+| **harness** | `build_slip_config_sweep.py`, the exhaustive real-slip backtest (v1→v4) | `NBA_WORKERS.md` `§T33.4` |
+| **matrix engine** | `build_slip_matrix.py`: every strategy × every signal on every real leg, gated by both seasons | `NBA_WORKERS.md` `§T33.4` |
+| **Gate 1 / Gate 2 / Gate 3** | S2 day-bootstrap P5 > 0 · positive in both seasons + P5 > 0 · the live gate (rolling hit `0.58`/`0.565`) | strategy `§14e`, `§14f`, `§15f` · `T33-5` |
+| **cap-1** | one slip per day — how slips are actually placed; the quoted measure from `§17` on | strategy `§17c` |
+| **peripheral props** | `turnovers`, `steals`, `blocks`, `stocks` — the defensive family where the edge concentrated; **Regular-only on PrizePicks** | `NBA_GOBLIN_DEMON.md` `§T33.2` |
+| **sort raw / price calibrated** | the two-role rule: order legs by raw `model_p`, price and gate them by the calibrated value | `NBA_BASELINE_CALIBRATION.md` `§T33.5` |
+| **anchor tier** *(R / UA-Gob T1–3 / OA-Dem T1–3)* | the owner's grouping of a ladder around the Regular line (or the switch point): goblins Under the Anchor, demons Over it, tier = rungs away | `NBA_GOBLIN_DEMON.md` `§T33.2` |
+| **tier map** | `nba_score.tier_map_legs` — every real PP leg with its anchor tier, rank and outcome, per rank key | `NBA_DATABASE.md` `§T33.6` |
+| **gold band** | the run of top-n (or top-%) cuts in a cell where the hit rate beats the tier's own break-even, as large and constant as possible | `NBA_GOBLIN_DEMON.md` `§T33.2` · strategy `§19k` |
+| **`_alternate`** | PrizePicks' market suffix for goblin/demon ladders — must be folded to the base prop on joins | `T33-3` |
