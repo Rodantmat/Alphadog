@@ -282,6 +282,7 @@ def main():
           (SELECT sum((j->>'hit')::int) FROM jsonb_array_elements(legs_json) j) lh,
           (SELECT count(*) FILTER (WHERE (j->>'hit') IS NOT NULL) FROM jsonb_array_elements(legs_json) j)::int nlv,
           (SELECT exp(sum(ln((j->>'factor')::float)) FILTER (WHERE (j->>'hit') IS NOT NULL)) FROM jsonb_array_elements(legs_json) j) fprod,
+          (SELECT coalesce(bool_or(abs((j->>'factor')::float - 1) > 1e-9) FILTER (WHERE (j->>'hit') IS NOT NULL), false) FROM jsonb_array_elements(legs_json) j) live_alt,
           jsonb_array_length(legs_json) nl
         FROM nba_score.slip_engine_slips),
       e AS (SELECT *, CASE WHEN structure='flex' AND nlv < nl AND nlv < 3 THEN 'power' ELSE structure END est FROM s),
