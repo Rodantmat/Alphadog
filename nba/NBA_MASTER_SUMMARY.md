@@ -46499,3 +46499,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `108` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T31` (pass 8 of its own count).
 - ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
+
+# §P109 — PASS 109 (`2026-10-10`): `T31` PASS 9 — THE TRAP ANGLE
+*Angle (as NEXT set it):* (a8) the `133` assistant sentences of `T31` that explain an error, a failure or its cause, each read in its message and judged.
+- ✅ All on file or judged (`§T31.4`). `T31` → `1`/`3`.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line); line `23` re-checked after the census commit.
+- No italic quotation added since the pass-108 census commit; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `109` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T31` (pass 9 of its own count).
+- ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
