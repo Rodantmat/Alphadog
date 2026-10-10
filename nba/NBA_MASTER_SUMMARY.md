@@ -44789,3 +44789,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **`T48`** (`17` replies) — **NEW MATERIAL**, reopened: 🆕 **`§T48.4`** — ParlayAPI one-attempt, scraper retry loops longer than their step, the previous-day Betr archive.
 
 **PASS 14 COMPLETE (`2026-10-10`).** ⇒ **Reopened `0`/`3`**: `T32`–`T36`, `T38`–`T42`, `T44`, `T46`–`T48` · **open `0`/`3`**: `T37` · **✅ CLOSED** (unchanged): `T43`, `T45`, `S1`–`S9`. *The lesson of the pass*: the closing reply is the build chat's own summary to the owner, and it carries figures, stated stances and corrections that neither the arc tables nor the mechanical checks had reached — **of the `15` transcripts re-read (`T32`–`T36`, `T38`–`T42`, `T44`–`T48`), `14` yielded something** (all but `T45`), and four standing statements in the twelve were wrong — `NBA_SYSTEM_DESIGN.md` `§T35.7` #7 (*"proposed"*, in fact applied), `NBA_BASELINE_CALIBRATION.md` `§T36.5` (holiday slates *"dropped"*, in fact a live rule), and two stale live counts (`NBA_DATABASE.md` `certification_log`; this file's `§T34.4`) — each corrected with the code or the live table beside it; one rule was missing from a rule stack (`NBA_SYSTEM_DESIGN.md` `§T36.7`, holiday caution).
+
+---
+
+# §P15 — PASS 15 (`2026-10-10`): (cc) THE REVERSE TRACE OF PASS 14'S ADDITIONS
+*Angle (cc):* every figure and every quotation pass 14 wrote (and pass 13's `T37` additions) traced back to its transcript text — figures by a normalised substring search over the transcript, the strategy doc and the ledger (`revtrace.py`); every flagged item read in place; every ✅ claim re-checked against code or the live table it names.
+- **Figures**: every flagged number resolved — section numbers (`§T33.6`, `§T34.2`, `§T46.2` …), live counts taken this session (`certification_log` `1,452` rows; `live_strategy_calib` W `130.5 / 170.8`; `idx_scan` `39,655`). **No figure without a source.**
+- **Quotations**: `22` flagged by the strict 40-character test; `20` are the transcript's words with its markup stripped; **`2` were paraphrases set as quotations** and are now restored to the exact words — `§T33.6` (*"a high-conviction spike (higher variance), not an independence-clean core"*) and `§T36.6` (*"the 'before' column in table 1 already includes diversify, so the true starting point was a little worse than shown"*).
+- **✅ claims**: `nba-combos-history.yml:50–51` and `live_slip_engine.py:59–64`, `:598–603` re-read — as stated.
+- 🔴 **A process error of this pass, recorded**: an accidental empty commit (`7af7076`, message *"noop"*) went out **without `[skip ci]`** — the file was unchanged (same blob) and it triggered one *"AlphaDog v2 Mobile Auto Deploy"* run (`38031498331`) on content identical to the previous commit. Not cancelled (the doc track does not interact with runs). Every other commit of passes 14–15 carries `[skip ci]`.
+
+**Ledger**: pass `15` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T32`, `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48`.
+- **Finding → stays `0`/`3`**: `T33`, `T36` (a quotation each restored).
