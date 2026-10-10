@@ -43388,7 +43388,7 @@ a unique index treats as two different rows, caught by checking five dates inste
 ## §T26.R3 — PASS 114 (`2026-10-10`): THE DATING AUDIT — EVERY DATE THE TWELVE ATTACH TO A `T26` EVENT
 
 - **Method**: the `119` date mentions on lines of the twelve that name `T26`, plus a scan for "fixed / closed / added / since" beside `2026-09-24`, each checked against the message timestamps and ✅ the repo's commit times (`git log`, UTC). **The clock**: `T26` ran `2026-09-23 19:07Z` → `2026-09-24 04:37Z`, which is `12:07`–`21:37` PT on `2026-09-23`. A `2026-09-24` stamp on anything done before `00:00Z` is wrong on either clock and is struck; a `2026-09-23` stamp on something done after `00:00Z` (P2's cron, commit `7da620f32` at `00:02Z`) is right in Pacific time and stands.
-- 🆕 **Twelve more stamps a day late, struck in place, each pointing here** (with the four of `§T26.R1` and the two of `§T26.R2`, eighteen in all, one of them in `NBA_FINAL_SCORING_CALIBRATION.md` and left there):
+- 🆕 **Twelve more stamps a day late, struck in place, each pointing here** (with the four of `§T26.R1` and the three of `§T26.R2`, nineteen in all, one of them in `NBA_FINAL_SCORING_CALIBRATION.md` and left there):
   - `T23-2`, the season fix — ✅ commits `acf2f1af6` → `a709074c3`, `19:43:23Z`–`19:44:05Z` on `2026-09-23`: `NBA_RECIPE.md` ×`3` (the rebuild row, `STEP 13`'s note, the dry-run precondition), `NBA_OPEN_ITEMS.md` row `1c`.
   - `§4b`, P2 taking ownership of `final_hp` — ✅ commit `12445938e`, `20:30:23Z`: `NBA_SYSTEM_DESIGN.md` ×`3`, `NBA_RECIPE.md` ×`1`.
   - the injury archive's first load into Postgres — ✅ loader commit `265260928` at `21:16:33Z`; the build chat reported all `919,949` rows in at `21:23Z`: `NBA_DATABASE.md`.
