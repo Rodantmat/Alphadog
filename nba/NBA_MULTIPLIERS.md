@@ -1660,7 +1660,7 @@ the standard. Primary record: `NBA_BASELINE_CALIBRATION.md` §5.6.
 > | app | rule | verified |
 > |---|---|---|
 > | **Sleeper** | **`payout_multiplier = 1 + (decimal − 1) × 0.95`** | ***"exact"*** |
-> | **Underdog** | **`payout_multiplier = decimal(American price) × 0.963`** | **worked on three real legs** *(below)* |
+> | **Underdog** | ~~**`payout_multiplier = decimal(American price) × 0.963`**~~ → ⚠ **SUPERSEDED `2026-10-03` by the solved formula `base(n) × ∏ mᵢ × C` — `§T36.3`** | **worked on three real legs** *(below)* |
 > | **slip** | **`slip multiplier = PRODUCT of leg multipliers`** | ⚠ **see the haircut** |
 >
 > **The Underdog verification, as stored**: *"Feltner ER 2.5 under **+114 → 2.14 dec → app 2.06
