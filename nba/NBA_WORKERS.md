@@ -3550,3 +3550,26 @@ these twelve.**
 | `nba/scrape_underdog_board.py` / `nba/archive_live_boards.py` | **fixed in `§30h`**: the scraper now keeps the fantasy price/probability, the displayed price and the payout modifier; the archiver stores `price` = displayed price, `multiplier` = payout modifier | (inside the board pipelines) |
 **Engine knobs introduced in `T36`** (✅ in code): `SE_LOWFOUL` default **`1`** (size ≥ 4; `build_slip_engine.py` line `55`) · `SE_SAMETEAM` default `0` — ✅ its own comment now reads *"REJECTED by its side-table rebuild (kept for the record)"* · `LS_ALLSTAR_PLAN` default **`B`** (`live_slip_engine.py` line `110`) · **`LIVE_MAX_DAILY_STAKE` default `36`** (line `132`) · `LS_MODE=reset` (clean ledger before the first live pick) · `LS_MODE=late_pick` (record-only) — ✅ **today prints *"late_pick is retired (§31p)"*** (a later transcript).
 **Two launch-blocking install gaps fixed in `T36`**: `pdfplumber` missing from P2's and P3's `pip install` lines (commits `56a4dc18`, `1d344694`, `2026-10-03 00:08Z`); a systematic check of **all `62` scripts the four pipelines run** (following local imports) against each workflow's install line then found no other gap (`§29y`).
+
+---
+
+## 🆕 **§T37.4 — `T37` (`2026-10-03/04`): THE UNDERDOG PROGRAM'S SCRIPTS, THE PARITY TOOLS, AND THE TWO NEW PIPELINE STEPS** *(source `T37`, `NBA_MASTER_SUMMARY.md` `§T37`; ✅ every file present and every workflow `workflow_dispatch` only, checked `2026-10-10`)*
+| script (`nba/`) | workflow | does |
+|---|---|---|
+| `build_ud_tier_map_bands.py` | `nba-ud-tier-map-bands.yml` | UD tier map (modifier bands) + every-n/every-% sweep; `TM_SOURCE` / `TM_SUFFIX` for the repriced builds |
+| `certify_ud_candidates.py` | `nba-ud-certify-candidates.yml` | raw-source certifier (board → grader's stat → `final_hp`), grid per cell → `ud_cand_certified(_curr / _dlt)` |
+| `build_ud_signal_matrix.py` | `nba-ud-signal-matrix.yml` | UD signal matrix (a diffable transform of the PP matrix + the low-foul key) |
+| `build_ud_retest_failed.py` | `nba-ud-retest-failed.yml` | every PP-rejected idea re-tested on UD legs (`ud_cand_leg_features_x`, `ud_failed_signal_matrix`) |
+| `build_ud_slip_engine.py` | `nba-ud-slip-engine.yml` | UD slip engine on the PP skeleton; knobs `UD_EXCL_CENTER`, `UD_EXCL_HOTFORM`, `UD_EXCL_FRESH`, `UD_MIN_NV`, `UD_LEGS_TABLE`, `UD_HC_MAIN` / `UD_HC_ALT`, `UD_CELLS_JSON` (with `_core`); position from `nba_ref.players` |
+| `validate_ud_slip_strategies.py` | `nba-ud-validate-strategies.yml` | the PP falsification battery + **reverse walk-forward** → `ud_slip_validation*` |
+| `build_ud_reprice.py` | `nba-ud-reprice.yml` | historical legs repriced to today's logic — scenarios `min` (strict, superseded), `cur`, `narrow`, **`delta`** (balanced, adopted) → `ud_window_legs_curr` |
+| `probe_ud_feed_vs_app.py` | `nba-probe-ud-feed.yml` | the Odds-API-vs-app probe (feed faithful) |
+| `simulate_ud_bankroll.py` | `nba-ud-bankroll-sim.yml` | 10,000-season bankroll / drawdown / Kelly / stop-rule / CUSUM simulator (debugged on synthetic days first) |
+| `drought_regime_analysis.py` | `nba-drought-regime-analysis.yml` | both apps: block-bootstrap recalibration, line movement, window-time predictors, team micro-regimes |
+| `research_angles.py` | `nba-research-angles.yml` | travel/circadian, public Over bias, count skew, parlay liability |
+| **`ud_live_slip_engine.py`** | `nba-ud-live.yml` (manual) | **the UD paper engine** (imports `build_ud_slip_engine`); ledger `ud_live_slips` |
+| `parity_pp_leg_source.py` | `nba-pp-parity.yml` | old (`prop_universe`) vs new (live) PP leg source — every leg, field, slip and grade |
+| *(name map)* | `nba-name-map-refresh.yml` | on-demand player-name-map refresh (the daily one is a P2B step) |
+| *(close)* | `nba-close-capture.yml` | the close board (PP + UD, label `close`), input-free; fired by the scheduler (**v2.1.0** `decideClose`, first tip − 25 min) |
+**New steps inside the daily pipelines** (✅ in the YAML): **P3** — *"Underdog paper pick (P5 + P4 shadow)"* after the PrizePicks slip pick, `continue-on-error`; **P2A** — *"Underdog paper grade"* after the PrizePicks grade (every ungraded slate before today), `continue-on-error`; **P2B** — the daily **player-name-map refresh** (before anything that resolves names) and the **`morning` DFS board snapshot** (PP + UD, gated on `has_games`, `continue-on-error`, each board capped at 5 min). **`live_slip_engine.py`**: `LS_LEG_SOURCE` default **`live`** (line `216`), `universe` for parity.
+**A timing harness** (`§31f`): *"exact copy of the scorer with only the output table redirected to a scratch table; dropped after"* — the P3 scorer measured at **20 s** on a 38,551-leg board without touching `board_scored`.
