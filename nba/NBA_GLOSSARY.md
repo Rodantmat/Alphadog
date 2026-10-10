@@ -1595,7 +1595,7 @@ projections and November only 62% coverage"*; with it **October 85%, November 90
 rate EWMA carried at player level; carried evidence counts as `CARRY_N` games at the boundary.
 **Controlled by `BT_CARRY`, default "1".** Per app: PrizePicks in the raw feed; Underdog
 `alternate_projections`; Fliff separate proposals; Betr tiers; **Sleeper has none** *(⚠ but T7's
-verified inventory found Sleeper milestone lines 20+/25+/30+ — see OPEN_ITEMS)*.
+verified inventory found Sleeper milestone lines 20+/25+/30+ — see OPEN_ITEMS)* → 🆕 *Sleeper's ladder is `lines/available_alt`, captured `2026-09-27` (`T31`) — `NBA_MASTER_SUMMARY.md` `§T31.1`*.
 **Width, from three converging sources (T7)**: books ladder a 24.5 player **~19.5 to ~31.5 ≈ ±1 SD**;
 Unabated prices off the player's full outcome distribution; **Goblin ≈ 25th–35th percentile,
 Standard ≈ median, Demon ≈ 70th–80th, useful range ≈ 15th–85th.** The live `LADDER_DEPTH` measurement
