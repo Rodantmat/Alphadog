@@ -130,3 +130,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/load_pp_quotes.py
+
+      # 2026-10-10: PrizePicks' Flex tiers for slips with goblins / demons (the grader's flex_alt_tiers) sharpen with every
+      # run's MIXED quotes - rebuilt here as the lower envelope of all quotes; never shrinks the evidence.
+      - name: Rebuild the Flex-with-alternates tiers from all quotes
+        if: always()
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/build_pp_flex_alt_tiers.py
