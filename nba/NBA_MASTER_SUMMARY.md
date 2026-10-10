@@ -46360,3 +46360,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `99` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P100 — PASS 100 (`2026-10-10`): THE ELISIONS IN THE DOCS' QUOTATIONS OF `T37`
+*Angle (as NEXT set it):* (m7) every "…" in the docs whose text on both sides could be found in `T37`'s strategy text, the omitted words recovered from the transcript and judged under `§P98`'s bar: `5` such gaps of three words or more. The scan cannot see an elision whose sides the docs paraphrase rather than quote; those are left to the seeded angles. (n7) the scans re-run after the addition (≥ `5`: `179`; ≥ `4`: `203` — both unchanged): `0` new sentences, `0` changed runs.
+- 🆕 Not on file (AS STATED, in `§T37.9`): one clause — `§30n`'s reason the 7- and 8-pick structures are thin.
+- With the dash, parenthetical, semicolon and elision angles done (`3`, `4`, `2`, `1` clauses), `T37` returns to seeded angles, each judged from scratch.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-99 census commit: `qdiff.py` `0` flags (`1` quote counted).
+
+**Ledger**: pass `100` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
