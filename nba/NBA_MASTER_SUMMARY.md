@@ -31378,7 +31378,7 @@ is the dropped sport, not a defect. They are counted and priced here, not condem
 
 🔴 **`market.prizepicks_board_stage` is `206 MB` at `reltuples = 0`** — ***an empty table carrying 206
 MB of index and bloat.*** ⚠ *The single clearest reclaim candidate in the list, and it needs no
-judgement about what the data was for.*
+judgement about what the data was for.* → 🆕 *`2026-10-10`: reclaimed on `2026-09-24` (`206 MB → 32 kB`), `§T27.8`.*
 
 ## 3. ✅✅ THE NBA SIDE IS CLEAN — *stated at full strength, as the pre-registration required*
 
