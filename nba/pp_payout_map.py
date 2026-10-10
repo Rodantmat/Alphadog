@@ -326,7 +326,8 @@ def main():
     games = sorted({r["game"] for r in rows})
     print(f"BOARD_ROWS|{len(rows)}|std={len(std)}|goblin={len(gob)}|demon={len(dem)}|games={len(games)}", flush=True)
 
-    q = Quoter(px)
+    q = make_quoter(px)
+    result["meta"]["transport"] = q.target if isinstance(q, BrowserQuoter) else f"curl:{q.target}"
 
     def run(section, legs_, note=None):
         rec = q.quote([(l["id"], l["side"]) for l in legs_])
