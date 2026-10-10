@@ -44499,3 +44499,14 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 **Ledger**: pass `12` complete (`2026-10-10`) — **CLEAN** for all three.
 - ✅ **CLOSED — CLEAN `3`/`3`** (passes 10, 11, 12): **`T32`**, **`T36`**.
 - **CLEAN `1`/`3`**: `T37`.
+
+---
+
+# §P13 — PASS 13 (`2026-10-10`) ON `T37`: A STRAIGHT RE-READ OF EVERY CLOSING REPLY
+*Angle:* all `32` of the build chat's closing replies in `T37` (`114 KB`), read end to end against `§T37` and the subject files. Almost everything is already there under its strategy `§` (`§30j`–`§31g`); the residue is decision detail and the proof behind the wiring switch:
+- 🆕 **Two rejections with their reasons** → `NBA_SYSTEM_DESIGN.md` (Underdog rule set): **quarter-Kelly** (*"a median 45% drawdown"*), and the **Under-only blocks/threes/turnovers cells** — the leg grid favoured Unders but the slip level lost, *"the model already exploits it, since about 85% of its picks are Unders"*.
+- 🆕 **PrizePicks' alarm recalibration values as set in `§30x`** (A_core_3power drawdown `70 → 96`, streak `16 → 24`; W_core_3power `151 → 205`) beside ✅ today's calibration (`2026-10-10 04:27Z`: A `69.8 / 90.0`, `18 / 23`; W `130.5 / 170.8`, `20 / 24`).
+- 🆕 **The proof of the live-leg-source switch** (`§31`–`§31a`): `360 / 360` strategy-slates identical on the same legs, `1,146 / 1,146` legs graded alike, and every input difference attributed (`11,109` suffixed · `3,237` aliases · `486` no game · `60` trade-day · `6` = two mislabelled-standard legs); loader `3.8 s`/slate → `NBA_SYSTEM_DESIGN.md`.
+- 🆕 **Underdog's 2026-27 stand-down dates**: **Feb 12–18** and **Apr 4–11**, `0` differences vs the backtest rule over `156` dates (`§31e`).
+
+**Ledger**: pass `13` (`2026-10-10`) on `T37` — **NEW MATERIAL**, CLEAN `0`/`3`.
