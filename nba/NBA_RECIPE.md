@@ -1433,3 +1433,11 @@ THE REPOSITORY IS PUBLIC.**
 22. **Build real slips** (sizes 2–6, Power/Flex, compositions, caps) under app rules, the pair-level correlation sign rule, `≤ 2` legs per cell, cross-game first, compression pricing, final week excluded.
 23. **Validate the way MLB does** (owner: *"This is what validates the slip strategy"*): walk-forward, day-blocked bootstrap lower bound, whole-board null, decomposition, teammate ban. Result: three families (A steals-anchored, B demon, C no-steals).
 24. **Automate** (owner: *"a completely automated engine"*): **P4** picks and grades daily on paper through a hurdle machine; **P5** rebuilds, recertifies and revalidates weekly; nothing is staked, added or un-redded by the machine (`NBA_SYSTEM_DESIGN.md` `§T34.7`).
+
+### STEP 14d — **Run it on the real stream, make it cheap, put it inside the pipelines, then hunt the droughts** *(`T35`, `2026-10-01`; `NBA_MASTER_SUMMARY.md` `§T35`)*
+25. **Simulate every detector on the real daily stream before trusting it** — and the unit is the **day**, not the leg (a day's legs are the same few players). Day-blocked z-tests replace leg-level CUSUMs.
+26. **Simulate state-machine changes locally first** (owner, frustrated, `21:28Z`); the hour-long replay only confirms.
+27. **Delta mode** (owner: *"exactly the same if the whole thing was recalculated and be cumulative"*): build only new days where per-day construction makes it exact; keep the statistics full; prove equality by diffing.
+28. **No separate schedules** (owner): pick at the end of P3, grade at the end of P2, requalify at the end of P1; P4/P5 stay as manual entries.
+29. **Stake each distinct slip once** (`dup`); **make every family's label true in what it stakes** (`EXCLUDE_BY_FAMILY`); **keep a stopped strategy observing** (shadow slips).
+30. **Bad weeks and droughts — ask "why", then only adopt what is identifiable at the time** (owner): calendar rules (week 1 Over tilt, week 2 steals-excluded low-event play, final week off), structural rules (diversify, small-slate cap, demon cap 6, dedupe); leg-level findings go to the ranker's retrain list, not the slip layer. Stop when three consecutive passes are dry (owner: *"3 dry consecutive runs"*).
