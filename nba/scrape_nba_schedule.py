@@ -65,17 +65,17 @@ def fetch(season):
     proxy_url = os.environ.get("PROXY_URL", "").strip()
     proxies = {"https": proxy_url, "http": proxy_url} if proxy_url else None
     url = URL_TEMPLATE.format(season=season)
-    last_error = None
-    for attempt in range(1, 4):
-        try:
-            resp = requests.get(url, headers=STATS_HEADERS, timeout=30, proxies=proxies, impersonate="chrome124")
-            resp.raise_for_status()
-            return resp.json(), resp.status_code, url
-        except Exception as exc:  # noqa: BLE001
-            last_error = str(exc)
-            if attempt < 3:
-                time.sleep(5)
-    raise RuntimeError(last_error)
+    # system retry policy (nba/net_retry.py, 2026-10-09): 4 attempts, full-jitter backoff (was a fixed 5 s), 429/5xx /
+    # connection errors retried, a final 4xx raised at once
+    from net_retry import RetryError, request
+    try:
+        resp = request("GET", url, session=requests, proxies=proxies, routes=("proxy",), tries=4, base=3, cap=20,
+                       timeout=30, label=f"schedule {season}", headers=STATS_HEADERS, impersonate="chrome124")
+    except RetryError as exc:
+        raise RuntimeError(str(exc)) from None
+    if resp.status_code != 200:
+        raise RuntimeError(f"http {resp.status_code} for {url}")
+    return resp.json(), resp.status_code, url
 
 
 def parse_games(body):
