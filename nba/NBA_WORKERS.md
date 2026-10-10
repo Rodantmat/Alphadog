@@ -558,7 +558,7 @@ the exposure countable rather than anecdotal.**
 | 10 | `grade_board_outcomes.py` | `nba_market.board_outcomes` 🔴 *(window ends `2026-04-12` — T20-5)* |
 | 11 | `export_market_spreads.py` | **— nothing to the DB** *(a FILE producer despite the name)* |
 | 12–14 | `baseline/build_baseline_ladder.py` · `baseline/build_combos_ladder.py` · `baseline/build_periods_ladder.py` | **— nothing to the DB** *(they emit the ladder artefacts)* |
-| 15 | `load_baseline_ladder.py` | **`nba_score.baseline_ladder`** *(live `206,237`)* · `nba_score.baseline_ladder_runs` *(latest `asof` **2026-03-15**)* |
+| 15 | `load_baseline_ladder.py` | **`nba_score.baseline_ladder`** ~~*(live `206,237`)*~~ 🔴 *(pass-3 live re-check `2026-10-10`: **the table does not exist** — dropped by `F6-1`'s consolidation `2026-09-25`, see the ⚠ SUPERSEDED block above; `baseline_ladder_runs` still resolves)* · `nba_score.baseline_ladder_runs` *(latest `asof` **2026-03-15**)* |
 | 16 | `build_asof_calibration.py` | `nba_score.ladder_calibration_asof` |
 | 17 | `build_blowout_model.py` | `nba_score.blowout_model` |
 | 18 | `build_confidence_v3.py` | `nba_score.confidence_model` · `nba_score.confidence_verification` |
