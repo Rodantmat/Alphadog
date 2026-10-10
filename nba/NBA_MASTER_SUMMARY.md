@@ -45020,3 +45020,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `31` complete (`2026-10-10`).
 - **CLEAN → `3`/`3` ✅ CLOSED** (passes 29–31): `T35`.
 - **CLEAN → `1`/`3`**: `T32`, `T36`.
+
+---
+
+# §P32 — PASS 32 (`2026-10-10`): (xx) THE LAST REPLIES — WHERE EACH TRANSCRIPT HANDED OFF — `T32`, `T36`
+*Angle (xx):* each transcript's last assistant replies read straight through (`lastn.py`) against what its section says about the hand-off.
+- **`T32`** (last three, `06:26Z`–`06:33Z`): the sharp-threshold × depth frontier, the 6-pick mirage, and the Flex retest (Flex-5 `+132%`, pays on `71%`; Power-5 `+221%`, wins `16%`) — all in `§T32` (the `§13`–`§13e` row and the pass-14 frontier row); the chat's own next steps (caps, per-cell concentration, placeability) are the first work of `T33`. **CLEAN.**
+- 🆕 **`T36`** (last four, `04:57Z`–`05:44Z`): the formula, the live-capture fix, the certification pass and the hand-off (*"Ready for the next stage, the Underdog tier map"*) are all recorded (`NBA_MULTIPLIERS.md` `§T36.3`, `NBA_DATABASE.md` `§T36.6`, `T36-3`); but the **`04:57Z` reading** that `§30e` superseded — shading `0.967` / `~0.88` / `~0.84`, the Flex top-tier shares, the proposal to capture the app's payout request — appeared only as the bare words "`§30e` superseded" → recorded on the path in `NBA_MULTIPLIERS.md` `§T36.3`.
+
+**Ledger**: pass `32` complete (`2026-10-10`).
+- **CLEAN → `2`/`3`**: `T32`.
+- **NEW MATERIAL → `0`/`3`**: `T36`.
