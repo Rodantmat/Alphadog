@@ -45260,3 +45260,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `52` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P53 — PASS 53 (`2026-10-10`): (ttt) CONFIRMATION, AND A HAND-TRACED SAMPLE
+*Angle (ttt):* `coloc.py` re-run (`39` flags, every one on `§P52`'s accounted list except Gemini's exit parameters), and `20` sentences drawn at random (seed `53`) from the strategy text `T36` wrote, each traced by hand.
+- 🆕 **`T36`** → `§T36.6` #9: the exit rule's parameters (`≥ 70%` after `≥ 7` days cool); from the sample, **two of twenty** not on file — the first-21-days monitor's seven thresholds (`§29s`; the record had only their names) and the convexity table's conclusion.
+- ⚠ **Two in twenty is a rate, not an accident**: the strategy text `T36` wrote (`62` writes) still holds content the record lacks wherever its sentences carry no figure the detectors could test. Pass 54 traces that text sentence by sentence, by words rather than figures.
+
+**Ledger**: pass `53` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
