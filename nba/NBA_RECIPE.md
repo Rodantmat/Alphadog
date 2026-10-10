@@ -9,7 +9,7 @@ that is the useful part.
 > # 📑 **INDEX — `NBA_RECIPE.md`**
 > **Every build step in the order it happened.** *Where a step exists because an earlier attempt
 > failed, the failure is part of the recipe.*
-> 📏 **`97` sections · re-derived `2026-10-10` (RUN, `+1` = `STEP 14k`)** · ~~`96` (`+1` = `STEP 14j`)~~ · ~~`95` (`+1` = `STEP 14i`)~~ · ~~`94` (`+1` = `STEP 14h`)~~ · ~~`93` (`+1` = `STEP 14g`)~~ · ~~`92` (`+1` = `STEP 14f`)~~ · ~~`91` (`+1` = `STEP 14e`)~~ · ~~`90` (`+1` = `STEP 14d`)~~ · ~~`89` (`+1` = `STEP 14c`)~~ · ~~`88` (`+1` = `STEP 14b`)~~ · ~~`87` (`+1`)~~ · 🆕 **`STEP 14` (end of file) — the slip-building program, how it started (`T32`)** · ~~**`86` sections · re-derived `2026-09-25`**~~ *(was `63` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_RECIPE.md ``
+> 📏 **`98` sections · re-derived `2026-10-10` (RUN, `+1` = `STEP 14l`)** · ~~`97` (`+1` = `STEP 14k`)~~ · ~~`96` (`+1` = `STEP 14j`)~~ · ~~`95` (`+1` = `STEP 14i`)~~ · ~~`94` (`+1` = `STEP 14h`)~~ · ~~`93` (`+1` = `STEP 14g`)~~ · ~~`92` (`+1` = `STEP 14f`)~~ · ~~`91` (`+1` = `STEP 14e`)~~ · ~~`90` (`+1` = `STEP 14d`)~~ · ~~`89` (`+1` = `STEP 14c`)~~ · ~~`88` (`+1` = `STEP 14b`)~~ · ~~`87` (`+1`)~~ · 🆕 **`STEP 14` (end of file) — the slip-building program, how it started (`T32`)** · ~~**`86` sections · re-derived `2026-09-25`**~~ *(was `63` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_RECIPE.md ``
 >
 > 🆕 **SECTION ADDED `2026-09-25`.** *Anchors are heading text; search the label.*
 > | § | what it is |
