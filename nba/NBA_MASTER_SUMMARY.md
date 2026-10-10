@@ -45971,3 +45971,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T35`, `T36`, `T37`, `T38`, `T39`, `T46`.
 - **CLEAN → `1`/`3`**: `T34`, `T47`. **CLEAN → `2`/`3`**: `T43`.
 - ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T44`, `T45`, `T48` *(pass 73)*.
+
+---
+
+# §P74 — PASS 74 (`2026-10-10`): A SEED-74 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN; `T43` CLOSES
+*Angles (as NEXT set them):* (m5) a seed-`74` sample on `T32`–`T39`, `T43`, `T46`, `T47` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `18` · `11` · `13` · `17` · `14` · `7` · `9` · `18` · `18` · `16` · `10`. (n5) the ≥ `5` scan re-run on the eleven after pass 74's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each of the ten still open).
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (the out-of-sample calibration with its mid band; the 5-pick placeability; the builder's join) · **`T33`** (`§19g`'s G3 decomposition; `§15d`'s core-prop consistency check) · **`T34`** (`§22`'s cells with no robust layer) · **`T35`** (the second replay's run limits; the small-slate mechanism; the cap rule's last clause) · **`T38`** (the team-id format check) · **`T39`** (the distance finding's one-scale clause and the `final_score` share).
+- ✅ **Clean on this angle:** `T36`, `T37`, `T43` (its third clean angle → **CLOSED**), `T46`, `T47`.
+- Judged, not recorded: MLB screenshot examples (`T36`, the `§30d`/`§30e` material at summary level); table headers and a run-log pointer (`T34`); a routing-table row and G1's remaining production table, built later (`T39`); a run id (`T46`); the foundation summary line (`T32`).
+- ⚠ **Process slips and corrections:** the `§T43.9` closure bullet first gave pass 73's traced count as `16` (it is `18`, per `§P73`) and first called Gemini's reference-only reading judged (the checker had passed it) — both corrected the same pass by strike, the second in two patches because the first dropped two words outright; they are restored struck (`RULE 40`). An hourly-rotation commit (`6f499bd80`) landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-73 census commit: `qdiff.py` `0` flags (`11` quotes).
+
+**Ledger**: pass `74` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T35`, `T38`, `T39`.
+- **CLEAN → `1`/`3`**: `T36`, `T37`, `T46`. **CLEAN → `2`/`3`**: `T47`.
+- ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T43`, `T44`, `T45`, `T48` *(pass 74)*.
