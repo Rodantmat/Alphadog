@@ -1244,9 +1244,17 @@ Each candidate was either executed or measured to its final-output effect and cl
   **Effect on the live strategies (market-free twin, own cap, final week out; ROI before → after, 2024-25 / 2025-26):**
   B_demon_3flex +52 / +90 → **−16 / +31**; B_demon_5flex +70 / +204 → **−22 / +84**; A_wsteals_5flex +69 / +96 → +36 / +79;
   A_core_5flex (retired) +76 / +97 → +51 / +79; C_wstocks_4flex +55 / +79 → +31 / +66; A_wrebounds_4flex +49 / +93 → +38 / +88;
-  every Power strategy unchanged. All strategies are paper; P5 run 38023098995 (dispatched on the regraded tables) re-decides
-  verdicts — a FAIL turns a strategy red / cap 0 by the standing rule. PrizePicks' Playoff Unders slips are all-standard
-  (unaffected).
+  every Power strategy unchanged. The A / C Flex strategies were overstated too — the "core" pool carries demon cells
+  (threes_D1, assists_D1) — but stay positive in both seasons. PrizePicks' Playoff Unders slips are all-standard (unaffected).
+  **Recertified — P5 run 38023098995 on the regraded tables:** certification **66 / 66 PASS** (L11 payout recompute on the new
+  rule: 0 mismatches); verdicts vs 10-08: B_demon_5flex PASS (OOS +227%, lo +98%) → **not selected** (out of the validator's
+  top 30); A_wsteals_5flex PASS (+86%, lo +47%) → **not selected**; A_core_5flex PASS +97% → PASS +79% (lo +33%; retired);
+  R_stocks_4power FAIL −8% (rotation-only, its own state gate holds it). "Not selected" changes no state by design, so
+  **B_demon_3flex and B_demon_5flex were set red / cap 0 by hand with the reason on the row** (weaker season negative on the
+  real tiers — the both-seasons bar) — back only through P5's own path (validator PASS + live-season lower bound > 0).
+  **Live hurdles recalibrated on the true payouts** (P4 mode=calibrate, `live_strategy_calib` 2026-10-10 04:27Z; hurdles read
+  this table first): 95th-percentile drawdowns A_wsteals_5flex 89 → 148 units, B_demon_3flex 26 → 102, B_demon_5flex 131 → 451,
+  C_wstocks_4flex 32 → 51, A_wrebounds_4flex 19 → 23 — the paper→live gate now judges against honest risk.
 - **Fliff / Betr — measurement-only apps, proof deferred to their NBA boards.** Fliff = sportsbook pricing (per-leg American odds →
   decimal, a parlay multiplies); its NBA board is still team markets only. Betr publishes only "up to" totals by size (2 up to
   3x … 8 up to 300x, review sites); its per-tier multiplier (REGULAR / BOOSTED / EDGE …) is not in the capture yet
