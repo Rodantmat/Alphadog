@@ -46259,3 +46259,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `91` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P92 — PASS 92 (`2026-10-10`): `T37`'S SHORT SENTENCES; THE RE-RUN, AND ONE CLAUSE IT CAUGHT
+*Angle (as NEXT set it):* (w6) the `44` strategy-text sentences of four to nine words that the full read's ten-word splitter skipped, read whole and searched on file by their substance, each section read from its block's own heading. (x6) the ≥ `5` scan re-run after the additions (`189` of `456` sentences with a run), compared against every earlier tier's list: `0` new sentences, but one changed run on a sentence the lists already held — `§30y`'s correction to `§30i`, judged on file in pass 90 — was read again whole and its last clause found absent; recorded, then the scan re-run once more (`188` of `456`; `0` new).
+- 🆕 Not on file (AS STATED, in `§T37.9`): four clauses — `§30r`'s rule for alternates, `§30y`'s remaining by-side cells, `§31b`'s finding on the 44 players, and (from the re-run) `§30y`'s reading of the Under edge.
+- 🔴 A process slip, recorded: pass 90 passed `§30y`'s correction sentence as on file because its correction and figure were; its final clause was not. A sentence whose figures are on file can still carry a reading that is not.
+- Judged, not recorded: headers; the fragments of the reverse-transfer table; the probe's MLB examples; the audit's close-capture gap (the gap and its fix, `§31c`, on file); the temporary table's drop.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-91 census commit: `qdiff.py` `0` flags (`4` quotes counted).
+
+**Ledger**: pass `92` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
