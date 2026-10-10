@@ -160,7 +160,7 @@ constraints that shaped it. This is the operational spec.
 > |---|---|---|
 > | **`1`** | 🔑 **THE CUTOFF — why `1:15 PM PT`** | 🔑 |
 > | **`2`** · **`3`** · **`4`** | **`P1` — WEEKLY STATIC** · **`P2` — OVERNIGHT HEAVY** · **`P3` — AFTERNOON LIGHT** | |
-> | **`4b`** | ✅ **`final_hp` — REBUILT BY `P2` STEP `6b`** *(closed `2026-09-24`; the section retains the history of the gap and its cause)* | ✅ |
+> | **`4b`** | ✅ **`final_hp` — REBUILT BY `P2` STEP `6b`** *(closed ~~`2026-09-24`~~ `2026-09-23`, date corrected pass 114 → `NBA_MASTER_SUMMARY.md` `§T26.R3`; the section retains the history of the gap and its cause)* | ✅ |
 > | **`5`** | **THE CALCULATION CHAIN** | |
 > | **`6`** | **FAILURE POLICY** — *incl.* **`6b`** the pipeline-scrutiny methodology | |
 > | **`7`** | **VERIFICATION STATUS** *(`2026-09-20`)* | |
