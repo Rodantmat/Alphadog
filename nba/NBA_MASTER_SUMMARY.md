@@ -45188,3 +45188,10 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `45` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T36`.
+
+# §P46 — PASS 46 (`2026-10-10`): (mmm) `T36`'S VOCABULARY IN THE GLOSSARY
+*Angle (mmm):* every rule, state, status and knob `T36` introduced, looked up as a row of `NBA_GLOSSARY.md` (the file's own term index), not just as words somewhere in it. Twenty terms checked; `T36`'s block (`clean pass` … `fantasy price`) held nine.
+- 🆕 **`T36`** → `NBA_GLOSSARY.md`, fourteen rows, each pointing at the section that defines it: the week-2 gated play, the kill switch, low-event Unders, the drought menu, the pre-break-week state, the late-March raise, holiday caution, `MAX_DAILY_STAKE` / `placed_capped`, `FAIL_STATE_GATED`, `season_block()`, the `+5`/`+10` watchdogs, the morning-line capture, the late pick, `reset` mode. Already covered: `week 2`, `cushion`, `shadow slip`, `final week`, star lines.
+
+**Ledger**: pass `46` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
