@@ -46897,3 +46897,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `133` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean** (`§T9.14h`): `T1`–`T9` done (`1,407` sentences); next `T10`–`T12`.
+
+---
+
+# §P134 — PASS 134 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T10`, `T11`, `T12` · 🆕 TWO RESIDUES
+*Angle (as NEXT set it):* (z8) `§P131`'s method on `T10`–`T12`.
+- Tabulated in the shell before this line: `T10` `273` of `391` sentences listed, `T11` `250` of `357`, `T12` `200` of `328` — **`723` read and judged** (`T10`'s head overlaps `T9`'s tail at `19:51`–`19:58Z` on `2026-09-09`; `T10`'s tail and `T11`'s head at `23:40`–`23:45Z`; `T11`'s tail and `T12`'s head at `02:58Z` on `2026-09-10`).
+- On file, by substance: the season-opening carryover and phase fix, the replay's ladder rows, the combos and periods builders, the deep checkpoint, the factor lock and the baseline/enrichment reassignment (summarised in `NBA_FINAL_SCORING_CALIBRATION.md` §7; detail in `NBA_ENRICHMENT_FACTOR_LOCK.md`), the return ramp table, the team-change discount, the absence prior with its by-month row, the as-of rules (`nba_asof.py`, `09:00 ET`), the matchup shards and the `100 MB` limit, the injury-report parser fixes and chunked backfill, ParlayAPI's validated state and the board-history exhaustion, the Odds API test and the two keys, the cost model per region, the Pacific rule and the pick window, the Sleeper/Underdog/PrizePicks scraper decisions and the Underdog lobby flow, Fliff's RPC. Judged: narration, owner pastes, step-by-step DevTools instructions, plan items whose fate is not stated (the age-adjusted carryover, Q1 usage share, the game-flow prior), mining-source detail that lives in `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` (the coach roster source and change dates), probe counts below the docs' grain.
+- 🆕 **`§T10.29`** — three builder bugs from the `2026-03-15` production replay, the third a latent season-detection bug fixed in all three builders ahead of the October rollover.
+- 🆕 **`§T11.60`** — the OddsPapi probe's verdict (history from January 2026 only; no Underdog or Sleeper; PrizePicks restricted on the free tier) and the ParlayAPI game-line archive's depth (NBA from 2007, `14` sources).
+- Every italic quotation added in passes 133–134 (`§T9.14h`, `§T10.29`, `§T11.60`) was checked verbatim against the extracted transcript text in the shell; one in `§T9.14h` had its inner quotation marks changed from the transcript's and was re-cut in pass 133 (commit `399bc1ee3`).
+- ⚠ **Additional sweep `1` stays not clean.** No commit other than this pass's landed since `596aad812` when this line was written (checked on main); line `23` is re-checked after the census commit. The credential grep on the twelve returns `0`; no credential value, proxy host or key is reproduced.
+
+**Ledger**: pass `134` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean** (`§T9.14h`, `§T10.29`, `§T11.60`): `T1`–`T12` done (`2,130` sentences); next `T13`–`T15`.
