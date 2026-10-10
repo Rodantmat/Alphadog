@@ -27,8 +27,6 @@ One set per day per label: a slot already captured is left alone unless CP_FORCE
 """
 import json
 import os
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
