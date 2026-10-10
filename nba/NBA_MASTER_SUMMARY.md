@@ -46515,6 +46515,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 *Angle (as NEXT set it):* (b8) `20` sentences of `T31`'s prose drawn with seed `110`, each read whole in its message and judged from scratch.
 - ✅ All on file or judged (`§T31.4`). `T31` → `2`/`3`.
 - 🔴 A slip, corrected in the bullet: one category count was written as four before it was counted (it is five). From the next pass, a sample's categories are tabulated in the shell — sentence numbers by category — and the bullet is written from that table.
+- 🔴 A process slip: the ledger patch and the index-row patch (`688be1397`, `37353621c`) went out in one message — two patches to this file at once, against the one-per-message rule (the third time: passes 74, 101, 110). Both applied in order; nothing to undo. Patches to this file now go one per message without exception.
 - No hourly-rotation commit landed during the pass (checked on main before writing this line); line `23` re-checked after the census commit.
 - No italic quotation added since the pass-109 census commit; the credential grep on the twelve returns `0`.
 
