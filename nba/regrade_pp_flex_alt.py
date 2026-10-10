@@ -43,9 +43,9 @@ def main():
         for t in TABLES:
             t0 = time.time()
             c.execute(f"ALTER TABLE nba_score.{t} ADD COLUMN IF NOT EXISTS payout_grader_v1 double precision")
-            days = [r[0] for r in c.execute(f"SELECT DISTINCT game_date FROM nba_score.{t} WHERE structure='flex' ORDER BY 1").fetchall()]
+            days = [r[0] for r in c.execute(f"SELECT DISTINCT season FROM nba_score.{t} WHERE structure='flex' ORDER BY 1").fetchall()]
             n = 0
-            for d in days:
+            for d in days:          # one set-based statement per season (segments view = the DB function, verified 190/190)
                 n += c.execute(SQL.format(t=t), (d,)).rowcount
                 c.commit()
             r = c.execute(f"""SELECT count(*) FILTER (WHERE payout_grader_v1 IS NOT NULL), sum(payout_grader_v1) FILTER (WHERE payout_grader_v1 IS NOT NULL),
