@@ -1495,3 +1495,11 @@ THE REPOSITORY IS PUBLIC.**
 68. **Test the sandbox, not just the model** — every new table a builder writes must be redirected and covered by the production-write check; finish by proving production untouched.
 69. **Credentials live in the credential store** (`nba_config.external_credentials`), resolved at run time before any fallback secret — never in docs, memory or the repo; a credential seen in a transcript is cited, never copied.
 70. **Re-audit with fresh eyes** (independent readers who do not see the ledger's conclusions), then **verify every finding against code AND data before fixing**; take an outside model's review as reference — split it into taken and rejected-with-evidence.
+
+### STEP 14l — **When live cannot reproduce what was certified, measure live against a faithful twin; define the slate once; rehearse the first night of the season until it passes** *(`T43`, `2026-10-08`; `NBA_MASTER_SUMMARY.md` `§T43`)*
+71. **Find every input the certified history had that live does not** (the sportsbook market term) — rebuild the history without it, check every certified strategy still stands, and **calibrate the monitors on that twin**, behind one switch; never rewrite the certified history in place.
+72. **Verify a rescoring function against an independent copy before trusting it** — compare scores **and** ranks; a function that touches the wrong rank key looks fine until compared.
+73. **One definition per business fact** (what a slate is) — a view in the database, read by every pipeline, the scheduler, certify and both engines.
+74. **Rehearse the opening night on the final code** and re-run the rehearsal after every fix: the first slate of a season exercises paths no mid-season replay reaches.
+75. **Keep the database's own code in the repository** (hand sources + a scheduled dump) — what lives only in the database cannot be certified or recovered.
+76. **A new board enters on paper, inside the certified pool, behind a price gate** — staked only after the paper gate and the sequential monitor.
