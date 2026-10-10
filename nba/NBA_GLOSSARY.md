@@ -2151,7 +2151,7 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **overconfidence map** | realized hit by prop × side × kind × role_tier × model_p bucket; the model ranks but overstates above `~0.55` | `NBA_BASELINE_CALIBRATION.md` `§T32.5` |
 | **`recalibration_map`** | `nba_score` table holding that map (`8,818` rows, first built `2026-10-06`) | `NBA_DATABASE.md` `§T32.6` |
 | **`rank_foundation`** | the designed rank substrate — **never built** | `NBA_DATABASE.md` `§T32.6` · `T32-2` |
-| **trailing** | a player's own hit/miss rate on the exact prop+side over the last `N` games (3/5/10/20/30); shorter windows sharper in `T32` | strategy `§8a`, `§8i` |
+| **trailing** | a player's own hit/miss rate on the exact prop+side over the last `N` games (3/5/10/20/30); shorter windows sharper in `T32` — ⚠ *(pass 9, `2026-10-10`)* **superseded as a selector**: strategy `§16b` (*"Trailing windows on this pool — nearly powerless (corrects §8a/§14h for these props)"*, `T33`) and `§18` (hit-rate ranks pick at a coin flip on PP NBA — retired as NBA selectors); within a prop the trailing month even predicts the next day negatively (`§20e`, `T34`) | strategy `§8a`, `§8i` · `§16b`, `§18`, `§20e` |
 | **real replay** | the owner's backtest rule: real snapshots, legs, multipliers and outcomes day by day — never extrapolated | `NBA_RECIPE.md` `STEP 14` |
 | **all-combos measure** | ROI over **every** qualifying slip combination — immune to selection and ordering; the honest number when a greedy top-N swings | strategy `§13a` |
 | **tie-break sensitivity** *(Rule B0c)* | re-run a ranked backtest under ≥2 deterministic orderings and report the range; an MLB scar | strategy `§6`, `§13a` |
