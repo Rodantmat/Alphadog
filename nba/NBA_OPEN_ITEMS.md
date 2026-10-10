@@ -13,7 +13,7 @@ quoted ID, never a line number.*
 
 ⚠ **Re-derive before acting.** *The items are stable; the tallies are not.*
 
-## 🔴 A · THE OPEN DECISIONS — ~~*nothing below moves without you*~~ ⇒ 🆕 **DELEGATED `2026-09-24` (`§T26.3`)**
+## 🔴 A · THE OPEN DECISIONS — ~~*nothing below moves without you*~~ ⇒ 🆕 **DELEGATED ~~`2026-09-24`~~ `2026-09-23` (`§T26.3`)** *(date corrected pass 114 → `NBA_MASTER_SUMMARY.md` `§T26.R3`)*
 
 > 🔑🔑 **THE OWNER NO LONGER MAKES THESE.** *Verbatim, `T26`:* ***"I don't make those decisions. You can
 > make those decisions, but with strong research, debug, documentation study, analyzing the data."***
