@@ -3464,6 +3464,14 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T41.6 — **`T41` (`2026-10-07`): THE REFEREE ARCHIVE THAT HAD NEVER FILLED, TABLES NO PIPELINE REFRESHES, AND TABLES THAT LOADED HALFWAY** *(source `T41`; AS STATED from the build chat's ledger B-1, B-5, C-1; live read-only `2026-10-10`)*
+- **`nba_ref.referee_assignments`** — columns `game_date, matchup, slot, official_name, official_number, source, captured_at, game_id, official_code` (`game_id` and `official_code` added in `T41`). **It had 0 rows** until the capture was fixed (`MM/DD/YYYY` → empty rows for every date; wrong payload keys). ✅ **Live: `12` rows, all `2026-10-06`** (the verification run: 4 preseason games × 3 officials) — the next rows arrive from P2B's crew poll on regular-season game days. *COMPASS fact 87 had said "unverified until the season starts".*
+- **Tables no pipeline refreshes and no production code reads** (B-5, G-2's inventory note): `nba_stats.player_career_season_totals`, `nba_stats.player_splits`, `nba_team.team_splits` — ✅ `player_splits` last updated `2026-09-08 08:18Z`; loaded by the backfill worker's weekly mode, which COMPASS listed under "weekly static" but no pipeline calls. *"Harmless"* — inventory, no reader (checked `pg_proc`, `pg_views`, `pg_matviews`, repo).
+- **Partial loads** (C-1, as measured): `player_shot_quality` written `10-05` / `10-07` while `player_shot_quality_delta` / `player_shot_zone_profile` stayed at `2026-09-28`; `player_playtype_profile` written `10-05` while `nba_team.playtype_profile` stayed at `2026-09-24` — the worker had landed only its first table. *Read any multi-table family's freshness table by table, never from one sibling.*
+- **`nba_stats.player_impact_rating`** (DARKO) frozen at `2026-09-24` after the `10-05` scrape returned 0 players — only the loader's refusal kept the old rows; the repo file had been overwritten with an empty array.
+
+---
+
 ## 🆕 §T40.6 — **`T40` (`2026-10-07`): THE SELECTION LEG POOL, THE CURRENCY MAP, AND ROUTING OUT OF `board_scored`** *(source `T40`; live read-only `2026-10-10`)*
 | object | content | live |
 |---|---|---|
