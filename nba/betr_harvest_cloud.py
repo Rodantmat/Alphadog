@@ -401,7 +401,7 @@ def main():
         kw["proxy"] = proxy_arg
     try:
         with SB(**kw) as sb:
-            sb.uc_open_with_reconnect(URL, reconnect_time=10)
+            open_alive(sb, URL, "first load")
             enable_network(sb)
             where(sb, "first load")
             for _ in range(3):
