@@ -46206,3 +46206,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `87` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P88 — PASS 88 (`2026-10-10`): THE NEXT BAND OF `T37`'S FULL READ; THE RE-RUN
+*Angle (as NEXT set it):* (o6) every strategy-text sentence of `T37` whose four-word coverage against the docs is `0.15`–`0.30` — `42` of `424` on this pass's recount (`41` on pass 87's), read whole and traced by key phrases and figures, the passage opened where a check came back empty; each candidate searched on file by its substance and its section read from its block's heading. (p6) the ≥ `5` scan re-run on `T37` after the additions (`201` of `456` sentences with a run), compared against every earlier tier's list: `0` new.
+- 🆕 Not on file (AS STATED, in `§T37.9`): three clauses — `§30j`'s near-band definition (a run the ≥ `5` scans had listed since pass `68` and passed over), `§31a`'s team rule for live PrizePicks legs, `§31f`'s verdict on the one score tie.
+- Judged, not recorded: table headers; the scheduler's live status reading at the time of a check; `§31e`'s framing sentence (its numbered checks on file).
+- The low band (coverage below `0.15`) now holds `67` sentences on this pass's recount, against pass 87's `74` before its additions.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-87 census commit: `qdiff.py` `0` flags (`3` quotes counted).
+
+**Ledger**: pass `88` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
