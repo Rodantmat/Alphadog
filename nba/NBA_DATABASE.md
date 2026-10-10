@@ -3463,6 +3463,20 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T33.6 — **THE TIER MAP AND THE `line_source` SPLIT THE SLIP PROGRAM TRIPPED ON (`2026-09-29/30`)** *(source `T33`, recovered transcript; live-verified `2026-10-10`)*
+
+| object | what it holds | state, live `2026-10-10` |
+|---|---|---|
+| **`nba_market.prop_universe.line_source`** | `real` = a line actually posted on a board (`archive`); `simulated` = a line the system constructed | ✅ **`real` × `12` props** (points, pra, pts_reb, pts_ast, rebounds, assists, reb_ast, threes_made, steals, blocks, stocks, turnovers) · **`simulated` × `8`** (ftm, fta, fga, fgm, fg3a — `points-scaled`; oreb, dreb — `rebounds-share`; fantasy_score — `fs-reconstruction`). 🔴 **Any slip/backtest query on this table that does not filter `line_source='real'` mixes in lines no app ever offered** — `48%` of graded standard legs at `T33` (`§T33.0`). *Recorded here first by `NBA_BASELINE_CALIBRATION.md` `§T25.3` on `2026-09-25`.* ⚠ **And `line_source='real'` is NOT "PrizePicks posted it"** — it includes every book's real lines; `~14%` of the real defensive legs were never on PP's window board (`§T33.2`, strategy `§17b`) |
+| **`nba_score.tier_map_legs`** | one row per real PrizePicks window-board leg (standard + `_alternate` ladders), tier by anchor (R / G1–G3 / D1–D3), factor, the rank score, outcome, the leg's rank inside its `(day, prop, tier)` cell and the cell size; one copy per `rank_key` | ✅ **`828,818` rows × `3` rank keys (`final_hp`, `baseline_hp`, `final_score`) = `2,486,454`**, `323` days `2024-10-22 → 2026-04-12`, `~1.1 GB` *(`T33` built `911,368` for `final_hp`; rebuilt from `pp_leg_price` in `T34`)* |
+| **`nba_score.tier_map_bands`** | per `(rank_key, window, prop, tier, cut_type, cut)`: top-cut hit rate, mean factor, `p·m`, days | ✅ `30,411` rows |
+| **`nba_score.tier_map_summary`** | per `(rank_key, window, prop, tier)`: the discovered band | ✅ `990` rows |
+| **`nba_score.slip_leg_features`** | *designed (`build_slip_matrix.py` stage 1)*: every real PP leg × every walk-forward signal | 🔴 **DOES NOT EXIST** (`to_regclass` NULL) — created by the first run (`2026-09-29 ~23:50Z`, `~800k`-row insert), gone by `2026-10-10`; removal not yet located (`RULE 6`) |
+
+⚠⚠ **THE `_alternate` JOIN TRAP** *(strategy `§19e`)*: PrizePicks' goblin/demon ladders arrive as **`player_<prop>_alternate`** markets. Stripping only the `player_` prefix leaves `<prop>_alternate`, which matches no prop key — **the first tier map joined `23%` of the board and saw zero goblins and demons.** *Fold `_alternate` → base prop on every PP board join.* (`NBA_GOBLIN_DEMON.md` `§T33.2`.)
+
+---
+
 ## 🆕 §T32.6 — **THE SLIP PROGRAM'S FIRST OBJECTS (`2026-09-28/29`): ONE TABLE THAT EXISTS, TWO THAT NEVER DID, AND A REFEREE TABLE THREE TIMES THE SIZE ON FILE** *(source `T32`, recovered transcript; every row live-verified `2026-10-10`. ⚠ Placed HERE, above `§T26.57`, because this file's tail is a byte-duplicate block (`T26-15`) and no unique end-of-file anchor exists.)*
 
 | object | what it holds | state, live `2026-10-10` |
