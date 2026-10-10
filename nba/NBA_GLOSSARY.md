@@ -2135,3 +2135,38 @@ such a reader exists.* ⚠ **The fix that would work is a staleness banner in ea
 moving them to an `archive/` subfolder** — ***and BOTH are writes to files outside the twelve, which
 the standing constraints forbid this sweep from making.*** ⇒ 🔑 **RECORDED AS AN OWNER/BUILD-CHAT
 ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it is tracked.*
+
+---
+
+## 🆕 SLIP-PROGRAM AND BETR-CLOUD TERMS — **`T32` onward** *(added `2026-10-10`; source `T32`, the recovered transcript. Each term → meaning → where it lives. The build chat's `nba/NBA_SLIP_BUILDING_STRATEGY.md` is cited as `strategy §n` — outside the twelve, current, owned by the build chat.)*
+
+| term | meaning | where |
+|---|---|---|
+| **slip-building program** | the phase that turns scored legs into placeable slips; opened by the owner `2026-09-29 00:57Z` | `NBA_RECIPE.md` `STEP 14` · `NBA_MASTER_SUMMARY.md` `§T32.10` · strategy `§0`–`§5` |
+| **rank** *(slip sense)* | a way to trail legs and surface candidates that clear break-even — owner's six: prop-line hit rate, baseline HP, final HP, final score, player hit rate, plain prop-line | strategy `§3`, `§8` · `§T32.11` |
+| **signal** *(slip sense)* | a second layer that enhances or purges a rank; must be game-day replicable | strategy `§11` · `§T32.11` |
+| **gate** | a validation layer for a strategy — *"a reality check not a leg/slip killer"* (owner) | strategy `§4` (phase 4) |
+| **`cal_p`** | the **as-of recalibrated** hit probability — `model_p` corrected by `nba_score.recalibration_map`, fit only on data before the day priced | `NBA_BASELINE_CALIBRATION.md` `§T32.5` |
+| **`p·m`** | recalibrated `p` × the leg's real multiplier `m`; **`< 1` ⇒ no Power slip can be +EV** — Power-only; Flex needs the full distribution | `NBA_MULTIPLIERS.md` `§T32.3` · strategy `§6a`, `§6e` |
+| **overconfidence map** | realized hit by prop × side × kind × role_tier × model_p bucket; the model ranks but overstates above `~0.55` | `NBA_BASELINE_CALIBRATION.md` `§T32.5` |
+| **`recalibration_map`** | `nba_score` table holding that map (`8,818` rows, first built `2026-10-06`) | `NBA_DATABASE.md` `§T32.6` |
+| **`rank_foundation`** | the designed rank substrate — **never built** | `NBA_DATABASE.md` `§T32.6` · `T32-2` |
+| **trailing** | a player's own hit/miss rate on the exact prop+side over the last `N` games (3/5/10/20/30); shorter windows sharper in `T32` | strategy `§8a`, `§8i` |
+| **real replay** | the owner's backtest rule: real snapshots, legs, multipliers and outcomes day by day — never extrapolated | `NBA_RECIPE.md` `STEP 14` |
+| **all-combos measure** | ROI over **every** qualifying slip combination — immune to selection and ordering; the honest number when a greedy top-N swings | strategy `§13a` |
+| **tie-break sensitivity** *(Rule B0c)* | re-run a ranked backtest under ≥2 deterministic orderings and report the range; an MLB scar | strategy `§6`, `§13a` |
+| **mirage** | a headline ROI produced by a handful of winning days (e.g. 6-pick `+427%` from `3` days) | strategy `§13d` |
+| **loss-frustration control** | owner preference: a strategy that wins a little most days over one that wins big weekly at similar ROI | strategy `§0` · `§T32.10` |
+| **50-leg cap** | the owner's placement ceiling — `~50` legs/day/app | strategy `§0`, `§7k` |
+| **game-day replicability** | a rank/signal may be used live only if it can be computed at the P3 window; **CLV fails it** (backtest-only) | strategy `§9` · `§T32.10` |
+| **CLV** | closing-line value — line movement from capture to close; strong but sparse, kept as a validation metric | strategy `§8o`, `§9` |
+| **WOWY** | with-or-without-you — teammate output with a star present vs absent | strategy `§7d`, `§11h` |
+| **DvP** | defense vs position — opponent points allowed to a position; built from games × positions, **flat** in `T32` | strategy `§11j` |
+| **Kelly fraction** | optimal stake `f = (pⁿ·m − 1)/(m − 1)`; **peaks at 3 picks** for `p = 0.61` | `NBA_MULTIPLIERS.md` `§T32.3` |
+| **meta-model** | L2-logistic combiner of replicable features (`build_slip_meta_model.py`, report only) | strategy `§12` · `NBA_WORKERS.md` `§T32.1` |
+| **probe sport** | the owner's rule: other sports' boards (WNBA, MLB) are probes, tests and learning only — NBA is wired after the mapping works | `NBA_OPEN_ITEMS.md` `T20-3` · `§T32.1` |
+| **UC Mode** | SeleniumBase "undetected" Chrome — clears Cloudflare Turnstile (with Xvfb on a runner) | `NBA_SYSTEM_ARCHITECTURE.md` `§T32.2` |
+| **`BETR_SESSION_STATE`** | GitHub secret seeding the cloud harvester's logged-in Betr session (slim export, under the `48 KB` cap) | `NBA_WORKERS.md` `§T32.1` · `NBA_SYSTEM_ARCHITECTURE.md` `§T32.2` |
+| **local forward proxy** | an unauthenticated `proxy.py` on the runner relaying to the authenticated residential proxy — the UC-Mode + auth-proxy workaround | `NBA_SYSTEM_ARCHITECTURE.md` `§T32.2` |
+| **Path C** | the owner-PC Betr harvester (`betr_harvest.py`), kept as fallback | `NBA_WORKERS.md` `§T32.1` |
+| **phase 4.5** | the owner's review checkpoint before any auto-engine; why the `T32` builders are report-mode | `NBA_RECIPE.md` `STEP 14` |
