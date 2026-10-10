@@ -1,0 +1,9167 @@
+{
+ "meta": {
+  "started": "2026-10-10T03:23:29Z",
+  "league": 7,
+  "game_mode": "prizepools",
+  "max_quotes": 150,
+  "targets": [
+   "chrome150",
+   "chrome146",
+   "chrome145"
+  ],
+  "board_league_ids": [
+   "7"
+  ],
+  "league_names": [
+   "NBA"
+  ],
+  "transport": "curl:primp:chrome_153:direct",
+  "mode": "multi",
+  "combos": 12,
+  "finished": "2026-10-10T03:25:58Z",
+  "stop_reason": "complete (multi)",
+  "quotes": 78
+ },
+ "board": [
+  {
+   "id": "15575749",
+   "player": "188017",
+   "name": "Anthony Edwards",
+   "team": "MIN",
+   "stat": "Points",
+   "line": 27.5,
+   "odds": "standard",
+   "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+   "start": "2026-10-21T19:40:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13976084",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Rebounds",
+   "line": 5.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975930",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 54.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975899",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs+Asts",
+   "line": 49.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975924",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs",
+   "line": 49.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975928",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 49.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975890",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975898",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975918",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975923",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975929",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975931",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 42.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975900",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs+Asts",
+   "line": 40.0,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975889",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Asts",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975895",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975917",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Asts",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975922",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975927",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 39.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975925",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs",
+   "line": 35.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975886",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Points",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975894",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975897",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs+Asts",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975914",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Points",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975921",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975926",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "15316505",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Asts",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975891",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Asts",
+   "line": 33.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975919",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Asts",
+   "line": 32.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975885",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Points",
+   "line": 29.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975888",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Asts",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975896",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs",
+   "line": 29.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975913",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Points",
+   "line": 29.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975916",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Asts",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975920",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Pts+Rebs",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13952665",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Points",
+   "line": 26.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13952666",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Points",
+   "line": 24.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13975892",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Pts+Rebs",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975912",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Points",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975884",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Points",
+   "line": 19.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975903",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Rebs+Asts",
+   "line": 19.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975936",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Rebs+Asts",
+   "line": 19.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "15316504",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Points",
+   "line": 19.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975904",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Rebs+Asts",
+   "line": 14.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "14949362",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Rebs+Asts",
+   "line": 14.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975882",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Assists",
+   "line": 13.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975935",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Rebounds",
+   "line": 13.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975881",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Assists",
+   "line": 11.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975934",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Rebounds",
+   "line": 11.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975883",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Assists",
+   "line": 9.5,
+   "odds": "standard",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975910",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Assists",
+   "line": 9.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975933",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Rebounds",
+   "line": 8.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975880",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Assists",
+   "line": 7.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975902",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Rebounds",
+   "line": 7.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975909",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Assists",
+   "line": 7.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975932",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "Rebounds",
+   "line": 7.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975907",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "3-PT Made",
+   "line": 4.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975879",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "3-PT Made",
+   "line": 3.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975901",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "Rebounds",
+   "line": 3.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975906",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "3-PT Made",
+   "line": 3.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975878",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "3-PT Made",
+   "line": 2.5,
+   "odds": "demon",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975877",
+   "player": "59107",
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "stat": "3-PT Made",
+   "line": 1.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975905",
+   "player": "187999",
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "stat": "3-PT Made",
+   "line": 1.5,
+   "odds": "goblin",
+   "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+   "start": "2026-10-20T15:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975954",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975963",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "15590222",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975953",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Asts",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975958",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975962",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs+Asts",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975991",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs+Asts",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975964",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs+Asts",
+   "line": 35.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975950",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Points",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975957",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975961",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs+Asts",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975983",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Asts",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975987",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975990",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs+Asts",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975955",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Asts",
+   "line": 32.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975992",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs+Asts",
+   "line": 31.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975949",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Points",
+   "line": 29.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975952",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Asts",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975959",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs",
+   "line": 29.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975960",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs+Asts",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975982",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Asts",
+   "line": 29.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975986",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs",
+   "line": 29.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976139",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs+Asts",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13952667",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Points",
+   "line": 25.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13975948",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Points",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975956",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Pts+Rebs",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975978",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Points",
+   "line": 24.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975984",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Asts",
+   "line": 24.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975989",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs+Asts",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976138",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs",
+   "line": 24.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975988",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs",
+   "line": 23.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975947",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Points",
+   "line": 19.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975977",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Points",
+   "line": 19.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975980",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Asts",
+   "line": 19.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975985",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Pts+Rebs",
+   "line": 19.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976140",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Rebs+Asts",
+   "line": 19.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13952668",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Points",
+   "line": 17.0,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13975976",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Points",
+   "line": 14.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975997",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Rebs+Asts",
+   "line": 14.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976137",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Rebs+Asts",
+   "line": 14.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "14007606",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Rebs+Asts",
+   "line": 13.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "15590221",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Assists",
+   "line": 11.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975944",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Assists",
+   "line": 9.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975967",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Rebs+Asts",
+   "line": 9.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975973",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Assists",
+   "line": 9.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975996",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Rebounds",
+   "line": 9.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975942",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Assists",
+   "line": 7.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975994",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Rebounds",
+   "line": 7.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975945",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Assists",
+   "line": 6.5,
+   "odds": "standard",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13975995",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Rebounds",
+   "line": 6.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975941",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Assists",
+   "line": 5.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975971",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Assists",
+   "line": 5.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975993",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Rebounds",
+   "line": 5.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976136",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Rebounds",
+   "line": 5.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975940",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "3-PT Made",
+   "line": 4.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975938",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "3-PT Made",
+   "line": 3.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975966",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Rebounds",
+   "line": 3.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975939",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "3-PT Made",
+   "line": 2.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975965",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Rebounds",
+   "line": 2.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975969",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "3-PT Made",
+   "line": 2.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975937",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "3-PT Made",
+   "line": 1.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975970",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "3-PT Made",
+   "line": 1.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975946",
+   "player": "188004",
+   "name": "Jalen Brunson",
+   "team": "NYK",
+   "stat": "Double-Double",
+   "line": 0.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975968",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "3-PT Made",
+   "line": 0.5,
+   "odds": "goblin",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975975",
+   "player": "336267",
+   "name": "LeBron James",
+   "team": "PHI",
+   "stat": "Double-Double",
+   "line": 0.5,
+   "odds": "demon",
+   "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+   "start": "2026-10-20T19:10:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976089",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Rebounds",
+   "line": 11.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976094",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Assists",
+   "line": 3.0,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13976098",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "3-PT Made",
+   "line": 1.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976050",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 54.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976017",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs+Asts",
+   "line": 49.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976045",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs",
+   "line": 49.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976049",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 49.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976009",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976013",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976016",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976043",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976048",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 44.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976018",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs+Asts",
+   "line": 40.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13976051",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 40.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13976004",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Points",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976008",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Asts",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976012",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976039",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Asts",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976044",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs",
+   "line": 39.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976046",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs",
+   "line": 37.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13976010",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Asts",
+   "line": 36.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13976003",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Points",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976007",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Asts",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976014",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs",
+   "line": 34.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13976015",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs+Asts",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976036",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Points",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976038",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Asts",
+   "line": 34.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976041",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976047",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs+Asts",
+   "line": 34.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13952669",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Points",
+   "line": 29.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13976006",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Asts",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976011",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Pts+Rebs",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976035",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Points",
+   "line": 29.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976040",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Asts",
+   "line": 29.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13976042",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Rebs",
+   "line": 29.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13952671",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Points",
+   "line": 26.0,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13976002",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Points",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976034",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Points",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976037",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Pts+Asts",
+   "line": 24.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976033",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Points",
+   "line": 19.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976055",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Rebs+Asts",
+   "line": 19.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976054",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Rebounds",
+   "line": 15.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976056",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Rebs+Asts",
+   "line": 14.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "14226884",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Rebs+Asts",
+   "line": 14.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976053",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Rebounds",
+   "line": 13.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976083",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Rebounds",
+   "line": 11.0,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13976052",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Rebounds",
+   "line": 9.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "14226883",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Assists",
+   "line": 9.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975999",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Assists",
+   "line": 7.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976000",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Assists",
+   "line": 5.5,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": null
+  },
+  {
+   "id": "13976020",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Rebounds",
+   "line": 5.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976028",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Assists",
+   "line": 5.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976021",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Rebounds",
+   "line": 4.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976031",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Blocked Shots",
+   "line": 4.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976019",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Rebounds",
+   "line": 3.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976025",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "3-PT Made",
+   "line": 3.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976027",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Assists",
+   "line": 3.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976030",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Blocked Shots",
+   "line": 3.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13975998",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "3-PT Made",
+   "line": 2.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976024",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "3-PT Made",
+   "line": 2.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976026",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Assists",
+   "line": 2.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976029",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Blocked Shots",
+   "line": 2.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976096",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "3-PT Made",
+   "line": 2.0,
+   "odds": "standard",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": false
+  },
+  {
+   "id": "13976023",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "3-PT Made",
+   "line": 1.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976001",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "Double-Double",
+   "line": 0.5,
+   "odds": "demon",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "13976032",
+   "player": "173819",
+   "name": "Victor Wembanyama",
+   "team": "SAS",
+   "stat": "Double-Double",
+   "line": 0.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "14226881",
+   "player": "188011",
+   "name": "Shai Gilgeous-Alexander",
+   "team": "OKC",
+   "stat": "3-PT Made",
+   "line": 0.5,
+   "odds": "goblin",
+   "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+   "start": "2026-10-20T21:40:00.000-04:00",
+   "adjusted_odds": true
+  },
+  {
+   "id": "15575410",
+   "player": "188017",
+   "name": "Anthony Edwards",
+   "team": "MIN",
+   "stat": "Points",
+   "line": 27.5,
+   "odds": "standard",
+   "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+   "start": "2026-10-21T19:40:00.000-04:00",
+   "adjusted_odds": false
+  }
+ ],
+ "quotes": [
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:44Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.1
+    }
+   },
+   "power_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.7,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976042",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:46Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.1
+    }
+   },
+   "power_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.7,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975971",
+     "name": "LeBron James",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:48Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 2.5
+    }
+   },
+   "power_srp": [
+    [
+     1.4,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 2.0,
+     "2": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13975891",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 33.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976042",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975971",
+     "name": "LeBron James",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gg) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:50Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 4.75
+    }
+   },
+   "power_srp": [
+    [
+     2.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.4,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 3.0,
+     "3": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     2.0,
+     0.5,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13975891",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 33.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "15575410",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976042",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975971",
+     "name": "LeBron James",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "2 alts (gg) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:52Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 8.5
+    }
+   },
+   "power_srp": [
+    [
+     4.75,
+     0.0,
+     0.0
+    ],
+    [
+     2.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.4,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 5.0,
+     "4": 1.0,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     3.0,
+     0.75,
+     0.0
+    ],
+    [
+     2.0,
+     0.5,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13975891",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 33.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "15575410",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976018",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 40.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976042",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975971",
+     "name": "LeBron James",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "2 alts (gg) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:54Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 16.0
+    }
+   },
+   "power_srp": [
+    [
+     8.5,
+     0.0,
+     0.0
+    ],
+    [
+     4.75,
+     0.0,
+     0.0
+    ],
+    [
+     2.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.4,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 9.0,
+     "5": 1.5,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     4.0,
+     1.25,
+     0.4
+    ],
+    [
+     3.0,
+     0.75,
+     0.0
+    ],
+    [
+     2.0,
+     0.5,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13975891",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 33.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "15575410",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976018",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 40.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975964",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Rebs+Asts",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976042",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975971",
+     "name": "LeBron James",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "2 alts (gg) + 4 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:55Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.1
+    }
+   },
+   "power_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.8,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976002",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:57Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 3.5
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 2.4,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975995",
+     "name": "LeBron James",
+     "stat": "Rebounds",
+     "line": 6.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:23:59Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 4.25
+    }
+   },
+   "power_srp": [
+    [
+     2.1,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 3.0,
+     "2": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     2.2,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13952666",
+     "name": "Cade Cunningham",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976002",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975995",
+     "name": "LeBron James",
+     "stat": "Rebounds",
+     "line": 6.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:01Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 8.0
+    }
+   },
+   "power_srp": [
+    [
+     3.75,
+     0.0,
+     0.0
+    ],
+    [
+     2.1,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 6.0,
+     "3": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     3.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13952666",
+     "name": "Cade Cunningham",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976094",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 3.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976002",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975995",
+     "name": "LeBron James",
+     "stat": "Rebounds",
+     "line": 6.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:02Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 14.5
+    }
+   },
+   "power_srp": [
+    [
+     7.25,
+     0.0,
+     0.0
+    ],
+    [
+     3.75,
+     0.0,
+     0.0
+    ],
+    [
+     2.1,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 7.0,
+     "4": 1.75,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     5.0,
+     0.75,
+     0.0
+    ],
+    [
+     3.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13952666",
+     "name": "Cade Cunningham",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976094",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 3.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976002",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975995",
+     "name": "LeBron James",
+     "stat": "Rebounds",
+     "line": 6.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:03Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 28.0
+    }
+   },
+   "power_srp": [
+    [
+     13.5,
+     0.0,
+     0.0
+    ],
+    [
+     7.25,
+     0.0,
+     0.0
+    ],
+    [
+     3.75,
+     0.0,
+     0.0
+    ],
+    [
+     2.1,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 18.0,
+     "5": 1.75,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     6.0,
+     1.75,
+     0.4
+    ],
+    [
+     5.0,
+     0.75,
+     0.0
+    ],
+    [
+     3.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13952666",
+     "name": "Cade Cunningham",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976094",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 3.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "15575410",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976002",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975995",
+     "name": "LeBron James",
+     "stat": "Rebounds",
+     "line": 6.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "2 alts (gd) + 4 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:05Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 7.75
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 4.5,
+     "1": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976013",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:07Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 8.25
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 4.5,
+     "1": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975895",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:09Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 37.5
+    }
+   },
+   "power_srp": [
+    [
+     7.75,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 26.0,
+     "2": 2.5
+    }
+   },
+   "flex_srp": [
+    [
+     6.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13975945",
+     "name": "Jalen Brunson",
+     "stat": "Assists",
+     "line": 6.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976013",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975895",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (dd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:10Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 75.0
+    }
+   },
+   "power_srp": [
+    [
+     14.5,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 43.0,
+     "3": 4.0
+    }
+   },
+   "flex_srp": [
+    [
+     12.0,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13975945",
+     "name": "Jalen Brunson",
+     "stat": "Assists",
+     "line": 6.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976094",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 3.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976013",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975895",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (dd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:12Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 144.0
+    }
+   },
+   "power_srp": [
+    [
+     28.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 118.0,
+     "4": 2.5,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     17.0,
+     2.0,
+     0.0
+    ],
+    [
+     3.6,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13975945",
+     "name": "Jalen Brunson",
+     "stat": "Assists",
+     "line": 6.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976094",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 3.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975988",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs",
+     "line": 23.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976013",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975895",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (dd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:14Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 285.0
+    }
+   },
+   "power_srp": [
+    [
+     53.0,
+     0.0,
+     0.0
+    ],
+    [
+     10.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 130.0,
+     "5": 10.0,
+     "4": 2.0
+    }
+   },
+   "flex_srp": [
+    [
+     35.0,
+     2.25,
+     0.4
+    ],
+    [
+     7.0,
+     1.0,
+     0.0
+    ],
+    [
+     3.6,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13975945",
+     "name": "Jalen Brunson",
+     "stat": "Assists",
+     "line": 6.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976094",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 3.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975988",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs",
+     "line": 23.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "15575410",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976013",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975895",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "2 alts (dd) + 4 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:15Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.3
+    }
+   },
+   "power_srp": [
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.9,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976011",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:17Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 7.25
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 5.0,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975978",
+     "name": "LeBron James",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:19Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 9.5
+    }
+   },
+   "power_srp": [
+    [
+     2.3,
+     0.0,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 7.0,
+     "2": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     2.4,
+     0.0,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13975959",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976011",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975978",
+     "name": "LeBron James",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "2 alts (gd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:21Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 18.0
+    }
+   },
+   "power_srp": [
+    [
+     4.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.3,
+     0.0,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 12.0,
+     "3": 1.5
+    }
+   },
+   "flex_srp": [
+    [
+     3.0,
+     0.75,
+     0.0
+    ],
+    [
+     2.1,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13975959",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976056",
+     "name": "Victor Wembanyama",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976011",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975978",
+     "name": "LeBron James",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "2 alts (gd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:23Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 34.0
+    }
+   },
+   "power_srp": [
+    [
+     7.5,
+     0.0,
+     0.0
+    ],
+    [
+     4.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.3,
+     0.0,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 19.0,
+     "4": 2.25,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     6.0,
+     0.5,
+     0.0
+    ],
+    [
+     3.0,
+     0.75,
+     0.0
+    ],
+    [
+     2.1,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13975959",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976056",
+     "name": "Victor Wembanyama",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13952666",
+     "name": "Cade Cunningham",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976011",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975978",
+     "name": "LeBron James",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:25Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 63.0
+    }
+   },
+   "power_srp": [
+    [
+     14.0,
+     0.0,
+     0.0
+    ],
+    [
+     7.5,
+     0.0,
+     0.0
+    ],
+    [
+     4.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.3,
+     0.0,
+     0.0
+    ],
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 48.0,
+     "5": 2.0,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     8.0,
+     1.25,
+     0.4
+    ],
+    [
+     6.0,
+     0.5,
+     0.0
+    ],
+    [
+     3.0,
+     0.75,
+     0.0
+    ],
+    [
+     2.1,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13975959",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976056",
+     "name": "Victor Wembanyama",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13952666",
+     "name": "Cade Cunningham",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976011",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975978",
+     "name": "LeBron James",
+     "stat": "Points",
+     "line": 24.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gd) + 4 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:27Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 10.0
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 4.5,
+     "1": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976001",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Double-Double",
+     "line": 0.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:28Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 6.25
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 3.6,
+     "1": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976031",
+     "name": "Victor Wembanyama",
+     "stat": "Blocked Shots",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:30Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 36.5
+    }
+   },
+   "power_srp": [
+    [
+     6.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 25.0,
+     "2": 2.5
+    }
+   },
+   "flex_srp": [
+    [
+     5.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976001",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Double-Double",
+     "line": 0.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976031",
+     "name": "Victor Wembanyama",
+     "stat": "Blocked Shots",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "2 alts (dd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:32Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 72.0
+    }
+   },
+   "power_srp": [
+    [
+     11.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 41.0,
+     "3": 4.0
+    }
+   },
+   "flex_srp": [
+    [
+     9.0,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975891",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 33.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976001",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Double-Double",
+     "line": 0.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976031",
+     "name": "Victor Wembanyama",
+     "stat": "Blocked Shots",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "2 alts (dd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:33Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 139.0
+    }
+   },
+   "power_srp": [
+    [
+     21.5,
+     0.0,
+     0.0
+    ],
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 53.0,
+     "4": 7.0,
+     "3": 2.0
+    }
+   },
+   "flex_srp": [
+    [
+     13.0,
+     1.75,
+     0.0
+    ],
+    [
+     3.6,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975891",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 33.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975984",
+     "name": "LeBron James",
+     "stat": "Pts+Asts",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976001",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Double-Double",
+     "line": 0.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976031",
+     "name": "Victor Wembanyama",
+     "stat": "Blocked Shots",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (dd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:35Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 275.0
+    }
+   },
+   "power_srp": [
+    [
+     40.0,
+     0.0,
+     0.0
+    ],
+    [
+     10.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 160.0,
+     "5": 10.0,
+     "4": 2.0
+    }
+   },
+   "flex_srp": [
+    [
+     26.0,
+     2.0,
+     0.4
+    ],
+    [
+     7.0,
+     1.0,
+     0.0
+    ],
+    [
+     3.6,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975891",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 33.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975984",
+     "name": "LeBron James",
+     "stat": "Pts+Asts",
+     "line": 24.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "15575410",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976001",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Double-Double",
+     "line": 0.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976031",
+     "name": "Victor Wembanyama",
+     "stat": "Blocked Shots",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "2 alts (dd) + 4 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:37Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.6
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.8,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975965",
+     "name": "Jalen Brunson",
+     "stat": "Rebounds",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:39Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.1
+    }
+   },
+   "power_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.7,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975926",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:40Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 3.25
+    }
+   },
+   "power_srp": [
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 2.25,
+     "2": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     1.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13976051",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs+Asts",
+     "line": 40.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975965",
+     "name": "Jalen Brunson",
+     "stat": "Rebounds",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975926",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gg) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:42Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 6.0
+    }
+   },
+   "power_srp": [
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 4.0,
+     "3": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     2.25,
+     0.75,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13976051",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs+Asts",
+     "line": 40.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975904",
+     "name": "Cade Cunningham",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975965",
+     "name": "Jalen Brunson",
+     "stat": "Rebounds",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975926",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gg) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:44Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 11.0
+    }
+   },
+   "power_srp": [
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 5.0,
+     "4": 1.5,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     5.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.25,
+     0.75,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13976051",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs+Asts",
+     "line": 40.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975904",
+     "name": "Cade Cunningham",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13952668",
+     "name": "LeBron James",
+     "stat": "Points",
+     "line": 17.0,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975965",
+     "name": "Jalen Brunson",
+     "stat": "Rebounds",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975926",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gg) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:45Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 20.0
+    }
+   },
+   "power_srp": [
+    [
+     11.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 11.0,
+     "5": 1.75,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     5.0,
+     1.5,
+     0.4
+    ],
+    [
+     5.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.25,
+     0.75,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13976051",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Rebs+Asts",
+     "line": 40.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975904",
+     "name": "Cade Cunningham",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13952668",
+     "name": "LeBron James",
+     "stat": "Points",
+     "line": 17.0,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976010",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 36.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975965",
+     "name": "Jalen Brunson",
+     "stat": "Rebounds",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975926",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "2 alts (gg) + 4 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:47Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.0
+    }
+   },
+   "power_srp": [
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.7,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975901",
+     "name": "Cade Cunningham",
+     "stat": "Rebounds",
+     "line": 3.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:49Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.7
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.9,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975921",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:50Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 4.5
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 3.2,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976012",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:52Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 5.0
+    }
+   },
+   "power_srp": [
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 3.0,
+     "2": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     1.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13975901",
+     "name": "Cade Cunningham",
+     "stat": "Rebounds",
+     "line": 3.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975921",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976012",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "3 alts (ggd) + 0 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:54Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 9.5
+    }
+   },
+   "power_srp": [
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 6.0,
+     "3": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     2.25,
+     0.75,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13976083",
+     "name": "Victor Wembanyama",
+     "stat": "Rebounds",
+     "line": 11.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975901",
+     "name": "Cade Cunningham",
+     "stat": "Rebounds",
+     "line": 3.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975921",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976012",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "3 alts (ggd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:56Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 17.5
+    }
+   },
+   "power_srp": [
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 10.0,
+     "4": 1.5,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     5.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.25,
+     0.75,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13976083",
+     "name": "Victor Wembanyama",
+     "stat": "Rebounds",
+     "line": 11.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975955",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Asts",
+     "line": 32.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975901",
+     "name": "Cade Cunningham",
+     "stat": "Rebounds",
+     "line": 3.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975921",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976012",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ggd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:58Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 33.0
+    }
+   },
+   "power_srp": [
+    [
+     11.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 21.0,
+     "5": 2.0,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     6.0,
+     1.25,
+     0.4
+    ],
+    [
+     5.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.25,
+     0.75,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13976083",
+     "name": "Victor Wembanyama",
+     "stat": "Rebounds",
+     "line": 11.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975955",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Asts",
+     "line": 32.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975992",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 31.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975901",
+     "name": "Cade Cunningham",
+     "stat": "Rebounds",
+     "line": 3.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975921",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976012",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ggd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:24:59Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.2
+    }
+   },
+   "power_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.8,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975892",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:01Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 7.5
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 5.0,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976004",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:03Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 4.0
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 2.8,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975990",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:04Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 13.0
+    }
+   },
+   "power_srp": [
+    [
+     2.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 10.0,
+     "2": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     2.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13975892",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976004",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975990",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (gdd) + 0 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:06Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 24.5
+    }
+   },
+   "power_srp": [
+    [
+     5.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.2,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 17.0,
+     "3": 1.5
+    }
+   },
+   "flex_srp": [
+    [
+     3.0,
+     1.0,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13976056",
+     "name": "Victor Wembanyama",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975892",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976004",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975990",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (gdd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:08Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 46.0
+    }
+   },
+   "power_srp": [
+    [
+     9.5,
+     0.0,
+     0.0
+    ],
+    [
+     3.75,
+     0.0,
+     0.0
+    ],
+    [
+     2.2,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 29.0,
+     "4": 2.25,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     6.0,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.75,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13976056",
+     "name": "Victor Wembanyama",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975892",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976004",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975990",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (gdd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:10Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 87.0
+    }
+   },
+   "power_srp": [
+    [
+     17.5,
+     0.0,
+     0.0
+    ],
+    [
+     7.25,
+     0.0,
+     0.0
+    ],
+    [
+     3.75,
+     0.0,
+     0.0
+    ],
+    [
+     2.2,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 70.0,
+     "5": 2.0,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     10.0,
+     1.5,
+     0.4
+    ],
+    [
+     6.0,
+     0.5,
+     0.0
+    ],
+    [
+     3.0,
+     0.75,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13976056",
+     "name": "Victor Wembanyama",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975925",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs",
+     "line": 35.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975955",
+     "name": "Jalen Brunson",
+     "stat": "Pts+Asts",
+     "line": 32.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975892",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 24.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976004",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Points",
+     "line": 39.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975990",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (gdd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:11Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 4.25
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 3.0,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976016",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:13Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 3.5
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 2.4,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975929",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:15Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 10.5
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 6.0,
+     "1": 0.75
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975940",
+     "name": "Jalen Brunson",
+     "stat": "3-PT Made",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:16Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 31.0
+    }
+   },
+   "power_srp": [
+    [
+     5.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 23.0,
+     "2": 2.0
+    }
+   },
+   "flex_srp": [
+    [
+     4.5,
+     0.0,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13976016",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975929",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975940",
+     "name": "Jalen Brunson",
+     "stat": "3-PT Made",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ddd) + 0 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:18Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 61.0
+    }
+   },
+   "power_srp": [
+    [
+     8.75,
+     0.0,
+     0.0
+    ],
+    [
+     3.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 35.0,
+     "3": 3.5
+    }
+   },
+   "flex_srp": [
+    [
+     6.0,
+     1.0,
+     0.0
+    ],
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13975896",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976016",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975929",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975940",
+     "name": "Jalen Brunson",
+     "stat": "3-PT Made",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ddd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:20Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 114.0
+    }
+   },
+   "power_srp": [
+    [
+     17.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.25,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 94.0,
+     "4": 2.0,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     10.0,
+     1.5,
+     0.0
+    ],
+    [
+     3.6,
+     1.25,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13975896",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976040",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976016",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975929",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975940",
+     "name": "Jalen Brunson",
+     "stat": "3-PT Made",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ddd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:22Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 220.0
+    }
+   },
+   "power_srp": [
+    [
+     31.5,
+     0.0,
+     0.0
+    ],
+    [
+     12.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 79.0,
+     "5": 10.0,
+     "4": 2.0
+    }
+   },
+   "flex_srp": [
+    [
+     19.0,
+     2.0,
+     0.4
+    ],
+    [
+     7.0,
+     1.5,
+     0.0
+    ],
+    [
+     3.6,
+     1.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13975896",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976040",
+     "name": "Victor Wembanyama",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "14007606",
+     "name": "LeBron James",
+     "stat": "Rebs+Asts",
+     "line": 13.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976016",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975929",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975940",
+     "name": "Jalen Brunson",
+     "stat": "3-PT Made",
+     "line": 4.5,
+     "odds": "demon",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ddd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:23Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.6
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.8,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976139",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:25Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.6
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.8,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976026",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:26Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.1
+    }
+   },
+   "power_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.7,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976006",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:28Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 2.7
+    }
+   },
+   "power_srp": [
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 2.25,
+     "2": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.8,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13976139",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976026",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976006",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "3 alts (ggg) + 0 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:30Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 5.0
+    }
+   },
+   "power_srp": [
+    [
+     2.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 4.0,
+     "3": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     2.25,
+     0.5,
+     0.0
+    ],
+    [
+     1.6,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13975904",
+     "name": "Cade Cunningham",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976139",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976026",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976006",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ggg) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:32Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 9.25
+    }
+   },
+   "power_srp": [
+    [
+     5.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 5.0,
+     "4": 1.25,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     4.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.25,
+     0.5,
+     0.0
+    ],
+    [
+     1.6,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13975904",
+     "name": "Cade Cunningham",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976139",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976026",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976006",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "3 alts (ggg) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:34Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 17.5
+    }
+   },
+   "power_srp": [
+    [
+     9.25,
+     0.0,
+     0.0
+    ],
+    [
+     5.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 11.0,
+     "5": 1.25,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     4.0,
+     1.5,
+     0.4
+    ],
+    [
+     4.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.25,
+     0.5,
+     0.0
+    ],
+    [
+     1.6,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13975904",
+     "name": "Cade Cunningham",
+     "stat": "Rebs+Asts",
+     "line": 14.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13952665",
+     "name": "Jayson Tatum",
+     "stat": "Points",
+     "line": 26.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976139",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976026",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 2.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976006",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "3 alts (ggg) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:36Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.0
+    }
+   },
+   "power_srp": [
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.7,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "15316504",
+     "name": "Jayson Tatum",
+     "stat": "Points",
+     "line": 19.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:38Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 6.5
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 4.5,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976009",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:40Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 5.0
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 3.4,
+     "1": 0.5
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975898",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:42Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 12.5
+    }
+   },
+   "power_srp": [
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 10.0,
+     "2": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     3.25,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "15316504",
+     "name": "Jayson Tatum",
+     "stat": "Points",
+     "line": 19.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976009",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975898",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "3 alts (gdd) + 0 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:43Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 24.0
+    }
+   },
+   "power_srp": [
+    [
+     6.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 14.0,
+     "3": 2.0
+    }
+   },
+   "flex_srp": [
+    [
+     3.8,
+     1.0,
+     0.0
+    ],
+    [
+     1.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13975988",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs",
+     "line": 23.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "15316504",
+     "name": "Jayson Tatum",
+     "stat": "Points",
+     "line": 19.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976009",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975898",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (gdd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:45Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 45.5
+    }
+   },
+   "power_srp": [
+    [
+     11.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.5,
+     0.0,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 30.0,
+     "4": 2.0,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     6.0,
+     1.5,
+     0.0
+    ],
+    [
+     3.0,
+     0.5,
+     0.0
+    ],
+    [
+     1.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13975988",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs",
+     "line": 23.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976083",
+     "name": "Victor Wembanyama",
+     "stat": "Rebounds",
+     "line": 11.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "15316504",
+     "name": "Jayson Tatum",
+     "stat": "Points",
+     "line": 19.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976009",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975898",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (gdd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:46Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 87.0
+    }
+   },
+   "power_srp": [
+    [
+     21.0,
+     0.0,
+     0.0
+    ],
+    [
+     6.75,
+     0.0,
+     0.0
+    ],
+    [
+     3.5,
+     0.0,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 71.0,
+     "5": 2.0,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     10.0,
+     2.0,
+     0.4
+    ],
+    [
+     5.0,
+     0.75,
+     0.0
+    ],
+    [
+     3.0,
+     0.5,
+     0.0
+    ],
+    [
+     1.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13975988",
+     "name": "LeBron James",
+     "stat": "Pts+Rebs",
+     "line": 23.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13976083",
+     "name": "Victor Wembanyama",
+     "stat": "Rebounds",
+     "line": 11.0,
+     "odds": "standard",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "15316504",
+     "name": "Jayson Tatum",
+     "stat": "Points",
+     "line": 19.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976009",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13975898",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Rebs+Asts",
+     "line": 44.5,
+     "odds": "demon",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "3 alts (gdd) + 3 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:48Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.3
+    }
+   },
+   "power_srp": [
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.9,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.3,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975888",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:50Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 2.2
+    }
+   },
+   "power_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 1.8,
+     "1": 0.25
+    }
+   },
+   "flex_srp": [
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976015",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:52Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "2": {
+     "2": 9.75
+    }
+   },
+   "power_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "2": {
+     "2": 4.5,
+     "1": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     1.5,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "LEG",
+   "n": 2,
+   "legs": [
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13976028",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:54Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "3": {
+     "3": 10.0
+    }
+   },
+   "power_srp": [
+    [
+     1.6,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "3": {
+     "3": 6.0,
+     "2": 1.0
+    }
+   },
+   "flex_srp": [
+    [
+     1.7,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 3,
+   "legs": [
+    {
+     "id": "13975888",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976015",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976028",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 2,
+   "note": "3 alts (ggd) + 0 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:55Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "4": {
+     "4": 19.0
+    }
+   },
+   "power_srp": [
+    [
+     2.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.6,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "4": {
+     "4": 11.0,
+     "3": 1.5
+    }
+   },
+   "flex_srp": [
+    [
+     2.5,
+     0.5,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 4,
+   "legs": [
+    {
+     "id": "13952667",
+     "name": "Jalen Brunson",
+     "stat": "Points",
+     "line": 25.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975888",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976015",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976028",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ggd) + 1 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:57Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "5": {
+     "5": 35.0
+    }
+   },
+   "power_srp": [
+    [
+     5.25,
+     0.0,
+     0.0
+    ],
+    [
+     2.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.6,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "5": {
+     "5": 20.0,
+     "4": 2.0,
+     "3": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     4.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.5,
+     0.5,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 5,
+   "legs": [
+    {
+     "id": "13952667",
+     "name": "Jalen Brunson",
+     "stat": "Points",
+     "line": 25.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975931",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 42.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13975888",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976015",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976028",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 3,
+   "note": "3 alts (ggd) + 2 standards"
+  },
+  {
+   "status": 200,
+   "t": "2026-10-10T03:25:58Z",
+   "target": "primp:chrome_153:direct",
+   "power_adj": true,
+   "power": {
+    "6": {
+     "6": 67.0
+    }
+   },
+   "power_srp": [
+    [
+     10.0,
+     0.0,
+     0.0
+    ],
+    [
+     5.25,
+     0.0,
+     0.0
+    ],
+    [
+     2.9,
+     0.0,
+     0.0
+    ],
+    [
+     1.6,
+     0.0,
+     0.0
+    ],
+    [
+     1.2,
+     0.0,
+     0.0
+    ]
+   ],
+   "power_max_alert": false,
+   "flex_adj": true,
+   "flex": {
+    "6": {
+     "6": 51.0,
+     "5": 2.0,
+     "4": 0.4
+    }
+   },
+   "flex_srp": [
+    [
+     5.0,
+     1.25,
+     0.4
+    ],
+    [
+     4.0,
+     0.5,
+     0.0
+    ],
+    [
+     2.5,
+     0.5,
+     0.0
+    ],
+    [
+     1.5,
+     0.0,
+     0.0
+    ],
+    [
+     1.1,
+     0.0,
+     0.0
+    ]
+   ],
+   "flex_max_alert": false,
+   "section": "MIXED",
+   "n": 6,
+   "legs": [
+    {
+     "id": "13952667",
+     "name": "Jalen Brunson",
+     "stat": "Points",
+     "line": 25.5,
+     "odds": "standard",
+     "game": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+     "side": "over"
+    },
+    {
+     "id": "13975931",
+     "name": "Jayson Tatum",
+     "stat": "Pts+Rebs+Asts",
+     "line": 42.5,
+     "odds": "standard",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "15575749",
+     "name": "Anthony Edwards",
+     "stat": "Points",
+     "line": 27.5,
+     "odds": "standard",
+     "game": "NBA_game_ZHHvKkKdvBJF6u8gKONUoWLw",
+     "side": "over"
+    },
+    {
+     "id": "13975888",
+     "name": "Cade Cunningham",
+     "stat": "Pts+Asts",
+     "line": 29.5,
+     "odds": "goblin",
+     "game": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+     "side": "over"
+    },
+    {
+     "id": "13976015",
+     "name": "Shai Gilgeous-Alexander",
+     "stat": "Pts+Rebs+Asts",
+     "line": 34.5,
+     "odds": "goblin",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    },
+    {
+     "id": "13976028",
+     "name": "Victor Wembanyama",
+     "stat": "Assists",
+     "line": 5.5,
+     "odds": "demon",
+     "game": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+     "side": "over"
+    }
+   ],
+   "n_games": 4,
+   "note": "3 alts (ggd) + 3 standards"
+  }
+ ]
+}
