@@ -1112,7 +1112,8 @@ Each candidate was either executed or measured to its final-output effect and cl
 ### THE 10-20 IN-APP CHECKS — PROBED (owner: "you can also probe the apps for everything")
 - **PrizePicks 3-/4-Flex — CLOSED by PrizePicks' own quote engine:** 3-Flex 3.0 / 1.0, 4-Flex 6.0 / 1.5 (Power 3 = 6.0,
   4 = 10.0; 2-pick 3.0, Flex 2.0 / 0.5) — the mined tables the engines use, not the help centre's 2.25 / 1.25 and 5 / 1.5.
-- **Sleeper payout = product of multipliers — not answerable without an account:** the help centre states no formula
+- ~~**Sleeper payout = product of multipliers — not answerable without an account:**~~ **SUPERSEDED the same evening:
+  settled from our own MLB placed slips — see "RETRIES, CAPTURE TIMES, … SLEEPER" below.** the help centre states no formula
   (Player Picks Rules, Combo Contests: Max all-hit, Flex one miss at 3+ / two at 5+, minimum Flex 1.25×, voids regraded as
   if never included); probe 38008386302 found no payout rule in the public endpoints (`lines/available` 9,120 lines,
   `available_alt` 3,341, `promos` 8 — only per-option `payout_multiplier`) nor in the web bundles; entry quotes need a
