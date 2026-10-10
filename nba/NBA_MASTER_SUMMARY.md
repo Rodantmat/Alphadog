@@ -44702,3 +44702,9 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - 🆕 **A correction in two files**: `NBA_BASELINE_CALIBRATION.md` `§T36.5` listed *"holiday slates"* among the dropped tests — the `05:26Z` reply adopted NYE and MLK Day as a cap-1 caution, ✅ in code (`live_slip_engine.py:598–603`); struck, and the rule added to `NBA_SYSTEM_DESIGN.md` `§T36.7`'s rule stack.
 
 **Ledger**: `T36` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+**`T37`** — not re-read in pass 14: its `32` closing replies were pass 13's straight re-read (`§P13`); it stays at CLEAN `0`/`3` and takes its next pass with the others.
+
+**`T38`** (`16` closing replies, `10-04 04:16Z → 08:22Z`) — **NEW MATERIAL**, reopened: 🆕 **`§T38.5`** — the preview's actual slips and the side facts (PrizePicks game ids embed the capture date); the full 2025-26 per-strategy book with the portfolio rows (`+94%`, `99–55` days, longest losing streak `6`) and Underdog's `~8`-week flat stretch; H1's blind spot in points (`13` / `20`); the monitor's calibration rows and both seasons' z at slate 60; the ROI curve in money; the star-Under portfolio rows.
+
+**Ledger**: `T38` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
