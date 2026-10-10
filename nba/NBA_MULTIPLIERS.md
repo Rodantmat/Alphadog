@@ -2402,3 +2402,28 @@ whether `T22`'s `≈2.0/1.25/1.4` is `v1`.**
 | void / tie | the leg drops, the entry shrinks one size (`pp_power_after_voids`) | ties/voids shrink the entry |
 | correlation | — | **"correlated projections can modify your payout"** — a builder-time shift, readable only at placement |
 🔑 **The one structural block this adds**: `stocks` = blocks + steals **contains** `steals` and `blocks` — a player's steals leg and stocks leg must never share a slip (measured same-player covariance `+0.032`, the only non-zero pair in the defensive family — `§15c`).
+
+---
+
+## 🆕 §T34.3 — **"PP DOES NOT EVEN PROVIDE MULTIPLIERS": THE SLIP PROGRAM'S PRICING, CORRECTED BY THE OWNER, THEN BY ITS OWN FOURTH PASS** *(source `T34`, `2026-09-30`, recovered transcript; AS STATED from `NBA_SLIP_BUILDING_STRATEGY.md` `§19l`, `§19m`, `§23b`, `§24b`, `§26b`, `§29c`; ✅ = live `2026-10-10`)*
+
+**The owner's two rulings (`2026-09-30 01:07Z / 01:08Z`, verbatim):** *"the full 2 seasons should use the current multipliers we have now, because the boards, legs, outcomes do not change, but the prices must reflect the current moment and reality"* · *"i believe you priced it with current knowledge of multipliers, because PP does not even provide multupliers, it should be on the documentation"*. Both were already true in the repo (`PP_PAYOUT_FINDINGS.md` §1/§9 — out of scope here, read-only cross-reference); the build chat had not read it before pricing.
+
+**What the slip program had done wrong, and the rule it adopted (`§19m`):**
+| | before | after |
+|---|---|---|
+| tier key | its own rank-distance inside a kind | **the system's tier** from `nba_market.pp_leg_price` (`anchor_line`, signed `tier`, `position_vs_anchor`); rescued-anchor legs (`tier = 0`, no Regular line) tiered from `line − anchor_line` |
+| price | per-line prices **averaged into a tier mean** | **the per-line `factor` at the window snapshot** — *"PP prices per LINE, not per tier — only the deepest goblins sit on a flat 2.1× floor"* |
+| break-even | a tier-average multiplier | **per leg**, from its own current price (`p_be = 0.55 / m` for a 3-pick Power) |
+*The level had been current all along (its `factor` was this same model's output, leg for leg) — "the tier key and the averaging were wrong."* ✅ **Live**: `pp_leg_price` carries **one** `model_version`, `pp-leg-v2-sqrt-cap-conservative-floor190`, on both `window` (`1,168,508`) and `close` (`1,170,012`) legs.
+
+**Facts the corrected map measured (all `AS STATED`):** Regular factor **exactly `1.000`** on all `311,160` Regular legs; goblins `0.614–0.934` (G1 avg `0.756`, G2 `0.698`, G3 `0.661`; floor `0.614` = the documented flat deepest-goblin floor); demons D1 `1.44` / D2 `1.71` / D3 `2.43` avg, max `5.76`; **`120` demons (`0.02%`) priced `0.96–0.99`** — half a point above the anchor, near-standard, never selectable as demons (`§19n`; `152` of `426,776` at `≤ 1.0` in `§24`'s invariant). **`implied_p × factor ≈ 0.5` with zero anomalies** — PP prices every goblin/demon so its implied probability times its multiplier is about one half (`§23b`, `§24`).
+
+🔴 **PP lowered its demon payouts between seasons** (`§19l`) as it deepened the ladders: points D1 `1.46 → 1.22`, rebounds D2 `2.29 → 2.02`, assists D1 `1.50 → 1.26` (`§24a`); Regular stays `1.00`, goblins ~flat. ⇒ ***"The live-season gate must re-read the tier multipliers, not assume last season's."***
+
+🔴 **The fourth certification pass, on external facts (`§24b`)** — *"a fourth run of the same 52 invariants would have passed again and proved nothing new: the list checks the system against itself"*:
+1. **The payout table.** PrizePicks' support article (*"Payouts Explained"*) and two third-party sources showed **3-pick Power `5×`** (per-leg break-even `0.585`, not `0.55`). PrizePicks' own live *Ways to Pick* page showed: **Power `3`-pick `6×`, `4`-pick `10×`, `5`-pick `20×`, `6`-pick `37.5×`; Flex `4`-pick `6×/1.5×`, `3`-pick `3×/1×`, and a new `2`-pick Flex `2×/0.5×`** (*"live since 2026-09-18"*). ⇒ *the support article is stale*; the `0.55` bar stands. Invariant `L10.power_table_matches_live_page` added (fetch + compare).
+2. **The slip payout rule.** Every mixed goblin/demon slip had been priced `base × Π(leg factors) × 0.95` — **the `0.95` haircut was the build chat's own number.** Replaced by the repo's measured compression (`0.10-T22` above): `payout = product` up to `9.1×`, then `9.1 × (product/9.1)^0.857`, with *"real 4-pick demon-heavy slips paid 15–29% more than even that."* Invariant `L10.slip_compression_rule_matches_oos_quotes` (reproduces the three OOS quotes within `1.6%`). ⇒ ***"price every slip with the compression rule, never a plain product, and never a flat haircut."***
+
+**Structure findings that are pricing facts:** the **2-pick Flex `2×/0.5×` is out** — *"the 2×/0.5× table does not reward a 0.62 leg"* (core 2-Flex `+16%` / `−2%`; 2-pick Power thin but positive, `§26b`) · **two goblins hurt every structure** (*"the factor product ~0.5 crushes payout"*) while one goblin as the 5th leg of a 4-Regular Power lifts `+109% → +148%` (`§23b`; → `NBA_GOBLIN_DEMON.md` `§T34.2`) · **voided legs revert the slip to the smaller size per PrizePicks' `payouts_srp` rule; a slip left with `< 2` legs is refunded** — written into the live engine (`§29c` #4), replacing *"staying ungraded forever."*
+⚠ **Same-game pricing, NBA vs MLB** (`§28a`): MLB measured PP discounting same-game slips `37%`; NBA's own real quotes show **opponent** same-game pairs at `3.0/3.0/2.9×` (no meaningful discount) and **teammate pairs untested on NBA** ⇒ the engine bans teammate same-game pairs (V6) and allows opponents. → `NBA_OPEN_ITEMS.md` `T34-6`.
