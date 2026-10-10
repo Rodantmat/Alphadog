@@ -36,22 +36,31 @@ def fetch_period(season, period, proxies):
            f"&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=Totals"
            f"&Period={period}&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season={season}&SeasonSegment="
            f"&SeasonType=Regular+Season&ShotClockRange=&StarterBench=&TeamID=0&VsConference=&VsDivision=")
-    for attempt in range(4):
-        try:
-            resp = requests.get(url, headers=STATS_HEADERS, timeout=90, proxies=proxies, impersonate="chrome124")
-            resp.raise_for_status()
-            body = resp.json()
-            rs = next((r for r in body.get("resultSets") or [] if r.get("name") == "PlayerGameLogs"), None)
-            if not rs:
-                raise RuntimeError("PlayerGameLogs result set missing")
-            hdr = rs.get("headers", []); rows = rs.get("rowSet") or []
-            idx = [hdr.index(c) for c in KEEP if c in hdr]; cols = [hdr[i] for i in idx]
-            recs = [dict(zip(cols, [r[i] for i in idx])) for r in rows]
-            return recs, hdr
-        except Exception as exc:  # noqa: BLE001
-            print(f"  attempt {attempt + 1} failed for {season} Q{period}: {exc}")
-            time.sleep(5 * (attempt + 1))
-    raise RuntimeError(f"period fetch failed: {season} Q{period}")
+    # system retry policy (nba/net_retry.py, 2026-10-09): 4 attempts, full-jitter backoff, 429/5xx/connection errors and a
+    # missing result set retried; a final 4xx is not; no sleep after the last attempt (the old loop slept 20 s for nothing).
+    from net_retry import call
+
+    def once():
+        resp = requests.get(url, headers=STATS_HEADERS, timeout=90, proxies=proxies, impersonate="chrome124")
+        if 400 <= resp.status_code < 500 and resp.status_code not in (408, 425, 429):
+            raise _Final(f"http {resp.status_code}")
+        resp.raise_for_status()
+        body = resp.json()
+        rs = next((r for r in body.get("resultSets") or [] if r.get("name") == "PlayerGameLogs"), None)
+        if not rs:
+            raise RuntimeError("PlayerGameLogs result set missing")
+        hdr = rs.get("headers", []); rows = rs.get("rowSet") or []
+        idx = [hdr.index(c) for c in KEEP if c in hdr]; cols = [hdr[i] for i in idx]
+        recs = [dict(zip(cols, [r[i] for i in idx])) for r in rows]
+        return recs, hdr
+    try:
+        return call(once, tries=4, base=5, cap=40, label=f"periods {season} Q{period}", give_up_on=(_Final,))
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(f"period fetch failed: {season} Q{period} ({str(exc)[:120]})") from None
+
+
+class _Final(Exception):
+    """a non-retryable answer (4xx other than 408/425/429)"""
 
 
 def main():
