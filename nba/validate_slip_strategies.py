@@ -237,6 +237,10 @@ def main():
         for f in fs:
             fp *= f
         base = (POWER[size] if h == size else 0.0) if structure == 'power' else FLEX.get((size, h), 0.0)
+        if base > 0 and structure == 'flex' and any(abs(f - 1.0) > 1e-9 for f in fs):
+            # 2026-10-10: Flex with goblins / demons pays PrizePicks' quote-derived tiers - the SAME function the grader uses
+            import build_slip_engine as _SE
+            return _SE.flex_alt_payout(size, size - h, fp) - 1.0
         return (compress(base * fp) if base > 0 else 0.0) - 1.0
     null_counts = []
     for it in range(NULLS):
