@@ -44511,3 +44511,15 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - 🆕 **Underdog's 2026-27 stand-down dates**: **Feb 12–18** and **Apr 4–11**, `0` differences vs the backtest rule over `156` dates (`§31e`).
 
 **Ledger**: pass `13` (`2026-10-10`) on `T37` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+---
+
+# §P14 — PASS 14 (`2026-10-10`): THE CLOSING-REPLY RE-READ, APPLIED TO EVERY TRANSCRIPT
+*Angle:* pass 13 showed that reading the build chat's closing replies end to end finds decision detail the mechanical checks miss. Pass 14 applies the same straight re-read to every transcript with closing replies, in order (`T32` → `T48`; `T43` has none), against its `§T` section and the subject files. **A transcript where it finds anything new is reopened at `0`/`3`; the CLOSED marks of earlier passes are struck, not deleted (`RULE 40`).** Entries are added per transcript as it is read.
+
+**`T32`** (`2026-09-28 02:43 → 09-29 06:32 UTC`, every final reply up to `#183`) — **NEW MATERIAL**, reopened:
+- 🆕 **The T20-25 refit is forward-only** → `§T32.6`: only that day's `final_hp` takes the new weights and history keeps the old; option A (now) vs option B (at slip start), A recommended; ✅ `confidence_model` `built_at` still `2026-09-25`, `10` rows.
+- 🆕 **The overconfidence map** by role (STARTER `0.590` → FRINGE `0.491`), by side (Over `0.587` / Under `0.547`, `10,361` vs `4,223`) and by prop → `NBA_BASELINE_CALIBRATION.md` `§T32.5`.
+- 🆕 **The `0.62` frontier as told to the owner** (threshold as the dominant lever, the depth ladder, `27` of `73` days, *"4-pick is a trap"* contradicted, the two-profile split) → a new row in `§T32.11`.
+
+**Ledger**: `T32` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
