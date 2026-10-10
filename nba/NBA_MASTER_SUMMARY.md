@@ -45907,3 +45907,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`–`T39`, `T43`, `T46`–`T48`.
 - **CLEAN → `1`/`3`**: `T44`.
 - ✅ **CLOSED `3`/`3`**: `T40` *(pass 70)*, `T41`, `T42`, `T45`.
+
+# §P71 — PASS 71 (`2026-10-10`): A SEED-71 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN
+*Angles (as NEXT set them):* (g5) a seed-`71` sample on `T32`–`T39`, `T43`, `T44`, `T46`–`T48` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `19` · `12` · `13` · `15` · `18` · `9` · `12` · `15` · `16` · `13` · `16` · `13` · `17`. (h5) the ≥ `5` scan re-run on all thirteen after pass 70's additions: no flag that an earlier tier had not traced.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (`T23-1`'s triage status; `T20-25`'s staged state) · **`T33`** (the ftm+fta share; the Oct-20 candidate) · **`T34`** (the pair reasons; the G3 gate; the board-day count; the single-book share) · **`T36`** (the pre-break plays and the plan table) · **`T37`** (Gemini's controls; the absence flag's standing; the audit's live state) · **`T38`** (the full-board reading) · **`T39`** (the second rookie revisit condition) · **`T43`** (the adapters' two conditions) · **`T47`** (the score scale).
+- ✅ **Clean on this angle:** `T35`, `T44`, `T46`, `T48`.
+- Judged, not recorded: the MLB proxy rotation (`T44`, out of scope); the PrizePicks quote transport (`T48`, `pp_payout_map.py`, out of scope); restatements and later-executed plans (`T33`, `T39`); the MLB lessons (`T32`).
+- ⚠ **Process slips:** two new bullets quoted this file's own wording as if it were transcript text (`§T39.9`, `§T43.9`) — `qdiff.py` flagged both; struck and rephrased. `§T32.14` first attributed both its residues to the triage list — the second is a `COMPASS` status row; corrected by strike. No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-70 correction commit: `qdiff.py` `0` flags (`24` quotes; `149` since the pass-66 census commit).
+
+**Ledger**: pass `71` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T36`, `T37`, `T38`, `T39`, `T43`, `T47`.
+- **CLEAN → `1`/`3`**: `T35`, `T46`, `T48`. **CLEAN → `2`/`3`**: `T44`.
+- ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T45`.
