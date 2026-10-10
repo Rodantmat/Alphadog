@@ -43936,6 +43936,24 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - The build chat **appended the owner's realignment to its memory file** (`/areas/alphadog-nba-full-certification.md`) before starting round 2 — the *"store these instructions so you don't drift"* clause, applied.
 - 🔑 **Gemini is used as a reference, not an authority**: twice in this window its points were split into *taken* and *rejected with evidence*; its rejection of Option A on the market term was answered with a scratch-only study rather than a production rewrite.
 
+## §T42.5 — THE FOUR AUDIT REPORTS (`S1`–`S4`, swept with this pass)
+*Subagent transcripts of the build chat — each a read-only audit (*"do NOT modify any file … Report findings only"*), told not to repeat ledger items. Their findings are **claims until the build chat verified them**; the ledger records the verified ones. Recorded here: scope, routing, and what they **verified correct** or observed that no ledger line carries — AS STATED, code as of `10-07/08`.*
+| audit | window | scope | findings → where they went |
+|---|---|---|---|
+| `S1` | `10-07 18:17 → 18:25Z` *(spawned in `T41`'s window)* | `live_slip_engine.py` + `ud_live_slip_engine.py` logic vs strategy `§29`, `§30z`, `§31j–§31s` and the payout findings | 10 → #1–#4 = `F-1`…`F-3` (`T41`); #5–#10 = `F-4`…`F-8` (`§T42.0` #1–#2) |
+| `S2` | `05:57 → 06:13Z` | P2B slate pipeline | 17 + INFO → ledger `R2-P2B` #1–#18 |
+| `S3` | `06:13 → 06:25Z` | P3 afternoon pipeline | 18 → `R2-P3` #1–#18 |
+| `S4` | `06:26 → 06:39Z` | P2A results, grading, P4 / P5 | 18 → `R2-P2A` #1–#18 |
+**Verified correct by the audits (not elsewhere in the twelve):**
+- **The live PrizePicks pick's freshness gate** requires, for the slate, `board_scored > 0`, `final_hp` non-NULL rows `> 0` and `pp_leg_price` window legs with a factor `> 0` — else **exit 2** (step red): *"P2B empty → hard fail, never a silent empty pick"*; zero joined legs after that → *"nothing to pick"* (`S1`, `S3`).
+- **Edge monitor statistic**: Newey-West standard error with **7 lags, Bartlett weights** `(1 − l/(lags+1))`; decisions sticky through the stored prior look; voids skipped (`S1`, `S4`). **Underdog** monitor: looks 30/60/90/120, confirm `2.48` / alarm `−2.95`, delta `−0.1084`, P5 portfolio only (`S4`).
+- **Calendar rules are season-aware** — season blocks from `nba_calendar.games` ∪ `team_game_log` split at gaps > 60 days, the All-Star break found as the February 4–10-day gap, MLK / New Year computed per year; *"No 2025-26 literals in the live paths"* (`S1`).
+- **Opening night inherits last season's October–November as-of calibration cells** — `build_final_hp.shift_for` takes the latest cell ≤ the game date (`S2`).
+- **Roster sync refuses an error or < 300 players and never deactivates** a player (`S2`).
+- **Scheduler** (`S4`): an unknown GitHub run status is never treated as dead; recovery windows — P2A/P2B before `p2b_latest`, P3 before first tip; DST through wall-clock offsets 7/8.
+- **Tie (`hit None`) handling** — pushes and DNPs get no outcome entry; every aggregate filters `hit IS NOT NULL`; no `int(None)` / `hit == False` path (`S1`).
+**Observed by the audits, not carried as a ledger finding in this window (AS STATED, unverified here):** `S3` #17 — hard-coded `MAX_DAILY_STAKE 36`, holiday dates, availability-delta sensitivities, and `score_board_legs` **duplicating** the score constants of `build_final_hp` (*"the duplicated formula is the one that can drift silently"* — the build chat's round-2 fix `R2-P3` #17 is `T43`); `S4` #18(d) — workers read `raw.githubusercontent.com` without cache-busting, so a failed push loads yesterday's files with `ok:true`; `S3` #2 — the Underdog scraper's measured pace (an MLB run: `~611` calls in `4 min 23 s`; an in-season NBA slate estimated `8–10 min` against a 300 s cap).
+
 ## §T42.4 — ROUTED BY THIS PASS
 `NBA_SYSTEM_DESIGN.md` `§T42.7` (sticky red and its release; guard unit; certified constants in code; one dead app never blocks the slate; the market-term parity gap; the owner's no-back-data question) · `NBA_SYSTEM_ARCHITECTURE.md` `§T42.8` (proxy in the credential store; soft-step visibility; one weekly-static path; P3 capture resilience; sandbox guard) · `NBA_WORKERS.md` `§T42.4` · `NBA_DATABASE.md` `§T42.6` · `NBA_BASELINE_CALIBRATION.md` `§T42.5` (Over+Under sum; opening-day season label; morning-only lines; the confidence market term) · `NBA_OPEN_ITEMS.md` `§T42 ITEMS` · `NBA_RECIPE.md` `STEP 14k` · `NBA_GLOSSARY.md`.
 **Ledger**: `T42` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`.
