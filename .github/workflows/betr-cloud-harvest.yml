@@ -1,15 +1,19 @@
 name: Betr Cloud Harvest
 
+# WHEN IT RUNS (owner 2026-10-09: "strategic times that match my slip-placing times and our system needs - that reduces
+# traffic cost"). No crons: P3 dispatches this harvest at the WINDOW (min(13:15 PT, first tip - 30 min), the decision
+# board the slips are built from) with label=window, once per slate. It is the heaviest proxy user (a full Chrome session),
+# and the two old crons (10:45 / 13:15 PT) captured a board nothing used plus a duplicate of the window. An NBA board is
+# archived into Postgres by this run itself (label from the dispatch), because P3 archives before the harvest can land.
 on:
   workflow_dispatch:
     inputs:
       league:
         description: "Override league (blank = auto: WNBA until 2026-10-20, then NBA)"
         default: ""
-  schedule:
-    # Pacific board windows: ~10:45 and ~13:15 PT = 17:45 and 20:15 UTC
-    - cron: '45 17 * * *'
-    - cron: '15 20 * * *'
+      label:
+        description: "board snapshot label for the archive: window (P3's dispatch) | close | routine"
+        default: "routine"
 
 concurrency:
   group: betr-cloud-harvest
@@ -21,11 +25,12 @@ permissions:
 jobs:
   harvest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30      # three harvest attempts (~5 min each) + pauses + archive
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0          # the conflict-safe push rebases onto origin/main - needs history
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -37,7 +42,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          P=""
+          for i in 1 2 3; do
+            P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null) && break
+            echo "credential store not reachable (attempt $i/3)"; P=""; sleep $((i * 4))
+          done
           if [ -n "$P" ]; then
             echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
             echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store -> $(echo "$P" | sed 's#.*@##')"
@@ -80,22 +89,42 @@ jobs:
           BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
           BETR_CLIENT_ID: ${{ secrets.BETR_CLIENT_ID }}
           BETR_LEAGUE: ${{ steps.lg.outputs.league }}
-        # exit 4 = the residential proxy carried no Betr traffic (run 38007254948) - one retry on a NEW sticky session
-        # (new exit IP). Exit 2 (session) / 3 (league not open) are not retried: retrying cannot change them.
+        # RETRIES (owner 2026-10-09: proper retry logic on every external step). Up to 3 runs of the harvester, each on a
+        # NEW sticky proxy session (new exit IP), with a growing jittered pause:
+        #   exit 4 = the proxy carried no Betr traffic (run 38007254948)                    -> retried
+        #   exit 2 = no authenticated traffic (session refused OR the auth calls dropped)  -> retried (a dropped auth
+        #            call through a bad exit IP looks the same as an expired session; a real expiry fails every try)
+        #   exit 3 = Betr has not opened this league (the chip does not route)              -> NOT retried (cannot change)
+        #   any other non-zero (Chrome crashed, the script died)                            -> retried
         run: |
           set +e
-          BETR_SESSION_ID="betr${GITHUB_RUN_ID}a" python nba/betr_harvest_cloud.py; rc=$?
-          if [ $rc -eq 4 ]; then
-            echo "::warning::proxy carried no traffic - retrying once on a fresh proxy session"
-            BETR_SESSION_ID="betr${GITHUB_RUN_ID}b" python nba/betr_harvest_cloud.py; rc=$?
-          fi
+          rc=1; pause=20
+          for t in a b c; do
+            BETR_SESSION_ID="betr${GITHUB_RUN_ID}${t}" python nba/betr_harvest_cloud.py; rc=$?
+            if [ $rc -eq 0 ] || [ $rc -eq 3 ] || [ "$t" = "c" ]; then break; fi
+            echo "::warning::harvest attempt ${t} exited ${rc} - retrying on a fresh proxy session"
+            sleep $(( pause + RANDOM % 20 )); pause=$(( pause * 2 ))
+          done
           exit $rc
       - name: Commit the board file
+        # ONE push helper (nba/git_push_retry.sh): the old single `git push || echo` lost the board silently on a race.
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           lg="$(echo "${{ steps.lg.outputs.league }}" | tr '[:upper:]' '[:lower:]')"
-          git add boards/betr_${lg}_current.json boards/betr_${lg}_current_meta.json boards/betr_nba_current.json 2>/dev/null || true
-          git commit -m "Betr ${lg} board (cloud harvest) [skip ci]" || echo "no change"
-          git pull --rebase --autostash || true
-          git push || echo "push skipped"
+          bash nba/git_push_retry.sh "Betr ${lg} board (cloud harvest) [skip ci]" \
+            boards/betr_${lg}_current.json boards/betr_${lg}_current_meta.json boards/betr_nba_current.json
+      # ARCHIVE THE NBA BOARD HERE (2026-10-09). P3 dispatches this harvest at the window and archives its own boards a few
+      # minutes later - before this harvest can land - so P3 only ever archived the PREVIOUS Betr board (dated by its games
+      # and labelled window a day late). This run archives the board it just captured, with the dispatch's label.
+      - name: Archive the NBA board into Postgres
+        if: ${{ success() && steps.lg.outputs.league == 'NBA' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ARCHIVE_APPS: "betr"
+          ARCHIVE_SPORT: "nba"
+          ARCHIVE_LABEL: ${{ github.event.inputs.label || 'routine' }}
+        run: |
+          for i in 1 2 3; do
+            python nba/archive_live_boards.py && exit 0
+            echo "archive attempt $i failed - retrying"; sleep $((i * 10))
+          done
+          echo "::error::Betr board archive failed after 3 attempts"; exit 1
