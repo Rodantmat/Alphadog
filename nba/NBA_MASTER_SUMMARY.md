@@ -45859,3 +45859,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`–`T37`, `T39`, `T46`.
 - **CLEAN → `1`/`3`**: `T38`, `T40`, `T43`, `T44`, `T47`, `T48`.
 - ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
+
+# §P69 — PASS 69 (`2026-10-10`): THE RE-RUN ON THE LARGE TRANSCRIPTS; A FRESH SAMPLE ON THE SMALL ONES
+*Angles (as NEXT set them):* (c5) the ≥ `5` scan re-run on `T32`–`T37`, `T39`, `T46` after pass 68's additions: the ≥ `8` lists gained nothing; five `5`–`7` flags had not been traced before (they moved down from the ≥ `8` list as the record grew) — one each in `T32`, `T33`, `T34`, `T37`, `T46` — each traced by key phrases and figures and its transcript passage opened. (d5) a fresh seeded sample on `T38`, `T40`, `T43`, `T44`, `T47`, `T48` (seed `69`, `20` sentences each, drawn as `sampleCheckS.py` draws them, printed whole) — every sampled sentence traced by key phrases and figures, flagged or not, and its transcript passage opened where a check came back empty.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T33`** (the portfolio passage's tail) · **`T37`** (the `§30s` conclusion's opening clause) · **`T46`** (the `psr` signal stage's clause) · **`T38`** (the monitor's decision-logic tests) · **`T44`** (`§31w`'s first principle as first written) · **`T47`** (`§31aa`'s method research) · **`T48`** (the switch rule's fallback; the closure sizes).
+- ✅ **Clean on this angle:** `T32` (the CLV caveat's closing line on file), `T34` (a table header), `T35`, `T36`, `T39` (no untraced flag) — (c5); `T40`, `T43` — (d5).
+- Judged, not recorded: the PrizePicks quote transport (`pp_payout_map.py`, out of scope); the owner's MLB / NHL mining order (out of scope); table headers.
+- ⚠ **Process slips:** two new bullets first carried a wrong status verb or an unsourced timing — `§T38.8` "stays" for a reset, `§T44.9` "later the same day" — both corrected by strike (the second now reads "later in the same transcript"). No hourly-rotation commit landed during the pass (checked on main).
+- Every quotation added since the pass-68 census commit: `qdiff.py` `0` flags.
+
+**Ledger**: pass `69` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T33`, `T37`, `T38`, `T44`, `T46`, `T47`, `T48`.
+- **CLEAN → `1`/`3`**: `T32`, `T34`, `T35`, `T36`, `T39`. **CLEAN → `2`/`3`**: `T40`, `T43`.
+- ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
