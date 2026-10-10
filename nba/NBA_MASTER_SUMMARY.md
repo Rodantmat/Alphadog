@@ -45468,6 +45468,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - 🆕 **`T34`** → `§T34.8`: `§19k`–`§19p` (the pre-correction tables, the corrected rows, the ledger in full, the three ranks), `§20`–`§22` (the player and rotation tables, the pct table, the variations, market edge, minutes trend, the noise calibration, every cell's best layer, the stacks), `§23`–`§25` (the goblin edge and structures, the invariants, the certified ledger's hit rates, the deciding, cap and pair tables, the post-rule leaderboard), `§26`–`§29` (2-pick, the qualified leaders' gate numbers, the hurdles as first set, MLB's bar, the `17` and the capped survivors, family C, Underdog presence, the eight live strategies). `figmiss.py` `150 → 115 → 9 → 0` unaccounted.
 - Every quotation added: `qdiff.py` `0` flags across the pass's `13` content patches (`44`, `60`, `48`, `52`, `41`, `59`, `52`, `87`, `49`, `48`, `71` quotations and the residue patches).
 - ⚠ **Not yet done for these three**: the full figure-free read (`runlen.py` leaves `596` such sentences for `T32` alone; `T32`'s sample says the rate is non-zero). That is pass 58's angle.
+- *Process slip*: the `T32` and `T33` index-row patches went out in one message on this file (the second time, after `§P56`); both landed in sequence (`d95660c`, `cf8b7b2`), confirmed by grep. Census `3,090` (`+4`).
 
 **Ledger**: pass `57` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`.
