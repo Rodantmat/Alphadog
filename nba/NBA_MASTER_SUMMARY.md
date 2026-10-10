@@ -46047,3 +46047,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T33`, `T38`.
 - **CLEAN → `1`/`3`**: `T32`, `T34`, `T35`, `T37`.
 - ✅ **CLOSED `3`/`3`**: `T36`, `T39`, `T40`–`T48` *(pass 77)*.
+
+---
+
+# §P78 — PASS 78 (`2026-10-10`): A SEED-78 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN
+*Angles (as NEXT set them):* (u5) a seed-`78` sample on `T32`–`T35`, `T37`, `T38` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `19` · `13` · `12` · `17` · `14` · `9`. (v5) the ≥ `5` scan re-run on the six still open after pass 78's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T33`** (`§18`'s 5-pick Flex reading and the stance it set) · **`T34`** (`§25b`'s late-season row).
+- ✅ **Clean on this angle:** `T32`, `T35`, `T37`, `T38`.
+- Judged, not recorded: the MLB lessons (the within-bucket score, the raw-URL lesson) and the owner's working framework (`T32`); MLB's sticky pitcher lines and next-step plans (`T33`); table headers (`T34`, `T37`, `T38`).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-77 census commit: `qdiff.py` `0` flags (`3` quotes counted).
+
+**Ledger**: pass `78` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T33`, `T34`.
+- **CLEAN → `1`/`3`**: `T38`. **CLEAN → `2`/`3`**: `T32`, `T35`, `T37`.
+- ✅ **CLOSED `3`/`3`**: `T36`, `T39`, `T40`–`T48` *(unchanged)*.
