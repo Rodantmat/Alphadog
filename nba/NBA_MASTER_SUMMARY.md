@@ -46756,6 +46756,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 # §P124 — PASS 124 (`2026-10-10`): `T38`, `T39`, `T40` — THE ≥ 5 LISTS FROM SCRATCH
 *Angle (as NEXT set it):* (p8) the three lists re-run over all twelve and every sentence judged from scratch; new ids checked first (`§T38.9`, `§T39.10`, `§T40.9` free).
 - `33` + `153` + `29` = `215` sentences read; nothing new (`§T38.9`, `§T39.10`, `§T40.9`). All three stay ✅ CLOSED.
+- A slip caught in the same pass: the STATE line first gave the running total as `2,457`, written before it was computed; the shell gives `2,240` (`811` + `304` + `408` + `207` + `295` + `33` + `153` + `29`). Struck and corrected.
 - No hourly-rotation commit had landed since `b4c3d80d7` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
 
 **Ledger**: pass `124` complete (`2026-10-10`).
