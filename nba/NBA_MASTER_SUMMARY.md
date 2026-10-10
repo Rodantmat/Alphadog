@@ -46803,3 +46803,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `127` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript (`T1`–`T48`, `S1`–`S9`) — at `3`/`3` for all but ~~nine~~ eleven of `T1`–`T26`, whose bases are tabulated above.
+
+---
+
+# §P128 — PASS 128 (`2026-10-10`): THE CORPUS-WIDE CLOSURE CLAIMS
+*Angle (as NEXT set it):* (t8) every place in the twelve that says a set of transcripts is closed, read in place against `§P127`'s table of closure bases.
+- Three shell searches over the twelve, unstruck hits only (strike parity), each hit read in place: NEXT's pattern (`89` hits, `71` unstruck — most of them "all `40` workflows", "every transcript's sections" and the like, not closure claims); a widened one for "sweep is complete", "transcripts closed", "ALL CLOSED", "three consecutive clean" (`36`); and one for a transcript range beside "`3`/`3`" or "three clean". The claims among them that are current, or that were inexact when written, are below; the rest are rules, method text, dated states true on their date, or this run's own ledgers (`§P127` covers those).
+- 🆕 **One claim, five places, inexact from the day it was written (`2026-09-22`)**: the glossary-gap finding says `T12`–`T18` — "seven transcripts, every one of them CLOSED on 'three consecutive clean passes'" — and `§T20.86` repeats it ("seven transcripts closed `3/3`"; "`T3`–`T18` have ALL CLOSED on three consecutive clean passes"). The index rows written the same day say otherwise: `T12`–`T17` closed on the standing closure judgment, `T3` on the amended rule; only `T18` at `3`/`3`. The finding itself — no glossary content commit for that sweep — is untouched. Pointers added, old words kept: `NBA_GLOSSARY.md`'s update-log row, `NBA_OPEN_ITEMS.md`'s copy of the finding, and three places here (the finding's section and two in `§T20.86`) — five patches, counted in `git log`.
+- Checked and left: the `T1`–`T6` "`3/3` marks certify less than they say" finding and its owner decision (`NBA_OPEN_ITEMS.md` item `2`) — a recorded, open question about those marks, not a claim of a basis; "no transcript currently holds three consecutive clean passes" (`NBA_OPEN_ITEMS.md`), dated and true when written; "`T21` stays formally OPEN" inside `§T21`, superseded by `T21`'s close on its own row; `NBA_RECIPE.md`'s "three consecutive clean passes" (the owner's certification rule for the build, not a transcript claim).
+- No hourly-rotation or bot commit landed since `bce0cb69c` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `128` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript (`T1`–`T48`, `S1`–`S9`), on the bases in `§P127`'s table.
