@@ -44627,3 +44627,9 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - ⚠ **Tool lesson recorded**: a `github_patch_file` replacement containing the two characters dollar-backtick never landed (the proxy dropped the stream three times); the same text written as "dollars per 100-dollar" landed at once — *in a string replacement those two characters are the "text before the match" pattern.* Avoid them in `new_str`.
 
 **Ledger**: `T34` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+**`T35`** (`51` final replies, `10-01 06:02Z → 10-02 00:46Z`) — **NEW MATERIAL**, reopened:
+- 🆕 **`§T35.6`** — the eight strategies' OOS CIs at entry; the portfolio answer (Sharpe `0.50`, max dd `74.7`, the shared January 29 drought ⇒ bankroll to the portfolio's `75` u); daily load (`123` of `154` days at the ceiling); week-by-week both seasons; the week-2 tests (the fade test `50/50`, `53/47`; a confidence-model hypothesis withdrawn in ten minutes; why H8 was rejected); the replay sequence with the build chat's own numbering; an open steals-series question; the drought passes with the decisions they rested on.
+- 🆕 **A correction**: `NBA_SYSTEM_DESIGN.md` `§T35.7` #7 had the weighted-steals cap 6 / core 5-Flex retirement as *"proposed"* — the `22:33Z` reply says applied as reviewed edits, ✅ and the code agrees (`live_slip_engine.py:59–64`). Struck and annotated.
+
+**Ledger**: `T35` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
