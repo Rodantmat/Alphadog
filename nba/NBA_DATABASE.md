@@ -3651,7 +3651,7 @@ All in schema **`nba_score`**; all written by the scripts in `NBA_WORKERS.md` `�
 | table | grain / what it holds | T34 figure | live `2026-10-10` |
 |---|---|---|---|
 | `tier_map_legs` *(T33, rebuilt)* | one row per PP window leg × `rank_key` (`final_hp` / `baseline_hp` / `final_score`): tier (system's), `factor` (current per-line), score, hit, `n_rank`, `cell_size` | `828,818` per rank, `323` days | ✅ `828,818` × `3`, `323` days |
-| `tier_map_bands` / `tier_map_summary` *(T33)* | per (rank, window, prop, tier, cut) — `cut_type` `n` or `pct` | `10,141` band rows after `§19m` | `30,411` / `990` |
+| `tier_map_bands` / `tier_map_summary` *(T33)* | per (rank, window, prop, tier, cut) — `cut_type` `n` or `pct` | `10,141` band rows after `§19m` *(🆕 pass 7: the three-rank sweeps in `T34` wrote **`10,137`** rows and `66` cells **each** — `3 × 10,137 = 30,411`, the live count exactly)* | `30,411` / `990` |
 | `tier_map_player_trail` (+ `_trail2`) | per leg: the player's **prior** hit rate on (prop, tier, **side**) with appearances at 7 / 30 / 60 days and all-time | `828,818` | `828,818` (both) |
 | `tier_map_rotation` | per (day, prop, tier): realized p·m of the top-5/10/20/33/50% and top-1/3/5/10, with trailing 7/14/30/60/90-day averages over **strictly prior** days | — | `15,854` |
 | `cand_leg_features` | the `24` candidate cells' legs with every signal band attached | `440,679` | ✅ `440,679` |
