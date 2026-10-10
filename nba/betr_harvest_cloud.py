@@ -316,6 +316,34 @@ def enable_network(sb):
             pass
 
 
+def clear_geo(sb, rounds=40):
+    """Answer Betr's 'Choose Current Location' prompt (/AllowLocation) with STATE and wait for a booted page (> 5 KB).
+    Returns True when the prompt was answered at least once."""
+    answered = False
+    for _ in range(rounds):
+        try:
+            url = sb.get_current_url(); src = sb.get_page_source() or ""
+        except Exception:  # noqa: BLE001
+            time.sleep(3); continue
+        if "AllowLocation" in url:
+            for xp in (f'//*[normalize-space(text())="{STATE}"]', f'//li[contains(.,"{STATE}")]',
+                       f'//option[normalize-space(text())="{STATE}"]', '//select'):
+                try:
+                    if xp == '//select' and sb.is_element_visible(xp):
+                        sb.select_option_by_text(xp, STATE); answered = True; break
+                    if sb.is_element_visible(xp):
+                        sb.click(xp, timeout=3); answered = True; break
+                except Exception:  # noqa: BLE001
+                    continue
+            time.sleep(4); continue
+        if len(src) > 5000:
+            break
+        time.sleep(3)
+    if answered:
+        print(f"  geo prompt answered with {STATE}", flush=True)
+    return answered
+
+
 def where(sb, tag):
     """DIAGNOSTIC TRAIL (2026-10-09): every failure used to end in a bare 'NO BOARD'. Print where the browser actually is -
     URL, title, page size, and the tell-tales (Cloudflare challenge, /auth, the geo prompt, a proxy error page)."""
