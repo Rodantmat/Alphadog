@@ -46346,3 +46346,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `98` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P99 — PASS 99 (`2026-10-10`): EVERY LOW-COVERAGE CLAUSE AFTER A SEMICOLON IN `T37`
+*Angle (as NEXT set it):* (k7) the clauses after a semicolon in `T37`'s strategy text, each scored on its own four-word coverage: `371`, `115` below `0.5` on the recount at the start, each read in its sentence and judged from scratch under `§P98`'s bar. (l7) the scans re-run after the additions (≥ `5`: `179`; ≥ `4`: `203` — both unchanged; semicolon clauses below `0.5`: `113`; parentheticals: `112`; dash clauses: `88`): `0` new sentences, `0` changed runs.
+- 🆕 Not on file (AS STATED, in `§T37.9`): two clauses — `§30t`'s survivor names the record had elided, `§31e`'s consequence of the off-by-one stand-down.
+- Judged, not recorded: plans later run; the reverse-transfer table's fragments; research-source detail; the MLB probe examples; implementation notes.
+- The yield of the clause-level angles is falling: dash clauses `3`, parentheticals `4`, semicolon clauses `2`.
+- One commit by another process landed during the pass: `0a8104cc4` (github-actions, "Update Fliff board JSON", `boards/fliff_mlb_current*.json` only — outside `nba/`).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-98 census commit: `qdiff.py` `0` flags (`2` quotes counted).
+
+**Ledger**: pass `99` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
