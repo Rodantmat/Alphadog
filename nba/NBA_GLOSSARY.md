@@ -2223,3 +2223,8 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **P5 / P4 (Underdog paper)** | P5 = weighted:points 4-Std + 6-Flex (cap 1) + mains 2-Std (cap 2), primary; P4 = its shadow — *not* the PrizePicks P4/P5 workflows | `NBA_SYSTEM_DESIGN.md` `§T37.7` |
 | **live leg source (`LS_LEG_SOURCE`)** | `live` = `pp_leg_price` → name map → `final_hp` (default); `universe` = the backtest `prop_universe` path, parity tests only | `NBA_DATABASE.md` `§T37.6` |
 | **fresh absence** | a rotation player who played the team's previous game and is out today; 2+ on a team lowers hit rates → a half-stake candidate | `NBA_BASELINE_CALIBRATION.md` `§T37.5` |
+| **out-of-range board guard** (`LS_MIN_BOARD` 179 / `UDL_MIN_BOARD` 178) | nothing is placed when today's board has fewer scored legs than the smallest validated board | `NBA_SYSTEM_DESIGN.md` `§T38.7` |
+| **break-even edge monitor** (`LS_MODE=edge`) | group-sequential test, looks every 30 slates, confirm `z ≥ 3.28` / alarm `z ≤ −3.09`, against the break-even of the slips actually placed | `NBA_SYSTEM_DESIGN.md` `§T38.7` · `edge_monitor` |
+| **δ\* (portfolio break-even)** | the uniform leg-hit shift below certified at which the portfolio's expected ROI is zero (`−9.24 pp` backtest) | `NBA_MULTIPLIERS.md` `§T38.3` |
+| **star-line Under / `stake_weight`** | a balanced Under at points ≥ 24.5, PRA ≥ 34.5, pts+ast/pts+reb ≥ 29.5; slips holding one stake 0.5 | `NBA_BASELINE_CALIBRATION.md` `§T38.5` |
+| **slate sandbox** (`sim_slate.py`) | rehearse a future slate with real code, scratch writes and rollback | `NBA_WORKERS.md` `§T38.4` |
