@@ -2628,3 +2628,24 @@ out of scope for this pass. `nba_config.classification_config`'s stored `prop_re
 to a config key, only reported in the source transcript. Original figures kept as correct-when-measured
 history, per `RULE 40`; a book-scoped re-derivation is flagged as a candidate for a future pass, not
 attempted here.
+
+---
+
+## 🆕 §T32.5 — **THE MODEL RANKS BUT IS OVERCONFIDENT ABOVE ~0.55 — MAPPED, CORRECTED AS-OF, AND PROVEN ON A HELD-OUT DAY** *(source `T32`, `2026-09-28/29`, recovered transcript; AS STATED from COMPASS facts `123`–`124` and `NBA_SLIP_BUILDING_STRATEGY.md` `§2`, `§7g`, `§7j`, `§7n`; table state live-verified `2026-10-10`)*
+
+*Owner, `2026-09-28 21:32Z`*: ***"Map the overconfidence to take it into consideration for slip building, map by prop lines, player tiers, prop lines variations and directions and any other categorization possible."***
+
+**① The finding** — the baseline/final HP **orders legs correctly but overstates the top**: `model_p ≈ 0.76` realizes `0.55`/`0.57` (the two seasons). On `points` / Over / standard *(`§7g`)*:
+| model_p bucket | n | raw p | realized | overstatement |
+|---|---|---|---|---|
+| `0.55–0.60` | `4,049` | `0.574` | `0.520` | `+0.054` |
+| `0.65–0.70` | `1,509` | `0.673` | `0.555` | `+0.118` |
+| `0.70–0.75` | `820` | `0.722` | `0.577` | `+0.145` |
+| `≥ 0.75` | `520` | `0.793` | **`0.610`** | **`+0.183`** |
+Traps at the top: **`fgm` / `oreb` / `fga`** (invert) and **FRINGE** role (hit `< 0.50` at high confidence); best: high-confidence **Over** on `points`/`turnovers`/`steals` for STARTER/IRON_MAN. 🔑 *This is the NBA instance of the MLB finding this file already records (`20–55` point overconfidence gaps on small-mean count data) — here measured, not imported.*
+
+**② The correction** — `nba/build_recalibration_map.py` → **`nba_score.recalibration_map`**: realized hit by `prop × kind × side × role_tier × model_p bucket`, **as-of per season**, shrunk `n/(n+K)` with `K = 200` (`RC_SHRINK_K`), monotone. ✅ **Live `2026-10-10`**: `8,818` rows · `fit_set ∈ {2024-25, 2025-26, POOLED}` · `7,872` with `use_map = true` · **built `2026-10-06 06:55Z`** — *the builder was report-mode in `T32`; the first write is later-transcript material.* Columns: `fit_set, prop, kind, side, role_tier, p_bucket, lo, hi, n, model_p_mean, realized, calibrated_p, use_map, built_at`.
+
+**③ Why it does not leak** — S1-fit buckets predict S2 realized within **`≤ 0.012`** in every well-sampled bucket (`§7j`); the `≥ 0.75` tail drifts `+0.047` on small n, hence the shrinkage. **Held-out day `2026-01-15`** (`§7n`, map fit strictly before it): aggregate error `0.0035`; **high-confidence tail (`190` legs, `model_p ≥ 0.65`): raw `0.711` → calibrated `0.558` → realized `0.584`** — error `0.026` vs raw `0.127`, **~5× better where slip EV lives**. 📜 **The backtest rule this locked**: *the map used to price a leg on date D is fit only on data strictly before D* — the parity rule applied to slip building.
+
+**④ What it means for this file**: the `final_hp` this file calibrates is the **input** to a second, downstream calibration layer the slip program owns. ⚠ **`§T32.5`'s numbers predate the program's own real-lines correction (`§T33`)** — the overconfidence finding stands on the whole board; individual slip results built on it are revisited there.
