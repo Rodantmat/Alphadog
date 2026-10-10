@@ -45839,3 +45839,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T43`, `T44`, `T46`, `T47`, `T48`.
 - **CLEAN → `2`/`3`**: `T36`.
 - ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
+
+# §P68 — PASS 68 (`2026-10-10`): THE FINER TIER ON THE LARGE TRANSCRIPTS; THE RE-RUN ON THE SMALL ONES
+*Angles (as NEXT set them):* (z4) on `T32`–`T37`, `T39`, every sentence whose longest unrecorded run is `5`–`7` words — `295` · `127` · `193` · `88` · `123` · `87` · `63`. The same co-occurrence triage split them; the sentences it could not match (`83` · `37` · `55` · `20` · `22` · `17` · `11`) were read as printed (the run and ~`200` characters of the sentence), with key phrases and figures checked across the eleven editable documents where the content was not recognised as already recorded, and the transcript passage opened where a check came back empty; the rest were accepted on the match. (a5) the ≥ `5` scan re-run on `T38`, `T40`, `T43`, `T44`, `T46`–`T48` after pass 67's additions: every remaining `5`–`7` flag is one pass 67 traced and judged on file, except one `T46` sentence that moved down from the ≥ `8` list; the ≥ `8` lists gained nothing. (b5) `T36`'s third angle was (z4).
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (the slip-size consensus and fact 124's reading; the usage verdict; the referee signal's status; the signal phase's verdict) · **`T33`** (`§14`'s forward-test limits; `§14g`'s resolution; the true board's first figures; the join's scale; `§19g`'s season levels; `§13`'s frontier and portfolio answer) · **`T34`** (`§19l`'s per-window break-even; the constancy verdicts; the band reading; `§20d`'s first rule; `§21a`'s re-cut; the engine reconciliation; `§27` / `§28f` figures) · **`T35`** (the grace-clock mechanism; the hedge reason; the `42`-slip caveat; the week-1 account; the slate-level step) · **`T36`** (pass 36's rationale; the week-17 leg figure; the retrain test's second half) · **`T37`** (`§30l`'s noise rows; `§30m`'s verdict column; the retest coverage; `§30s`'s conclusions; the post-All-Star reading) · **`T39`** (the gate-2 status plan; the whole-number confidence rule; fact 134's wording) · **`T46`** (the `psr` slip stage).
+- ✅ **Clean on this angle:** `T38`, `T40`, `T43`, `T44`, `T47`, `T48` (a5).
+- Judged, not recorded: MLB examples inside NBA passages (`T36`'s payout rows, `T37`'s probe players); the `6`-pick pooled leaders (`T33`, as before); the Chalkboard device-binding detail (`T32`, as before); planning lists later executed.
+- ⚠ **Process slips:** none found on re-read. One patch call failed server-side (`Could not read current file`) and was retried after confirming on main that nothing had landed. No hourly-rotation commit landed during the pass (checked on main).
+- Every quotation added since the pass-67 census commit: `qdiff.py` `0` flags (`52` quotes).
+
+**Ledger**: pass `68` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`–`T37`, `T39`, `T46`.
+- **CLEAN → `1`/`3`**: `T38`, `T40`, `T43`, `T44`, `T47`, `T48`.
+- ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
