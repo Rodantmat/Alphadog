@@ -1457,3 +1457,10 @@ THE REPOSITORY IS PUBLIC.**
 40. **Validate in both directions** when seasons are different products (forward and reverse walk-forward).
 41. **A real leg signal that fails as a filter may still work as sizing** — drop-and-replace pulls in weaker legs; a half stake does not.
 42. **Audit the live wiring end to end before calling it ready** (owner: *"double check and certify … No guessing!"*): what table does the live path read, is it refreshed by a pipeline, does every name resolve, is every step ordered and isolated, does settlement match the backtest leg for leg.
+
+### STEP 14g — **Rehearse the real slate, bound the domain, watch for a slide, size the weak spot** *(`T38`, `2026-10-04`; `NBA_MASTER_SUMMARY.md` `§T38`)*
+43. **Rehearse a real upcoming slate in a sandbox** (owner: *"Simulate bro!"*) — real code, real live board, scratch writes, rollback, production verified untouched. Historical replays cannot contain live-only failure modes (here: a live board without team names).
+44. **When the owner asks "why is it offered if it is weak?", look for a missing floor** — a relative ranking needs a domain bound (the smallest validated board).
+45. **Separate collapse detection from slide detection** — hurdles for collapses; a group-sequential break-even monitor (bootstrap-calibrated boundaries) for a slow slide; accept that near-break-even is undecidable in one season.
+46. **State the realistic expectation from an exact curve, not an approximation** (owner: *"What can we expected … being realistic?"*), and say what is in-sample.
+47. **Size, don't exclude, the model's weakest leg type** (star-line Unders: half stake) — and keep the risk machinery at unit stake.
