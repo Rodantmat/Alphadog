@@ -45211,3 +45211,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `48` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T36`.
+
+# §P49 — PASS 49 (`2026-10-10`): (ppp) `§T36` READ AS A NEWCOMER WOULD
+*Angle (ppp):* `§T36` (`52 KB`) read top to bottom for internal contradictions: one quantity with two values, a superseded statement left unmarked, the READ FIRST against the body; the header's counts re-taken from the corpus (`67` owner + `67` assistant = `134` messages; `12` screenshot files ✓).
+- 🔴 **A superseded statement left unmarked**: `§30i`'s *"balanced mains hit exactly `50.0%`"* stood in the `§T36.2` row and in `NBA_MULTIPLIERS.md` `§T36.3` with no sign that `T37` corrected it (pooled both sides) — forward pointers added in both places.
+- 🔴 **Two figures that read as a contradiction**: the week-2 *"−56 and −40"* (`§T36.6` #7) beside `§29d`'s *"−40% / −51%"* — the first pair is net units, the second ROI (the strategy text `T36` wrote pairs them with *"+20 and +26 net"*); clarified in place, with that text's *"(+18.6, +1.7)"* for the set-aside slips.
+- 🔴 **A count in this ledger**: `§P41` said `66` owner messages — the script's pattern drops the export's last message, a `05:44:59Z` *"Continue"* with no reply; corrected to `67` (`32` short, `26` *"Continue"*). The other transcripts that end on an owner line (`T34`, `T35`, `T37`, `T38`) have header counts that match the corpus, and their last lines are recorded or are bare *"Continue"*.
+- *Process slip (as in `§P34`)*: pass 48's index-row and START HERE patches went out in parallel on this file; both landed (`4fb6479`, `cfcf27a`), confirmed by grep.
+
+**Ledger**: pass `49` complete (`2026-10-10`).
+- **CORRECTIONS → `0`/`3`**: `T36`.
