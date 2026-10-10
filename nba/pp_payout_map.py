@@ -385,7 +385,11 @@ def main():
     games = sorted({r["game"] for r in rows})
     print(f"BOARD_ROWS|{len(rows)}|std={len(std)}|goblin={len(gob)}|demon={len(dem)}|games={len(games)}", flush=True)
 
-    q = make_quoter(px)
+    probe = None
+    _p = pick_distinct(std, 2)
+    if len(_p) == 2:
+        probe = [(r["id"], "over") for r in _p]
+    q = make_quoter(px, probe)
     result["meta"]["transport"] = q.target if isinstance(q, BrowserQuoter) else f"curl:{q.target}"
 
     def run(section, legs_, note=None):
