@@ -125,6 +125,7 @@ def main():
     sports = [s.strip().upper() for s in os.environ.get("UNDERDOG_SPORTS", "MLB,NBA").split(",") if s.strip()]
     OUT.mkdir(parents=True, exist_ok=True)
     s = requests.Session()
+    core_failed = []
     for sport in sports:
         store = {k: {} for k in ("over_under_lines", "appearances", "players", "games", "solo_games", "teams")}
         calls = []
