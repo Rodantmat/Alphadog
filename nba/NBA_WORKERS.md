@@ -3627,3 +3627,20 @@ these twelve.**
 | **`nba/build_tier_map_sel.py`** | `nba-tier-map-sel.yml` *(and P5 step 1b)* | the production selection leg table `tier_map_legs_sel` |
 | `nba/g2_deep_stage.py`, `nba/build_tier_map_deep.py` | `nba-g2-deep-gate.yml`, `nba-combos-history-depth-verify.yml`, `nba-combos-depth-verify.yml` | G2 gate 2 (scratch tables only) and the depth-parity checks |
 **Production code changed** (✅): `build_final_hp.py` — G2 routing in-transaction + deterministic `conf_tier` cutpoints; `score_board_legs.py` — whole-number and beyond-depth routing out of `board_scored`; `build_whole_number_hp.py` — adjacent rungs include routed rows; **`nba/baseline/build_combos_ladder.py`** and **`nba/baseline/build_combos_history.py`** — `COMBO_DEPTH = {pra 24, pts_reb 21, pts_ast 21}` (note the **`nba/baseline/`** path); `live_slip_engine.py` — `whole_number_legs()`, the board query as a template (half-point text byte-identical), `EDGE_DELTA` default **`−0.0916`** (line `1391`), tie-void in `calibrate` and the edge reference; `build_slip_engine.py` — `tier_map_legs_sel` admitted as a production leg source; `certify_slip_system.py` L11 tie-aware payout; `nba-slip-engine.yml` input `legs_table` (default `tier_map_legs_sel`); **P5** step *"1b. Selection leg table"* and steps 3 / 3b on it; `parity_pp_leg_source.py` compares half-point legs only.
+
+---
+
+## 🆕🔴 **§T41.4 — `T41` (`2026-10-07`): THE WORKERS THE FIRST CERTIFICATION PASS FIXED** *(source `T41`; AS STATED from the build chat's ledger passes A–C, F-1…F-3; ✅ = in the repo `2026-10-10`)*
+| file | defect found | fix |
+|---|---|---|
+| `nba/grade_board_outcomes.py` | **crashed P2A four nights running** on a 404 for the not-yet-existing `2026_27` game-log file | 404 → empty log set, *"loud line"*, dates grade as `dates_without_boxscore`; other HTTP errors still raise; `load_players` reads the repo file first, CDN as fallback |
+| `nba/alphadog-v2-nba-scheduler.js` | a dead claim was never recovered | **v2.2.0** stale-claim recovery (`NBA_SYSTEM_ARCHITECTURE.md` `§T41.8`) |
+| `nba/scrape_nba_darko.py` | darko.app redesign → **0 players**, and the scraper **overwrote the good file with an empty array** | primary `__data.json` + a devalue decoder; legacy HTML as fallback; **< 400 players = failure, previous file untouched** |
+| **`nba/git_push_retry.sh`** *(new)* | concurrent commits lost a run's files | conflict-safe commit + push (six attempts) |
+| `nba/verify_static_loads.py` | checked one table per worker | checks every table; re-invokes a partial worker synchronously |
+| `nba/scrape_referee_assignments.py` | **never captured a crew** (date format `MM/DD/YYYY` → empty; parser looked for the wrong keys) | ISO date first; reads `nba.Table.rows[]` with `official1..4` (4 = alternate); stores `game_id`, `official_code` |
+| `nba/scrape_nba_injury_report.py` | a dead proxy → **silent 0 rows** for the binding availability input | proxy preflight on a known PDF, direct fallback |
+| `nba/live_slip_engine.py` | voids pruned before the payout engine; points-Under cap global; week-2 play on every strategy | voids passed to `ENG.grade` as `hit=None`; `MAX_LINE_BY_STRATEGY = {'D_points_3power': ('points','Under',22.5)}`; week-2 play stakes only `A_*` / `C_*` (others shadow) |
+| `nba/build_slip_engine.py` / `certify_slip_system.py` | single survivor refunded | single survivor pays `compress(1.5 × factor)` on a hit for ANY original size; L11 recompute follows |
+| `nba/ud_live_slip_engine.py` | whole-number Underdog legs dropped silently | counted daily; a WARNING if any appear |
+**Probing pattern**: `.github/workflows/nba-probe.yml` + a trigger file `nba/TRIGGER_NBA_PROBE.txt` (the script to run is written into it, then restored) — a runner-side end-to-end test of a scraper without a pipeline run (e.g. DARKO: *"530 players via __data.json"*; injury preflight: *"proxy 407, direct OK"*).
