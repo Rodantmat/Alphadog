@@ -3691,3 +3691,25 @@ these twelve.**
 | **`nba/dump_db_sql.py`** + `.github/workflows/nba-db-sql-dump.yml` *(new)* | weekly + on-demand dump of every NBA function and view into `nba/sql/` |
 | `nba-p2a-results.yml` · `nba-p2b-slate.yml` · `nba-p3-afternoon-light.yml` · `nba-p4-live-slips.yml` · `nba-p5-weekly-requal.yml` · `nba-close-capture.yml` | replay `asof` plumbing; matchup shards soft; predicate-based `has_games`; crew poll bounded by the build budget, timeout 300; gzipped dated ladder; late runs skip delta/score/paper/certify/picks; P3 commits via `git_push_retry.sh`; P4 `confirm` and `edge_rebuild` inputs; P5 steps 3c (twin rebuild + both twin engines, delta) and 5c (twin validations), suffix-aware verdicts and release gate |
 **Probes**: Underdog timing (`nba/probe_underdog_timing.py`), PrizePicks producer equivalence (`nba/probe_pp_producers.py` — a **probe of producers**, not the out-of-scope payout probes).
+
+## 🆕🔴 **§T44.4 — `T44` (`2026-10-08 11:01Z → 21:03Z`): MEASUREMENT, RETENTION AND THE FIRST POSTSEASON CODE** *(source `T44`; AS STATED from the ledger and the commit messages; ✅ = in the repo / DB `2026-10-10`; MLB files out of scope and not listed)*
+| file | what it does |
+|---|---|
+| **`nba/build_price_shop_ledger.py`** *(new; P3 soft step `soft_psl` after both picks)* | per selected leg × app: listed, same line / nearest line and gap, displayed `m`, per-leg `m_eff` (Underdog modifier × `ud_ref_per_leg`), p (`final_hp`; whole numbers from `final_hp_derived`), `p × m_eff`, `gate_pass`; `PSL_SOURCE=backtest` replays a certified slate; tunables `classification_config['price_shop_ledger']`. Fixes on the way: `final_hp.player_id` is text (cast); Underdog's number is a modifier, not a price |
+| **`nba/snapshot_model_params.py`** *(new)* | copies any table's rows as JSON into append-only `nba_score.model_params_history (as_of_date, source_table, row_md5, row)`; P2B snapshots the blowout / confidence / confidence-verification tables and the as-of fit the slate reads; P5 snapshots `slip_validation*`, `cand_certified`, `tier_map_summary` |
+| `nba/live_slip_engine.py` | every daily grade records post-grade states (`record_state_history`); a replay without `LS_RESUME` is refused in season when live slips exist (`LS_RESET_FORCE=1` overrides) |
+| `nba/build_rung_market.py` · `build_confidence_v3.py` · `apply_ladder_calibration.py` · `backtest_tier_selection_value.py` | read `board_tiers_v2` (R-1); confidence v3's expression index moved with it |
+| `nba-p1-weekly-static.yml` | `_asof` snapshots for six more weekly-overwritten profile tables + `nba_ref.players` (first: Monday 10-12) |
+| `nba/scrape_referee_assignments.py` | every capture also appended to `nba_ref.referee_assignments_log` (created on first capture — ✅ **not yet created `2026-10-10`**: no capture since `10-07 17:48Z`) |
+| `nba-p2b-slate.yml` · `nba-close-capture.yml` | P2B loads the day-before injury snapshots; Sleeper + Fliff captured and archived at morning and close (bounded, archived only on exit 0) |
+| `nba/prune_baseline_to_board.py` · `nba-p2a-results.yml` | a live-season date is pruned only if its full ladder file is in the checkout; held dates retried |
+| **`nba/dump_db_ledgers.py`** *(new; in `nba-db-sql-dump.yml`)* | weekly git archive of 23 DB-only ledgers (never credentials) |
+| **`nba/dump_db_history.py`** + **`nba-db-history-archive.yml`** *(new)* | per-season CSV.GZ of the big ingredient tables → GitHub Release assets (monthly 1st + on demand); the two game_id-keyed tables dropped from the list (their raw JSON lives in the repo) |
+| **`nba/repair_board_gaps.py`** *(new)* | re-resolves re-keyed event ids and retries empty / 404 snapshots at nearby timestamps (tip−40, tip−2h, tip−60) |
+| `nba/backfill_game_line_snapshots.py` | hard-coded off-season skip removed (it excluded the 2025 playoffs) |
+| **`nba/scrape_nba_postseason.py`** + `nba-postseason-mine.yml` *(new, P-1)* | play-in + playoff game logs, advanced, measure types, quarters, per-game starters / officials → `*_postseason_<slug>` files |
+| **`nba/load_postseason_logs.py`** *(new, P-1)* | loads them into separate `*_postseason` twin tables (regular-season tables untouched) |
+| `nba/grade_board_outcomes.py` (P-2) | merges postseason box scores and quarter logs |
+| **`nba/baseline/build_baseline_history_postseason.py`** · **`build_combos_history_postseason.py`** · **`nba/export_market_spreads_postseason.py`** · `nba-baseline-history-postseason.yml` *(new, P-3)* | the certified recipe + history patches + postseason data; emit only 004/005 games; `load_baseline_history.py` replaces only postseason rows (guarded) |
+| `nba/build_final_hp.py` · `build_asof_calibration.py` · `score_board_legs.py` (P-4) | `FE_POSTSEASON` scope; phase `5_postseason` by game id, fallback `4_push`; postseason confidence phase factor; every delete scoped to 004/005; as-of calibration fits `5_postseason` cells; scoring uses them on a postseason slate |
+| `nba-injury-report.yml` | backfill loop counts only days inside the requested range (postseason injury backfill) |
