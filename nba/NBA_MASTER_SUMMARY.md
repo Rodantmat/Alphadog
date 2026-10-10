@@ -46245,3 +46245,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `90` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P91 — PASS 91 (`2026-10-10`): THE LAST BAND OF `T37`'S FULL READ; THE RE-RUN
+*Angle (as NEXT set it):* (u6) every strategy-text sentence of `T37` whose four-word coverage against the docs is `0.70` or more — `179` of `424` on the recount at the start; each sentence's uncovered words (runs of three or more that no four-word run on file reaches) listed first — `38` sentences had such a run, `141` none — and every run traced by key phrases and figures; each candidate searched on file by its substance and its section read from its block's own heading, or from its context where the block has none. (v6) the ≥ `5` scan re-run on `T37` after the additions (`191` of `456` sentences with a run), compared against every earlier tier's list: `0` new.
+- 🆕 Not on file (AS STATED, in `§T37.9`): four clauses — `§30k`'s status for the collapsed favoured tiers, `§30p`'s calendar breadth for weeks 2 and 3, `§30v`'s reason for the small-slate split, `§30y`'s travel verdict.
+- Judged, not recorded: the framing runs (headings, labels, table cells' verdict words already on file in their rows).
+- The full read is complete: all `424` strategy-text sentences of `T37` read across passes 87–91 (bands `< 0.15` / `0.15`–`0.30` / `0.30`–`0.50` / `0.50`–`0.70` / `≥ 0.70`), `25` clauses added in all (`7` / `3` / `5` / `6` / `4`). Band counts after this pass's additions: `67` / `39` / `58` / `81` / `179` (unchanged — the four clauses sit in sentences already at high coverage).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-90 census commit: `qdiff.py` `0` flags (`4` quotes counted).
+
+**Ledger**: pass `91` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
