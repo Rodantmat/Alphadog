@@ -584,6 +584,8 @@ the exposure countable rather than anecdotal.**
 >
 > 📌 ***The pattern to carry: every freshness gate needs a season predicate, or it inverts out of
 > season — asserting failure when the correct state is "nothing to do".***
+>
+> → 🆕 *`2026-10-10`: this fix was corrected the same evening (`23:36Z`) — the gate counted games scheduled within ±30 days, so the preseason ramp read as "in season"; it now judges games played. See `NBA_MASTER_SUMMARY.md` `§T26.R5`; the note above was true when written.*
 
 > ### 🆕 §T26.6 — ✅✅ **`P3`: `22` MINUTES → `~2`. IT WAS SCRAPING EVERY SPORT THE APPS OFFER AND THROWING THE REST AWAY.**
 >
