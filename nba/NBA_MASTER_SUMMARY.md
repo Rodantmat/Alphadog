@@ -47023,3 +47023,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `143` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T21` done (`7,843` sentences); next `T22`.
+
+# §P144 — PASS 144 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T22`
+*Angle (as NEXT set it):* (j9) `§P131`'s method on `T22`.
+- Tabulated in the shell before this line (the scan at pass 142's head; no residue landed in pass 143): `T22` `521` of `832` sentences listed — **all `521` read and judged** (its head overlaps `T21`'s tail at `2026-09-21` `02:20Z`).
+- On file, by substance: the chronological correction (no future knowledge pulled backward), the static-layer freeze as observed, the hardcoded `'2025-26'` INSERT trap, the `game_types` quote endpoint and its two-leg minimum, the preseason dates, the `17,902`-row double-encoded JSONB finding, the `GITHUB_TOKEN` lead, the `43,370` no-center legs and the `2,199,354`-leg history. Judged out of scope by constraint: the PrizePicks payout mapping itself (quotes, multiplier models, rescue tiers, the `pp_*` tables), which lives in `nba/PP_PAYOUT_FINDINGS.md` — cross-referenced, not swept; the MLB double-encoded rows. Judged: narration, the owner's step-by-step browser instructions. Not reproduced: the session cookies and headers in the owner's paste.
+- **Nothing new — `T22` clean in additional sweep `1`.** No commit other than this pass's landed since `d20de063a` when this line was written. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `144` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T22` done (`8,364` sentences); next `T23`.
