@@ -46441,3 +46441,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `104` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T31` (pass 4 of its own count).
 - ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
+
+# §P105 — PASS 105 (`2026-10-10`): `T31` PASS 5 — THE OWNER STRATUM AND THE REPO WRITES
+*Angle (as NEXT set it):* (v7) all `73` owner messages of `T31`, each judged against the record; (w7) every repo commit in the session's span (`2026-09-27 21:55Z` → `2026-09-28 02:45Z`), each checked against the twelve and the repo.
+- 🆕 Not on file (in `§T31.2`): eight owner messages, verbatim — four Chalkboard pushes, the least-work preference, two research-and-alternative directives, the residential-proxy statement; `nba/probe_betr.py` and the probe workflow's Betr secret names (`BETR_CLIENT_ID` new to the twelve).
+- 🔴 A slip, corrected in `§T31.2`: the count of judged pastes was first written as `39` (it is `28`), written before it was counted — the same failure as passes 96, 101 and 103. Every count in a ledger or bullet is now computed in the shell first and pasted, not estimated.
+- Judged, not recorded: `28` pastes; four credential-handling directives; Keycloak token messages; acknowledgements and answered questions; the span's other repo writes (on file, or out of scope).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line); line `23` is re-checked after the census commit.
+- Every quotation added since the pass-104 last commit: `qdiff.py` `0` flags (`8` quotes counted); the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `105` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T31` (pass 5 of its own count).
+- ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
