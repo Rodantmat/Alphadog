@@ -3464,6 +3464,15 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T46.6 — **`T46` (`2026-10-09`): TWO AUDIT FUNCTIONS, A GAME KEY THAT WAS NULL, AND THE PLAYOFF RESEARCH TABLE** *(source `T46`; AS STATED from the ledger; live read-only `2026-10-10`; newest section placed above `§T45.6`)*
+- **`nba_control.audit_postseason_cov(table)`** (✅ present): distinct dates in the last regular month vs the postseason window, both seasons — the per-table parity audit.
+- **`nba_control.cert_fp(table, where)`** (✅ present): a reproducible row fingerprint of a table slice — used to prove the certified regular-season tables identical before / during / after the postseason backfill.
+- 🔴→🟢 **`nba_score.tier_map_legs_post.event_id`** was NULL on all 359,301 rows (`board_outcomes` has no event column; the regular map takes its game from `prop_universe`) → resolved from `game_id` via `nba_market.event_game_map` (181/181, 0 fallbacks). ✅ `0` NULL `2026-10-10`.
+- **`nba_score.ud_tier_map_legs_post`** (+ bands / summary; the Underdog postseason record — UD stays stake 0 on postseason slates): ✅ `105,765` rows (= `35,255` legs × 3 rank keys).
+- **`nba_score.post_research_legs`** — the leg-level playoff research table, kept (✅ `~119,767` rows).
+- **Parity coverage**: injury snapshots 50 / 47 postseason dates; `event_game_map` + `schedule_norm` 181 postseason events (regular 2,454 rows hash-identical); `scenario_realised` postseason games (phase `5_postseason`); `pp_anchor_rescue` / `pp_leg_price_cons` from 2026-04-13 (99.5% priced); per-game matchups in own shards `nba_matchups_pergame_postseason_*` (14,585 / 16,174 / 17,033 rows); postseason `final_hp` 2025-26 269,184 rows; whole-number 5,824 / 5,484 rows; Underdog twins `ud_window_legs_post`, `ud_stat_actual`, `pp_line_history`.
+- **Certified regular-season sizes used in the proof** (AS STATED): `final_hp` 002 `7,215,296` rows; `baseline_history` 002 `8,708,333`; `board_outcomes` outside the postseason windows `6,905,452`.
+
 ## 🆕 §T45.6 — **`T45` (`2026-10-08/09`): THE POSTSEASON TWIN TABLES, THE SECOND SLATE VIEW, AND THE POSTSEASON CERTIFICATION TABLES** *(source `T45`; AS STATED from `§31w` and the ledger; live read-only `2026-10-10`; newest section placed above `§T44.6`)*
 - **Twin tables `<table>_postseason`** (P-1; loaded by `nba/load_postseason_logs.py` from `*_postseason_<slug>.json`; 10 tables): ✅ **`nba_stats.player_game_log_postseason` 2023-24 `1,805` / 2024-25 `1,934` / 2025-26 `2,047`**; ✅ **`nba_team.team_game_log_postseason` `176` / `180` / `182`**. Nothing regular-season reads them; postseason-aware consumers union them explicitly.
 - **`nba_calendar.slate_games`** (view: 002 + 004 + 005; `nba/sql/slate_games.sql`) — ✅ `2,521` rows (vs `regular_season_games` `2,430`).
