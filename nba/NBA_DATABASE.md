@@ -3464,6 +3464,17 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T45.6 — **`T45` (`2026-10-08/09`): THE POSTSEASON TWIN TABLES, THE SECOND SLATE VIEW, AND THE POSTSEASON CERTIFICATION TABLES** *(source `T45`; AS STATED from `§31w` and the ledger; live read-only `2026-10-10`; newest section placed above `§T44.6`)*
+- **Twin tables `<table>_postseason`** (P-1; loaded by `nba/load_postseason_logs.py` from `*_postseason_<slug>.json`; 10 tables): ✅ **`nba_stats.player_game_log_postseason` 2023-24 `1,805` / 2024-25 `1,934` / 2025-26 `2,047`**; ✅ **`nba_team.team_game_log_postseason` `176` / `180` / `182`**. Nothing regular-season reads them; postseason-aware consumers union them explicitly.
+- **`nba_calendar.slate_games`** (view: 002 + 004 + 005; `nba/sql/slate_games.sql`) — ✅ `2,521` rows (vs `regular_season_games` `2,430`).
+- **`nba_score.tier_map_legs_post`** — ✅ `359,301` rows; **`nba_score.slip_engine_slips_post`** (+ `_post_nosteals`) — ✅ `62,042` slips.
+- **`nba_score.cell_postseason_eligibility`** (`cell, pm_reg, days_post, legs_post, hit_post, pm_post, k_days, pm_weighted, eligible, reason, built_at`) and **`nba_score.cand_certified_post`**.
+- **`nba_score.postseason_strategy_verdict`** (`strategy, composition, size, structure, k, source, days, slips, roi, roi_s1, roi_s2, boot_lo, verdict, reason, built_at`) — ✅ 14 rows `2026-10-10` (`built_at 2026-10-09 07:29Z`, a later certification): the 11 regular strategies SHADOW; `P_unders_5flex`, `P_unders_4flex`, `U_unders_2standard` PASS; `P_unders_3power` SHADOW (the playoff-unders program — later transcripts).
+- **Config keys** ✅: `classification_config['postseason_weighting']` (K 50, gap 0.02, min 20), `['postseason_strategy_gate']`, `['postseason_board_floor']` (485).
+- **`nba_score.ladder_calibration_asof_pre_post_20261008`** — backup of the as-of calibration before the postseason rebuild (2024-25 regular cells verified identical against it).
+- **`board_outcomes`** gains every postseason game day: 50 (2024-25) / 47 (2025-26) dates, 245,880 / 316,960 graded legs; **`baseline_history` / `final_hp`** gain 004/005 rows only (every delete scoped to season + prop + 004/005).
+- **`live_slips` statuses** gain `placed_post`, `placed_post_shadow` → `graded_post*` — outside the regular ledger's statuses.
+
 ## 🆕 §T44.6 — **`T44` (`2026-10-08`): THE LEDGERS OF MEASUREMENT AND MEMORY — PRICE SHOPPING, MODEL PARAMETERS, STATE HISTORY — A RENAMED LEGACY TABLE, AND THE POSTSEASON MARKET** *(source `T44`; AS STATED from the ledger; live read-only `2026-10-10`; newest section placed above `§T43.6`)*
 - **`nba_score.price_shop_ledger`** (new): one row per selected leg × app — listed, same line, nearest line / gap, `m`, `m_eff`, p, `p × m_eff`, `gate_pass`. ✅ `240` rows, **one date** (the `2026-04-10` replay) — no live slate yet.
 - **`nba_config.classification_config['price_shop_ledger']`**: at `T44` `margin_pp 0.0916`, `ud_ref_per_leg 1.8206` (= 20^(1/5), the 5-pick root), `apps`. ✅ `2026-10-10` the row reads `ud_ref_per_leg 1.8708` (the 2-pick Standard root 3.5^(1/2) — *"was the 5-pick … 2.7% low"*) and adds `cell_margin 0.03`, both from `§31aa` (`2026-10-09`, later transcript); apps now include `betr_us_dfs`.
