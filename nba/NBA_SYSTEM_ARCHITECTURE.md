@@ -2587,3 +2587,16 @@ SEND**, not what the books do with it, nor that a differently-scoped board would
 6. **The trigger-file pattern again**: `nba/TRIGGER_NBA_PROBE.txt` + `.github/workflows/nba-probe.yml` (runs on a push to that path, executes the `script:` named inside it) is how the Chalkboard host probe ran — a third instance of the convention `§8b-ii` describes.
 
 🔐 **Credential practice, `2026-09-28 04:49Z`**: the owner offered to paste the session file into the chat; the build chat refused — *"pasting it into the chat puts your full account access into the transcript, which gets exported"* — and routed it clipboard → secret. ⚠ ***The export the owner later made (`2026-10-09`) is exactly such a transcript — the rule was right.***
+
+---
+
+## 🆕 §T34.8 — **WHERE THE SLIP LAYER ATTACHES TO THE DAILY PIPELINE (`T34` DESIGN)** *(source `T34`, `2026-10-01`, recovered transcript; AS STATED from `NBA_SLIP_BUILDING_STRATEGY.md` `§29a`–`§29c`; ✅ = live `2026-10-10`)*
+```
+P1 (weekly retrain) ──► P5 weekly requal  (T34: Mon 20:00 UTC, "after P1")
+P2 (grade yesterday) ──► P4 GRADE         (T34: 16:30 UTC / 09:30 PT, 45 min after P2)
+P3 (score + archive window board) ──► P4 PICK (T34: 21:45 UTC / 14:45 PT, 30 min after P3)
+```
+- **Reads**: today's PP window board as priced by `nba_market.pp_leg_price` and scored by the live `nba_score.final_hp`; outcomes from `nba_market.prop_universe`; the regular-season calendar from `nba_calendar.games` (`game_label` — Cup / Mexico / Paris games count as regular; 2026-27 regular season `Oct 20 → Apr 11`, verified by the build chat). **Writes**: `nba_score.live_*`, `weekly_requal` (`NBA_DATABASE.md` `§T34.6`).
+- **No re-derivation at the live edge**: `live_slip_engine.py` **imports** the certified rules from `build_slip_engine.py` (cells, per-cell cap, correlation map, ordering, compression pricing). The live and backtest paths share one code path for the rules.
+- **Concurrency**: P4's replay and calibrate modes run under P4's concurrency group, so a long replay queues the next P4 job; the build chat noted *"I can't cancel a run through the bridge"* and cut replay cost instead (`LS_BOOT=500`, timeout `30 → 120` min).
+- ✅ **Today the timing links above are not crons**: neither `nba-p4-live-slips.yml` nor `nba-p5-weekly-requal.yml` has a `schedule:` (P4 dispatch-only; P5 `workflow_call` + dispatch) — the chain is now driven from elsewhere; *the transcript that rewired it is read later (RULE 6).*
