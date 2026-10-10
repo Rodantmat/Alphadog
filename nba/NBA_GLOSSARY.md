@@ -2277,4 +2277,8 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **`m*` (break-even multiplier)** | `1 / (p_cell × root)` — the smallest multiplier at which a certified leg is worth playing on an app | `NBA_MULTIPLIERS.md` `§T47.3` |
 | **`stake_mode`** | `playoff_unders` switch: `gate` stakes the PASS strategies on playoff slates; `shadow` makes every Playoff Unders slip record-only | `NBA_SYSTEM_DESIGN.md` `§T47.7` |
 | **pricing law (hit × m ≈ 0.500)** | on main lines every app prices fairly; the cut is in the payout table; alternates carry an extra cut | `NBA_MULTIPLIERS.md` `§T47.3` |
+| **"not soft"** | owner rule (`2026-10-09`): a board that does not work properly is a failure to fix, not a soft step | `NBA_SYSTEM_DESIGN.md` `§T48.7` |
+| **`net_retry` (retry policy)** | the one retry policy for external calls — transient retried with jittered backoff inside a budget, permanent final, loads never blind-retried | `NBA_SYSTEM_ARCHITECTURE.md` `§T48.8` |
+| **three capture moments** | MORNING (P2B), WINDOW (P3, the decision board), CLOSE (first tip − 25) — the only NBA board captures | `NBA_SYSTEM_DESIGN.md` `§T48.7` |
+| **market switch (four rows)** | `market_feed.refresh_final_hp`, `live_backtest_suffix.suffix`, `.ud_table`, `ud_edge_monitor` — flipped together once live books-per-rung match the history | `NBA_SYSTEM_DESIGN.md` `§T48.7` |
 | **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
