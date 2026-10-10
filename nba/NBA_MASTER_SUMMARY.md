@@ -45061,5 +45061,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
   - from the replies the narration pointed to: `27`/`27` offline tests and the `62`-script library check → the `§29x`–`§29y` row; the snapped-`1.00` classes and the `690`-leg live verification → `NBA_MULTIPLIERS.md` `§T36.3`.
   ⚠ The last two were in `T36`'s final replies, which `§P33` had read in full and called *"on file"*; that claim is struck there.
 
+*Process slip (as in `§P19`/`§P25`/`§P26`)*: the index-row and START HERE patches went out in parallel on this same file; both landed (`a1ef5f4`, `087511c`), each confirmed by grep, every commit `[skip ci]`.
+
 **Ledger**: pass `34` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
