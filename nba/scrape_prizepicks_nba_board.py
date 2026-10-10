@@ -190,8 +190,12 @@ def main() -> int:
                 print(f"  [{attempt}] ERR {str(exc)[:70]}", flush=True)
         if chosen:
             break
-        wait = captcha_cooldown if blocked else sleep_s
-        if attempt < attempts:
+        if budget.expired(10):
+            break
+        # jittered wait (full jitter, at least half the configured pause), clipped to the budget
+        base_wait = captcha_cooldown if blocked else sleep_s
+        wait = min(base_wait / 2 + backoff(attempt - 1, base=base_wait / 2, cap=base_wait), max(0.0, budget.left() - 15))
+        if attempt < attempts and wait > 0:
             print(f"  no usable payload; {'BLOCKED - ' if blocked else ''}waiting {wait:.0f}s", flush=True)
             time.sleep(wait)
 
