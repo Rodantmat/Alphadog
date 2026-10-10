@@ -167,6 +167,7 @@ leg's game date — never a future one.**
 🔑🔑 **AND IT DOES MORE WORK, NOT LESS — which is the strongest evidence the pasted version was wrong**:
 **rebounds moves `0.01516` under the as-of cells against `0.00405` under the pasted table — roughly
 3.7×** — *"because they're fitted on the RELEVANT PRIOR EVIDENCE rather than one blanket season."*
+→ 🆕 *`2026-10-10`, additional sweep `1`: a day earlier the transcript gave `0.00405` a different cause — the run where the `rung_market` join was still broken — `NBA_MASTER_SUMMARY.md` `§T17.5`.*
 
 ✅✅ **THE PAYOFF IS THE OPENING-NIGHT PROPERTY**: *"**the formula now stands for ANY day**: replay a past
 date and it uses only what was gradeable before it; run it live mid-season and it's the same code path;
