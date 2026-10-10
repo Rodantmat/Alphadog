@@ -44365,7 +44365,7 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 | `T36` | `ud_window_legs` rebuilt `4×`, `player_pf20` table → view, replays and scratch drops — all recorded; `slip_engine_slips_sameteam` (the `SE_SAMETEAM` test table, dropped) not worth a row | `IMG_6952`–`6960` (`§T36.5`), `IMG_6962`–`6965` (`§T36.1` `04:55Z`) | clean | **CLEAN** |
 | `T37` | 🆕 the `§31g` relabel applied to production rows from the chat (`UPDATE`/`DELETE`/`UPDATE` on `board_snapshots`) and the `_audit_state_before` snapshot → `§T37.3` | none | 🆕 `nba-ud-live-parity.yml`, `nba-p3-scoring-timing.yml`, **`nba/refresh_player_name_map.py`** (the daily P2B name-map refresh) → `NBA_WORKERS.md` `§P2.4` | **NEW MATERIAL** |
 | `T38` | clean | none | 🆕 `nba/star_under_compare.py` → `§P2.4` | **NEW MATERIAL** |
-| `T39`–`T47` | `T42`'s Underdog team-market `DELETE` and `T43`'s `refresh_board_rung_keys` rebuild already recorded (`NBA_DATABASE.md`, `§P2.4`) | `T42`'s six screenshots are the proxy-plan screens (`§T42` `05:51Z`) | clean | **CLEAN** |
+| `T39`–`T47` | `T42`'s Underdog team-market `DELETE` and `T43`'s `refresh_board_rung_keys` rebuild already recorded (`NBA_DATABASE.md`, `§P2.4`) | `T42`'s two screenshots (`04:57Z`, `05:51Z`) are the proxy-plan screens quoted in `§T42` | clean | **CLEAN** |
 | `T48` | the Bovada `DELETE … RETURNING` → quarantine already recorded | the owner's account-export zips (`§T48` #1 — *"held no conversation content"*) | 🆕 `probe_betr_token_refresh.py`, `probe_sleeper_payout_config.py`, `probe_capture_props_live.py` → `§P2.4` | **NEW MATERIAL** |
 | `S1`–`S9` | none | none | none | **CLEAN** |
 
