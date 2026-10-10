@@ -1385,7 +1385,7 @@ the three-clean-pass cycle per transcript against the full set.
 | **33** | `2026-09-30-00-59-36-nba-slip-building-phase0-start` *(export)* | ⏳ **OPEN — `1` pass, CLEAN `0`/`3`** · pass 1 (owner stratum + all prose + `57` write calls) **NEW MATERIAL** → `§T33` + `NBA_MULTIPLIERS` `§T33.3` · `NBA_GOBLIN_DEMON` `§T33.2` · `NBA_WORKERS` `§T33.4` · `NBA_BASELINE_CALIBRATION` `§T33.5` · `NBA_DATABASE` `§T33.6` · `NBA_OPEN_ITEMS` `T33-1…6` · `NBA_RECIPE` `STEP 14b` · glossary · span `09-29 06:37 → 09-30 00:57 UTC`, `53` msgs / `25` owner turns |
 | **34** | `2026-10-01-05-51-31-nba-slip-candidate-map-final-hp` *(export)* | ⏳ **OPEN — `0` passes** · → 10-01 05:51 · `84` msgs |
 | **35** | `2026-10-02-00-50-52-nba-live-engine-drift-research` *(export)* | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T35`), CLEAN `0`/`3` · `10-01 06:02` → `10-02 00:48` · `109` msgs / `55` owner |
-| **36** | `2026-10-03-05-48-07-nba-live-engine-scheduler-launch-ready` *(export)* | ⏳ **OPEN — `0` passes** · → 10-03 05:48 · `134` msgs |
+| **36** | `2026-10-03-05-48-07-nba-live-engine-scheduler-launch-ready` *(export)* | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T36`), CLEAN `0`/`3` · `10-02 00:52` → `10-03 05:44` · `134` msgs / `67` owner |
 | **37** | `2026-10-04-03-48-05-nba-wiring-audit-31x` *(export)* | ⏳ **OPEN — `0` passes** · → 10-04 03:48 · `64` msgs |
 | **38** | *(unnamed — written at the 10-04 18:07 compaction; export)* | ⏳ **OPEN — `0` passes** · → 10-04 18:07 · `33` msgs |
 | **39** | `2026-10-04-18-07-21-nba-paper-trading-cert-edge-monitors-rosters-gaps-31k-31r.txt` | ⏳ **OPEN — `0` passes** · 10-04 18:07 → 10-07 01:00 (claude.ai tail, opens with its §30w–31o compaction summary) |
