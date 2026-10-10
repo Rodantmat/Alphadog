@@ -198,6 +198,82 @@ class Quoter:
         return rec
 
 
+TRANSPORT = (os.getenv("PP_TRANSPORT") or "browser").strip().lower()
+PAGE_FETCH_JS = """
+var url = arguments[0], opts = arguments[1], done = arguments[arguments.length - 1];
+fetch(url, opts).then(function(r){ return r.text().then(function(t){ done({status: r.status, text: t}); }); })
+  .catch(function(e){ done({status: -1, text: String(e)}); });
+"""
+
+
+class BrowserQuoter(Quoter):
+    """Quotes from the PrizePicks web app's own page context (fetch() with the page's datadome / cf_clearance cookies and
+    Chrome's real TLS fingerprint). Proven 2026-10-09 (probe 38010173137): 2/3/4-pick all-standard + a goblin+demon pair
+    all 200. Only minimal headers: custom x-device-* headers trigger a CORS preflight the API refuses (probe 38009508495).
+    Same interface as Quoter - quote() / records / stop rules are inherited; only the transport differs."""
+
+    def __init__(self, px):
+        import atexit
+        from seleniumbase import SB
+        from betr_harvest_cloud import open_alive, start_local_proxy   # the proven residential-proxy chain
+        self._open_alive = open_alive
+        self.px, self.ti, self.blocks, self.n = px, 0, 0, 0
+        self.target = "browser"
+        os.environ.setdefault("BETR_SESSION_ID", f"ppmap{os.getenv('GITHUB_RUN_ID', '0')}")
+        self._lp, proxy_arg = start_local_proxy()
+        kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True)
+        if proxy_arg:
+            kw["proxy"] = proxy_arg
+        self._cm = SB(**kw)
+        self.sb = self._cm.__enter__()
+        atexit.register(self.close)
+        self.new_session()
+
+    def close(self):
+        try:
+            self._cm.__exit__(None, None, None)
+        except Exception:  # noqa: BLE001
+            pass
+        if self._lp:
+            self._lp.terminate(); self._lp = None
+
+    def new_session(self):
+        ok = self._open_alive(self.sb, "https://app.prizepicks.com/", "pp app", tries=6)
+        for _ in range(2):
+            try:
+                self.sb.uc_gui_click_captcha()
+            except Exception:  # noqa: BLE001
+                pass
+            time.sleep(3)
+        time.sleep(5)
+        try:
+            names = sorted(c["name"] for c in self.sb.driver.get_cookies())
+        except Exception:  # noqa: BLE001
+            names = []
+        print(f"SESSION|browser|app reached={ok}|datadome={'datadome' in names}|cookies={len(names)}", flush=True)
+
+    def _post(self, picks):
+        body = {"new_wager": {"amount_bet_cents": 2000,
+                              "picks": [{"wager_type": side, "projection_id": pid} for pid, side in picks],
+                              "pick_protection": False},
+                "game_mode": "prizepools"}
+        self.sb.driver.set_script_timeout(60)
+        r = self.sb.driver.execute_async_script(PAGE_FETCH_JS, API + "/game_types",
+                                                {"method": "POST", "credentials": "include",
+                                                 "headers": {"accept": "application/json", "content-type": "application/json"},
+                                                 "body": json.dumps(body)})
+        return int(r.get("status", -1)), (r.get("text") or "")
+
+
+def make_quoter(px):
+    if TRANSPORT == "browser":
+        try:
+            return BrowserQuoter(px)
+        except Exception as exc:  # noqa: BLE001
+            print(f"TRANSPORT|browser failed to start ({type(exc).__name__}: {str(exc)[:120]}) - falling back to curl", flush=True)
+    return Quoter(px)
+
+
 def leg(r, side="over"):
     return {"id": r["id"], "name": r["name"], "stat": r["stat"], "line": r["line"],
             "odds": r["odds"], "game": r["game"], "side": side}
