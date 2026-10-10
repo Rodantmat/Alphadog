@@ -45719,7 +45719,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 ---
 
-# §P63 — PASS 63 (`2026-10-10`): THE ORPHAN RE-RUN, THE DEFERRED HAND-TRACED SAMPLES, AND THREE OVER-CLAIMS CORRECTED
+# §P63 — PASS 63 (`2026-10-10`): THE ORPHAN RE-RUN, THE DEFERRED HAND-TRACED SAMPLES, AND ~~THREE~~ TWO OVER-CLAIMS CORRECTED
 *Angles (as NEXT set them):* (m4) `colocOrphan.py` re-run on every `T32`–`T48` transcript after pass 62's additions; (n4) the `20`-sentence samples deferred from pass 62 (seed `63`, `sampleCheck.py`: a sentence is flagged when under a quarter of its 4-grams are on file or a figure is missing; every flag then traced by hand — key phrases, figures, and the surrounding passage — against all eleven editable documents, not only this file); (o4) `T42`'s third angle = (m4) + (n4).
 - **(m4)**: no new orphans except `T33`'s `314` — which was not new material but an over-claim of pass 62 (below).
 - **Corrections of pass 62's own claims** (struck and restated in place): `§T33.7` — the side × line classes were already on file in `§16e`'s sub-structure line; only the leg counts were new. `§T34.8` — the 60-day player-rate row's cold end was partly on file in `§T34.6`.
