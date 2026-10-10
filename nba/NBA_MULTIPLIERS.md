@@ -2354,3 +2354,24 @@ whether `T22`'s `≈2.0/1.25/1.4` is `v1`.**
 > table was not read *(it is the other session's object)*. 🔴 **`NOT RECORDED`** — what `v2` denotes;
 > whether NBA was refit at the same precision; the WNBA playoff end date that bounds any further
 > mining *(`§T23.3` §5)*. ⚖️ **`pp_*` objects not queried.**
+
+---
+
+## 🆕 §T32.3 — **WHAT THE SLIP PROGRAM'S FIRST NIGHT ESTABLISHED ABOUT MULTIPLIERS AT SLIP LEVEL** *(source `T32`, `2026-09-28/29`, recovered transcript; AS STATED from the build chat's `NBA_SLIP_BUILDING_STRATEGY.md` `§7a`–`§7i`, `§13b`, `§13e` — that file's numbers are not re-run here; recorded `2026-10-10`)*
+
+🔑 **The governing rule, imported from MLB and then corrected the same night**: *every Power payout reduces to the per-leg product `p × m`* (recalibrated hit probability × the leg's real multiplier) — **if `p·m < 1` no size, cap or signal turns a Power slip positive** *(strategy `§6a`)*. ⚠ **Gemini's correction, adopted: this is POWER-ONLY.** Flex pays partial hits, so its EV is the full distribution `EV = Σ_k P(exactly k of N) · payout_k` over all `2^N` hit/miss combinations — a `p·m<1` pool can still be a +EV Flex slip *(`§6e`)*.
+
+**The PrizePicks tables the program priced against** *(queried from `nba_market.pp_flex_standard_payout` and the Power tiers; ✅ consistent with this file's own `3/6/10/20/37.5×` rows above)*: Flex 6 = `25×`/`2×`/`0.4×` · 5 = `10×`/`2×`/`0.4×` · 4 = `6×`/`1.5×` · 3 = `3×`/`1×` · 2 = `2×`/`0.5×`.
+
+| per-leg break-even, **identical legs** *(from the real functions)* | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|
+| **Power** | `0.58` | `0.56` | `0.57` | `0.55` | `0.55` |
+| **Flex** | `0.62` | `0.58` | `0.56` | `0.55` | `0.55` |
+
+- 🔴 **REFUTED on the real tables**: the web/Gemini claim that *Flex has the lowest break-even* — for identical legs Flex's break-even is **≥** Power's; the published "6-Flex break-even `54.2%`" does not reproduce.
+- ✅ **Where Flex DOES win — heterogeneous legs** *(`§7e`)*: a 5-pick with one `0.72` anchor beats Power under Flex while the four satellites sit below **`~0.535`** (at `0.51`: Flex `+3.6%`, Power `−2.6%`); above it Power wins. ⇒ ***choose the slip type per candidate slip from the two real EVs, never globally.***
+- **Size** *(`§7h`–`§7i`, Power ladder `3/6/10/20/37.5×`)*: at a realized `p = 0.61`, raw EV climbs with size (`+11.6% / +36.2% / +38.5% / +68.9% / +93.2%` for 2–6 picks) but the **Kelly fraction peaks at 3 picks** (`5.82% / 7.24% / 4.27% / 3.63% / 2.55%`); win frequency falls `37% → 23% → … → 5%`. At `p = 0.55` almost nothing clears.
+- **Voids are a size reduction, not a loss** *(`§7f`)*: on `prop_universe` void/DNP `1.50%`, push `0.58%`; PrizePicks drops a voided leg and prices the slip one size down — the existing `nba_market.pp_power_after_voids(factors[], live)` already does this. **Never grade a void or push as a miss.**
+- **Payout convention in force** *(`§7a`, config `board_payout_conversion_rules`, "verified against app screenshots + 19 placed slips `2026-09-10`")*: slip multiplier = **product of leg multipliers** (the real `2–8%` slip-level haircut left out, so the model is conservative); Sleeper `1+(dec−1)×0.95`; Underdog `decimal(American)×0.963` — ✅ the same two constants this file already records.
+- 🔴 **Goblins at slip level** *(`§7p`, `§13b`)*: realized `0.71–0.74` hit but per-leg `m ≈ 0.65–0.73` ⇒ `p·m ≈ 0.48–0.52`; **all-goblin 3-pick Power, `2,011` real slips: `−86.2%` ROI.** Gemini's "+611% goblin Flex" used the **slip** payout (`6×`) for goblins that are priced **per leg** (`~0.7×`, product `~0.26×`) — refuted on real data. → `NBA_GOBLIN_DEMON.md` `§T32.4`.
+- ⚠ **Every slip ROI produced in `T32` (`+8.9%` 2-pick, `+23.9%` all-combos 3-pick, `+101%` 4-pick at `cal_p ≥ 0.62`, Flex-5 `+132%`) is a `T32`-era figure** — *the pool those numbers ran on is examined again in `T33`; read them with the supersession note `§T33` adds, not as current.*
