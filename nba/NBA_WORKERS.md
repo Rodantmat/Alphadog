@@ -3749,3 +3749,14 @@ these twelve.**
 | **`nba/research_playoff_unders.py`** + **`nba-playoff-unders-research.yml`** *(new)* | gates + stress (grid, walk-forward under two selection rules with nulls, envelopes, decay, correlation, regular-season stress) |
 | `nba/certify_postseason_strategies.py` | Playoff Unders backtest + verdict through the same gate |
 | `nba/live_slip_engine.py` · `nba/ud_live_slip_engine.py` | Playoff Unders on postseason slates (shared rule); the Underdog grader reads postseason box scores too |
+
+## 🆕🔴 **§T47.4 — `T47` (`2026-10-09 07:07Z → 19:02Z`): PLAYOFF UNDERS FINISHED, THE MULTIPLIER PROGRAM, THE LEDGER'S NEW COLUMNS** *(source `T47`; AS STATED from the commit messages; ✅ = in the repo / DB `2026-10-10`)*
+| file | what it does |
+|---|---|
+| `nba/research_playoff_unders.py` | half-line propsets, `half_only` in variants and finalists; the deployed rule is chosen **before** the stress loop |
+| `nba/playoff_unders.py` | **`stake_mode`** tunable (`gate` \| `shadow`) |
+| `nba/live_slip_engine.py` · `nba/ud_live_slip_engine.py` | Playoff Unders honour `stake_mode` (shadow = never staked / stake 0) |
+| `nba/probe_pick_postseason.py` | Playoff Unders live slip must equal the certified backtest slip (parity); **market-free rescoring** of past nights (the first probe compared against market-inclusive scores); accent-insensitive names; an Underdog parity replay per night; the no-slip message corrected (*"a one-game night, not missing coverage"*) |
+| **`nba/research_multiplier_value.py`** + **`nba-multiplier-value.yml`** *(new, `§31aa`)* | stages law → calib → gate → udsim → xapp → layer; tables `nba_score.mvp_*`; the UD sim and cross-app slips exclude the final week (the certified convention) |
+| `nba/build_price_shop_ledger.py` | the backtest-hit-rate gate — `cell`, `p_cell`, `m_star`, `v_cell`, `gate_cell`; Underdog root = 2-pick `3.5^0.5` |
+| `nba/TRIGGER_NBA_PP_MAP.txt` | PrizePicks payout mining pointed back at the NBA board (it was on the WNBA) |
