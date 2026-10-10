@@ -46911,3 +46911,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `134` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean** (`§T9.14h`, `§T10.29`, `§T11.60`): `T1`–`T12` done (`2,130` sentences); next `T13`–`T15`.
+
+---
+
+# §P135 — PASS 135 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T13`
+*Angle (as NEXT set it):* (a9) `§P131`'s method on `T13` alone.
+- Tabulated in the shell before this line: `T13` `958` of `1,650` sentences listed — **all `958` read and judged** (its head overlaps `T12`'s tail at `05:23`–`05:29Z` on `2026-09-10`).
+- On file, by substance: the Fliff protocol (the herald feed host, the California restriction `15001`, the scraper), Betr's GraphQL and the token sent without a `Bearer` prefix, the automation-shape advice and the throwaway-account option, Chalkboard's phone-proxy route, ParlayAPI's Starter-tier answer and usage, the Underdog lobby ladder and Sleeper's single line, the `$119` plan and the two keys, the board backfill (`DATABASE_URL`, the Actions port, `2,468` events, `25.7M` rows, `2,054,220` credits), the early-slate window repair and `EVENT_NOT_FOUND` retries, the disk numbers and the auto-expansion, the hash index replacing the seven-column key (`5,577 MB`), the null historical multiplier column and PrizePicks' `−137`/`+100` pricing tags, the goblin/demon anchor and tier taxonomy and the four-way case, the multiplier research and its closed avenues (no feed, nine scrapers, Gemini's failed reproducibility test), the Underdog MLB tier curve (`1,401` rungs), the `0.963` Underdog rule, the "one rung each" retraction, the grader and its DNP / name-alias handling, the per-tier hit table and the break-evens (`48.8%`, `1.48×` / `2.30×` / `3.31×`), the market consensus redesign. Judged: narration, DevTools instructions, owner pastes (carrying session headers — not reproduced), research-source summaries (ownership news, community estimates), index-build mechanics below the docs' grain.
+- **Nothing new — `T13` clean in additional sweep `1`** (the sweep as a whole stays not clean, `§P133`–`§P134`). No commit other than this pass's landed since `58ab573b3` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `135` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T13` done (`3,088` sentences); next `T14`.
