@@ -46996,3 +46996,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `140` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T18` done (`6,684` sentences); next `T19`.
+
+# §P141 — PASS 141 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T19`
+*Angle (as NEXT set it):* (g9) `§P131`'s method on `T19`.
+- Tabulated in the shell before this line (the scan re-run at pass 140's head): `T19` `180` of `537` sentences listed — **all `180` read and judged** (its head overlaps `T18`'s tail at `2026-09-20` `03:48`–`04:00Z`).
+- On file, by substance: the four-way tier rule and `board_tiers_v2`, the owner's documentation order and the three-clean-pass rule, the early sweep method and its pass-1 truncation, the MLB registry figures (`157` rows, `130` workers, the `~5.3 KB` dead stubs), the referee key ("Umpire"), swar/nba_api and Issue #155, the Contents API's 1 MB silence, the play-type `3,364` / `3,282` gap, the blowout model's ratios (`1.0333`, `0.8748`), the `4,319` coach's-decision rows. Judged: narration, the owner's exchange about the forgotten work, the session's account of its own compacted context, and per-transcript progress tables.
+- **Nothing new — `T19` clean in additional sweep `1`.** No commit other than this pass's landed since `0c6fe3bdd` when this line was written. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `141` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T19` done (`6,864` sentences); next `T20`.
