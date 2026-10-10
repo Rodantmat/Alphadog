@@ -26405,6 +26405,12 @@ glossary backfill is pass 1's work, not pass 0's.**
 
 ---
 
+# §T18.8 — 🆕 ADDITIONAL SWEEP `1` (`2026-10-10`, sweep pass 140, `§P140`): **THE FIRST v3 REPLICATION'S NARROW CONFIDENCE — FIVE PLACEHOLDER FACTORS IN THE ENGINE, AND THE TWO THAT WERE FIXED**
+*From the messages of `2026-09-19` `05:02Z`–`05:14Z`. Already on file: the `38,686,696`-leg total, the measured weights (`f_role` `16.11`, `55.6%`), the end state "per-leg factors (`f_role`, `f_prov`) are real" (`NBA_FINAL_SCORING_CALIBRATION.md`), and the factors `score_board_legs.py` pins, with their reason marked "recorded nowhere" (the `③ WHY` block of the pinned-factor audit in this file).*
+- **The first replication carried a narrow confidence range**: `2025-26` `0.890`–`0.961`, `2024-25` `0.922`–`0.960`, `0` invalid either season (`05:02Z`). The stated cause: *"`f_prov`, `f_role`, `f_vol`, `f_exp` and `f_agree` are placeholders there, because the per-player volatility and market-agreement terms need graded history that the engine doesn't join at build time. Only completeness, availability, rung depth and book count actually vary per leg."*
+- **The consequence for the score** (`05:07Z`): *"Until those are joined in, score is ranked almost entirely by HP."*
+- **The fix named two of the five** (`05:14Z`): *"`f_role` and `f_prov` were placeholder constants in the engine, which is why confidence spanned only 0.89–0.96 and score was effectively ranked by HP alone. Both now come from `baseline_history`"*, with provenance reading 1.0 for an empirical cell and 0.30 for a parametric fallback *"rather than a flat 0.65"*. ⚠ The message names no change to `f_vol`, `f_exp` or `f_agree`.
+
 # §T18.7 — WIRING: EVERY OBJECT T18's SECTIONS ASSERT, RESOLVED — **16/16**
 *(T18 pass 8, 2026-09-22 · T4's closing angle · **the pass that closes T18 at 3/3**)*
 
