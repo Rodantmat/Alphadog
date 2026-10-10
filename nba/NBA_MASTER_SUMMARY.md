@@ -44729,3 +44729,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **`T38`** (`16` closing replies, `10-04 04:16Z → 08:22Z`) — **NEW MATERIAL**, reopened: 🆕 **`§T38.5`** — the preview's actual slips and the side facts (PrizePicks game ids embed the capture date); the full 2025-26 per-strategy book with the portfolio rows (`+94%`, `99–55` days, longest losing streak `6`) and Underdog's `~8`-week flat stretch; H1's blind spot in points (`13` / `20`); the monitor's calibration rows and both seasons' z at slate 60; the ROI curve in money; the star-Under portfolio rows.
 
 **Ledger**: `T38` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+**`T39`** (`24` closing replies, `10-04 20:45Z → 10-06 19:18Z`) — **NEW MATERIAL**, reopened: 🆕 **`§T39.5`** — the roster sizing (`494` of `16,765` by cause) and its replay dates; the per-season break-even swing behind the fixed `−8.99`; the integration test's slates; the gap program's numbers (ties, the blocks `0.0`, the backfill, per-stat depths, the rebounds change and revert); **the overconfidence-by-distance table — O5b measured**; the certified-depth configuration and its two live/backtest mismatches (turnovers `3` vs `2`, stocks `10` vs `5`).
+
+**Ledger**: `T39` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
