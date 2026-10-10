@@ -43780,7 +43780,7 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - **Why H8 (rolling projection-outcome correlation) was rejected before DDM replaced it** (`08:02Z`): the daily correlation swings `−0.27` to `+0.34` inside one bad week; smoothed, it fired on **day 5 of 7** in 2025-26 week 2 and **never** in 2024-25 weeks 5 and 8 — *"a detector that catches one of four weeks, late, is not a detector."* Pace (`08:09Z`): week 2 `100.1` vs `99.7–100.9`, corr `−0.007` — the fifteenth falsification; DARKO cited: blocks stabilise in `~41` games.
 
 **6 — The replays, in order** (all 2025-26, 161 days):
-| replay | code | result |
+| read at (UTC) — *labels are mine except where quoted; the build chat called the `21:21Z` read "the third acceptance replay" / "replay #3" and the last one "the fourth"* | code | result |
 |---|---|---|
 | #1 (`08:17Z`) | old CUSUM | B and C as designed (LB `+24…+49%`); **all five family-A strategies red on Dec 11** (*"the dead CUSUM"*) |
 | #2 (`16:35Z`) | day-blocked | family A active **Dec 20–26** (the paper gate at day 50), `37–47` days active, LB `+28…+40%` (from `−2…+18%`); two rule defects found (H1+H7 double count; a red self-clearing) |
