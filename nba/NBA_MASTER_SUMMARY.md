@@ -44857,6 +44857,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **Round 3's close-out checks** (`20:22Z`): the backup P2A cron *"correctly refused the already-claimed slate"*; GitHub dropped both Betr Cloud Harvest crons on `10-09`; `whole_number_nb` stays priced-not-selectable at `< 1%` of slip legs.
 **Ledger**: `T48` pass `14` — **NEW MATERIAL** (`§T48.4`), CLEAN `0`/`3`.
 
+## §T48.9 — PASS 60 (`2026-10-10`): THE STRATEGY TEXT `T48` WROTE, CHECKED FIGURE BY FIGURE *(AS STATED; numbered `.9` because `§T48.3`–`§T48.8` are taken in this or the other documents; the Betr session-renewal and payout-map passages are not followed — credential rule and scope)*
+*Method:* the additions of `T48`'s `7` strategy/`COMPASS` writes (`~2,570` words — `§31ab`, `§31ac`, facts `145`–`149`) through `figmiss2.py` (`7` of `52`; two are run ids) and a figure-by-figure search.
+- **`§31ab`, the gap's size**: *"removing it lowers their score by 5.59 points on average (−12.28 … −0.04) and re-orders 167,298 cell ranks"*.
+- **`§31ab`, the twin by strategy** (ROI `2024-25` / `2025-26`, certified → twin): *"weighted:points 4-Standard 1.54 → 1.24 / 1.11 → 0.94; weighted:points 6-Flex 1.46 → 0.50 / 2.25 → 1.84; mains 2-Standard 0.35 → 0.34 / 0.37 → 0.38; the P4 2-pick 0.57 → 0.57 / 0.27 → 0.27"*; *"The 6-Flex slot alone loses its 2024-25 lower bound (−0.57 on 82 slips)"*; the battery — *"forward 4 of 30 survive (weighted:points 4-Std OOS +94%, lower +26%; mains 4-Std +102% / +32%), V3 null 0.01 → not selection; reverse 0 of 30 (the 2025-26 top-30 is 5–6-pick builds whose market-free 2024-25 collapses; the P5 slots rank below the cut)"*; the break-even by season — *"−9.46 pp (−8.91 / −10.13; was −10.84)"*.
+- **`§31ac`, the feed's budget and baseline**: *"3 credits per call (12,828 left on the Pro key …)"*; *"Game lines stay on the paid NBA Odds API key (capture_game_lines_morning, historical endpoint, 30 credits/day of 4.9M); the free 500-credit key is the general/MLB fallback and would cover neither props (~80+/day) nor the historical morning snapshot (~900/month)"*; the history's reference — *"at the window the priced rungs average 2.1 books, only ~15% reach 4 (Oct 2025 – Jan 2026)"*, with the switch rule's band *"(within the month-to-month range 1.97–2.14)"*.
+- ⇒ **`T48` fails the deep check (small residue) — REOPENED, CLEAN `0`/`3`.**
+
 ---
 
 # §P2 — PASS 2 (`2026-10-10`) ACROSS `T32`–`T48` + `S1`–`S9`: THREE MECHANICAL COMPLETENESS ANGLES
