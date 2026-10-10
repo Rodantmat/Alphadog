@@ -3464,6 +3464,16 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T38.6 — **`T38` (`2026-10-04`): THE EDGE MONITOR'S TABLES, `stake_weight`, AND THE SANDBOX'S SCRATCH SCHEMA** *(source `T38`; live read-only `2026-10-10`)*
+| object | content | live |
+|---|---|---|
+| **`nba_score.edge_monitor`** | `season_start, look, slates, mean_excess, se, z, delta_star, decision, decided_at` — one row per look (30 / 60 / 90 / … slates; look `0` = the running row, information only); decisions sticky per season | `0` rows (no live season yet) |
+| **`nba_score.edge_monitor_ref`** | the certified per-leg hit rate per (cell, tier, side) from the 8 daily strategies' backtest, both seasons, caps, final week out; cached; `LS_EDGE_REBUILD=1` rebuilds | `20` rows |
+| **`nba_score.live_slips.stake_weight`** | `1.0` default; **`0.5`** when the slip holds a star-line balanced Under (`ALTER … ADD COLUMN IF NOT EXISTS`, `§31n`) — the stake to use; grading and hurdles stay at unit stake | column present |
+| `nba_score._sim_*` | scratch tables of the slate sandbox (`sim_slate.py`), dropped by its last step | ✅ `0` remain |
+
+---
+
 ## 🆕 §T37.6 — **`T37` (`2026-10-03/04`): THE UNDERDOG PROGRAM'S TABLE FAMILY (`nba_score.ud_*`), AND `prop_universe` DEMOTED TO BACKTEST-ONLY** *(source `T37`, recovered transcript; live read-only `2026-10-10`)*
 ✅ **`68` `nba_score.ud_*` relations live today.** Read them by family (suffix = the build that wrote it):
 | family | tables | what |
