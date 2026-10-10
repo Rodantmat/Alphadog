@@ -46333,3 +46333,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `97` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P98 — PASS 98 (`2026-10-10`): EVERY LOW-COVERAGE PARENTHETICAL IN `T37`
+*Angle (as NEXT set it):* (i7) the parentheticals in `T37`'s strategy text, each scored on its own four-word coverage: `287`, `116` below `0.5` on the recount at the start, each read in its sentence and judged from scratch under one stated bar — recorded when it carries a fact, finding, reason, purpose, consequence or verdict that no text on file states or implies. (j7) the scans re-run after the additions (≥ `5`: `179`; ≥ `4`: `203`; parentheticals below `0.5`: `112`; dash clauses: `88`): `0` new sentences; `2` runs changed wording on sentences already judged (`§30q`'s selection-bias line; `§31f`'s final-product line — its alignment and filter on file).
+- 🆕 Not on file (AS STATED, in `§T37.9`): four clauses — `§30q`'s note on the fragile cells, `§31f`'s tie-break match with PrizePicks, `§30x`'s link between the two apps' stretches, `§31f`'s reason for a 2025-26-only check.
+- Judged, not recorded: the reverse-transfer table's fragments; method conditions restated elsewhere; plans later run; research-source detail; implementation notes; the MLB probe examples; cross-references.
+- One commit by another process landed during the pass: `9b5e7a953` (github-actions, "Update Underdog board JSON", `boards/underdog_mlb_current*.json` only — outside `nba/`).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-97 census commit: `qdiff.py` `0` flags (`4` quotes counted).
+
+**Ledger**: pass `98` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
