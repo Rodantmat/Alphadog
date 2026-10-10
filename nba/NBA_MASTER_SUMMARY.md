@@ -44883,3 +44883,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `21` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T32`.
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+---
+
+# §P22 — PASS 22 (`2026-10-10`): (mm) THE STRATEGY DOC'S OWN TEXT FOR EACH PERIOD, SENTENCE BY SENTENCE
+*Angle (mm):* the build chat's strategy doc is the fullest written form of what each chat found. Its text for `T32` (`§5`–`§13e`, lines `84`–`726`) and `T36` (`§29n` from pass 24 through `§30i`, lines `1948`–`2128`) was split into sentences; every sentence carrying a figure was matched against the twelve (the strategy doc itself excluded), and each sentence with unmatched figures was read in place. Sentences belonging to passes `≤ 23` (`T35`, closed) were checked and found recorded in `§T35`.
+- 🆕 **`T32`** — `§12b`'s key finding, **market edge adds ~0 to a linear blend** (`0.5518` vs `0.5517` vs `0.5499`, because it is correlated with model_p), and the **`§8b`–`§8e` rank results** (ranks 2/3/4 have distinct roles — baseline HP `0.583` most selective, score `0.541` on `5–7×` the legs; the line band; anchor distance rejected; consistency amplifies trailing) → the `§T32` table rows, with the `T33` real-line caveat. The remaining unmatched figures are table cells of findings recorded by their headline (`§7d`, `§7f`, `§7m`, `§11k`) or ROI series `T33` voided (`§13`).
+- 🆕 **`T36`** — the changepoint test's figures (`33–51` false days; arXiv `1212.6020`) → `§T36.6` #1; **CLV inside the droughts** (slightly positive, `+0.0075`, fewer against-moves) and the **DraftKings / FanDuel rows** the line-shop test used (`9,342` / `7,064`) → `NBA_BASELINE_CALIBRATION.md`. The Underdog cells (`§30d`'s retracted proxy, the MLB slip table) are recorded at the level `NBA_MULTIPLIERS.md` keeps.
+
+**Ledger**: pass `22` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T36`.
