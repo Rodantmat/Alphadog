@@ -62,7 +62,8 @@ def part_a():
             except Exception:  # noqa: BLE001
                 return None
         print(f"A {last:7s} {stat:9s} {line:5} app {hi}/{lo}  ours mod {hm}/{lm} -> displayed {disp(hm)}/{disp(lm)}  "
-              f"payout_mod {l.get('higher_payout_modifier')}/{l.get('lower_payout_modifier')} game_date {l.get('game_date')}")
+              f"payout_mod {l.get('higher_payout_modifier')}/{l.get('lower_payout_modifier')}")
+        print(f"A   raw {last} {stat}: " + json.dumps({k: l.get(k) for k in keys if k.startswith(('higher_', 'lower_'))}))
 
 
 def part_b():
