@@ -44416,3 +44416,23 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - **CLEAN `2`/`3`**: `T37`, `T48`.
 - **CLEAN `1`/`3`**: `T32`.
 - **CLEAN `0`/`3`** (pass 6 found NEW MATERIAL): `T34`, `T36`, `T38`, `T39`.
+
+---
+
+# §P7 — PASS 7 (`2026-10-10`) ON `T32`, `T34`, `T36`–`T39`, `T48`: EVERY FIGURE THE TWELVE NEVER CARRY
+*Angle (m):* angle (l) tightened — every narration sentence with **one or more** figures (comma-grouped counts, decimals to two places, percentages), kept when **every** figure in it is absent from the twelve; each read in place. Most are fine-grained numbers behind conclusions already recorded; the ones below are not.
+
+| transcript | what (m) surfaced | verdict |
+|---|---|---|
+| `T32` | 🆕 the replicability audit (`04:14Z`) kept **market edge** live — the `window` snapshot carries `p_over_book` (`507,871` rows) — while demoting CLV → `§T32.11` (with a forward pointer: the live pipeline later proved to have no sportsbook feed) | **NEW MATERIAL** |
+| `T34` | 🆕 `3 × 10,137 = 30,411`: the live `tier_map_bands` count is exactly the three-rank sweep (`10,137` rows, `66` cells each) — ✅ re-counted per `rank_key` → `NBA_DATABASE.md` | **NEW MATERIAL** |
+| `T36` | 🆕 **pass 28** (`2026-10-02 01:07Z`, the first pass under the owner's research-and-Gemini clean-pass standard): research found **same-team pairs hold in droughts** (`+3%` vs `−8%` all-cross-game and `−40%` opposing-team, equal normal-period income — *"PrizePicks' flat correlation pricing is the reason it works"*); Gemini's **convexity table** — every structure loses the same on the worst days; 5-Flex convexity `7.4`, 6-Flex `13.1` (`+523%` on the best days); two edits proposed (same-team tie-break for Under-heavy slips; 6-Flex on big slates). *The tie-break became `SE_SAMETEAM`, default `0`, later "REJECTED by its side-table rebuild" (`NBA_WORKERS.md`)* | **NEW MATERIAL** |
+| `T37` | 🆕 a join defect in the new-angles research: the Odds API's *"Los Angeles Clippers"* vs the teams table's *"LA Clippers"* cost **~80 games a season** (`1,151` of `1,233` matched) until normalised in both joins — the same name family `NBA_DATABASE.md` already flags (`'los angeles'` maps to two teams) | **NEW MATERIAL** |
+| `T38` | table rows of `§31n` / turn `#12` whose conclusions are recorded | **CLEAN** |
+| `T39` | the whole-number gate-2 table (`30` of `3,054` / `10` of `3,136` slips) — recorded as `1.0% / 0.3%`; the `9,116`-cell `_calib_before_prune` difference — the drop is recorded | **CLEAN** |
+| `T48` | journal-entry timestamps from the transcript hunt; out-of-scope quotes | **CLEAN** |
+
+**Ledger**: pass `7` complete (`2026-10-10`).
+- **CLEAN `3`/`3` → ✅ CLOSED**: `T48` (passes 5, 6, 7).
+- **CLEAN `1`/`3`**: `T38`, `T39`.
+- **CLEAN `0`/`3`** (pass 7 found NEW MATERIAL): `T32`, `T34`, `T36`, `T37`.
