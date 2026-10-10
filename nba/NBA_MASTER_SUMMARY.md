@@ -46191,3 +46191,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `86` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+---
+
+# §P87 — PASS 87 (`2026-10-10`): A FULL READ OF `T37`'S LOWEST-COVERAGE SENTENCES; THE RE-RUN
+*Angle (as NEXT set it):* (m6) instead of a seeded sample, every one of the `74` strategy-text sentences (of `424`) whose four-word coverage against the docs is below `0.15`, read whole and traced by key phrases and figures, the passage opened where a check came back empty; each candidate searched on file by its substance and its section read from its block's heading (with a short-fragment search where the raw text carries markup). (n6) the ≥ `5` scan re-run on `T37` after the additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new).
+- 🆕 Not on file (AS STATED, in `§T37.9`): seven clauses — `§30k`'s money-column caveat, `§30n`'s engine unit tests, `§30r`'s reading of the same-cells collapse, `§30v`'s reason for P5 over P4, `§30x`'s mid-envelope baseline, `§31c`'s reason for a separate close-capture workflow, `§31e`'s overnight-grade-date check as it stood then (later superseded — the grade mode loops every ungraded slate, on file in NBA_SYSTEM_DESIGN.md `§T43.7` and NBA_WORKERS.md `§T42.4`).
+- Why this angle: the seeded samples of passes 82, 84 and 86 each found one such clause in `T37` at coverages `0.00`–`0.08`; a full read of the band is the angle that can exhaust it, where samples of twenty find one clause at a time. The remaining `350` sentences sit at coverage ≥ `0.15`; the band `0.15`–`0.30` (`41` sentences) is the natural next full read.
+- Judged, not recorded: table headers; next-step and queued-test lists (each later run or explicitly not pursued, on file); the rejected-on-Underdog list (each item on file).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-86 census commit: `qdiff.py` `0` flags (`7` quotes counted).
+
+**Ledger**: pass `87` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
