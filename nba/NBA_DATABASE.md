@@ -3464,6 +3464,19 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T40.6 — **`T40` (`2026-10-07`): THE SELECTION LEG POOL, THE CURRENCY MAP, AND ROUTING OUT OF `board_scored`** *(source `T40`; live read-only `2026-10-10`)*
+| object | content | live |
+|---|---|---|
+| **`nba_score.tier_map_legs_sel`** | **the production selection leg table**: `tier_map_legs` copied untouched + whole-number legs priced as live selection prices them (certified seasons cross-fitted; later seasons by the live path); built in a side table and renamed in one transaction; fails if any certified leg is altered; switch off → an exact copy of `tier_map_legs`; **rebuilt weekly by P5 step 1b** | est. `2.70 M` (and a `_mf` sibling — later transcript) |
+| **`nba_score.wn_currency_map`** | per (rank key, prop, tier, side) isotonic blocks mapping a whole-number leg's `p_eq` to the **raw-score** scale of its cell (*"same currency"*); pooled for live | `7,635` rows (`390` groups) |
+| `nba_config.classification_config['whole_number_selection']` | `{bin 0.05, min_n 200, r_tie 0.5, enabled true, formula p_eq = clip(pc − SE, 0, 1)·(1 − p_tie) + r_tie·p_tie; …}` — **the switch** | ✅ `enabled: true` (`2026-10-07`) |
+| `nba_score.final_hp_derived` — new derivations | `beyond_certified_depth` (from `build_final_hp.py`) and **`board_beyond_certified_depth`** (from `score_board_legs.py` — separate names so the two producers never overwrite each other) | `2` / `35,624` rows |
+| **`nba_score.board_scored`** — semantics changed | now **excludes** certified-prop whole-number lines (their price is `final_hp_derived` `whole_number`) and certified-prop legs beyond certified depth (routed) — so the uncertified paper strategy `standards_3pick_v1` (via `paper_pick_candidates`) can no longer pick a naively priced whole-number leg | — |
+| `nba_score._bk_*_hp` (4 backups of the half-point state) | taken before the recertification | ✅ **none remain** |
+🔑 **Who reads what** (the G1/G2 consumer audit, corrected in `T40`): `final_hp` → both live engines (PP, UD); `board_scored` → P3's paper logger `paper_pick_candidates` (**not** `final_hp`, as the first audit had it); `final_hp_derived` / `final_hp_all` → nothing decision-side except, from `T40`, the PP live engine's `whole_number_legs()` (reads the daily `whole_number` rows through the currency map).
+
+---
+
 ## 🆕🔴 §T39.6 — **`T39` (`2026-10-04/07`): PRICES OUTSIDE `final_hp`, THE RECALIBRATION MAP THAT FINALLY EXISTS, AND THE CONFIG KEYS THAT HOLD THE FITS** *(source `T39`; live read-only `2026-10-10`)*
 | object | content | live |
 |---|---|---|
