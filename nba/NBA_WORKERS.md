@@ -3693,7 +3693,7 @@ these twelve.**
 | `nba/scrape_nba_injury_report.py` | zero snapshots on a slate day is a failed scan (`INJURY_EXPECT`), bounded 600 s in P2B and P3 |
 | **`nba/dump_db_sql.py`** + `.github/workflows/nba-db-sql-dump.yml` *(new)* | weekly + on-demand dump of every NBA function and view into `nba/sql/` |
 | `nba-p2a-results.yml` · `nba-p2b-slate.yml` · `nba-p3-afternoon-light.yml` · `nba-p4-live-slips.yml` · `nba-p5-weekly-requal.yml` · `nba-close-capture.yml` | replay `asof` plumbing; matchup shards soft; predicate-based `has_games`; crew poll bounded by the build budget, timeout 300; gzipped dated ladder; late runs skip delta/score/paper/certify/picks; P3 commits via `git_push_retry.sh`; P4 `confirm` and `edge_rebuild` inputs; P5 steps 3c (twin rebuild + both twin engines, delta) and 5c (twin validations), suffix-aware verdicts and release gate |
-**Probes**: Underdog timing (`nba/probe_underdog_timing.py`), PrizePicks producer equivalence (`nba/probe_pp_producers.py` — a **probe of producers**, not the out-of-scope payout probes).
+**Probes**: Underdog timing (`nba/probe_underdog_timing.py`), PrizePicks producer equivalence (`nba/probe_pp_producers.py` — ~~a **probe of producers**, not the out-of-scope payout probes~~ *corrected `2026-10-10`: the file matches the out-of-scope `probe_pp_*.py` pattern — cross-reference only; its result is the ledger's `R2-P3` #10*).
 
 ## 🆕🔴 **§T44.4 — `T44` (`2026-10-08 11:01Z → 21:03Z`): MEASUREMENT, RETENTION AND THE FIRST POSTSEASON CODE** *(source `T44`; AS STATED from the ledger and the commit messages; ✅ = in the repo / DB `2026-10-10`; MLB files out of scope and not listed)*
 | file | what it does |
