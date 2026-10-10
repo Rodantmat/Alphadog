@@ -46030,3 +46030,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T34`, `T35`, `T37`.
 - **CLEAN → `1`/`3`**: `T33`, `T38`. **CLEAN → `2`/`3`**: `T39`.
 - ✅ **CLOSED `3`/`3`**: `T36`, `T40`–`T48` *(pass 76)*.
+
+---
+
+# §P77 — PASS 77 (`2026-10-10`): A SEED-77 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN; `T39` CLOSES
+*Angles (as NEXT set them):* (s5) a seed-`77` sample on `T32`–`T35`, `T37`–`T39` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `17` · `13` · `7` · `15` · `12` · `12` · `16`. (t5) the ≥ `5` scan re-run on the six still open after pass 77's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T33`** (the harness drivers built only on surviving signals) · **`T38`** (the three-demon slip's all-three figure).
+- ✅ **Clean on this angle:** `T32`, `T34`, `T35`, `T37`, `T39` (its third clean angle → **CLOSED**).
+- Judged, not recorded: the MLB lessons and the owner's working-rule list (`T32`); table headers (`T34`, `T35`); next-step plans later run (`T33`, `T38`, `T39`).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-76 census commit: `qdiff.py` `0` flags (`2` quotes counted).
+
+**Ledger**: pass `77` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T33`, `T38`.
+- **CLEAN → `1`/`3`**: `T32`, `T34`, `T35`, `T37`.
+- ✅ **CLOSED `3`/`3`**: `T36`, `T39`, `T40`–`T48` *(pass 77)*.
