@@ -46133,3 +46133,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - **CLEAN → `1`/`3`**: `T33`. **CLEAN → `2`/`3`**: `T34`.
 - ✅ **CLOSED `3`/`3`**: `T32`, `T35`, `T36`, `T38`, `T39`, `T40`–`T48` *(pass 82)*.
+
+---
+
+# §P83 — PASS 83 (`2026-10-10`): A SEED-83 SAMPLE ON THE THREE STILL OPEN; THE RE-RUN; `T34` CLOSES
+*Angles (as NEXT set them):* (e6) a seed-`83` sample on `T33`, `T34`, `T37` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty; each candidate searched on file by its substance before being called new. Traced per transcript: `14` · `13` · `10`. (f6) the ≥ `5` scan re-run on the two still open after pass 83's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file: nothing — every sampled sentence is on file or judged.
+- ✅ **Clean on this angle:** `T33`, `T34` (its third clean angle → **CLOSED**), `T37`.
+- Judged, not recorded: the signal re-check and Gate-2 plans, later run, and table headers (`T33`); the invariant table's rows and the superseded leaderboard rows (`T34`); the morning-capture plan, later built (`§T37`'s morning DFS snapshot on file), and the cell-table header (`T37`).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- No quotation added since the pass-82 census commit (`qdiff.py`: `0` quotes, `0` flags).
+
+**Ledger**: pass `83` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T37`. **CLEAN → `2`/`3`**: `T33`.
+- ✅ **CLOSED `3`/`3`**: `T32`, `T34`, `T35`, `T36`, `T38`, `T39`, `T40`–`T48` *(pass 83)*.
