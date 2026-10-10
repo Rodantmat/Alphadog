@@ -26354,7 +26354,7 @@ existing files"; recorded because the distinction has never been stated.)*
 | central T17/T18 terms present | `board_tiers_v2` **0** · `confidence_model` **0** · `certify_pipeline` **0** · `CONF_NEUTRAL` **0** · `measure_report_cutoff` **0** · `f_phase` **0** · `PHASE1_CUTOFF_LOCAL` **0** — **eight of ten absent** |
 
 ⇒ ***No glossary content commit exists for the sweep of T12 through T18 — seven transcripts, every
-one of them CLOSED on "three consecutive clean passes."*** **And the charter's most specific
+one of them CLOSED on "three consecutive clean passes."*** ⚠ *Inexact: by their own index rows, `T12`–`T17` closed on the standing closure judgment and only `T18` at `3`/`3` (`§P128`).* **And the charter's most specific
 completeness requirement is the glossary's: *"any material term that shows more than once must be in
 the glossary."***
 
