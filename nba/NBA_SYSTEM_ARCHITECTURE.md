@@ -2656,7 +2656,7 @@ CLOSE (first tip − 25 min) close board, PrizePicks + Underdog, label 'close', 
 
 ## 🆕 §T39.8 — **THE DAILY CHAIN AFTER `T39` (`2026-10-07`): ROSTERS EVERY MORNING, PRICES FOR EVERY LEG, A MONITOR PER APP** *(source `T39`; ✅ = the committed workflow files `2026-10-10`)*
 ```
-P2A … PP slip GRADE → PP edge monitor → UD paper GRADE (+ per-leg outcomes) → UD edge monitor → re-price yesterday's whole-number lines
+P2A … re-price yesterday's whole-number lines → PP slip GRADE → PP edge monitor → UD paper GRADE (+ per-leg outcomes) → UD edge monitor
 P2B rosters: refresh (commonallplayers) → apply to nba_ref.players → name map → injury report → … → ladder (current-roster rule) → final_hp → price whole-number lines (final_hp_derived)
 P3  … PP pick → UD paper pick                                   (unchanged)
 ```
