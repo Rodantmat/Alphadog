@@ -3188,7 +3188,7 @@ built weeks earlier."*** ⚠⚠ ***This sweep had only ever checked TWO of them*
 | as-of | `nba_ref.defender_ratings` | `111,768` | `2026-04-09` | *needs GAMES; `§T26.28` for its real story* |
 
 ✅✅ **SO THE "FROZEN STATIC LAYER" IS MOSTLY THAWED** — *four of the five living layers carry
-`2026-09-24`, the day P1's `scipy` fix let it commit again (`§T26.28`). *(⚠ pass 114: the `scipy`-fixed run committed on `2026-09-23`; `§T27.4` puts the `2026-09-24` writes on a hand load → `NBA_MASTER_SUMMARY.md` `§T26.R3`.)*
+`2026-09-24`, the day P1's `scipy` fix let it commit again (`§T26.28`).* *(⚠ pass 114: the `scipy`-fixed run committed on `2026-09-23`; `§T27.4` puts the `2026-09-24` writes on a hand load → `NBA_MASTER_SUMMARY.md` `§T26.R3`.)*
 
 ### 🔴🔴 **BUT `player_tracking_profile` IS ORPHANED THREE WAYS, AND EACH ONE ALONE WOULD HIDE IT**
 
