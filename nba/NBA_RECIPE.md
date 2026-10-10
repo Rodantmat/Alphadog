@@ -1464,3 +1464,11 @@ THE REPOSITORY IS PUBLIC.**
 45. **Separate collapse detection from slide detection** — hurdles for collapses; a group-sequential break-even monitor (bootstrap-calibrated boundaries) for a slow slide; accept that near-break-even is undecidable in one season.
 46. **State the realistic expectation from an exact curve, not an approximation** (owner: *"What can we expected … being realistic?"*), and say what is in-sample.
 47. **Size, don't exclude, the model's weakest leg type** (star-line Unders: half stake) — and keep the risk machinery at unit stake.
+
+### STEP 14h — **No loose ends, no gaps: price everything, select only what passes, and keep the model's roster current** *(`T39`, `2026-10-04/07`; `NBA_MASTER_SUMMARY.md` `§T39`)*
+48. **Compute break-even on the slips' real joint outcomes** (thinning), not under independence, and **fix it** — a per-season recompute drifts with the slip mix.
+49. **Certify end to end inside one rolled-back transaction** — the production entry points, both apps, real slates, asserted, restored.
+50. **The model must project today's rosters every morning** (owner) — traded, returning and opening-week players; the old last-3-games rule projected nobody on opening night.
+51. **For every gap, separate coverage from selection** (owner: *"There should be no gaps!"*): price it honestly (out-of-sample recalibration, ties modelled), store it where no existing consumer reads it by accident, and admit it to selection only through the two-season gate. *A gap closed badly is worse than an open one.*
+52. **Test a documented fact against the system before relying on it** — the recalibration map the COMPASS said the engine read had never existed.
+53. **Realign on request** (owner `01:03Z`): read the documentation and the compass from step zero before continuing; check for drift every so often.
