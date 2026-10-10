@@ -46802,4 +46802,4 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - No hourly-rotation or bot commit landed since `1195039be` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
 
 **Ledger**: pass `127` complete (`2026-10-10`).
-- ✅ **CLOSED**: every transcript (`T1`–`T48`, `S1`–`S9`) — at `3`/`3` for all but nine of `T1`–`T26`, whose bases are tabulated above.
+- ✅ **CLOSED**: every transcript (`T1`–`T48`, `S1`–`S9`) — at `3`/`3` for all but ~~nine~~ eleven of `T1`–`T26`, whose bases are tabulated above.
