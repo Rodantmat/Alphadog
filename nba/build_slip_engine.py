@@ -90,6 +90,48 @@ def compress(p):
     return p if p <= 9.1 else 9.1 * (p / 9.1) ** 0.857
 
 
+# FLEX WITH GOBLINS / DEMONS (2026-10-09, owner: "prove the payouts ... make sure everything is sharp"). PrizePicks' Flex
+# partial tiers are nearly FLAT in the slip's factor product (3-Flex one miss ~1.0x up to fp 3.4, 5-Flex one miss ~2.0x up to
+# fp 6.8, two misses 0.4x) while the all-hit tier rises FASTER than FLEX x fp. Until today grade() paid FLEX[(k, hits)] x
+# prod(factors) on every tier, which overpaid the partial tiers 2-5x (48 live quotes run 38020184454, 40 all-demon quotes probe
+# 38021265189, the 2026-09 WNBA mining): B_demon_3flex certified +52 / +90% was -12 / +33% on the app's tiers. The tiers now
+# come from PrizePicks' own quotes: nba_config.pp_slip_rules['flex_alt_tiers'] = per size and number of misses, the LOWER
+# ENVELOPE of quoted payouts against the factor product, interpolated in ln(fp) and clamped at the ends (conservative).
+# DB twin: nba_market.pp_flex_alt_payout() (nba/sql/pp_flex_alt_payout.sql) - the regrade and the certifier use it.
+_FLEX_ALT = None
+
+
+def flex_alt_tiers():
+    global _FLEX_ALT
+    if _FLEX_ALT is None:
+        with psycopg.connect(os.environ['DATABASE_URL']) as c:
+            row = c.execute("SELECT rule_json FROM nba_config.pp_slip_rules WHERE rule_key = 'flex_alt_tiers'").fetchone()
+        if not row:
+            raise RuntimeError("pp_slip_rules['flex_alt_tiers'] missing - a Flex slip with alternates cannot be priced (never guessed)")
+        rj = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        _FLEX_ALT = {int(n): {int(m): [(float(fp), float(pay)) for fp, pay in pts] for m, pts in t.items()}
+                     for n, t in rj['tiers'].items()}
+    return _FLEX_ALT
+
+
+def flex_alt_payout(k, misses, fprod):
+    """PrizePicks' Flex payout for a k-pick slip with alternates, `misses` misses, leg-factor product fprod (0 = no tier)."""
+    pts = flex_alt_tiers().get(k, {}).get(misses)
+    if not pts:
+        return 0.0
+    if fprod <= pts[0][0]:
+        return pts[0][1]
+    if fprod >= pts[-1][0]:
+        return pts[-1][1]
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        if x0 <= fprod <= x1:
+            if x1 == x0:
+                return min(y0, y1)
+            w = (math.log(fprod) - math.log(x0)) / (math.log(x1) - math.log(x0))
+            return y0 + (y1 - y0) * w
+    return pts[-1][1]
+
+
 # certified cells: (prop, tier, side, rank, n_band, edge = certified 2025-26 p.m)
 CELLS = {
     'steals_R_U':    ('steals', 'R', 'Under', 'final_score', 2, 0.691),
