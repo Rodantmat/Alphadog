@@ -21,7 +21,6 @@ Env: DATABASE_URL, GL_DATE (default: today in Pacific time), ODDS_KEY_NAME (defa
 """
 import os
 import sys
-import time
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
