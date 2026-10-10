@@ -47,7 +47,7 @@ jobs:
       - name: Python deps
         run: |
           python -m pip install --upgrade pip
-          pip install seleniumbase "proxy.py" "psycopg[binary]" curl_cffi
+          pip install seleniumbase "proxy.py" "psycopg[binary]" curl_cffi primp
           sbase get chromedriver || true
       - name: Run the probe
         env:
