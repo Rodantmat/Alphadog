@@ -45203,3 +45203,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `47` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P48 — PASS 48 (`2026-10-10`): (ooo) THE LESSONS
+*Angle (ooo):* every lesson, standing rule, *"the class"*, *"going forward"* or *"from now on"* statement the build chat made in `T36` — in its final replies, its narration, and the text of its `72` strategy-document and `COMPASS` writes — matched to its record.
+- One standing rule, stated twice (narration and strategy text): *"check `pg_stat_activity` and cancel orphaned backends before any rebuild"* — on file (`§T36.3`, `NBA_SYSTEM_DESIGN.md` `§T36.7`, item `T36-8`). The `04:51Z` *"Going forward the data is clean: our live archiver already stores Underdog's real price"* was overturned the same night — the archiver was storing the wrong product's price — and that correction is on file (`NBA_MULTIPLIERS.md` `§T36.3`, `§T36.6` #7). The rest is method talk (*"the passes are the method"*) or other documents' titles.
+- **CLEAN** — nothing new, nothing corrected.
+
+**Ledger**: pass `48` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T36`.
