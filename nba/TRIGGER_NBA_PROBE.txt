@@ -1,1 +1,2 @@
-script: probe_price_shop_ledger.py
+script: build_pp_flex_alt_tiers.py
+# 2026-10-10: first run of the flex_alt_tiers rebuilder before the payout map runs it (must reproduce the stored curve)
