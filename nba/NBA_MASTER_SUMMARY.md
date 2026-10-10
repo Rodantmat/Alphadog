@@ -19,7 +19,7 @@
 > # 📑 **INDEX — `NBA_MASTER_SUMMARY.md`**
 > **The record of what every transcript contained** — the sweep ledger, the per-transcript findings
 > (`§T`*n*`.`*m*), the canonical figure table, and the corrections made to each.
-> 📏 **`2,946` sections · re-derived `2026-10-10` (RUN — `+6` = `§T37`)** · ~~`2,940` (`§T36`, `+6`)~~ · ~~`2,934` (`§T35`, `+6`)~~ · ~~`2,928` (`§T34`, `+7`)~~ · ~~`2,921` (`§T33`, `+6`)~~ · ~~`2,915` (`§T32`, `+14`)~~ · 🆕 **`§T32`–`§T37` (end of file) — the recovered gap, in order.** · ~~**`2,901` sections · re-derived `2026-09-25`**~~ *(was `2,883` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
+> 📏 **`2,952` sections · re-derived `2026-10-10` (RUN — `+6` = `§T38`)** · ~~`2,946` (`§T37`, `+6`)~~ · ~~`2,940` (`§T36`, `+6`)~~ · ~~`2,934` (`§T35`, `+6`)~~ · ~~`2,928` (`§T34`, `+7`)~~ · ~~`2,921` (`§T33`, `+6`)~~ · ~~`2,915` (`§T32`, `+14`)~~ · 🆕 **`§T32`–`§T37` (end of file) — the recovered gap, in order.** · ~~**`2,901` sections · re-derived `2026-09-25`**~~ *(was `2,883` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
 >
 > 🆕🆕🆕 **`2026-09-26` — WHERE THE DAY'S SECTIONS LIVE** *(`T25` CLOSED; `T26` still open at **`29`** passes *(~~`20`~~ — this map's header was written at pass `20` and the count is re-derived at each close)*; the map below it is the `2026-09-25` map and is kept, not replaced — **`RULE 40`**)*
 > | file | sections defined there `2026-09-26` |
