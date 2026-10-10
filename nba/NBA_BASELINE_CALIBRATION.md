@@ -2414,6 +2414,8 @@ only the consumer knows which columns it needs.*
 
 > 🔑🔑🔑 ***"the data says don't build it."***
 
+→ 🆕 *`2026-10-10`: the share measured first — `4.1%` of the candidate pool (`158` of `3,836` legs above `1.30`) — is in `NBA_MASTER_SUMMARY.md` `§T26.R5`.*
+
 *The hypothesis under test: that legs for players with **no prior-season history** are mis-priced, and
 deserve an **evidence-depth filter** or a **new confidence factor**.*
 
