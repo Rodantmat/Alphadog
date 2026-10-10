@@ -203,8 +203,24 @@ def renew_session_state(st):
         body = urllib.parse.urlencode({"grant_type": "refresh_token", "client_id": cid, "refresh_token": refresh}).encode()
         req = urllib.request.Request(KC_TOKEN, data=body, headers={"Content-Type": "application/x-www-form-urlencoded",
                                                                    "Accept": "application/json", "User-Agent": "okhttp/4.9.2"})
-        with urllib.request.urlopen(req, timeout=60) as r:
-            j = json.loads(r.read().decode())
+        # RETRY (2026-10-09, owner: retries on every external step): a refresh is retried ONLY when the server cannot
+        # have rotated the token - HTTP 429 / 5xx or a connection that never opened. A read timeout after the request
+        # was sent is NOT retried (Keycloak may already have rotated the refresh token; the next run renews instead).
+        j = None
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    j = json.loads(r.read().decode())
+                break
+            except urllib.error.HTTPError as exc:
+                if exc.code in (429, 500, 502, 503, 504) and attempt < 2:
+                    print(f"session: Keycloak http {exc.code} - retry {attempt + 1}/2", flush=True); time.sleep(5 * (attempt + 1)); continue
+                raise
+            except urllib.error.URLError as exc:
+                if isinstance(getattr(exc, "reason", None), (ConnectionRefusedError, ConnectionResetError, OSError)) \
+                        and "timed out" not in str(exc).lower() and attempt < 2:
+                    print(f"session: Keycloak unreachable ({str(exc)[:60]}) - retry {attempt + 1}/2", flush=True); time.sleep(5 * (attempt + 1)); continue
+                raise
         new_access, new_refresh, new_id = j.get("access_token"), j.get("refresh_token"), j.get("id_token")
         if not new_access:
             return st, f"session: Keycloak answered without an access token ({sorted(j)})"
