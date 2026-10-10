@@ -310,12 +310,26 @@ class BrowserQuoter(Quoter):
         return -1, "unreachable"
 
 
-def make_quoter(px):
-    if TRANSPORT == "browser":
+def make_quoter(px, probe=None):
+    """the transport ladder: curl_cffi (no page load, a few KB per quote) when PrizePicks answers it, else a real Chrome.
+    probe = [(projection_id, side), (projection_id, side)] - one 2-pick quote decides, and is not recorded."""
+    if TRANSPORT in ("auto", "curl"):
+        q = Quoter(px)
+        if TRANSPORT == "curl" or not probe:
+            return q
         try:
-            return BrowserQuoter(px)
+            st, txt = q._post(probe)
         except Exception as exc:  # noqa: BLE001
-            print(f"TRANSPORT|browser failed to start ({type(exc).__name__}: {str(exc)[:120]}) - falling back to curl", flush=True)
+            st, txt = -1, str(exc)[:120]
+        walled = "captcha-delivery" in (txt or "")
+        if st == 200 and not walled:
+            print(f"TRANSPORT|curl|{q.target} answered (200) - the cheap path serves this run", flush=True)
+            return q
+        print(f"TRANSPORT|curl|{q.target} refused (status {st}{', DataDome' if walled else ''}) - switching to the browser", flush=True)
+    try:
+        return BrowserQuoter(px)
+    except Exception as exc:  # noqa: BLE001
+        print(f"TRANSPORT|browser failed to start ({type(exc).__name__}: {str(exc)[:120]}) - falling back to curl", flush=True)
     return Quoter(px)
 
 
