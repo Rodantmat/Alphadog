@@ -45086,3 +45086,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `35` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P36 — PASS 36 (`2026-10-10`): (ccc) `T36`'S `23` GEMINI CALLS, ITS STRATEGY TEXT, AND THE NARRATION TRACED
+*Angle (ccc):* all `23` `call_gemini` exchanges in `T36` extracted (prompt and reply) and each matched to its record; then the strategy text `T36` wrote (`§29` passes 24–84, `§29z`, `§30a`–`§30i`) and the mid-turn narration run through the sentence trace with the threshold lowered to a single missing figure.
+- 🆕 **`T36`**: Gemini's retrain prediction and the build chat's rejection of it; the EWMA `λ` Gemini proposed vs the one shipped; pass 40 (the EdgeClaw audit, the latent-factor approach *"restates the variance test"*); pass 41's 6-Flex figures; pass 42's late-March counts; pass 43's sizing answer and why the stake cap does not bind; Gemini's line-offset risk on the Underdog path → `§T36.6` #7; the position split per season → `NBA_BASELINE_CALIBRATION.md` `§T36.5` #2; the UD archive's multiplier range and per-stat coverage gap → `§T36.6` #6; ten residual strategy figures → `§T36.6` #7; concurrent commits and the `3,412` vs `5,264` mismatch → `§T36.3`; the `394,014` player-market-days check → `§T36.6` #7.
+- RULE 28 check on pass 35's addition: the demon calendar's figures were already on file (`NBA_GOBLIN_DEMON.md` `§T36.2`) — a pointer added, nothing struck.
+- Not recorded, by rule: the `§30c` MLB-reference figures (MLB, cross-reference only) and the build chat's memory dump read at `23:07Z` (another surface's memory, not `T36` content).
+- Pass 21's line *"The rest resolve (… the P2A/P2B critique …)"* (`§P21`) was too broad: the critique was only recorded in pass 34.
+
+**Ledger**: pass `36` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
