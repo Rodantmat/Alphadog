@@ -1950,7 +1950,7 @@ a direct fit would smooth away. **⚠ The +3 vs +2 scale conflict is unresolved 
 
 **Known misses, in the header**: *"blocks more 70–75 **−4.3, n=3900** = **P(0 blocks) under-predicted
 for ~1.5 bpg players, persists at any lambda**; blocks less 75–80 −2.6; steals less 60–65 +3.6.
-**Holdout shows the same signs.**"*
+**Holdout shows the same signs.**"* → *the zero-rate table learned by mean band then fixed the blocks 70–75 band on 2025-26, partly on the holdout: `NBA_MASTER_SUMMARY.md` `§T9.14h`.*
 
 ---
 
