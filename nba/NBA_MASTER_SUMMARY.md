@@ -44817,3 +44817,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`.
 - **CLEAN → `2`/`3`**: `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48`.
 - **CLEAN → `1`/`3`**: `T33`, `T36`.
+
+---
+
+# §P17 — PASS 17 (`2026-10-10`): (hh) EVERY COMPASS LINE AGAINST THE TWELVE, BY FIGURE
+*Angle (hh):* `NBA_COMPASS.md` is the build chat's own index of what it found (read-only here). Pass 9's COMPASS check matched facts by their headline line; **this pass checks every line of the file** — each line whose figures (3+ significant characters, years excluded) are mostly absent from the twelve is read in place. *The reason for the stronger form*: fact `125`'s correlation bullets sit on continuation lines below their numbered headline, which is how pass 16 found them missing.
+- `5` lines flagged in the whole file: fact `72` (rate response) and facts `88`–`89` (the enrichment reality check) — the September material of earlier transcripts, recorded there under rounded figures; fact `148` — the PrizePicks quote path (out of scope); and **fact `123`'s per-kind calibration line** — 🆕 **`T32`**: standard `0.4403` vs `0.4336`, demon `0.2746` vs `0.2435`, **goblin `0.6176` vs `0.6531`** → `NBA_BASELINE_CALIBRATION.md` `§T32.5`.
+- The figures of facts `128`–`149` (the `T33`–`T48` period) all resolve in the twelve (the six stragglers — `29.6`, `13,148`, `0.553`, `1.8433`, `214%`, `0.601` — are recorded there rounded or as ranges).
+
+**Ledger**: pass `17` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`.
+- **CLEAN → `3`/`3` ✅ CLOSED** (passes 15–17): `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48`.
+- **CLEAN → `2`/`3`**: `T33`, `T36`.
