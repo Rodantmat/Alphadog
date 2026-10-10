@@ -172,6 +172,9 @@ def main():
                                       "picks": [{"wager_type": "over", "projection_id": p["id"]} for p in picks[:n]],
                                       "pick_protection": False}, "game_mode": "prizepools"}
                 r = page_fetch(sb, API + "/game_types", "POST", body); n_q += 1
+                if r["status"] == -1:
+                    r = page_fetch(sb, API + "/game_types", "POST", body, device=True); n_q += 1
+                    print(f"  (retried with x-device-id: status {r['status']})", flush=True)
                 t = tables(r["text"])
                 blocked = "captcha-delivery" in r["text"]
                 print(f"QUOTE {n}-pick all-standard: status {r['status']} {'DATADOME' if blocked else ''} -> {t if t else r['text'][:160]!r}", flush=True)
