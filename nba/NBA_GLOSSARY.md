@@ -133,7 +133,7 @@ context, and which document section. Any material term appearing more than once 
 | Date | What changed |
 |---|---|
 | 2026-09-20 | Created. Terms from T1 (10 passes), T2 (1 pass), the journal, and the live session. |
-| **2026-09-22** | 🔴🔴 **BACKFILL — this file had NO content commit for the sweep of T12 through T18** *(seven transcripts, each closed on three consecutive clean passes; 44 commits here against `NBA_MASTER_SUMMARY`'s 889; the index above stopped at T16)*. **Cause and full evidence: `NBA_MASTER_SUMMARY.md` §T19.1 and open item T19-1; the rule it produced is RULE 41 — *no pass measures the deliverable against its charter*.** **Added: the transcript index through T20, and §Z — THE COMPLETE TERM INDEX, 824 terms.** |
+| **2026-09-22** | 🔴🔴 **BACKFILL — this file had NO content commit for the sweep of T12 through T18** *(seven transcripts, each closed on three consecutive clean passes — ⚠ *inexact: by their own rows in `NBA_MASTER_SUMMARY.md`'s `📍 TRANSCRIPT INDEX`, `T12`–`T17` closed on the standing closure judgment and only `T18` at `3`/`3` (`§P128`)*; 44 commits here against `NBA_MASTER_SUMMARY`'s 889; the index above stopped at T16)*. **Cause and full evidence: `NBA_MASTER_SUMMARY.md` §T19.1 and open item T19-1; the rule it produced is RULE 41 — *no pass measures the deliverable against its charter*.** **Added: the transcript index through T20, and §Z — THE COMPLETE TERM INDEX, 824 terms.** |
 
 ---
 
