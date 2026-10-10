@@ -192,7 +192,10 @@ def main():
     # m x (1 - h)^(1/n); the 2-pick Max carries the most haircut per leg, so its root (1 - h)^(1/2) is the conservative
     # per-leg price - it was treated as m itself (root 1.0), which overstated every Sleeper leg by up to 4%.
     srow = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='sleeper_payout'").fetchone()
-    sl_h = float(((srow[0] if srow else None) or {}).get('slip_haircut', 0.08))
+    scfg = (srow[0] if srow else None) or {}
+    if isinstance(scfg, str):        # a row stored as a JSON string (regression 38019478623) is decoded, never crashes the ledger
+        scfg = json.loads(scfg)
+    sl_h = float(scfg.get('slip_haircut', 0.08))
     sl_root = (1.0 - sl_h) ** 0.5
     rates = cell_rates(conn)
     apps = list(c.get('apps') or DEFAULT_CFG['apps'])
