@@ -560,6 +560,10 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PIPE: "p3"
           CERT_DATE: ${{ steps.d.outputs.asof }}
+          # board liveness for the apps P3 scrapes itself. Betr is harvested by its own workflow, dispatched by this run and
+          # landing minutes after it (2026-10-09) - its file here is always the previous harvest, so it would WARN every
+          # day; the harvest run's own red/green (exit 2/3/4, three attempts) is Betr's liveness signal.
+          ARCHIVE_APPS: "prizepicks,underdog,sleeper,fliff"
         run: python nba/certify_pipeline.py
       - name: Late run - nothing scored, nothing picked
         if: ${{ steps.d.outputs.late == '1' }}
