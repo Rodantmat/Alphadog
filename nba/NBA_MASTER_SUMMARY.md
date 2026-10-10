@@ -44894,3 +44894,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `22` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T36`.
+
+---
+
+# §P23 — PASS 23 (`2026-10-10`): (nn) THE SAME STRATEGY-DOC RANGES, BY VERDICT
+*Angle (nn):* every heading and every VALIDATED / REJECTED / KEPT / adopted / dry / superseded verdict in the `T32` range (`§6a`–`§13e`) and the `T36` range (`§29n` passes 24–85, `§29o`–`§30i`), its named technique or variable searched in the twelve and read where absent.
+- 🆕 **`T32`** — two verdicts had no row: **`§10` research pass 2** (per-tier value — points demons the one +value tier upgrade, `p·m 0.580` vs `0.571`; SmartStake's devig method confirms the architecture; stacking is tournament logic; positional volatility queued) → a new `§T32` row; and **`§8i` / `§8j`** (the trailing-window correlations, `t3 0.095` sharpest; combos *"TRACK"* their best component, points-anchored props best) → the ranks row.
+- **`T36`** — every verdict resolves: passes 24–27 (`§T36.2` `§29n` row; `injury_asof_pick` in `NBA_DATABASE.md`), the week-2 play, the rotation and its guards, single bad days, the low-foul key, the monitor, the replays, the pre-break plans, the other boards (`T36-10`), the launch numbers, the double check and last sweep (`T36-7`, `T36-9`), the scheduler (`T36-1`), and `§30a`–`§30i` (`NBA_MULTIPLIERS.md`). **CLEAN.**
+
+**Ledger**: pass `23` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`.
+- **CLEAN → `1`/`3`**: `T36`.
