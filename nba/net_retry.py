@@ -134,8 +134,8 @@ def request(method, url, *, session=None, proxies=None, routes=("direct",), trie
             print(f"RETRY|{label}|attempt {attempt + 1}/{tries} via {route}|http {r.status_code}", flush=True)
         if attempt < tries - 1:
             _sleep(max(backoff(attempt, base, cap), wait_hint or 0.0), budget, label, attempt + 1, tries, "backing off")
-    raise RetryError(f"{label}: {tries} attempt(s) failed; last: "
-                     f"{getattr(last, 'status_code', None) or type(last).__name__ if last is not None else 'nothing'}", last)
+    raise RetryError(redact(f"{label}: {tries} attempt(s) failed; last: "
+                            f"{getattr(last, 'status_code', None) or type(last).__name__ if last is not None else 'nothing'}"), last)
 
 
 def call(fn, *, tries=DEFAULT_TRIES, base=DEFAULT_BASE, cap=DEFAULT_CAP, budget=None, retry_on=(Exception,),
