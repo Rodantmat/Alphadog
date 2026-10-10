@@ -45730,6 +45730,6 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - Every quotation added: `qdiff.py` `0` flags (`13` quotes). Credential check: the proxy host and its targeting suffix appear `0` times in the twelve.
 
 **Ledger**: pass `63` complete (`2026-10-10`).
-- **NEW MATERIAL → `0`/`3`**: `T33`, `T34`, `T35`, `T37`, `T47`; **back to `0`/`3` from a clean count**: `T38` (from `0`/`3` — unchanged), `T39`, `T40`, `T43` (from `1`/`3`).
+- **NEW MATERIAL → `0`/`3`**: `T33`, `T34`, `T35`, `T37`, `T38`, `T47`; **back to `0`/`3` from a clean count**: `T39`, `T40`, `T43` (from `1`/`3`).
 - **CLEAN → `1`/`3`**: `T32`, `T36`, `T41`, `T44`, `T45`, `T46`. **CLEAN → `2`/`3`**: `T48`.
 - ✅ **CLOSED `3`/`3`**: `T42` (third consecutive clean pass: pass 61 `figmiss2.py` + `colocT.py`, pass 62 `colocAll.py` / `colocOrphan.py`, pass 63 (m4) + (n4)).
