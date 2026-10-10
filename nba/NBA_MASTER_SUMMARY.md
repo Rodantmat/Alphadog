@@ -44298,3 +44298,34 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 ## §T48.3 — ROUTED BY THIS PASS
 `NBA_SYSTEM_DESIGN.md` `§T48.7` (the switch rule; "not soft"; capture times; retry policy) · `NBA_SYSTEM_ARCHITECTURE.md` `§T48.8` (net_retry; capture schedule; Betr chain; PrizePicks quote transport; ParlayAPI feed) · `NBA_WORKERS.md` `§T48.4` · `NBA_DATABASE.md` `§T48.6` · `NBA_MULTIPLIERS.md` `§T48.3` (the Flex tables closed by the quote engine; Sleeper settled) · `NBA_OPEN_ITEMS.md` `§T48 ITEMS` · `NBA_RECIPE.md` `STEP 14q` · `NBA_GLOSSARY.md`.
 **Ledger**: `T48` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`. **First pass of every transcript `T32`–`T48` + `S1`–`S9` complete.**
+
+---
+
+# §P2 — PASS 2 (`2026-10-10`) ACROSS `T32`–`T48` + `S1`–`S9`: THREE MECHANICAL COMPLETENESS ANGLES
+*Pass 2 does not re-narrate; it tests pass 1 for omissions with three checks that do not depend on a reader's attention:* **(a) owner messages** — every human-role event that is not a tool result, console paste or system notice, matched against this file by a sliding `24`-character window, the unmatched read in place; **(b) written files** — every path the build chat wrote (`github_put_file` / `github_patch_file` / `Write` / `Edit` / `git add`), basename checked against the twelve; **(c) created objects** — every `CREATE TABLE/VIEW/FUNCTION nba_*.*`, checked against the twelve and against the live schema. Out-of-scope PrizePicks-payout and MLB paths excluded; staging names a swap renames away (`*_new`, `*_build`) are gone live and ignored.
+
+| transcript | (a) owner | (b) files | (c) objects | pass-2 result |
+|---|---|---|---|---|
+| `T32` | `35` unquoted → `§T32.13` | clean | clean | **NEW MATERIAL** |
+| `T33` | `5` → `§T33.5` | clean | clean | **NEW MATERIAL** |
+| `T34` | `9` → `§T34.6` | clean | `tier_current_mult` → `NBA_DATABASE.md` `§P2.6` | **NEW MATERIAL** |
+| `T35` | `16` → `§T35.5` | clean | clean | **NEW MATERIAL** |
+| `T36` | `4` → `§T36.5` | clean | `4` tables → `§P2.6` | **NEW MATERIAL** |
+| `T37` | clean (`"Great, continue"`, `"Simulate bro!"`) | clean | `team_fresh_abs` → `§P2.6` | **NEW MATERIAL** |
+| `T38` | clean | clean | clean | **CLEAN** |
+| `T39` | clean (two *"Continue"*) | `nba-depth-change-verify.yml` → `NBA_WORKERS.md` `§P2.4` | clean | **NEW MATERIAL** |
+| `T40` | clean | `nba-tier-map-deep.yml` → `§P2.4` | clean (`tier_map_legs_wi2` gone live) | **NEW MATERIAL** |
+| `T41` | clean | clean (`nba_darko_current_meta.json` is the DARKO scraper's output; its failure is recorded) | clean | **CLEAN** |
+| `T42` | clean | clean | clean | **CLEAN** |
+| `T43` | clean | `nba/sql/refresh_board_rung_keys.sql` → `§P2.4` | clean | **NEW MATERIAL** |
+| `T44` | clean | `3` probes + `TRIGGER_NBA_INJURY_REPORT.txt` → `§P2.4` | clean | **NEW MATERIAL** |
+| `T45` | clean | trigger file (`§P2.4`) | `cell_certified_post` → `§P2.6` | **NEW MATERIAL** |
+| `T46` | clean | clean | `10` `psr_*` tables → `§P2.6` | **NEW MATERIAL** |
+| `T47` | clean | clean | `psr_pu_grid` / `psr_pu_final` → `§P2.6` | **NEW MATERIAL** |
+| `T48` | clean (the omitted messages are the ones `§T48` set aside on purpose) | clean | clean | **CLEAN** |
+| `S1`–`S9` | n/a (subagent prompts are the build chat's) | clean (globbed data outputs only) | clean (staging names only) | **CLEAN** |
+
+- ⚠ **Two live files no transcript carries**: `nba/sql/sleeper_slip_payout.sql` and `nba/sql/pp_flex_alt_payout.sql` (both `2026-10-09`) — after the pack's last ledger block; `T48-9`'s pending transcript.
+- 🔁 **Ledger-row drift, sixth instance** — index rows `34` and `39` still said `0` passes after their pass 1; fixed at the start of this pass.
+
+**Ledger**: pass `2` complete for `T32`–`T48` + `S1`–`S9` (`2026-10-10`). CLEAN `1`/`3`: `T38`, `T41`, `T42`, `T48`, `S1`–`S9`. Every other transcript: NEW MATERIAL, count stays `0`/`3`.
