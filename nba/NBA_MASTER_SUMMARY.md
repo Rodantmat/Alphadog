@@ -42951,7 +42951,7 @@ and the distinction is load-bearing for the headline below.*
 
 **`§T23.3` §2 recorded**: *"The transcript's own next step, **`NOT RECORDED` as run**: 'an exact
 slip-level backtest of a **standards-only** strategy (pushes/DNPs revert the slip size)' — a `T24`
-question."* ⇒ **`T24` §3 ran it.**
+question."* ⇒ **`T24` §3 ran it.** → 🆕 *`2026-10-10`, additional sweep `1`: `T23` had already reported a slip-level standards backtest of its own (`+16.7% ± 4.4%` over `4,212` slips, with minutes-leak and night-clustering checks) — `§T23.21`.*
 
 *Game-aware replay — **window lines, exact standard payouts**, greedy packing with no two legs from
 one game, slips close at `3`:*
