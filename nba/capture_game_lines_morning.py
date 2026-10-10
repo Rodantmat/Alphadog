@@ -37,21 +37,17 @@ def iso_z(t):
 
 
 def get(session, url):
-    for attempt in range(4):
-        try:
-            r = session.get(url, timeout=90)
-        except requests.RequestException as e:
-            time.sleep(5 + attempt * 10)
-            err = f"request error: {e}"
-            continue
-        if r.status_code == 200:
-            return r.json(), r.headers.get("x-requests-remaining"), None
-        if r.status_code in (429, 502, 503, 504):
-            time.sleep(5 + attempt * 10)
-            err = f"http {r.status_code}"
-            continue
-        return None, r.headers.get("x-requests-remaining"), f"http {r.status_code}: {r.text[:200]}"
-    return None, None, f"retries exhausted ({err})"
+    """the Odds API through the system retry policy (nba/net_retry.py, 2026-10-09): 4 attempts, full-jitter backoff,
+    Retry-After honoured, every 5xx retried (500 was final before), a final 4xx returned at once, no sleep after the
+    last attempt."""
+    from net_retry import RetryError, request
+    try:
+        r = request("GET", url, session=session, tries=4, base=5, cap=40, timeout=90, label="odds api")
+    except RetryError as exc:
+        return None, None, f"retries exhausted ({exc})"
+    if r.status_code == 200:
+        return r.json(), r.headers.get("x-requests-remaining"), None
+    return None, r.headers.get("x-requests-remaining"), f"http {r.status_code}: {r.text[:200]}"
 
 
 def main():
