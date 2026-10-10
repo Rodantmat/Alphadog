@@ -44329,3 +44329,25 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - 🔁 **Ledger-row drift, sixth instance** — index rows `34` and `39` still said `0` passes after their pass 1; fixed at the start of this pass.
 
 **Ledger**: pass `2` complete for `T32`–`T48` + `S1`–`S9` (`2026-10-10`). CLEAN `1`/`3`: `T38`, `T41`, `T42`, `T48`, `S1`–`S9`. Every other transcript: NEW MATERIAL, count stays `0`/`3`.
+
+---
+
+# §P3 — PASS 3 (`2026-10-10`) ACROSS `T32`–`T48` + `S1`–`S9`: COMMIT MESSAGES, QUOTED FIGURES, LIVE CLAIMS
+*Three more mechanical angles:* **(d) commit messages** — every `"message"` of a build-chat write call; each strategy `§` tag and each comma-grouped number in them checked against the twelve, the absent ones read and judged; **(e) quoted figures** — every backticked figure in `§T32`–`§T48` here and in every `§T32.x`–`§T48.x` section of the other eleven files, checked against its own transcript (+ the `S` reports read with it), the strategy doc and the ledger (the two AS-STATED sources); **(f) live claims** — every `` `nba_*.table` … `N` `` pair on a ✅ line re-counted read-only.
+
+| transcript | (d) commit messages | (e) figures | (f) live | pass-3 result |
+|---|---|---|---|---|
+| `T32` | `§8m` market-edge design → `NBA_BASELINE_CALIBRATION.md` item 4 | clean (`2,844` = transcript line count) | clean | **NEW MATERIAL** |
+| `T33` | `§13g`–`§13k`, `§16f` are the `§T33.0`-voided ROI series; `§19i` = `§T33.5` | clean | clean | **CLEAN** |
+| `T34` | `§20e` within-prop mean reversion → `NBA_BASELINE_CALIBRATION.md` item 4b; `§19k`/`§19n` detail (`9,545` first band rows; `910,599` joinable vs `910,513`, `86` duplicate price keys; `10,763` sampled legs, `0/0/0` mismatches) recorded here | clean (`1,378,317` is live) | clean | **NEW MATERIAL** |
+| `T35` | clean | clean | clean | **CLEAN** |
+| `T36` | pass 76 portfolio effect of the low-foul key → `NBA_SYSTEM_DESIGN.md` `§T36.7`; `§30b` first build `471,711` → `NBA_DATABASE.md` (`ud_window_legs`, ✅ exact `240,051` / `210,155`) | clean | clean | **NEW MATERIAL** |
+| `T37`, `T38` | clean | clean (live table counts in `§T37.6` are dated ✅) | clean | **CLEAN** |
+| `T39` | G2 cell-usable subset (`2,430`+`306` / `5,957`+`1,124`; `20` rungs cover `98.8–99.7%`) → `NBA_GOBLIN_DEMON.md` | clean | clean | **NEW MATERIAL** |
+| `T40`–`T48` | clean (Claude Code-era messages carry no `§` tags or comma figures absent from the twelve) | clean (only event counts, derived) | clean (`live_slip_engine.py` still `118,512` bytes; `tier_map_legs` `828,818`/key; `price_shop_ledger` `240`; `_mf_study_fs` `900,071`; `injury_asof_pick` `28,349`; …) | **CLEAN** |
+| `S1`–`S9` | n/a | clean | clean | **CLEAN** |
+
+- 🔴 **One stale live claim outside the `T32`–`T48` range, found by (f)**: `NBA_WORKERS.md` still gave `nba_score.baseline_ladder` *"live `206,237`"* in two table rows — **the table does not exist** (dropped by `F6-1`'s consolidation `2026-09-25`, already recorded in the same file's ⚠ SUPERSEDED block and in `NBA_GLOSSARY.md`). Both rows struck/annotated (`RULE 40`); attributed to `T26`'s era, which stays open.
+- Dated live claims that have simply grown since (`nba_ref.players` `713` → `756`, `player_name_map` `5,169` → `5,221`, quarantine `7,921` → `7,970`) carry their dates and are left as written.
+
+**Ledger**: pass `3` complete for `T32`–`T48` + `S1`–`S9` (`2026-10-10`). **CLEAN `2`/`3`**: `T38`, `T41`, `T42`, `T48`, `S1`–`S9`. **CLEAN `1`/`3`**: `T33`, `T35`, `T37`, `T40`, `T43`–`T47`. **CLEAN `0`/`3`** (pass 3 found NEW MATERIAL): `T32`, `T34`, `T36`, `T39`.
