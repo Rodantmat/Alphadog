@@ -3105,7 +3105,7 @@ times.**"***
 AND THE THING THAT DECIDED IT WAS ONE CLOCK CALCULATION.*** ⚠⚠ **`D1` REMAINS A BASELINE-STAGE FACTOR
 IN P2** *(workflow line `141`, "Referee assignments and per-game matchups (baseline-stage factors)")*,
 **which is what the parity doc's stage table says it should be** — ⇒ ***the instruction at seg807/822
-is SUPERSEDED, not outstanding.***
+is SUPERSEDED, not outstanding.*** 🆕 *(pass 113: the certified recipe has no referee input at all, so the rebuild would not have changed a stored number → `NBA_MASTER_SUMMARY.md` `§T26.R2`.)*
 
 🔴 **RECORDED EXPLICITLY BECAUSE THE OWNER SAID *"put it on your list"* AND NO LIST ENTRY WAS EVER
 MADE.** *A future reader finding seg807/seg822 without seg844 would re-open a rebuild the owner
