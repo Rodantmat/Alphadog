@@ -45556,7 +45556,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - ✅ **`T35`, `T36` — CLEAN on the second angle.** All `20` sampled sentences of each traced to the record; two details judged and not recorded — `T35`'s *"(a 2-minute aggregate read)"* (the row's reason, *"full where full is the exact form"*, is on file) and `T36`'s *"12 × 0.64⁴ = 2.01× — exactly the observed mean"* (the reconciliation of the owner's MLB slips, the `§30d` screenshot material kept at summary level since `§P52`).
 - 🔧 **Tool fix, recorded:** `colocT.py` stopped a write call's argument block only at `[TOOL RESULT]`; the pack-format transcripts put a `--- ` line first, so every write in `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47` failed to parse and the tool reported `0 of 0`. Fixed to stop at either (as `sa_extract.py` does); a recount shows `T32`–`T38` and `T48` unaffected (old = new write counts), so no earlier `colocT.py` verdict changes. `T40`–`T47` have not been through `colocT.py` yet.
 - ⚠ **Two process slips, struck in place:** `§T38.8` and `§T39.9` each first said the figure-free residue was settled before `runlen.py` had run on that transcript; both struck the same pass (RULE 40) and replaced by the measured result.
-- Every quotation added: `qdiff.py` `0` flags on each of the `16` patches checked.
+- Every quotation added: `qdiff.py` `0` flags on each of the ~~`16`~~ `15` patches that carry quotations *(miscount corrected on re-count: `§T37.9` `7`, `§T38.8` `2`, `§T39.9` `3`, the `T32`–`T34` bullets `3`)*.
 
 **Ledger**: pass `59` complete (`2026-10-10`).
 - **NEW MATERIAL / REOPENED → `0`/`3`**: `T32`, `T33`, `T34`; `T37`, `T38`, `T39` (reopened from `3`/`3`).
