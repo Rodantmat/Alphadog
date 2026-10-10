@@ -46429,7 +46429,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - 🔁 Forward pointers (`RULE 6`) added to the four places that still carry Sleeper's ladder as missing or unresolved: `NBA_MULTIPLIERS.md`, `NBA_GOBLIN_DEMON.md`, `NBA_GLOSSARY.md`, `NBA_OPEN_ITEMS.md`.
 - Judged, not recorded: Chalkboard's API map, headers and replay results (outcome on file from `T32`); the Chalkboard pricing model's content (`PP_PAYOUT_FINDINGS.md` `§0i`); Betr's Keycloak / offline-token passages; the seventeen raw-HTTP Betr probes; the Apify cost discussion; the proxy's identity; capture-step instructions.
 - Live reads this pass: `SELECT` only (`nba_market.board_snapshots`, Sleeper keys in the last `20` days); repo files read, none changed outside the docs.
-- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- ~~No hourly-rotation commit landed during the pass (checked on main before writing this line).~~ One did, after this line: `6a34efead` (`19:11Z`) changed line `8` (its own resume note) and **rewrote line `23` from a stale copy, undoing this pass's census commit `c3b248a46`** — the census was re-applied (`b865e9aa5`). Line `23` is now checked after every pass's last commit, not only before.
 - Every quotation added since the pass-103 census commit: `qdiff.py` `0` flags (`7` quotes counted); the credential grep on the twelve returns `0`.
 
 **Ledger**: pass `104` complete (`2026-10-10`).
