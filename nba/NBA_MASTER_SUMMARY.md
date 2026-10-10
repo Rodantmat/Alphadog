@@ -44663,3 +44663,9 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - 🆕 **A correction**: `NBA_SYSTEM_DESIGN.md` `§T35.7` #7 had the weighted-steals cap 6 / core 5-Flex retirement as *"proposed"* — the `22:33Z` reply says applied as reviewed edits, ✅ and the code agrees (`live_slip_engine.py:59–64`). Struck and annotated.
 
 **Ledger**: `T35` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+**`T36`** (`67` final replies, `10-02 00:52Z → 10-03 05:44Z`) — **NEW MATERIAL**, reopened:
+- 🆕 **`§T36.6`** — the rotation's identification record and drought menu with their numbers (and the stocks Power's re-measure `+48% → +27%`); single bad day vs long drought; calendar and leg numbers; the owner's before/after tables; the replays (#5 lock-on, #6 rotation record, the first 2024-25 live replay, the pre-break plans A–D, the final pair); the first Underdog read.
+- 🆕 **A correction in two files**: `NBA_BASELINE_CALIBRATION.md` `§T36.5` listed *"holiday slates"* among the dropped tests — the `05:26Z` reply adopted NYE and MLK Day as a cap-1 caution, ✅ in code (`live_slip_engine.py:598–603`); struck, and the rule added to `NBA_SYSTEM_DESIGN.md` `§T36.7`'s rule stack.
+
+**Ledger**: `T36` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
