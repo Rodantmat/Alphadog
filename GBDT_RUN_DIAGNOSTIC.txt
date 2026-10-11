@@ -38,11 +38,12 @@ Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
 	modified:   GBDT_RUN_DIAGNOSTIC.txt
+	modified:   gbdt_training/data/train_models_debug.log
 	modified:   gbdt_training/data/workflow_run.log
 
 no changes added to commit (use "git add" and/or "git commit -a")
 === git branch/HEAD state ===
 * main
   remotes/origin/main
-190777ee6b6562d0d11cdd09294d01201f9e2220
+3508f60c44da66cf7c8b0dc0d36652fc21eebfda
 refs/heads/main
