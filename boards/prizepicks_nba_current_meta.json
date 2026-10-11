@@ -3,59 +3,59 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-10T20:20:13Z",
+  "fetched_at": "2026-10-11T20:20:01Z",
   "egress": {
-    "ip": "142.173.161.204",
-    "city": "Ashburn",
-    "region": "Virginia",
+    "ip": "178.83.84.137",
+    "city": "Dallas",
+    "region": "Texas",
     "country": "US",
-    "loc": "39.0437,-77.4875",
-    "org": "AS6079 RCN",
-    "postal": "20149",
-    "timezone": "America/New_York",
+    "loc": "32.7831,-96.8067",
+    "org": "AS7459 Grande Communications Networks, LLC",
+    "postal": "75201",
+    "timezone": "America/Chicago",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 226,
-  "row_count": 226,
+  "rows": 225,
+  "row_count": 225,
   "total_pages": 1,
-  "future_pickable": 226,
+  "future_pickable": 225,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 403,
-      "bytes": 501,
+      "bytes": 496,
       "error": "blocked"
     },
     {
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 403,
-      "bytes": 475,
+      "bytes": 480,
       "error": "blocked"
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 253284,
+      "bytes": 252256,
       "total_pages": 1,
       "ok": true,
-      "rows": 226,
-      "future_pickable": 226
+      "rows": 225,
+      "future_pickable": 225
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 253262,
+      "bytes": 252234,
       "total_pages": 1,
       "ok": true,
-      "rows": 226,
-      "future_pickable": 226
+      "rows": 225,
+      "future_pickable": 225
     }
   ],
-  "github_run_id": "38083092937"
+  "github_run_id": "38171504415"
 }
