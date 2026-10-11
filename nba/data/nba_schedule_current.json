@@ -21386,8 +21386,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "Kaseya Center",
       "arena_city": "Miami",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21401,8 +21401,8 @@
       "away_team_tricode": "ATL",
       "arena_name": "Gainbridge Fieldhouse",
       "arena_city": "Indianapolis",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21416,8 +21416,8 @@
       "away_team_tricode": "PHI",
       "arena_name": "TD Garden",
       "arena_city": "Boston",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21431,8 +21431,8 @@
       "away_team_tricode": "SAC",
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
-      "game_status": 1,
-      "game_status_text": "8:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21446,8 +21446,8 @@
       "away_team_tricode": "LAC",
       "arena_name": "Rogers Arena",
       "arena_city": "Vancouver",
-      "game_status": 1,
-      "game_status_text": "6:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21461,8 +21461,8 @@
       "away_team_tricode": "DET",
       "arena_name": "Capital One Arena",
       "arena_city": "Washington",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": "Preseason"
     },
     {
@@ -21476,8 +21476,8 @@
       "away_team_tricode": "SAS",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "10:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21491,8 +21491,8 @@
       "away_team_tricode": "DAL",
       "arena_name": "Venetian Arena",
       "arena_city": "Macao, China",
-      "game_status": 1,
-      "game_status_text": "6:00 am ET",
+      "game_status": 2,
+      "game_status_text": "1st Qtr             ",
       "game_label": "Preseason"
     },
     {
