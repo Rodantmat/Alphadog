@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-10-12T15:48:40Z",
-  "fetched_at": "2026-10-12T15:49:06Z",
+  "started_at": "2026-10-12T23:06:22Z",
+  "fetched_at": "2026-10-12T23:06:46Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -57,7 +57,7 @@
     ],
     [
       "pills[match=264623]",
-      188
+      154
     ],
     [
       "lines[match=264755]",
@@ -65,7 +65,7 @@
     ],
     [
       "pills[match=264755]",
-      160
+      161
     ],
     [
       "lines[match=264756,other-day]",
@@ -89,89 +89,89 @@
     ],
     [
       "lines_with_stats[players]",
-      0,
-      40
+      22,
+      38
     ],
     [
       "alternate_projections",
-      265,
-      874,
+      228,
+      687,
       0,
-      "deduped 0"
+      "deduped 73"
     ],
     [
       "lines[mass=true]",
-      0
+      4
     ],
     [
       "lines[mass=false]",
       0
     ]
   ],
-  "lines": 399,
-  "legs": 399,
-  "ladder_legs": 874,
-  "ladder_lines_with_alternates": 265,
-  "players": 40,
-  "pregame_legs": 399,
-  "live_legs": 0,
+  "lines": 392,
+  "legs": 392,
+  "ladder_legs": 687,
+  "ladder_lines_with_alternates": 228,
+  "players": 38,
+  "pregame_legs": 190,
+  "live_legs": 202,
   "by_stat": {
-    "Hits + Runs + RBIs": 36,
-    "Total Bases": 36,
-    "Home Runs": 36,
-    "RBIs": 36,
-    "Hits": 35,
-    "Runs": 35,
-    "Batter Walks": 34,
-    "Stolen Bases": 27,
-    "Fantasy Points": 19,
+    "Total Bases": 48,
+    "Hits": 41,
+    "RBIs": 40,
+    "Hits + Runs + RBIs": 39,
+    "Home Runs": 38,
+    "Stolen Bases": 36,
+    "Runs": 33,
+    "Batter Walks": 30,
     "Singles": 14,
     "Batter Strikeouts": 14,
-    "Doubles": 14,
+    "Fantasy Points": 9,
+    "Doubles": 8,
     "Moneyline": 7,
-    "Strikeouts": 4,
-    "Pitching Outs Recorded": 4,
-    "Pitcher Hits Allowed": 4,
     "Team Total Runs": 4,
-    "Pitcher Walks Allowed": 4,
-    "Pitcher Earned Runs Allowed": 4,
-    "1st Inn. Strikeouts": 4,
-    "1st Inn. Runs Allowed": 4,
-    "1st Inn. Hits Allowed": 4,
-    "1st Inn. Pitch Count": 4,
-    "1st Inn. Batters Faced": 4,
     "Spread": 2,
     "Total Runs": 2,
-    "Run 1st Inning": 2,
-    "1st 5 Innings Total Runs": 2,
     "1st 5 Innings Moneyline": 2,
-    "1st 5 Innings Spread": 2
+    "1st 5 Innings Total Runs": 2,
+    "1st 5 Innings Spread": 2,
+    "Strikeouts": 2,
+    "Pitching Outs Recorded": 2,
+    "Pitcher Hits Allowed": 2,
+    "Pitcher Walks Allowed": 2,
+    "Pitcher Earned Runs Allowed": 2,
+    "1st Inn. Strikeouts": 2,
+    "1st Inn. Runs Allowed": 2,
+    "1st Inn. Pitch Count": 2,
+    "1st Inn. Batters Faced": 2,
+    "1st Inn. Hits Allowed": 2,
+    "Run 1st Inning": 1
   },
   "by_line_type": {
-    "balanced": 399
+    "balanced": 392
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 49,
-    "None": 15,
-    "1.16": 9,
-    "0.81": 9,
-    "0.9": 8,
-    "1.46": 8,
-    "0.88": 7,
-    "0.85": 7,
-    "0.89": 6,
-    "0.83": 5,
-    "1.9": 5,
-    "1.67": 5,
-    "1.14": 5,
-    "0.86": 4,
-    "0.91": 4
+    "1.0": 26,
+    "None": 14,
+    "1.41": 10,
+    "9.38": 8,
+    "1.37": 7,
+    "2.63": 6,
+    "11.71": 6,
+    "0.9": 6,
+    "3.92": 5,
+    "7.82": 5,
+    "6.71": 5,
+    "1.33": 5,
+    "1.76": 5,
+    "1.09": 4,
+    "1.26": 4
   },
-  "github_run_id": "38272811042",
+  "github_run_id": "38320277398",
   "target_date_et": "2026-10-12",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 25.1
+  "elapsed_s": 23.4
 }
