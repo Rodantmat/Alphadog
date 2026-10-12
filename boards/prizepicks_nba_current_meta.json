@@ -3,16 +3,16 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-11T20:20:01Z",
+  "fetched_at": "2026-10-12T20:19:49Z",
   "egress": {
-    "ip": "178.83.84.137",
-    "city": "Dallas",
-    "region": "Texas",
+    "ip": "5.151.103.215",
+    "city": "Leesburg",
+    "region": "Virginia",
     "country": "US",
-    "loc": "32.7831,-96.8067",
-    "org": "AS7459 Grande Communications Networks, LLC",
-    "postal": "75201",
-    "timezone": "America/Chicago",
+    "loc": "39.1157,-77.5636",
+    "org": "AS6079 RCN",
+    "postal": "20176",
+    "timezone": "America/New_York",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
@@ -33,14 +33,14 @@
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 403,
-      "bytes": 480,
+      "bytes": 94,
       "error": "blocked"
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 252256,
+      "bytes": 252384,
       "total_pages": 1,
       "ok": true,
       "rows": 225,
@@ -50,12 +50,12 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 252234,
+      "bytes": 252362,
       "total_pages": 1,
       "ok": true,
       "rows": 225,
       "future_pickable": 225
     }
   ],
-  "github_run_id": "38171504415"
+  "github_run_id": "38303145244"
 }
