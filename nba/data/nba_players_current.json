@@ -1223,6 +1223,19 @@
       "team_abbreviation": "ORL"
     },
     {
+      "id": 1643572,
+      "full_name": "Rafael Castro",
+      "last_comma_first": "Castro, Rafael",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "rafael_castro",
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
+    },
+    {
       "id": 1643416,
       "full_name": "Chris Cenac Jr.",
       "last_comma_first": "Cenac Jr., Chris",
@@ -5069,6 +5082,19 @@
       "team_city": "Golden State",
       "team_name": "Warriors",
       "team_abbreviation": "GSW"
+    },
+    {
+      "id": 1642922,
+      "full_name": "Jalon Moore",
+      "last_comma_first": "Moore, Jalon",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_jalen_moore",
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
     },
     {
       "id": 1631457,
