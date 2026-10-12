@@ -760,17 +760,6 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642847,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.107,
-      "fgm": 42,
-      "fga": 108,
-      "fg_pct": 0.389,
-      "efg_pct": 0.394,
-      "fg3a_frequency": 0.003,
-      "fg3_pct": 0.333
-    },
-    {
       "player_id": 1642845,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.105,
@@ -780,6 +769,17 @@
       "efg_pct": 0.398,
       "fg3a_frequency": 0.002,
       "fg3_pct": 1.0
+    },
+    {
+      "player_id": 1642847,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.107,
+      "fgm": 42,
+      "fga": 108,
+      "fg_pct": 0.389,
+      "efg_pct": 0.394,
+      "fg3a_frequency": 0.003,
+      "fg3_pct": 0.333
     },
     {
       "player_id": 1629023,
@@ -859,17 +859,6 @@
       "fg3_pct": 0.25
     },
     {
-      "player_id": 1629111,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.186,
-      "fgm": 54,
-      "fga": 102,
-      "fg_pct": 0.529,
-      "efg_pct": 0.529,
-      "fg3a_frequency": 0.004,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 1631109,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.234,
@@ -879,6 +868,17 @@
       "efg_pct": 0.529,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
+    },
+    {
+      "player_id": 1629111,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.186,
+      "fgm": 54,
+      "fga": 102,
+      "fg_pct": 0.529,
+      "efg_pct": 0.529,
+      "fg3a_frequency": 0.004,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 203468,
@@ -1145,17 +1145,6 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 1628398,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.128,
-      "fgm": 44,
-      "fga": 88,
-      "fg_pct": 0.5,
-      "efg_pct": 0.506,
-      "fg3a_frequency": 0.001,
-      "fg3_pct": 1.0
-    },
-    {
       "player_id": 1641842,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.162,
@@ -1165,6 +1154,17 @@
       "efg_pct": 0.5,
       "fg3a_frequency": 0.002,
       "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1628398,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.128,
+      "fgm": 44,
+      "fga": 88,
+      "fg_pct": 0.5,
+      "efg_pct": 0.506,
+      "fg3a_frequency": 0.001,
+      "fg3_pct": 1.0
     },
     {
       "player_id": 1630532,
@@ -2058,17 +2058,6 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630224,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.107,
-      "fgm": 27,
-      "fga": 55,
-      "fg_pct": 0.491,
-      "efg_pct": 0.509,
-      "fg3a_frequency": 0.006,
-      "fg3_pct": 0.667
-    },
-    {
       "player_id": 1642363,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.092,
@@ -2078,6 +2067,17 @@
       "efg_pct": 0.491,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
+    },
+    {
+      "player_id": 1630224,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.107,
+      "fgm": 27,
+      "fga": 55,
+      "fg_pct": 0.491,
+      "efg_pct": 0.509,
+      "fg3a_frequency": 0.006,
+      "fg3_pct": 0.667
     },
     {
       "player_id": 203501,
@@ -2124,17 +2124,6 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1629614,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.072,
-      "fgm": 16,
-      "fga": 54,
-      "fg_pct": 0.296,
-      "efg_pct": 0.306,
-      "fg3a_frequency": 0.005,
-      "fg3_pct": 0.25
-    },
-    {
       "player_id": 1642347,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.107,
@@ -2144,6 +2133,17 @@
       "efg_pct": 0.296,
       "fg3a_frequency": 0.004,
       "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1629614,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.072,
+      "fgm": 16,
+      "fga": 54,
+      "fg_pct": 0.296,
+      "efg_pct": 0.306,
+      "fg3a_frequency": 0.005,
+      "fg3_pct": 0.25
     },
     {
       "player_id": 1630188,
@@ -2355,17 +2355,6 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1631245,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.143,
-      "fgm": 20,
-      "fga": 47,
-      "fg_pct": 0.426,
-      "efg_pct": 0.436,
-      "fg3a_frequency": 0.006,
-      "fg3_pct": 0.5
-    },
-    {
       "player_id": 1630193,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.052,
@@ -2374,6 +2363,17 @@
       "fg_pct": 0.426,
       "efg_pct": 0.436,
       "fg3a_frequency": 0.002,
+      "fg3_pct": 0.5
+    },
+    {
+      "player_id": 1631245,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.143,
+      "fgm": 20,
+      "fga": 47,
+      "fg_pct": 0.426,
+      "efg_pct": 0.436,
+      "fg3a_frequency": 0.006,
       "fg3_pct": 0.5
     },
     {
@@ -2421,17 +2421,6 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 203114,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.083,
-      "fgm": 19,
-      "fga": 45,
-      "fg_pct": 0.422,
-      "efg_pct": 0.444,
-      "fg3a_frequency": 0.006,
-      "fg3_pct": 0.667
-    },
-    {
       "player_id": 1629645,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.088,
@@ -2441,6 +2430,17 @@
       "efg_pct": 0.422,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
+    },
+    {
+      "player_id": 203114,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.083,
+      "fgm": 19,
+      "fga": 45,
+      "fg_pct": 0.422,
+      "efg_pct": 0.444,
+      "fg3a_frequency": 0.006,
+      "fg3_pct": 0.667
     },
     {
       "player_id": 1630703,
@@ -2740,17 +2740,6 @@
       "fg3_pct": 0.5
     },
     {
-      "player_id": 1628978,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.047,
-      "fgm": 18,
-      "fga": 39,
-      "fg_pct": 0.462,
-      "efg_pct": 0.487,
-      "fg3a_frequency": 0.007,
-      "fg3_pct": 0.333
-    },
-    {
       "player_id": 1642346,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.108,
@@ -2760,6 +2749,17 @@
       "efg_pct": 0.474,
       "fg3a_frequency": 0.011,
       "fg3_pct": 0.25
+    },
+    {
+      "player_id": 1628978,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.047,
+      "fgm": 18,
+      "fga": 39,
+      "fg_pct": 0.462,
+      "efg_pct": 0.487,
+      "fg3a_frequency": 0.007,
+      "fg3_pct": 0.333
     },
     {
       "player_id": 1629020,
@@ -2817,17 +2817,6 @@
       "fg3_pct": 0.5
     },
     {
-      "player_id": 1631159,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.142,
-      "fgm": 18,
-      "fga": 37,
-      "fg_pct": 0.486,
-      "efg_pct": 0.486,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 1628960,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.056,
@@ -2837,6 +2826,17 @@
       "efg_pct": 0.514,
       "fg3a_frequency": 0.006,
       "fg3_pct": 0.5
+    },
+    {
+      "player_id": 1631159,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.142,
+      "fgm": 18,
+      "fga": 37,
+      "fg_pct": 0.486,
+      "efg_pct": 0.486,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
     },
     {
       "player_id": 203500,
@@ -2850,9 +2850,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642848,
+      "player_id": 203935,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.057,
+      "fga_frequency": 0.078,
       "fgm": 12,
       "fga": 37,
       "fg_pct": 0.324,
@@ -2861,9 +2861,9 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 203935,
+      "player_id": 1642848,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.078,
+      "fga_frequency": 0.057,
       "fgm": 12,
       "fga": 37,
       "fg_pct": 0.324,
@@ -2938,17 +2938,6 @@
       "fg3_pct": 0.286
     },
     {
-      "player_id": 1629130,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.05,
-      "fgm": 12,
-      "fga": 35,
-      "fg_pct": 0.343,
-      "efg_pct": 0.414,
-      "fg3a_frequency": 0.02,
-      "fg3_pct": 0.357
-    },
-    {
       "player_id": 1641712,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.112,
@@ -2958,6 +2947,17 @@
       "efg_pct": 0.343,
       "fg3a_frequency": 0.003,
       "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1629130,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.05,
+      "fgm": 12,
+      "fga": 35,
+      "fg_pct": 0.343,
+      "efg_pct": 0.414,
+      "fg3a_frequency": 0.02,
+      "fg3_pct": 0.357
     },
     {
       "player_id": 1631169,
@@ -3070,6 +3070,17 @@
       "fg3_pct": 0.0
     },
     {
+      "player_id": 1631131,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.214,
+      "fgm": 13,
+      "fga": 31,
+      "fg_pct": 0.419,
+      "efg_pct": 0.419,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
       "player_id": 203110,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.063,
@@ -3090,17 +3101,6 @@
       "efg_pct": 0.516,
       "fg3a_frequency": 0.019,
       "fg3_pct": 0.5
-    },
-    {
-      "player_id": 1631131,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.214,
-      "fgm": 13,
-      "fga": 31,
-      "fg_pct": 0.419,
-      "efg_pct": 0.419,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
     },
     {
       "player_id": 1642942,
@@ -3301,17 +3301,6 @@
       "fg3_pct": 0.25
     },
     {
-      "player_id": 1628396,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.231,
-      "fgm": 14,
-      "fga": 27,
-      "fg_pct": 0.519,
-      "efg_pct": 0.519,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 1631213,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.097,
@@ -3321,6 +3310,17 @@
       "efg_pct": 0.574,
       "fg3a_frequency": 0.022,
       "fg3_pct": 0.5
+    },
+    {
+      "player_id": 1628396,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.231,
+      "fgm": 14,
+      "fga": 27,
+      "fg_pct": 0.519,
+      "efg_pct": 0.519,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
     },
     {
       "player_id": 1629661,
@@ -3345,17 +3345,6 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 1629660,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.126,
-      "fgm": 13,
-      "fga": 27,
-      "fg_pct": 0.481,
-      "efg_pct": 0.481,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 1642854,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.16,
@@ -3365,6 +3354,17 @@
       "efg_pct": 0.5,
       "fg3a_frequency": 0.006,
       "fg3_pct": 1.0
+    },
+    {
+      "player_id": 1629660,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.126,
+      "fgm": 13,
+      "fga": 27,
+      "fg_pct": 0.481,
+      "efg_pct": 0.481,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
     },
     {
       "player_id": 1630557,
@@ -3708,15 +3708,15 @@
       "fg3_pct": 0.8
     },
     {
-      "player_id": 1630631,
+      "player_id": 1642853,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.047,
+      "fga_frequency": 0.099,
       "fgm": 8,
       "fga": 21,
       "fg_pct": 0.381,
-      "efg_pct": 0.381,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
+      "efg_pct": 0.405,
+      "fg3a_frequency": 0.009,
+      "fg3_pct": 0.5
     },
     {
       "player_id": 1628369,
@@ -3730,15 +3730,15 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1642853,
+      "player_id": 1630631,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.099,
+      "fga_frequency": 0.047,
       "fgm": 8,
       "fga": 21,
       "fg_pct": 0.381,
-      "efg_pct": 0.405,
-      "fg3a_frequency": 0.009,
-      "fg3_pct": 0.5
+      "efg_pct": 0.381,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
     },
     {
       "player_id": 1642914,
@@ -4016,9 +4016,9 @@
       "fg3_pct": 0.5
     },
     {
-      "player_id": 1642864,
+      "player_id": 1631342,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.069,
+      "fga_frequency": 0.061,
       "fgm": 6,
       "fga": 17,
       "fg_pct": 0.353,
@@ -4027,9 +4027,9 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1631342,
+      "player_id": 1642864,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.061,
+      "fga_frequency": 0.069,
       "fgm": 6,
       "fga": 17,
       "fg_pct": 0.353,
@@ -4049,17 +4049,6 @@
       "fg3_pct": 0.143
     },
     {
-      "player_id": 1629723,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.085,
-      "fgm": 5,
-      "fga": 17,
-      "fg_pct": 0.294,
-      "efg_pct": 0.294,
-      "fg3a_frequency": 0.01,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 1630526,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.17,
@@ -4071,15 +4060,15 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1629646,
+      "player_id": 1629723,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.34,
-      "fgm": 9,
-      "fga": 16,
-      "fg_pct": 0.563,
-      "efg_pct": 0.563,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
+      "fga_frequency": 0.085,
+      "fgm": 5,
+      "fga": 17,
+      "fg_pct": 0.294,
+      "efg_pct": 0.294,
+      "fg3a_frequency": 0.01,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 1642880,
@@ -4093,13 +4082,13 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1626172,
+      "player_id": 1629646,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.267,
-      "fgm": 8,
+      "fga_frequency": 0.34,
+      "fgm": 9,
       "fga": 16,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
+      "fg_pct": 0.563,
+      "efg_pct": 0.563,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -4118,6 +4107,17 @@
       "player_id": 1643052,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.17,
+      "fgm": 8,
+      "fga": 16,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1626172,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.267,
       "fgm": 8,
       "fga": 16,
       "fg_pct": 0.5,
@@ -4192,17 +4192,6 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1626156,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.065,
-      "fgm": 8,
-      "fga": 15,
-      "fg_pct": 0.533,
-      "efg_pct": 0.533,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 1642862,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.158,
@@ -4212,6 +4201,17 @@
       "efg_pct": 0.567,
       "fg3a_frequency": 0.011,
       "fg3_pct": 1.0
+    },
+    {
+      "player_id": 1626156,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.065,
+      "fgm": 8,
+      "fga": 15,
+      "fg_pct": 0.533,
+      "efg_pct": 0.533,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
     },
     {
       "player_id": 1629652,
@@ -4247,17 +4247,6 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 1630544,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.05,
-      "fgm": 5,
-      "fga": 15,
-      "fg_pct": 0.333,
-      "efg_pct": 0.333,
-      "fg3a_frequency": 0.007,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 1631246,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.051,
@@ -4266,6 +4255,17 @@
       "fg_pct": 0.333,
       "efg_pct": 0.333,
       "fg3a_frequency": 0.003,
+      "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1630544,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.05,
+      "fgm": 5,
+      "fga": 15,
+      "fg_pct": 0.333,
+      "efg_pct": 0.333,
+      "fg3a_frequency": 0.007,
       "fg3_pct": 0.0
     },
     {
@@ -4291,17 +4291,6 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1631288,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.092,
-      "fgm": 8,
-      "fga": 14,
-      "fg_pct": 0.571,
-      "efg_pct": 0.571,
-      "fg3a_frequency": 0.007,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 1642885,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.066,
@@ -4311,6 +4300,17 @@
       "efg_pct": 0.607,
       "fg3a_frequency": 0.005,
       "fg3_pct": 1.0
+    },
+    {
+      "player_id": 1631288,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.092,
+      "fgm": 8,
+      "fga": 14,
+      "fg_pct": 0.571,
+      "efg_pct": 0.571,
+      "fg3a_frequency": 0.007,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 1642261,
@@ -4346,15 +4346,15 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630182,
+      "player_id": 1631104,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.072,
+      "fga_frequency": 0.105,
       "fgm": 8,
       "fga": 13,
       "fg_pct": 0.615,
-      "efg_pct": 0.692,
-      "fg3a_frequency": 0.011,
-      "fg3_pct": 1.0
+      "efg_pct": 0.615,
+      "fg3a_frequency": 0.008,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 1642419,
@@ -4368,15 +4368,15 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 1631104,
+      "player_id": 1630182,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.105,
+      "fga_frequency": 0.072,
       "fgm": 8,
       "fga": 13,
       "fg_pct": 0.615,
-      "efg_pct": 0.615,
-      "fg3a_frequency": 0.008,
-      "fg3_pct": 0.0
+      "efg_pct": 0.692,
+      "fg3a_frequency": 0.011,
+      "fg3_pct": 1.0
     },
     {
       "player_id": 1630545,
@@ -4522,17 +4522,6 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1642948,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.028,
-      "fgm": 5,
-      "fga": 11,
-      "fg_pct": 0.455,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.003,
-      "fg3_pct": 1.0
-    },
-    {
       "player_id": 1641727,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.118,
@@ -4544,31 +4533,20 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1629684,
+      "player_id": 1642948,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.06,
-      "fgm": 4,
+      "fga_frequency": 0.028,
+      "fgm": 5,
       "fga": 11,
-      "fg_pct": 0.364,
-      "efg_pct": 0.364,
-      "fg3a_frequency": 0.011,
-      "fg3_pct": 0.0
+      "fg_pct": 0.455,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.003,
+      "fg3_pct": 1.0
     },
     {
       "player_id": 1631204,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.062,
-      "fgm": 4,
-      "fga": 11,
-      "fg_pct": 0.364,
-      "efg_pct": 0.364,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1631113,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.08,
       "fgm": 4,
       "fga": 11,
       "fg_pct": 0.364,
@@ -4597,6 +4575,28 @@
       "efg_pct": 0.409,
       "fg3a_frequency": 0.004,
       "fg3_pct": 1.0
+    },
+    {
+      "player_id": 1631113,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.08,
+      "fgm": 4,
+      "fga": 11,
+      "fg_pct": 0.364,
+      "efg_pct": 0.364,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1629684,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.06,
+      "fgm": 4,
+      "fga": 11,
+      "fg_pct": 0.364,
+      "efg_pct": 0.364,
+      "fg3a_frequency": 0.011,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 1642367,
@@ -4632,17 +4632,6 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1629162,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.127,
-      "fgm": 5,
-      "fga": 10,
-      "fg_pct": 0.5,
-      "efg_pct": 0.55,
-      "fg3a_frequency": 0.013,
-      "fg3_pct": 1.0
-    },
-    {
       "player_id": 1630249,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.023,
@@ -4652,6 +4641,17 @@
       "efg_pct": 0.5,
       "fg3a_frequency": 0.002,
       "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1629162,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.127,
+      "fgm": 5,
+      "fga": 10,
+      "fg_pct": 0.5,
+      "efg_pct": 0.55,
+      "fg3a_frequency": 0.013,
+      "fg3_pct": 1.0
     },
     {
       "player_id": 1627827,
@@ -4709,17 +4709,6 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1629680,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.067,
-      "fgm": 5,
-      "fga": 9,
-      "fg_pct": 0.556,
-      "efg_pct": 0.611,
-      "fg3a_frequency": 0.007,
-      "fg3_pct": 1.0
-    },
-    {
       "player_id": 1631117,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.243,
@@ -4731,6 +4720,17 @@
       "fg3_pct": null
     },
     {
+      "player_id": 1629680,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.067,
+      "fgm": 5,
+      "fga": 9,
+      "fg_pct": 0.556,
+      "efg_pct": 0.611,
+      "fg3a_frequency": 0.007,
+      "fg3_pct": 1.0
+    },
+    {
       "player_id": 1642918,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.18,
@@ -4738,17 +4738,6 @@
       "fga": 9,
       "fg_pct": 0.444,
       "efg_pct": 0.444,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642354,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.091,
-      "fgm": 3,
-      "fga": 9,
-      "fg_pct": 0.333,
-      "efg_pct": 0.333,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -4764,9 +4753,20 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630610,
+      "player_id": 1642354,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.108,
+      "fga_frequency": 0.091,
+      "fgm": 3,
+      "fga": 9,
+      "fg_pct": 0.333,
+      "efg_pct": 0.333,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1642964,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.127,
       "fgm": 2,
       "fga": 9,
       "fg_pct": 0.222,
@@ -4775,9 +4775,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642964,
+      "player_id": 1630610,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.127,
+      "fga_frequency": 0.108,
       "fgm": 2,
       "fga": 9,
       "fg_pct": 0.222,
@@ -4852,31 +4852,20 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 1642873,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.35,
-      "fgm": 3,
-      "fga": 7,
-      "fg_pct": 0.429,
-      "efg_pct": 0.429,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1626145,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.032,
-      "fgm": 3,
-      "fga": 7,
-      "fg_pct": 0.429,
-      "efg_pct": 0.429,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 1642876,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.226,
+      "fgm": 3,
+      "fga": 7,
+      "fg_pct": 0.429,
+      "efg_pct": 0.429,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1629027,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.04,
       "fgm": 3,
       "fga": 7,
       "fg_pct": 0.429,
@@ -4896,6 +4885,17 @@
       "fg3_pct": null
     },
     {
+      "player_id": 1626145,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.032,
+      "fgm": 3,
+      "fga": 7,
+      "fg_pct": 0.429,
+      "efg_pct": 0.429,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
       "player_id": 1641733,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.043,
@@ -4907,9 +4907,9 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1629027,
+      "player_id": 1642873,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.04,
+      "fga_frequency": 0.35,
       "fgm": 3,
       "fga": 7,
       "fg_pct": 0.429,
@@ -4929,9 +4929,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642504,
+      "player_id": 1628380,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.059,
+      "fga_frequency": 0.094,
       "fgm": 4,
       "fga": 6,
       "fg_pct": 0.667,
@@ -4951,9 +4951,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1628380,
+      "player_id": 1642504,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.094,
+      "fga_frequency": 0.059,
       "fgm": 4,
       "fga": 6,
       "fg_pct": 0.667,
@@ -4973,9 +4973,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630587,
+      "player_id": 1641871,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.094,
+      "fga_frequency": 0.081,
       "fgm": 2,
       "fga": 6,
       "fg_pct": 0.333,
@@ -4984,9 +4984,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1641871,
+      "player_id": 1630587,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.081,
+      "fga_frequency": 0.094,
       "fgm": 2,
       "fga": 6,
       "fg_pct": 0.333,
@@ -5028,9 +5028,9 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 203486,
+      "player_id": 1642396,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.357,
+      "fga_frequency": 0.043,
       "fgm": 3,
       "fga": 5,
       "fg_pct": 0.6,
@@ -5061,15 +5061,15 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1642396,
+      "player_id": 201145,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.043,
+      "fga_frequency": 0.074,
       "fgm": 3,
       "fga": 5,
       "fg_pct": 0.6,
       "efg_pct": 0.6,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
+      "fg3a_frequency": 0.015,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 1629312,
@@ -5083,37 +5083,15 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 201145,
+      "player_id": 203486,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.074,
+      "fga_frequency": 0.357,
       "fgm": 3,
       "fga": 5,
       "fg_pct": 0.6,
       "efg_pct": 0.6,
-      "fg3a_frequency": 0.015,
-      "fg3_pct": 0.0
-    },
-    {
-      "player_id": 1643158,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.172,
-      "fgm": 2,
-      "fga": 5,
-      "fg_pct": 0.4,
-      "efg_pct": 0.4,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
-    },
-    {
-      "player_id": 1627752,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.026,
-      "fgm": 2,
-      "fga": 5,
-      "fg_pct": 0.4,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.005,
-      "fg3_pct": 1.0
     },
     {
       "player_id": 1643018,
@@ -5127,9 +5105,9 @@
       "fg3_pct": 0.5
     },
     {
-      "player_id": 1631116,
+      "player_id": 1643158,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.185,
+      "fga_frequency": 0.172,
       "fgm": 2,
       "fga": 5,
       "fg_pct": 0.4,
@@ -5149,15 +5127,26 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630165,
+      "player_id": 1631116,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.036,
-      "fgm": 1,
+      "fga_frequency": 0.185,
+      "fgm": 2,
       "fga": 5,
-      "fg_pct": 0.2,
-      "efg_pct": 0.2,
+      "fg_pct": 0.4,
+      "efg_pct": 0.4,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
+    },
+    {
+      "player_id": 1627752,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.026,
+      "fgm": 2,
+      "fga": 5,
+      "fg_pct": 0.4,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.005,
+      "fg3_pct": 1.0
     },
     {
       "player_id": 1641778,
@@ -5182,13 +5171,13 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 203648,
+      "player_id": 1630165,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.125,
-      "fgm": 3,
-      "fga": 4,
-      "fg_pct": 0.75,
-      "efg_pct": 0.75,
+      "fga_frequency": 0.036,
+      "fgm": 1,
+      "fga": 5,
+      "fg_pct": 0.2,
+      "efg_pct": 0.2,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -5204,31 +5193,20 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1628449,
+      "player_id": 203648,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.16,
-      "fgm": 2,
+      "fga_frequency": 0.125,
+      "fgm": 3,
       "fga": 4,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
+      "fg_pct": 0.75,
+      "efg_pct": 0.75,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
     {
-      "player_id": 1641726,
+      "player_id": 1643133,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.222,
-      "fgm": 2,
-      "fga": 4,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642933,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.333,
+      "fga_frequency": 0.4,
       "fgm": 2,
       "fga": 4,
       "fg_pct": 0.5,
@@ -5259,9 +5237,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1643133,
+      "player_id": 1642933,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.4,
+      "fga_frequency": 0.333,
       "fgm": 2,
       "fga": 4,
       "fg_pct": 0.5,
@@ -5270,24 +5248,24 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1631451,
+      "player_id": 1641726,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.098,
-      "fgm": 1,
+      "fga_frequency": 0.222,
+      "fgm": 2,
       "fga": 4,
-      "fg_pct": 0.25,
-      "efg_pct": 0.25,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
     {
-      "player_id": 201599,
+      "player_id": 1628449,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.125,
-      "fgm": 1,
+      "fga_frequency": 0.16,
+      "fgm": 2,
       "fga": 4,
-      "fg_pct": 0.25,
-      "efg_pct": 0.25,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -5314,13 +5292,24 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1641771,
+      "player_id": 1631451,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.052,
-      "fgm": 0,
+      "fga_frequency": 0.098,
+      "fgm": 1,
       "fga": 4,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
+      "fg_pct": 0.25,
+      "efg_pct": 0.25,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 201599,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.125,
+      "fgm": 1,
+      "fga": 4,
+      "fg_pct": 0.25,
+      "efg_pct": 0.25,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -5336,9 +5325,20 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642434,
+      "player_id": 1641771,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.13,
+      "fga_frequency": 0.052,
+      "fgm": 0,
+      "fga": 4,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1630811,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.018,
       "fgm": 3,
       "fga": 3,
       "fg_pct": 1.0,
@@ -5347,9 +5347,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630811,
+      "player_id": 1642434,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.018,
+      "fga_frequency": 0.13,
       "fgm": 3,
       "fga": 3,
       "fg_pct": 1.0,
@@ -5369,31 +5369,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 201959,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.115,
-      "fgm": 2,
-      "fga": 3,
-      "fg_pct": 0.667,
-      "efg_pct": 0.667,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 202687,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.2,
-      "fgm": 2,
-      "fga": 3,
-      "fg_pct": 0.667,
-      "efg_pct": 0.667,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1630209,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.115,
       "fgm": 2,
       "fga": 3,
       "fg_pct": 0.667,
@@ -5413,6 +5391,28 @@
       "fg3_pct": null
     },
     {
+      "player_id": 1630209,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.115,
+      "fgm": 2,
+      "fga": 3,
+      "fg_pct": 0.667,
+      "efg_pct": 0.667,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 201959,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.115,
+      "fgm": 2,
+      "fga": 3,
+      "fg_pct": 0.667,
+      "efg_pct": 0.667,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
       "player_id": 1643253,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.043,
@@ -5424,53 +5424,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630322,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.034,
-      "fgm": 1,
-      "fga": 3,
-      "fg_pct": 0.333,
-      "efg_pct": 0.333,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 1641725,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.081,
-      "fgm": 1,
-      "fga": 3,
-      "fg_pct": 0.333,
-      "efg_pct": 0.333,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1629634,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.333,
-      "fgm": 1,
-      "fga": 3,
-      "fg_pct": 0.333,
-      "efg_pct": 0.333,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1628365,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.3,
-      "fgm": 1,
-      "fga": 3,
-      "fg_pct": 0.333,
-      "efg_pct": 0.333,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1631351,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.04,
       "fgm": 1,
       "fga": 3,
       "fg_pct": 0.333,
@@ -5501,9 +5457,53 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1628502,
+      "player_id": 1628365,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.065,
+      "fga_frequency": 0.3,
+      "fgm": 1,
+      "fga": 3,
+      "fg_pct": 0.333,
+      "efg_pct": 0.333,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1630322,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.034,
+      "fgm": 1,
+      "fga": 3,
+      "fg_pct": 0.333,
+      "efg_pct": 0.333,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1629634,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.333,
+      "fgm": 1,
+      "fga": 3,
+      "fg_pct": 0.333,
+      "efg_pct": 0.333,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1631351,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.04,
+      "fgm": 1,
+      "fga": 3,
+      "fg_pct": 0.333,
+      "efg_pct": 0.333,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1641755,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.064,
       "fgm": 0,
       "fga": 3,
       "fg_pct": 0.0,
@@ -5523,9 +5523,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1641755,
+      "player_id": 1628502,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.064,
+      "fga_frequency": 0.065,
       "fgm": 0,
       "fga": 3,
       "fg_pct": 0.0,
@@ -5534,9 +5534,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642884,
+      "player_id": 1642362,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.5,
+      "fga_frequency": 0.077,
       "fgm": 2,
       "fga": 2,
       "fg_pct": 1.0,
@@ -5556,13 +5556,90 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642362,
+      "player_id": 1642884,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.077,
+      "fga_frequency": 0.5,
       "fgm": 2,
       "fga": 2,
       "fg_pct": 1.0,
       "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1631111,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.286,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1641998,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.2,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1631216,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.077,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 201587,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.008,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.75,
+      "fg3a_frequency": 0.008,
+      "fg3_pct": 0.5
+    },
+    {
+      "player_id": 1643047,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.182,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1629726,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.038,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1629610,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.105,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -5622,119 +5699,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1629610,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.105,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 201587,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.008,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.75,
-      "fg3a_frequency": 0.008,
-      "fg3_pct": 0.5
-    },
-    {
-      "player_id": 1629726,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.038,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1643047,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.182,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1631111,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.286,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1641998,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.2,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1631216,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.077,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1641752,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.074,
-      "fgm": 0,
-      "fga": 2,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642355,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.018,
-      "fgm": 0,
-      "fga": 2,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.009,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 203078,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.042,
-      "fgm": 0,
-      "fga": 2,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1641761,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.222,
       "fgm": 0,
       "fga": 2,
       "fg_pct": 0.0,
@@ -5776,79 +5743,35 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1642282,
+      "player_id": 1641761,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.2,
-      "fgm": 1,
-      "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
+      "fga_frequency": 0.222,
+      "fgm": 0,
+      "fga": 2,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
     {
-      "player_id": 204060,
+      "player_id": 1642355,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.037,
-      "fgm": 1,
-      "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
+      "fga_frequency": 0.018,
+      "fgm": 0,
+      "fga": 2,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.009,
+      "fg3_pct": 0.0
     },
     {
-      "player_id": 1641890,
+      "player_id": 1641752,
       "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.02,
-      "fgm": 1,
-      "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 201569,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.048,
-      "fgm": 1,
-      "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1643060,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.333,
-      "fgm": 1,
-      "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1630621,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.071,
-      "fgm": 1,
-      "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642490,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.059,
-      "fgm": 1,
-      "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
+      "fga_frequency": 0.074,
+      "fgm": 0,
+      "fga": 2,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -5963,6 +5886,138 @@
       "fg3_pct": null
     },
     {
+      "player_id": 1643060,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.333,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1630621,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.071,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1642490,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.059,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1642282,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.2,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 204060,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.037,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1641890,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.02,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 201569,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.048,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1642403,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.143,
+      "fgm": 0,
+      "fga": 1,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1641810,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.05,
+      "fgm": 0,
+      "fga": 1,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1630625,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.083,
+      "fgm": 0,
+      "fga": 1,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1642938,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.037,
+      "fgm": 0,
+      "fga": 1,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1642402,
+      "close_def_dist_range": "0-2 Feet - Very Tight",
+      "fga_frequency": 0.125,
+      "fgm": 0,
+      "fga": 1,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
       "player_id": 203967,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.167,
@@ -6021,61 +6076,6 @@
       "player_id": 1642855,
       "close_def_dist_range": "0-2 Feet - Very Tight",
       "fga_frequency": 0.333,
-      "fgm": 0,
-      "fga": 1,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642402,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.125,
-      "fgm": 0,
-      "fga": 1,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642403,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.143,
-      "fgm": 0,
-      "fga": 1,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1641810,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.05,
-      "fgm": 0,
-      "fga": 1,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1630625,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.083,
-      "fgm": 0,
-      "fga": 1,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642938,
-      "close_def_dist_range": "0-2 Feet - Very Tight",
-      "fga_frequency": 0.037,
       "fgm": 0,
       "fga": 1,
       "fg_pct": 0.0,
@@ -15808,17 +15808,6 @@
       "fg3_pct": 0.417
     },
     {
-      "player_id": 1630171,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.144,
-      "fgm": 26,
-      "fga": 66,
-      "fg_pct": 0.394,
-      "efg_pct": 0.432,
-      "fg3a_frequency": 0.081,
-      "fg3_pct": 0.135
-    },
-    {
       "player_id": 201567,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.332,
@@ -15828,6 +15817,17 @@
       "efg_pct": 0.553,
       "fg3a_frequency": 0.266,
       "fg3_pct": 0.396
+    },
+    {
+      "player_id": 1630171,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.144,
+      "fgm": 26,
+      "fga": 66,
+      "fg_pct": 0.394,
+      "efg_pct": 0.432,
+      "fg3a_frequency": 0.081,
+      "fg3_pct": 0.135
     },
     {
       "player_id": 1631243,
@@ -16039,17 +16039,6 @@
       "fg3_pct": 0.286
     },
     {
-      "player_id": 203926,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.396,
-      "fgm": 23,
-      "fga": 55,
-      "fg_pct": 0.418,
-      "efg_pct": 0.618,
-      "fg3a_frequency": 0.381,
-      "fg3_pct": 0.415
-    },
-    {
       "player_id": 203992,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.362,
@@ -16059,6 +16048,17 @@
       "efg_pct": 0.545,
       "fg3a_frequency": 0.237,
       "fg3_pct": 0.389
+    },
+    {
+      "player_id": 203926,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.396,
+      "fgm": 23,
+      "fga": 55,
+      "fg_pct": 0.418,
+      "efg_pct": 0.618,
+      "fg3a_frequency": 0.381,
+      "fg3_pct": 0.415
     },
     {
       "player_id": 1630165,
@@ -16809,17 +16809,6 @@
       "fg3_pct": 0.143
     },
     {
-      "player_id": 1642066,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.236,
-      "fgm": 16,
-      "fga": 29,
-      "fg_pct": 0.552,
-      "efg_pct": 0.655,
-      "fg3a_frequency": 0.122,
-      "fg3_pct": 0.4
-    },
-    {
       "player_id": 1630264,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.136,
@@ -16829,6 +16818,17 @@
       "efg_pct": 0.586,
       "fg3a_frequency": 0.047,
       "fg3_pct": 0.2
+    },
+    {
+      "player_id": 1642066,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.236,
+      "fgm": 16,
+      "fga": 29,
+      "fg_pct": 0.552,
+      "efg_pct": 0.655,
+      "fg3a_frequency": 0.122,
+      "fg3_pct": 0.4
     },
     {
       "player_id": 1626204,
@@ -17227,17 +17227,6 @@
       "fg3_pct": 0.2
     },
     {
-      "player_id": 1642358,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.102,
-      "fgm": 9,
-      "fga": 18,
-      "fg_pct": 0.5,
-      "efg_pct": 0.528,
-      "fg3a_frequency": 0.028,
-      "fg3_pct": 0.2
-    },
-    {
       "player_id": 1643253,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.257,
@@ -17247,6 +17236,17 @@
       "efg_pct": 0.556,
       "fg3a_frequency": 0.1,
       "fg3_pct": 0.286
+    },
+    {
+      "player_id": 1642358,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.102,
+      "fgm": 9,
+      "fga": 18,
+      "fg_pct": 0.5,
+      "efg_pct": 0.528,
+      "fg3a_frequency": 0.028,
+      "fg3_pct": 0.2
     },
     {
       "player_id": 1643052,
@@ -17414,15 +17414,15 @@
       "fg3_pct": 0.4
     },
     {
-      "player_id": 203078,
+      "player_id": 1630587,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.333,
+      "fga_frequency": 0.25,
       "fgm": 6,
       "fga": 16,
       "fg_pct": 0.375,
-      "efg_pct": 0.531,
-      "fg3a_frequency": 0.25,
-      "fg3_pct": 0.417
+      "efg_pct": 0.438,
+      "fg3a_frequency": 0.141,
+      "fg3_pct": 0.222
     },
     {
       "player_id": 1643016,
@@ -17436,15 +17436,15 @@
       "fg3_pct": 0.143
     },
     {
-      "player_id": 1630587,
+      "player_id": 203078,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.25,
+      "fga_frequency": 0.333,
       "fgm": 6,
       "fga": 16,
       "fg_pct": 0.375,
-      "efg_pct": 0.438,
-      "fg3a_frequency": 0.141,
-      "fg3_pct": 0.222
+      "efg_pct": 0.531,
+      "fg3a_frequency": 0.25,
+      "fg3_pct": 0.417
     },
     {
       "player_id": 1642905,
@@ -17502,17 +17502,6 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1641744,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.143,
-      "fgm": 9,
-      "fga": 14,
-      "fg_pct": 0.643,
-      "efg_pct": 0.679,
-      "fg3a_frequency": 0.02,
-      "fg3_pct": 0.5
-    },
-    {
       "player_id": 203500,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.102,
@@ -17522,6 +17511,17 @@
       "efg_pct": 0.643,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
+    },
+    {
+      "player_id": 1641744,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.143,
+      "fgm": 9,
+      "fga": 14,
+      "fg_pct": 0.643,
+      "efg_pct": 0.679,
+      "fg3a_frequency": 0.02,
+      "fg3_pct": 0.5
     },
     {
       "player_id": 1630256,
@@ -17645,17 +17645,6 @@
       "fg3_pct": 0.8
     },
     {
-      "player_id": 1631218,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.089,
-      "fgm": 8,
-      "fga": 11,
-      "fg_pct": 0.727,
-      "efg_pct": 0.727,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
       "player_id": 1631166,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.167,
@@ -17665,6 +17654,17 @@
       "efg_pct": 0.818,
       "fg3a_frequency": 0.045,
       "fg3_pct": 0.667
+    },
+    {
+      "player_id": 1631218,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.089,
+      "fgm": 8,
+      "fga": 11,
+      "fg_pct": 0.727,
+      "efg_pct": 0.727,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
     },
     {
       "player_id": 1631214,
@@ -17810,17 +17810,6 @@
       "fg3_pct": 0.5
     },
     {
-      "player_id": 1626172,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.133,
-      "fgm": 3,
-      "fga": 8,
-      "fg_pct": 0.375,
-      "efg_pct": 0.375,
-      "fg3a_frequency": 0.017,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 1641747,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.131,
@@ -17843,15 +17832,15 @@
       "fg3_pct": 0.286
     },
     {
-      "player_id": 1628449,
+      "player_id": 1626172,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.32,
-      "fgm": 2,
+      "fga_frequency": 0.133,
+      "fgm": 3,
       "fga": 8,
-      "fg_pct": 0.25,
-      "efg_pct": 0.313,
-      "fg3a_frequency": 0.28,
-      "fg3_pct": 0.143
+      "fg_pct": 0.375,
+      "efg_pct": 0.375,
+      "fg3a_frequency": 0.017,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 1642910,
@@ -17885,6 +17874,17 @@
       "efg_pct": 0.313,
       "fg3a_frequency": 0.222,
       "fg3_pct": 0.167
+    },
+    {
+      "player_id": 1628449,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.32,
+      "fgm": 2,
+      "fga": 8,
+      "fg_pct": 0.25,
+      "efg_pct": 0.313,
+      "fg3a_frequency": 0.28,
+      "fg3_pct": 0.143
     },
     {
       "player_id": 200768,
@@ -17953,28 +17953,6 @@
       "fg3_pct": 0.4
     },
     {
-      "player_id": 1631116,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.222,
-      "fgm": 2,
-      "fga": 6,
-      "fg_pct": 0.333,
-      "efg_pct": 0.417,
-      "fg3a_frequency": 0.148,
-      "fg3_pct": 0.25
-    },
-    {
-      "player_id": 1642443,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.24,
-      "fgm": 2,
-      "fga": 6,
-      "fg_pct": 0.333,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.12,
-      "fg3_pct": 0.667
-    },
-    {
       "player_id": 1630214,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.13,
@@ -17997,6 +17975,28 @@
       "fg3_pct": 0.333
     },
     {
+      "player_id": 1631116,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.222,
+      "fgm": 2,
+      "fga": 6,
+      "fg_pct": 0.333,
+      "efg_pct": 0.417,
+      "fg3a_frequency": 0.148,
+      "fg3_pct": 0.25
+    },
+    {
+      "player_id": 1642443,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.24,
+      "fgm": 2,
+      "fga": 6,
+      "fg_pct": 0.333,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.12,
+      "fg3_pct": 0.667
+    },
+    {
       "player_id": 201569,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.286,
@@ -18008,14 +18008,14 @@
       "fg3_pct": 0.2
     },
     {
-      "player_id": 1642951,
+      "player_id": 1643158,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.4,
+      "fga_frequency": 0.207,
       "fgm": 1,
       "fga": 6,
       "fg_pct": 0.167,
       "efg_pct": 0.167,
-      "fg3a_frequency": 0.2,
+      "fg3a_frequency": 0.138,
       "fg3_pct": 0.0
     },
     {
@@ -18030,14 +18030,25 @@
       "fg3_pct": 0.167
     },
     {
-      "player_id": 1643158,
+      "player_id": 1641794,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.207,
+      "fga_frequency": 0.667,
+      "fgm": 1,
+      "fga": 6,
+      "fg_pct": 0.167,
+      "efg_pct": 0.25,
+      "fg3a_frequency": 0.444,
+      "fg3_pct": 0.25
+    },
+    {
+      "player_id": 1642951,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.4,
       "fgm": 1,
       "fga": 6,
       "fg_pct": 0.167,
       "efg_pct": 0.167,
-      "fg3a_frequency": 0.138,
+      "fg3a_frequency": 0.2,
       "fg3_pct": 0.0
     },
     {
@@ -18052,17 +18063,6 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1641794,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.667,
-      "fgm": 1,
-      "fga": 6,
-      "fg_pct": 0.167,
-      "efg_pct": 0.25,
-      "fg3a_frequency": 0.444,
-      "fg3_pct": 0.25
-    },
-    {
       "player_id": 1641790,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.085,
@@ -18072,17 +18072,6 @@
       "efg_pct": 0.7,
       "fg3a_frequency": 0.034,
       "fg3_pct": 0.5
-    },
-    {
-      "player_id": 1631211,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.417,
-      "fgm": 2,
-      "fga": 5,
-      "fg_pct": 0.4,
-      "efg_pct": 0.6,
-      "fg3a_frequency": 0.417,
-      "fg3_pct": 0.4
     },
     {
       "player_id": 1642384,
@@ -18107,15 +18096,15 @@
       "fg3_pct": 0.4
     },
     {
-      "player_id": 1629312,
+      "player_id": 1631211,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.174,
-      "fgm": 3,
-      "fga": 4,
-      "fg_pct": 0.75,
-      "efg_pct": 1.0,
-      "fg3a_frequency": 0.13,
-      "fg3_pct": 0.667
+      "fga_frequency": 0.417,
+      "fgm": 2,
+      "fga": 5,
+      "fg_pct": 0.4,
+      "efg_pct": 0.6,
+      "fg3a_frequency": 0.417,
+      "fg3_pct": 0.4
     },
     {
       "player_id": 201959,
@@ -18129,15 +18118,26 @@
       "fg3_pct": 1.0
     },
     {
-      "player_id": 1643047,
+      "player_id": 1629312,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.364,
+      "fga_frequency": 0.174,
+      "fgm": 3,
+      "fga": 4,
+      "fg_pct": 0.75,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.13,
+      "fg3_pct": 0.667
+    },
+    {
+      "player_id": 1641801,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.308,
       "fgm": 2,
       "fga": 4,
       "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.182,
-      "fg3_pct": 0.0
+      "efg_pct": 0.625,
+      "fg3a_frequency": 0.154,
+      "fg3_pct": 0.5
     },
     {
       "player_id": 1630209,
@@ -18162,15 +18162,15 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1641801,
+      "player_id": 1643047,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.308,
+      "fga_frequency": 0.364,
       "fgm": 2,
       "fga": 4,
       "fg_pct": 0.5,
-      "efg_pct": 0.625,
-      "fg3a_frequency": 0.154,
-      "fg3_pct": 0.5
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.182,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 1642357,
@@ -18195,9 +18195,9 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1629646,
+      "player_id": 203486,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.064,
+      "fga_frequency": 0.214,
       "fgm": 3,
       "fga": 3,
       "fg_pct": 1.0,
@@ -18217,9 +18217,9 @@
       "fg3_pct": null
     },
     {
-      "player_id": 203486,
+      "player_id": 1629646,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.214,
+      "fga_frequency": 0.064,
       "fgm": 3,
       "fga": 3,
       "fg_pct": 1.0,
@@ -18248,17 +18248,6 @@
       "efg_pct": 1.0,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
-    },
-    {
-      "player_id": 1641807,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.3,
-      "fgm": 2,
-      "fga": 3,
-      "fg_pct": 0.667,
-      "efg_pct": 0.667,
-      "fg3a_frequency": 0.1,
-      "fg3_pct": 0.0
     },
     {
       "player_id": 1643257,
@@ -18294,15 +18283,15 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1631102,
+      "player_id": 1641807,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.158,
-      "fgm": 1,
+      "fga_frequency": 0.3,
+      "fgm": 2,
       "fga": 3,
-      "fg_pct": 0.333,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.158,
-      "fg3_pct": 0.333
+      "fg_pct": 0.667,
+      "efg_pct": 0.667,
+      "fg3a_frequency": 0.1,
+      "fg3_pct": 0.0
     },
     {
       "player_id": 201599,
@@ -18349,6 +18338,17 @@
       "fg3_pct": 0.0
     },
     {
+      "player_id": 1631102,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.158,
+      "fgm": 1,
+      "fga": 3,
+      "fg_pct": 0.333,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.158,
+      "fg3_pct": 0.333
+    },
+    {
       "player_id": 1643141,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.75,
@@ -18369,6 +18369,17 @@
       "efg_pct": 0.0,
       "fg3a_frequency": 0.333,
       "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1630846,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.286,
+      "fgm": 2,
+      "fga": 2,
+      "fg_pct": 1.0,
+      "efg_pct": 1.25,
+      "fg3a_frequency": 0.143,
+      "fg3_pct": 1.0
     },
     {
       "player_id": 1641761,
@@ -18404,39 +18415,6 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1630846,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.286,
-      "fgm": 2,
-      "fga": 2,
-      "fg_pct": 1.0,
-      "efg_pct": 1.25,
-      "fg3a_frequency": 0.143,
-      "fg3_pct": 1.0
-    },
-    {
-      "player_id": 1630164,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.2,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1643060,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.667,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.333,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 1631115,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.4,
@@ -18448,28 +18426,6 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1643024,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.333,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.167,
-      "fg3_pct": 0.0
-    },
-    {
-      "player_id": 1630649,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 1.0,
-      "fgm": 1,
-      "fga": 2,
-      "fg_pct": 0.5,
-      "efg_pct": 0.5,
-      "fg3a_frequency": 0.5,
-      "fg3_pct": 0.0
-    },
-    {
       "player_id": 1642403,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.286,
@@ -18478,6 +18434,17 @@
       "fg_pct": 0.5,
       "efg_pct": 0.5,
       "fg3a_frequency": 0.143,
+      "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1643024,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.333,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.167,
       "fg3_pct": 0.0
     },
     {
@@ -18514,6 +18481,50 @@
       "fg3_pct": null
     },
     {
+      "player_id": 1630164,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.2,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1643060,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.667,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.333,
+      "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1630649,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 1.0,
+      "fgm": 1,
+      "fga": 2,
+      "fg_pct": 0.5,
+      "efg_pct": 0.5,
+      "fg3a_frequency": 0.5,
+      "fg3_pct": 0.0
+    },
+    {
+      "player_id": 1628365,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.2,
+      "fgm": 0,
+      "fga": 2,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
       "player_id": 1628998,
       "close_def_dist_range": "4-6 Feet - Open",
       "fga_frequency": 0.2,
@@ -18525,13 +18536,24 @@
       "fg3_pct": 0.0
     },
     {
-      "player_id": 1628365,
+      "player_id": 1641810,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.2,
-      "fgm": 0,
-      "fga": 2,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
+      "fga_frequency": 0.05,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
+      "fg3a_frequency": 0.0,
+      "fg3_pct": null
+    },
+    {
+      "player_id": 1642368,
+      "close_def_dist_range": "4-6 Feet - Open",
+      "fga_frequency": 0.25,
+      "fgm": 1,
+      "fga": 1,
+      "fg_pct": 1.0,
+      "efg_pct": 1.0,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -18613,24 +18635,24 @@
       "fg3_pct": null
     },
     {
-      "player_id": 1641810,
+      "player_id": 1643133,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.05,
-      "fgm": 1,
+      "fga_frequency": 0.1,
+      "fgm": 0,
       "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
     {
-      "player_id": 1642368,
+      "player_id": 1642468,
       "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.25,
-      "fgm": 1,
+      "fga_frequency": 1.0,
+      "fgm": 0,
       "fga": 1,
-      "fg_pct": 1.0,
-      "efg_pct": 1.0,
+      "fg_pct": 0.0,
+      "efg_pct": 0.0,
       "fg3a_frequency": 0.0,
       "fg3_pct": null
     },
@@ -18688,28 +18710,6 @@
       "efg_pct": 0.0,
       "fg3a_frequency": 0.333,
       "fg3_pct": 0.0
-    },
-    {
-      "player_id": 1643133,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 0.1,
-      "fgm": 0,
-      "fga": 1,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
-    },
-    {
-      "player_id": 1642468,
-      "close_def_dist_range": "4-6 Feet - Open",
-      "fga_frequency": 1.0,
-      "fgm": 0,
-      "fga": 1,
-      "fg_pct": 0.0,
-      "efg_pct": 0.0,
-      "fg3a_frequency": 0.0,
-      "fg3_pct": null
     },
     {
       "player_id": 1630178,
