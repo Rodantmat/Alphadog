@@ -21491,8 +21491,8 @@
       "away_team_tricode": "DAL",
       "arena_name": "Venetian Arena",
       "arena_city": "Macao, China",
-      "game_status": 2,
-      "game_status_text": "1st Qtr             ",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21506,8 +21506,8 @@
       "away_team_tricode": "MIL",
       "arena_name": "Spectrum Center",
       "arena_city": "Charlotte",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21521,8 +21521,8 @@
       "away_team_tricode": "ORL",
       "arena_name": "Rocket Arena",
       "arena_city": "Cleveland",
-      "game_status": 1,
-      "game_status_text": "6:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21536,8 +21536,8 @@
       "away_team_tricode": "CHI",
       "arena_name": "Ball Arena",
       "arena_city": "Denver",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
