@@ -1,6 +1,38 @@
--- DUMP OF THE NBA DATABASE FUNCTIONS (2026-10-08, nba/dump_db_sql.py). The database is the running copy; this file is the
+-- DUMP OF THE NBA DATABASE FUNCTIONS (2026-10-13, nba/dump_db_sql.py). The database is the running copy; this file is the
 -- record (round-2 P3#16: critical-path SQL must be certifiable from source and recoverable from git).
 -- Do not hand-edit: change the database (or the hand-maintained source files in this folder), then re-dump.
+
+CREATE OR REPLACE FUNCTION nba_control.audit_postseason_cov(t text, col text DEFAULT 'game_date'::text)
+ RETURNS TABLE(r1 bigint, p1 bigint, r2 bigint, p2 bigint)
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+BEGIN
+  RETURN QUERY EXECUTE format($q$SELECT count(DISTINCT d) FILTER (WHERE d < '2025-04-14'),
+    count(DISTINCT d) FILTER (WHERE d BETWEEN '2025-04-14' AND '2025-07-01'),
+    count(DISTINCT d) FILTER (WHERE d BETWEEN '2026-03-13' AND '2026-04-12'),
+    count(DISTINCT d) FILTER (WHERE d > '2026-04-12')
+    FROM (SELECT %I::date d FROM %s WHERE %I BETWEEN '2025-03-14' AND '2025-07-01' OR %I BETWEEN '2026-03-13' AND '2026-06-30') x$q$, col, t, col, col);
+END $function$;
+
+CREATE OR REPLACE FUNCTION nba_control.cert_fp(tbl text, where_sql text DEFAULT 'TRUE'::text)
+ RETURNS TABLE(n bigint, h numeric)
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+-- reproducible table fingerprint (§31w, 2026-10-09): row count + sum of hashtext(whole row as text), every column incl. timestamps
+BEGIN
+  RETURN QUERY EXECUTE format('SELECT count(*)::bigint, coalesce(sum(hashtext(t::text)::bigint),0)::numeric FROM %s t WHERE %s', tbl, where_sql);
+END $function$;
+
+CREATE OR REPLACE FUNCTION nba_control.prop_stat(prop text, pts numeric, reb numeric, ast numeric, fg3m numeric, stl numeric, blk numeric, tov numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+AS $function$
+SELECT CASE prop WHEN 'points' THEN pts WHEN 'rebounds' THEN reb WHEN 'assists' THEN ast WHEN 'threes_made' THEN fg3m
+ WHEN 'pts_reb' THEN pts+reb WHEN 'pts_ast' THEN pts+ast WHEN 'reb_ast' THEN reb+ast WHEN 'pra' THEN pts+reb+ast
+ WHEN 'steals' THEN stl WHEN 'blocks' THEN blk WHEN 'stocks' THEN stl+blk WHEN 'turnovers' THEN tov END $function$;
 
 CREATE OR REPLACE FUNCTION nba_market.build_derived_alt_backsim()
  RETURNS bigint
@@ -305,6 +337,29 @@ fix_flag AS (
 )
 SELECT (SELECT count(*) FROM fix_phase) + (SELECT count(*) FROM fix_flag);
 $function$;
+
+CREATE OR REPLACE FUNCTION nba_market.pp_flex_alt_payout(p_n integer, p_misses integer, p_fprod double precision)
+ RETURNS double precision
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE
+  pts jsonb; m int; i int; x0 float8; y0 float8; x1 float8; y1 float8;
+BEGIN
+  SELECT rule_json->'tiers'->(p_n::text)->(p_misses::text) INTO pts FROM nba_config.pp_slip_rules WHERE rule_key = 'flex_alt_tiers';
+  IF pts IS NULL OR jsonb_array_length(pts) = 0 THEN RETURN 0; END IF;
+  m := jsonb_array_length(pts);
+  IF p_fprod <= (pts->0->>0)::float8 THEN RETURN (pts->0->>1)::float8; END IF;
+  IF p_fprod >= (pts->(m-1)->>0)::float8 THEN RETURN (pts->(m-1)->>1)::float8; END IF;
+  FOR i IN 0 .. m - 2 LOOP
+    x0 := (pts->i->>0)::float8; y0 := (pts->i->>1)::float8; x1 := (pts->(i+1)->>0)::float8; y1 := (pts->(i+1)->>1)::float8;
+    IF x0 <= p_fprod AND p_fprod <= x1 THEN
+      IF x1 = x0 THEN RETURN least(y0, y1); END IF;
+      RETURN y0 + (y1 - y0) * (ln(p_fprod) - ln(x0)) / (ln(x1) - ln(x0));
+    END IF;
+  END LOOP;
+  RETURN (pts->(m-1)->>1)::float8;
+END $function$;
 
 CREATE OR REPLACE FUNCTION nba_market.pp_flex_standard_payout(p_legs integer, p_hits integer, p_original boolean)
  RETURNS numeric
@@ -776,6 +831,46 @@ WITH ins AS (
 SELECT count(*) FROM ins;
 $function$;
 
+CREATE OR REPLACE FUNCTION nba_market.sleeper_slip_payout(p_mult double precision[], p_result text[], p_mode text, p_haircut numeric DEFAULT NULL::numeric)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE
+  h numeric; n int; i int; j int; k int; ok boolean; prod numeric; s numeric := 0;
+  lm double precision[] := '{}'; lr text[] := '{}';
+BEGIN
+  IF coalesce(array_length(p_mult, 1), 0) <> coalesce(array_length(p_result, 1), 0) THEN
+    RAISE EXCEPTION 'sleeper_slip_payout: % multipliers vs % results', array_length(p_mult, 1), array_length(p_result, 1);
+  END IF;
+  IF p_mode NOT IN ('power', 'flex') THEN RAISE EXCEPTION 'sleeper_slip_payout: mode % (power | flex)', p_mode; END IF;
+  h := coalesce(p_haircut,
+                (SELECT (config_json->>'slip_haircut')::numeric FROM nba_config.classification_config WHERE config_key = 'sleeper_payout'),
+                0.08);
+  FOR i IN 1..coalesce(array_length(p_mult, 1), 0) LOOP
+    IF p_result[i] NOT IN ('hit', 'miss', 'void') THEN RAISE EXCEPTION 'sleeper_slip_payout: result % (hit | miss | void)', p_result[i]; END IF;
+    IF p_result[i] <> 'void' THEN lm := lm || p_mult[i]; lr := lr || p_result[i]; END IF;
+  END LOOP;
+  n := coalesce(array_length(lm, 1), 0);
+  IF n < 2 THEN RETURN 1.0; END IF;
+  IF p_mode = 'power' OR n = 2 THEN
+    IF 'miss' = ANY (lr) THEN RETURN 0; END IF;
+    prod := 1; FOR i IN 1..n LOOP prod := prod * lm[i]::numeric; END LOOP;
+    RETURN round(prod * (1 - h), 4);
+  END IF;
+  FOR k IN 1..n LOOP
+    ok := true; prod := 1;
+    FOR j IN 1..n LOOP
+      IF j <> k THEN
+        IF lr[j] = 'miss' THEN ok := false; END IF;
+        prod := prod * lm[j]::numeric;
+      END IF;
+    END LOOP;
+    IF ok THEN s := s + prod; END IF;
+  END LOOP;
+  RETURN round((s / n) * (1 - h), 4);
+END $function$;
+
 CREATE OR REPLACE FUNCTION nba_ref.norm_name(t text)
  RETURNS text
  LANGUAGE sql
@@ -852,6 +947,54 @@ BEGIN
   DROP TABLE IF EXISTS nba_score.tier_map_legs_sel_mf;
   ALTER TABLE nba_score.tier_map_legs_sel_mf_new RENAME TO tier_map_legs_sel_mf;
   SELECT count(*) INTO n FROM nba_score.tier_map_legs_sel_mf;
+  RETURN n;
+END $function$;
+
+CREATE OR REPLACE FUNCTION nba_score.build_ud_tier_map_legs_curr_mf()
+ RETURNS bigint
+ LANGUAGE plpgsql
+AS $function$
+DECLARE n bigint; d_books numeric; d_agree numeric;
+BEGIN
+  SELECT deduction INTO d_books FROM nba_score.confidence_model WHERE factor = 'f_books';
+  SELECT deduction INTO d_agree FROM nba_score.confidence_model WHERE factor = 'f_agree';
+  IF d_books IS NULL OR d_agree IS NULL THEN RAISE EXCEPTION 'confidence_model lacks f_books / f_agree'; END IF;
+  DROP TABLE IF EXISTS nba_score.ud_tier_map_legs_curr_mf_new;
+  CREATE TABLE nba_score.ud_tier_map_legs_curr_mf_new AS
+  WITH j AS (
+    SELECT s.*, f.confidence AS conf, f.c_market AS cm, f.final_hp AS hp
+    FROM nba_score.ud_tier_map_legs_curr s
+    LEFT JOIN nba_score.final_hp f ON s.rank_key = 'final_score' AND f.game_date = s.game_date AND f.player_id = s.player_id
+                                   AND f.prop = s.prop AND f.side = s.side AND f.line = s.line
+  ), r AS (
+    -- legs without a market term are untouched (the stored score is the faithful one; recomputing from the 4-decimal stored
+    -- hp / confidence adds +-0.02 of rounding noise). Legs with a market term move by the DIFFERENCE between the formula at
+    -- the market-free confidence and the formula at the stored confidence, so the same rounding noise cancels.
+    SELECT j.*,
+      CASE WHEN j.rank_key <> 'final_score' OR j.cm IS NULL OR j.cm = 0 THEN j.score ELSE
+        round(least(100.0, greatest(0.0, j.score
+          + ( least(100.0, greatest(0.0,
+              j.hp*100.0
+              + (100.0 - j.hp*100.0) * least(1.0, greatest(0.0, ((j.conf - (d_books*j.cm + d_agree*0.30)/100.0) - 0.85)/0.15)) * 0.5
+              - j.hp*100.0 * least(1.0, greatest(0.0, -(((j.conf - (d_books*j.cm + d_agree*0.30)/100.0) - 0.85)/0.15))) * 0.35))
+            - least(100.0, greatest(0.0,
+              j.hp*100.0
+              + (100.0 - j.hp*100.0) * least(1.0, greatest(0.0, (j.conf - 0.85)/0.15)) * 0.5
+              - j.hp*100.0 * least(1.0, greatest(0.0, -((j.conf - 0.85)/0.15))) * 0.35)) )
+        ))::numeric, 2)::double precision END AS score_mf
+    FROM j)
+  SELECT rank_key, season, game_date, player, player_id, prop, side, line, kind, tier, factor,
+         score_mf AS score, hit,
+         CASE WHEN rank_key = 'final_score'
+              THEN row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score_mf DESC, player, side, line)::int
+              ELSE n_rank END AS n_rank,
+         cell_size, now() AS built_at
+  FROM r;
+  CREATE INDEX ON nba_score.ud_tier_map_legs_curr_mf_new (rank_key, game_date, prop, tier);
+  ANALYZE nba_score.ud_tier_map_legs_curr_mf_new;
+  DROP TABLE IF EXISTS nba_score.ud_tier_map_legs_curr_mf;
+  ALTER TABLE nba_score.ud_tier_map_legs_curr_mf_new RENAME TO ud_tier_map_legs_curr_mf;
+  SELECT count(*) INTO n FROM nba_score.ud_tier_map_legs_curr_mf;
   RETURN n;
 END $function$;
 

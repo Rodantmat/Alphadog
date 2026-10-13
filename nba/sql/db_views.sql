@@ -1,4 +1,4 @@
--- DUMP OF THE NBA DATABASE VIEWS (2026-10-08, nba/dump_db_sql.py). The database is the running copy; this file is the
+-- DUMP OF THE NBA DATABASE VIEWS (2026-10-13, nba/dump_db_sql.py). The database is the running copy; this file is the
 -- record (round-2 P3#16: critical-path SQL must be certifiable from source and recoverable from git).
 -- Do not hand-edit: change the database (or the hand-maintained source files in this folder), then re-dump.
 
@@ -22,6 +22,27 @@ CREATE OR REPLACE VIEW nba_calendar.regular_season_games AS
     updated_at
    FROM nba_calendar.games
   WHERE (game_id ~~ '002%'::text);
+
+CREATE OR REPLACE VIEW nba_calendar.slate_games AS
+ SELECT game_id,
+    season,
+    game_date,
+    game_datetime_utc,
+    home_team_id,
+    home_team_tricode,
+    away_team_id,
+    away_team_tricode,
+    arena_name,
+    arena_city,
+    game_status,
+    game_status_text,
+    game_label,
+    source_key,
+    raw_json,
+    created_at,
+    updated_at
+   FROM nba_calendar.games
+  WHERE ((game_id ~~ '002%'::text) OR (game_id ~~ '004%'::text) OR (game_id ~~ '005%'::text));
 
 CREATE OR REPLACE VIEW nba_market.leg_edge_map AS
  SELECT season,
@@ -55,6 +76,59 @@ CREATE OR REPLACE VIEW nba_market.leg_edge_map AS
             WHEN ((((2)::numeric * factor) * model_p) < 1.4) THEN 'e 1.30-1.40'::text
             ELSE 'f >=1.40'::text
         END;
+
+CREATE OR REPLACE VIEW nba_market.pp_flex_alt_segments AS
+ WITH p AS (
+         SELECT (n.key)::integer AS n,
+            (m.key)::integer AS misses,
+            ((e.v ->> 0))::double precision AS x,
+            ((e.v ->> 1))::double precision AS y,
+            e.i
+           FROM nba_config.pp_slip_rules r,
+            LATERAL jsonb_each((r.rule_json -> 'tiers'::text)) n(key, value),
+            LATERAL jsonb_each(n.value) m(key, value),
+            LATERAL ( SELECT t.v,
+                    t.ordinality AS i
+                   FROM jsonb_array_elements(m.value) WITH ORDINALITY t(v, ordinality)) e
+          WHERE (r.rule_key = 'flex_alt_tiers'::text)
+        ), s AS (
+         SELECT p.n,
+            p.misses,
+            p.x AS x0,
+            p.y AS y0,
+            lead(p.x) OVER w AS x1,
+            lead(p.y) OVER w AS y1,
+            p.i,
+            max(p.i) OVER (PARTITION BY p.n, p.misses) AS imax
+           FROM p
+          WINDOW w AS (PARTITION BY p.n, p.misses ORDER BY p.i)
+        )
+ SELECT s.n,
+    s.misses,
+    s.x0,
+    s.y0,
+    s.x1,
+    s.y1
+   FROM s
+  WHERE (s.x1 IS NOT NULL)
+UNION ALL
+ SELECT s.n,
+    s.misses,
+    0 AS x0,
+    s.y0,
+    s.x0 AS x1,
+    s.y0 AS y1
+   FROM s
+  WHERE (s.i = 1)
+UNION ALL
+ SELECT s.n,
+    s.misses,
+    s.x0,
+    s.y0,
+    '1000000000'::numeric AS x1,
+    s.y0 AS y1
+   FROM s
+  WHERE (s.i = s.imax);
 
 CREATE OR REPLACE VIEW nba_market.pp_leg_price AS
  SELECT t.game_date,
