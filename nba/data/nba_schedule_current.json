@@ -21551,8 +21551,8 @@
       "away_team_tricode": "OKC",
       "arena_name": "State Farm Arena",
       "arena_city": "Atlanta",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21566,8 +21566,8 @@
       "away_team_tricode": "LON",
       "arena_name": "Moda Center",
       "arena_city": "Portland",
-      "game_status": 1,
-      "game_status_text": "4:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21581,8 +21581,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21596,8 +21596,8 @@
       "away_team_tricode": "SAS",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21611,8 +21611,8 @@
       "away_team_tricode": "BKN",
       "arena_name": "Capital One Arena",
       "arena_city": "Washington",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
