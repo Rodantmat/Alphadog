@@ -1587,6 +1587,19 @@
       "team_abbreviation": "HOU"
     },
     {
+      "id": 1643128,
+      "full_name": "Matt Cross",
+      "last_comma_first": "Cross, Matt",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "matt_cross",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
+    },
+    {
       "id": 1643018,
       "full_name": "LJ Cryer",
       "last_comma_first": "Cryer, LJ",
@@ -2965,19 +2978,6 @@
       "team_abbreviation": "MEM"
     },
     {
-      "id": 1642935,
-      "full_name": "Chucky Hepburn",
-      "last_comma_first": "Hepburn, Chucky",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2026",
-      "player_code": "chucky_hepburn",
-      "team_id": 1610612761,
-      "team_city": "Toronto",
-      "team_name": "Raptors",
-      "team_abbreviation": "TOR"
-    },
-    {
       "id": 1629639,
       "full_name": "Tyler Herro",
       "last_comma_first": "Herro, Tyler",
@@ -3132,19 +3132,6 @@
       "team_city": "Golden State",
       "team_name": "Warriors",
       "team_abbreviation": "GSW"
-    },
-    {
-      "id": 1631216,
-      "full_name": "Caleb Houstan",
-      "last_comma_first": "Houstan, Caleb",
-      "roster_status": 1,
-      "from_year": "2022",
-      "to_year": "2026",
-      "player_code": "caleb_houstan",
-      "team_id": 1610612740,
-      "team_city": "New Orleans",
-      "team_name": "Pelicans",
-      "team_abbreviation": "NOP"
     },
     {
       "id": 1641724,
@@ -6488,6 +6475,19 @@
       "team_abbreviation": "SAC"
     },
     {
+      "id": 1642481,
+      "full_name": "Jamarion Sharp",
+      "last_comma_first": "Sharp, Jamarion",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jamarion_sharp",
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
+    },
+    {
       "id": 1630549,
       "full_name": "Day'Ron Sharpe",
       "last_comma_first": "Sharpe, Day'Ron",
@@ -7435,19 +7435,6 @@
       "team_city": "Indiana",
       "team_name": "Pacers",
       "team_abbreviation": "IND"
-    },
-    {
-      "id": 1629022,
-      "full_name": "Lonnie Walker IV",
-      "last_comma_first": "Walker IV, Lonnie",
-      "roster_status": 1,
-      "from_year": "2018",
-      "to_year": "2026",
-      "player_code": "lonnie_walker",
-      "team_id": 1610612743,
-      "team_city": "Denver",
-      "team_name": "Nuggets",
-      "team_abbreviation": "DEN"
     },
     {
       "id": 1641717,
