@@ -47296,3 +47296,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `160` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T38` done (`20,284` sentences); next `T39`.
+
+# §P161 — PASS 161 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T39`
+*Angle (as NEXT set it):* (a10) `§P131`'s method on `T39`.
+- Tabulated in the shell before this line (the scan at pass 160's head): `T39` `647` of `983` sentences listed, no memory dump among them — **all `647` read whole** (the figure triage ordered them: `4` with a figure not on file, `106` with every figure on file, `537` with none).
+- On file, by substance (each grepped before it was written): the PrizePicks break-even fixed at `−8.99`, the late pick retired, the leftover tables resolved, the monitors' status filter and the rolled-back integration test, the daily roster sync and the morning-build player rule with its replay validation, LeBron James scored, the unscored-leg trace, whole-number lines (the derivation, its overconfidence, the correction, gate 2, `final_hp_derived`), the Underdog stat-key fix, the per-stat depth table and the deep-line calibration, the rebounds `6 → 10` change and its revert, rookies before and after their debut, the COMPASS alignment review, the recalibration map v2 and `calibrated_p`, and the certified-depth diversion. Judged: narration, run waits, commit hashes, attachment notices, the harness slips the build chat caught itself.
+- 🆕 **One residue, `§T39.11`** *(`5` italic quotations, each a substring of the transcript in the shell)*: Underdog's running z in the integration test, the unmodelled players' hit rate, the reb+ast far-line row, the distance estimator's recovery check, and the map's `24` of `28` corrected combinations. Pointer: row `39`.
+- No commit not this sweep's since `733d535a3`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `161` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T39` done (`20,931` sentences); next `T40`.
