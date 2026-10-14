@@ -48162,3 +48162,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `226` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`, `§T44.13`, `§T48.11`): `T1`–`T48`, `S1`–`S6` done (`23,782` sentences); next `S7`.
+
+# §P227 — PASS 227 (`2026-10-14`): ADDITIONAL SWEEP `2` — `S7` · ONE RESIDUE
+*Angle (as NEXT set it):* (u12) `§P131`'s method on `S7`, the regular-season-assumptions sweep (`2026-10-08` `20:42 → 20:46Z`), each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 226's head): `S7` `87` of `122` sentences listed, no memory dump among them — **all `87` read whole** (the bounded figure triage: `14` with a figure not on file, `3` matched only inside a longer number — all seventeen file:line references — `34` with every figure on file, `36` with none).
+- On file, by substance (each grepped before it was written): `§P177`'s list, `§T45.4` and `§T45.10`, plus the postseason wiring (game ids that never collide, the explicit `002` filters, `5_postseason` with its `4_push` fallback), the phase names `1_oct_nov` … `4_push`, `final7` in `slip_engine_slips.phase`, the injury backfill's `INJURY_FROM` / `INJURY_TO`. Judged: the prompt, file:line lists, the research scripts' date bounds at the level `§T45.4` carries, the change list (built as `§T45`'s wiring).
+- 🆕 **One residue, `§T45.11`** *(`5` italic quotations, each a substring of the transcript in the shell)*: the calibration phases' date boundaries, the slip engines' phase values and bounds, the board-level phase and its consumers, the one season mapping that already included the playoffs. Pointer: `§T45.4`.
+- **Additional sweep `2` stays not clean.** Commits not this sweep's since `0e99a14c0` (the log read before this line): `0`. No italic quotation in this ledger; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `227` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`, `§T44.13`, `§T45.11`, `§T48.11`): `T1`–`T48`, `S1`–`S7` done (`23,904` sentences); next `S8`.
