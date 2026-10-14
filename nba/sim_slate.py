@@ -33,7 +33,11 @@ def main():
     rows = conn.execute("""
       WITH b AS (
         SELECT DISTINCT ON (nba_ref.norm_name(player), market_key, side, line)
-               player, nba_ref.norm_name(player) cn, market_key, side, line, event_id, home_team, away_team
+               player, nba_ref.norm_name(player) cn, market_key, side, line,
+               -- the archive's live event id embeds the CAPTURE date (live-prizepicks-<capture day>-<PP game id>); 'routine' rows span
+               -- many capture days, so one game read as up to 19 events (sweep 2026-10-13: "11 games" for a 3-game slate) and the
+               -- engine's same-game tiering saw different games. Strip the capture date: one id per PrizePicks game, as on a window board.
+               regexp_replace(event_id, '^(live-[a-z_]+-)[0-9]{4}-[0-9]{2}-[0-9]{2}-', '\\1') event_id, home_team, away_team
         FROM nba_market.board_snapshots
         WHERE bookmaker='prizepicks' AND game_date=%s AND snapshot_label='routine'
         ORDER BY nba_ref.norm_name(player), market_key, side, line, fetched_at DESC),
