@@ -18481,3 +18481,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `243` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`): `T1`–`T21` done (`15,665` sentences); next `T22`.
+
+## §P244 — PASS 244 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T22` · NO RESIDUE
+*Angle (as NEXT set it):* (n13) `§P131`'s method on `T22`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching; the owner's session cookies, headers and location fields in his paste not reproduced.
+- Tabulated in the shell before this line (the scan at pass 243's head): `T22` `516` of `832` sentences listed, **read whole** (the bounded figure triage: `15` with a figure not on file / `0` inside a longer number / `105` with every figure on file / `396` with none; `15 + 0 + 105 + 396 = 516`). The `15` are `§P194`'s: the PrizePicks payout mapping (out of scope, cross-referenced to `nba/PP_PAYOUT_FINDINGS.md`, not swept), one MLB row, one browser string.
+- On file, by substance (each grepped before it was written, every hit read): `§P194`'s list — the chronological correction, the static-layer freeze, the hardcoded `'2025-26'` insert, the preseason dates (`Oct 3` → `Oct 16`), the `17,902`-row double-encoded finding, the `GITHUB_TOKEN` lead, the `43,370` no-center legs, the `2,199,354`-leg history — plus the `game_types` payload, Chalkboard as app-only, `NBA_SWEEP_RUN_LOG.md`, the OWNER DECISION mark and the resume note. Judged, on `§P194`'s bases: the payout mapping (out of scope), the MLB repair, the owner's step-by-step browser instructions, narration.
+- **No residue in `T22`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `ae06fad54` (the log read before this line): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `244` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`): `T1`–`T22` done (`16,497` sentences); next `T23`.
