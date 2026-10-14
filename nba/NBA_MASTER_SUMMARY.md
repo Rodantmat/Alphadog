@@ -42954,6 +42954,7 @@ deadline itself.
 # §T23.22 — 🆕 ADDITIONAL SWEEP `2` (`2026-10-14`, sweep pass 195, `§P195`): **THE FANTASY FORMULA'S CHECK, WITH ITS POPULATION** *(AS STATED)*
 *From the message of `2026-09-21 19:22Z`. Already on file: the formula itself and the row that marks it checked (`NBA_MULTIPLIERS.md`, the fantasy_score table: `✅ checks out`, no population given).*
 - *"PTS + 1.2 REB + 1.5 AST + 3 STL + 3 BLK − TOV matches the NBA's official fantasy points on all 26,649 game logs from last season."*
+- ▶ 🆕 *Additional sweep `3` (`2026-10-14`, pass 245): `§T23.23` — item 1's three fixes as the build chat listed them, the shrink's `20%` / `80%` weight — written in `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md` (`T26-23`).*
 
 # §T22.2 · §T22.3 · §T22.6 · §T22.7 · §T23.4 — 📋 **THE FIVE PASS RECORDS WHOSE CONTENT WENT TO THE SUBJECT DOCUMENTS**
 
