@@ -47747,3 +47747,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `190` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T18` done (`6,613` sentences); next `T19`.
+
+# §P191 — PASS 191 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T19` · NOTHING NEW
+*Angle (as NEXT set it):* (k11) `§P131`'s method on `T19`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 190's head): `T19` `178` of `537` sentences listed — **all `178` read whole** (the figure triage: `0` with a figure not on file, `26` with every figure on file, `152` with none).
+- On file, by substance (each grepped before it was written): `§P141`'s list, plus the MLB universe figures the early documentation passes reported (`18` schemas, `116` workers, the control schema's `21` tables and the config schema's `15`), the corpus size (`~44 MB`), the garbage-time sources (Cleaning the Glass, Ben Falk), the `[] is not None` bug class, the one-season starter-status scope (`1,230` vs `~3,690` calls), GBDT rejected with conditions, the survivorship caution. Judged: narration, the owner's exchange about the forgotten work, the session's account of its compacted context, per-transcript progress tables.
+- **Nothing new — `T19` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's to the twelve since `7bd8f0763`. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `191` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T19` done (`6,791` sentences); next `T20`.
