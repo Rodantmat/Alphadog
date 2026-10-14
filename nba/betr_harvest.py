@@ -46,9 +46,11 @@ def parse_leg(ev, team, player, proj):
     base = {"event_id": str(ev.get("id")), "player": name, "player_id": str(player.get("id")),
             "team": (team or {}).get("name"), "stat": stat, "tier": tier, "market_id": proj.get("marketId"),
             "status": proj.get("marketStatus"), "start_time": ev.get("date")}
-    legs.append({**base, "line": line, "alt": False,
-                 "over": "MORE" in opts, "under": "LESS" in opts})
     alt = proj.get("nonRegularValue")
+    # non-REGULAR tiers carry a 0.5 PLACEHOLDER in value and the real line in nonRegularValue (2026-10-13; see betr_harvest_cloud.py)
+    if not (str(tier or "").upper() != "REGULAR" and alt is not None and alt > 0 and alt != line):
+        legs.append({**base, "line": line, "alt": False,
+                     "over": "MORE" in opts, "under": "LESS" in opts})
     if alt is not None and alt > 0 and alt != line:
         legs.append({**base, "line": alt, "alt": True, "alt_percentage": proj.get("nonRegularPercentage")})
     return legs
