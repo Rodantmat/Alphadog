@@ -192,7 +192,7 @@ def api_checks(conn, cfg):
     code, hh, t = curl("/api/slips/high-hit", body={}); save_sample("high_hit", hh)
     sl = hh.get("generated_slips") or []
     unpriced = [s["track_label"] for s in sl if not s.get("estimated_multiplier")]
-    check("C12 Slips screen: engine slips load and are priced", code == 200 and hh.get("ok") and not unpriced, f"{t}s source {hh.get('source')} slips {len(sl)} pool {len(hh.get('backup_pool', []))} unpriced {unpriced[:3]}")
+    check("C12 Slips screen: engine slips load and are priced", code == 200 and hh.get("ok") and sl and not unpriced, f"{t}s source {hh.get('source')} slips {len(sl)} pool {len(hh.get('backup_pool', []))} unpriced {unpriced[:3]}")
     nolegs = [s["track_label"] for s in sl if any(l.get("hit_probability_0_100") is None for l in s["legs"])]
     check("C13 Slips screen: every slip leg matched to its board leg", not nolegs, nolegs[:3])
     if hh.get("source") == "replay_backtest" and sl:
