@@ -248,7 +248,7 @@ async function closeStaleClaim(sql, env, pipeline, key, plan, now, st, dryRun) {
 async function act(sql, env, pipeline, key, dec, dryRun) {
   if (dryRun) return { pipeline, run_key: key, ...dec, dry_run: true };
   if (dec.action === "missed") {
-    const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot, ok, detail) VALUES (${pipeline}, ${key}::date, 'missed', false, ${dec.reason})
+    const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot, ok, detail) VALUES (${pipeline}, ${key}::date, ${dec.slot || "missed"}, false, ${dec.reason})
                           ON CONFLICT DO NOTHING RETURNING pipeline`;
     if (ins[0]) await log(sql, "missed", pipeline, key, "missed", dec.reason);
     return { pipeline, run_key: key, ...dec };
