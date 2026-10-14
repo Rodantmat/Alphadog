@@ -47183,3 +47183,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `153` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T31` done (`12,798` sentences); next `T32`.
+
+# §P154 — PASS 154 (`2026-10-10` → `2026-10-14`): ADDITIONAL SWEEP `1` — `T32`
+*Angle (as NEXT set it):* (t9) `§P131`'s method on `T32`, `T31`'s handling for its Betr and Chalkboard material.
+- Tabulated in the shell before this line (the scan at pass 153's head): `T32` `3,329` of `4,360` sentences listed. A triage split them by their figures against the backtick-stripped twelve: `30` carrying a figure no text on file holds, `709` whose every figure is on file, `2,590` with no figure. Read whole: all `30`; `670` of the `709`; `2,293` of the `2,590`. Set aside unread, `336` lines of the handled classes (Betr auth / token / proxy, Chalkboard, capture, bot-detection steps; `39` and `297` from the last two groups). `2,993` + `336` = `3,329`. The session broke between chunks (`2026-10-10` → `2026-10-14`); no commit touched the twelve in the gap.
+- On file, by substance: the Betr cloud route and the five-app audit (`§T32.1`–`§T32.2`), P3's push collision (`§T32.4`), the certification table (`§T32.5`), the drift incident and its evidence (`§T32.6`), the open-items rulings (`§T32.8`), the overconfidence map, correlation and the slip program's figures through the Flex sweep (`§T32.9`–`§T32.14`, the strategy document as stated), the A4 / `T26-6` proof, `T18-17`'s floor, `T20-25`'s `38` players and `321,406` legs, `F8-1`. Judged: the handled classes; the build chat's memory file pasted at `18:21Z` (out of scope); run ids, sizes and probe output; narration.
+- 🆕 **Residue — `§T32.16`** (new `##` after `§T32.15`): `board_outcomes`' over/under split by line type (✅ live: main `48.1%` over, alternate `39.5%`, alternates `74.6%` of played rows) and `board_tiers_v2`'s kind split with its fourth kind, `unknown` (✅ live `44,540`). Every quotation checked verbatim in the shell; no credential, token or proxy value reproduced. Pointers: `NBA_DATABASE.md` `§T22.13`, `§T32.5`, entry row `32`.
+- **`T32` not clean** — additional sweep `1` stays not clean. Commits this pass, all `[skip ci]`: `da30ab191`, `482975ecb`, `e148ecdbe`, `c05dc1044`, this ledger; the other commits since `20df7ce6f` are the pipelines' own data commits (board JSON, P2/P3, payout map), none touching the twelve.
+
+**Ledger**: pass `154` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T32` done (`16,127` sentences); next `T33`.
