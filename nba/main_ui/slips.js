@@ -247,7 +247,9 @@ export async function apiHighHit(sql, cfg, url, version) {
     byKey.set([l.source_key, "n:" + norm(l.player_name), l.canonical_prop_key, Number(l.line_value), l.selected_side].join("|"), l);
   }
   const risk = await dnpRisk(sql, slate.date, board.map(l => l.player_name));
+  lap("injuries");
   const notes = [];
+  if (board.length >= BOARD_CAP) notes.push(`The slate has more than ${BOARD_CAP} legs - only the top ${BOARD_CAP} by score were matched.`);
   let unmatched = 0;
   const slips = [];
   for (const s of [...eng.pp, ...eng.ud]) {
