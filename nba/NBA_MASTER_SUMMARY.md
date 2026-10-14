@@ -47574,3 +47574,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `177` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S7` done (`24,185` sentences); next `S8`.
 - ⚠ **The same slip as pass 175, corrected in this pass:** the NEXT patch (`771cefa24`) replaced pass 177's text in place (its `old_str` was a head fragment); `e71b6b055` restored it, struck, byte-identical to the version at `46c669dff` (checked in the shell); `21d0b65fd` made the rule in pass 178's text exact — the whole bold pass text is the `old_str`.
+
+# §P178 — PASS 178 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S8`
+*Angle (as NEXT set it):* (r10) `§P131`'s method on `S8`, the multiplier brief (`2026-10-09` `16:28 → 16:34Z`), checked against `§T47.4` and the twelve it restates.
+- Tabulated in the shell before this line (the scan at pass 177's head): `S8` `124` of `203` sentences listed, no memory dump among them — **all `124` read whole** (the figure triage ordered them: `23` with a figure not on file, `58` with every figure on file, `43` with none).
+- On file, by substance (each grepped before it was written): its verdict per app and five contradictions (`§T47.4`), the Pick6 archive (`534,188` rows, `94.89%`, `415` values `0.50–46.60`), Sleeper's `1.45–2.21` capture, Chalkboard's attestation wall, Betr's tiers and zero multiplier, the Underdog modifier rules (`210,155` of `210,155`), the price-shop replay, the monitors' constants, the break-evens, the overconfidence (`~21%` / `~17%`), the demons' `0.246`, the gate and edge results, `452` real quotes. Judged: the prompt, line references, its MLB conversions (`certification-center.js`, `MULTIPLIER_TABLES_MASTER`) and its `PP_PAYOUT_FINDINGS.md` material (cross-reference only).
+- 🆕 **One residue, `§T47.11`** *(`5` italic quotations, each a substring of the transcript in the shell)*: Chalkboard's pricing reference, the shrinkage blend, the Underdog core's haircut margin, two table sizes. Pointer: `§T47.4`'s `S8` row.
+- No commit not this sweep's to the twelve since `f8d236bc6`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `178` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S8` done (`24,309` sentences); next `S9`.
