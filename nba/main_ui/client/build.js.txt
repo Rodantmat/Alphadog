@@ -2,7 +2,7 @@
 function nChooseK(n,k){if(k>n||k<0)return 0;k=Math.min(k,n-k);let o=1;for(let i=1;i<=k;i++)o=o*(n-k+i)/i;return Math.floor(o)}
 function validTypes(n){const m=Math.min(6,n);let a=[];for(let i=2;i<=m;i++)a.push(i);return a}
 function defaultStructures(n){return n>=6?[{amount:2,slip_type:3},{amount:1,slip_type:4}]:n>=5?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=4?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=3?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=2?[{amount:1,slip_type:2}]:[]}
-function legTitle(r){return esc((r.player_name||'')+' • '+cap(r.canonical_prop_key)+' '+String(r.selected_side||'').toUpperCase()+' '+(r.line_value??''))}
+function legTitle(r){return esc((r.player_name||'')+' • '+displayPropLabel(r.canonical_prop_key)+' '+String(r.selected_side||'').toUpperCase()+' '+(r.line_value??''))}
 function evClass(ev){if(ev==null)return '';return ev>0?'good':(ev>-0.1?'warn':'bad')}
 function evLabel(ev){if(ev==null)return '—';const pct=Math.round(ev*100);return (pct>=0?'+':'')+pct+'% EV'}
 function multiplierLabel(m){if(m==null||!isFinite(m))return '—';return (Math.round(m*100)/100)+'x'}
