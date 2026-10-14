@@ -1398,3 +1398,72 @@ red, the rest paper with their caps).
   `_dlt_recert_nv48` tables. Restore DDL and commands: `nba/sql/archived_ud_experiments.sql`. **Database 41 → 36 GB.**
 - **Disk (watch item, not a fault):** 43 GB before the compaction above, 41 GB after, 36 GB after the archive (27 GB after the 09-28 rewrites). Largest: board_snapshots 6.9 GB, board_scored 3.3,
   baseline_history 3.2, final_hp 2.2. The plan autoscales +10 GiB at 80 %; the in-season daily growth is the thing to watch.
+
+### THE NBA MAIN INTERFACE — A SEPARATE, FULLY FUNCTIONAL COPY OF THE MLB UI, ON NBA DATA (owner 2026-10-14: "make a copy of the interface that I'm using for the MLB … exactly a functional copy … different name, different path … no exceptions, no excuses … break it in phases … simulate, test, debug")
+- **What it is.** Worker `alphadog-v2-nba-main-ui` (entry `nba/alphadog-v2-nba-main-ui.js`, manifest `nba/worker_manifest_nba.json`),
+  https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev. Same screens and look as the MLB main UI
+  (`alphadog-v2-certification-center`, untouched): board cards with filters, the tap-through dossier (prop trends L5/L10/L20, shot
+  quality, advanced metrics, form windows, splits, home/away, game log, defense vs position, team profiles, injuries, last-game
+  starters, schedule spot, officials, game market, every line of the player across apps, sportsbook and DFS boards, consensus), the
+  slip builder (recommended structure by risk-adjusted EV + custom structures), the Slips screen (engine slips, backup pool, leg
+  substitution, real-multiplier fields, save), player profile with search, Board Health with guarded reruns, Calibration with Apply.
+- **Split for a light load.** The MLB worker is one 1.06 MB file inlining its client. Here: server modules under `nba/main_ui/`
+  (common, board, insight, context, dossier, profile, slips, pricing, health, assets) and the client as a small core (shell + board,
+  ~58 KB) plus parts fetched only when a screen first opens (`/js/dossier.js`, `build.js`, `slips.js`, `profile.js`, `admin.js`,
+  `pricing.js`); the dossier part is prefetched 1.5 s after the board renders. Client sources (`nba/main_ui/client/*.txt|html`)
+  are bundled as text modules and served byte-for-byte (test C22). Upload 350 KiB, startup 13 ms.
+- **Data.** Board = `nba_score.board_scored` (P3's one set per slate), enriched read-only: team (latest box-score team, else roster),
+  game (`nba_calendar.slate_games`), PrizePicks variation (`board_tiers_v2`, label preference window > close > routine) and factor
+  (`pp_leg_price`), Underdog / Sleeper multipliers (`board_snapshots`). With no scored slate today the board replays the latest
+  scored slate (now 2026-06-13) and says so; `/?date=YYYY-MM-DD` replays any scored slate on every screen. Slips = today's
+  `live_slips` / `ud_live_slips`; on a replay with none, the certified backtest's slips for that slate (market-free twin
+  `slip_engine_slips_mf[_nosteals]`, `ud_slip_engine_slips_dlt_orig2_mf`, strategies and caps from `live_strategy_state`, red /
+  cap-0 / W_ / R_ excluded), with their results. The backtest is regular season only (latest 2026-04-12), so a playoff replay
+  slate falls back to the latest backtest slate, disclosed in the notes.
+- **One source of payout math.** `nba/main_ui/pricing.js` mirrors the certified graders (PrizePicks Power compress(base × ∏factor),
+  Flex all-standard table / `flex_alt_tiers`; Underdog STD × ∏f, FLEX × ∏hit f; Sleeper product / round-robin) and is served to
+  the browser by serializing the same functions. EV is exact over all hit/miss outcomes; breakeven by bisection.
+- **Tunables in the DB:** `classification_config['nba_main_ui']` (apps, limits, label preferences, market→prop map, backup pool,
+  builder bounds, PP strategies, UD portfolios and payout tables, replay tables, rerun / calibration workflows). Saved slips:
+  `nba_score.ui_saved_slips` (unique per PT day + app + mode + leg fingerprint). Health reruns obey the run-once rules (never a
+  claimed run_key; P2B after P2A; P3 only on a slate day before tip after P2B). Calibration Apply dispatches the FULL reliability
+  audit (`nba-board-maintenance.yml` task reliability) — a subset run would overwrite the audit record with a partial one.
+- **Certification:** `nba/test_nba_main_ui.py` + `.github/workflows/nba-main-ui-test.yml` (optional `date`; report and phone-width
+  screenshots to branch `nba-ui-probe`, never main). A: config parity with `score_board_legs.MARKET_TO_PROP`,
+  `live_slip_engine.STRATEGIES`, `ud_live_slip_engine.PORTFOLIOS`, `build_ud_slip_engine.STD/FLEX`. B: pricing.js pays exactly what
+  `build_slip_engine.grade` and `ud_live_slip_engine.payout` pay on 400 + 400 random slips. C: every route vs the database (board
+  HP / confidence / score, team and game, goblin/demon vs board_tiers_v2, dossier lines and game log, profile, slips priced and
+  matched, builder EV vs an independent Python EV with the certified grader, save + same-day duplicate guard, health, rerun refusal,
+  calibration report, the served pricing.js run in a clean scope, backup pool reproduced from the whole slate). D: headless
+  Chromium walks every screen at 430 px (incl. a leg swap that must reprice on the checked legs) — no horizontal overflow, no
+  script error. **Final (v1.1.2): 51/51 on the default replay (run 38646984537) and 51/51 on a full regular-season slate via
+  `date=2026-03-10` (9,265 legs, every slip leg matched; run 38646981084).**
+- **Defects found by the live test and fixed:** (1) defense-vs-position query declared an unused first parameter → dossier and
+  profile 500; (2) the `nba_main_ui` config row had been seeded double-encoded (a JSON string) — normalized in place; (3) saved-slip
+  jsonb bound as text then cast; (4) wrangler's keep-names transform injects `__name()` into function bodies, which the serialized
+  browser pricing carried without the helper → Slips "Build failed"; a no-op `__name` ships first (reproduced locally with esbuild
+  --keep-names, guarded by test C23); (5) three regexes lost their escapes when lifted from the MLB template literal (`cleanVal`,
+  `notesLines`, `cleanLabel` — on MLB the `\b` inside the template becomes a backspace, so its label cleanup never fires); (6)
+  consensus rows map alternate markets to their prop label; (7) builder titles use the board's prop labels; (8) the backup pool is
+  ordered by the unrounded hit probability (test C24 caught the rounded-tie order); (9) after a leg swap the slip card priced EVERY
+  row (the unchecked leg plus the substitute) while labelled with the kept size — MLB prices by size alone, NBA prices the actual
+  legs; the card now prices only the checked legs; (10) Board Health on a past slate timed out reading final_hp's build time — now
+  read only for today's live slate; (11) a page `?date=` reaches every screen.
+- **Speed.** The three backtest slip tables had no index; every replay query scanned ~1 GB. Added `game_date` indexes
+  (`slip_engine_slips_mf_game_date_idx`, `slip_engine_slips_mf_nosteals_game_date_idx`, `ud_slip_engine_slips_dlt_orig2_mf_game_date_idx`,
+  ~9 MB together; the builders use CREATE TABLE IF NOT EXISTS, so they persist): Slips 27.5 s → 4–6 s; board 1–3 s, dossier and
+  profile 3–5 s, builder < 1.5 s. A narrowed board load was measured no faster and reverted.
+- **DATABASE — visibility maps lost by the 10-13 compaction (system-wide, not only the UI).** VACUUM FULL rewrites a table without a
+  visibility map, so index-only reads fall back to the heap: a one-date count on final_hp took 9.7 s cold. Eleven NBA tables were at
+  0 % all-visible (final_hp, board_scored, baseline_history, board_outcomes, the four PrizePicks slip tables, tier_map_legs,
+  board_rung_keys, injury_report_snapshots, cand_leg_features). Plain `VACUUM (ANALYZE)` on each (concurrent, no rows change) →
+  100 %; the same count now 0.04 s. `db_compact.py` now runs a plain VACUUM right after each VACUUM FULL, so the trap cannot recur.
+- **Slip system re-certified after today's DB changes:** `certify_slip_system.py` run 330b321d — 66 checks, 0 FAIL (sixth
+  consecutive clean pass). Strategy states unchanged since the 10-10 Flex-grader recertification (B_demon_3flex / 5flex red; the
+  rest paper with their certified caps until live results).
+- **Open finding, not fixed (deliberately):** the historical `board_scored` has no name-suffixed players (Jr / Sr / II / III)
+  outside April–May of either season — the suffix-matching defect P3 documents as fixed; the 2026-04-12 board, for example, lacks
+  Craig Porter Jr, Jaime Jaquez Jr, Kelly Oubre Jr, Wendell Carter Jr. Live slates are unaffected (the fix is in P3). Re-scoring
+  past slates would run P3 a second time for those slates, which the run-once rule forbids, so it is the owner's call. In the UI a
+  replayed slip leg missing from the scored board is shown without a probability and disclosed in the notes (1 of 75 legs on
+  2026-04-12).
