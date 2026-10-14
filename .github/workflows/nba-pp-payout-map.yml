@@ -31,6 +31,9 @@ on:
   #   16:30 UTC = 09:30 PDT / 08:30 PST - the morning board is up: mine the legs posted overnight
   #   19:45 UTC = 12:45 PDT / 11:45 PST - the board the slips are built from: new legs + the drift re-quotes
   # Scheduled runs are forced into delta mode and read max_quotes / drift from the trigger file.
+  # 2026-10-13 SWEEP: these crons started ~5 h late (10-13: 21:25 / 23:26 UTC, AFTER P3), so the window priced from the previous
+  # day's factors. On GAME days the NBA scheduler worker now dispatches this map twice (am = P2B time, pm = P3 - 40 min,
+  # mode=delta) and the crons stand down (gate job below); off game days (preseason, off days) the crons still run.
   schedule:
     - cron: '30 16 * * *'
     - cron: '45 19 * * *'
