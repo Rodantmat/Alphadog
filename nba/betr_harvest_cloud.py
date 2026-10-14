@@ -628,6 +628,19 @@ def main():
             "alt_legs": sum(1 for l in legs if l.get("alt")),
             "players": len({l["player_id"] for l in legs}), "events": nevents,
             "board_op": board_events(board)[1], "partial_lobby": board is lobby_board}
+    # TIER SAMPLES (2026-10-13 sweep): the per-tier payout multiplier (REGULAR / BOOSTED / EDGE_n ...) is still not located
+    # (BETR_BUILD_STATE §8: nonRegularPercentage reads 0). The board answer is already in hand, so keep ONE raw projection per
+    # tier - every field Betr sends, unparsed - in the meta file: no extra request, and the 10-20 check reads where it lives.
+    try:
+        samples = {}
+        for ev in board_events(board)[0]:
+            for t in (ev.get("teams") or []) + [{"players": ev.get("players") or []}]:
+                for p in (t.get("players") or []):
+                    for proj in (p.get("projections") or []):
+                        samples.setdefault(str(proj.get("type")), proj)
+        meta["tier_samples"] = samples
+    except Exception as exc:  # noqa: BLE001 - diagnostics must never cost the board
+        meta["tier_samples_error"] = str(exc)[:200]
     (OUT / f"betr_{LEAGUE.lower()}_current.json").write_text(json.dumps({"meta": meta, "legs": legs}, separators=(",", ":")))
     (OUT / f"betr_{LEAGUE.lower()}_current_meta.json").write_text(json.dumps(meta, indent=2))
     if LEAGUE == "NBA":
