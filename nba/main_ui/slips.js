@@ -212,8 +212,21 @@ async function replaySlips(sql, cfg, slate) {
 export async function apiHighHit(sql, cfg, url, version) {
   const slate = await resolveSlate(sql, cfg, url);
   const pricing = pricingFrom(cfg);
-  let eng = await engineSlips(sql, cfg, slate);
-  if (!eng.pp.length && !eng.ud.length) eng = await replaySlips(sql, cfg, slate);
+  const boardSlate = slate;
+  let eng = await engineSlips(sql, cfg, boardSlate);
+  if (!eng.pp.length && !eng.ud.length) eng = await replaySlips(sql, cfg, boardSlate);
+  // Replay of a slate the certified backtest does not cover (it is regular season only - a playoff replay slate has none):
+  // replay the latest slate it does cover instead, and say so. A live slate never falls back - it shows today's or nothing.
+  let fallbackNote = null;
+  if (!eng.pp.length && !eng.ud.length && slate.mode === "replay") {
+    const sfx = String(eng.suffix || "").replace(/[^a-z0-9_]/gi, "");
+    const last = (await q(sql, `SELECT max(game_date)::text d FROM nba_score.slip_engine_slips${sfx} WHERE game_date <= $1::date`, [slate.date]))[0];
+    if (last && last.d && last.d !== slate.date) {
+      slate = { ...slate, date: last.d, replay_of: boardSlate.date };
+      eng = await replaySlips(sql, cfg, slate);
+      fallbackNote = `The certified backtest covers regular seasons only (latest slate ${last.d}); ${boardSlate.date} is not in it, so this replays ${last.d}.`;
+    }
+  }
   // every board leg of the slate (both apps the engines play), to price and describe each slip leg
   const board = await loadLegs(sql, cfg, { date: slate.date, mode: slate.mode }, { where: "AND b.app IN ('prizepicks', 'underdog')", limit: 20000, withInsight: false });
   const pct = new Map();
