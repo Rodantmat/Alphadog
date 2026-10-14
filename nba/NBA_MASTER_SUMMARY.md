@@ -47595,3 +47595,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `178` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S8` done (`24,309` sentences); next `S9`.
+
+# §P179 — PASS 179 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S9`
+*Angle (as NEXT set it):* (s10) `§P131`'s method on `S9`, the pricing web research (`2026-10-09` `16:28 → 16:33Z`), checked against `§T47.4` and `NBA_MULTIPLIERS.md` `§T47.3`; third-party content recorded only as the report states it.
+- Tabulated in the shell before this line (the scan at pass 178's head): `S9` `117` of `149` sentences listed, no memory dump among them — **all `117` read whole** (the figure triage ordered them: `16` with a figure not on file, `15` with every figure on file, `86` with none).
+- On file, by substance (each grepped before it was written): the PrizePicks help-centre table and its caution, Underdog's Standard and Flex tables with the Standard break-evens and *"richer than older ones"*, payout = table × ∏ modifiers (implied), the boost's increment as bonus cash, Sleeper's VS-Score rule and `1.25×` Flex minimum, Betr's `2 = 3×` … `8 = 100×`, ParlayPlay's per-projection multipliers, Pick6's peer-to-peer pools, per-leg break-even `(1/M)^(1/n)`. Judged: the prompt, source links and article ids, the de-vig method table's rows, the general odds conversions.
+- 🆕 **One residue, `§T47.12`** *(`34` italic quotations, each a substring of the transcript in the shell)*: the Flex break-evens per leg for both tables, the goblin / demon data points and the opaque-total rule, Underdog's modifier rules and the report's guess, Sleeper's pools, voids, ez Pick and working model, Betr / ParlayPlay / Dabble, the worst-case de-vig choice and the vendor example, the sizing and enumeration maths, its closing checklist. Pointer: `§T47.4`'s `S9` row.
+- No commit not this sweep's to the twelve since `1251104f8`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `179` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S9` done (`24,426` sentences) — all `57` sources read; next the twelve 📑 INDEX blocks.
