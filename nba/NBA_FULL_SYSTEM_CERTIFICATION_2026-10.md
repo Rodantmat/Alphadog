@@ -1338,3 +1338,39 @@ capture by design (P2B morning line runs on slate days only).
 **Sources / credentials:** stats.nba.com via P1 / P2A green; injury PDFs loaded daily; ParlayAPI 200; proxy carried Betr and
 PrizePicks traffic today; no credential rotated or exposed. Strategy states unchanged since 10-10 (B_demon_3flex / B_demon_5flex
 red, the rest paper with their caps).
+
+#### SECOND PASS, OTHER ANGLES (owner 2026-10-13 21:22 PT: "Another complete pass looking different angles. Sleeper also has a board up")
+- **Opening-night dress rehearsal on the real 10-20 boards** (`nba-sim-slate`, sandboxed, run 38511151344): the full P2B build
+  (ladder 25,932 rows / 83 players / 22 props, final_hp board-scoped to 1,125 rungs) and the live `pick()` on PrizePicks' posted
+  10-20 board: 720 scored legs, 98 unscored, **0 team / event unresolved**, 31 players; slips placed for C_wstocks_4flex and the
+  shadow strategies; production verified untouched (baseline_history / final_hp / final_hp_derived / live_slips all 0). One
+  rehearsal artefact fixed: the archive's live event id embeds the CAPTURE date (`live-prizepicks-<capture day>-<game>`), and the
+  simulation reads 'routine' rows spanning 19 capture days → "11 games" for a 3-game slate and wrong same-game tiering in the
+  rehearsal. Live is not affected (the engine reads the single window capture of the slate day); `sim_slate.py` now strips the
+  capture date (3 events verified in SQL); re-run dispatched.
+- **Rolled-back integration test** (last run 10-07; the pick / grade / monitor code changed on 10-08 / 10-09): one FAIL — the
+  Underdog edge-monitor assertion compared with the code default −10.84 pp while the engine correctly used the tunable −9.46 pp
+  (round 3 #4). The test was stale, not the engine; fixed to compare with the value the engine resolves → re-run 38511951340
+  **ALL PASS**, ledgers rolled back to 0.
+- **PrizePicks leg-source parity** (20 slates, 38511970962): no grading disagreements, no apples-to-apples differences (only the
+  known suffix / alias categories).
+- **Identity on the opening-night boards:** every PrizePicks (31), Sleeper (26) and Betr (31) player on 10-20 resolves through
+  `player_name_map` and sits on a team playing that day (offseason moves — LeBron James / Jaylen Brown PHI, Paul George /
+  Mitchell Robinson BOS — agree between Betr's board and our roster sync).
+- **Sleeper board refreshed** (dispatch 38511132317): 112 legs / 27 players, all 10-20, six stat types incl. double-double (mapped),
+  one promo leg (filed `_promo`), no alt ladder posted yet; 69 legs two-sided, 43 over-only.
+- **Underdog / Fliff refreshed:** Underdog has posted no 10-20 player lines yet (game-day board); Fliff 26 events, team markets only.
+- **Betr after the placeholder fix** (probe 04:54 UTC): 360 legs, 195 alt; the only non-REGULAR main legs left are two real 3PM
+  0.5 lines (EDGE tier where `nonRegularValue` = `value`).
+- **PrizePicks pricing model vs PrizePicks' own quotes:** per leg the model is conservative on average (goblins 0.97×, demons
+  0.93× the quoted 2-pick on 10-13) but ~11 % of legs sit > 2 % above the quote (max +17 %, demon points). At slip level the
+  grader's Power price (`compress(POWER[n] × ∏ model factor)`) against the 96 fully-priced MIXED quotes of 10-10: 4- to 6-picks
+  0.68–0.77× the quote (under-paid, conservative), 3-picks 0.93× on average but **above the quote on 8 / 24 — all of them
+  goblin+demon mixes (1.10×)**. No live strategy builds that mix: A_core_3power's 3-Power slips are all-standard (868) or
+  demon-only (101), D_points_3power all-standard — so the overpay never reaches a live price. Recorded as a scope note: a future
+  composition mixing goblins and demons in 3-Power needs the slip haircut that `pp_slip_power_conservative` applies.
+- **Scheduler over the first two weeks, DST included:** plans computed by the deployed code for 10-20 … 11-02 (Nov 1 = PST):
+  P2A 03:30, P2B 08:05, P3 = min(13:15, tip − 30) + 1 (11:31 on 10-20 / 10-31, 12:01 on 11-01), PP map am 08:05 / pm P3 − 40.
+- **Tunables:** no double-encoded JSON left in `classification_config` / `pp_slip_rules`.
+- **Disk (watch item, not a fault):** 43 GB (27 GB after the 09-28 rewrites). Largest: board_snapshots 6.9 GB, board_scored 3.3,
+  baseline_history 3.2, final_hp 2.2. The plan autoscales +10 GiB at 80 %; the in-season daily growth is the thing to watch.
