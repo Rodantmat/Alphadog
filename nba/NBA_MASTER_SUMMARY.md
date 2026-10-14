@@ -26448,6 +26448,7 @@ glossary backfill is pass 1's work, not pass 0's.**
 - **The first replication carried a narrow confidence range**: `2025-26` `0.890`–`0.961`, `2024-25` `0.922`–`0.960`, `0` invalid either season (`05:02Z`). The stated cause: *"`f_prov`, `f_role`, `f_vol`, `f_exp` and `f_agree` are placeholders there, because the per-player volatility and market-agreement terms need graded history that the engine doesn't join at build time. Only completeness, availability, rung depth and book count actually vary per leg."*
 - **The consequence for the score** (`05:07Z`): *"Until those are joined in, score is ranked almost entirely by HP."*
 - **The fix named two of the five** (`05:14Z`): *"`f_role` and `f_prov` were placeholder constants in the engine, which is why confidence spanned only 0.89–0.96 and score was effectively ranked by HP alone. Both now come from `baseline_history`"*, with provenance reading 1.0 for an empirical cell and 0.30 for a parametric fallback *"rather than a flat 0.65"*. ⚠ The message names no change to `f_vol`, `f_exp` or `f_agree`.
+- ▶ 🆕 *Additional sweep `3` (`2026-10-14`, pass 240): `§T18.9` — the scratched player's legs as scored, the enhancing score at both extremes — written in `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md` (`T26-23`).*
 
 # §T18.7 — WIRING: EVERY OBJECT T18's SECTIONS ASSERT, RESOLVED — **16/16**
 *(T18 pass 8, 2026-09-22 · T4's closing angle · **the pass that closes T18 at 3/3**)*
