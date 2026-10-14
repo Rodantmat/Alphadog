@@ -257,7 +257,7 @@ async function act(sql, env, pipeline, key, dec, dryRun) {
   const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot) VALUES (${pipeline}, ${key}::date, ${dec.slot})
                         ON CONFLICT (pipeline, run_key, slot) DO NOTHING RETURNING pipeline`;
   if (!ins[0]) return { pipeline, run_key: key, action: "skip", reason: "duplicate fire - this slot already dispatched" };
-  const res = await dispatch(env, WORKFLOWS[pipeline]);
+  const res = await dispatch(env, WORKFLOWS[pipeline], dec.inputs);
   if (!res.ok) {
     // remove the slot record so the next tick retries; a kept record would be read as "already dispatched"
     await sql`DELETE FROM nba_control.scheduler_dispatches WHERE pipeline=${pipeline} AND run_key=${key}::date AND slot=${dec.slot}`;
