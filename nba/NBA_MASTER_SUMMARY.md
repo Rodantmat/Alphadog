@@ -47451,3 +47451,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `171` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1` done (`23,594` sentences); next `S2`.
+
+# §P172 — PASS 172 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S2`
+*Angle (as NEXT set it):* (l10) `§P131`'s method on `S2`, the P2B slate audit (`2026-10-08` `05:57 → 06:13Z`), its findings checked against the ledger rows they went to.
+- Tabulated in the shell before this line (the scan at pass 171's head): `S2` `91` of `124` sentences listed, no memory dump among them — **all `91` read whole** (the figure triage ordered them: `7` with a figure not on file, `41` with every figure on file, `43` with none).
+- On file, by substance (each grepped before it was written): findings #1–#7, #9 and #10 as fixed in `T42` (`§T42.0` #7), #4 and #11–#18 as fixed in `T43` (its round-2 table), #8 through the one slate predicate (`P2A#16`), the `34` of `616` missing names, the double count; and what the audit verified correct (opening night's inherited cells, the roster sync's refusals, the morning line's as-of, the singles-only refusal, the push retry). Judged: the prompt, file:line references, the verify and fix lines (the fixes as built are on file).
+- 🆕 **One residue, `§T42.12`** *(`10` italic quotations, each a substring of the transcript in the shell)*: the opening-night ramp haircut and the two untested season paths, `§31p`'s post-window scope, the unread `blowout_model`, the certifier's no-slate day, the fixed-offset clocks, two info items, the crew-poll wait. Pointer: `§T42.4`'s `S2` row.
+- No commit not this sweep's to the twelve since `b1b9f7596` (two board-data commits elsewhere). The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `172` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S2` done (`23,685` sentences); next `S3`.
