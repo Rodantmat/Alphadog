@@ -48039,3 +48039,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `215` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T43` done (`20,835` sentences); next `T44`.
+
+# §P216 — PASS 216 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T44` · NOTHING NEW
+*Angle (as NEXT set it):* (j12) `§P131`'s method on `T44`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 215's head): `T44` `160` of `318` sentences listed, no memory dump among them — **all `160` read whole**, every credential-class detail masked in the shell before reading (the bounded figure triage: `2` with a figure not on file — a run-id list and the MLB credit balance — `0` matched only inside a longer number, `52` with every figure on file, `106` with none).
+- On file, by substance (each grepped before it was written): `§P166`'s list and `§T44.10`, plus the twin re-run (`2.70 M` rows), the price-shopping ledger's first slate (`19` of `40`, `12` at the same line; the `0.0916` gate), Betr's history (`142k` legs) and the `1.5 M` scored sportsbook legs, the retention audit (`R-1`; `model_params_history`; the `23` DB-only ledgers; the `7`-day provider backups; `db-archive-2026-10-08`, `905 M`), the shared proxy secret's `10` NBA fallbacks, the Odds API credits (`4,999,977`), and both postseasons (`90` / `91` games, `1.49 M` rows, `50 / 47` dates). Judged: narration, the session's notices, run ids, the secret value the owner was given (credential rule), and the MLB / NHL mining with its credit planning (out of scope).
+- **Nothing new — `T44` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `e188b9d12` (the log read before this line). No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `216` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T44` done (`20,995` sentences); next `T45`.
