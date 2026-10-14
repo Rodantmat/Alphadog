@@ -1300,8 +1300,11 @@ row `failure/skipped`): three tables did not land.
   +34%, R_stocks_4power FAIL_STATE_GATED as designed, the rest NOT_IN_TOP30); no state changed.
 
 **PrizePicks payout map ran AFTER the window.** Its GitHub crons (16:30 / 19:45 UTC = "before the window") started at 21:25 and
-23:26 UTC on 10-13 — five hours late, after P3 — so the window would have priced new goblins / demons from the previous day's
-mined factors. Same disease as P3 and Betr before. **Fixed:** the NBA scheduler (v2.4.0, deployed, ticking) fires the map twice
+23:26 UTC on 10-13 — five hours late, after P3. *Corrected in the second pass the same night:* the live price of a leg is NOT
+the mined quote — it is the pricing model (`nba_market.pp_leg_price` = `pp_pricing_model` × `pp_price_key`); the mined quotes
+feed the Flex-with-alternates tier curve and the model-vs-quote check (`pp_mined_vs_model`). What the late runs cost was that
+the day's quotes were taken from a board P3 had already priced (143 of 458 quotes on 10-13 had no price key to compare) and
+the tier curve lagged a day — not a wrong live price. Same disease as P3 and Betr before. **Fixed:** the NBA scheduler (v2.4.0, deployed, ticking) fires the map twice
 per GAME day as single-shot slots — `am` from the P2B time, `pm` in [P3 − 40 min, P3) (a delta run measures ~6 min) — with
 `mode=delta` (new workflow input); a slot that cannot fire in its window is logged `missed-<slot>` once, never late. On game days
 the workflow's own crons stand down (new `gate` job reads `nba_calendar.slate_games`); off game days they still run.
