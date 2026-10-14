@@ -46,7 +46,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.g.outputs.run }}
+    steps:
+      - id: g
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          T=$(TZ=America/Los_Angeles date +%F)
+          G=$(psql "$DATABASE_URL" -Atqc "SELECT count(*) FROM nba_calendar.slate_games WHERE game_date='$T'::date" 2>/dev/null || echo "")
+          if [ -n "$G" ] && [ "$G" -gt 0 ]; then
+            echo "game day $T ($G slate games): the NBA scheduler dispatches this map before the window - cron stands down"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "no slate games on $T (or calendar unreachable: '$G') - cron run proceeds"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   map:
+    needs: gate
+    if: ${{ needs.gate.outputs.run == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
