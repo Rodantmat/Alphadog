@@ -300,9 +300,10 @@ def browser():
 
         def sub():
             rows = page.locator("#autoCreateResults .legRow")
-            if rows.count():
-                rows.first.click()
-                page.wait_for_timeout(500)
+            if not rows.count():
+                raise RuntimeError("no slip legs to uncheck")
+            rows.first.locator(".legKeepBox").uncheck()
+            page.wait_for_selector("#autoCreateResults .subTag", timeout=10000)
         step("05_slips_substitution", sub)
 
         def profile():
