@@ -45214,6 +45214,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - 🆕 *(pass 62, `colocAll.py` — one more, AS STATED)*: the first postseason alone — *"On one postseason (2024-25) no strategy passed (best +67% / +47% / +41% at k = 1, every lower bound < 0) — the two-season verdict is in the ledger."*
 - ⇒ **`T45` fails the deep check — REOPENED, CLEAN `0`/`3`** (`S7` not reopened).
 
+## §T45.10 — ADDITIONAL SWEEP 1, PASS 177 (`2026-10-14`): DETAILS OF THE REGULAR-SEASON SWEEP `S7` *(AS STATED — code-only claims as of `10-08`, before the postseason wiring; `§P177`)*
+*Method:* the ≥ `5` scan over all twelve on `S7`'s whole transcript (`98` of `122` sentences, computed in the shell), read by `§P131`'s method; its summary is on file (`§T45.4`) and the wiring it planned (`5_postseason`, `slate_games`, the postseason delta) is on file — what follows is the sweep's own detail beside them.
+- **Bounds that would move**: *"If playoff team logs are loaded, s1 moves to June."*; *"That breaks in_final7 (:553, :566), the window refusal (:533), evaluate_hurdles season_end (:809, :916) and late-March day counts."*; for the slip backtests — *"Without that, final7 lands in June."*
+- **The phases**: *"April–June all fall into 4_push."*; *"nba_market.prop_universe.phase (sql/db_functions.sql:207-208, 243, 288-295): the most common game-id season digit per night maps to regular, playoffs, play-in, preseason or all-star, otherwise other; nights with no box score get no-boxscore."*
+- **Month-coded windows**: *"ud_live_slip_engine.py:124: final_week only when day.month in (3, 4)."*; *"backtest_tier_selection_value.py:130: "final fortnight" is month == 4."*
+- **Loaders**: the measure-types worker — *"It is the only loader that can take a second file without code changes, via an input prefix."*
+- **Board floors on playoff days**: *"Playoff slates of 1–4 games may fall below the smallest validated board, so nothing would be placed."*
+
 # §T46 — `T46` · `2026-10-09-02-50-53-nba-playoff-roi-playoff-research-31x-31y` *(transcripts pack `2026-10-09`)* — 🆕 **POSTSEASON PARITY PROVEN WITHOUT TOUCHING THE REGULAR SEASON; THE OWNER'S ROI QUESTIONS ANSWERED WITH AN HONEST 2026-27 RANGE; THE PLAYOFFS STUDIED THROUGH THE WHOLE METHOD — ONLY THE MODEL'S UNDERS HOLD; A POSTSEASON GAME-KEY DEFECT; "PLAYOFF UNDERS" BEGINS**
 
 > *Chat track, pass `1` (**`5` real owner messages** among `787` events; all assistant prose including one `SendUserMessage`; every write call), recorded `2026-10-10`. Span `2026-10-09 02:50Z → 07:06Z`. Evidence base: the transcript; the ledger's **POSTSEASON BACKFILL TO FULL PARITY** (results) and **POSTSEASON GAME KEY**; strategy **`§31x`**, **`§31y`**, `§31w` (parity as built); COMPASS 140–142 — read-only, figures **AS STATED**. The Playoff Unders gates, certification and live parity (`§31z`, ledger *PLAYOFF UNDERS*) were coded at the end of this window and run in `T47`.*
