@@ -2410,7 +2410,7 @@ a universe at once, not the one currently suspected.*
 `build_blowout_model.py` → `blowout_model` (35 rows) · `build_scenario_calibration.py` →
 `scenario_calibration` · `build_mondrian_confidence.py` → `conformal_confidence` ·
 `build_confidence_v3.py` → `confidence_model` · `build_asof_calibration.py` →
-`ladder_calibration_asof` · `build_board_tiers_v2.py` → **`TRUNCATE`** `board_tiers_v2` ·
+`ladder_calibration_asof` · `build_board_tiers_v2.py` → **`TRUNCATE`** `board_tiers_v2` (▶ the builder before `d7f66e649`, `2026-09-23`: since then the default rebuild is one slate × app in one transaction, `TRUNCATE` only under `BT2_ALL=1` — `NBA_OPEN_ITEMS.md` `§T42.15`) ·
 `alphadog-v2-nba-weekly-differential.js` → `player_roster_snapshot`, `team_roster_snapshot`,
 `official_roster_snapshot` *(the documented snapshot replace-in-full design)*.
 **Recorded so a future audit does not re-flag them.**
