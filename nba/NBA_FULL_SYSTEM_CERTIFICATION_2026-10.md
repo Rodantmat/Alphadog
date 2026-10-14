@@ -1373,5 +1373,17 @@ red, the rest paper with their caps).
 - **Scheduler over the first two weeks, DST included:** plans computed by the deployed code for 10-20 … 11-02 (Nov 1 = PST):
   P2A 03:30, P2B 08:05, P3 = min(13:15, tip − 30) + 1 (11:31 on 10-20 / 10-31, 12:01 on 11-01), PP map am 08:05 / pm P3 − 40.
 - **Tunables:** no double-encoded JSON left in `classification_config` / `pp_slip_rules`.
-- **Disk (watch item, not a fault):** 43 GB (27 GB after the 09-28 rewrites). Largest: board_snapshots 6.9 GB, board_scored 3.3,
+- **LOSSLESS COMPACTION (owner 22:48 PT: "without losing any data, no regression, no loss, no compromise, is there any cleanup
+  or data size improvement we can make?").** Measured with pgstattuple / pgstatindex: the 10-10 regrade left ~25 % empty space in
+  the four PrizePicks slip tables; delete-then-insert loaders left tier_map_legs 50 % empty (PK leaf density 34 %),
+  board_rung_keys 30 %, injury_report_snapshots 40 %, final_hp 13 %, board_scored's unique index at 65 %. `nba/db_compact.py`
+  (task `compact` / `compact_dry` in `nba-board-maintenance.yml`) rewrites them with VACUUM FULL, off-hours only, smallest first,
+  and checks each table's row count AND a whole-content fingerprint (sum of a 64-bit hash of every row) before and after — any
+  difference stops the run. Dry run 38519016415, then run 38519553377: **43,812 MB → 41,209 MB (−2.6 GB)**; every table's rows
+  and fingerprint identical (e.g. tier_map_legs 1,125 → 501 MB, board_scored 3,312 → 2,870 MB on 14,011,146 rows); all 194 NBA
+  indexes valid. Also dropped the two lookup indexes (205 MB) of `board_tiers_legacy_20261008`, the frozen reader-less copy kept
+  for retention — its rows stay; the exact CREATE statements are in the run log. Not done (owner's call): the 35 Underdog
+  experiment tables (`ud_slip_engine_*`, ~5.3 GB, verified distinct — not duplicates) could move to the off-database release
+  archive (`nba-db-history-archive.yml`) and be restored on demand; MLB schemas were not touched.
+- **Disk (watch item, not a fault):** 43 GB before the compaction above, 41 GB after (27 GB after the 09-28 rewrites). Largest: board_snapshots 6.9 GB, board_scored 3.3,
   baseline_history 3.2, final_hp 2.2. The plan autoscales +10 GiB at 80 %; the in-season daily growth is the thing to watch.
