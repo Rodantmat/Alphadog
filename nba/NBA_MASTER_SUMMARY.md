@@ -48146,3 +48146,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `225` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`, `§T44.13`, `§T48.11`): `T1`–`T48`, `S1`–`S5` done (`23,680` sentences); next `S6`.
+
+# §P226 — PASS 226 (`2026-10-14`): ADDITIONAL SWEEP `2` — `S6` · NOTHING NEW
+*Angle (as NEXT set it):* (t12) `§P131`'s method on `S6`, the write-path inventory (`2026-10-08` `17:39 → 17:45Z`), each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 225's head): `S6` `84` of `102` sentences listed, no memory dump among them — **all `84` read whole** (the bounded figure triage: `5` with a figure not on file, `3` matched only inside a longer number — all eight file:line references — `42` with every figure on file, `34` with none).
+- On file, by substance (each grepped before it was written): `§P176`'s list and `§T44.12`, the R-items (R-1 the table nothing wrote, R-8 the board captures, R-9 the prune's safety, R-10 the backups at three levels) and the retention map — the day-of values in `board_scored`, model parameters latest-only, strategy-state history, the replay guard (`LS_RESUME`, refused in season), the weekly profile tables, referee crews, injury snapshots via P3, the once-a-day apps — plus the weekly differential worker and its snapshot tables. Judged: the prompt, file:line references, the inventory rows' write-mode cells beside the stores on file, the narration, and the payout-map row (out of scope).
+- **Nothing new — `S6` clean in additional sweep `2`** (the sweep as a whole stays not clean). Commits not this sweep's since `ec0a2bfd0` (the log read before this line): `0`. No italic quotation in this ledger; the credential grep on the twelve returns `0`.
+- ⚠ **A slip of this pass:** after a dropped connection, this ledger and the STATE patch were sent in one message to the same file (pass 191's rule); the STATE patch landed first (`aa1fac3aa`), this ledger did not and was re-sent alone. Nothing was overwritten.
+
+**Ledger**: pass `226` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`, `§T44.13`, `§T48.11`): `T1`–`T48`, `S1`–`S6` done (`23,782` sentences); next `S7`.
