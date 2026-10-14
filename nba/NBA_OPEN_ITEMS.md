@@ -18756,3 +18756,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `267` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T45` done (`36,051` sentences); next `T46`.
+
+## §P268 — PASS 268 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T46` · NO RESIDUE
+*Angle (as NEXT set it):* (l14) `§P131`'s method on `T46`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 267's head): `T46` `95` of `174` sentences listed, no memory dump among them — **all `95` read whole** (the bounded figure triage: `2` with a figure not on file — two source-link ids — / `0` inside a longer number / `31` with every figure on file / `62` with none; `2 + 0 + 31 + 62 = 95`).
+- On file, by substance (each grepped before it was written, every hit read): `§P168`'s and `§P218`'s lists and `§T46.9`, plus the regular season untouched (`478,900` / `478,580` / `475,060`; the `48` certified rows), the confidence fit's exclusion of postseason legs, the post-backfill book (`+3%` over `96` nights; `298` slips at `−12%`), the earlier figures withdrawn (`+62%`, `+15%`, `+11%`), the playoff production finding (`57% / 62% / 64%`; confident Unders `57–58%`), Playoff Unders and `post_research_legs`, the honest walk-forward (`26` vs `~12`; Unders `54.5%` / `55.3%` vs `53.6%`), the computed Flex edge, the withdrawn Underdog `+34%`, and the postseason game-key defect (`T46-3`). Judged, on `§P168`'s and `§P218`'s bases: narration, the session's notices, research-source links, COMPASS item numbers.
+- **No residue in `T46`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `0194add38` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `268` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T46` done (`36,225` sentences); next `T47`.
