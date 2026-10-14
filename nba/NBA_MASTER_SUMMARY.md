@@ -47538,3 +47538,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `175` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S5` done (`23,997` sentences); next `S6`.
 - ⚠ **A slip of this pass, corrected in it:** the NEXT patch (`ec0f6d638`) first replaced pass 175's text in place instead of striking it; the next patch (`500297b25`) restored it, struck, byte-identical to the version before (checked in the shell) — `RULE 40`.
+
+# §P176 — PASS 176 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S6`
+*Angle (as NEXT set it):* (p10) `§P131`'s method on `S6`, the write-path inventory (`2026-10-08` `17:39 → 17:45Z`), checked against `§T44.4` and the R-items it went to.
+- Tabulated in the shell before this line (the scan at pass 175's head): `S6` `90` of `102` sentences listed, no memory dump among them — **all `90` read whole** (the figure triage ordered them: `5` with a figure not on file, `48` with every figure on file, `37` with none).
+- On file, by substance (each grepped before it was written): the risks that became R-1…R-10 (the table nothing wrote, model parameters latest-only, strategy-state history, replay unguarded, weekly profile tables without as-of copies, referee crews latest-only, injury snapshots via P3 only, Sleeper / Fliff / Betr once a day, the prune's only full copy, no data backup) and the retention map, with `board_scored` as the day-of record. Judged: the prompt, the per-step inventory rows that only restate a write mode the retention map carries, file:line references.
+- 🆕 **One residue, `§T44.12`** *(`9` italic quotations, each a substring of the transcript in the shell)*: DARKO's weekly capture of a daily series, the intraday board overwrite, the one-missed-P3 rule, the ingredients with no loader, the Underdog re-pick and latest-only weekly tables, the scheduler's own deletes, two items left for a database check. Pointer: `§T44.4`'s `S6` row.
+- No commit not this sweep's to the twelve since `02634ce91`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `176` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S6` done (`24,087` sentences); next `S7`.
