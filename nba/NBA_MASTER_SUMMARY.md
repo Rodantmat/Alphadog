@@ -47328,3 +47328,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `163` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T41` done (`21,082` sentences); next `T42`.
+
+# §P164 — PASS 164 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T42`
+*Angle (as NEXT set it):* (d10) `§P131`'s method on `T42`.
+- Tabulated in the shell before this line (the scan at pass 163's head): `T42` `87` of `145` sentences listed, no memory dump among them — **all `87` read whole**, credential values masked in the shell before reading (the figure triage ordered them: `2` with a figure not on file, `26` with every figure on file, `59` with none).
+- On file, by substance (each grepped before it was written): the round-2 code fixes (UD season block, Pacific clock, soft-step collector, sticky red, the board guard on unique legs), the recertification counts (`17` real survivors, `478,900` slips, `120` / `60`), the dress rehearsal (`162` scored legs, nothing placed), the reliability pass (`12` scrapers), the `407` and the proxy change — its economics, the credential store row (`proxy_url`) and the nine workflows that read it, the measured exits — the placeholder season files, the Sleeper game dates, and the market-free study. Judged: narration, timestamps, attachment notices, blob hashes, the provider links and plan card, and every host, port, user name and targeting suffix (credential rule).
+- 🆕 **One residue, `§T42.10`** *(`2` italic quotations, each a substring of the transcript in the shell; the credential grep on the residue returns `0`)*: the first provider's plan options the record had not carried. Pointer: row `42`.
+- No commit not this sweep's since `d44bffe73`. The credential grep on the twelve returns `0` (three read-only sources carry the gateway text; they are not the twelve and are not patched).
+
+**Ledger**: pass `164` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T42` done (`21,169` sentences); next `T43`.
