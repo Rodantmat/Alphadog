@@ -80,6 +80,10 @@ def main():
         except psycopg.errors.LockNotAvailable:
             print(f"  {t:<42} SKIPPED - busy (lock not granted in 60 s)", flush=True)
             continue
+        # VACUUM FULL rewrites the file WITHOUT a visibility map, so every index-only read falls back to the heap until a plain
+        # VACUUM runs (found 2026-10-14: a one-date count on final_hp took 9.7 s after the 10-13 compaction, 0.04 s after a plain
+        # VACUUM; eleven tables incl. board_scored / baseline_history were at 0 % all-visible). Plain VACUUM sets it; no rows change.
+        c.execute(f"VACUUM (ANALYZE) {t}")
         fp1 = fingerprint(c, t)
         s1 = size(c, t)
         if fp1 != fp0:
