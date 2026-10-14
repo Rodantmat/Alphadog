@@ -370,7 +370,7 @@ function slipCardHtml(s,idx){
 }
 function slipCardShell(s,idx,sel,multValue,fieldsHtml){
   const meta=[s.track_label?esc(s.track_label):'',s.status?esc(String(s.status).replace(/_/g,' ')):'',s.stake_weight!=null&&s.stake_weight!==1?'stake '+esc(s.stake_weight)+'u':'',s.result?('result '+esc(s.result.hits)+'/'+esc(s.slip_size)+' hit • paid '+esc(Math.round(Number(s.result.payout||0)*100)/100)+'x'):''].filter(Boolean).join(' • ');
-  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(multValue)+'</span></div>'+(meta?'<div class="small" style="margin:2px 0 6px">'+meta+'</div>':'')+'<div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'
+  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(multValue)+'</span></div>'+(meta?'<div class="small" style="margin:2px 0 6px">'+meta+'</div>':'')+'<div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+fieldsHtml+'</div>'
 }
 async function highHitSlips(){
   const results=$('autoCreateResults');
