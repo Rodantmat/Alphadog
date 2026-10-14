@@ -18726,3 +18726,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `264` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T42` done (`35,642` sentences); next `T43`.
+
+## §P265 — PASS 265 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T43` · NO RESIDUE
+*Angle (as NEXT set it):* (i14) `§P131`'s method on `T43`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 264's head): `T43` `28` of `41` sentences listed, no memory dump among them — **all `28` read whole** (the bounded figure triage: `0` / `0` / `0` / `28` with none; every line is a step announcement).
+- On file, by substance (each grepped before it was written, every hit read, in `§T43.2`'s round-2 table): `§P165`'s and `§P215`'s lists — the whole-number prune, the replay `asof` plumbing, the grader's team check, the Underdog budget, injury names through the daily roster, the gzipped dated ladder, the market-free table and `bt_table()`, the `edge_monitor_ref` rebuild, the combos builder's component pickles and the failed components / combos / periods step. Judged, on their bases: narration, and the build chat's internal helper names (`team_hist` among them).
+- **No residue in `T43`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `9aa0d4b53` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `265` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T43` done (`35,683` sentences); next `T44`.
