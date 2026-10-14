@@ -213,7 +213,76 @@ export async function playerBoardRows(sql, cfg, date, playerName) {
   const consensus = await q(sql, `
     WITH mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop))
     SELECT DISTINCT ON (c.market_key, c.line) mk.prop, c.market_key, c.line::float line, c.books, c.p_over_mean::float p_over, c.p_over_sd::float sd, c.snapshot_label
-    FROM nba_market.market_consensus c LEFT JOIN mk ON mk.market_key = c.market_key
+    FROM nba_market.market_consensus c LEFT JOIN mk ON mk.market_key = regexp_replace(c.market_key, '_(alternate|promo)
+    WHERE c.game_date = $1::date AND c.player = $2 ORDER BY c.market_key, c.line, array_position($5::text[], c.snapshot_label) NULLS LAST`,
+    [date, playerName, pgArr(mk.map(x => x[0])), pgArr(mk.map(x => x[1])), pgArr(cfg.ui.label_pref)]);
+  return { sportsbook: rows.filter(r => !dfs.has(r.bookmaker)).map(fmt), dfs: rows.filter(r => dfs.has(r.bookmaker)).map(fmt),
+    consensus: consensus.map(c => ({ prop: c.prop || c.market_key, line: c.line, books: c.books, p_over: r1(c.p_over * 100), sd: r1(c.sd * 100), label: c.snapshot_label })) };
+}
+
+export async function shotProfile(sql, pidT) {
+  const [quality, delta, zones] = await Promise.all([
+    q(sql, `SELECT close_def_dist_range, fga_frequency::float freq, fga::float fga, fg_pct::float fg_pct, efg_pct::float efg_pct, fg3a_frequency::float fg3a_freq, fg3_pct::float fg3_pct
+            FROM nba_stats.player_shot_quality WHERE player_id = $1 ORDER BY close_def_dist_range`, [pidT]),
+    q(sql, `SELECT actual_efg_pct::float actual, expected_efg_pct::float expected, shot_quality_delta::float delta, total_fga::float fga FROM nba_stats.player_shot_quality_delta WHERE player_id = $1`, [pidT]),
+    q(sql, `SELECT zone, fgm::float fgm, fga::float fga, fg_pct::float fg_pct FROM nba_stats.player_shot_zone_profile WHERE player_id = $1 ORDER BY fga DESC`, [pidT])]);
+  const p = v => v == null ? null : r1(v <= 1.5 ? v * 100 : v);
+  if (!quality.length && !delta.length && !zones.length) return null;
+  return {
+    by_defender_distance: quality.map(r => ({ range: r.close_def_dist_range, freq: p(r.freq), fga: r.fga, fg_pct: p(r.fg_pct), efg_pct: p(r.efg_pct), fg3a_freq: p(r.fg3a_freq), fg3_pct: p(r.fg3_pct) })),
+    delta: delta[0] ? { actual_efg: p(delta[0].actual), expected_efg: p(delta[0].expected), delta_pp: delta[0].delta == null ? null : r1(Math.abs(delta[0].delta) <= 1 ? delta[0].delta * 100 : delta[0].delta), fga: delta[0].fga } : null,
+    zones: zones.map(z => ({ zone: z.zone, fgm: z.fgm, fga: z.fga, fg_pct: p(z.fg_pct) }))
+  };
+}
+
+export async function advanced(sql, pidT) {
+  const [season, tracking, impact, onoff, playtypes] = await Promise.all([
+    q(sql, `SELECT season, games_played, pts_total::float pts, reb_total::float reb, ast_total::float ast, net_rating::float net, usg_pct::float usg, ts_pct::float ts, ast_pct::float ast_pct, oreb_pct::float oreb_pct, dreb_pct::float dreb_pct
+            FROM nba_stats.player_season_profile WHERE player_id = $1 ORDER BY season DESC LIMIT 1`, [pidT]),
+    q(sql, `SELECT season, avg_speed::float speed, avg_speed_off::float speed_off, avg_speed_def::float speed_def, dist_miles::float miles, dist_miles_off::float miles_off, dist_miles_def::float miles_def
+            FROM nba_stats.player_tracking_profile WHERE player_id = $1 ORDER BY season DESC LIMIT 1`, [pidT]),
+    q(sql, `SELECT dpm::float dpm, o_dpm::float o_dpm, d_dpm::float d_dpm, box_dpm::float box_dpm, on_off_dpm::float on_off_dpm, rank, source_key FROM nba_stats.player_impact_rating WHERE player_id = $1 ORDER BY updated_at DESC LIMIT 1`, [pidT]),
+    q(sql, `SELECT season, net_rating_on::float net_on, net_rating_off::float net_off, net_rating_diff::float net_diff, off_rating_on::float off_on, off_rating_off::float off_off, def_rating_on::float def_on, def_rating_off::float def_off
+            FROM nba_stats.player_onoff_profile WHERE player_id = $1 ORDER BY season DESC LIMIT 1`, [pidT]),
+    q(sql, `SELECT play_type, type_grouping, gp, poss_pct::float poss_pct, ppp::float ppp, efg_pct::float efg_pct, percentile::float percentile
+            FROM nba_stats.player_playtype_profile WHERE player_id = $1 ORDER BY poss_pct DESC NULLS LAST LIMIT 8`, [pidT])]);
+  const p = v => v == null ? null : r1(v <= 1.5 ? v * 100 : v);
+  const s = season[0];
+  return {
+    season_profile: s ? { season: s.season, games: s.games_played, pts_per_game: s.games_played ? r1(s.pts / s.games_played) : null, reb_per_game: s.games_played ? r1(s.reb / s.games_played) : null,
+      ast_per_game: s.games_played ? r1(s.ast / s.games_played) : null, usage_pct: p(s.usg), true_shooting_pct: p(s.ts), assist_pct: p(s.ast_pct), oreb_pct: p(s.oreb_pct), dreb_pct: p(s.dreb_pct), net_rating: r1(s.net) } : null,
+    tracking: tracking[0] ? { season: tracking[0].season, speed_mph: r1(tracking[0].speed), speed_off: r1(tracking[0].speed_off), speed_def: r1(tracking[0].speed_def), miles: r1(tracking[0].miles), miles_off: r1(tracking[0].miles_off), miles_def: r1(tracking[0].miles_def) } : null,
+    impact: impact[0] ? { dpm: r1(impact[0].dpm), o_dpm: r1(impact[0].o_dpm), d_dpm: r1(impact[0].d_dpm), box_dpm: r1(impact[0].box_dpm), on_off_dpm: r1(impact[0].on_off_dpm), rank: impact[0].rank, source: impact[0].source_key } : null,
+    on_off: onoff[0] ? { season: onoff[0].season, net_on: r1(onoff[0].net_on), net_off: r1(onoff[0].net_off), net_diff: r1(onoff[0].net_diff), off_on: r1(onoff[0].off_on), off_off: r1(onoff[0].off_off), def_on: r1(onoff[0].def_on), def_off: r1(onoff[0].def_off) } : null,
+    play_types: playtypes.map(r => ({ play_type: r.play_type, grouping: r.type_grouping, gp: r.gp, poss_pct: p(r.poss_pct), ppp: r3(r.ppp), efg_pct: p(r.efg_pct), percentile: p(r.percentile) }))
+  };
+}
+
+// The game a team plays on a date (slate calendar), with names
+export async function gameFor(sql, date, teamId) {
+  const r = await q(sql, `SELECT g.game_id, g.game_date::text game_date, g.game_datetime_utc, g.home_team_id, g.away_team_id, g.home_team_tricode, g.away_team_tricode,
+      g.arena_name, g.arena_city, g.game_status_text, ht.full_name home_name, at.full_name away_name, ht.abbreviation home_abbr, at.abbreviation away_abbr
+    FROM nba_calendar.slate_games g LEFT JOIN nba_ref.teams ht ON ht.team_id = g.home_team_id LEFT JOIN nba_ref.teams at ON at.team_id = g.away_team_id
+    WHERE g.game_date = $1::date AND $2 IN (g.home_team_id, g.away_team_id) LIMIT 1`, [date, teamId || ""]);
+  const g = r[0];
+  if (!g) return null;
+  return { ...g, game_time_utc: g.game_datetime_utc ? new Date(g.game_datetime_utc).toISOString() : null };
+}
+
+// Everything around one player's game: used by the dossier (selected leg's game) and the profile (next game).
+export async function gameContext(sql, cfg, { date, game, teamId, position }) {
+  if (!game) return null;
+  const teamIds = [game.home_team_id, game.away_team_id].filter(Boolean);
+  const oppId = teamId === game.home_team_id ? game.away_team_id : game.home_team_id;
+  const [teams, dvp, inj, starters, sched, refs, lines] = await Promise.all([
+    teamProfiles(sql, teamIds, date), defenseVsPosition(sql, oppId, position), injuries(sql, date, [game.home_name, game.away_name].filter(Boolean), game.game_time_utc),
+    lastGameStarters(sql, teamIds, date), scheduleSpot(sql, teamIds, date), officials(sql, date, game), gameLines(sql, cfg, date, game)]);
+  return { game, opponent_team_id: oppId, team_profiles: teams, defense_vs_position: dvp, injuries: inj, starters, schedule_spot: sched, officials: refs,
+    market_summary: lines.summary, market_odds: lines.rows };
+}
+
+export { statFor, propLabel, appLabel };
+, '')
     WHERE c.game_date = $1::date AND c.player = $2 ORDER BY c.market_key, c.line, array_position($5::text[], c.snapshot_label) NULLS LAST`,
     [date, playerName, pgArr(mk.map(x => x[0])), pgArr(mk.map(x => x[1])), pgArr(cfg.ui.label_pref)]);
   return { sportsbook: rows.filter(r => !dfs.has(r.bookmaker)).map(fmt), dfs: rows.filter(r => dfs.has(r.bookmaker)).map(fmt),
