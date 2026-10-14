@@ -47787,3 +47787,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `194` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T22` done (`8,283` sentences); next `T23`.
+
+# §P195 — PASS 195 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T23` · 🆕 ONE RESIDUE
+*Angle (as NEXT set it):* (o11) `§P131`'s method on `T23`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 194's head): `T23` `233` of `477` sentences listed — **all `233` read whole** (the figure triage: `9` with a figure not on file, `51` with every figure on file, `173` with none). Of the `9`: the pricing internals (unpriced legs, extrapolated legs, the `pp_*` tests) out of scope as `§P145` judged them; the one-date model / price / outcome snapshot superseded by item 1's two-season verdict on file (the message itself: *"That single date proves nothing yet"*); re-score counts and run ids, judged; the fantasy formula's population recorded below.
+- On file, by substance (each grepped before it was written): `§P145`'s list and `§T23.21`, plus the fixed-rung schedules, the books' median against PrizePicks' line (`93%` / `99.9%`), the rebuilt fantasy centre on `1,315` player-nights (`51.9%`), the fantasy demons (`31.9%`) and goblins (`73.5%`), the Less floor (`1.7×`), the calibration cells (`9,904`). Judged: the payout mapping and WNBA mining (out of scope), narration, run waits.
+- 🆕 **One residue, `§T23.22`** *(`1` italic quotation, a substring of the transcript in the shell)*: the fantasy formula's check against the NBA's official fantasy points on `26,649` game logs. Pointer: `NBA_MULTIPLIERS.md`'s fantasy_score table.
+- No commit not this sweep's to the twelve since `3c8f37ec0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `195` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`): `T1`–`T23` done (`8,516` sentences); next `T24`.
