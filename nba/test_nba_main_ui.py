@@ -58,6 +58,12 @@ def curl(path, body=None, timeout=60):
     return int(code or 0), data, round(time.time() - t0, 2)
 
 
+def _k(leg_id):
+    """board leg id date~app~player_id~prop~line~side -> comparable key"""
+    p = str(leg_id).split("~")
+    return (p[1], p[2], p[3], float(p[4]), p[5]) if len(p) == 6 else tuple(p)
+
+
 def save_sample(name, data):
     def trim(x, depth=0):
         if isinstance(x, list):
