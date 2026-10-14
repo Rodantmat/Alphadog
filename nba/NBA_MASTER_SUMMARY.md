@@ -15647,6 +15647,12 @@ CLEAN 0/3 · 1 pass.**
 
 ## T14 — `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt`
 
+### T14.5 — 🆕 ADDITIONAL SWEEP `2` (`2026-10-14`, sweep pass 186, `§P186`): **THE FIRST COMBOS LOAD, THE COVERAGE AFTER ±10, AND WHAT EACH PHASE-2 INPUT MOVES** *(AS STATED)*
+*From the messages of `2026-09-11 06:37Z`, `08:03Z`–`08:07Z`, `20:04Z` and `23:57Z`; the ±6 → ±10 rebuild, the `60` out-of-range points legs before it, the `1,660`-leg combos gap, the scenario count (`≤ 8` per team, `≤ 64` per game), the phase split and the late-scratch fallback are on file.*
+- **The first combos artifact and its load**: *"Total: 38,316 rows across 161 players."*; *"the artifact file has 38,316 rows including combos, which is better"*; then *"Loaded successfully — 18 props, 36,895 rows, 161 players, versus the previous 11 props and 17,376 rows."* (`38,316` − `36,895` = `1,421`, computed in the shell.)
+- **The coverage after the combos reached ±10** (the twelve record the `60` before and mark it not re-measured): *"| Prop | Out of range before | After | Matched before | After |"*, *"| points | 60 | 8 | 419 | 471 |"*, *"| pra | 69 | 12 | 336 | 393 |"*, *"| rebounds | 0 | 0 | 378 | 378 |"*; *"The residual handful are extreme demons beyond even ±10, which is a sensible place to stop."*; *"The remaining name-unresolved counts (19 points, 11 pra) and line gaps are worth a pass too, but they're small and the alias logic is already in place — those are polish rather than blockers."*
+- **What each phase-2 input moves, as the build chat sized it** (its heading: *"How much they move the number (from what we've measured)"*): *"Own status → OUT: the leg is voided/reverted — a discrete outcome, not a probability shift."*; *"Teammate OUT (redistribution): the biggest one. A 30%+ usage star out frees 7–8 usage points; affected teammates' points-type legs shift ±5–15 percentage points."*; *"Opponent starter OUT (matchup delta): defender-quality quintile is worth ±5–7% on scoring rate — a few points of hit probability."*; *"Market adjuster: ±1–3 points, as a confidence/ranking input, not a recompute."*.
+
 ### T14.4 — PASS 3 (**the MECHANISM FAILURE CENSUS**) — **✅ the last unread stratum, TWO instrument bounds, and T14 CLOSES**
 *The only strata never read: **`tool_use` 368 + `tool_result` 367 + `thinking` 54 = 789 segments,
 587,632 chars**. **Scoped to the failure predicate ONLY**, as pre-registered. Census pinned
