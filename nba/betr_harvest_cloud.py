@@ -42,8 +42,14 @@ def parse_leg(ev, team, player, proj):
     base = {"event_id": str(ev.get("id")), "player": name, "player_id": str(player.get("id")),
             "team": (team or {}).get("name"), "stat": stat, "tier": tier, "market_id": proj.get("marketId"),
             "status": proj.get("marketStatus"), "start_time": ev.get("date")}
-    legs.append({**base, "line": line, "alt": False, "over": "MORE" in opts, "under": "LESS" in opts})
     alt = proj.get("nonRegularValue")
+    # PLACEHOLDER LINE (2026-10-13 sweep, raw tier samples of the first NBA board): on every non-REGULAR tier (BOOSTED,
+    # MINI_BOOSTED, SUPER_BOOSTED, BOOSTED_4, EDGE_1..4) Betr sends value = 0.5 and the REAL line in nonRegularValue, MORE
+    # only. The 0.5 was emitted as a main leg - 199 of 556 legs on 10-13 were "Over 0.5" rungs that do not exist in the app.
+    # A non-REGULAR projection with a real nonRegularValue now yields only that line. (REGULAR 0.5 lines are real.)
+    placeholder = str(tier or "").upper() != "REGULAR" and alt is not None and alt > 0 and alt != line
+    if not placeholder:
+        legs.append({**base, "line": line, "alt": False, "over": "MORE" in opts, "under": "LESS" in opts})
     if alt is not None and alt > 0 and alt != line:
         legs.append({**base, "line": alt, "alt": True, "alt_percentage": proj.get("nonRegularPercentage")})
     return legs
