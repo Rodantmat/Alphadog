@@ -47527,3 +47527,4 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `175` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S5` done (`23,997` sentences); next `S6`.
+- ⚠ **A slip of this pass, corrected in it:** the NEXT patch (`ec0f6d638`) first replaced pass 175's text in place instead of striking it; the next patch (`500297b25`) restored it, struck, byte-identical to the version before (checked in the shell) — `RULE 40`.
