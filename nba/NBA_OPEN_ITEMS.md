@@ -18505,3 +18505,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `245` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`): `T1`–`T23` done (`16,974` sentences); next `T24`.
+
+## §P246 — PASS 246 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T24` · NO RESIDUE
+*Angle (as NEXT set it):* (p13) `§P131`'s method on `T24`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 245's head): `T24` `76` of `226` sentences listed, **read whole** (the bounded figure triage: `3` with a figure not on file / `0` inside a longer number / `38` with every figure on file / `35` with none; `3 + 0 + 38 + 35 = 76`). The `3` are `§P196`'s: the derived props' first-build Over rates beside the `35.7%`–`47.2%` range on file, and two goblin-floor ratios (pricing internals, out of scope).
+- On file, by substance (each grepped before it was written, every hit read): `§P196`'s list, `§T24.1`, `§T24.2` and `§T24.9`, plus `32,170` player-nights, `197,416` first-build legs, the universe's `1,088,192` / `128,680` / `337,748` / `112,404` and `1,606,151` usable, the `14,271` ungraded legs, the `1,024` goblin keys repriced, `derived_center_offset`, the Pritchard check, `leg_edge_map`, `sim_strategy`, `build_fs_backsim`, `paper_pick_slips`, the PL/pgSQL substitution break. Judged, on `§P196`'s bases: the `pp_*` policy keys (`derived_line_shift` and its `0.28 ×` outcome-MAE line error, the alternate rules — out of scope), build-performance notes.
+- **No residue in `T24`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `f043ed059` (the log read before this line): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `246` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`): `T1`–`T24` done (`17,200` sentences); next `T25`.
