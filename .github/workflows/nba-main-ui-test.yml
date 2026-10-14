@@ -1,0 +1,66 @@
+name: NBA Main UI - End-to-End Test
+
+# Certifies the NBA main interface (worker alphadog-v2-nba-main-ui): config parity with the engines' code, payout parity with
+# the certified graders, every API route against the database, and a headless-Chromium walk of every screen at phone width.
+# The report and screenshots are pushed to the branch nba-ui-probe (force, single commit) so they can be reviewed from a clone;
+# nothing is written to main. Read-only on the database except nba_score.ui_saved_slips rows flagged saved_by='nba_ui_test'.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "slate date to test (blank = what the UI shows: today's board, else the latest scored slate)"
+        default: ""
+        required: false
+      player:
+        description: "player to open in the Player Profile walk"
+        default: "Jokic"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-main-ui-test
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Deps
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q "psycopg[binary]" pandas numpy playwright
+          python -m playwright install --with-deps chromium
+      - name: Test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UI_URL: https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev
+          UI_DATE: ${{ github.event.inputs.date }}
+          UI_PLAYER: ${{ github.event.inputs.player }}
+          OUT_DIR: nba_ui_probe
+        run: python nba/test_nba_main_ui.py
+      - name: Publish report + screenshots to branch nba-ui-probe
+        if: always()
+        run: |
+          set -e
+          [ -d nba_ui_probe ] || exit 0
+          cp -r nba_ui_probe /tmp/probe
+          cd /tmp/probe
+          echo "run ${{ github.run_id }} $(date -u +%FT%TZ)" > RUN.txt
+          git init -q
+          git config user.name "alphadog-bot"; git config user.email "alphadog-bot@users.noreply.github.com"
+          git checkout -q -b nba-ui-probe
+          git add -A
+          git commit -qm "NBA main UI test report, run ${{ github.run_id }}"
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git push -q -f origin nba-ui-probe
