@@ -47715,3 +47715,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `187` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`): `T1`–`T15` done (`4,288` sentences); next `T16`.
+
+# §P188 — PASS 188 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T16` · NOTHING NEW
+*Angle (as NEXT set it):* (h11) `§P131`'s method on `T16`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 187's head): `T16` `507` of `1,198` sentences listed — **all `507` read whole** (the figure triage: `5` with a figure not on file, `129` with every figure on file, `373` with none). Of the `5`: the single-season ratings count, the per-band calibration pairs and the points band's row count judged as `§P138` judged them (figures below the docs' grain); `2450` of `3680` is the `66.6%` on file; a process id, judged.
+- On file, by substance (each grepped before it was written): `§P138`'s list and `§T16.5`, plus the goblin / standard over-statement (`75.8%` → `72.7%`, `73.1%` → `56.7%`), the goblin T−3 cell (`0.579` vs `0.754`), the phase decay (`+1.46` → `+0.13`), the per-prop calibration gains (`+0.0080` … `+0.0015`), the novelty weighting (`0.9056` → `0.8165`), the baseline's `0.7150`, the five-channel spreads (`1.73` / `2.58`), B4's rim-protection closure (`0` of `5`), the market-total bands (`1.0140` / `1.0358`). Judged: narration, owner directives on file, research-source summaries (as `§P138`), job-progress tables and counts, a rejected factor's per-prop beta.
+- **Nothing new — `T16` clean in additional sweep `2`** (the sweep as a whole stays not clean). Commits not this sweep's since `384d50e8f`: `34051dee3` (the build chat's certification ledger, `NBA_FULL_SYSTEM_CERTIFICATION_2026-10.md` — read-only, not the twelve); none to the twelve. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `188` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`): `T1`–`T16` done (`4,795` sentences); next `T17`.
