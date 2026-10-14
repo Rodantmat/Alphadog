@@ -81,17 +81,22 @@ def check(conn, worker, started):
 
 
 def reinvoke(worker):
+    """POST /run with curl, the same client the load step uses. urllib was refused in 0.5 s with HTTP 403 by the
+    workers.dev edge on every repair attempt (P1 2026-10-12: playtypes and shotquality) - the edge blocks the
+    Python-urllib client signature, so the repair path never actually reached a worker. curl is what the load
+    step proves works every week; the request is kept open up to REPAIR_TIMEOUT_S so the worker is never abandoned."""
     host = os.environ.get("WORKER_HOST") or "rodolfoaamattos.workers.dev"
     url = f"https://alphadog-v2-{worker}.{host}/run"
-    req = urllib.request.Request(url, data=b"{}", headers={"content-type": "application/json"}, method="POST")
+    out = f"/tmp/repair-{worker}.json"
     try:
-        with urllib.request.urlopen(req, timeout=REPAIR_TIMEOUT_S) as r:
-            body = r.read().decode("utf-8", "replace")
-            try:
-                j = json.loads(body)
-                return f"HTTP {r.status} ok={j.get('ok')} errors={j.get('errors')}"
-            except Exception:  # noqa: BLE001
-                return f"HTTP {r.status} (non-JSON reply)"
+        r = subprocess.run(["curl", "-sS", "--max-time", str(REPAIR_TIMEOUT_S), "-o", out, "-w", "%{http_code}", "-X", "POST", url,
+                            "-H", "content-type: application/json", "-d", "{}"], capture_output=True, text=True, timeout=REPAIR_TIMEOUT_S + 30)
+        code = (r.stdout or "").strip()
+        try:
+            j = json.load(open(out))
+            return f"HTTP {code} ok={j.get('ok')} errors={j.get('errors')}"
+        except Exception:  # noqa: BLE001
+            return f"HTTP {code} (no JSON reply; curl: {(r.stderr or '').strip()[:120]}) - judged by data below"
     except Exception as exc:  # noqa: BLE001
         return f"re-invocation did not return ({str(exc)[:120]}) - judged by data below"
 
