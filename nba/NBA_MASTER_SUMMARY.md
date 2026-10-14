@@ -47352,3 +47352,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `165` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T43` done (`21,198` sentences); next `T44`.
+
+# §P166 — PASS 166 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T44`
+*Angle (as NEXT set it):* (f10) `§P131`'s method on `T44`.
+- Tabulated in the shell before this line (the scan at pass 165's head): `T44` `166` of `318` sentences listed, no memory dump among them — **all `166` read whole**, credential values masked in the shell before reading (the figure triage ordered them: `2` with a figure not on file, `56` with every figure on file, `108` with none).
+- On file, by substance (each grepped before it was written): the P5 market-free twin re-run, the other-boards research and §31u/§31v, the price-shopping ledger and its `m_eff` fix (the `2026-04-10` replay), the retention audit (the four readers moved to `board_tiers_v2`, model-parameter snapshots, the three backup levels, the `db-archive` release), the Odds API credits (`4,999,977 → 4,918,278`), both postseasons' boards (`1.49 M` rows) and game lines, the gap audit, the shared paid key the MLB mirror drained, and the honest "in theory" statement. Judged: narration, timestamps, notification text, run ids, the MLB and NHL mining and its credit planning (out of scope), the MLB secret rotation, and the proxy value the owner was given (credential rule).
+- 🆕 **One residue, `§T44.10`** *(`4` italic quotations, each a substring of the transcript in the shell)*: where the six repaired holes were, and the retention certification's `10` fixes. Pointer: row `44`.
+- No commit not this sweep's since `6351f5ce7`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `166` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T44` done (`21,364` sentences); next `T45`.
