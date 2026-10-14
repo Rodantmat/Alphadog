@@ -343,6 +343,16 @@ def browser():
                 raise RuntimeError("no slip legs to uncheck")
             rows.first.locator(".legKeepBox").uncheck()
             page.wait_for_selector("#autoCreateResults .subTag", timeout=10000)
+            # the swapped card must price the CHECKED legs: its label names that count, and a Power badge equals the field
+            card = page.evaluate("""(() => { const c = document.querySelector('.subTag').closest('.slipCard');
+                const n = [...c.querySelectorAll('.legKeepBox')].filter(b => b.checked).length;
+                const lab = (c.querySelector('.realMultLabel') || {}).textContent || '';
+                const inp = c.querySelectorAll('.realMultInput'); const badge = (c.querySelector('.multiplierTag') || {}).textContent || '';
+                return { n, lab, single: inp.length === 1 && !inp[0].dataset.tierHits ? inp[0].value : null, badge }; })()""")
+            if f"({card['n']}-pick" not in card["lab"]:
+                raise RuntimeError(f"swapped slip prices the wrong legs: {card}")
+            if card["single"] not in (None, "") and abs(float(card["single"]) - float(card["badge"].rstrip("x") or 0)) > 0.011:
+                raise RuntimeError(f"badge and real-multiplier field disagree after the swap: {card}")
         step("05_slips_substitution", sub)
 
         def profile():
