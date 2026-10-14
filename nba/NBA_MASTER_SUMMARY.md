@@ -48057,3 +48057,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `217` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T45` done (`21,021` sentences); next `T46`.
+
+# §P218 — PASS 218 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T46` · NOTHING NEW
+*Angle (as NEXT set it):* (l12) `§P131`'s method on `T46`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 217's head): `T46` `96` of `174` sentences listed, no memory dump among them — **all `96` read whole** (the bounded figure triage: `2` with a figure not on file — two source-link ids — `0` matched only inside a longer number, `32` with every figure on file, `62` with none).
+- On file, by substance (each grepped before it was written): `§P168`'s list and `§T46.9`, plus the regular season untouched (`478,900` / `478,580` / `475,060`; the `48` certified rows), the post-backfill book (`+3%` over `96` nights; `+4%` / `+2%`; the `26` / `29`-night rows; `298` slips at `−12%`), the earlier figures withdrawn (`+62%`, `+15%`, `+11%`), the playoff production finding (`57% / 62% / 64%`; confident Unders `57–58%`), the honest walk-forward (`26` vs `~12`; `62` vs `58`, `29` vs `36`; `+150–260%` → `−88%` to `+32%`; Unders `54.5%` / `55.3%` vs `53.6%`; Overs `49% / 44%`; demons and goblins `48% / 41%`), the computed edge (`~+25%`, `~+38%`; `+7% / +10%`), and the withdrawn Underdog `+34%`. Judged: narration, the session's notices, research-source links, COMPASS item numbers.
+- **Nothing new — `T46` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `6d8ac0eda` (the log read before this line). No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `218` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T46` done (`21,117` sentences); next `T47`.
