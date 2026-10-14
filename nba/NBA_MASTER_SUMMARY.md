@@ -45095,6 +45095,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **The injury step (finding #14)**: *"84 URL probes per day × 2 days with a 30 s timeout each; a slow proxy can run tens of minutes against the 25-min job."*
 - **The commit step (finding #15)**: *"keeps THIS run's files (the replayed commits are "theirs" during a rebase), while the comment says the remote's fresher capture wins."*
 - **Verified correct**: *"Opening night with empty ledgers: ensure_tables seeds all strategies paper at cap; _ROTATION absent → no rotation; 2-game slate → cap 1 everywhere."*
+- ▶ 🆕 Additional sweep `3` (`2026-10-14`, pass 273): `§T42.15` — the board tiers builder's slate scope (one slate × app deleted and rebuilt in one transaction since `d7f66e649`, `TRUNCATE` only under `BT2_ALL=1`; ✅ live) — written in `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md` (`T26-23`).
 
 ## §T42.14 — ADDITIONAL SWEEP 1, PASS 174 (`2026-10-14`): DETAILS OF THE P2A / GRADING / P4–P5 AUDIT `S4` *(AS STATED — audit claims, code as of `10-08`; `§P174`)*
 *Method:* the ≥ `5` scan over all twelve on `S4`'s whole transcript (`104` of `125` sentences, computed in the shell), read by `§P131`'s method; the findings that became ledger rows are on file (`§T42.0` #7 for #1–#5 and #12, `§T43`'s round-2 table for #6–#11 and #13–#18, `§T42.4` for the scheduler items and #18(d)) — what follows is the audit's own detail beside them, finding numbers as the report numbers them.
