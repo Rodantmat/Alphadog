@@ -300,7 +300,7 @@ export async function apiSave(sql, cfg, body, version) {
 export async function apiRecent(sql, url, version) {
   const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit") || 50)));
   const rows = await q(sql, "SELECT * FROM nba_score.ui_saved_slips ORDER BY saved_at DESC LIMIT $1", [limit]);
-  return { ok: true, data_ok: true, version, route: "/api/slips/recent", slips: rows.map(r => ({ ...r, slip_id: Number(r.slip_id), legs: r.legs_json })) };
+  return { ok: true, data_ok: true, version, route: "/api/slips/recent", slips: rows.map(r => ({ ...r, slip_id: Number(r.slip_id), legs: typeof r.legs_json === "string" ? JSON.parse(r.legs_json) : r.legs_json })) };
 }
 
 export { appLabel, legId };
