@@ -86,22 +86,76 @@ def api_key(conn, name):
     return r[0].strip()
 
 
-def fetch(key):
-    """ParlayAPI props through the system retry policy (nba/net_retry.py; 2026-10-09 - it was ONE attempt and a
-    URLError / timeout crashed the step): 4 attempts, full-jitter backoff, 429 / 5xx / connection errors retried,
-    Retry-After honoured, 5 minutes in all. A final 4xx (bad key, out of credits) is returned at once."""
+def _page(key, query):
+    """ONE page through the system retry policy (nba/net_retry.py: 4 attempts, full-jitter backoff, 429 / 5xx - including
+    ParlayAPI's 503 props_board_degraded - retried with Retry-After honoured, 5 minutes in all). A final 4xx (bad key, out of
+    credits) is returned at once. -> (status, remaining, doc, headers)"""
     from net_retry import Deadline, RetryError, request
     try:
-        r = request("GET", f"{PARLAY}/sports/{SPORT}/props", tries=4, budget=Deadline(300), timeout=120, label="parlayapi props",
+        r = request("GET", f"{PARLAY}/sports/{SPORT}/props?{query}", tries=4, budget=Deadline(300), timeout=120, label="parlayapi props",
                     headers={"X-API-Key": key, "accept": "application/json", "User-Agent": "alphadog"})
     except RetryError as exc:
         last = exc.last
         if last is not None and hasattr(last, "status_code"):
-            return last.status_code, last.headers.get("x-requests-remaining"), {"error": (last.text or "")[:300]}
-        return 0, None, {"error": f"no answer after retries: {str(exc)[:200]}"}
+            return last.status_code, last.headers.get("x-requests-remaining"), {"error": (last.text or "")[:300]}, {}
+        return 0, None, {"error": f"no answer after retries: {str(exc)[:200]}"}, {}
     if r.status_code != 200:
-        return r.status_code, r.headers.get("x-requests-remaining"), {"error": (r.text or "")[:300]}
-    return 200, r.headers.get("x-requests-remaining"), r.json()
+        return r.status_code, r.headers.get("x-requests-remaining"), {"error": (r.text or "")[:300]}, dict(r.headers)
+    return 200, r.headers.get("x-requests-remaining"), r.json(), {k.lower(): v for k, v in r.headers.items()}
+
+
+def fetch(key, cfg=None):
+    """The WHOLE props board, paged (2026-10-13 sweep). ParlayAPI pages at `limit` rows (default 5000, max 10000) and signals more
+    with x-result-has-more / x-next-offset (offsets stop at 10000); every page costs 3 credits. The single call this used to make
+    returned EXACTLY 5000 items on 2026-10-13 (a preseason board) - the first page only; a full regular-season board would have
+    lost every row past it. Now: page with limit 10000 until has-more is false; if the offset cap is reached with more left, one
+    more pass NARROWED to the history's sportsbooks (the rows the market term needs) is merged in, as ParlayAPI's docs direct.
+    x-result-truncated (a source read cap on ParlayAPI's side, not recoverable by paging) is reported loudly.
+    -> (status, remaining, items, meta)"""
+    cfg = cfg or DEFAULT_CFG
+    limit = int(cfg.get("page_limit") or 10000)
+    items, meta = [], {"pages": 0, "truncated": False, "narrowed_pass": False, "has_more_at_cap": False}
+    status, remaining = 0, None
+
+    def run(extra):
+        nonlocal status, remaining
+        off = 0
+        while True:
+            st, rem, doc, hd = _page(key, f"limit={limit}&offset={off}{extra}")
+            status, remaining = st, (rem or remaining)
+            if st != 200:
+                return doc
+            meta["pages"] += 1
+            page = doc if isinstance(doc, list) else (doc.get("data") or doc.get("props") or [])
+            items.extend(page)
+            if str(hd.get("x-result-truncated", "")).lower() == "true":
+                meta["truncated"] = True
+            more = str(hd.get("x-result-has-more", "")).lower() == "true"
+            nxt = hd.get("x-next-offset")
+            if not more or not page:
+                return None
+            try:
+                off = int(nxt) if nxt not in (None, "") else off + len(page)
+            except ValueError:
+                off += len(page)
+            if off > 10000:
+                meta["has_more_at_cap"] = True
+                return None
+
+    err = run("")
+    if err is not None:
+        return status, remaining, err, meta
+    if meta["has_more_at_cap"]:
+        books = sorted(set(cfg["books"]) | {k for k, v in cfg.get("book_aliases", {}).items() if v in set(cfg["books"])})
+        seen = {json.dumps(x, sort_keys=True) for x in items}
+        before = list(items); items.clear()
+        meta["narrowed_pass"] = True
+        err = run("&bookmakers=" + ",".join(books))
+        narrowed = [x for x in items if json.dumps(x, sort_keys=True) not in seen]
+        items[:] = before + narrowed
+        if err is not None:
+            return status, remaining, err, meta
+    return 200, remaining, items, meta
 
 
 def et_date(s):
