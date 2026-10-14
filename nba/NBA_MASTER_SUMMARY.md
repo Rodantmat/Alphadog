@@ -48011,3 +48011,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `212` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`): `T1`–`T40` done (`20,643` sentences); next `T41`.
+
+# §P213 — PASS 213 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T41` · ONE RESIDUE
+*Angle (as NEXT set it):* (g12) `§P131`'s method on `T41`, each listed sentence searched on file by its substance and figures.
+- Tabulated in the shell before this line (the scan at pass 212's head): `T41` `80` of `136` sentences listed, no memory dump among them — **all `80` read whole** (the figure triage: `0` with a figure not on file, `27` with every figure on file, `53` with none). Read in context, one of the `27` was not on file: `274` matched only inside `274,632` (pass 200's slip, caught this time).
+- On file, by substance (each grepped before it was written): `§P163`'s list, `§T41.5` and `§T41.9`, plus the recertification (`+78.4%` / `+94.9%`; `−8.99 → −9.16`; `7,434` tied slips), the `NOT_IN_TOP30` ranks and the `+81%` / `+120%` / `+90%` 2025-26 returns, the calibration's fallback constants, Underdog's whole-number window (`0.6%`; `2024-10 → 2025-02`), the backups (`~730 MB`), the first referee rows (`12` — `4` matchups × `3`), the dead-claim recovery and the push helper. Judged: narration, the session's model-switch and time-zone notices, blob hashes, the local helper test.
+- 🆕 **One residue, `§T41.10`** *(`4` italic quotations, each a substring of the transcript in the shell)*: the warning count's test on old dates (`274` legs on `2024-10-25`, none on `2026-01-10`) and the V1 ranking rule behind `NOT_IN_TOP30` (2024-25 ROI at cap, at least `40` days; the top `30` scored). Pointer: row `41`.
+- **Additional sweep `2` stays not clean.** No commit not this sweep's since `c0a64515f` (the log read before this line). The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `213` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T41` done (`20,723` sentences); next `T42`.
