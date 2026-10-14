@@ -47801,3 +47801,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `195` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`): `T1`–`T23` done (`8,516` sentences); next `T24`.
+
+# §P196 — PASS 196 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T24` · 🆕 ONE RESIDUE
+*Angle (as NEXT set it):* (p11) `§P131`'s method on `T24`, each listed sentence searched on file by its substance and figures; the whole list read in this pass (`T24` is a session record, not a dialogue).
+- Tabulated in the shell before this line (the scan at pass 195's head): `T24` `80` of `226` sentences listed — **all `80` read whole** (the figure triage flagged `8` sentences with a figure not on file). Of the `8`: the derived props' first-build Over rates beside the `35.7%`–`47.2%` range on file; the goblin-floor ratios and the deepest conservative goblin price (`2.018×`) — pricing internals, out of scope; the test week's rates recorded below.
+- On file, by substance (each grepped before it was written): `§P146`'s list and `§T24.1` / `§T24.2`, plus the fantasy realised values per leg (`0.939` / `0.942`, `0.851` / `0.841`), the derived-prop cells at `≥1.30` (FTM Over `1.293` / `1.322`, `364` legs), the low-count edge on real lines (steals `1.390` / `1.319`), the centre offsets (`48.5%`), the reversion check (`99.5%` / `96.6%` / `91.3%`), the goblin-floor correction (`115,150` flagged, `1,843×`). Judged: the `pp_*` policy keys (the derived line shift and alternate rules — out of scope), build-performance notes.
+- 🆕 **One residue, `§T24.9`** *(`3` italic quotations, each a substring of the transcript in the shell)*: the Fantasy back-simulation's test week (`675` player-nights; best-estimate `50.4%` Over; conservative Over / Under / goblin / demon rates; the grid and the ladder coverage). Pointer: `§T24.1` §3.
+- No commit not this sweep's to the twelve since `2f7d9866a`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `196` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`): `T1`–`T24` done (`8,596` sentences); next `T25`.
