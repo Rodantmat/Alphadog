@@ -138,6 +138,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     certainty_0_100: conf,
     hit_probability_0_100: hp,
     estimated_hit_probability_0_100: hp,
+    final_hp_raw: num(r.final_hp),
     probability_confidence_0_100: conf,
     baseline_hp_0_100: r1(num(r.baseline_hp) * 100),
     calibration_shift_pp: r1(num(r.cal_shift) * 100),
