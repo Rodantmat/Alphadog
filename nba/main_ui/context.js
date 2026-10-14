@@ -88,12 +88,12 @@ export async function teamProfiles(sql, teamIds, date) {
 export async function defenseVsPosition(sql, oppTeamId, position) {
   if (!oppTeamId || !position) return null;
   const rows = await q(sql, `
-    WITH s AS (SELECT max(season) season FROM nba_team.defense_vs_position WHERE opponent_position = $2),
+    WITH s AS (SELECT max(season) season FROM nba_team.defense_vs_position WHERE opponent_position = $1),
     d AS (SELECT team_id, games_sampled, avg_pts_allowed::float pts, avg_reb_allowed::float reb, avg_ast_allowed::float ast, avg_fg_pct_allowed::float fg
-          FROM nba_team.defense_vs_position WHERE opponent_position = $2 AND season = (SELECT season FROM s))
+          FROM nba_team.defense_vs_position WHERE opponent_position = $1 AND season = (SELECT season FROM s))
     SELECT d.*, (SELECT season FROM s) season,
       rank() OVER (ORDER BY pts DESC) pts_rank, rank() OVER (ORDER BY reb DESC) reb_rank, rank() OVER (ORDER BY ast DESC) ast_rank,
-      rank() OVER (ORDER BY fg DESC) fg_rank, count(*) OVER () teams FROM d`, [oppTeamId, position]);
+      rank() OVER (ORDER BY fg DESC) fg_rank, count(*) OVER () teams FROM d`, [position]);
   const r = rows.find(x => x.team_id === oppTeamId);
   return r ? { position, season: r.season, games_sampled: r.games_sampled, avg_pts_allowed: r1(r.pts), avg_reb_allowed: r1(r.reb), avg_ast_allowed: r1(r.ast),
     avg_fg_pct_allowed: r1(r.fg <= 1 ? r.fg * 100 : r.fg), pts_rank: Number(r.pts_rank), reb_rank: Number(r.reb_rank), ast_rank: Number(r.ast_rank),
