@@ -42947,6 +42947,10 @@ deadline itself.
 - **And a third run, the live procedure replayed** (`18:57Z`, after the paper-trading log was built): *"I replayed the exact live procedure — pre-game lines only — across both seasons. It returned +13.6% ± 4.3% over 323 nights: +7.8% in 2024-25 and +18.3% in 2025-26. That's slightly below the earlier backtest, as it should be, since live you keep your line even if it moves later."*
 - ⚠ So a slip-level standards backtest was run in `T23` itself, before `T24`'s *(⚠ first written "two days before" — `T24`'s own run date is not established here; corrected in the same pass)*; the two differ in nights, slips and ROI, and neither message compares them.
 
+# §T23.22 — 🆕 ADDITIONAL SWEEP `2` (`2026-10-14`, sweep pass 195, `§P195`): **THE FANTASY FORMULA'S CHECK, WITH ITS POPULATION** *(AS STATED)*
+*From the message of `2026-09-21 19:22Z`. Already on file: the formula itself and the row that marks it checked (`NBA_MULTIPLIERS.md`, the fantasy_score table: `✅ checks out`, no population given).*
+- *"PTS + 1.2 REB + 1.5 AST + 3 STL + 3 BLK − TOV matches the NBA's official fantasy points on all 26,649 game logs from last season."*
+
 # §T22.2 · §T22.3 · §T22.6 · §T22.7 · §T23.4 — 📋 **THE FIVE PASS RECORDS WHOSE CONTENT WENT TO THE SUBJECT DOCUMENTS**
 
 > 🔴 **WRITTEN AS A REPAIR, AND THE DEFECT WAS MINE.** *A verification pass on `2026-09-23` found
