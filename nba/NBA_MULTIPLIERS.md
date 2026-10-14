@@ -431,7 +431,7 @@ which is the right order and worth noting as such.*
 | the implied rungs | PrizePicks sets them at roughly **`65%`** and **`32%`** probability |
 | `Less` mirrors it | *a demon taken `Less` pays the goblin's `2.3×`* |
 | its own spread constant | **`≈2.26`** — *wider than points alone, as a weighted sum of several stats should be* |
-| the scoring formula | ✅ **checks out**: `pts + 1.2·reb + 1.5·ast + 3·stl + 3·blk …` |
+| the scoring formula | ✅ **checks out**: `pts + 1.2·reb + 1.5·ast + 3·stl + 3·blk …` → 🆕 *the population the check ran on (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T23.22`* |
 
 🔑🔑🔑 ***EVERY OTHER PROP HOLDS THE LINE AND MOVES THE PRICE. `fantasy_score` HOLDS THE PRICE AND
 MOVES THE LINE.*** ⇒ ***`§T22.9`'s "priced by the line, not the rung" is exactly inverted here***, and
