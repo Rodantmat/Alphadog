@@ -292,7 +292,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   }
   if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - P3 builds them about 30 minutes before the first tip." : `No slips recorded for ${slate.date}.`);
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, backup_pool: pool,
-    pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes };
+    pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, timing_ms: (lap("build"), T) };
 }
 
 // ------------------------------------------------------------------ save / recent
