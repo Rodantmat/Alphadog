@@ -18705,3 +18705,14 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `262` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T40` done (`35,361` sentences); next `T41`.
+
+## §P263 — PASS 263 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T41` · NO RESIDUE · `T48-10` GIVEN A SECOND DOCUMENTARY SOURCE
+*Angle (as NEXT set it):* (g14) `§P131`'s method on `T41`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 262's head): `T41` `75` of `136` sentences listed, no memory dump among them — **all `75` read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `22` with every figure on file / `53` with none; `0 + 0 + 22 + 53 = 75`).
+- On file, by substance (each grepped before it was written, every hit read): `§P163`'s and `§P213`'s lists and `§T41.5`, `§T41.9`–`§T41.10`, plus the recertification (`478,900`; `+78.4%` / `+94.9%`; `−8.99 → −9.16`; `7,434` tied slips; `13` real survivors against a null of `0`), the calibration's fallback constants, Underdog's whole-number window (`0.6%`; `2024-10 → 2025-02`), the backups and `tier_map_legs_wi2`'s `372 MB` rebuilt on demand, the first referee rows (`4` matchups × `3`), the dead-claim recovery, the push helper, the verifier that re-invokes by data, and the certification round's findings that `T42` records (`RED_STICKY` first, the two-yellow rule in the opening window). Judged, on `§P163`'s and `§P213`'s bases: narration, the session's model-switch and time-zone notices, blob hashes, the local helper test.
+- **No residue in `T41`.**
+- 🆕 **`T48-10` given a second documentary source**: the read-only `nba/NBA_FULL_SYSTEM_CERTIFICATION_2026-10.md` gained the section "THE NBA MAIN INTERFACE" (`fdd1046fd`, `22:27Z`), read in full. Its figures grepped first — `51/51`, `27.5 s`, `all-visible`, `1 of 75`, `330b321d`, `350 KiB`: `0` hits each in the twelve. Recorded AS STATED on `T48-10`'s row (`3d97cc461`), its worker address not reproduced.
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `0ed88e23c` (the log and each diff's file list read, and re-read immediately before this patch): `1` — `fdd1046fd` above; none since. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `263` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T41` done (`35,497` sentences); next `T42`.
