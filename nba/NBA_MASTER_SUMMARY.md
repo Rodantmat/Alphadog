@@ -47363,3 +47363,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `166` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T44` done (`21,364` sentences); next `T45`.
+
+# §P167 — PASS 167 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T45`
+*Angle (as NEXT set it):* (g10) `§P131`'s method on `T45`.
+- Tabulated in the shell before this line (the scan at pass 166's head): `T45` `27` of `50` sentences listed, no memory dump among them — **all `27` read whole** (the figure triage: `0` with a figure not on file, `4` with every figure on file, `23` with none).
+- On file, by substance (each grepped before it was written): the postseason wired through every stage (`slate_games`, scheduler `v2.3.0`, the live engine's postseason pick), the eligible postseason cells, the strategy results at one slip a night (`C_wstocks_4flex` `+62%` on `25` days, the postseason-native search empty), and the postseason board floor (`485`). Judged: narration, timestamps, and the MLB lines — the match-odds backfill over `445` dates, the re-asked last days, Betr's stale MLB file, the MLB backups and scraper failure (out of scope).
+- **Nothing new — `T45` clean in additional sweep `1`.** No commit not this sweep's since `bd1490dd0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `167` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T45` done (`21,391` sentences); next `T46`.
