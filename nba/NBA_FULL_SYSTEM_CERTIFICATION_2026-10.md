@@ -1347,7 +1347,8 @@ red, the rest paper with their caps).
   rehearsal artefact fixed: the archive's live event id embeds the CAPTURE date (`live-prizepicks-<capture day>-<game>`), and the
   simulation reads 'routine' rows spanning 19 capture days → "11 games" for a 3-game slate and wrong same-game tiering in the
   rehearsal. Live is not affected (the engine reads the single window capture of the slate day); `sim_slate.py` now strips the
-  capture date (3 events verified in SQL); re-run dispatched.
+  capture date (3 events verified in SQL). Re-run 38514875932: "720 scored legs, 0 unresolved, 31 players, **3 games**", same
+  slips (only C_wstocks_4flex placed; B_demon_* and R_stocks_4power shadow, as their states say), production untouched again.
 - **Rolled-back integration test** (last run 10-07; the pick / grade / monitor code changed on 10-08 / 10-09): one FAIL — the
   Underdog edge-monitor assertion compared with the code default −10.84 pp while the engine correctly used the tunable −9.46 pp
   (round 3 #4). The test was stale, not the engine; fixed to compare with the value the engine resolves → re-run 38511951340
