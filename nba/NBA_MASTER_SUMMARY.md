@@ -47306,3 +47306,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `161` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T39` done (`20,931` sentences); next `T40`.
+
+# §P162 — PASS 162 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T40`
+*Angle (as NEXT set it):* (b10) `§P131`'s method on `T40`.
+- Tabulated in the shell before this line (the scan at pass 161's head): `T40` `71` of `130` sentences listed, no memory dump among them — **all `71` read whole** (the figure triage ordered them: `3` with a figure not on file, `18` with every figure on file, `50` with none).
+- On file, by substance (each grepped before it was written): the G2 routing of deep rungs to `final_hp_derived` and its write test, the deeper combo ladders (`17,260` rows unchanged, `7,866` new), the paper logger's whole-number leak (`10` / `11` / `4` / `17` → `0`), the deterministic `conf_tier` cutpoints, the whole-number pricing method (tie as half a win, the one-SE discount) and its backtest, the history builder at live depths and the deep rungs' backtest (`~1%` of slips), the tie-aware grade and the certified rebuild (`478,900` slips). Judged: narration, run times, timestamps, research-source links, the build chat's local-clone notes.
+- **Nothing new — `T40` clean in additional sweep `1`.** No commit not this sweep's since `bb68aaa16`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `162` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T40` done (`21,002` sentences); next `T41`.
