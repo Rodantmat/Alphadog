@@ -47315,3 +47315,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `162` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T40` done (`21,002` sentences); next `T41`.
+
+# §P163 — PASS 163 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T41`
+*Angle (as NEXT set it):* (c10) `§P131`'s method on `T41`.
+- Tabulated in the shell before this line (the scan at pass 162's head): `T41` `80` of `136` sentences listed, no memory dump among them — **all `80` read whole** (the figure triage ordered them: `0` with a figure not on file, `27` with every figure on file, `53` with none).
+- On file, by substance (each grepped before it was written): the recertification on the whole-number pool (`66` checks, the tie-aware recompute over `7,434` slips, ROI `+78.4%` / `+94.9%`, `EDGE_DELTA` `−8.99 → −9.16`), the monitor calibration moving `≤ 0.01`, the read-only and official P5 verdicts (`13` real survivors vs a null of `0`; `8` NOT_IN_TOP30 traced to the low-foul rebuild), Underdog's whole-number lines (`0.6%`, posted only `2024-10 → 2025-02`, now counted and warned), the backups dropped (`~730 MB`), the certification round's P2A grader fixes, the dead-claim recovery, `git_push_retry.sh`, the verifier rewrite, the first referee rows, and the sticky-red findings. Judged: narration, model-switch and timestamp notices, blob hashes, the local helper test.
+- **Nothing new — `T41` clean in additional sweep `1`.** No commit not this sweep's since `13d5017c0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `163` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T41` done (`21,082` sentences); next `T42`.
