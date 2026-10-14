@@ -1385,5 +1385,16 @@ red, the rest paper with their caps).
   for retention — its rows stay; the exact CREATE statements are in the run log. Not done (owner's call): the 35 Underdog
   experiment tables (`ud_slip_engine_*`, ~5.3 GB, verified distinct — not duplicates) could move to the off-database release
   archive (`nba-db-history-archive.yml`) and be restored on demand; MLB schemas were not touched.
-- **Disk (watch item, not a fault):** 43 GB before the compaction above, 41 GB after (27 GB after the 09-28 rewrites). Largest: board_snapshots 6.9 GB, board_scored 3.3,
+- **UNDERDOG EXPERIMENT TABLES ARCHIVED OUT OF THE DATABASE (owner 23:22 PT: "When we run backtesting we need it? ... If is
+  useless it can go, but you need to be sure").** Backtests and hit rates read the production tables (PrizePicks slip tables,
+  tier maps, board_outcomes, final_hp / board_scored) and, for Underdog, `ud_slip_engine_*_dlt_orig2` / `_dlt_orig2_mf` (live
+  reference, P5, edge monitor, parity, price shop), `_dlt_recert2` (bankroll sim, drought analysis) and `_center` (validator
+  default) — those 8 tables STAY. The other 13 builds (26 tables: base, _center_hot, _curr_center, _curr_center_hc0,
+  _curr_center_orig, _dlt_orig, _dlt_orig_fresh, _dlt_orig_nv48, _dlt_recert, _dlt_under3, _hotform, _minfall, _minrise) are
+  finished §30 experiments (rejected / superseded, written up in the strategy doc) with no reader in code, workflows, views or
+  functions. Sequence: archived to release `db-archive-2026-10-14` (run 38521966027; ~2 MB per season file) → **proven
+  restorable**: every table loaded back into a temp copy with identical row count and whole-content fingerprint (run
+  38522754675, `nba/verify_archive_restore.py`, "ALL 26 TABLES PROVEN RESTORABLE") → dropped, plus the two never-filled empty
+  `_dlt_recert_nv48` tables. Restore DDL and commands: `nba/sql/archived_ud_experiments.sql`. **Database 41 → 36 GB.**
+- **Disk (watch item, not a fault):** 43 GB before the compaction above, 41 GB after, 36 GB after the archive (27 GB after the 09-28 rewrites). Largest: board_snapshots 6.9 GB, board_scored 3.3,
   baseline_history 3.2, final_hp 2.2. The plan autoscales +10 GiB at 80 %; the in-season daily growth is the thing to watch.
