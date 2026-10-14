@@ -47517,3 +47517,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `174` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S4` done (`23,898` sentences); next `S5`.
+
+# §P175 — PASS 175 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S5`
+*Angle (as NEXT set it):* (o10) `§P131`'s method on `S5`, the online research report (`2026-10-08` `17:14 → 17:19Z`), checked against `§T44.4` and what `§31v` carries; third-party content recorded only as the report states it.
+- Tabulated in the shell before this line (the scan at pass 174's head): `S5` `99` of `114` sentences listed, no memory dump among them — **all `99` read whole** (the figure triage ordered them: `15` with a figure not on file, `22` with every figure on file, `62` with none).
+- On file, by substance (each grepped before it was written): the per-leg break-evens (PrizePicks Power, `5`-Flex `≈54.3%`, Underdog `57.7 / 55.0 / 56.2 / 54.9%`), the stale-or-disputed support-article table, Sleeper's `~12–13%` hold and the `14.6×` vs `17.8×` caution, the Sleeper Flex example, Betr's three disagreeing sources and their break-evens, correlation shading, the `~15 s` stale-line race, the limits on Underdog / Sleeper / Fliff, and the verdict that no audited P&L exists. Judged: the prompt, source links and article ids, the NFL stack study (out of scope).
+- 🆕 **One residue, `§T44.11`** *(`26` italic quotations, each a substring of the transcript in the shell)*: the article-table Flex break-evens and Underdog's per-leg fee, other apps' void rules, one source's Betr tables and injury protection, Fliff's pricing and caps, three promotions, further limits and the tool-feed lag, the one study found, the ranking's first row and the Sleeper check. Pointer: `§T44.4`'s `S5` row.
+- No commit not this sweep's to the twelve since `58355d3f5`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `175` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S5` done (`23,997` sentences); next `S6`.
