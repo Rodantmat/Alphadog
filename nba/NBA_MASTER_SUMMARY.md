@@ -43196,7 +43196,7 @@ after something had been over-claimed.*
 - *"Test week (Jan 12–18 2026, 675 player-nights): best-estimate center 50.4% Over (unbiased); conservative Over 45.0%, Under"* *"44.2%, goblin 64.0% (below its price's ~65% — the WNBA goblin-spacing doubt can no longer flatter a backtest), demon 25.1%;"* *"0 lines off the .5 grid; 0 lines easier than the rule; model probability present on 76% (the rest fall outside the ±10 ladder)."*
 
 # §T25.8 — 🆕 ADDITIONAL SWEEP `2` (`2026-10-14`, sweep pass 197, `§P197`): **THE PROP UNIVERSE'S FIRST FLAG COUNT, BY COMPONENT, AND ITS SIMULATED PUSHES** *(AS STATED — a session record; its queries are not stored)*
-*From `T25` (`2026-09-21T21:09:52Z`). Already on file: the `148` demons flagged below standard pay (`§T24.x` §6, `demon_priced_below_standard`), the flag count moving `153` → `158` between refreshes, and the integrity check "simulated pushes only on Fantasy" (§6).*
+*From `T25` (`2026-09-21T21:09:52Z`). Already on file: the `148` demons flagged below standard pay (~~`§T24.x` §6~~ `§T24.1` §6 *(a placeholder left at write time, corrected)*, `demon_priced_below_standard`), the flag count moving `153` → `158` between refreshes, and the integrity check "simulated pushes only on Fantasy" (`§T24.1` §6).*
 - *"153 legs are flagged, not deleted: 148 demons pushed just under standard pay by the haircut, and 5 kind/price mismatches."*
 - *"The 384 pushes on simulated lines are all Fantasy Score and legitimate: Fantasy points can land exactly on a .5 line."*
 
