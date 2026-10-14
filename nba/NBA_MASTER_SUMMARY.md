@@ -47935,3 +47935,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `206` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`): `T1`–`T34` done (`17,063` sentences); next `T35`.
+
+# §P207 — PASS 207 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T35` · NOTHING NEW
+*Angle (as NEXT set it):* (a12) `§P131`'s method on `T35`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 206's head): `T35` `829` of `1,370` sentences listed — **all `829` read whole** (the figure triage: `57` with a figure not on file, `256` with every figure on file, `516` with none). `90` of the `829` are the per-day ledger rows of the `06:21Z` turn, judged as `§P157` judged them; all `57` of the figure misses fall among those `90` rows.
+- On file, by substance (each grepped before it was written): `§P157`'s list and `§T35.10`, plus the portfolio table, week 2's fourteen tests, Kinds A / B, H8, the December 11 replay, the H7 February 11 stop, delta mode (`13,484` / `51,396`), the P1–P5 timings, the simulator, diversify and the demon cap `6`, the drought fingerprints, slate size, the week-1 tilt, the per-season $1 table (`$4,945` / `$8,660.09` / `+$3,715.09`), and the three dry drought passes with pass 23's tip-time test (late-tip Overs `74%`, one season; week-3 deep slips `+185%` / `+312%`). Judged: as `§P157` judged — the per-day ledger rows, narration, run waits.
+- **Nothing new — `T35` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `75ebf1a64`. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `207` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`): `T1`–`T35` done (`17,892` sentences); next `T36`.
