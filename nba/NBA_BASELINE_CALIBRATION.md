@@ -2136,6 +2136,7 @@ are a second gap is `NOT MEASURED`** — the `2026-03-15` board is a window boar
 and this pass did not re-run `check_baseline_board_coverage.py`. **The `60` out-of-range points legs
 and the `66` line gaps are recorded as of `2026-09-11` and were NOT re-measured**; neither the
 rung-depth setting nor the rung-step rule was checked against today's builder.*
+> → 🆕 *the transcript's own coverage after the combos reached ±10 (points, pra, rebounds), and the first combos artifact's load (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T14.5`.*
 
 ---
 
