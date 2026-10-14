@@ -3,23 +3,24 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-13T20:21:50Z",
+  "fetched_at": "2026-10-14T20:19:19Z",
   "egress": {
-    "ip": "72.56.169.103",
-    "city": "Dallas",
-    "region": "Texas",
+    "ip": "76.95.48.55",
+    "hostname": "syn-076-095-048-055.res.spectrum.com",
+    "city": "Moreno Valley",
+    "region": "California",
     "country": "US",
-    "loc": "32.7831,-96.8067",
-    "org": "AS213541 WS Telecom Inc",
-    "postal": "75201",
-    "timezone": "America/Chicago",
+    "loc": "33.9375,-117.2306",
+    "org": "AS20001 Charter Communications Inc",
+    "postal": "92553",
+    "timezone": "America/Los_Angeles",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 1640,
-  "row_count": 1640,
+  "rows": 1014,
+  "row_count": 1014,
   "total_pages": 1,
-  "future_pickable": 1640,
+  "future_pickable": 1014,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
@@ -33,29 +34,29 @@
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 403,
-      "bytes": 480,
+      "bytes": 94,
       "error": "blocked"
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 1835919,
+      "bytes": 1134897,
       "total_pages": 1,
       "ok": true,
-      "rows": 1640,
-      "future_pickable": 1640
+      "rows": 1014,
+      "future_pickable": 1014
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 1835897,
+      "bytes": 1134875,
       "total_pages": 1,
       "ok": true,
-      "rows": 1640,
-      "future_pickable": 1640
+      "rows": 1014,
+      "future_pickable": 1014
     }
   ],
-  "github_run_id": "38461532880"
+  "github_run_id": "38630637972"
 }
