@@ -34,7 +34,11 @@ export async function apiHealth(sql, cfg, url, version) {
     q(sql, `SELECT bookmaker, snapshot_label, count(*)::int n, max(fetched_at) fetched, max(game_date)::text game_date FROM nba_market.board_snapshots
             WHERE game_date = (SELECT max(game_date) FROM nba_market.board_snapshots WHERE game_date <= $1::date AND bookmaker = ANY($2::text[]))
               AND bookmaker = ANY($2::text[]) GROUP BY 1, 2 ORDER BY 1, 2`, [today, pgArr(cfg.ui.dfs_books)]),
-    q(sql, `SELECT count(*)::int n, count(DISTINCT player_id)::int players, max(built_at) built FROM nba_score.final_hp WHERE game_date = $1::date`, [d]),
+    // counts are index-only; the build time needs every heap row of the date (12 s+ on a cold past slate), so it is read only
+    // for today's live slate, where it means something (the InitPlan runs only when the CASE takes that branch)
+    q(sql, `SELECT count(*)::int n, count(DISTINCT player_id)::int players,
+                   CASE WHEN $2::boolean THEN (SELECT max(built_at) FROM nba_score.final_hp WHERE game_date = $1::date) END built
+            FROM nba_score.final_hp WHERE game_date = $1::date`, [d, d === today]),
     q(sql, `SELECT (SELECT max(game_date)::text FROM nba_stats.player_game_log) reg, (SELECT max(game_date)::text FROM nba_stats.player_game_log_postseason) post,
                    (SELECT max(updated_at) FROM nba_stats.player_game_log) reg_upd`),
     q(sql, `SELECT max(snapshot_ts) last_ts, count(*) FILTER (WHERE game_date = $1::date)::int rows_slate FROM nba_daily.injury_report_snapshots WHERE game_date >= $1::date - 3`, [d]),
