@@ -47997,3 +47997,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `211` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`): `T1`–`T39` done (`20,572` sentences); next `T40`.
+
+# §P212 — PASS 212 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T40` · NOTHING NEW
+*Angle (as NEXT set it):* (f12) `§P131`'s method on `T40`, each listed sentence searched on file by its substance and figures.
+- Tabulated in the shell before this line (the scan at pass 211's head): `T40` `71` of `130` sentences listed, no memory dump among them — **all `71` read whole** (the figure triage: `3` with a figure not on file — the identifiers inside three research-source links — `18` with every figure on file, `50` with none).
+- On file, by substance (each grepped before it was written): `§P162`'s list, plus the deeper combo ladders (`17,260` unchanged, `7,866` new), the paper logger's whole-number picks (`10 / 11 / 4 / 17 → 0`), `conf_tier`, the worked whole-number example (`60 / 85`), the first whole-number backtest (`16.4%` / `7.8%` of slips; `77.8% → 78.1%`, `94.0% → 93.9%`; drawdown `137 → 158`, `86 → 80`), the history at live depths (`~157,000` rungs a season; `77.1%` / `93.4%`), the Ighodaro parity case, the safety discount's sources, and the certified rebuild (`478,900`; `346,736`; `61,688`; `7,434`). Judged: narration, run times, the session's time-zone notices, link identifiers, the local-clone notes, the build chat's own SQL slip.
+- **Nothing new — `T40` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `9616a821f` (the log read before this line). No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `212` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`): `T1`–`T40` done (`20,643` sentences); next `T41`.
