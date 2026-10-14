@@ -1360,7 +1360,7 @@ varies by rung, side, prop, player form and team form"*)* **and turns it into a 
 **demon offset +6.28**. ⚠ **The asymmetry is the point**: **demons sit nearly twice as far from the
 anchor as goblins do**, and **a label-based model cannot express that at all.**
 🔑 ***This is the measured form of the owner's "ladder depth is PROP-DEPENDENT" directive*** *(T13
-seg 661, `NBA_OPEN_ITEMS.md`, 0 of thirty)* — **and it is one prop. The other props are NOT RECORDED.**
+seg 661, `NBA_OPEN_ITEMS.md`, 0 of thirty)* — **and it is one prop. The other props are NOT RECORDED.** → 🆕 *the other seven props' rows and the table's source line, as the transcript gives them (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T13.7`.*
 
 ### 0.9g 🔴 **WHAT GEMINI PRODUCED — and why it was DISCARDED**
 *The owner directed Gemini's use explicitly. **The result was thrown away, and the reason is a
