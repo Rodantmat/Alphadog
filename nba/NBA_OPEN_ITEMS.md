@@ -18436,3 +18436,8 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `239` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`): `T1`–`T17` done (`10,674` sentences); next `T18`.
+
+## §T18.9 — ADDITIONAL SWEEP 3, PASS 240 (`2026-10-14`): THE SCRATCHED PLAYER'S LEGS AS SCORED — THE ENHANCING SCORE AT BOTH EXTREMES *(AS STATED; `§P240`; from the message of `2026-09-20` `02:07Z`; belongs beside `NBA_MASTER_SUMMARY.md` `§T18.8`)*
+*Method:* the ≥ `5` scan over all twelve on `T18`'s whole transcript (`915` of `1,890` sentences, computed in the shell), read by `§P131`'s method; each item grepped in the twelve by its substance and its figures, every hit read. Already on file: the P3 chain on `2025-11-29` (Klay Thompson out after P2; `3,446` teammate overrides at `~1.3` pp; his `828` legs zeroed; `58,395` legs scored; his Overs `0.0122`, Unders `0.9834`) and the enhancing score's formula and worked rows (`97.4` / `95.0` / `81.7`; `65.06` vs `45.39`). Not on file: the scores those two legs carried, the per-side leg counts, and the reading given with them.
+- *"| Over | 157 | 0.0122 | 28.8 |"*; *"| Under | 35 | 0.9834 | 98.5 |"* (side, legs, final HP, score).
+- *"the 98.3% Unders score 98.5, near the ceiling, because high HP with well-supported data gets enhanced, not taxed. The Overs score 28.8 rather than near zero, since confidence still lifts a near-certain-loss leg off the floor."*
