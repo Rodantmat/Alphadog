@@ -1296,7 +1296,8 @@ row `failure/skipped`): three tables did not land.
   900 s). Proof: `nba/repair_static_loads.py` (new; dispatchable through `nba-browser-probe.yml`, re-invokes + verifies by data
   outside P1, no re-scrape) — shot quality repaired (bridge call 162 s: 2,267 / 582 / 4,656 rows), playtypes repaired by the
   patched curl path (team playtype written 03:25 UTC). All five tables now 10-14. P1 certification re-run: 2/2 PASS. P5 re-run
-  dispatched for the week (run 38506226876; result below).
+  for the week: run 38506226876 green — **66 checks, 0 FAIL**; verdicts identical to 10-10 (A_core_5flex PASS OOS +79% / CI_lo
+  +34%, R_stocks_4power FAIL_STATE_GATED as designed, the rest NOT_IN_TOP30); no state changed.
 
 **PrizePicks payout map ran AFTER the window.** Its GitHub crons (16:30 / 19:45 UTC = "before the window") started at 21:25 and
 23:26 UTC on 10-13 — five hours late, after P3 — so the window would have priced new goblins / demons from the previous day's
