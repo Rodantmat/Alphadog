@@ -1,0 +1,382 @@
+// AlphaDog NBA main interface - client part (served as-is by alphadog-v2-nba-main-ui; split from the MLB client, NBA data).
+let lastAutoCreatedSlips=[];
+let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
+const slipUnchecked=new Map(); // slipIdx -> Set(legIdx) - survives the re-render in applySlipSourceFilter
+function isLegSubstitute(slipIdx,leg){
+  const subs=slipSubs.get(slipIdx);if(!subs)return false;
+  for(const s of subs.values()){ if(String(s.board_row_id)===String(leg.board_row_id))return true; }
+  return false;
+}
+function dnpBadge(leg){
+  const r=String(leg&&leg.dnp_risk||'');
+  if(r==='HIGH')return '<span class="dnpFlag" title="'+esc(String(leg.dnp_risk_reason||''))+'" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">⚠ SCRATCH RISK</span>';
+  if(r==='MEDIUM')return '<span class="dnpFlag" title="'+esc(String(leg.dnp_risk_reason||''))+'" style="font-size:10px;font-weight:700;opacity:0.75;margin-right:6px">⚠</span>';
+  return '';
+}
+function pctlTag(leg){
+  const p=Number(leg&&leg.board_percentile);
+  if(!Number.isFinite(p))return '';
+  const col=p>=95?'#7ee787':(p>=90?'#d4c05a':'#ff6b6b');
+  return '<span class="pctlTag" title="percentile on today\'s board" style="font-size:10px;font-weight:800;color:'+col+';margin-left:6px">p'+p.toFixed(0)+'</span>';
+}
+function legRowHtml(leg,slipIdx,legIdx){
+  const un=slipUnchecked.get(slipIdx);
+  const checked=(un&&un.has(legIdx))?'':' checked';
+  const isSub=isLegSubstitute(slipIdx,leg);
+  const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
+  const hi=String(leg.dnp_risk||'')==='HIGH';
+  const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
+}
+// One delegated listener on the results container instead of inline onchange="" attributes -
+// inline handlers on dynamically-injected HTML do not resolve to top-level functions in this
+// WebView (confirmed live 2026-08-21, same failure mode as the earlier leg-removal bug).
+function bindLegKeepBoxDelegation(){
+  const results=$('autoCreateResults');if(!results||results._legKeepBoundAlready)return;
+  results._legKeepBoundAlready=true;
+  results.addEventListener('change',e=>{
+    if(e.target&&e.target.classList&&e.target.classList.contains('legKeepBox')){
+      handleLegToggle(Number(e.target.dataset.slipIdx),Number(e.target.dataset.legIdx),!!e.target.checked);
+    }
+  });
+}
+// ===== LEG SUBSTITUTION ENGINE (2026-08-27) =====
+// Legs regularly go unavailable between generation and placement (line moved, prop pulled, player
+// scratched). Letting a slip shrink 6->5->4 materially cuts ROI because the multiplier compounds,
+// so instead we hold the slip at its original size by swapping in a spare.
+//
+// Behaviour:
+//  - backupPool is ONE shared pool across every slip in the order, ranked by baseline descending.
+//  - Uncheck a leg -> the best still-available pool leg is appended to the BOTTOM of that slip and
+//    auto-checked. The slip keeps 6 checked legs; 7 rows render, one unchecked.
+//  - That leg leaves the pool globally, so no other slip can also use it.
+//  - Re-check the original -> its substitute is removed and returned to the pool, available again
+//    to any slip. This makes an accidental uncheck fully reversible.
+//  - Uncheck N legs -> N substitutes, one per uncheck, in order.
+//
+// Guard not in the original spec but required for correctness: a pool leg is SKIPPED if it would
+// duplicate a player already in that slip, or become a 3rd leg from the same game. Both would
+// break the correlation limits the backtest enforced (max 1 leg/player per slip, max 2 legs/game),
+// and a slip that violates them is not the thing that was validated. We walk down the pool to the
+// first leg that is legal for that specific slip.
+let backupPool=[];
+const slipSubs=new Map(); // slipIdx -> Map(originalLegIdx -> substituteLeg)
+function poolLegIsLegalForSlip(leg,keptLegs,slip){
+  if(!leg)return false;
+  // A leg can only substitute into a slip on the SAME platform - a PrizePicks leg is not
+  // placeable on Underdog and vice versa. This is permanent for every strategy.
+  if(slip&&String(leg.source_key||'')!==String(slip.source_key||''))return false;
+  for(const l of keptLegs){
+    if(String(l.mlb_player_id)===String(leg.mlb_player_id))return false;
+  }
+  let sameGame=0;
+  for(const l of keptLegs){ if(String(l.game_pk)===String(leg.game_pk))sameGame++; }
+  // Underdog penalises same-game pairs ~14.9%, so it is held to 1 leg per game; PrizePicks allows 2.
+  const gameCap=(String(slip&&slip.source_key||'')==='parlay_underdog')?1:2;
+  return sameGame<gameCap;
+}
+function takeBestPoolLeg(keptLegs,slip){
+  for(let i=0;i<backupPool.length;i++){
+    if(poolLegIsLegalForSlip(backupPool[i],keptLegs,slip)){
+      return backupPool.splice(i,1)[0];
+    }
+  }
+  return null;
+}
+function returnLegToPool(leg){
+  if(!leg)return;
+  if(backupPool.some(l=>String(l.board_row_id)===String(leg.board_row_id)))return;
+  backupPool.push(leg);
+  // Keep the pool ordered by baseline so "best available" stays meaningful after returns.
+  backupPool.sort((a,b)=>Number(b.hit_probability_0_100||0)-Number(a.hit_probability_0_100||0));
+}
+function poolStatusHtml(){
+  if(!backupPool.length)return '<div class="poolStatus" style="opacity:0.7;font-size:12px;margin:6px 0">Backup pool: empty - unchecking a leg will now shrink the slip.</div>';
+  // Substitution is SOURCE-MATCHED: a Sleeper slip can only draw a Sleeper leg. A combined count
+  // is misleading - the pool can show 7 legs while a given platform has zero legal ones.
+  // BUG FIXED 2026-08-29: operator saw "7 legs" and got no substitute, because all 7 belonged to
+  // other platforms.
+  const bySrc={};
+  for(const l of backupPool){
+    const k=String(l.source_key||'?');
+    (bySrc[k]=bySrc[k]||[]).push(l);
+  }
+  const label={prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'};
+  const parts=Object.keys(bySrc).sort().map(k=>{
+    const legs=bySrc[k];
+    const top=legs.slice(0,2).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(', ');
+    return '<b>'+esc(label[k]||k)+': '+legs.length+'</b> ('+top+')';
+  });
+  return '<div class="poolStatus" style="opacity:0.85;font-size:12px;margin:6px 0">Backup pool by app &mdash; '+parts.join(' &nbsp;|&nbsp; ')+'</div>';
+}
+function handleLegToggle(slipIdx,legIdx,isChecked){
+  const slip=lastRawSlips[slipIdx];if(!slip)return;
+  if(!slipSubs.has(slipIdx))slipSubs.set(slipIdx,new Map());
+  if(!slipUnchecked.has(slipIdx))slipUnchecked.set(slipIdx,new Set());
+  const subs=slipSubs.get(slipIdx);
+  const un=slipUnchecked.get(slipIdx);
+  if(!isChecked){
+    un.add(legIdx);
+    // A leg was just unchecked. If we have not already substituted for THIS leg, pull the best
+    // legal leg out of the shared pool and append it, keeping the slip at its original size.
+    if(!subs.has(legIdx)){
+      const boxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+      const kept=Array.from(boxes).filter(cb=>cb.checked).map(cb=>slip.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+      const sub=takeBestPoolLeg(kept,slip);
+      if(sub){
+        slip.legs.push(sub);
+        subs.set(legIdx,sub);
+      }
+    }
+  }else{
+    un.delete(legIdx);
+    // A leg was re-checked. If it had a substitute, remove that substitute and hand it back to the
+    // pool so any slip can use it again - an accidental uncheck is fully reversible.
+    if(subs.has(legIdx)){
+      const sub=subs.get(legIdx);
+      const pos=slip.legs.findIndex(l=>String(l.board_row_id)===String(sub.board_row_id));
+      if(pos>=0)slip.legs.splice(pos,1);
+      subs.delete(legIdx);
+      returnLegToPool(sub);
+    }
+  }
+  applySlipSourceFilter();
+}
+// Called on every leg checkbox toggle - recounts how many legs are still checked for this slip
+// and swaps in the correct multiplier fields for that NEW effective size, live.
+function refreshRealMultFields(slipIdx){
+  const slip=lastRawSlips[slipIdx];if(!slip)return;
+  const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+  const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>slip.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+  const keptCount=keptLegs.length;
+  const card=keepBoxes[0]&&keepBoxes[0].closest('.slipCard');if(!card)return;
+  const badge=card.querySelector('.multiplierTag[data-slip-idx="'+slipIdx+'"]');
+  if(badge){
+    if(keptCount<2){
+      badge.textContent='—';
+    }else{
+      const topMult=recomputeMultiplier(slip.source_key,slip.entry_mode,keptCount,keptLegs);
+      badge.textContent=multiplierLabel(topMult);
+    }
+  }
+  const multArea=card.querySelector('.realMultRow,.realMultGroup');if(!multArea)return;
+  if(keptCount<2){
+    multArea.outerHTML='<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
+    return;
+  }
+  multArea.outerHTML=realMultFieldsHtmlForSize({...slip,legs:keptLegs},slipIdx,keptCount);
+}
+function realMultFieldsHtml(s,idx){
+  return realMultFieldsHtmlForSize(s,idx,s.slip_size);
+}
+// Slips the operator has DESELECTED. Default is SELECTED - every slip is saved unless explicitly
+// unchecked. BUG FIXED 2026-08-29: slipSelectBox rendered with no checked attribute, so it
+// defaulted to unchecked AND every re-render (which fires on every leg toggle) wiped the whole
+// selection. Unchecking one leg deselected all six slips.
+const slipDeselected=new Set();
+function bindSlipSelectBoxes(){
+  document.querySelectorAll('.slipSelectBox').forEach(cb=>{
+    cb.onchange=()=>{
+      const i=String(cb.dataset.slipIdx);
+      if(cb.checked)slipDeselected.delete(i); else slipDeselected.add(i);
+    };
+  });
+}
+function slipCardHtml(s,idx){
+  const sel=slipDeselected.has(String(idx))?'':' checked';
+  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'
+}
+async function saveSelectedSlips(){
+  const boxes=document.querySelectorAll('.slipSelectBox:checked');
+  if(!boxes.length){alert('Check at least one slip to save.');return}
+  // For each selected slip, keep only the legs whose checkbox is still checked, then recompute
+  // the real multiplier for the resulting size before saving - never save the original
+  // multiplier against a leg count that no longer matches it. If a real multiplier was typed in
+  // (the field on each slip card), that always wins over any computed/estimated number - it's
+  // real, ground-truth data straight from the app, and the whole point is to keep sharpening
+  // future estimates against it.
+  const selected=Array.from(boxes).map(b=>{
+    const slipIdx=Number(b.dataset.slipIdx);
+    const orig=lastRawSlips[slipIdx];if(!orig)return null;
+    const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+    const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>orig.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+    if(keptLegs.length<2)return null; // no app allows a 1-leg slip
+    const realMultInputs=document.querySelectorAll('.realMultInput[data-slip-idx="'+slipIdx+'"]');
+    let realMult=null,realMultFlexTiers=null;
+    if(realMultInputs.length===1&&!realMultInputs[0].dataset.tierHits){
+      realMult=realMultInputs[0].value?Number(realMultInputs[0].value):null;
+    }else if(realMultInputs.length>1){
+      realMultFlexTiers={};
+      realMultInputs.forEach(inp=>{if(inp.value)realMultFlexTiers[inp.dataset.tierHits]=Number(inp.value)});
+      if(Object.keys(realMultFlexTiers).length===0)realMultFlexTiers=null;
+    }
+    const computedMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length,keptLegs);
+    return {...orig, legs:keptLegs, slip_size:keptLegs.length, slip_type:keptLegs.length+'-pick',
+      estimated_multiplier:computedMult||orig.estimated_multiplier,
+      real_multiplier:realMult,
+      real_multiplier_flex_tiers:realMultFlexTiers,
+      structure_label:keptLegs.length+'-pick '+nbaModeLabel(orig.source_key,orig.entry_mode)};
+  }).filter(Boolean);
+  if(!selected.length){alert('Each selected slip needs at least 2 legs kept.');return}
+  const btn=$('saveSelectedSlipsBtn');if(btn){btn.disabled=true;btn.textContent='Saving...'}
+  try{
+    const j=await (await fetch('/api/slips/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slips:selected,selected_leg_count:selected.reduce((a,s)=>a+(s.legs||[]).length,0),saved_by:'nba_main_ui'})})).json();
+    if(!j.ok){alert('Save failed: '+(j.error||'unknown'));return}
+    const savedCount=(j.saved_slips||[]).length;
+    const dupCount=(j.skipped_duplicates||[]).length;
+    let msg='✅ Saved '+savedCount+' slip(s) with real multipliers recorded.';
+    if(dupCount)msg+=' ('+dupCount+' skipped - identical slip already saved today.)';
+    alert(msg);
+  }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
+}
+function activeSourceFilters(){const m={prizepicks:$('filterPrizepicks'),sleeper:$('filterSleeper'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+const SOURCE_LABELS={prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'};
+function slipSummaryHtml(filtered){
+  const groups=new Map();
+  for(const x of filtered){
+    const src=String(x.s.source_key||'').toLowerCase();
+    const label=SOURCE_LABELS[src]||src.toUpperCase();
+    const mode=x.s.entry_mode==='power'?'Power':'Flex';
+    const key=label+'|'+x.s.slip_size+'-Pick '+mode;
+    groups.set(key,(groups.get(key)||0)+1);
+  }
+  const bySource=new Map();
+  for(const [key,count] of groups){
+    const [label,structure]=key.split('|');
+    if(!bySource.has(label))bySource.set(label,[]);
+    bySource.get(label).push(count+' '+structure);
+  }
+  const lines=Array.from(bySource.entries()).map(([label,parts])=>'<div class="slipSummaryLine"><b>'+label+':</b> '+parts.join(', ')+'</div>');
+  return '<div class="slipSummary"><div class="slipSummaryTotal">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+lines.join('')+'</div>';
+}
+// Real multipliers the operator has TYPED. Keyed by slip + effective size + tier so that a slip
+// whose size changed (leg unchecked / substituted) correctly recomputes, while every untouched
+// slip keeps the value that was entered.
+// BUG FIXED 2026-08-28: unchecking a single leg re-rendered the whole list and WIPED every real
+// multiplier the operator had entered across all slips. Only user-typed values are preserved -
+// auto-computed values are left to recompute so the badge stays correct.
+const realMultCache=new Map();
+function realMultKey(inp){
+  const boxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+inp.dataset.slipIdx+'"]');
+  const size=Array.from(boxes).filter(cb=>cb.checked).length;
+  return inp.dataset.slipIdx+'|'+size+'|'+(inp.dataset.tierHits||'full');
+}
+function bindRealMultCapture(){
+  document.querySelectorAll('.realMultInput').forEach(inp=>{
+    inp.oninput=()=>{ realMultCache.set(realMultKey(inp), inp.value); };
+  });
+}
+function restoreRealMultInputs(){
+  document.querySelectorAll('.realMultInput').forEach(inp=>{
+    const k=realMultKey(inp);
+    if(realMultCache.has(k))inp.value=realMultCache.get(k);
+  });
+  bindRealMultCapture();
+}
+function applySlipSourceFilter(){
+  const results=$('autoCreateResults');if(!results)return;
+  bindLegKeepBoxDelegation();
+  if(!lastRawSlips.length){return}
+  const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
+  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
+  results.innerHTML=lastSlipsNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  restoreRealMultInputs();
+  bindSlipSelectBoxes();
+  const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
+}
+function bindSlipSourceFilters(){const ids=['filterPrizepicks','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
+function bindAutoCreateSlips(){
+  bindSlipSourceFilters()
+}
+// ---- NBA overrides for the Slips screen (declared after the shared MLB slip code, so these definitions win) ---------------
+// Payouts follow the certified NBA graders (pricing.js, loaded with this part); every slip response carries the database's
+// pricing tables, kept in NBA_PRICING.
+var NBA_PRICING=null, NBA_MAX_PER_GAME={prizepicks:2,underdog:1,sleeper:2};
+function recomputeMultiplier(sourceKey,entryMode,size,legs){
+  if(!NBA_PRICING||!legs||legs.length<2)return 0;
+  const m=nbaFullMultiplier(NBA_PRICING,sourceKey,entryMode==='flex'?'flex':'power',legs);
+  return m==null?0:Math.round(m*1000)/1000;
+}
+function realMultFieldsHtmlForSize(s,idx,size){
+  const mode=s.entry_mode==='flex'?'flex':'power';
+  if(mode!=='flex'||!NBA_PRICING){
+    const mult=recomputeMultiplier(s.source_key,mode,size,s.legs);
+    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick '+nbaModeLabel(s.source_key,mode)+')</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" value="'+esc(String(mult||''))+'"></div>';
+  }
+  const tiers=nbaTiers(NBA_PRICING,s.source_key,'flex',s.legs)||{};
+  const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
+  if(!keys.length)return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick Flex, no priced table - enter it)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'"></div>';
+  const partialEst=String(s.source_key)!=='prizepicks'||(s.legs||[]).some(l=>Math.abs(Number(l.leg_factor||1)-1)>1e-9);
+  return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick Flex'+(partialEst?', partials are ESTIMATES':'')+')</span><div class="realMultFields">'+keys.map(k=>
+    '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(tiers[k]||''))+'"></label>'
+  ).join('')+'</div></div>';
+}
+function poolLegIsLegalForSlip(leg,keptLegs,slip){
+  if(!leg)return false;
+  if(slip&&String(leg.source_key||'')!==String(slip.source_key||''))return false;
+  for(const l of keptLegs){ if(String(l.mlb_player_id||l.player_id)===String(leg.mlb_player_id||leg.player_id))return false; }
+  let sameGame=0;
+  for(const l of keptLegs){ if(String(l.game_pk)===String(leg.game_pk))sameGame++; }
+  const cap=Number((NBA_MAX_PER_GAME||{})[String(slip&&slip.source_key||'')]||2);
+  if(sameGame>=cap)return false;
+  // a slip must keep players from at least two teams
+  const teams=new Set(keptLegs.map(l=>String(l.team_id||l.game_pk)));teams.add(String(leg.team_id||leg.game_pk));
+  return keptLegs.length+1<2||teams.size>=2;
+}
+function poolStatusHtml(){
+  if(!backupPool.length)return '<div class="poolStatus" style="opacity:0.7;font-size:12px;margin:6px 0">Backup pool: empty - unchecking a leg will now shrink the slip.</div>';
+  const bySrc={};
+  for(const l of backupPool){const k=String(l.source_key||'?');(bySrc[k]=bySrc[k]||[]).push(l)}
+  const parts=Object.keys(bySrc).sort().map(k=>{const legs=bySrc[k];const top=legs.slice(0,2).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(displayPropLabel(l.canonical_prop_key))+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(', ');return '<b>'+esc(appLabel(k))+': '+legs.length+'</b> ('+top+')'});
+  return '<div class="poolStatus" style="opacity:0.85;font-size:12px;margin:6px 0">Backup pool by app &mdash; '+parts.join(' &nbsp;|&nbsp; ')+'</div>';
+}
+function activeSourceFilters(){const m={prizepicks:$('filterPrizepicks'),sleeper:$('filterSleeper'),underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+function slipSummaryHtml(filtered){
+  const groups=new Map();
+  for(const x of filtered){const s=x.s;const lab=s.track_label||appLabel(s.source_key);const key=lab+'|'+s.slip_size+'-Pick '+nbaModeLabel(s.source_key,s.entry_mode);groups.set(key,(groups.get(key)||0)+1)}
+  const byLab=new Map();for(const [k,c] of groups){const p=k.split('|');if(!byLab.has(p[0]))byLab.set(p[0],[]);byLab.get(p[0]).push(c+' '+p[1])}
+  const lines=[...byLab.keys()].sort().map(l=>'<div class="slipSummaryLine"><b>'+esc(l)+':</b> '+byLab.get(l).join(', ')+'</div>').join('');
+  return '<div class="slipSummary"><div class="slipSummaryTotal">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+lines+'</div>';
+}
+function resultTag(leg){if(leg==null||leg.result_hit==null)return '';return leg.result_hit?'<span style="font-size:10px;font-weight:900;color:#7ee787;margin-left:6px">HIT</span>':'<span style="font-size:10px;font-weight:900;color:#ff8a8a;margin-left:6px">MISS</span>'}
+function legRowHtml(leg,slipIdx,legIdx){
+  const un=slipUnchecked.get(slipIdx);
+  const checked=(un&&un.has(legIdx))?'':' checked';
+  const isSub=isLegSubstitute(slipIdx,leg);
+  const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
+  const hi=String(leg.dnp_risk||'')==='HIGH';
+  const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+resultTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
+}
+function legLine(l){
+  let variant='';
+  const lt=String(l.line_type||'regular');
+  if(String(l.source_key||'').toLowerCase()==='prizepicks'){const label=Number(l.is_goblin)===1?'Goblin':(Number(l.is_demon)===1?'Demon':'Regular');variant=' <span class="badge '+label.toLowerCase()+'" style="vertical-align:middle">'+esc(label)+'</span>'}
+  else if(l.leg_factor!=null&&Math.abs(Number(l.leg_factor)-1)>1e-9){variant=' <span class="badge source" style="vertical-align:middle">'+esc(Number(l.leg_factor).toFixed(2))+'x</span>'}
+  return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+variant+(lt!=='regular'&&String(l.source_key)!=='prizepicks'?'':'');
+}
+function slipCardHtml(s,idx){
+  const sel=slipDeselected.has(String(idx))?'':' checked';
+  const meta=[s.track_label?esc(s.track_label):'',s.status?esc(String(s.status).replace(/_/g,' ')):'',s.stake_weight!=null&&s.stake_weight!==1?'stake '+esc(s.stake_weight)+'u':'',s.result?('result '+esc(s.result.hits)+'/'+esc(s.slip_size)+' hit • paid '+esc(Math.round(Number(s.result.payout||0)*100)/100)+'x'):''].filter(Boolean).join(' • ');
+  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div>'+(meta?'<div class="small" style="margin:2px 0 6px">'+meta+'</div>':'')+'<div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'
+}
+async function highHitSlips(){
+  const results=$('autoCreateResults');
+  results.innerHTML='<div class="empty">Loading the engines\' slips for the slate...</div>';
+  try{
+    const j=await (await fetch('/api/slips/high-hit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
+    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
+    NBA_PRICING=j.pricing||NBA_PRICING;NBA_MAX_PER_GAME=j.max_per_game||NBA_MAX_PER_GAME;
+    const slips=j.generated_slips||[];
+    const sl=j.slate||{};
+    lastSlipsNoteHtml='<div class="dossierNote" style="margin-bottom:10px"><b>Slate '+esc(sl.date||'')+(sl.mode==='replay'?' — replay':' — today')+'</b>'+(j.notes||[]).map(n=>'<div class="small" style="margin-top:4px">'+esc(n)+'</div>').join('')+'</div>';
+    if(!slips.length){lastRawSlips=[];results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No engine slips for this slate.</div>';return}
+    lastRawSlips=slips;
+    backupPool=(j.backup_pool||[]).slice();
+    slipSubs.clear();
+    slipUnchecked.clear();
+    applySlipSourceFilter();
+  }catch(e){results.innerHTML='<div class="empty err">Build failed: '+esc(e.message||e)+'</div>'}
+}
+
+bindSlipSourceFilters();
