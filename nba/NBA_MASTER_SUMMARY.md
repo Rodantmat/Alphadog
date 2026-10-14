@@ -47688,3 +47688,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `185` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`): `T1`–`T13` done (`3,062` sentences); next `T14`.
+
+# §P186 — PASS 186 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T14` · 🆕 ONE RESIDUE
+*Angle (as NEXT set it):* (f11) `§P131`'s method on `T14`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 185's head): `T14` `622` of `1,201` sentences listed — **all `622` read whole** (the figure triage: `12` with a figure not on file, `135` with every figure on file, `475` with none). Of the `12`: `24,739` is the `17,376` rows plus the `7,363` collapsed rungs on file; `3,451` on file (a trailing comma in the triage); `167,909` and `2,535,660` progress counts toward the `1,057,765` rungs and the `12.49M` history on file; the combos' "was" counts superseded by the live counts on file; the event map's `2,556` beside its `96%` on file; the database plan prices judged as `§P136` judged them (cost reasoning for unbought plans); `38,316` recorded below.
+- On file, by substance (each grepped before it was written): `§P136`'s list, plus the scenario table and the late-scratch fallback (`NBA_SYSTEM_DESIGN.md`), the arrival order, the `13` archived stat types, the `29` of `~31` stat menu, the `47`-connection upgrade, the `1,177` MLB tables, the `152` period game-days, the out-of-range `4,804` on combos, the loader's one-transaction fix. Judged: narration, owner directives already on file, static coach names and dates (as `§P136`), run timings, research citations (the fantasy page's date), the factor-readiness inventory at the factor-lock level (`NBA_ENRICHMENT_FACTOR_LOCK.md`).
+- 🆕 **One residue, `§T14.5`** *(`14` italic quotations, each a substring of the transcript in the shell)*: the first combos artifact and its load (`38,316` → `36,895`), the coverage after the combos reached ±10 (points `60` → `8`, pra `69` → `12`, the matched counts, the name-unresolved residue), and what each phase-2 input moves as the build chat sized it. Pointers: `NBA_BASELINE_CALIBRATION.md`'s coverage record, `NBA_SYSTEM_DESIGN.md`'s scenario section.
+- No commit not this sweep's to the twelve since `ba38e48a0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `186` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`): `T1`–`T14` done (`3,684` sentences); next `T15`.
