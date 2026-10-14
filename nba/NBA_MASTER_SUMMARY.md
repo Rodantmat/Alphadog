@@ -48021,3 +48021,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `213` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T41` done (`20,723` sentences); next `T42`.
+
+# §P214 — PASS 214 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T42` · NOTHING NEW
+*Angle (as NEXT set it):* (h12) `§P131`'s method on `T42`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 213's head): `T42` `84` of `145` sentences listed, no memory dump among them — **all `84` read whole**, every host, port, user name, targeting suffix and address masked in the shell before reading (the bounded figure triage: `2` with a figure not on file — an attachment notice's file name and a proxy port — `0` matched only inside a longer number, `22` with every figure on file, `60` with none).
+- On file, by substance (each grepped before it was written): `§P164`'s list and `§T42.10`, plus the recertification counts (`17` real survivors, `478,900`), the dress rehearsal (`162` scored legs), the `407` at `13:16` PT and P3's per-app isolation, the traffic estimate (`20–50 MB`/day, `1–2 MB`, `50–150 MB`/week, `30–60 MB` a run; `3–5 GB`/month), the price comparison (`~$3.62`/GB; `$1.00`/GB), the provider test (`217 KB` board), COMPASS fact `135` and strategy `§31t`, the placeholder-season helper, the Sleeper game dates, and the market-free study. Judged: narration, the session's notices, blob hashes, provider links and the plan card, and every credential-class detail (not reproduced).
+- **Nothing new — `T42` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `e4be88024` (the log read before this line). No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `214` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T42` done (`20,807` sentences); next `T43`.
