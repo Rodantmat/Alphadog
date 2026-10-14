@@ -47774,3 +47774,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `193` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T21` done (`7,766` sentences); next `T22`.
+
+# §P194 — PASS 194 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T22` · NOTHING NEW
+*Angle (as NEXT set it):* (n11) `§P131`'s method on `T22`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 193's head): `T22` `517` of `832` sentences listed — **all `517` read whole** (the figure triage: `15` with a figure not on file, `107` with every figure on file, `395` with none). Of the `15`: every one is the PrizePicks payout mapping (the quotes, the Flex arithmetic, the rescue tiers, the Price IDs and the `pp_*` views and their error figures) — out of scope as `§P144` judged it, cross-referenced to `nba/PP_PAYOUT_FINDINGS.md`, not swept; one is an MLB row; one a browser string from an owner paste.
+- On file, by substance (each grepped before it was written): `§P144`'s list — the chronological correction, the static-layer freeze, the hardcoded `'2025-26'` INSERT, the preseason dates, the `17,902`-row double-encoded finding, the `GITHUB_TOKEN` lead, the `43,370` no-center legs and the `2,199,354`-leg history. Judged: the payout mapping (out of scope), the MLB repair, the owner's step-by-step browser instructions, narration. Not reproduced: the session cookies and headers in the owner's paste.
+- **Nothing new — `T22` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `cff02361c`. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `194` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T22` done (`8,283` sentences); next `T23`.
