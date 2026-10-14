@@ -44747,6 +44747,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 - `153` of `254` sentences listed (computed in the shell); one holds figures not on file — four NBA player ids in the roster-replay validation's example list, below the docs' grain. All read whole and searched on file by substance: the daily roster sync and current-roster projection with its replay validation and late-trade quantification, the PrizePicks break-even cross-check and the fixed `EDGE_DELTA`, the retention artifacts dropped, the late pick retired, the monitor fixes, the rolled-back integration test, the gap program (G1 whole-number pricing and its gates, G2 ladder depth and its parity constraint, G3 rookies, G4 Underdog's game props), the Underdog stat-key table, `final_hp_derived`, the distance-overconfidence finding and `calibrated_p`. **Nothing new — `T39` stays ✅ CLOSED.**
 
+## §T39.11 — ADDITIONAL SWEEP 1, PASS 161 (`2026-10-14`): FIVE REPLY DETAILS *(AS STATED; `§P161`)*
+*Method:* the ≥ `5` scan over all twelve on `T39`'s whole transcript (`647` of `983` sentences, computed in the shell), read by `§P131`'s method.
+- **The monitors' rolled-back integration test (`2026-10-05` `05:02Z`)**, beside the PrizePicks reading on file: *"The Underdog path passed end to end with two slates (running z +3.14 against −10.84, from both slates)."*
+- **The players the old morning build could not model (`05:53Z`)**, beside the `2.62%` / `2.95%` on file: *"Their legs hit about 55% (balanced lines) against 58% overall, a gap within normal noise."*
+- **The far-line table's reb+ast row (`2026-10-06` `02:58Z`)**, the reason behind its depth staying at `10` on file: *"reb+ast | Off by about 4 points at the extremes | Keep at 10"*.
+- **The distance estimator's recovery check (`05:29Z`)**: *"The estimator recovers the known coefficients within sampling error (distance −0.062 vs −0.06; slope 0.417 vs 0.45; on 60,000 points)."*
+- **The recalibration map v2's coverage (`06:59Z`)**, beside its out-of-sample score on file: *"24 of 28 combinations are corrected."*
+
 ---
 
 # §T40 — `T40` · `2026-10-07-01-01-33-nba-whole-number-legs-deep-combo-rungs-31s` *(transcripts pack `2026-10-09`; the first segment inside the Claude Code session)* — 🆕 **G2 ROUTING BUILT AND VERIFIED, A NON-DETERMINISM FIXED, THE OWNER'S RULING THAT STRONG WHOLE-NUMBER LEGS BELONG IN SLIPS (GATE 2B — ADMITTED), DEEP COMBO RUNGS NOT ADMITTED, AND THE SYSTEM RECERTIFIED ON THE SELECTION LEG POOL**
