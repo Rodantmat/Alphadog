@@ -47278,3 +47278,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `159` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T37` done (`19,928` sentences); next `T38`.
+
+# §P160 — PASS 160 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T38`
+*Angle (as NEXT set it):* (z9) `§P131`'s method on `T38`.
+- Tabulated in the shell before this line (the scan at pass 159's head): `T38` `356` of `560` sentences listed, no memory dump among them — **all `356` read whole** (the figure triage ordered them: `12` with a figure not on file, `97` with every figure on file, `247` with none).
+- On file, by substance (each grepped before it was written): the sandboxed October 20 simulation and the live-board team bug it caught, the six spotlight players and the star-line Unders (`~3.5 SD`), board breadth and the out-of-range guards (`179` / `178`), the per-strategy 2025-26 table (`06:48Z`), the `$1` profits and the bankroll guidance, the week-by-week summary, the first realistic answer's central figures, the H1 reading, the break-even monitor (research, calibration, the real-data z path), the exact ROI curve and the realistic band, the star-Under half stake. Judged: narration, run waits, commit hashes, research-source names.
+- 🆕 **One residue, `§T38.10`** *(`43` italic quotations, each a substring of the transcript in the shell)*: the `$1` table's wagered amounts and returns by season, the `24` weekly rows of 2025-26 with their two readings, the first realistic table's other rows and single-season ranges, and the exclusion row. Pointers: row `38`, the week-by-week sentence in this file. ⚠ The residue patch was refused once by the bridge (`502`, nothing written); sent again in its own message, it applied once.
+- No commit not this sweep's since `4b0d7387e`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `160` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T38` done (`20,284` sentences); next `T39`.
