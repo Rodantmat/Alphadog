@@ -45321,6 +45321,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **Loaders**: the measure-types worker — *"It is the only loader that can take a second file without code changes, via an input prefix."*
 - **Board floors on playoff days**: *"Playoff slates of 1–4 games may fall below the smallest validated board, so nothing would be placed."*
 
+## §T45.11 — ADDITIONAL SWEEP 2, PASS 227 (`2026-10-14`): THE PHASE DEFINITIONS IN THE REGULAR-SEASON SWEEP `S7` *(AS STATED — code-only claims as of `10-08`, before the postseason wiring; `§P227`)*
+*Method:* the ≥ `5` scan over all twelve on `S7`'s whole transcript (`87` of `122` sentences, computed in the shell), read by `§P131`'s method; `§T45.4`, `§T45.10` and the wiring (`5_postseason`, `slate_games`, the postseason delta) are on file — what follows is the sweep's own detail beside them.
+- **The calibration phases' boundaries**: *"Values: 1_oct_nov, 2_dec_asb (to Feb 14), 3_post_asb (to Mar 15), 4_push (everything else)."*
+- **The slip engines' phases**: *"early, mid, late or final7, relative to data bounds."*; the bounds — *"compute bounds as min/max leg date per season, and feed phase_of."*
+- **The board-level phase**: *"Consumers filter to regular only: db_views.sql:48, db_functions.sql:1084,1092 (sim slip) and parity_pp_leg_source.py:81 all use phase='regular'. This is the only existing playoffs value. It depends on playoff rows being present in nba_stats.player_game_log."*; and the one season mapping that already spanned the postseason — *"fit-set mapping by Jul–Jun date. This one includes the playoffs."*
+
 # §T46 — `T46` · `2026-10-09-02-50-53-nba-playoff-roi-playoff-research-31x-31y` *(transcripts pack `2026-10-09`)* — 🆕 **POSTSEASON PARITY PROVEN WITHOUT TOUCHING THE REGULAR SEASON; THE OWNER'S ROI QUESTIONS ANSWERED WITH AN HONEST 2026-27 RANGE; THE PLAYOFFS STUDIED THROUGH THE WHOLE METHOD — ONLY THE MODEL'S UNDERS HOLD; A POSTSEASON GAME-KEY DEFECT; "PLAYOFF UNDERS" BEGINS**
 
 > *Chat track, pass `1` (**`5` real owner messages** among `787` events; all assistant prose including one `SendUserMessage`; every write call), recorded `2026-10-10`. Span `2026-10-09 02:50Z → 07:06Z`. Evidence base: the transcript; the ledger's **POSTSEASON BACKFILL TO FULL PARITY** (results) and **POSTSEASON GAME KEY**; strategy **`§31x`**, **`§31y`**, `§31w` (parity as built); COMPASS 140–142 — read-only, figures **AS STATED**. The Playoff Unders gates, certification and live parity (`§31z`, ledger *PLAYOFF UNDERS*) were coded at the end of this window and run in `T47`.*
