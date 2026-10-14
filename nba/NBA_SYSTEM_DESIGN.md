@@ -518,7 +518,7 @@ rule but a judgment about whether the FEATURE was fairly built.**
 with uncertainty enumerated, only the realised branch stored** (`nba_score.scenario_realised`), *"the
 unrealised universe is never written."* 🔑 **The owner specified both halves — enumerate everything to
 CALIBRATE, store only the outcome to SURVIVE — and the storage argument is his, not an
-implementation detail.**
+implementation detail.** → 🆕 *the calibration by uncertain-player count (one to five), as the transcript gives it (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T17.6`.*
 
 ### ⚠⚠ AND THE TENSION THE SWEEP MUST RECORD RATHER THAN RESOLVE
 
