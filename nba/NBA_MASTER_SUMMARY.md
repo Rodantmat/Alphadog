@@ -21752,6 +21752,12 @@ superseded. 🔴 CLEAN 0/3 · 1 pass.**
 - *"Two bugs surfaced and were fixed in the replay (virtual advanced-team rows must carry only keys; the completed-games filter must run before the slate is appended)."* — the period builder.
 - *"A latent season-detection bug (the new advanced file would have parsed as a bogus season) was caught and fixed in all three builders."* — found while wiring the daily plumbing that mirrors the current season's bulk files into season-named files, for the October rollover.
 
+### T10.30 — 🆕 ADDITIONAL SWEEP `2` (`2026-10-14`, sweep pass 184, `§P184`): **THE SEASON SHAPE BEYOND OCTOBER, AND WHAT THE PHASE CELL MOVED** *(AS STATED)*
+*From the message of `2026-09-09 20:12Z`; the October over-projection (`−4.8` / `−6.2`, `−5.2` / `−4.6`), the coverage figures and the phase cell's existence are on file.*
+- **The month-by-month table** (Oct · Nov · Dec–Mar · Apr): *"| Points 2025-26 | −4.8 | −3.7 | ±1.2 | +6.1 |"*, *"| Points 2024-25 | −6.2 | −1.8 | ±2.6 | +6.9 |"*, *"| Rebounds 2025-26 | −5.2 | −2.4 | ±1.1 | +3.5 |"*, *"| Rebounds 2024-25 | −4.6 | −2.3 | ±2.2 | +5.6 |"*; and the reading — *"Carryover over-projects by ~5 pp in October (rust, new roles, rotation experiments), settles by December, and April flips (tanking, resting stars, young players getting run)."*
+- **What the `season_phase` cell moved**: *"points October −4.8 → −0.1, April +6.1 → +2.3; rebounds October −5.2 → −3.6 (its opening effect is partly shape, not level)."*
+- **The opening's operating note**: *"rookies and new arrivals have no carryover and run on the tier prior for their first three games — treat as lower confidence."*
+
 ### T10.28 — PASS 28 (**literal audit, second run — the bare-identifier surface**) — **✅ CLEAN 3/3 · T10 CLOSES**
 *2026-09-21. The third of the closing three. Pass 22 audited `schema.table`, pass 23 the
 `factor_profile_cells` key columns; this is the rest of the bare-identifier surface.*
