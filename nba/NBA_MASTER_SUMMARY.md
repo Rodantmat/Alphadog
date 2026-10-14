@@ -44687,6 +44687,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 | points 3-Power (cap 3) | `+36%` | `55–98` | `8` | `42.0` | `36` |
 | *core 5-Flex (retired, shadow)* | `+131%` | `65–89` | `11` | `8.4` | `17` |
 | *stocks 4-Power (rotation only)* | **`−8%`** | `13–126` | `28` | `40.4` | `88` |
+| *core 3-Power and core+demon 3-Power, All-Star week versions* | 🆕 → `§T38.11` *(pass 210)* | | | | |
 | **PrizePicks portfolio** (8 daily, `~20` slips/day) | **`+94%`** (`+2,948` on `3,136`) | **`99–55`** | **`6`** | `85.8` | **`9`** |
 | **Underdog P5** | `+89%` (`+464` on `522`) | `60–88` | `7` | `43.8` | `34` |
 | Underdog P4 (shadow) | `+83%` | `55–93` | `8` | `37.7` | `34` |
