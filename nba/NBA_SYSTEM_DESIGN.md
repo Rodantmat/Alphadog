@@ -1230,7 +1230,7 @@ that's a lookup. Even a 40k-leg board is seconds."*
 > our absence data those are **a small minority of days**."*
 ⚠ **The measurement that would pin both numbers — *"how many uncertain players per team on a typical
 report, and how often the late report introduces a name that wasn't there"* — was proposed and is
-NOT RECORDED as run.**
+NOT RECORDED as run.** → 🆕 *what each phase-2 input moves, as the build chat sized it (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T14.5`.*
 
 ## 0a.3 🔑🔑 **THE TWO-PHASE CLOCK — where it was designed, the TWO LEAKAGE TRAPS, and the PREMISE UNDER IT THAT WAS LATER FOUND WRONG**
 
