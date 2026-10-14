@@ -18746,3 +18746,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `266` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T44` done (`36,001` sentences); next `T45`.
+
+## §P267 — PASS 267 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T45` · NO RESIDUE
+*Angle (as NEXT set it):* (k14) `§P131`'s method on `T45`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 266's head): `T45` `26` of `50` sentences listed, no memory dump among them — **all `26` read whole** (the bounded figure triage: `0` / `0` / `4` with every figure on file / `22` with none; `0 + 0 + 4 + 22 = 26`).
+- On file, by substance (each grepped before it was written, every hit read): `§P167`'s and `§P217`'s lists, plus the postseason weighting (`K = 50`, the eligible cells), the strategies at one slip a night (`+62%` on `25` nights, `+15%`, `+11%`), the postseason-native search (`0` of `29`), the postseason board floor (`485`), the live probe on three past nights, and the Betr harvester's "NO BOARD" (`T45-6`). Judged, on their bases: narration, the session's notices, and the MLB lines (the `445` match-odds dates among them; out of scope).
+- **No residue in `T45`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `0daaf4644` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `267` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T45` done (`36,051` sentences); next `T46`.
