@@ -1114,6 +1114,7 @@ pg["comp_min"] = np.where(pg["competitive"] & (pg["PF"] < 6), pg["MINF"], np.nan
 > construction** (raw is calibrated within ~1–3pp)"*, and *"the out-of-sample test of the phase cell is
 > only possible on 2025-26 today; **for the 2026-27 opening the fit uses 2024-25 + 2025-26 —
 > stronger**."*
+> → 🆕 *the November / December–March / April columns, April's flip and what the phase cell moved (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T10.30`.*
 >
 > ⚠ **The season opens 2026-10-20**, which is the window this pattern describes.
 
