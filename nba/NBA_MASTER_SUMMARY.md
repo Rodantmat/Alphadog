@@ -47193,3 +47193,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `154` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T32` done (`16,127` sentences); next `T33`.
+
+# §P155 — PASS 155 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T33`
+*Angle (as NEXT set it):* (u9) `§P131`'s method on `T33`.
+- Tabulated in the shell before this line (the scan at pass 154's head): `T33` `475` of `760` sentences listed — **all `475` read whole** (the figure triage ordered them: `5` with a figure not on file, `188` with every figure on file, `282` with none). Its head overlaps `T32`'s tail at `2026-09-29 06:37Z`.
+- On file, by substance (each grepped before it was written): the composition sweep and its levers, caps and the single-cell correlation (strategy `§13f`–`§13l`, recorded as void in level by `§14a`), the backdata reality (`§13h`), the simulated-line correction (`§T33.0`), harness v2–v4 with the day-clustered bootstrap, the season effect and the swapped-seasons control, the window-board pool and the `14%` that was never on it, the signals on real lines, Underdog's table and the app restrictions, the live gate, the sort-key finding, the ranks retired as selectors, the owner's tier-map method and the anchor tiers (`§T33.2`), the goblin and demon pricing, the every-n sweep, the ranker-retrain reading of `2024-25`. Judged: narration, run waits, the build chat's offers to stop, and figures superseded inside the transcript.
+- **Nothing new — `T33` clean in additional sweep `1`.** One commit not this sweep's landed since `90a15aeab`: `fc0ee442a` (`2026-10-14 03:13Z`), the hourly rotation's own row in this file, `[skip ci]`, not touched. ⚠ A process slip in pass 154: the STATE and NEXT patches to this file went out in one message, against one-patch-per-message-per-file; both applied once and cleanly. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `155` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T33` done (`16,602` sentences); next `T34`.
