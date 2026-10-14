@@ -25718,7 +25718,7 @@ props were the first test, not the last.
 > falls back to Normal until its component is re-saved**)"*
 
 **A copula over calibrated marginals** — and the one marginal not yet re-saved falls back explicitly
-rather than silently. → 🆕 *the combos' first-pass figures and the stars' fourth quarter as measured (`2026-10-14`, `§P183`): `§T9.14i`.*
+rather than silently. → 🆕 *the combos' first-pass figures and the stars' fourth quarter as measured (`2026-10-14`, `§P183`): `§T9.14i`.* → 🆕 *plus the period layer's certification table and its first-quarter findings (`2026-10-14`, additional sweep `3`, `§P233`): `§T9.14j`, written in `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md` (`T26-23`).*
 
 ### T9.8 — **THE PERIOD LAYER — the three-part mixture**
 > *"Implementing the **three-part Q4/2H mixture** with **everything fit on train**: **state
