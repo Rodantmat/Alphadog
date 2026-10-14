@@ -44,6 +44,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/maintenance_shrink_board_index.py
+      - name: Lossless compaction (VACUUM FULL, row count + content fingerprint verified; nba/db_compact.py)
+        if: ${{ github.event.inputs.task == 'compact' || github.event.inputs.task == 'compact_dry' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          COMPACT_DRY: ${{ github.event.inputs.task == 'compact_dry' && '1' || '' }}
+        run: python -u nba/db_compact.py
       - name: Build derived market tables
         if: ${{ github.event.inputs.task == 'derived' || github.event.inputs.task == 'map' }}
         env:
