@@ -30,6 +30,7 @@ const WORKFLOWS = {
   P2B: "nba-p2b-slate.yml",
   P3: "nba-p3-afternoon-light.yml",
   CLOSE: "nba-close-capture.yml",   // §31c: the close board, once per game day at first tip - 25 min (input-free workflow)
+  PPMAP: "nba-pp-payout-map.yml",   // 2026-10-13: the PrizePicks payout map (mined goblin/demon factors), twice per game day BEFORE P3
 };
 const MIN = 60000;
 
