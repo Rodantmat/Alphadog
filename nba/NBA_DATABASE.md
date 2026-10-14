@@ -2894,6 +2894,8 @@ Jackson Jr's `1,057` legs."*
 🔑 ***The sweep found it and could not see how much it had already cost; the calibration diff found the
 cost and not the population. Together they are the whole picture.***
 
+→ 🆕 *`2026-10-14`: the name layer's coverage after the fix across both seasons (`561` of `561` board names, from `516`; `41` players by the one normaliser, `4` by nickname aliases) and the calibration's cell count through the prune and back (`25,908` → `25,962`) — `NBA_MASTER_SUMMARY.md` `§T28.3`.*
+
 # 🆕 §T26.7 — 📐 **THE RETENTION RULE: ONE SET PER DAY, BOARD-SCOPED AFTER THE DAY**
 
 *Owner decision `2026-09-24`. **Recorded here `2026-09-25` and verified live.** ⚠ **This is what
