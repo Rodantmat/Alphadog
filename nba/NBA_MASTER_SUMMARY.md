@@ -47705,3 +47705,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `186` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`): `T1`–`T14` done (`3,684` sentences); next `T15`.
+
+# §P187 — PASS 187 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T15` · 🆕 ONE RESIDUE
+*Angle (as NEXT set it):* (g11) `§P131`'s method on `T15`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 186's head): `T15` `604` of `1,084` sentences listed — **all `604` read whole** (the figure triage: `42` with a figure not on file, `160` with every figure on file, `402` with none). Of the `42`: the two-season A2 multipliers (`1.315` / `1.370`) are on file as `1.3147` / `1.3696`; the retracted panels' values, the superseded A2's RMSE column, the oreb diagnostic and k-sweep rows (the arc's results on file), the pair example, sample and load counts judged as `§P137` judged them (intermediate tables and sample sizes below the docs' grain); the reliability audit's certified rows recorded below.
+- On file, by substance (each grepped before it was written): `§P137`'s list, plus the N1 rotation / fringe split (`0.956`, `0.961`, `71.2%`), the allocator's MAE tests (`4.609`, `4.641` vs `6.186`), the oreb k sweep (`0.241` → `0.045`), the archiver's first legs (`6,557`), the calibration checker's `0.8` / `0.9` pp on points, the flagged and period reliability rows, the certified median (`0.20` pp). Judged: narration, research-source summaries (as `§P137`), owner directives on file.
+- 🆕 **One residue, `§T15.6`** *(`15` italic quotations, each a substring of the transcript in the shell)*: the reliability audit's certified rows — `11` props with n, ECE, worst band, Brier and lift — and its two readings. Pointer: `NBA_OPEN_ITEMS.md`'s reliability-scorer paragraph (`NBA_FINAL_SCORING_CALIBRATION.md`, which holds the flagged rows, is never edited).
+- No commit not this sweep's to the twelve since `384d50e8f`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `187` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`): `T1`–`T15` done (`4,288` sentences); next `T16`.
