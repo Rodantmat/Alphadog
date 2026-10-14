@@ -43191,6 +43191,10 @@ after something had been over-claimed.*
 
 ---
 
+# §T24.9 — 🆕 ADDITIONAL SWEEP `2` (`2026-10-14`, sweep pass 196, `§P196`): **THE FANTASY BACK-SIMULATION'S TEST WEEK** *(AS STATED — a session record; its queries are not stored)*
+*From `T24` §2. Already on file: the back-simulation's scale and size (`32,170` player-nights, `§T24.1` §3), the conservative realised values per leg (`NBA_FINAL_SCORING_CALIBRATION.md` `§0.18b-T24` A), the fantasy prices.*
+- *"Test week (Jan 12–18 2026, 675 player-nights): best-estimate center 50.4% Over (unbiased); conservative Over 45.0%, Under"* *"44.2%, goblin 64.0% (below its price's ~65% — the WNBA goblin-spacing doubt can no longer flatter a backtest), demon 25.1%;"* *"0 lines off the .5 grid; 0 lines easier than the rule; model probability present on 76% (the rest fall outside the ±10 ladder)."*
+
 # §F1.1 — 📑 **EVERY FILE NOW OPENS WITH AN INDEX — AND BUILDING THEM AUDITED ALL TWELVE, WHICH HAD NEVER BEEN DONE**
 
 *File-sweep pass 1, 2026-09-23. **Owner instruction**: "create an index on the beginning of each
