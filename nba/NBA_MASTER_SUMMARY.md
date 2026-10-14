@@ -15653,6 +15653,7 @@ CLEAN 0/3 · 1 pass.**
 - **The first scored group's certified rows** (`03:49Z`): *"| steals | 541k | 0.10 | 1.39 | 0.0405 | 26.9% | certified |"*, *"| threes_made | 570k | 0.13 | 1.30 | 0.0526 | 23.9% | certified |"*, *"| dreb | 659k | 0.15 | 0.97 | 0.0819 | 19.9% | certified |"*, *"| pts_reb | 963k | 0.21 | 0.60 | 0.1750 | 8.3% | certified |"*.
 - **The all-props run's certified rows** (`06:05Z`): *"| fta | 610,657 | 0.24 | 1.48 | 0.0839 | 20.5% | certified |"*, *"| reb_ast | 821,992 | 0.25 | 1.02 | 0.1107 | 16.2% | certified |"*, *"| rebounds | 711,182 | 0.25 | 1.26 | 0.0930 | 18.3% | certified |"*, *"| ftm | 585,334 | 0.31 | 1.09 | 0.0720 | 21.8% | certified |"*, *"| pra | 977,705 | 0.34 | 0.61 | 0.1823 | 7.5% | certified |"*, *"| fga | 865,441 | 0.35 | 1.08 | 0.1125 | 15.9% | certified |"*, *"| pts_ast | 936,764 | 0.36 | 0.65 | 0.1681 | 9.2% | certified |"*.
 - **Its readings**: *"Every other prop in the history table passes on both seasons with worst bands ≤ 1.5 pp."*; *"the low-count props (oreb 25.8%, ftm 21.8%, fta 20.5%) carry two to three times more predictive edge than the high-volume combos (pra 7.5%, pts_ast 9.2%)"*.
+- ▶ 🆕 *Additional sweep `3` (`2026-10-14`, pass 237): `§T15.7` — the second and third of the three reasons given for B4 v1's failure — written in `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md` (`T26-23`).*
 
 ---
 
