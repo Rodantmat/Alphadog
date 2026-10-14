@@ -43098,7 +43098,7 @@ alternate Unders** (the `zero`-Under invariant, on file).*
 ⚠ 🔴 **`flag: demon_priced_below_standard` = `148`** — *"the `7%` longshot haircut took a
 near-standard demon under `1.0`"* — **a known, counted, flagged population rather than a silent one.**
 ✅ **`kind_price_mismatch` = `0` after the kind fix** *(the `63` from `§0.13-T22` — **resolved**, which
-that section recorded as `NOT RECORDED`).*
+that section recorded as `NOT RECORDED`).* → 🆕 *the first flag count by component (`148` + `5`) and the `384` simulated pushes, as the session record gives them (`2026-10-14`, additional sweep `2`): `§T25.8`.*
 
 ## 7. ⚠ **`prop_universe` — RECORDED UNDER THE STANDING RESTRICTION**
 
