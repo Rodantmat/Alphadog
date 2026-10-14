@@ -43048,7 +43048,7 @@ center = PTS + 1.2·REB + 1.5·AST + 3·STL + 3·BLK − TOV
 > **all `15` distinct WNBA lines** via `gap = round_half(3.2 + 0.07 × center)`, which is corroboration
 > by construction rather than assertion.* 🔴 **It does not by itself prove PrizePicks uses `+3`** —
 > *it proves a model using `+3` reproduces the observed line grid.* ▶ **Recorded at item 5 with that
-> distinction.**
+> distinction.** → 🆕 *the back-simulation's own test week, as the session record gives it (`2026-10-14`, additional sweep `2`): `§T24.9`.*
 
 ## 4. 🔑🔑🔑 **THE STRUCTURAL DISCOVERY — PRIZEPICKS CUTS EVERY LINE FROM ONE BOX-SCORE PROJECTION** *(`T24` §4.3, `0/0`)*
 
