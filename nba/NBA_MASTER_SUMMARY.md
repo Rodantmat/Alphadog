@@ -47556,3 +47556,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `176` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S6` done (`24,087` sentences); next `S7`.
+
+# §P177 — PASS 177 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S7`
+*Angle (as NEXT set it):* (q10) `§P131`'s method on `S7`, the regular-season-assumptions sweep (`2026-10-08` `20:42 → 20:46Z`), checked against `§T45.4` and the postseason wiring on file.
+- Tabulated in the shell before this line (the scan at pass 176's head): `S7` `98` of `122` sentences listed, no memory dump among them — **all `98` read whole** (the figure triage ordered them: `14` with a figure not on file, `44` with every figure on file, `40` with none).
+- On file, by substance (each grepped before it was written): the `§T45.4` summary (every miner on `SeasonType=Regular Season`, the single `002` gate, the live engine's refusal, the matchups filter, the ignored playoff file name, the grader's playoff dates, the DvP blend and completeness check, the schedule's postseason counts), the calibration phases `1_oct_nov` … `4_push` and `5_postseason`, the `91` postseason events, `seasonSlugs`. Judged: the prompt, file:line lists, the research scripts' date bounds at the level `§T45.4` carries, the change list (built as `§T45`'s wiring).
+- 🆕 **One residue, `§T45.10`** *(`9` italic quotations, each a substring of the transcript in the shell)*: the season bounds that would move to June, April–June in `4_push` and `prop_universe`'s phase rule, two month-coded windows, the one loader that takes a second file, the board floors on playoff days. Pointer: `§T45.4`.
+- No commit not this sweep's to the twelve since `681d3fe28`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `177` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S7` done (`24,185` sentences); next `S8`.
