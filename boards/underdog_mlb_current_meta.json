@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-10-13T21:23:54Z",
-  "fetched_at": "2026-10-13T21:24:08Z",
+  "started_at": "2026-10-14T01:18:43Z",
+  "fetched_at": "2026-10-14T01:18:52Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -57,7 +57,7 @@
     ],
     [
       "pills[match=264756]",
-      156
+      133
     ],
     [
       "lines[match=264628,other-day]",
@@ -78,12 +78,12 @@
     [
       "lines_with_stats[players]",
       40,
-      28
+      27
     ],
     [
       "alternate_projections",
-      176,
-      592,
+      138,
+      459,
       0,
       "deduped 0"
     ],
@@ -96,23 +96,22 @@
       0
     ]
   ],
-  "lines": 245,
-  "legs": 245,
-  "ladder_legs": 592,
-  "ladder_lines_with_alternates": 176,
-  "players": 28,
-  "pregame_legs": 245,
-  "live_legs": 0,
+  "lines": 222,
+  "legs": 222,
+  "ladder_legs": 459,
+  "ladder_lines_with_alternates": 138,
+  "players": 27,
+  "pregame_legs": 66,
+  "live_legs": 156,
   "by_stat": {
-    "Hits + Runs + RBIs": 25,
-    "Hits": 25,
-    "Total Bases": 25,
-    "RBIs": 25,
-    "Home Runs": 24,
-    "Runs": 22,
+    "Hits + Runs + RBIs": 24,
+    "Hits": 24,
+    "Total Bases": 24,
+    "RBIs": 24,
+    "Home Runs": 23,
+    "Batter Walks": 22,
     "Stolen Bases": 22,
-    "Batter Walks": 21,
-    "Fantasy Points": 7,
+    "Runs": 21,
     "Moneyline": 5,
     "Strikeouts": 3,
     "Pitching Outs Recorded": 3,
@@ -125,41 +124,35 @@
     "Spread": 2,
     "Total Runs": 2,
     "Team Total Runs": 2,
-    "1st Inn. Pitch Count": 2,
-    "1st Inn. Runs Allowed": 2,
-    "1st Inn. Strikeouts": 2,
-    "1st Inn. Batters Faced": 2,
-    "1st Inn. Hits Allowed": 2,
-    "Run 1st Inning": 1,
     "1st 5 Innings Total Runs": 1,
-    "1st 5 Innings Spread": 1,
-    "1st 5 Innings Moneyline": 1
+    "1st 5 Innings Moneyline": 1,
+    "1st 5 Innings Spread": 1
   },
   "by_line_type": {
-    "balanced": 245
+    "balanced": 222
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 27,
-    "None": 10,
-    "0.77": 7,
+    "1.0": 16,
+    "None": 9,
     "1.12": 5,
-    "0.85": 5,
-    "1.29": 5,
-    "0.88": 4,
-    "6.71": 4,
-    "1.05": 3,
-    "1.07": 3,
-    "1.14": 3,
-    "0.81": 3,
-    "0.8": 3,
-    "4.7": 3,
-    "1.45": 3
+    "1.23": 4,
+    "5.56": 4,
+    "8.43": 4,
+    "1.17": 4,
+    "1.09": 3,
+    "0.51": 3,
+    "1.25": 3,
+    "2.17": 3,
+    "2.27": 3,
+    "2.63": 3,
+    "6.33": 3,
+    "2.78": 3
   },
-  "github_run_id": "38470095704",
+  "github_run_id": "38494901985",
   "target_date_et": "2026-10-13",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 13.6
+  "elapsed_s": 8.7
 }
