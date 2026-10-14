@@ -121,6 +121,23 @@ function decideClose(plan, now, alreadyDispatched) {
   if (now >= plan.first_tip) return { action: "missed", slot: "missed", reason: "first tip passed before the close capture fired" };
   return { action: "dispatch", slot: "primary", reason: "first tip - 25 min: close board capture" };
 }
+// PRIZEPICKS PAYOUT MAP (2026-10-13 sweep). Its two GitHub crons (16:30 / 19:45 UTC = "before the window", owner 2026-10-09)
+// started 5 h late on this repo (10-13: 21:25 and 23:26 UTC, after P3), so the slip window priced from yesterday's mined factors.
+// Same cure as P3 / Betr: this worker fires it. Two single-shot slots per GAME day (no claim - a map run is a capture, not a slate
+// pipeline): 'am' from the P2B time (the morning board), 'pm' in [P3 - 40 min, P3) (a delta run measures ~6 min, so the window
+// prices from factors mined minutes before it). A slot that cannot fire inside its window is logged 'missed' once, never retried late.
+// Off game days (preseason, off days) the workflow's own crons still run; on game days they stand down (the workflow's gate).
+function decidePpMap(plan, now, slotsDone) {
+  if (!plan.first_tip) return { action: "skip", reason: "no regular-season games" };
+  const slots = [["am", plan.p2b, plan.p3 - 40 * MIN], ["pm", plan.p3 - 40 * MIN, plan.p3]];
+  for (const [slot, start, end] of slots) {
+    if (slotsDone.includes(slot) || slotsDone.includes(`missed-${slot}`)) continue;
+    if (now < start) return { action: "wait", reason: `before PP map ${slot} (${new Date(start).toISOString()})` };
+    if (now >= end) return { action: "missed", slot: `missed-${slot}`, reason: `PP map ${slot} window passed` };
+    return { action: "dispatch", slot, reason: `PP map ${slot}: mine the board before the window`, inputs: { mode: "delta" } };
+  }
+  return { action: "skip", reason: "both PP map slots done today" };
+}
 function p1Due(now) { const d = new Date(now); return d.getUTCDay() === 1 && d.getUTCHours() >= 19; }
 
 // ---------- I/O ----------
