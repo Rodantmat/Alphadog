@@ -18856,3 +18856,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `276` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`, `§T42.15`): `T1`–`T48`, `S1`–`S6` done (`40,239` sentences); next `S7`.
+
+## §P277 — PASS 277 (`2026-10-14`): ADDITIONAL SWEEP `3` — `S7` · NO RESIDUE
+*Angle (as NEXT set it):* (u14) `§P131`'s method on `S7`, the regular-season-assumptions sweep (`2026-10-08` `20:42 → 20:46Z`), each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 276's head): `S7` `83` of `122` sentences listed, no memory dump among them — **all `83` read whole** (the bounded figure triage: `13` with a figure not on file / `3` inside a longer number — file:line references and line lists — / `33` with every figure on file / `34` with none; `13 + 3 + 33 + 34 = 83`).
+- On file, by substance (each grepped before it was written, every hit read): `§P177`'s and `§P227`'s lists, `§T45.4`, `§T45.10` and `§T45.11`, plus the postseason wiring (`5_postseason`, `slate_games`, the twin postseason tables), the schedule's postseason counts, `seasonSlugs`, the delta worker's completeness check and the DvP blend, the ignored second file name, `season_block`, `final7`, `build_slip_matrix`, the `month ≥ 10` season mapping, the injury backfill's `INJURY_FROM` / `INJURY_TO`, the board floors (`MIN_BOARD_LEGS`), and the season-bounds dicts (`SEASON_BOUNDS`, the one cron'd script with its `2026-27` row). Judged, on `§P177`'s and `§P227`'s bases: the prompt, file:line lists, the research scripts' date bounds at the level `§T45.4` carries (the spreads exporter's fallback window among them), the change list (built as `§T45`'s wiring).
+- **No residue in `S7`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `4d785a28b` (pass 276's census; the log and each diff's file list read, and re-read immediately before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the one `§P263` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `277` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`, `§T42.15`): `T1`–`T48`, `S1`–`S7` done (`40,361` sentences); next `S8`.
