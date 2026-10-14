@@ -47392,3 +47392,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `168` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T46` done (`21,494` sentences); next `T47`.
+
+# §P169 — PASS 169 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T47`
+*Angle (as NEXT set it):* (i10) `§P131`'s method on `T47`.
+- Tabulated in the shell before this line (the scan at pass 168's head): `T47` `64` of `167` sentences listed, no memory dump among them — **all `64` read whole** (the figure triage ordered them: `2` with a figure not on file, `26` with every figure on file, `36` with none).
+- On file, by substance (each grepped before it was written): Playoff Unders' gates and robustness (all `60` whole-line 5-Flex variants, the `6–12`-unit drawdown, the `0.1%` Underdog chance), the replay parity on the market-free score, the multiplier program (the per-leg break-even `1.871` / `1.843`, the alternate-line cut, Pick6's modifier, the best gate `0.997`, the Underdog slip filter `+143%`, Underdog's per-leg reference `2.7%` low, the `12` → `10` of `12` replay), PrizePicks' help-centre Flex tables, and the transcript pack `transcripts-2026-10-09.zip` with its stated gaps. Judged: narration, timestamps, source links, the owner's dictation.
+- 🆕 **One residue, `§T47.10`** *(`2` italic quotations, each a substring of the transcript in the shell)*: the same-game correlation behind Playoff Unders, and the two Underdog prices the hard-line assists legs failed against. Pointer: row `47`.
+- No commit not this sweep's since `c241fde32`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `169` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T47` done (`21,558` sentences); next `T48`.
