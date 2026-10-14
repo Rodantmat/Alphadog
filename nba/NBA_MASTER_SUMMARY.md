@@ -47431,3 +47431,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `170` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48` done (`23,524` sentences); next `S1`.
+
+# §P171 — PASS 171 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S1`
+*Angle (as NEXT set it):* (k10) `§P131`'s method on `S1`, the live-engine audit (`2026-10-07` `18:17 → 18:25Z`).
+- Tabulated in the shell before this line (the scan at pass 170's head): `S1` `70` of `78` sentences listed, no memory dump among them — **all `70` read whole** (the figure triage ordered them: `9` with a figure not on file, `26` with every figure on file, `35` with none).
+- On file, by substance (each grepped before it was written): the audit's ten findings — the void-stripped grade and the single survivor (`F-1`), the points-Under cap's scope and the week-2 play's scope, the sticky red and `H5`, the guard unit, the Underdog season key and clock, the paper gate (`F-4`…`F-8`) — and what it verified correct (the freshness gate, the monitor's statistic and constants, the season-aware calendar, tie handling, the payout tables). Judged: the prompt, file:line references, code fragments, the suggested fixes (the fixes as built are on file).
+- 🆕 **One residue, `§T42.11`** *(`3` italic quotations, each a substring of the transcript in the shell)*: the strategy doc's rejection figures for the points-Under exclusion as the audit cites them, the double-recorded look 30, and the hour the fixed clock was wrong. Pointer: `§T42.4`'s `S1` row.
+- No commit not this sweep's since `a6d04921a`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `171` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1` done (`23,594` sentences); next `S2`.
