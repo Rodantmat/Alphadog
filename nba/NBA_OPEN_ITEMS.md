@@ -1735,7 +1735,7 @@ certified, and it caught the assistant's own over-correction on oreb within minu
 with the CALIBRATION CHECKER**, which closed a different hole: *"until now, a prop's verdict existed
 only in an ephemeral run output"* — the checker re-verifies any prop **from stored data**, without
 depending on a harness log that scrolls away. *Validated against `points` — worst band 0.8 pp on
-more, 0.9 pp on less, reproducing the certification standard independently.*
+more, 0.9 pp on less, reproducing the certification standard independently.* → 🆕 *the audit's certified rows as the transcript gives them (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T15.6`.*
 
 > ## 🔴🔴 READ FIRST — **EVERY DEADLINE IN THIS DOCUMENT KEYED TO `2026-10-03` IS 17 DAYS EARLY**
 > *Standing correction, added 2026-09-21 (§T10.18b). It applies to the whole document and is not
