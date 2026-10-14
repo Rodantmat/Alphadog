@@ -18,6 +18,10 @@ on:
         description: "Quote budget for this run"
         required: false
         default: "250"
+      mode:
+        description: "blank = the trigger file's mode; 'delta' = monitoring run (the NBA scheduler's game-day slots send this)"
+        required: false
+        default: ""
   push:
     paths:
       - 'nba/TRIGGER_NBA_PP_MAP.txt'
