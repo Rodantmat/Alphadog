@@ -18736,3 +18736,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `265` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T43` done (`35,683` sentences); next `T44`.
+
+## §P266 — PASS 266 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T44` · NO RESIDUE
+*Angle (as NEXT set it):* (j14) `§P131`'s method on `T44`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 265's head): `T44` `160` of `318` sentences listed, no memory dump among them — **all `160` read whole**, every credential-class detail masked in the shell before reading (the bounded figure triage: `2` with a figure not on file — a run-id list and the MLB credit balance — / `0` inside a longer number / `52` with every figure on file / `106` with none; `2 + 0 + 52 + 106 = 160`).
+- On file, by substance (each grepped before it was written, every hit read): `§P166`'s and `§P216`'s lists and `§T44.10`, plus the twin re-run, the price-shopping ledger's first slate (`19` of `40`, `12` at the same line), Betr's history (`142k` legs), the retention audit (`R-1` — the four readers moved to `board_tiers_v2`; model parameters snapshotted per slate; the replay guard "unless forced"; the weekly as-of copies; the referee capture log; the day-before injury snapshots loaded from P2B; backups at three levels), Fliff's preseason board of team markets only, the shared proxy secret's NBA fallbacks, the Odds API credits (`4,999,977`), and both postseasons (`90` / `91` games, `1.49 M` rows, `50 / 47` dates). Judged, on `§P166`'s and `§P216`'s bases: narration, the session's notices, run ids, the secret value and the steps the owner was given (credential rule), and the MLB / NHL mining with its credit planning (out of scope).
+- **No residue in `T44`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `e74559e23` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `266` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T44` done (`36,001` sentences); next `T45`.
