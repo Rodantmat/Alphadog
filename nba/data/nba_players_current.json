@@ -1392,6 +1392,19 @@
       "team_abbreviation": "MEM"
     },
     {
+      "id": 1643617,
+      "full_name": "Zach Cleveland",
+      "last_comma_first": "Cleveland, Zach",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "zach_cleveland",
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
+    },
+    {
       "id": 1642363,
       "full_name": "Nique Clifford",
       "last_comma_first": "Clifford, Nique",
@@ -1587,19 +1600,6 @@
       "team_abbreviation": "HOU"
     },
     {
-      "id": 1643128,
-      "full_name": "Matt Cross",
-      "last_comma_first": "Cross, Matt",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "matt_cross",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
-    },
-    {
       "id": 1643018,
       "full_name": "LJ Cryer",
       "last_comma_first": "Cryer, LJ",
@@ -1676,19 +1676,6 @@
       "team_city": "Washington",
       "team_name": "Wizards",
       "team_abbreviation": "WAS"
-    },
-    {
-      "id": 1642930,
-      "full_name": "R.J. Davis",
-      "last_comma_first": "Davis, R.J.",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "rj_davis",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
     },
     {
       "id": 1631120,
@@ -1819,6 +1806,19 @@
       "team_city": "New York",
       "team_name": "Knicks",
       "team_abbreviation": "NYK"
+    },
+    {
+      "id": 1643679,
+      "full_name": "Jorge Diaz-Graham",
+      "last_comma_first": "Diaz-Graham, Jorge",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jorge_diaz-graham",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1641711,
@@ -3849,19 +3849,6 @@
       "team_abbreviation": "SAC"
     },
     {
-      "id": 1642530,
-      "full_name": "Yuki Kawamura",
-      "last_comma_first": "Kawamura, Yuki",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2026",
-      "player_code": "yuki_kawamura",
-      "team_id": 1610612746,
-      "team_city": "LA",
-      "team_name": "Clippers",
-      "team_abbreviation": "LAC"
-    },
-    {
       "id": 1631211,
       "full_name": "Trevor Keels",
       "last_comma_first": "Keels, Trevor",
@@ -4096,6 +4083,19 @@
       "team_abbreviation": "SAC"
     },
     {
+      "id": 1642940,
+      "full_name": "Viktor Lakhin",
+      "last_comma_first": "Lakhin, Viktor",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "viktor_lakhin",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
+    },
+    {
       "id": 1629111,
       "full_name": "Jock Landale",
       "last_comma_first": "Landale, Jock",
@@ -4289,6 +4289,19 @@
       "team_city": "Philadelphia",
       "team_name": "76ers",
       "team_abbreviation": "PHI"
+    },
+    {
+      "id": 1643630,
+      "full_name": "Fletcher Loyer",
+      "last_comma_first": "Loyer, Fletcher",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "fletcher_loyer",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
     },
     {
       "id": 1641754,
@@ -4681,19 +4694,6 @@
       "team_abbreviation": "NOP"
     },
     {
-      "id": 1643724,
-      "full_name": "Isaac McKneely",
-      "last_comma_first": "McKneely, Isaac",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "isaac_mckneely",
-      "team_id": 1610612737,
-      "team_city": "Atlanta",
-      "team_name": "Hawks",
-      "team_abbreviation": "ATL"
-    },
-    {
       "id": 1629162,
       "full_name": "Jordan McLaughlin",
       "last_comma_first": "McLaughlin, Jordan",
@@ -4961,19 +4961,6 @@
       "from_year": "2017",
       "to_year": "2026",
       "player_code": "malik_monk",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
-    },
-    {
-      "id": 1643368,
-      "full_name": "Damari Monsanto",
-      "last_comma_first": "Monsanto, Damari",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "damari_monsanto",
       "team_id": 1610612758,
       "team_city": "Sacramento",
       "team_name": "Kings",
@@ -5290,19 +5277,6 @@
       "team_city": "LA",
       "team_name": "Clippers",
       "team_abbreviation": "LAC"
-    },
-    {
-      "id": 1643635,
-      "full_name": "Aaron Nkrumah",
-      "last_comma_first": "Nkrumah, Aaron",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "aaron_nkrumah",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
     },
     {
       "id": 1630192,
@@ -6930,6 +6904,19 @@
       "team_abbreviation": "BOS"
     },
     {
+      "id": 1630678,
+      "full_name": "Terry Taylor",
+      "last_comma_first": "Taylor, Terry",
+      "roster_status": 1,
+      "from_year": "2021",
+      "to_year": "2026",
+      "player_code": "terry_taylor",
+      "team_id": 1610612759,
+      "team_city": "San Antonio",
+      "team_name": "Spurs",
+      "team_abbreviation": "SAS"
+    },
+    {
       "id": 1643141,
       "full_name": "Jahmyl Telfort",
       "last_comma_first": "Telfort, Jahmyl",
@@ -7396,19 +7383,6 @@
       "team_city": "Brooklyn",
       "team_name": "Nets",
       "team_abbreviation": "BKN"
-    },
-    {
-      "id": 1643753,
-      "full_name": "Mohamed Wague",
-      "last_comma_first": "Wague, Mohamed",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "mohamed_wague",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
     },
     {
       "id": 1631133,
