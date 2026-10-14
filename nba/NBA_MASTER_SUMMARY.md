@@ -15643,6 +15643,13 @@ both trees, and four owner directives moved into the twelve — headed by a rule
 persisted and an anti-rejection order that bears on every verdict this transcript produces.
 CLEAN 0/3 · 1 pass.**
 
+### T15.6 — 🆕 ADDITIONAL SWEEP `2` (`2026-10-14`, sweep pass 187, `§P187`): **THE RELIABILITY AUDIT'S CERTIFIED ROWS** *(AS STATED — quoted from the transcript, not re-taken live)*
+*From the messages of `2026-09-13 03:49Z` and `06:05Z`; the scorer and its ruler, the oreb row and its `0.1 pp` penalty, the flagged rows (fantasy_score, double_double, stocks), the seven period rows, the `27` / `3` / `0` final state and the lift extremes are on file (`NBA_FINAL_SCORING_CALIBRATION.md` `§0a-T15`).*
+- **The columns**: *"| Prop | n | ECE | Worst band | Brier | Lift | Verdict |"* (`03:49Z`) and *"| Prop | n | ECE | Worst | Brier | Lift | Status |"* (`06:05Z`).
+- **The first scored group's certified rows** (`03:49Z`): *"| steals | 541k | 0.10 | 1.39 | 0.0405 | 26.9% | certified |"*, *"| threes_made | 570k | 0.13 | 1.30 | 0.0526 | 23.9% | certified |"*, *"| dreb | 659k | 0.15 | 0.97 | 0.0819 | 19.9% | certified |"*, *"| pts_reb | 963k | 0.21 | 0.60 | 0.1750 | 8.3% | certified |"*.
+- **The all-props run's certified rows** (`06:05Z`): *"| fta | 610,657 | 0.24 | 1.48 | 0.0839 | 20.5% | certified |"*, *"| reb_ast | 821,992 | 0.25 | 1.02 | 0.1107 | 16.2% | certified |"*, *"| rebounds | 711,182 | 0.25 | 1.26 | 0.0930 | 18.3% | certified |"*, *"| ftm | 585,334 | 0.31 | 1.09 | 0.0720 | 21.8% | certified |"*, *"| pra | 977,705 | 0.34 | 0.61 | 0.1823 | 7.5% | certified |"*, *"| fga | 865,441 | 0.35 | 1.08 | 0.1125 | 15.9% | certified |"*, *"| pts_ast | 936,764 | 0.36 | 0.65 | 0.1681 | 9.2% | certified |"*.
+- **Its readings**: *"Every other prop in the history table passes on both seasons with worst bands ≤ 1.5 pp."*; *"the low-count props (oreb 25.8%, ftm 21.8%, fta 20.5%) carry two to three times more predictive edge than the high-volume combos (pra 7.5%, pts_ast 9.2%)"*.
+
 ---
 
 ## T14 — `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt`
