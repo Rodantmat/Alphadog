@@ -210,6 +210,8 @@ async function replaySlips(sql, cfg, slate) {
 }
 
 export async function apiHighHit(sql, cfg, url, version) {
+  const T = {}; let tp = Date.now();
+  const lap = k => { T[k] = Date.now() - tp; tp = Date.now(); };
   let slate = await resolveSlate(sql, cfg, url);
   const pricing = pricingFrom(cfg);
   const boardSlate = slate;
