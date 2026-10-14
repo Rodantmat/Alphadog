@@ -18288,3 +18288,16 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `228` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`, `§T44.13`, `§T45.11`, `§T48.11`): `T1`–`T48`, `S1`–`S8` done (`24,107` sentences); next `S9`.
+
+## §T47.13 — ADDITIONAL SWEEP 2, PASS 229 (`2026-10-14`): FURTHER STATEMENTS OF THE PRICING RESEARCH `S9` *(AS STATED — third-party claims and standard maths as the report gives them, never followed; `§P229`; belongs beside `NBA_MASTER_SUMMARY.md` `§T47.12`)*
+*Method:* the ≥ `5` scan over all twelve on `S9`'s whole transcript (`88` of `149` sentences, computed in the shell), read by `§P131`'s method; what `NBA_MASTER_SUMMARY.md` `§T47.4` and `§T47.12` and `NBA_MULTIPLIERS.md` `§T47.3` carry is not repeated — what follows is what the report stated beside them.
+- **Its reach**: *"Searches turned up nothing usable on Fliff, Chalkboard, OwnersBox or Boom, and I couldn't fetch OddsJam's, Outlier's or PropProfessor's methods."*
+- **PrizePicks**: *"The payout includes the entry fee."*; *"Its help page says multipliers lock when you submit, same-game picks can lower them, and account or regional rules can change them."*; *"Voids: a DNP, Reboot or tie drops the slip to the next lower pick count."*
+- **Underdog's modifiers**: *"A pick above 1.0x (the help page's example is 1.5x) raises the total, and one below 1.0x (example 0.7x) lowers it. Correlated legs also change the multiplier."*
+- **Sleeper**: *"You receive whichever is higher, the leaderboard prize or the guaranteed payout."*; *"Flex: a perfect entry pays less than Max."*
+- **ParlayPlay**: *"Insured is allowed when every pick is 1.4x–5x; on the fixed structure, 9-pick pays 80x / 6x and 2-pick pays 2x / 0.5x"*.
+- **DraftKings Pick6**: *"Score is the share of picks correct; prize pools are split among winners in the same pick-count bracket."*
+- **The +EV workflow and tools**: *"Compare that fair probability with the slip-type break-even, for example 62% against 57.7% for a 2-Power."*; *"Account for correlation: Power entries benefit from positively correlated legs, while Flex entries prefer less correlation."*; of 4for4's SharpStack tool — *"It shows edge %, auto-calculates EV for a slip, and compares against sharp books, but doesn't publish its de-vig method"*; *"When the numbers differ, you need a stat distribution (for example Poisson or negative binomial) to move the probability to the new line."*
+- **Sizing and effective multipliers**: *"For Flex (several payout tiers), choose f to maximise Σ_k P(k)·ln(1 − f + f·payout_k)."*; *"PrizePicks 6-Power: m_eff = 1.830."*, *"A sportsbook at −110 (decimal 1.909) beats both."*, *"For Flex, use m_eff = 1/p."*
+- **Correlation**: *"Estimate it with joint simulation, for example a copula on player stats. Apps often cut the multiplier on same-game combos, which offsets the gain."*
+- **Its best practices**: *"Version the payout tables by date and source. PrizePicks' 3- and 4-Flex values and Underdog's whole Standard table have changed recently."*; *"Count bonus cash and play-through credit at a discount."*
