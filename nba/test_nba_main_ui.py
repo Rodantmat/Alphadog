@@ -292,7 +292,10 @@ def browser():
 
         def slips():
             page.click("#buildBack"); page.click("#menuOpen"); page.click("#menuSlips")
-            page.wait_for_selector("#autoCreateResults .slipCard, #autoCreateResults .empty")
+            page.wait_for_function("(() => { const e = document.getElementById('autoCreateResults'); return e && (e.querySelector('.slipCard') || (e.querySelector('.empty') && !/Loading/.test(e.textContent))); })()", timeout=90000)
+            n = page.locator("#autoCreateResults .slipCard").count()
+            if not n:
+                raise RuntimeError("no slip cards: " + page.inner_text("#autoCreateResults")[:200])
         step("04_slips", slips)
 
         def sub():
