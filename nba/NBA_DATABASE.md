@@ -1726,6 +1726,8 @@ delta and an aggregate.**
 > | `player_steals` | `13,064` | `0.6%` |
 > | `player_blocks` | `7,478` | `0.3%` |
 > | **TOTAL** | **`2,199,354`** | ✅ **sums exactly** |
+>
+> → 🆕 *`2026-10-14`: the same table by `kind` — demon / standard / goblin and a fourth, `unknown` (`44,540` live) — is in `NBA_MASTER_SUMMARY.md` `§T32.16`.*
 
 > ✅✅ **`[LIVE-AUDIT]` `2026-09-23` — ALL TWELVE FIGURES RE-DERIVED AGAINST THE LIVE DATABASE AND
 > EVERY ONE REPRODUCES TO THE ROW.** *`SELECT base_market, count(*) … GROUP BY base_market` returned
