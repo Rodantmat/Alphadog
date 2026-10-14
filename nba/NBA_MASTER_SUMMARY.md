@@ -47765,3 +47765,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `192` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T20` done (`6,990` sentences); next `T21`.
+
+# §P193 — PASS 193 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T21` · NOTHING NEW
+*Angle (as NEXT set it):* (m11) `§P131`'s method on `T21`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 192's head): `T21` `776` of `1,734` sentences listed — **all `776` read whole** (the figure triage: `2` with a figure not on file, `132` with every figure on file, `642` with none). The `2`: the sweep's per-transcript uncovered percentages (`99.4%`, `95.9%`, `92.5%`), judged as `§P143` judged the method tables.
+- On file, by substance (each grepped before it was written): `§P143`'s list, plus the `1,344`-of-`1,349` silent block, the `2026-27` calendar's `001` / `002` prefixes only, the `79,358` player-games and `2,666` games, BallDontLie's `$39.99` tier and `600` requests a minute, the now-out overrides (`0.2640` / `0.9924`). Judged: narration, the documentation method's history at the level on file, the owner's exchanges about pace, tooling and model choice, document-size tables. Not reproduced: the bridge host the transcript prints.
+- **Nothing new — `T21` clean in additional sweep `2`** (the sweep as a whole stays not clean). Commits not this sweep's since `247cece59`: `7acf3e15e`, `fc7acc848`, `3596e598d` (the build chat's `nba/db_compact.py` and its maintenance workflow — code, not the twelve, after the last transcript; not documented here, cross-reference only); none to the twelve. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `193` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T21` done (`7,766` sentences); next `T22`.
