@@ -47474,3 +47474,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `172` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S2` done (`23,685` sentences); next `S3`.
+
+# §P173 — PASS 173 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S3`
+*Angle (as NEXT set it):* (m10) `§P131`'s method on `S3`, the P3 afternoon audit (`2026-10-08` `06:13 → 06:25Z`), its findings checked against the ledger rows they went to, numbered as the report numbers them.
+- Tabulated in the shell before this line (the scan at pass 172's head): `S3` `109` of `129` sentences listed, no memory dump among them — **all `109` read whole** (the figure triage ordered them: `2` with a figure not on file, `49` with every figure on file, `58` with none).
+- On file, by substance (each grepped before it was written): findings #1 and #3 as fixed in `T42` (`§T42.0` #7; `broad_day` in the glossary), #2 and #4–#18 as fixed in `T43` (its round-2 table; `R-1`, the market term's `f_books` / `f_agree`), #2's measured pace and #17's constants (`§T42.4`), the `451k` tie-order differences; and what the audit verified correct (the slate date and cutoff, the freshness gate, the board guards `179` / `178`, the whole-number price, the rung-key refresh window). Judged: the prompt, file:line references, the verify and fix lines (the fixes as built are on file).
+- 🆕 **One residue, `§T42.13`** *(`16` italic quotations, each a substring of the transcript in the shell)*: the undated Underdog legs' counts and effect, why `broad_day`'s absence was not caught, the empty rung-market month, the certifier's zero-window pass, the delta's early-report window and unread inputs, the fresh-absence hour, the MLB producer's page cap, the injury probes' budget, the inverted rebase comment, opening night with empty ledgers. Pointer: `§T42.4`'s `S3` row.
+- No commit not this sweep's to the twelve since `7f3dd041d`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `173` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S3` done (`23,794` sentences); next `S4`.
