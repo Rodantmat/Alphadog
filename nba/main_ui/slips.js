@@ -285,7 +285,7 @@ export async function apiSave(sql, cfg, body, version) {
     const slate = String((legs[0].board_row_id || legs[0].final_board_row_id || "").split("~")[0] || "").slice(0, 10) || null;
     const ins = await q(sql, `INSERT INTO nba_score.ui_saved_slips (slate_date, source_key, entry_mode, slip_size, structure_label, track_label, strategy,
         estimated_multiplier, real_multiplier, real_multiplier_flex_tiers, estimated_hit_probability_0_100, legs_json, fingerprint, saved_by)
-      VALUES ($1::date, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12::jsonb, $13, $14)
+      VALUES ($1::date, $2, $3, $4, $5, $6, $7, $8, $9, $10::text::jsonb, $11, $12::text::jsonb, $13, $14)
       ON CONFLICT (saved_on, source_key, entry_mode, fingerprint) DO NOTHING RETURNING slip_id`,
       [slate && /^\d{4}-\d{2}-\d{2}$/.test(slate) ? slate : null, s.source_key || null, s.entry_mode || null, legs.length, s.structure_label || null, s.track_label || null,
        s.strategy || null, s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.real_multiplier == null ? null : Number(s.real_multiplier),
