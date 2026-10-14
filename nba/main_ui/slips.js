@@ -251,8 +251,9 @@ export async function apiHighHit(sql, cfg, url, version) {
             pgArr(cand.map(c => c.app)), pgArr(cand.map(c => c.player_id)), pgArr(cand.map(c => c.prop)), pgArr(cand.map(c => c.line)), pgArr(cand.map(c => c.side))],
     limit: 20000, withInsight: false });
   const pct = new Map();
-  for (const r of await q(sql, `SELECT app, array_agg(score::float8 ORDER BY score) s FROM nba_score.board_scored
-                                WHERE game_date = $1::date AND app IN ('prizepicks', 'underdog') GROUP BY app`, [slate.date])) pct.set(r.app, (r.s || []).map(Number));
+  // array types are not parsed on this connection (fetch_types off) - aggregate as text and split
+  for (const r of await q(sql, `SELECT app, string_agg(score::float8::text, ',' ORDER BY score) s FROM nba_score.board_scored
+                                WHERE game_date = $1::date AND app IN ('prizepicks', 'underdog') GROUP BY app`, [slate.date])) pct.set(r.app, String(r.s || "").split(",").filter(Boolean).map(Number));
   const percentile = (app, s) => { const arr = pct.get(app) || []; if (!arr.length) return null; let lo = 0; while (lo < arr.length && arr[lo] <= s) lo++; return r1(100 * lo / arr.length); };
   const byKey = new Map();
   const norm = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z]/g, "");
