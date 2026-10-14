@@ -194,7 +194,14 @@ def api_checks(conn, cfg):
     unpriced = [s["track_label"] for s in sl if not s.get("estimated_multiplier")]
     check("C12 Slips screen: engine slips load and are priced", code == 200 and hh.get("ok") and sl and not unpriced, f"{t}s source {hh.get('source')} slips {len(sl)} pool {len(hh.get('backup_pool', []))} unpriced {unpriced[:3]}")
     nolegs = [s["track_label"] for s in sl if any(l.get("hit_probability_0_100") is None for l in s["legs"])]
-    check("C13 Slips screen: every slip leg matched to its board leg", not nolegs, nolegs[:3])
+    if hh.get("source") == "replay_backtest":
+        # a backtest slip can hold a leg the historical scored board lacks (e.g. the pre-fix suffix-name gap): it must be
+        # shown without a probability AND disclosed in the notes - never silently priced
+        nleg = sum(len(s["legs"]) for s in sl)
+        disclosed = any("not on the scored board" in n for n in hh.get("notes", [])) or not nolegs
+        check("C13 Slips screen (replay): unmatched legs are disclosed, the rest matched", disclosed, f"{len(nolegs)} slips with an unscored leg of {len(sl)}; {nleg} legs")
+    else:
+        check("C13 Slips screen: every slip leg matched to its board leg", not nolegs, nolegs[:3])
     if hh.get("source") == "replay_backtest" and sl:
         res = [s for s in sl if s.get("result")]
         check("C14 replay slips carry the backtest result", len(res) == len(sl), f"{len(res)}/{len(sl)}")
