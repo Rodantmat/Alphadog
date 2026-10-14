@@ -10,7 +10,11 @@ import ADMIN from "./client/admin.js.txt";
 import LOGO_B64 from "./client/logo.png.b64.txt";
 import * as PRICING from "./pricing.js";
 
+// wrangler bundles with esbuild keep-names, which injects __name(fn, "name") calls INSIDE function bodies (nested functions and
+// arrow functions). toString() carries those calls to the browser, where esbuild's helper does not exist - so the served file
+// defines a no-op __name first (found live 2026-10-14: "Build failed: __name is not defined" on the Slips screen).
 const PRICING_JS = "// NBA payout + EV math - the worker's nba/main_ui/pricing.js, serialized\n" +
+  "var __name = typeof __name === 'function' ? __name : function (f) { return f; };\n" +
   Object.values(PRICING).filter(f => typeof f === "function").map(f => f.toString()).join("\n") + "\n";
 if (!/function nbaPayout\(/.test(PRICING_JS) || !/function nbaFlexAlt\(/.test(PRICING_JS)) throw new Error("pricing.js did not serialize - client payout math unavailable");
 
