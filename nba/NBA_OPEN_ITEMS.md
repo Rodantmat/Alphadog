@@ -18579,3 +18579,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `251` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`): `T1`–`T29` done (`21,530` sentences); next `T30`.
+
+## §P252 — PASS 252 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T30` · NO RESIDUE
+*Angle (as NEXT set it):* (v13) `§P131`'s method on `T30`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 251's head): `T30` `35` of `40` sentences listed, **read whole** (the bounded figure triage: `1` with a figure not on file / `0` inside a longer number / `1` with every figure on file / `33` with none; `1 + 0 + 1 + 33 = 35`). The `1` is `§P202`'s: a console timestamp in the export exchange, judged.
+- On file, by substance (each grepped before it was written, every hit read): `§P152`'s and `§P202`'s lists — the capture-export and upload troubleshooting (entry row `30`; the blank-upload cause in `§T31.1`), Sleeper's `available_alt` and one-sided calls (`§T31.1`, `§T29.1`). Judged, on `§P202`'s bases: the export commands and the owner's pasted console lines (a local path in them not reproduced), the further Sleeper endpoint named in passing.
+- **No residue in `T30`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `1f624af29` (the log and each diff's file list read at this pass's head and again immediately before this patch): `7`, all the NBA main UI build (`T48-10`, brought up to date this pass) — `ddd6dd1f2`, `2f0c6f9c7`, `8442e47e2`, `e7c82c57b` and `f72eab295` (`nba/main_ui/slips.js`), `48da97b47` (`nba/test_nba_main_ui.py`), `43c29ca0b` (the worker entry, `v1.0.8`); none touches the twelve. ✅ **`§T28.4`'s pointer landed** (`d9d2736e4`), on the eighth attempt — five in pass 250, three in pass 251 (`§P251`'s line was written after the first of those three). The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `252` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`): `T1`–`T30` done (`21,570` sentences); next `T31`.
