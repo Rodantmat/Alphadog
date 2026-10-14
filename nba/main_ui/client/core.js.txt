@@ -1,4 +1,6 @@
 // AlphaDog NBA main interface - client part (served as-is by alphadog-v2-nba-main-ui; split from the MLB client, NBA data).
+// Replay any scored slate: open /?date=YYYY-MM-DD and every screen's API call carries that date (the dossier's leg id already does).
+(function(){var d=new URLSearchParams(location.search).get('date');if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return;var f=window.fetch.bind(window);window.fetch=function(u,o){if(typeof u==='string'&&u.indexOf('/api/')===0&&!/[?&]date=/.test(u)&&u.indexOf('/api/main-board/dossier')!==0){u+=(u.indexOf('?')>=0?'&':'?')+'date='+encodeURIComponent(d)}return f(u,o)}})();
 const $=id=>document.getElementById(id);const UI_VERSION_LABEL='NBA v1.0.0';let slateInfo=null;let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null,selectedLegIds=new Set(),lastGeneratedSlips=[],lastRecommendedSlips=[],customStructures=[];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
