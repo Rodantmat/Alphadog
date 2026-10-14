@@ -1370,7 +1370,7 @@ of an effect.**
 segment adds is that they were taken TOGETHER, as one decision about granularity, and resolved in
 OPPOSITE directions by a single shared standard: *the held-out season judges.***
 
-→ 🆕 *`2026-10-10`: the rejected variant added the player's own rest bucket (the team back-to-back barely moved Questionables) — figures in `NBA_MASTER_SUMMARY.md` `§T26.R5`.*
+→ 🆕 *`2026-10-10`: the rejected variant added the player's own rest bucket (the team back-to-back barely moved Questionables) — figures in `NBA_MASTER_SUMMARY.md` `§T26.R5`.* → 🆕 *`2026-10-14`: the archive's first load by status, the injury-name join (`93.4%` → `98.9%`), the Questionable signal in the training season and the starter base rates — `NBA_MASTER_SUMMARY.md` `§T26.R6`.*
 
 ### 🔴🔴 **AND THE REFUSAL — THE LINE BETWEEN A DECISION AND AN ACTION**
 
