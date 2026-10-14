@@ -47377,3 +47377,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `167` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T45` done (`21,391` sentences); next `T46`.
+
+# §P168 — PASS 168 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T46`
+*Angle (as NEXT set it):* (h10) `§P131`'s method on `T46`.
+- Tabulated in the shell before this line (the scan at pass 167's head): `T46` `103` of `174` sentences listed, no memory dump among them — **all `103` read whole** (the figure triage ordered them: `2` with a figure not on file — two source-link ids — `38` with every figure on file, `63` with none).
+- On file, by substance (each grepped before it was written): the postseason backfill to full parity (the four props, `dreb` / `oreb` / `fgm` / `fta`; the `50` / `47` dates), the confidence-fit leak closed, the regular season proven untouched (`cert_fp`), the re-run playoff certification (`97` nights, the best row, `298` slips at `−12%`, the earlier numbers withdrawn), the playoff research (`57–64%` below average, confident Unders `57–58%`), Playoff Unders, the honest walk-forward (`26` vs `~12`, the noise rows, `0` survivors, the leg-level hits), the postseason game-key defect, and the withdrawn Underdog `+34%`. Judged: narration, timestamps, research-source links.
+- 🆕 **One residue, `§T46.9`** *(`10` italic quotations, each a substring of the transcript in the shell)*: the post-backfill strategy table's other rows, the three strategies left with nothing to bet on, and the double-double note. ⚠ Two unsourced readings I wrote into its double-double bullet were struck the same pass (RULE 40). Pointer: row `46`.
+- No commit not this sweep's since `76d516bdd`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `168` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T46` done (`21,494` sentences); next `T47`.
