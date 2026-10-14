@@ -47262,3 +47262,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `158` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T36` done (`19,155` sentences); next `T37`.
+
+# §P159 — PASS 159 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T37`
+*Angle (as NEXT set it):* (y9) `§P131`'s method on `T37`.
+- Tabulated in the shell before this line (the scan at pass 158's head): `T37` `773` of `1,166` sentences listed, no memory dump among them — **all `773` read whole** (the figure triage ordered them: `2` with a figure not on file — a commit hash and the `+110%…+200%` range whose `6`-pick rows are on file — `160` with every figure on file, `611` with none).
+- On file, by substance (each grepped before it was written): the Underdog tier map, constancy and certification (`14` of `15` cells, steals `0` of `36`), the signal matrix re-run and the reverse category (what PrizePicks rejected that works on Underdog), the base engine and the `2`-pick, validation both directions with the null, the strict repricing and its supersession by the balanced one, the Odds-API feed probe (`162` / `162` mains), the portfolios P1–P5, droughts and the week-scale simulation, late line movement, book agreement and fresh absences as filters and as half stakes, the new angles (Under tilt, low-count Overs, travel, operator limits, the Clippers join), the live Underdog wiring, the PrizePicks wiring audit and its fixes (name map, box-score grading, parity on `30` slates), the third certification (`871` payouts, `893` of `894` slips, the tie), the early-board labelling fix and the six spotlight players. Judged: narration, run waits, commit hashes.
+- **Nothing new — `T37` clean in additional sweep `1`.** Commits not this sweep's since `cd31d32af`: `3`, none to the twelve — `nba/BETR_BUILD_STATE.md`, and two to read-only sources (`nba/NBA_COMPASS.md` entry `152` and `nba/NBA_FULL_SYSTEM_CERTIFICATION_2026-10.md`, the weekly sweep of `2026-10-13`), left for the `S` sources when this sweep reaches them. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `159` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T37` done (`19,928` sentences); next `T38`.
