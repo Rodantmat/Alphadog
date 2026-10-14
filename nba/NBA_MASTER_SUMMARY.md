@@ -44935,7 +44935,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 | audit | window | scope | findings → where they went |
 |---|---|---|---|
 | `S1` | `10-07 18:17 → 18:25Z` *(spawned in `T41`'s window)* | `live_slip_engine.py` + `ud_live_slip_engine.py` logic vs strategy `§29`, `§30z`, `§31j–§31s` and the payout findings | 10 → #1–#4 = `F-1`…`F-3` (`T41`); #5–#10 = `F-4`…`F-8` (`§T42.0` #1–#2) → 🆕 *plus `§T42.11` from `2026-10-14` — the additional-sweep `1` residue, `§P171`.* |
-| `S2` | `05:57 → 06:13Z` | P2B slate pipeline | 17 + INFO → ledger `R2-P2B` #1–#18 |
+| `S2` | `05:57 → 06:13Z` | P2B slate pipeline | 17 + INFO → ledger `R2-P2B` #1–#18 → 🆕 *plus `§T42.12` from `2026-10-14` — the additional-sweep `1` residue, `§P172`.* |
 | `S3` | `06:13 → 06:25Z` | P3 afternoon pipeline | 18 → `R2-P3` #1–#18 |
 | `S4` | `06:26 → 06:39Z` | P2A results, grading, P4 / P5 | 18 → `R2-P2A` #1–#18 |
 **Verified correct by the audits (not elsewhere in the twelve):**
