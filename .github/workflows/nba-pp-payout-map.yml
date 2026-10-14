@@ -114,6 +114,7 @@ jobs:
           echo "PP_OUT_DIR=$PP_OUT_DIR" >> "$GITHUB_ENV"
           echo "PP_MINED_TABLE=$PP_MINED_TABLE" >> "$GITHUB_ENV"
           if [ "${{ github.event_name }}" = "schedule" ]; then export PP_MODE=delta; fi
+          if [ -n "${{ github.event.inputs.mode }}" ]; then export PP_MODE="${{ github.event.inputs.mode }}"; fi
           echo "league: ${LG:-nba} ($PP_LEAGUE) | mode: ${PP_MODE:-full} | quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20} | drift: ${PP_DRIFT_SAMPLE:-10}"
           python nba/pp_payout_map.py
 
