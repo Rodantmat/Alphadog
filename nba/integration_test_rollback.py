@@ -82,7 +82,12 @@ def main():
         U.ud_edge_monitor(nc, day)
         urow = conn.execute("SELECT slates, delta_star FROM nba_score.ud_edge_monitor WHERE look = 0").fetchone()
         check("Underdog edge monitor recorded its running row from BOTH graded slates", urow is not None and urow[0] == 2, f"{urow}")
-        check("Underdog edge monitor uses its fixed break-even", urow is not None and abs(urow[1] - U.UD_EDGE_DELTA) < 1e-12)
+        # the break-even in force is the TUNABLE classification_config['ud_edge_monitor'].delta_star (round 3 #4, 2026-10-09: the
+        # market-free twin's -0.0946), not the code default U.UD_EDGE_DELTA (-0.1084) - this assertion predated the tunable and
+        # failed on 2026-10-13 (run 38511145002) while the engine was right. Compare with what the engine itself resolves.
+        ud_delta = U.ud_edge_cfg(conn)[0]
+        check("Underdog edge monitor uses its fixed break-even (the tunable in force)", urow is not None and abs(urow[1] - ud_delta) < 1e-12,
+              f"(recorded {None if urow is None else urow[1]}, in force {ud_delta})")
     finally:
         conn.rollback()
         after = (conn.execute("SELECT count(*) FROM nba_score.live_slips").fetchone()[0],
