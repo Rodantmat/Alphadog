@@ -48072,3 +48072,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `218` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T46` done (`21,117` sentences); next `T47`.
+
+# §P219 — PASS 219 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T47` · NOTHING NEW
+*Angle (as NEXT set it):* (m12) `§P131`'s method on `T47`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 218's head): `T47` `61` of `167` sentences listed, no memory dump among them — **all `61` read whole** (the bounded figure triage: `2` with a figure not on file — two source-link ids — `0` matched only inside a longer number, `23` with every figure on file, `36` with none).
+- On file, by substance (each grepped before it was written): `§P169`'s list and `§T47.10`, plus Playoff Unders' gates and stress (`1.5%`; `6–12` units; `+24%`; `0.1%`; all `60` whole-line 5-Flex variants), the replay parity (`9` of `9`), the multiplier program (`1.871` / `1.843`; `0.500`; `3–7%` / `13–26%`; `0.997`; `−20% to +15%`; `+143%` vs `+10%`; Pick6's gated value `1.12–1.15`; the `12` of `12` at `1.55`), the Flex tables (`2.25/1.25`, `5/1.5`), and the transcript pack (`transcripts-2026-10-09.zip`, its stated gaps, the earlier packs). Judged: narration, the session's notices, source links, the owner's dictation.
+- **Nothing new — `T47` clean in additional sweep `2`** (the sweep as a whole stays not clean). Commits not this sweep's since `b45a56de5` (the log read before this line): `1` — `31a1d010c`, the owner's hourly rotation pass, which rewrote only its own `HOURLY ROTATION — latest` row in this file and added its notes beneath it; no section of this sweep was touched. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `219` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T47` done (`21,178` sentences); next `T48`.
