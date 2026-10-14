@@ -226,9 +226,13 @@ if not cloning the repo, repackage the harvester + committer as two flat files. 
 installing.
 
 ## 8. STILL OPEN
-- **alt/boosted MULTIPLIER**: `nonRegularPercentage` reads 0 in the capture; the payout multiplier likely
-  lives on `allowedOptions[].marketOption` (marketOptionId present) or a sibling field. Lines are complete;
-  capture the multiplier when the slip/multiplier work resumes.
+- **NBA BOARD SHAPE (2026-10-13, first NBA board, raw tier samples in `boards/betr_nba_current_meta.json` → `tier_samples`):**
+  on every non-REGULAR tier (BOOSTED, MINI_BOOSTED, SUPER_BOOSTED, BOOSTED_4, EDGE_1..4) `value` = **0.5 placeholder**, the real
+  line = `nonRegularValue`, `allowedOptions` = MORE only. Both harvesters now emit only the real line for those tiers (the 0.5
+  was a fake main leg: 199 / 556 legs); 96 archived placeholder rows → `nba_market.board_snapshots_quarantine`.
+- **alt/boosted MULTIPLIER**: NOT on the board — `nonRegularPercentage` = 0 on all nine tiers and `allowedOptions[]` carries
+  only `marketOptionId` + `outcome` (verified 2026-10-13 on the raw projections). Betr prices at slip time: capture it from one
+  entry screen or the slip quote call on 10-20.
 - **Session longevity**: unknown how long the logged-in profile lasts before Betr forces re-auth. If a
   scheduled run finds itself logged out, it writes no board (harmless) until a BETR_LOGIN=1 run. Add a
   freshness check to the certifier's per-app board-liveness (already reads betr meta).
