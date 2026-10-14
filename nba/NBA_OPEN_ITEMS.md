@@ -18515,3 +18515,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `246` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`): `T1`–`T24` done (`17,200` sentences); next `T25`.
+
+## §P247 — PASS 247 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T25` · NO RESIDUE
+*Angle (as NEXT set it):* (q13) `§P131`'s method on `T25`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 246's head): `T25` `315` of `585` sentences listed, **read whole** (the bounded figure triage: `1` with a figure not on file / `0` inside a longer number / `80` with every figure on file / `234` with none; `1 + 0 + 80 + 234 = 315`). The `1` is `§P197`'s: the materialised conservative price table's row count (`1,284,785`) — a `pp_*` pricing internal, out of scope.
+- On file, by substance (each grepped before it was written, every hit read): `§P197`'s list and `§T25.8`, plus the Fantasy back-simulation (`15,916` + `16,254`; the `50.4%` Over), the derived standards (`88,886` + `90,826`; `97,954` superseded; points-scaled; `1.063` / `1.093` after the offset fix), the universe (`1,652,753`; the interim `1,606,146` → `1,606,151`), the planner's `~757`-row misestimate, the flag count `153 → 158`, the `938 MB`, the slip simulator's `+15.8% ± 4.1%` on `4,379` slips (`+10.2%` / `+20.4%`), the model's `1.36`–`1.63` claims, the void schedules, the twelve-prop `VALUES` list hardcoded twice, the unauthenticated `POST /run` writers, the `950,947`-character offset, `F7-1`, the glossary's `131` concept entries. Judged, on `§P197`'s bases: the payout mapping (out of scope, with its goblin-price ranges and overpricing percentages), build-performance notes, narration, and the documentation chat's process history at the level on file (the zips, the session record, the findability orders, the owner's count of its `[skip ci]` breaches — the twelve carry the sweep's own count).
+- **No residue in `T25`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `8fa5b3292` (the log and each diff's file list read before this line): `1` — `7c1f3c081` (`nba/main_ui/context.js`, `21:07Z`, the NBA main UI build, `T48-10`); it does not touch the twelve. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `247` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`): `T1`–`T25` done (`17,785` sentences); next `T26`.
