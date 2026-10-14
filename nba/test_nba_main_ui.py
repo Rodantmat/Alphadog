@@ -43,7 +43,7 @@ def check(name, ok, detail=""):
 
 def curl(path, body=None, timeout=60):
     url = UI + path
-    if DATE and body is None and "date=" not in path and path.startswith("/api/") and "dossier" not in path:
+    if DATE and "date=" not in path and (path.startswith("/api/") or path == "/health") and "dossier" not in path:
         url += ("&" if "?" in url else "?") + "date=" + DATE
     cmd = ["curl", "-sS", "-m", str(timeout), "-H", "user-agent: Mozilla/5.0 AlphaDog-NBA-UI-Test", "-w", "\n%{http_code}"]
     if body is not None:
