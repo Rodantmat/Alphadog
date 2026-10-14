@@ -1280,3 +1280,57 @@ Each candidate was either executed or measured to its final-output effect and cl
   3x … 8 up to 300x, review sites); its per-tier multiplier (REGULAR / BOOSTED / EDGE …) is not in the capture yet
   (`BETR_BUILD_STATE` §8). Neither prices a placed slip; both are 10-20 checks (first NBA Betr harvest: capture the tier
   multiplier field; Fliff: first player props + one parlay screen).
+
+### WEEKLY SWEEP 2026-10-13 — ONE WEEK TO OPENING NIGHT (owner 2026-10-13 20:07 PT: "Another week in, do another full sweep pass, proves, check boards, apps, sources, check the progress with the opening day getting close")
+Scope: every pipeline run since 10-07, every board / app, every external source, the scheduler, credentials, strategy states.
+Preseason is observation only (owner 10-12); the system starts on 10-20 (3 games, first tip 12:00 PT → P3 11:31 PT).
+
+**Pipelines.** P2A / P2B / P3 green every day 10-08 … 10-13 (scheduler-fired on time; P3 scores nothing on preseason days by
+design — the certifier logs "no games scheduled"). **P1 10-12 FAILED** (run 38294729641) and with it the chained requal (claim
+row `failure/skipped`): three tables did not land.
+- *Cause 1 (old, known):* a multi-table writer worker is cut off when the caller's curl times out at 150 s — the first table
+  lands, the later ones do not (`nba_team.playtype_profile`, `player_shot_quality_delta`, `player_shot_zone_profile` stuck at 10-08).
+- *Cause 2 (new — why the built-in repair never worked):* `verify_static_loads.py` re-invoked the worker with Python urllib, and
+  the workers.dev edge refused it in 0.5 s with **HTTP 403** (it blocks the urllib client signature; curl from the same runner is
+  accepted every week). The repair path had never reached a worker. **Fixed:** the repair re-invokes with curl (request kept open
+  900 s). Proof: `nba/repair_static_loads.py` (new; dispatchable through `nba-browser-probe.yml`, re-invokes + verifies by data
+  outside P1, no re-scrape) — shot quality repaired (bridge call 162 s: 2,267 / 582 / 4,656 rows), playtypes repaired by the
+  patched curl path (team playtype written 03:25 UTC). All five tables now 10-14. P1 certification re-run: 2/2 PASS. P5 re-run
+  dispatched for the week (run 38506226876; result below).
+
+**PrizePicks payout map ran AFTER the window.** Its GitHub crons (16:30 / 19:45 UTC = "before the window") started at 21:25 and
+23:26 UTC on 10-13 — five hours late, after P3 — so the window would have priced new goblins / demons from the previous day's
+mined factors. Same disease as P3 and Betr before. **Fixed:** the NBA scheduler (v2.4.0, deployed, ticking) fires the map twice
+per GAME day as single-shot slots — `am` from the P2B time, `pm` in [P3 − 40 min, P3) (a delta run measures ~6 min) — with
+`mode=delta` (new workflow input); a slot that cannot fire in its window is logged `missed-<slot>` once, never late. On game days
+the workflow's own crons stand down (new `gate` job reads `nba_calendar.slate_games`); off game days they still run.
+`decidePpMap` unit-tested on 10-20 (12:00 PT first tip), a 16:00 tip, a 12:30 tip and a no-game day.
+
+**ParlayAPI (the live market term) read only its first page.** The 10-13 window capture returned exactly 5,000 items = ParlayAPI's
+default page (`limit` 5000, max 10000, `x-result-has-more` / `x-next-offset`, 3 credits per page). A full regular-season board
+would have lost every row past the first page. **Fixed:** `capture_parlay_props.fetch` pages at 10,000 until has-more is false,
+adds a sportsbook-narrowed pass if the 10,000 offset cap is reached, and warns on `x-result-truncated`. Mock-tested (multi-page,
+cap + narrow, single page, 401); live probe 03:27 UTC: 2,376 items in one page, 58 sportsbook O/U rows for 10-20 / 10-21
+normalized. Preseason note (not a bug): the history's eight sportsbooks post no player O/U props on preseason games (DraftKings /
+FanDuel show only "To score N+" milestones, Bovada only team / quarter markets) → 0 window rows each preseason day is correct;
+Pinnacle / Novig do post O/U props but are outside the certified book set. Credits 12,608.
+
+**Betr — first NBA board, and a parser fault found on it.** League chip open; probe harvest 38504766548: 555 legs, 31 players,
+3 events — all three 10-20 games. The harvester now keeps one RAW projection per payout tier in the meta (`tier_samples`, no
+extra request). They show: on every non-REGULAR tier (BOOSTED, MINI_BOOSTED, SUPER_BOOSTED, BOOSTED_4, EDGE_1..4) `value` is a
+**0.5 placeholder** and the real line is `nonRegularValue` (MORE only). The parser emitted the 0.5 as a main leg: 199 of 556
+legs were "Over 0.5" rungs that do not exist in the app (a price-shop compare against a PrizePicks 0.5 goblin would have
+matched them). **Fixed** in both harvesters (verified on the nine raw tier samples: each yields only its real line); the 96
+archived placeholder rows moved to `nba_market.board_snapshots_quarantine` (retained, reason recorded). **The per-tier payout
+multiplier is NOT on the board** (`nonRegularPercentage` 0 on every tier; `allowedOptions` carries only option ids) — Betr
+prices at slip time; it stays the 10-20 item (one entry screen or the slip quote call). Session: valid to 10-28, self-renews on
+the first run after 10-16 (`BETR_BUILD_STATE` §4).
+
+**Boards for opening night (10-20) already posted:** PrizePicks 1,801 rows / 48 players (10-20 + 10-21), Sleeper 189 rows /
+40 players, Betr 478 active rows. Underdog: only the current preseason day (it posts game-day boards; 10-20 check stands).
+Fliff: 22 events, game lines only, 0 player props (10-20 check stands). Sportsbooks via the Odds API: no preseason game-line
+capture by design (P2B morning line runs on slate days only).
+
+**Sources / credentials:** stats.nba.com via P1 / P2A green; injury PDFs loaded daily; ParlayAPI 200; proxy carried Betr and
+PrizePicks traffic today; no credential rotated or exposed. Strategy states unchanged since 10-10 (B_demon_3flex / B_demon_5flex
+red, the rest paper with their caps).
