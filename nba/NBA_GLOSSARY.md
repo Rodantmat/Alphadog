@@ -1151,7 +1151,7 @@ season are we in", read by 10+ scripts** *(`build_availability_delta` · `build_
 `` grep -c "2025-26" `` on all three pipeline workflows returns **`0`·`0`·`0`**. 🔑🔑 **THE SUBTLE PART —
 IT ROLLS OVER ON THE FIRST REGULAR-SEASON GAME, NOT ON OCTOBER 1**: *the calendar-date version would have
 made **"three P1 runs scrape an empty season"**. **The obvious fix carried a new three-week defect and it
-was caught before shipping**.* ▶ `§T26.30`.
+was caught before shipping**.* ▶ `§T26.30`. → 🆕 *`2026-10-14` (additional sweep `3`, pass 250): the boundary was moved the same evening to the DAY AFTER the first regular-season game (`<=`; commit `00e3327fd`), so on opening day itself the season still reads the prior one — `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md`, `§T28.4`.*
 
 **`availability_prior`** 🆕 · T26 · LIVE · `nba_score.availability_prior` — the derived **`P(plays)`**
 model's stored cells *(**`699`** with non-null `p_plays`)*. **`N1`'s fallback when the injury report is
