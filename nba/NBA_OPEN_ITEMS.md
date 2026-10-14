@@ -18716,3 +18716,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `263` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T41` done (`35,497` sentences); next `T42`.
+
+## §P264 — PASS 264 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T42` · NO RESIDUE
+*Angle (as NEXT set it):* (h14) `§P131`'s method on `T42`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 263's head): `T42` `82` of `145` sentences listed, no memory dump among them — **all `82` read whole**, hosts, ports, user names, addresses and plan links masked in the shell before reading (the bounded figure triage: `2` with a figure not on file — an attachment notice's file name and a proxy port — / `0` inside a longer number / `21` with every figure on file / `59` with none; `2 + 0 + 21 + 59 = 82`).
+- On file, by substance (each grepped before it was written, every hit read): `§P164`'s and `§P214`'s lists and `§T42.10`, plus the recertification counts (`17` real survivors, `478,900`), the round's fixes (sticky red and the opening-window yellows, the unique half-point board guard, the Underdog season block and Pacific clock, the soft-step collector, P3's per-app isolation after the `407` at `13:16` PT, the Betr lobby rejection), the traffic estimate (`20–50 MB`/day; `3–5 GB`/month), the price comparison (`~$3.62`/GB), the provider test (`217 KB` board), COMPASS fact `135` and strategy `§31t`, the Sleeper game dates, and the market-free study. Judged, on `§P164`'s and `§P214`'s bases: narration, the session's notices, blob hashes, provider names, links and plan cards, and every credential-class detail (not reproduced).
+- **No residue in `T42`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `8e8a483c8` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `264` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T42` done (`35,642` sentences); next `T43`.
