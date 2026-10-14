@@ -355,8 +355,20 @@ function legLine(l){
   else if(l.leg_factor!=null&&Math.abs(Number(l.leg_factor)-1)>1e-9){variant=' <span class="badge source" style="vertical-align:middle">'+esc(Number(l.leg_factor).toFixed(2))+'x</span>'}
   return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+variant+(lt!=='regular'&&String(l.source_key)!=='prizepicks'?'':'');
 }
+// The legs that count: every row except the unchecked ones (a substitute is appended checked). NBA payouts depend on WHICH legs
+// are in the slip (factors / multipliers), not only on its size, so the badge and the real-multiplier fields price these legs.
+function keptLegsOf(s,idx){const un=slipUnchecked.get(idx);return (s.legs||[]).filter((l,i)=>!(un&&un.has(i)))}
 function slipCardHtml(s,idx){
-  const sel=slipDeselected.has(String(idx))?'':' checked';
+  const kept=keptLegsOf(s,idx);
+  if(kept.length!==(s.legs||[]).length){
+    const sel0=slipDeselected.has(String(idx))?'':' checked';
+    const mult=kept.length>=2?recomputeMultiplier(s.source_key,s.entry_mode,kept.length,kept):null;
+    const fields=kept.length>=2?realMultFieldsHtmlForSize({...s,legs:kept},idx,kept.length):'<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
+    return slipCardShell(s,idx,sel0,mult,fields);
+  }
+  return slipCardShell(s,idx,slipDeselected.has(String(idx))?'':' checked',s.estimated_multiplier,realMultFieldsHtml(s,idx));
+}
+function slipCardShell(s,idx,sel,multValue,fieldsHtml){
   const meta=[s.track_label?esc(s.track_label):'',s.status?esc(String(s.status).replace(/_/g,' ')):'',s.stake_weight!=null&&s.stake_weight!==1?'stake '+esc(s.stake_weight)+'u':'',s.result?('result '+esc(s.result.hits)+'/'+esc(s.slip_size)+' hit • paid '+esc(Math.round(Number(s.result.payout||0)*100)/100)+'x'):''].filter(Boolean).join(' • ');
   return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div>'+(meta?'<div class="small" style="margin:2px 0 6px">'+meta+'</div>':'')+'<div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'
 }
