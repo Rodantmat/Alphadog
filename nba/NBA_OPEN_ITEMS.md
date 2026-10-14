@@ -18766,3 +18766,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `268` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T46` done (`36,225` sentences); next `T47`.
+
+## §P269 — PASS 269 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T47` · NO RESIDUE
+*Angle (as NEXT set it):* (m14) `§P131`'s method on `T47`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 268's head): `T47` `60` of `167` sentences listed, no memory dump among them — **all `60` read whole** (the bounded figure triage: `2` with a figure not on file — two source-link ids — / `0` inside a longer number / `23` with every figure on file / `35` with none; `2 + 0 + 23 + 35 = 60`).
+- On file, by substance (each grepped before it was written, every hit read): `§P169`'s and `§P219`'s lists and `§T47.10`, plus Playoff Unders' gates and stress (`1.5%`; `6–12` units; `+24%`; `0.1%`; all `60` whole-line 5-Flex variants), the replay parity (`9` of `9`) and the odds-free test fix, the multiplier program (`1.871` / `1.843`; `0.500`; `3–7%` / `13–26%`; `0.997`; `−20%` to `+15%`; `+143%` vs `+10%`; the `12` of `12` at `1.55`), the Flex tables (`2.25/1.25`, `5/1.5`), and the transcript pack (`transcripts-2026-10-09.zip`, its stated gaps). Judged, on `§P169`'s and `§P219`'s bases: narration, the session's notices, source links, the owner's dictation.
+- **No residue in `T47`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `112ff9551` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `269` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T47` done (`36,392` sentences); next `T48`.
