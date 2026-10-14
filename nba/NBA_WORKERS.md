@@ -99,7 +99,7 @@ writes. Grouped by role.
 > ### 🗺️ **A · THE MAPS — start here**
 > | § | what it covers | 🚩 |
 > |---|---|---|
-> | **`0.00000`** | 🗺️🗺️ **THE WIRING MAP — WORKFLOW → SCRIPT → TABLE** *(`T20` pass 34, `§T20.3x`)* | 🗺️ |
+> | **`0.00000`** | 🗺️🗺️ **THE WIRING MAP — WORKFLOW → SCRIPT → TABLE** *(`T20` pass 34, ~~`§T20.3x`~~ `§T20.39` — corrected `2026-10-14`, additional sweep `1` pass 180: the section's own heading and `NBA_MASTER_SUMMARY.md` `§T20.39` read `.39`)* | 🗺️ |
 > | **`0.0000`** | 🔴 **The three pipelines, and the owner's explicit cron instruction — SET IT ON ONE, NOT ON ALL** | 🔴 |
 > | **`0.0`** | ⚠ **The complete schedule surface — SEVEN scheduled workflows touch `nba/`, not four** | ⚠ |
 > | **`0.4`** | **The two registries — and the count that proves the isolation held** | |
