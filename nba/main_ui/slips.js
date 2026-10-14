@@ -281,12 +281,13 @@ export async function apiHighHit(sql, cfg, url, version) {
   if (unmatched) notes.push(`${unmatched} slip legs are not on the scored board (shown without a probability).`);
   if (fallbackNote) notes.push(fallbackNote);
   if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${eng.suffix ? "market-free twin" : "certified tables"}), with results.`);
-  // backup pool: the best board legs not already in a slip, per app, for substitution
+  // backup pool: the best board legs not already in a slip, per app, for substitution - ordered by the UNROUNDED hit
+  // probability (ties keep the board order: score, then player / prop / line / side), so the pool is reproducible from the DB
   const inSlip = new Set(slips.flatMap(s => s.legs.map(l => l.board_row_id)));
   const pool = [];
   for (const app of ["prizepicks", "underdog"]) {
     pool.push(...board.filter(l => l.source_key === app && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore)
-      .sort((a, b) => Number(b.estimated_hit_probability_0_100) - Number(a.estimated_hit_probability_0_100)).slice(0, size)
+      .sort((a, b) => Number(b.final_hp_raw) - Number(a.final_hp_raw)).slice(0, size)
       .map(l => slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name) })));
   }
   if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - P3 builds them about 30 minutes before the first tip." : `No slips recorded for ${slate.date}.`);
