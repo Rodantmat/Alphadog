@@ -47338,3 +47338,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `164` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T42` done (`21,169` sentences); next `T43`.
+
+# §P165 — PASS 165 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T43`
+*Angle (as NEXT set it):* (e10) `§P131`'s method on `T43`.
+- Tabulated in the shell before this line (the scan at pass 164's head): `T43` `29` of `41` sentences listed, no memory dump among them — **all `29` read whole** (the figure triage: `0` with a figure not on file, `0` with every figure on file, `29` with none — every line is a step announcement).
+- On file, by substance (each grepped before it was written, in `§T43.2`'s round-2 table): the whole-number neighbours and the prune, the replay `asof` driving every dated step, the grader's `dnp` only when the player's team has a box score, the Underdog budget and partial-board write, injury names through the daily roster, the gzipped dated ladder, the market-free twin and its suffix-aware P5 verdicts, and the placeholder-season `pd.concat` defect. Judged: narration only.
+- **Nothing new — `T43` clean in additional sweep `1`.** No commit not this sweep's since `34194f2b4`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `165` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T43` done (`21,198` sentences); next `T44`.
