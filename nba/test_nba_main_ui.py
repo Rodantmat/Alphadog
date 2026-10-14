@@ -246,6 +246,13 @@ def api_checks(conn, cfg):
             same = body == (ROOT / "nba/main_ui/client" / src[p]).read_bytes()
         if p == "/js/pricing.js":
             same = b"function nbaPayout(" in body and b"function nbaFlexAlt(" in body
+            # the served file must RUN as a classic browser script in a clean global scope (no bundler helpers)
+            (OUT / "_served_pricing.js").write_bytes(body)
+            js = ("const vm=require('vm'),fs=require('fs');const ctx={};vm.createContext(ctx);vm.runInContext(fs.readFileSync(process.argv[1],'utf8'),ctx);"
+                  "const pr=JSON.parse(fs.readFileSync(0,'utf8'));const legs=[{leg_factor:1},{leg_factor:1},{leg_factor:1}];"
+                  "process.stdout.write(JSON.stringify([ctx.nbaTiers(pr,'prizepicks','flex',legs),ctx.nbaBreakeven(pr,'underdog','power',legs)]))")
+            rr = subprocess.run(["node", "-e", js, str(OUT / "_served_pricing.js")], input=json.dumps(hh.get("pricing") or {}), capture_output=True, text=True)
+            check("C23 served pricing.js runs in a clean browser scope and prices a slip", rr.returncode == 0 and rr.stdout.startswith("[{"), (rr.stdout or rr.stderr)[-300:])
         check(f"C22 asset {p} served{' = source file' if p in src else ''}", r.returncode == 0 and len(body) > 100 and same, f"{len(body)} bytes")
 
 
