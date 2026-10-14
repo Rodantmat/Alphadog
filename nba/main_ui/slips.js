@@ -295,7 +295,6 @@ export async function apiHighHit(sql, cfg, url, version) {
   if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${eng.suffix ? "market-free twin" : "certified tables"}), with results.`);
   // backup pool: the best board legs not already in a slip, per app, for substitution
   const inSlip = new Set(slips.flatMap(s => s.legs.map(l => l.board_row_id)));
-  const minScore = Number(cfg.ui.backup_pool.min_score), size = Number(cfg.ui.backup_pool.size);
   const pool = [];
   for (const app of ["prizepicks", "underdog"]) {
     pool.push(...board.filter(l => l.source_key === app && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore)
