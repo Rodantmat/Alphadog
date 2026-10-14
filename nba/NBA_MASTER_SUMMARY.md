@@ -47252,3 +47252,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `157` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T35` done (`18,181` sentences); next `T36`.
+
+# §P158 — PASS 158 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T36`
+*Angle (as NEXT set it):* (x9) `§P131`'s method on `T36`.
+- Tabulated in the shell before this line (the scan at pass 157's head): `T36` `974` of `1,625` sentences listed — `228` are the build chat's memory dump inside the `2026-10-02` `23:07Z` reply (out of scope, not followed; the Betr token passage among them); **the other `746` read whole** (the figure triage ordered them: `6` with a figure not on file, `194` with every figure on file, `546` with none).
+- On file, by substance (each grepped before it was written): the dry splitting passes and the injury feed found already built, the week-2 gated play and its guard, the drought rotation with its EWMA detector and the drought menu, the single bad day and the points-only Power, CLV and the sportsbook prices, the calendar states (All-Star week, late March, holidays), the line-level and cushion findings, the low-foul key and its certification, the replays #5–#7 and the two-season launch numbers, the pre-break plans and plan B, the orphaned-query incident, the GitHub delay audit, the run-once claim and the Cloudflare scheduler, the P2A/P2B split and the dynamic schedule, the other-boards plan, and the Underdog formula, archive recovery and live capture. Judged: narration, run waits, MLB player examples, the `02:37Z` schedule table the `02:40Z` reply replaced, and the classic Underdog table the owner's screenshots replaced.
+- 🆕 **One residue, `§T36.10`** *(`3` italic quotations, each a substring of the transcript in the shell)*: the drought menu's range inside long droughts, the `38` early dates P3's code notes, and the two reasons the `1.04` constant was set aside. Pointer: row `36`.
+- Commits not this sweep's since `5c76195b1`: `1` (`6da64123e`, the Betr cloud harvest, `[skip ci]`, not one of the twelve). The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `158` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T36` done (`19,155` sentences); next `T37`.
