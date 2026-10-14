@@ -47728,3 +47728,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `188` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`): `T1`–`T16` done (`4,795` sentences); next `T17`.
+
+# §P189 — PASS 189 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T17` · 🆕 ONE RESIDUE
+*Angle (as NEXT set it):* (i11) `§P131`'s method on `T17`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 188's head): `T17` `902` of `1,782` sentences listed — **all `902` read whole** (the figure triage: `18` with a figure not on file, `243` with every figure on file, `641` with none). Of the `18`: the fringe accuracy is on file as `0.658` / `86.7%` / `11.8%`; the rebounds pair as `0.01516` / `0.00405`; the confidence distribution's ties as the `95` → `412` values; the fringe / iron-man gaps (`0.0283` / `0.0008`); the `final_hp` leg counts, sample and progress figures, a probe count, a clipped ablation figure and a research-source AUC judged as `§P139` judged them; the scenario calibration by count recorded below.
+- On file, by substance (each grepped before it was written): `§P139`'s list and `§T17.5`, plus the availability ablation (`0.6727` → `0.6780`, `70.3%` → `79.6%`), the conformal quintiles (`0.6273` …), the group table of the confidence thermometer (anchor `0.9115` / tail `0.8522`, standard `0.9135`, goblins `0.8940`, the `1,267,582` high-band legs), the role sensor's values and the `2.6%` fringe tail, the four indexes (`1,334 MB`). Judged: narration, owner directives on file, research-source summaries (as `§P139`), job-progress tables and query timings.
+- 🆕 **One residue, `§T17.6`** *(`7` italic quotations, each a substring of the transcript in the shell)*: the scenario calibration by uncertain-player count (one to five: games, most-likely branch hits, realised branch probability) and its calibration reading. Pointer: `NBA_SYSTEM_DESIGN.md` `§0z-4`.
+- No commit not this sweep's to the twelve since `16d60ad79`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `189` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`): `T1`–`T17` done (`5,697` sentences); next `T18`.
