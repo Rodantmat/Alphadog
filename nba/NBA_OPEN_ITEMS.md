@@ -18461,3 +18461,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `241` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`): `T1`–`T19` done (`13,101` sentences); next `T20`.
+
+## §P242 — PASS 242 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T20` · NO RESIDUE
+*Angle (as NEXT set it):* (l13) `§P131`'s method on `T20`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 241's head): `T20` `199` of `830` sentences listed, **read whole** (the bounded figure triage: `1` with a figure not on file / `0` inside a longer number / `29` with every figure on file / `169` with none; `1 + 0 + 29 + 169 = 199`). The `1` is `§P192`'s: the ladder config's `[25,35]` / `[70,80]` read as single tokens — `goblin_pct` on file.
+- On file, by substance (each grepped before it was written, every hit read): `§P192`'s list, plus `active_stats_season`, `MAX_TIERS = 24`, the shared-absence confidence tiers, the OT include / exclude variants for Sleeper quarters, the `0.002` far-tail rungs, the `p × m` guard, lesson `#14`, DvP, the playmaker-absence rule's *"Apply only once"* guard, the day-level block bootstrap and the weighted t-test's insufficiency, `relevant_prop_keys`, lesson `#13`'s *"15% multiplier change"* for a `~2.6×` probability gap, the `~1.4×` geometric demon step, the factor- and strategy-gating items (`1–9` / `10–13`), the fan-out join tell, `known_empty_games`, MLB's `n ≥ 30` / `≥ 80%` bar, rule B0b (`+216.5% → +32.9%`), `SLEEPER_SPORTS`. Judged, on `§P192`'s bases: narration, the owner's documentation mandates (on file), progress tables and pass counts, a research citation on rest minutes.
+- **No residue in `T20`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `4eb0312c0` (the log read before this line): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `242` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`): `T1`–`T20` done (`13,931` sentences); next `T21`.
