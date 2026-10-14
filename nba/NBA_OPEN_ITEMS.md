@@ -18695,3 +18695,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `261` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T39` done (`35,231` sentences); next `T40`.
+
+## §P262 — PASS 262 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T40` · NO RESIDUE
+*Angle (as NEXT set it):* (f14) `§P131`'s method on `T40`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 261's head): `T40` `71` of `130` sentences listed, no memory dump among them — **all `71` read whole** (the bounded figure triage: `3` with a figure not on file — the identifiers inside three research-source links — / `0` inside a longer number / `16` with every figure on file / `52` with none; `3 + 0 + 16 + 52 = 71`).
+- On file, by substance (each grepped before it was written, every hit read): `§P162`'s and `§P212`'s lists, plus the deep-rung routing to `final_hp_derived`, the deeper combo ladders (`17,260` unchanged, `7,866` new), the paper logger's whole-number leak (`10 / 11 / 4 / 17 → 0`), `conf_tier`, the worked example (`60 / 85`), the tie as half a win and the one-SE discount, the first backtest (`16.4%` / `7.8%`; `77.8% → 78.1%`, `94.0% → 93.9%`; drawdown `137 → 158`, `86 → 80`), the admission behind `classification_config['whole_number_selection']`, the history at live depths (`~157,000` rungs a season; `77.1%` / `93.4%`), the Ighodaro parity case, the tie-aware grade and certify `L11`, the certified rebuild (`478,900`; `346,736`; `61,688`; `7,434`). Judged, on `§P162`'s and `§P212`'s bases: narration, run times, the session's time-zone notices, link identifiers, the local-clone notes, the table backup before the rebuild, the build chat's own SQL slip.
+- **No residue in `T40`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `0ed88e23c` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `262` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T40` done (`35,361` sentences); next `T41`.
