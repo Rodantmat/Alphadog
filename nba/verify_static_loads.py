@@ -26,7 +26,7 @@ Env: DATABASE_URL, LOAD_STARTED_AT (ISO UTC), FAILED_WORKERS (space-separated wo
 import json
 import os
 import sys
-import urllib.request
+import subprocess
 from datetime import datetime, timezone
 
 import psycopg
