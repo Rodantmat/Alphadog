@@ -1,0 +1,45 @@
+// AlphaDog NBA main interface - client part (served as-is by alphadog-v2-nba-main-ui; split from the MLB client, NBA data).
+// ---- NBA Player Profile (needs the dossier part: trend cards, splits, shot quality, advanced metrics, context rows) --------
+function openPlayerProfilePart(){setScreen('playerProfile');$('playerProfileBody').innerHTML='<div class="empty">Type at least 3 letters.</div>';$('playerSearch').focus()}
+async function searchPlayers(){const q=$('playerSearch').value.trim();if(q.length<3){$('playerSearchResults').innerHTML='';return}const j=await (await fetch('/api/player-search?q='+encodeURIComponent(q)+'&t='+Date.now(),{cache:'no-store'})).json();$('playerSearchResults').innerHTML=(j.rows||[]).map(r=>'<button class="searchResult" data-player-id="'+esc(r.player_id)+'">'+esc(r.player_name)+' <span class="small">'+esc(r.primary_position||'')+'</span></button>').join('')||'<div class="small">No matches.</div>';document.querySelectorAll('.searchResult[data-player-id]').forEach(b=>b.onclick=()=>loadPlayerProfile(b.dataset.playerId))}
+async function loadPlayerProfile(id){$('playerProfileBody').innerHTML='<div class="empty">Loading player profile...</div>';try{const j=await (await fetch('/api/player-profile?player_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok){$('playerProfileBody').innerHTML='<div class="empty err">Profile failed: '+esc(j.error||'unknown')+'</div>';return}renderPlayerProfileDream(j)}catch(e){$('playerProfileBody').innerHTML='<div class="empty err">Profile failed: '+esc(e.message||e)+'</div>'}}
+function renderPlayerProfileDream(j){
+  const p=j.player||{},team=j.team||{},legs=j.current_legs||[],games=j.recent_games||[],homeGames=j.home_games||[],awayGames=j.away_games||[],snapshots=j.metric_snapshots||[],splits=j.splits||[],nextGame=j.next_game,nextCtx=j.next_game_context,advanced=j.advanced||{},availability=j.availability;
+  const name=p.full_name||p.player_name||'Player';
+  const heroBadges=[team.full_name||team.abbreviation||'Free agent',p.position||'—',[heightTxt(p.height_inches),p.weight_lbs?p.weight_lbs+' lb':''].filter(Boolean).join(' • ')||'—',p.age?'Age '+p.age:'',p.years_pro!=null?(p.years_pro===0?'Rookie':p.years_pro+' yrs pro'):''].filter(Boolean);
+  const nextGameLine=nextGame?('Next: '+(nextGame.is_home?'vs ':'@ ')+esc(nextGame.opponent_team_name||'TBD')+' • '+esc(fmtDate(nextGame.game_time_utc))+(nextGame.arena?' • '+esc(nextGame.arena):'')):'';
+  const availBadge=availability&&availability.availability_status?'<span class="availBadge '+availabilityClass(availability.availability_status)+'" title="'+esc((availability.reason||'')+(availability.report_date?' (report '+availability.report_date+')':''))+'">'+esc(availability.availability_status)+'</span>':'';
+  let html='<div class="p2Hero"><div class="p2Avatar">'+esc(initials(name))+'</div><div><div class="p2Name">'+esc(name)+' '+availBadge+'</div><div class="p2Meta">'+heroBadges.map(b=>'<span class="p2Badge">'+esc(b)+'</span>').join('')+'</div>'+(nextGameLine?'<div class="p2Next">'+nextGameLine+'</div>':'')+'</div></div>';
+  const seasonRow=snapRow(snapshots,'season_to_date'),l5Row=snapRow(snapshots,'last_5_games');
+  const trend=seasonRow&&l5Row?trendArrow(l5Row.pts,seasonRow.pts,true):'';
+  html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot'+(j.season?' — '+esc(j.season):'')+' '+trend+'</div>'+(seasonSnapStrip(snapshots)||'<div class="small">No season snapshot available yet.</div>');
+  const propKeys=propFamilyKeys();
+  const legsByProp={};for(const l of legs){const k=String(l.canonical_prop_key||'');(legsByProp[k]=legsByProp[k]||[]).push(l)}
+  const propCards=propKeys.map(k=>propTrendCard(k,games,legsByProp[k]||[])).filter(Boolean);
+  Object.keys(legsByProp).filter(k=>!propKeys.includes(k)).forEach(k=>{const c=propTrendCard(k,games,legsByProp[k]||[]);if(c)propCards.push(c)});
+  html+='<div class="sectionLabel" style="margin-top:16px">Prop Trends — Last 5 / 10 / 20</div>'+(propCards.length?'<div class="cards">'+propCards.join('')+'</div>':'<div class="small">No recent box scores or current lines for this player yet.</div>');
+  html+='<div class="dossierGrid">'+sectionWide('Recent Form Windows',table(['Window','G','GS','MIN','PTS','REB','AST','PRA','3PM','STL','BLK','TOV','FG%','3P%','FT%','+/-'],rowsForForm({recent_form:snapshots})),'Per-game averages, last 5 / 10 / 20 games and the season.')+'</div>';
+  html+=splitsBlock(splits);
+  html+=homeAwayBlock(homeGames,awayGames);
+  html+=shotQualityBlock(advanced.shot_quality);
+  html+=advancedMetricsBlock(advanced);
+  html+='<div class="dossierGrid">'+sectionWide('Game Log',table(['Date','Opp','W/L','GS','MIN','PTS','REB','AST','3PM','STL','BLK','TOV','FG','FT','+/-','Phase'],rowsForRecentGames({recent_games:games.slice(0,25)})),'Most recent 25 games, newest first.')+'</div>';
+  if(nextGame&&nextCtx){
+    html+='<div class="sectionLabel" style="margin-top:16px">Next Game — Micro Factors</div><div class="microFactors">';
+    html+=microFactor('🛡️','Opponent Defense vs Position',dvpRows(nextCtx),true);
+    html+=microFactorHtml('🏀','Team Profiles',table(['Team','Season','W-L','Last 10','Pace','ORtg','DRtg','Net'],rowsForTeams(nextCtx)),true);
+    html+=microFactorHtml('🩹','Injury Report',table(['Team','Player','Status','Reason'],rowsForInjuries(nextCtx)),false);
+    html+=microFactorHtml('📋','Last-Game Starters',table(['Team','Last Game','Starter','Pos','MIN'],rowsForStarters(nextCtx)),false);
+    html+=microFactorHtml('📅','Schedule Spot',table(['Team','Last Game','Rest','B2B','G in 4','G in 6','3-in-4','4-in-6','Last Loc','Risk'],rowsForSchedule(nextCtx)),false);
+    html+=microFactorHtml('🦓','Officials',table(['Official','Source','Games','Fouls / G','FTA / G','PF vs Lg'],rowsForOfficials(nextCtx)),false);
+    html+=microFactor('💰','Game Market',marketRows(nextCtx),false);
+    html+='</div>';
+  } else {
+    html+='<div class="dossierNote" style="margin-top:14px">No next scheduled game found for this player right now — micro-factor context will appear once a game is on the schedule.</div>';
+  }
+  if(legs.length){
+    html+='<div class="sectionLabel" style="margin-top:16px">Available Legs On The Board'+(j.slate&&j.slate.mode==='replay'?' (replay '+esc(j.slate.date)+')':'')+'</div><div class="miniLegGrid">'+legs.map(l=>miniLegCard(l)).join('')+'</div>';
+  }
+  $('playerProfileBody').innerHTML=html;
+  document.querySelectorAll('#playerProfileBody .miniLegCard[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.dataset.legId));
+}
