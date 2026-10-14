@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: "shrink | derived | map | curves | rungs | coverage"
+        description: "shrink | derived | map | curves | rungs | coverage | compact_dry | compact"
         default: "derived"
         required: false
       date:
