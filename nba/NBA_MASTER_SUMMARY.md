@@ -48048,3 +48048,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `216` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T44` done (`20,995` sentences); next `T45`.
+
+# §P217 — PASS 217 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T45` · NOTHING NEW
+*Angle (as NEXT set it):* (k12) `§P131`'s method on `T45`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 216's head): `T45` `26` of `50` sentences listed, no memory dump among them — **all `26` read whole** (the bounded figure triage: `0` with a figure not on file, `0` matched only inside a longer number, `4` with every figure on file, `22` with none).
+- On file, by substance (each grepped before it was written): `§P167`'s list, plus the postseason weighting (`K = 50`, the eligible cells), the strategies at one slip a night (`+62%` on `25` days, `+15%`, `+11%`), the postseason-native search (`0` of `29`), the postseason board floor (`485`), and the live parity probe on three past nights. Judged: narration, the session's notices, and the MLB lines (out of scope).
+- **Nothing new — `T45` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `16d226dfc` (the log read before this line). No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `217` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`, `§T36.11`, `§T37.10`, `§T38.11`, `§T41.10`): `T1`–`T45` done (`21,021` sentences); next `T46`.
