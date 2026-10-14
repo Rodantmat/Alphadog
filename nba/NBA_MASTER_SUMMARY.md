@@ -47209,3 +47209,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `155` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T33` done (`16,602` sentences); next `T34`.
+
+# §P156 — PASS 156 (`2026-10-14`): ADDITIONAL SWEEP `1` — `T34`
+*Angle (as NEXT set it):* (v9) `§P131`'s method on `T34`.
+- Tabulated in the shell before this line (the scan at pass 155's head): `T34` `679` of `1,087` sentences listed — **all `679` read whole** (the figure triage ordered them: `8` with a figure not on file, `288` with every figure on file, `383` with none).
+- On file, by substance (each grepped before it was written): the tier-map sweep and its bands, the playoff ingestion gap and the demon re-pricing between seasons, the price reconstruction and the system tiers (`10,763` legs, zero mismatches), the three ranks and `model_p`, the player-rate and rotation tests with the line-movement mechanism, market edge and the minutes-drop filter, the signal matrix and the demon stacks, the certified ledger, goblins as extenders, the frozen invariants (`53` → `54` → `66`) and the stage-0 defect, the payout page and the compression rule, the slip engine, the correlation rule, the final-week cutoff, the caps, the gates and the MLB method translated, families A/B/C and the per-cell cap, Underdog closed as a venue, the live engine's hurdles, CUSUM and MC95. Judged: narration, run waits, MLB's own record, and the strategy-text figures `§T34.8` already carries.
+- 🆕 **One residue, `§T34.10`** *(`35` italic quotations, each a substring of the transcript in the shell)*: four chat-reply figure sets the strategy-text passes (`§T34.8`, `§T34.9`) did not carry — the rotation leak check (`−0.02` vs `+0.17`) and the pooled `0.04–0.06`; the layers re-read by days kept (`06:11Z`, seven rows, the four cells whose best layer cut days); the depth-5 lift (`0.077 → 0.129`); the uncertified `06:16Z` table's other rows, best-layer column and dropped list. Pointers: row `34`, the `06:16Z` sentence in this file, `NBA_BASELINE_CALIBRATION.md` item 4b.
+- Commits not this sweep's since `3265126f5`: `13`, none touching the twelve (the build chat's PP-payout-map and scheduler work, code and workflows, out of scope; `git log -- nba/NBA_*.md` lists only this pass's). Two of this pass's patches were refused as not fast-forward while those landed; each was sent again in its own message and applied once. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `156` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T34` done (`17,281` sentences); next `T35`.
