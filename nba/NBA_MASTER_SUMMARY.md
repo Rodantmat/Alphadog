@@ -47889,3 +47889,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `201` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`): `T1`–`T29` done (`11,164` sentences); next `T30`.
+
+# §P202 — PASS 202 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T30` · NOTHING NEW
+*Angle (as NEXT set it):* (v11) `§P131`'s method on `T30`, each listed sentence searched on file by its substance and figures; the whole list read in this pass.
+- Tabulated in the shell before this line (the scan at pass 201's head): `T30` `35` of `40` sentences listed — **all `35` read whole** (the figure triage: `1` with a figure not on file, `1` with every figure on file, `33` with none). The `1`: a capture file's size in the export exchange, judged.
+- On file, by substance: `§P152`'s list — the capture-export and upload troubleshooting (entry row `30`, *a null result*; the blank-upload cause in `§T31.1`), Sleeper's `available_alt` and one-sided calls (`§T31.1`, `§T29.1`). Judged: the export commands and the owner's pasted console lines (a local path in them not reproduced); the further Sleeper endpoint named in passing, as `§P152` judged it.
+- **Nothing new — `T30` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's to the twelve since `82facdc53`; two outside them landed before it — `7d53323b4` (`nba/verify_archive_restore.py`) and `44df379eb` (`.github/workflows/nba-archive-verify.yml`), the build chat's, not touched. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `202` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`): `T1`–`T30` done (`11,199` sentences); next `T31`.
