@@ -47880,3 +47880,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `200` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`): `T1`–`T28` done (`10,823` sentences); next `T29`.
+
+# §P201 — PASS 201 (`2026-10-14`): ADDITIONAL SWEEP `2` — `T29` · NOTHING NEW
+*Angle (as NEXT set it):* (u11) `§P131`'s method on `T29`, each listed sentence searched on file by its substance and figures; the whole list read in this pass (its head overlaps `T28`'s tail at `2026-09-26 07:18Z`).
+- Tabulated in the shell before this line (the scan at pass 200's head): `T29` `341` of `465` sentences listed — **all `341` read whole** (the figure triage: `20` with a figure not on file, `32` with every figure on file, `289` with none). All `20` are the capture-setup instructions — the proxy's ports, an example local address, a port-in-use error — judged as `§P151` judged the capture instructions.
+- On file, by substance (each grepped before it was written): `§P151`'s list and `§T29.1`, plus the reliability audit's reconciliation (`1,391` of `1,391`, `592` of `592`), the schedule drift closed (`2,667` games, `1,267` for `2026-27`, UTA @ DEN), the `26,651` player logs, the dispatch census (`11` of `21`), `player_game_log` last written `2026-09-08`, `T26-10`'s metric column, the `7,921` quarantined rows and the archiver's vocabulary guard, `tier_band_calibration`'s `149` rows, Chalkboard's app-only route, Sleeper's `available_alt` (`§T31.1`). Judged: the capture instructions, the owner-actions list (credential and secret items — names and values not reproduced), Betr's staleness hours (a liveness reading, superseded), progress narration.
+- **Nothing new — `T29` clean in additional sweep `2`** (the sweep as a whole stays not clean). No commit not this sweep's since `cc3ec013a`. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `201` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `2`** under way, **not clean** (`§T9.14i`, `§T10.30`, `§T13.7`, `§T14.5`, `§T15.6`, `§T17.6`, `§T23.22`, `§T24.9`, `§T25.8`, `§T26.R6`, `§T27.9`, `§T28.3`): `T1`–`T29` done (`11,164` sentences); next `T30`.
