@@ -44504,6 +44504,10 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **The early-slate count in P3's own code (`2026-10-03` `02:33Z`)**, beside the `41 of 156` slates on file: *"It even notes about 38 such dates a season."*
 - **Why the `1.04` constant was set aside (`05:35Z`)**, beside the `3.50×` / `3.64×` check on file: *"It fits all three independent slips, but it contradicts Underdog's help page, and it may be an account boost."*
 
+## §T36.11 — ADDITIONAL SWEEP 2, PASS 208 (`2026-10-14`): THE SCHEDULE AUDIT'S P2 FAILURE DATES *(AS STATED; `§P208`)*
+*Method:* the ≥ `5` scan over all twelve on `T36`'s whole transcript (`969` of `1,625` sentences, computed in the shell), read by `§P131`'s method; the `228` sentences of the build chat's memory dump at `2026-10-02` `23:07Z` are out of scope and were not followed.
+- **The P2 failure dates the schedule audit showed (`2026-10-03` `00:13Z`)**, beside the `2026-10-01` / `2026-10-02` failures on file in `§T36.3` (the pdfplumber gap, `T26-20`) and the audit's delays on file: *"The data also shows P2 failed on Sept 27, Oct 1 and Oct 2 (the last two are the library problem fixed today)."* `T36` names no cause for the `Sept 27` failure.
+
 ---
 
 # §T37 — `T37` · `2026-10-04-03-48-05-nba-wiring-audit-31x` *(recovered `2026-10-10` from the owner's claude.ai export)* — 🆕 **THE UNDERDOG PROGRAM END TO END (TIER MAP → CERTIFIER → SIGNALS → ENGINE → VALIDATION → REPRICING → PORTFOLIO → LIVE PAPER ENGINE), AND THE WIRING AUDIT THAT FOUND THE LIVE PICK READING A BACKTEST TABLE**
