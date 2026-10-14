@@ -47496,3 +47496,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `173` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S3` done (`23,794` sentences); next `S4`.
+
+# §P174 — PASS 174 (`2026-10-14`): ADDITIONAL SWEEP `1` — `S4`
+*Angle (as NEXT set it):* (n10) `§P131`'s method on `S4`, the P2A / grading / P4–P5 audit (`2026-10-08` `06:26 → 06:39Z`), its findings checked against the ledger rows they went to, numbered as the report numbers them.
+- Tabulated in the shell before this line (the scan at pass 173's head): `S4` `104` of `125` sentences listed, no memory dump among them — **all `104` read whole** (the figure triage ordered them: `10` with a figure not on file, `36` with every figure on file, `58` with none).
+- On file, by substance (each grepped before it was written): findings #1–#5 and #12 as fixed in `T42` (`§T42.0` #7; the gap audit's re-run `1,230` completed games over `164` dates), #6–#11 and #13–#18 as fixed in `T43` (its round-2 table), the scheduler and #18(d) items (`§T42.4`), the rollover's opening-day guard as rebuilt; and what the audit verified correct (the season rollover, the monitors' constants, the scheduler's plan and recovery windows, the writer workers' fields and the `26,651` rows, `verify_static_loads.py`). Judged: the prompt, file:line references, the verify and fix lines (the fixes as built are on file).
+- 🆕 **One residue, `§T42.14`** *(`12` italic quotations, each a substring of the transcript in the shell)*: why B-3's count was the fallback, the delta scraper's silent chain, the orphaned slate, the Underdog grade's loss, P5's weekly release and re-red, the vanishing whole-number prices, the scheduler's same tick, the hurdle count, the schedule scraper's lost guard and the month-only rollover check. Pointer: `§T42.4`'s `S4` row.
+- No commit not this sweep's to the twelve since `a1073eb1b` (one code commit elsewhere, `8bc579f00`, not read — out of this chat's scope). The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `174` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T48`, `S1`–`S4` done (`23,898` sentences); next `S5`.
