@@ -202,6 +202,25 @@ def api_checks(conn, cfg):
         check("C13 Slips screen (replay): unmatched legs are disclosed, the rest matched", disclosed, f"{len(nolegs)} slips with an unscored leg of {len(sl)}; {nleg} legs")
     else:
         check("C13 Slips screen: every slip leg matched to its board leg", not nolegs, nolegs[:3])
+    # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
+    bp = cfg["backup_pool"]
+    sd = (hh.get("slate") or {}).get("date")
+    in_slip = {l["board_row_id"] for s in sl for l in s["legs"]}
+    want_pool = []
+    for app in ("prizepicks", "underdog"):
+        rows_ = conn.execute("""SELECT app, player_id, prop, line::float8, side FROM nba_score.board_scored WHERE game_date=%s AND app=%s AND score >= %s
+                                ORDER BY final_hp DESC, score DESC, player, prop, line, side""", (sd, app, bp["min_score"])).fetchall()
+        picked = []
+        for a, pid, prop, line, side in rows_:
+            key = (a, str(pid), prop, float(line), side)
+            if any(_k(x) == key for x in in_slip):
+                continue
+            picked.append(key)
+            if len(picked) >= int(bp["size"]):
+                break
+        want_pool += picked
+    got_pool = [_k(l["board_row_id"]) for l in hh.get("backup_pool", [])]
+    check("C24 backup pool == the pool picked from the whole slate (light load is exact)", got_pool == want_pool, f"got {len(got_pool)} want {len(want_pool)}; first diff {next(((a, b) for a, b in zip(got_pool, want_pool) if a != b), None)}")
     if hh.get("source") == "replay_backtest" and sl:
         res = [s for s in sl if s.get("result")]
         check("C14 replay slips carry the backtest result", len(res) == len(sl), f"{len(res)}/{len(sl)}")
