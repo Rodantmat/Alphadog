@@ -227,33 +227,16 @@ export async function apiHighHit(sql, cfg, url, version) {
       fallbackNote = `The certified backtest covers regular seasons only (latest slate ${last.d}); ${boardSlate.date} is not in it, so this replays ${last.d}.`;
     }
   }
-  // LIGHT LOAD (2026-10-14: the whole-slate load took 6-27 s). Enrich only the board legs this screen shows: every leg that
-  // could match a slip leg (same prop / line / side, any player - a superset of the name match below) plus the backup-pool
-  // candidates (top HP per app above the pool's minimum score, deep enough to survive excluding every slip leg - so the pool
-  // is identical to picking from the whole board, with the same tie order). Percentiles come from the slate's full score list.
+  lap("slips");
+  // every board leg of the slate (both apps the engines play), to price and describe each slip leg and to draw the backup pool.
+  // The whole slate is loaded on purpose: the largest PrizePicks + Underdog slate on record is 11,844 legs (cap 20,000; a hit
+  // on the cap is reported, never silent), and a narrowed load measured no faster (2026-10-14: 7.6 s vs 6.0 s).
   const minScore = Number(cfg.ui.backup_pool.min_score), size = Number(cfg.ui.backup_pool.size);
-  const combo = new Map(), slipLegCount = { prizepicks: 0, underdog: 0 };
-  for (const s of [...eng.pp, ...eng.ud]) {
-    const lj = typeof s.legs_json === "string" ? JSON.parse(s.legs_json) : s.legs_json || [];
-    slipLegCount[s.app] = (slipLegCount[s.app] || 0) + lj.length;
-    for (const x of lj) { const k = [x.prop, Number(x.line), sideIn(x.side)]; combo.set(k.join("|"), k); }
-  }
-  const cand = await q(sql, `SELECT app, player_id, prop, line::float8 line, side FROM (
-      SELECT app, player_id, prop, line, side, row_number() OVER (PARTITION BY app ORDER BY final_hp DESC, score DESC, player, prop, line, side) rn
-      FROM nba_score.board_scored WHERE game_date = $1::date AND app IN ('prizepicks', 'underdog') AND score >= $2) x
-    WHERE (app = 'prizepicks' AND rn <= $3) OR (app = 'underdog' AND rn <= $4)`,
-    [slate.date, minScore, size + slipLegCount.prizepicks, size + slipLegCount.underdog]);
-  const C = [...combo.values()];
-  const board = await loadLegs(sql, cfg, { date: slate.date, mode: slate.mode }, {
-    where: `AND b.app IN ('prizepicks', 'underdog') AND ((b.prop, b.line::float8, b.side) IN (SELECT * FROM unnest($6::text[], $7::float8[], $8::text[]))
-            OR (b.app, b.player_id, b.prop, b.line::float8, b.side) IN (SELECT * FROM unnest($9::text[], $10::text[], $11::text[], $12::float8[], $13::text[])))`,
-    extra: [pgArr(C.map(c => c[0])), pgArr(C.map(c => c[1])), pgArr(C.map(c => c[2])),
-            pgArr(cand.map(c => c.app)), pgArr(cand.map(c => c.player_id)), pgArr(cand.map(c => c.prop)), pgArr(cand.map(c => c.line)), pgArr(cand.map(c => c.side))],
-    limit: 20000, withInsight: false });
+  const BOARD_CAP = 20000;
+  const board = await loadLegs(sql, cfg, { date: slate.date, mode: slate.mode }, { where: "AND b.app IN ('prizepicks', 'underdog')", limit: BOARD_CAP, withInsight: false });
+  lap("board");
   const pct = new Map();
-  // array types are not parsed on this connection (fetch_types off) - aggregate as text and split
-  for (const r of await q(sql, `SELECT app, string_agg(score::float8::text, ',' ORDER BY score) s FROM nba_score.board_scored
-                                WHERE game_date = $1::date AND app IN ('prizepicks', 'underdog') GROUP BY app`, [slate.date])) pct.set(r.app, String(r.s || "").split(",").filter(Boolean).map(Number));
+  for (const app of ["prizepicks", "underdog"]) pct.set(app, board.filter(l => l.source_key === app).map(l => Number(l.score_0_100)).sort((a, b) => a - b));
   const percentile = (app, s) => { const arr = pct.get(app) || []; if (!arr.length) return null; let lo = 0; while (lo < arr.length && arr[lo] <= s) lo++; return r1(100 * lo / arr.length); };
   const byKey = new Map();
   const norm = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z]/g, "");
