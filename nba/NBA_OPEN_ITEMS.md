@@ -18451,3 +18451,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `240` complete (`2026-10-14`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`): `T1`–`T18` done (`12,564` sentences); next `T19`.
+
+## §P241 — PASS 241 (`2026-10-14`): ADDITIONAL SWEEP `3` — `T19` · NO RESIDUE
+*Angle (as NEXT set it):* (k13) `§P131`'s method on `T19`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 240's head): `T19` `178` of `537` sentences listed, **read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `25` with every figure on file / `153` with none; `0 + 0 + 25 + 153 = 178`).
+- On file, by substance (each grepped before it was written, every hit read): `§P191`'s list, plus `build_board_tiers_v2.py`, `journal.txt`, the owner's documentation rules (the glossary's *"any material term that shows more than once"*; three consecutive clean passes), `generate_wrangler_configs_nba.py` as proposed and never built, `dig.py`, the `157` team aliases and the `~130` deployed vs `116` registry workers, `swar/nba_api` and Issue `#155`, the owner's *"Umpire"* search key, the `~5.3 KB` dead stubs, the play types' `3,364` scraped vs `3,282` loaded, the `4,319` coach's-decision rows, the Contents API's `1 MB` silent-empty limit, `blowout_model` as ratios (`1.0333`). Judged, on `§P191`'s bases: narration, the owner's exchange about the forgotten work, the session's account of its compacted context, per-transcript progress tables.
+- **No residue in `T19`.**
+- **Additional sweep `3` stays not clean.** Commits not this sweep's since `c1b0e1692` (the log read before this line): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `241` complete (`2026-10-14`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`): `T1`–`T19` done (`13,101` sentences); next `T20`.
