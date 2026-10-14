@@ -409,7 +409,7 @@ above: **demons average +4.22 from the anchor while goblins average −2.87** �
 different names.** ⚠ **Any model keyed on the LABEL silently assumes a symmetry the data denies.**
 **The per-stat form of this** *(PRA: 26.2 average line, 0.85 goblins and 1.20 demons per ladder,
 offsets −3.56 / +6.28)* **is in `NBA_MULTIPLIERS.md` §0.9f. One prop is measured; the rest are NOT
-RECORDED.**
+RECORDED.** → 🆕 *the other seven props' rows, as the transcript gives them (`2026-10-14`, additional sweep `2`): `NBA_MASTER_SUMMARY.md` `§T13.7`.*
 
 ---
 
