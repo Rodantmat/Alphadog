@@ -194,6 +194,8 @@ writes. Grouped by role.
 > ⚠ **Not the same bug as the corpus's other "44% of the board" findings.** `NBA_OPEN_ITEMS.md` already documents a `norm_market()`/`market_key→prop` defect at the same `44%` magnitude, but that one is in the historical/Odds-API-sourced pipeline (`naive replace('player_','')`), a different file and a different code path than this live-capture normaliser. The magnitude matches because combos are structurally ~44% of any NBA board — coincidence of proportion, not the same defect. Recorded separately to avoid the two being merged into one.
 >
 > ✅✅ **Reconciled `2026-09-28`**: `NBA_OPEN_ITEMS.md`'s stale mitigation reference (the separate script `nba/scrape_prizepicks_nba_board.py`) is now patched in place — struck through and replaced with the live `main.py` parameterisation described above, cross-referencing this section. No script or workflow changed; doc-only.
+>
+> → 🆕 *`2026-10-14`: the first live board's size (`228` legs, `6` players, `3` games), the `16` of `18` keys matching history and the malformed rows kept beside the canonical ones — `NBA_MASTER_SUMMARY.md` `§T27.9`.*
 
 ---
 
