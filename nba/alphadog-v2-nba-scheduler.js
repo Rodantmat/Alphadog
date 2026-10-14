@@ -313,6 +313,12 @@ async function tick(env, now, dryRun = false) {
         else if (dryRun) out.push({ pipeline: "CLOSE", run_key: date, ...dec });
       }
     }
+    {   // PrizePicks payout map (2026-10-13) - two single-shot slots per game day, no claim, no watchdog
+      const d = await sql`SELECT slot FROM nba_control.scheduler_dispatches WHERE pipeline='PPMAP' AND run_key=${date}::date AND (ok IS DISTINCT FROM false OR slot LIKE 'missed-%')`;
+      const dec = decidePpMap(plan, now, d.map((x) => x.slot));
+      if (dec.action === "dispatch" || dec.action === "missed") out.push(await act(sql, env, "PPMAP", date, dec, dryRun));
+      else if (dryRun) out.push({ pipeline: "PPMAP", run_key: date, ...dec });
+    }
     if (p1Due(now)) {
       const key = runKey("P1", now);
       const st = await pipelineState(sql, env, "P1", key, true);
