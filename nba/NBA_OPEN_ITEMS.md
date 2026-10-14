@@ -18785,4 +18785,4 @@ are worth more per pass than any re-derivation.***
 - **Additional sweep `3` stays not clean.** Commits not this sweep's since `1c626c8be` (the log read, and re-read immediately before this patch): `0`. The credential grep on the twelve returns `0`.
 
 **Ledger**: pass `270` complete (`2026-10-14`).
-- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T48` done (`39,138` sentences); next `S1`.
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `3`** under way, **not clean** (`§T9.14j`, `§T10.31`, `§T13.8`, `§T15.7`, `§T18.9`, `§T23.23`, `§T26.R7`, `§T28.4`, `§T35.11`): `T1`–`T48` done (~~`39,138`~~ `39,567` sentences — corrected the same pass after a recount of every transcript's total in the shell: `§P231`'s `513` added `T1`–`T3`'s listed sentences (`214 + 182 + 117`), not their totals (`386 + 312 + 244 = 942`), so every done-count from pass `231` to here ran `429` low; pass `257`'s separate slip is `§P258`'s); next `S1`.
