@@ -16,7 +16,7 @@ import { apiGenerate, apiHighHit, apiSave, apiRecent } from "./main_ui/slips.js"
 import { apiHealth, apiHealthRerun, apiCalibrationReport, apiCalibrationApply } from "./main_ui/health.js";
 import { ASSETS } from "./main_ui/assets.js";
 
-const VERSION = "alphadog-v2-nba-main-ui-v1.0.6";
+const VERSION = "alphadog-v2-nba-main-ui-v1.0.7";
 const ASSET_HASH = VERSION.replace(/^.*-v/, "v");   // browser cache key for the client parts: bump VERSION on any client change
 
 const STATIC = {
