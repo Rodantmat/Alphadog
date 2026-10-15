@@ -1146,6 +1146,8 @@ join. Paired with `nba/nba_names.py`.
 Two-way ridge `Y = mu + alpha(off) + beta(def)`, 5 channels, reliability-shrunk, weekly as-of, both
 seasons. Has `as_of_date`.
 
+🆕 *(additional sweep `6`, pass `388`, `§P388` — `T16` `2026-09-13 16:08Z`, the research that sent the crude M1 feature back to be rebuilt as this table)*: the Sloan paper on defensive impact — a player's opponent 3P% *is not a reliable perimeter defensive metric because it is quite variable, having almost no year-to-year correlation.*; and the feature-engineering literature — *Opponent Points Allowed is not enough* — which calls for Hidden Markov Models to predict who will actually guard the target, plus scheme metrics (drop / hedge / blitz / switch frequency), and states that *books misprice props most often when multiple factors shift simultaneously — for example, a key teammate injury in a fast-paced matchup.* The reply's own reading: the null it had measured held only for a historical exposure average with no scheme and no positional cross-matching, and interactions were untested.
+
 ---
 
 ## 1b. `nba_stats` / `nba_team` — the weekly profile layer *(T2)*
