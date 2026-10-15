@@ -302,24 +302,32 @@ def fit_params(X, y, meta, l2, min_n):
                 params["_iso"][f"{side}|{ac}"] = k
         # per prop (2026-10-15 strategy audit): one map per side is dominated by the points family, where the market is
         # efficient, and it flattened the defensive props (steals / stocks / turnovers) where the model carries real signal
+        # A per-prop map is KEPT only when it earns it inside the fit set: fitted on the earlier half of the fit dates, it must
+        # beat the broader map (side x anchor class) on the later half in log-loss; then it is refitted on the whole fit set.
+        # The test season is never used to choose.
+        broad = stage1.copy()
+        for ac in ANCHOR_CLASSES:
+            msc = (sides == side) & (classes == ac)
+            if msc.any():
+                broad[msc] = apply_iso(stage1[msc], iso_key(params, side, ac))
         for prop in PROPS:
             mp = (sides == side) & (props == prop)
-            k = iso_knots(stage1[mp], y[mp]) if mp.sum() >= 2000 else None
-            if k:
-                params["_iso"][f"{side}|p:{prop}"] = k
-            for ac in ANCHOR_CLASSES:                   # and per (side, prop, anchor class) where that cell is large enough
-                mpc = mp & (classes == ac)
-                k = iso_knots(stage1[mpc], y[mpc]) if mpc.sum() >= 2000 else None
-                if k:
-                    params["_iso"][f"{side}|p:{prop}|{ac}"] = k
+            if mp.sum() < 2000:
+                continue
+            cut = np.sort(dates[mp])[mp.sum() // 2]
+            early, late = mp & (dates < cut), mp & (dates >= cut)
+            k_early = iso_knots(stage1[early], y[early])
+            if not k_early or late.sum() < 500:
+                continue
+            if logloss(apply_iso(stage1[late], k_early), y[late]) < logloss(broad[late], y[late]):
+                params["_iso"][f"{side}|p:{prop}"] = iso_knots(stage1[mp], y[mp])
     return params
 
 
 def iso_key(params, side, ac, prop=None):
-    """stage-2 map, most specific first (each fitted only on 2,000+ legs): (side, prop, anchor class), (side, prop),
-    (side, anchor class), the side's."""
+    """stage-2 map, most specific first: (side, prop) where it earned its place, (side, anchor class), the side's."""
     iso = params.get("_iso") or {}
-    return ((iso.get(f"{side}|p:{prop}|{ac}") or iso.get(f"{side}|p:{prop}")) if prop else None) or iso.get(f"{side}|{ac}") or iso.get(side)
+    return (iso.get(f"{side}|p:{prop}") if prop else None) or iso.get(f"{side}|{ac}") or iso.get(side)
 
 
 def predict(params, X, meta, iso=True):
