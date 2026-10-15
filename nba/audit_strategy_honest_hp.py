@@ -61,6 +61,8 @@ def main():
             "SELECT game_date, player_id, prop, line::float8, side, model_hp, true_hp, anchor FROM nba_score.board_true_hp"):
         thp[(d, pid, prop, float(line), side)] = (float(m), float(t), anc)
     print(f"  {len(names):,} (date, player) names, {len(thp):,} legs with an honest probability", flush=True)
+    cellp = {(c, t, sd): float(p) for c, t, sd, p in conn.execute("SELECT cell, tier, side, p FROM nba_score.edge_monitor_ref")}
+    print(f"  {len(cellp)} certified cell rates (nba_score.edge_monitor_ref)", flush=True)
 
     out = []
     for name, spec in STRATEGIES.items():
