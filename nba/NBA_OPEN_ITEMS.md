@@ -19803,3 +19803,14 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `364` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T42` done (`36,071` sentences); next `T43`.
+
+## §P365 — PASS 365 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T43` · NO RESIDUE
+*Angle (as NEXT set it):* (e18) `§P131`'s method on `T43`, with pass 361's identifier check.
+- Tabulated in the shell before this line (the scan at pass 364's head): `T43` `28` of `41` sentences listed — the same `28` as `§P315` listed, the two lists diffed in the shell (`0` dropped, `0` added). **All `28` read whole**. The bounded figure triage: `0` / `0` / `0` / `28` with none; every line is a step announcement.
+- The identifier check: `bt_table()`, `build_final_hp`, `built_at`, `calibrated_at`, `edge_monitor_ref` and `team_hist` all return hits in the twelve. `_pmap`, a helper, is judged as at pass 315.
+- On file, by substance (each grepped before it was written, every hit read, in `§T43.2`'s round-2 table): `§P315`'s list — the whole-number prune, the replay `asof` plumbing, the grader's team check, the Underdog budget, the NBA-owned PrizePicks producer, injury names through the daily roster, the gzipped dated ladder, the market-free table and `bt_table()`, the `edge_monitor_ref` rebuild, the combos builder's component pickles and the failed components / combos / periods step. Judged, on `§P165`'s, `§P215`'s, `§P265`'s and `§P315`'s bases: narration and the build chat's internal helper names.
+- **No residue in `T43`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`; `§P357`'s strike-correction; `§P361`'s residue; `§P362`'s writes). Commits not this sweep's since `0045cb7d3` (pass 364's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P356` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `365` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T43` done (`36,112` sentences); next `T44`.
