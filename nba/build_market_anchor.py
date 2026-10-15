@@ -41,7 +41,7 @@ from psycopg.rows import dict_row
 FEATURE_SQL = """WITH mk(prop, mkey) AS (VALUES ('points','player_points'),('rebounds','player_rebounds'),('assists','player_assists'),('threes_made','player_threes'),
    ('pra','player_points_rebounds_assists'),('pts_reb','player_points_rebounds'),('pts_ast','player_points_assists'),('reb_ast','player_rebounds_assists'),
    ('steals','player_steals'),('blocks','player_blocks'),('turnovers','player_turnovers'),('stocks','player_blocks_steals')),
-legs AS (
+legs AS MATERIALIZED (
   SELECT DISTINCT ON (b.game_date, b.player_id, b.prop, b.line, b.side) b.game_date, b.player_id, b.player, b.prop, b.line::float8 line, b.side,
          b.baseline_hp::float8 base, b.final_hp::float8 fin, mk.mkey
   FROM nba_score.board_scored b JOIN mk ON mk.prop = b.prop
