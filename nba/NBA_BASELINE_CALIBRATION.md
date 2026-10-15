@@ -562,6 +562,8 @@ graded by role: **deep bench 1.265 → starters 1.222**.*
 it immediately*: **for PRE-GAME RULED-OUT prediction the control is *games where X did not play at
 all*, NOT within-game stints** — *which removed the play-by-play dependency from the factor's path.*
 
+🆕 *(additional sweep `6`, pass `387`, `§P387` — `T15` `2026-09-12 05:38Z`–`19:54Z`, the other sources the research passes cited)*: Unabated, for the scenario design — *At 50 percent to play, we'll start with him in the base set, and then we'll have a set with him out as well.*; the PLOS endogeneity finding, the bias handled before fitting shares — *starters disproportionately play with starters*; the practitioner consensus the measured shares were checked against — *a 32% usage star frees 7–8 usage points, with the secondary creator taking 3–5, another scorer 2–3, bench 1–2 each*; and, for B4's failure (`19:54Z`), the Rim Deterrence work — rim protection mostly deterrence, shots never attempted, which block counts miss — and the practitioners' position-specificity: *a guard facing a team missing its point-of-attack defender is in a structurally different game than one facing a team missing a backup big*.
+
 ### ✅ THE ENRICHMENT CONTRACT THE ROUND WAS BUILT ON — **components, never the probability**
 
 > 🔑🔑 ***"enrichment adjusts the baseline's COMPONENTS — projected minutes, per-minute rate,
