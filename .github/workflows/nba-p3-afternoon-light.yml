@@ -416,8 +416,13 @@ jobs:
       # boards. The history loader, the prune and build_final_hp all read it instead of each re-scanning
       # board_snapshots. Refreshed for every date the archive touched today (advance boards post weeks
       # early, so today's capture can carry a future slate). Idempotent per date.
+      # SOFT (2026-10-15 full pass): neither the scorer nor the pick reads board_rung_keys at P3 time (P2B's build_final_hp and
+      # the prune do); a slow or failed refresh must never skip the scoring and the pick behind it.
       - name: Refresh board rung keys for the dates archived today
+        id: soft_rungkeys
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
+        timeout-minutes: 8
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
