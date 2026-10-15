@@ -195,6 +195,56 @@ def api_checks(conn, cfg):
     snap = {s["metric_window"]: s for s in pr.get("metric_snapshots", [])}
     check("C11 profile: identity, game log, snapshots, legs", code == 200 and pr.get("player") and pr.get("recent_games") and snap.get("season_to_date", {}).get("games_count"),
           f"{t}s games {len(pr.get('recent_games', []))} legs {len(pr.get('current_legs', []))} next {pr.get('next_game')}")
+    # ---- C25-C34: the bettor depth of the dossier and profile, every number reproduced from the database
+    pid = "nba_" + leg["player_id"]; d0 = leg["official_date"]; opp = leg.get("opponent_abbr")
+    derr = ctx.get("depth_errors") or []
+    check("C25 dossier depth: every block built (no block error)", isinstance(ctx.get("depth_errors"), list) and not derr, derr[:3])
+    u10 = next((r for r in ((ctx.get("usage_detail") or {}).get("usage") or []) if r["window"] == "Last 10"), None)
+    dbu = conn.execute("""SELECT avg(a.usg_pct::float), avg(a.ts_pct::float), count(*) FROM (
+                            SELECT game_id, game_date FROM nba_stats.player_game_log WHERE player_id=%s AND game_date < %s AND min > 0
+                            UNION ALL SELECT game_id, game_date FROM nba_stats.player_game_log_postseason WHERE player_id=%s AND game_date < %s AND min > 0
+                            ORDER BY game_date DESC LIMIT 10) g
+                          LEFT JOIN (SELECT game_id, usg_pct, ts_pct FROM nba_stats.player_game_log_advanced WHERE player_id=%s
+                                     UNION ALL SELECT game_id, usg_pct, ts_pct FROM nba_stats.player_game_log_advanced_postseason WHERE player_id=%s) a USING (game_id)""",
+                       (pid, d0, pid, d0, pid, pid)).fetchone()
+    check("C26 usage & efficiency: last-10 USG% / TS% == the per-game advanced log", u10 and dbu[0] is not None and abs(u10["usg"] - 100 * dbu[0]) < 0.11 and abs(u10["ts"] - 100 * dbu[1]) < 0.11,
+          f"ui {u10 and (u10['usg'], u10['ts'])} db {dbu[0] and (round(100 * dbu[0], 1), round(100 * dbu[1], 1))}")
+    trk = ctx.get("tracking_skills") or {}
+    ntr = conn.execute("SELECT count(*) FROM nba_stats.player_tracking_detail WHERE player_id=%s", (pid,)).fetchone()[0]
+    check("C27 tracking skills: one block per tracking board (touch boards merged)", (len(trk.get("groups") or []) >= 5) if ntr >= 6 else True, f"groups {[g['key'] for g in trk.get('groups') or []]} boards {ntr}")
+    car = ctx.get("career") or []
+    dbc = conn.execute("SELECT count(*), max(season_id) FROM nba_stats.player_career_season_totals WHERE player_id=%s", (pid,)).fetchone()
+    check("C28 career: one row per season / team on record", len(car) == dbc[0] and (not car or car[0]["season"] == dbc[1]), f"ui {len(car)} db {dbc[0]} latest {dbc[1]}")
+    vs = ctx.get("vs_opponent") or []
+    dbv = conn.execute("""SELECT count(*) FROM (SELECT game_date FROM nba_stats.player_game_log WHERE player_id=%s AND game_date < %s AND (matchup LIKE %s OR matchup LIKE %s)
+                          UNION ALL SELECT game_date FROM nba_stats.player_game_log_postseason WHERE player_id=%s AND game_date < %s AND (matchup LIKE %s OR matchup LIKE %s)) x""",
+                       (pid, d0, f"% @ {opp}", f"% vs. {opp}", pid, d0, f"% @ {opp}", f"% vs. {opp}")).fetchone()[0] if opp else 0
+    check("C29 head-to-head: every game vs the opponent before the slate (max 20)", len(vs) == min(20, dbv) and all(r["game_date"] < d0 for r in vs), f"vs {opp}: ui {len(vs)} db {dbv}")
+    ww = ctx.get("with_without") or {}
+    if ww.get("rows"):
+        r0 = ww["rows"][0]
+        mine = conn.execute("""SELECT count(*) FROM nba_stats.player_game_log g WHERE g.player_id=%s AND g.season=%s AND g.game_date < %s AND g.min > 0
+                               AND g.game_id IN (SELECT game_id FROM nba_team.team_game_log WHERE team_id=%s AND season=%s AND game_date < %s)""",
+                            (pid, ww["season"], d0, leg.get("team_id"), ww["season"], d0)).fetchone()[0]
+        tot = (r0["with"] or {}).get("games", 0) + (r0["without"] or {}).get("games", 0)
+        check("C30 with/without: with + without games == his games for the team this season", tot == mine, f"{r0['name']}: {tot} vs db {mine}; {len(ww['rows'])} teammates")
+    else:
+        check("C30 with/without: teammates listed", False, "no rows")
+    lu = ctx.get("lineups") or {}
+    nlu = conn.execute("SELECT count(*) FROM nba_team.lineup_profile WHERE %s = ANY(player_ids)", (pid,)).fetchone()[0]
+    check("C31 lineups: most-used units present when the league data has them", bool(lu.get("five") or lu.get("pairs")) == (nlu > 0), f"five {len(lu.get('five') or [])} pairs {len(lu.get('pairs') or [])} db rows {nlu}")
+    tt = ctx.get("team_trends") or []
+    check("C32 team form: both teams, last 10 + season", len(tt) == 4 and all(x["games"] > 0 and x["pace"] for x in tt), [(x["team"], x["window"], x["games"]) for x in tt])
+    hp = ctx.get("hp_lines") or []
+    check("C33 dossier ships the full pre-slate log for line records", len(ctx.get("games_full") or []) >= len(ctx.get("recent_games") or []) and all(g["game_date"] < d0 for g in ctx.get("games_full") or []),
+          f"{len(ctx.get('games_full') or [])} games for {len(hp)} lines")
+    pdp = pr.get("depth") or {}
+    check("C34 profile depth: built around the next game, no block error", pdp and not pdp.get("depth_errors") and pdp.get("career") and pdp.get("usage_detail"),
+          f"errors {pdp.get('depth_errors')} next {pr.get('next_game') and pr['next_game'].get('opponent_abbr')} vs-opp {len(pdp.get('vs_opponent') or [])} ww {len((pdp.get('with_without') or {}).get('rows') or [])}")
+    c_run, j_run, _ = curl("/run", body={"job_key": "nba_ui_test"})
+    c_404, j_404, _ = curl("/nope")
+    check("C35 /run is a read-only no-op and unknown paths list the allowed routes (MLB parity)", c_run == 200 and j_run.get("status") == "MAIN_UI_READ_ONLY_NOOP" and c_404 == 404 and len(j_404.get("allowed_routes") or []) >= 25,
+          f"run {j_run.get('status')} 404 routes {len(j_404.get('allowed_routes') or [])}")
     code, hh, t = curl("/api/slips/high-hit", body={}); save_sample("high_hit", hh)
     sl = hh.get("generated_slips") or []
     unpriced = [s["track_label"] for s in sl if not s.get("estimated_multiplier")]
