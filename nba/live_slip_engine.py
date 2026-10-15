@@ -1193,6 +1193,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if state != 'critical':
             h.pop('CRIT_SINCE', None)
         if state == 'red':
+            h.pop('RELEASED', None)  # a new red withdraws a release cap
             h['RED_STICKY'] = '1'   # released only by P5's weekly PASS
             if str(h.get('REQUAL', '')).startswith('PASS'):
                 h.pop('REQUAL')     # an OLD pass verdict must not release a NEW red
