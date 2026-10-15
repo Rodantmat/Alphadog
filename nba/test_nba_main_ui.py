@@ -306,7 +306,7 @@ def api_checks(conn, cfg):
         if spec and s_.get("strategy_backtest") is not None:
             tbl = f"nba_score.slip_engine_slips{sfx}{'_nosteals' if str(s_['strategy'])[:2] in ('C_', 'D_', 'R_', 'W_') else ''}"
             want_rec = [{"season": se, "slips": int(n_), "roi_pct": round(100 * (pay / st - 1), 1)} for se, n_, st, pay in conn.execute(
-                f"SELECT season, count(*), sum(stake), sum(payout) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s GROUP BY season ORDER BY season",
+                f"SELECT season, count(*), sum(stake), sum(payout) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s AND phase<>'final7' GROUP BY season ORDER BY season",
                 (spec["composition"], spec["size"], spec["structure"], max(1, int(caps.get(s_["strategy"]) or 0)))).fetchall()]
             got_rec = [{k: r[k] for k in ("season", "slips", "roi_pct")} for r in s_["strategy_backtest"]]
             nrec += 1
