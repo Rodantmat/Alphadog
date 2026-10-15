@@ -19501,3 +19501,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `340` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T18` done (`12,993` sentences); next `T19`.
+
+## §P341 — PASS 341 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T19` · NO RESIDUE
+*Angle (as NEXT set it):* (g17) `§P131`'s method on `T19`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at this pass's head): `T19` `178` of `537` sentences listed — the same `178` as `§P291` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `25` with every figure on file / `153` with none; `0 + 0 + 25 + 153 = 178`). The running done-count recounted from every source's total in the shell at `T18` (the sweep's first milestone, pass 270's lesson): `T1`–`T18` sum to `12,993`, as `§P340` wrote.
+- On file, by substance (each grepped before it was written, every hit read): `§P291`'s list, plus MLB's `~130` deployed workers against `116` registry rows and `team_aliases`' `157` rows, both of which the session flagged as undocumented, the dead stubs, `blowout_model`'s ratios (`1.0333`), the `4,319` coach's-decision rows, the extraction scripts. Judged, on `§P191`'s, `§P241`'s and `§P291`'s bases: narration, the owner's exchange about the forgotten work, the session's account of its compacted context, per-transcript progress tables and pass counts.
+- **No residue in `T19`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`). Commits not this sweep's since `03331cfe0` (pass 340's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P310` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `341` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T19` done (`13,530` sentences); next `T20`.
