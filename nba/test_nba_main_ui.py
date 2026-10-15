@@ -503,6 +503,30 @@ def sharp_checks(conn, cfg, leg, ctx, pr):
           f"errors {ps.get('errors')} env {len(ps.get('env') or [])} history props {len((ps.get('market_history') or {}).get('props') or [])} market {bool(ps.get('market'))}")
 
 
+# ------------------------------------------------------------------ C47-C48: the honest (market-anchored) probability
+def honest_checks(conn, cfg, d0):
+    n_all, n_th = conn.execute("""SELECT count(*), count(th.true_hp) FROM nba_score.board_scored b0 LEFT JOIN nba_score.board_true_hp th
+                                    ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop AND th.line = b0.line AND th.side = b0.side
+                                  WHERE b0.game_date = %s AND b0.app = ANY(%s)""", (d0, cfg["apps"])).fetchone()
+    check("C47 every board leg carries the market-anchored probability (board_true_hp)", n_all and n_th / n_all >= 0.99, f"{n_th:,} of {n_all:,} legs ({d0})")
+    rows = conn.execute("""
+        WITH t AS (SELECT th.game_date, th.player_id, th.prop, th.line::float8 line, th.side, th.true_hp::float8 p, th.model_hp::float8 m FROM nba_score.board_true_hp th
+                   WHERE th.game_date BETWEEN %s::date - 30 AND %s::date - 1),
+        s AS (SELECT player_id, game_date, pts::float8 pts, reb::float8 reb, ast::float8 ast, fg3m::float8 fg3m, stl::float8 stl, blk::float8 blk, tov::float8 tov
+              FROM nba_stats.player_game_log WHERE game_date BETWEEN %s::date - 30 AND %s::date - 1 AND min > 0
+              UNION ALL SELECT player_id, game_date, pts, reb, ast, fg3m, stl, blk, tov FROM nba_stats.player_game_log_postseason
+              WHERE game_date BETWEEN %s::date - 30 AND %s::date - 1 AND min > 0),
+        j AS (SELECT t.*, CASE t.prop WHEN 'points' THEN pts WHEN 'rebounds' THEN reb WHEN 'assists' THEN ast WHEN 'threes_made' THEN fg3m WHEN 'steals' THEN stl
+                WHEN 'blocks' THEN blk WHEN 'turnovers' THEN tov WHEN 'pra' THEN pts+reb+ast WHEN 'pts_reb' THEN pts+reb WHEN 'pts_ast' THEN pts+ast
+                WHEN 'reb_ast' THEN reb+ast WHEN 'stocks' THEN stl+blk END v FROM t JOIN s ON s.player_id = 'nba_' || t.player_id AND s.game_date = t.game_date)
+        SELECT width_bucket(p, 0.5, 1.0, 5) b, count(*), avg(p), avg(m), avg(CASE WHEN (side = 'Over' AND v > line) OR (side = 'Under' AND v < line) THEN 1.0 ELSE 0 END)
+        FROM j WHERE v IS NOT NULL AND v <> line AND p >= 0.5 GROUP BY 1 ORDER BY 1""", (d0, d0, d0, d0, d0, d0)).fetchall()
+    bands = [(int(b), int(n), round(float(p), 3), round(float(m), 3), round(float(h), 3)) for b, n, p, m, h in rows]
+    bad = [x for x in bands if x[1] >= 300 and abs(x[2] - x[4]) > 0.05]
+    check("C48 the probability the board shows matches reality (30 days before the slate: |shown - hit| <= 5 pts in every band with 300+ legs)",
+          bands and not bad, f"band(0.5-1.0 in fifths) n / shown / model-would-show / hit: {bands}")
+
+
 # ------------------------------------------------------------------ D. browser
 def browser():
     from playwright.sync_api import sync_playwright
