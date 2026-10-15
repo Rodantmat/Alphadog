@@ -3587,7 +3587,13 @@ these twelve.**
 | `simulate_ud_bankroll.py` | `nba-ud-bankroll-sim.yml` | 10,000-season bankroll / drawdown / Kelly / stop-rule / CUSUM simulator (debugged on synthetic days first) |
 | `drought_regime_analysis.py` | `nba-drought-regime-analysis.yml` | both apps: block-bootstrap recalibration, line movement, window-time predictors, team micro-regimes |
 | `research_angles.py` | `nba-research-angles.yml` | travel/circadian, public Over bias, count skew, parlay liability |
-| **`ud_live_slip_engine.py`** | `nba-ud-live.yml` (manual) | **the UD paper engine** (imports `build_ud_slip_engine`); ledger `ud_live_slips` |
+| **`ud_live_slip_engine.py`** | `nba-ud-live.yml` (manual) | **the UD paper engine** (imports `build_ud_slip_engine`); ledger `ud_live_slips`. 🆕 *(additional sweep `5`, pass 370, `§P370` — its switches by their own names; `T48` prints its edge-monitor code, `2026-10-09` `20:22Z`; ✅ read in code)*:
+- `UDL_MODE`: `pick` (the default; P3, after the PrizePicks pick), `grade` (P2A) or `edge` (the break-even monitor).
+- `UDL_DATE`: `YYYY-MM-DD`; with no date, `grade` catches up every ungraded slate and `edge` reads yesterday on the Pacific clock.
+- `UDL_FORCE=1`: rebuilds a day already logged, where otherwise the first log wins.
+- `UDL_MIN_BOARD`: default `178`; a thinner board builds nothing.
+- `UDL_EDGE_DELTA` / `UDL_EDGE_CONFIRM_Z` / `UDL_EDGE_ALARM_Z`: code defaults `−0.1084` / `2.48` / `−2.95`. The DB tunable overrides the code defaults, and an env value overrides both (for tests).
+- `UDL_EDGE_REBUILD=1`: rebuilds `ud_edge_monitor_ref`. The reference is also rebuilt whenever it was built from another backtest table than the tunable now names. |
 | `parity_pp_leg_source.py` | `nba-pp-parity.yml` | old (`prop_universe`) vs new (live) PP leg source — every leg, field, slip and grade |
 | *(name map)* | `nba-name-map-refresh.yml` | on-demand player-name-map refresh (the daily one is a P2B step) |
 | *(close)* | `nba-close-capture.yml` | the close board (PP + UD, label `close`), input-free; fired by the scheduler (**v2.1.0** `decideClose`, first tip − 25 min) |
