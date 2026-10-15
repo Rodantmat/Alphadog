@@ -145,5 +145,102 @@ function renderDossier(d){const s=d.selected||{}, legs=d.other_player_legs||[], 
   document.querySelectorAll('#dossierBody .miniLegCard[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.getAttribute('data-leg-id')))}
 async function openDossierPart(id){if(!id)return;setScreen('dossier');$('dossierBody').innerHTML='<div class="empty">Loading dossier...</div>';try{const j=await (await fetch('/api/main-board/dossier?final_board_row_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'dossier failed');currentDossier=j;renderDossier(j);window.scrollTo({top:0,behavior:'smooth'})}catch(e){$('dossierBody').innerHTML='<div class="empty err">Dossier load failed: '+esc(e.message||e)+'</div>'}}
 
+// ---- BETTOR DEPTH (2026-10-14; owner: "every single possible information ... raw, derived ... player characteristics, player
+// skills, player form ... not internal factors"). Shared by the dossier and the Player Profile. Every block below is public
+// basketball information - box-score lines, rates, tracking, career, head-to-head, teammates, lineups, team form - computed
+// from games strictly before the slate (season-level boards carry their season / update date). No model internals.
+function nOrDash(v){return v==null||v===''||!Number.isFinite(Number(v))?'—':String(Math.round(Number(v)*10)/10)}
+function pctOrDash(v){return v==null||!Number.isFinite(Number(v))?'—':(Math.round(Number(v)*10)/10)+'%'}
+function quantile(sorted,q){if(!sorted.length)return null;const i=(sorted.length-1)*q,lo=Math.floor(i),hi=Math.ceil(i);return sorted[lo]+(sorted[hi]-sorted[lo])*(i-lo)}
+function seasonOf(games){return games.length?games[0].season:null}
+// the prop's main line on this slate: a regular / standard line when the board has one, else the most common line
+function mainLineFor(propKey,legs){const ls=(legs||[]).filter(l=>l.canonical_prop_key===propKey);if(!ls.length)return null;
+  const reg=ls.filter(l=>!l.line_type||l.line_type==='regular');const pool=reg.length?reg:ls;const c={};pool.forEach(l=>{const k=Number(l.line_value);c[k]=(c[k]||0)+1});
+  return Number(Object.entries(c).sort((a,b)=>b[1]-a[1]||Number(a[0])-Number(b[0]))[0][0])}
+function propStats(games,propKey,line){
+  const vals=games.map(g=>propGameValue(g,propKey)).filter(v=>v!=null);if(vals.length<3)return null;
+  const season=seasonOf(games);const sv=games.filter(g=>g.season===season).map(g=>propGameValue(g,propKey)).filter(v=>v!=null);const base=sv.length>=3?sv:vals;
+  const sorted=base.slice().sort((a,b)=>a-b);const mean=base.reduce((a,b)=>a+b,0)/base.length;const sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)*(b-mean),0)/base.length);
+  const avgN=n=>{const s=vals.slice(0,n);return s.length?s.reduce((a,b)=>a+b,0)/s.length:null};
+  const est=line==null;if(est)line=Math.max(0.5,Math.floor(mean)+0.5);
+  const over=arr=>arr.length?Math.round(100*arr.filter(v=>v>line).length/arr.length):null;
+  let streak=0,dir=null;for(const v of vals){const o=v>line?'Over':(v<line?'Under':'Push');if(o==='Push')break;if(dir==null)dir=o;if(o!==dir)break;streak++}
+  return {line,est,n:base.length,avg:mean,median:quantile(sorted,0.5),l5:avgN(5),l10:avgN(10),floor:quantile(sorted,0.1),ceiling:quantile(sorted,0.9),sd,
+    overSeason:over(base),overL10:over(vals.slice(0,10)),overL5:over(vals.slice(0,5)),streak:dir?streak+' '+dir:'—',margin:mean-line,max:sorted[sorted.length-1],min:sorted[0]}}
+function lineProfileBlock(games,legs,focusProp){
+  const keys=propFamilyKeys().concat([...new Set((legs||[]).map(l=>l.canonical_prop_key))].filter(k=>!propFamilyKeys().includes(k)));
+  if(focusProp&&keys.includes(focusProp)){keys.splice(keys.indexOf(focusProp),1);keys.unshift(focusProp)}
+  const rows=[];for(const k of keys){const st=propStats(games,k,mainLineFor(k,legs));if(!st)continue;
+    rows.push({'Prop':displayPropLabel(k)+(k===focusProp?' ★':''),'Line':st.line+(st.est?' (est.)':''),'Avg':nOrDash(st.avg),'Median':nOrDash(st.median),'L5':nOrDash(st.l5),'L10':nOrDash(st.l10),
+      'Floor':nOrDash(st.floor),'Ceiling':nOrDash(st.ceiling),'Low-High':nOrDash(st.min)+'-'+nOrDash(st.max),'Std Dev':nOrDash(st.sd),'Over% Season':st.overSeason==null?'—':st.overSeason+'%',
+      'Over% L10':st.overL10==null?'—':st.overL10+'%','Over% L5':st.overL5==null?'—':st.overL5+'%','Streak':st.streak,'Avg vs Line':(st.margin>0?'+':'')+nOrDash(st.margin),'G':st.n})}
+  if(!rows.length)return '';
+  return '<div class="dossierGrid">'+sectionWide('Line Profile — Every Prop',table(['Prop','Line','Avg','Median','L5','L10','Floor','Ceiling','Low-High','Std Dev','Over% Season','Over% L10','Over% L5','Streak','Avg vs Line','G'],rows),
+    'Season to date against this slate\'s main line for each prop (est. = no line on the board, nearest half-point to his average). Floor / ceiling = 10th / 90th percentile game. Streak = consecutive most recent games on one side of the line.')+'</div>'}
+// hit-miss record of a line over the last n played games (n = null: the whole season)
+function hitMiss(games,propKey,line,side,n){const season=seasonOf(games);let arr=games.filter(g=>propGameValue(g,propKey)!=null);if(n)arr=arr.slice(0,n);else arr=arr.filter(g=>g.season===season);
+  if(!arr.length)return '—';let h=0,m=0;for(const g of arr){const v=propGameValue(g,propKey);if(v===Number(line))continue;if(side==='less'?v<line:v>line)h++;else m++}return h+'-'+m}
+function minutesRoleBlock(games){
+  const played=games.filter(g=>Number(g.min)>0);if(!played.length)return '';const season=seasonOf(played);
+  const stat=(set,k)=>{const v=set.map(g=>Number(g[k])).filter(Number.isFinite);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+  const sdOf=set=>{const v=set.map(g=>Number(g.min));const m=v.reduce((a,b)=>a+b,0)/v.length;return Math.sqrt(v.reduce((a,b)=>a+(b-m)*(b-m),0)/v.length)};
+  const win=[['Last 5',played.slice(0,5)],['Last 10',played.slice(0,10)],['Last 20',played.slice(0,20)],['Season '+season,played.filter(g=>g.season===season)]].filter(x=>x[1].length);
+  const rows=win.map(([w,set])=>({'Window':w,'G':set.length,'Starts':set.filter(g=>g.is_starter===1).length,'MIN':nOrDash(stat(set,'min')),'MIN SD':nOrDash(sdOf(set)),
+    'MIN Low-High':nOrDash(Math.min(...set.map(g=>Number(g.min))))+'-'+nOrDash(Math.max(...set.map(g=>Number(g.min)))),'FGA':nOrDash(stat(set,'fga')),'3PA':nOrDash(stat(set,'fg3a')),'FTA':nOrDash(stat(set,'fta')),'PF':nOrDash(stat(set,'pf'))}));
+  const ss=played.filter(g=>g.season===season);const role=[['Starter',ss.filter(g=>g.is_starter===1)],['Bench',ss.filter(g=>g.is_starter===0)]].filter(x=>x[1].length).map(([r,set])=>({'Role':r,'G':set.length,'MIN':nOrDash(stat(set,'min')),'PTS':nOrDash(stat(set,'pts')),'REB':nOrDash(stat(set,'reb')),'AST':nOrDash(stat(set,'ast')),'3PM':nOrDash(stat(set,'fg3m')),'PRA':nOrDash(set.reduce((a,g)=>a+Number(g.pts||0)+Number(g.reb||0)+Number(g.ast||0),0)/set.length)}));
+  const wl=[['Wins',ss.filter(g=>g.wl==='W')],['Losses',ss.filter(g=>g.wl==='L')]].filter(x=>x[1].length).map(([r,set])=>({'Role':r,'G':set.length,'MIN':nOrDash(stat(set,'min')),'PTS':nOrDash(stat(set,'pts')),'REB':nOrDash(stat(set,'reb')),'AST':nOrDash(stat(set,'ast')),'3PM':nOrDash(stat(set,'fg3m')),'PRA':nOrDash(set.reduce((a,g)=>a+Number(g.pts||0)+Number(g.reb||0)+Number(g.ast||0),0)/set.length)}));
+  return sectionWide('Minutes & Role',table(['Window','G','Starts','MIN','MIN SD','MIN Low-High','FGA','3PA','FTA','PF'],rows)+'<div class="small" style="margin:10px 0 2px;font-weight:900">This season by role and result</div>'+table(['Role','G','MIN','PTS','REB','AST','3PM','PRA'],role.concat(wl)),
+    'Playing time is the biggest driver of every prop: how many minutes, how steady, how often he starts, and his output as a starter / off the bench and in wins / losses.')}
+function usageBlock(d){if(!d||!(d.usage||[]).length)return '';
+  const u=d.usage.map(r=>({'Window':r.window,'G':r.games,'MIN':nOrDash(r.min),'USG%':pctOrDash(r.usg),'TS%':pctOrDash(r.ts),'eFG%':pctOrDash(r.efg),'AST%':pctOrDash(r.astp),'REB%':pctOrDash(r.rebp),'OREB%':pctOrDash(r.orebp),'DREB%':pctOrDash(r.drebp),
+    '% Team PTS':pctOrDash(r.tm_pts),'% Team REB':pctOrDash(r.tm_reb),'% Team AST':pctOrDash(r.tm_ast),'% Team FGA':pctOrDash(r.tm_fga),'3PA Rate':pctOrDash(r.three_rate),'FT Rate':pctOrDash(r.ft_rate),'Pace':nOrDash(r.pace),'ORtg':nOrDash(r.ortg),'DRtg':nOrDash(r.drtg)}));
+  const s=(d.scoring||[]).map(r=>({'Window':r.window,'G':r.games,'Paint':pctOrDash(r.paint),'Mid-Range':pctOrDash(r.mid),'3PT':pctOrDash(r.three),'Free Throws':pctOrDash(r.ft),'Fast Break':pctOrDash(r.fb),'Off Turnovers':pctOrDash(r.offtov),'Unassisted FGM':pctOrDash(r.uast),'3PA Share of FGA':pctOrDash(r.fga3)}));
+  return sectionWide('Usage & Efficiency',table(['Window','G','MIN','USG%','TS%','eFG%','AST%','REB%','OREB%','DREB%','% Team PTS','% Team REB','% Team AST','% Team FGA','3PA Rate','FT Rate','Pace','ORtg','DRtg'],u),
+      'How much of the offense runs through him and how efficiently - per-game averages over each window (role changes show up here first).')
+    +(s.length?sectionWide('Scoring Profile — Where His Points Come From',table(['Window','G','Paint','Mid-Range','3PT','Free Throws','Fast Break','Off Turnovers','Unassisted FGM','3PA Share of FGA'],s),'Share of his points by zone and situation, and how many of his made shots he creates himself.'):'')}
+function trackingBlock(t){if(!t||!(t.groups||[]).length)return '';
+  return '<div class="sectionLabel" style="margin-top:16px">Skills — Player Tracking</div><div class="small" style="margin:-4px 0 8px">NBA tracking boards, per game, '+esc(t.games!=null?t.games+' games':'')+(t.min_per_game!=null?' • '+esc(t.min_per_game)+' MIN':'')+(t.updated?' • updated '+esc(t.updated):'')+'.</div><div class="dossierGrid">'
+    +t.groups.map(g=>section(g.title,g.rows)).join('')+'</div>'}
+function vsOpponentBlock(rows,abbr,games){if(!abbr)return '';if(!(rows||[]).length)return sectionWide('Head-To-Head vs '+abbr,'<div class="small">No previous games against '+esc(abbr)+' on record.</div>');
+  const avg=k=>{const v=rows.filter(r=>Number(r.min)>0).map(r=>Number(r[k])).filter(Number.isFinite);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+  const season=seasonOf(games||[]);const sg=(games||[]).filter(g=>g.season===season&&Number(g.min)>0);const savg=k=>{const v=sg.map(g=>Number(g[k])).filter(Number.isFinite);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+  const pra=set=>set.length?set.reduce((a,r)=>a+Number(r.pts||0)+Number(r.reb||0)+Number(r.ast||0),0)/set.length:null;
+  const sum=[{'Split':'vs '+abbr+' ('+rows.length+'G)','MIN':nOrDash(avg('min')),'PTS':nOrDash(avg('pts')),'REB':nOrDash(avg('reb')),'AST':nOrDash(avg('ast')),'PRA':nOrDash(pra(rows.filter(r=>Number(r.min)>0))),'3PM':nOrDash(avg('fg3m')),'STL':nOrDash(avg('stl')),'BLK':nOrDash(avg('blk')),'TOV':nOrDash(avg('tov'))},
+    {'Split':'Season '+(season||'')+' ('+sg.length+'G)','MIN':nOrDash(savg('min')),'PTS':nOrDash(savg('pts')),'REB':nOrDash(savg('reb')),'AST':nOrDash(savg('ast')),'PRA':nOrDash(pra(sg)),'3PM':nOrDash(savg('fg3m')),'STL':nOrDash(savg('stl')),'BLK':nOrDash(savg('blk')),'TOV':nOrDash(savg('tov'))}];
+  const log=rows.map(r=>({'Date':r.game_date,'Opp':(r.is_home?'vs ':'@ ')+abbr,'W/L':r.wl||'','MIN':nOrDash(r.min),'PTS':r.pts,'REB':r.reb,'AST':r.ast,'3PM':r.fg3m,'STL':r.stl,'BLK':r.blk,'TOV':r.tov,'FG':(r.fgm??'—')+'-'+(r.fga??'—'),'FT':(r.ftm??'—')+'-'+(r.fta??'—'),'+/-':r.plus_minus,'Phase':r.phase==='Playoffs'?'PO':''}));
+  return sectionWide('Head-To-Head vs '+abbr,table(['Split','MIN','PTS','REB','AST','PRA','3PM','STL','BLK','TOV'],sum)+'<div class="small" style="margin:10px 0 2px;font-weight:900">Every game against '+esc(abbr)+' (newest first)</div>'+table(['Date','Opp','W/L','MIN','PTS','REB','AST','3PM','STL','BLK','TOV','FG','FT','+/-','Phase'],log),
+    'His averages against this opponent next to his season, then each meeting - regular season and playoffs.')}
+function withWithoutBlock(ww){if(!ww||!(ww.rows||[]).length)return '';
+  const f=(a,b,k)=>a&&b?nOrDash(a[k])+' / '+nOrDash(b[k]):(a?nOrDash(a[k])+' / —':(b?'— / '+nOrDash(b[k]):'—'));
+  const rows=ww.rows.map(r=>{const w=r.with,o=r.without;const small=o&&o.games<3;return {'Teammate':r.name+(r.status?' ('+r.status+')':''),'G With / Without':(w?w.games:0)+' / '+(o?o.games:0)+(small?' ⚠':''),
+    'MIN':f(w,o,'min'),'PTS':f(w,o,'pts'),'REB':f(w,o,'reb'),'AST':f(w,o,'ast'),'PRA':f(w,o,'pra'),'3PM':f(w,o,'fg3m'),'FGA':f(w,o,'fga'),
+    'PRA Change':w&&o?((o.pra-w.pra>0?'+':'')+nOrDash(o.pra-w.pra)):'—'}});
+  return sectionWide('With / Without Teammates ('+esc(ww.season)+')',table(['Teammate','G With / Without','MIN','PTS','REB','AST','PRA','3PM','FGA','PRA Change'],rows),
+    'His averages in games the teammate played / missed this season (each cell: with / without). Teammates on tonight\'s injury report are listed first with their status. ⚠ = fewer than 3 games without - a small sample.')}
+function lineupsBlock(lu){if(!lu||(!(lu.five||[]).length&&!(lu.pairs||[]).length))return '';
+  const map=r=>({'Lineup':r.group,'Team':r.team||'','GP':r.gp,'W-L':r.record||'—','MIN':nOrDash(r.min),'+/-':nOrDash(r.plus_minus),'+/- per 48':nOrDash(r.per48),'PTS':nOrDash(r.pts)});
+  return sectionWide('Lineups ('+esc(lu.season)+')',(lu.five.length?'<div class="small" style="margin:2px 0;font-weight:900">Most-used 5-man units</div>'+table(['Lineup','Team','GP','W-L','MIN','+/-','+/- per 48','PTS'],lu.five.map(map)):'')
+    +(lu.pairs.length?'<div class="small" style="margin:10px 0 2px;font-weight:900">Most-used two-man pairs</div>'+table(['Lineup','Team','GP','W-L','MIN','+/-','+/- per 48','PTS'],lu.pairs.map(map)):''),
+    'Who he shares the floor with most and how those groups perform (season totals; +/- per 48 normalizes for minutes).')}
+function teamTrendsBlock(rows){if(!(rows||[]).length)return '';
+  const r=rows.map(x=>({'Team':x.team,'Window':x.window,'G':x.games,'W-L':x.record,'PPG':nOrDash(x.ppg),'Opp PPG':nOrDash(x.opp_ppg),'Pace':nOrDash(x.pace),'ORtg':nOrDash(x.ortg),'DRtg':nOrDash(x.drtg),'eFG%':pctOrDash(x.efg),'Opp eFG%':pctOrDash(x.opp_efg),'TOV%':pctOrDash(x.tov),'Forced TOV%':pctOrDash(x.opp_tov),'OREB%':pctOrDash(x.oreb),'Opp OREB%':pctOrDash(x.opp_oreb),'FT Rate':pctOrDash(x.ftr),'Opp FT Rate':pctOrDash(x.opp_ftr)}));
+  return sectionWide('Team Form — Last 10 / Season',table(['Team','Window','G','W-L','PPG','Opp PPG','Pace','ORtg','DRtg','eFG%','Opp eFG%','TOV%','Forced TOV%','OREB%','Opp OREB%','FT Rate','Opp FT Rate'],r),
+    'Both teams before this game: scoring for and against, pace, ratings and the four factors on offense (eFG%, TOV%, OREB%, FT rate) and allowed on defense (Opp columns).')}
+function careerBlock(rows){if(!(rows||[]).length)return '';
+  const r=rows.map(x=>({'Season':x.season,'Team':x.team,'Age':x.age??'—','GP':x.gp,'GS':x.gs,'MIN':nOrDash(x.min),'PTS':nOrDash(x.pts),'REB':nOrDash(x.reb),'AST':nOrDash(x.ast),'PRA':nOrDash(x.pra),'3PM':nOrDash(x.fg3m),'STL':nOrDash(x.stl),'BLK':nOrDash(x.blk),'TOV':nOrDash(x.tov),'FG%':pctOrDash(x.fg_pct),'3P%':pctOrDash(x.fg3_pct),'FT%':pctOrDash(x.ft_pct)}));
+  return sectionWide('Career — Season By Season',table(['Season','Team','Age','GP','GS','MIN','PTS','REB','AST','PRA','3PM','STL','BLK','TOV','FG%','3P%','FT%'],r),'Per-game averages each regular season (TOT = combined line in a traded season).')}
+function arenaRows(a){if(!a)return [];return [['Arena',a.arena_name],['City',[a.city,a.state].filter(Boolean).join(', ')],['Capacity',a.capacity],['Altitude',a.altitude_ft!=null?a.altitude_ft+' ft':''],['Time Zone',a.timezone]]}
+// the whole depth section; `opts.oppAbbr` overrides the head-to-head opponent
+function bettorDepthHtml(ctx,games,legs,opts){opts=opts||{};const abbr=opts.oppAbbr||ctx.vs_opponent_abbr;
+  const a=arenaRows(ctx.arena);
+  return '<div class="sectionLabel" style="margin-top:18px">Player Depth — Form, Role, Skills, Matchup</div><div class="dossierGrid">'
+    +minutesRoleBlock(games)+usageBlock(ctx.usage_detail)+vsOpponentBlock(ctx.vs_opponent,abbr,games)+withWithoutBlock(ctx.with_without)
+    +teamTrendsBlock(ctx.team_trends)+lineupsBlock(ctx.lineups)+careerBlock(ctx.career)+(a.length?section('Arena',a,'Where the game is played.'):'')+'</div>'
+    +trackingBlock(ctx.tracking_skills)}
+// the dossier's line table gains each line's record (MLB shows the line's sample and hit-miss)
+function rowsForHpLines(ctx){const games=ctx.games_full||ctx.recent_games||[];return (ctx.hp_lines||[]).map(r=>({'Source':appLabel(r.source_key)+(r.line_type&&r.line_type!=='regular'?' '+lineLabel(r.line_type):''),'Prop':displayPropLabel(r.canonical_prop_key),'Side':String(r.selected_side||'').toUpperCase(),'Line':r.line_value,'HP':pctNum(r.estimated_hit_probability_0_100),'Conf':pctNum(r.probability_confidence_0_100),'Score':num(r.score_0_100),
+  'L10 Hit-Miss':hitMiss(games,r.canonical_prop_key,Number(r.line_value),String(r.selected_side||'').toLowerCase(),10),'Season Hit-Miss':hitMiss(games,r.canonical_prop_key,Number(r.line_value),String(r.selected_side||'').toLowerCase(),null),
+  'Edge':r.edge_0_100!=null?(r.edge_0_100>0?'+':'')+r.edge_0_100:'—','Factor':r.leg_factor!=null?Number(r.leg_factor).toFixed(3)+'x':'—'}))}
+
 // wide NBA tables (box-score columns) scroll inside their card instead of widening the page on a phone
 function table(headers,rows){if(!rows.length)return '<div class="small">Not available for this game/player yet.</div>';return '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="dossierTable"><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+headers.map(h=>'<td>'+esc(r[h]??'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
