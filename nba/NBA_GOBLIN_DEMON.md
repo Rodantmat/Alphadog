@@ -1733,6 +1733,7 @@ been able to check it.***
 payout_full, model_ev, live, hits, misses, voids, payout, profit, built_at`. Companion
 `nba_score.sim_strategy` (`1` row: `strategy, params, notes, created_at`) **is** on file in two
 documents — **the parameters were documented and the results were not.***
+🆕 *(additional sweep `6`, pass `396`, `§P396` — `T24`'s §8, the simulator's own specification, AS STATED; `std3_power_130`'s parameters were on file, the simulator's parameter set and its packing and pricing rules were not)*: `nba_score.sim_strategy` holds named strategies whose params are `n`, `slip_type` (power or flex), `min_value` (a floor on the leg value, which the record writes as 2 × factor × model_p), `kinds`, `sources`, `props`, `sides` and `max_slips_per_night`. `nba_score.simulate_slips(strategy, from, to)` writes `nba_score.sim_slip`, one row per slip (legs, factors, model probabilities, the conservative full payout, model EV, hits / misses / voids, the graded payout, profit). The view `nba_score.sim_results` reports per strategy × season the ROI, the night-clustered SE, t, the leg hit rate, and the claimed against the realized payout per unit. Per night it takes the unflagged, graded universe legs above `min_value`, one leg per player, and packs them greedily in value order into slips of `n` legs from `n` different games. Power is priced by `pp_slip_power_conservative` (any mix); Flex is all-standard only, the one verified schedule, so slips containing alternates are skipped.
 
 ## What the live table says — `[LIVE-AUDIT]` 2026-09-23
 
