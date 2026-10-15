@@ -66,7 +66,8 @@ export async function apiPlayerProfile(sql, cfg, url, version) {
     home_games: seasonGames.filter(g => g.is_home === 1), away_games: seasonGames.filter(g => g.is_home === 0),
     metric_snapshots: C.formWindows(games, seasonGames), splits: sp,
     next_game: nextGame, next_game_context: nextCtx,
-    advanced: { ...adv, shot_quality: shot }, availability
+    advanced: { ...adv, shot_quality: shot }, availability,
+    depth
   } };
 }
 
