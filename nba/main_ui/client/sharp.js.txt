@@ -1,0 +1,147 @@
+// AlphaDog NBA main interface - client part: the SHARP READ (served appended to the dossier part; used by the dossier and the
+// Player Profile). 2026-10-14, owner: "what the best and most experienced bettors look for". Everything shown is public,
+// bettor-facing information - the sportsbook market (fair line, ladder, movement, his record against the closing line), a
+// transparent box-score projection, his form against his own spread, the game script (spread, total, blowout risk and his
+// splits by script), foul trouble, availability / minutes ramp, travel, the opponent's defenders and teammate correlations.
+// No model internals. Server data: ctx.sharp (nba/main_ui/sharp.js); tunables: nba_config.classification_config nba_main_ui.sharp.
+function sgn(v,d){if(v==null||!Number.isFinite(Number(v)))return '—';const n=Math.round(Number(v)*Math.pow(10,d==null?1:d))/Math.pow(10,d==null?1:d);return (n>0?'+':'')+n}
+function amer(p){if(p==null||!Number.isFinite(Number(p)))return '—';const n=Number(p);return n>0?'+'+n:String(n)}
+function labName(l){return {routine:'Early',window:'Pre-Game',close:'Close (tip)'}[l]||cap(l)}
+function avgOf(a){const v=a.filter(x=>x!=null&&Number.isFinite(Number(x))).map(Number);return v.length?v.reduce((x,y)=>x+y,0)/v.length:null}
+function sdOf(a){const v=a.filter(x=>x!=null&&Number.isFinite(Number(x))).map(Number);if(v.length<2)return null;const m=v.reduce((x,y)=>x+y,0)/v.length;return Math.sqrt(v.reduce((x,y)=>x+(y-m)*(y-m),0)/(v.length-1))}
+function corrOf(xs,ys){const n=xs.length;if(n<5)return null;const mx=avgOf(xs),my=avgOf(ys);let a=0,b=0,c=0;for(let i=0;i<n;i++){a+=(xs[i]-mx)*(ys[i]-my);b+=(xs[i]-mx)**2;c+=(ys[i]-my)**2}return b&&c?a/Math.sqrt(b*c):null}
+function overPct(vals,line){const v=vals.filter(x=>x!=null);return v.length?Math.round(100*v.filter(x=>x>line).length/v.length):null}
+function seasonGamesOf(games){const s=seasonOf(games);return games.filter(g=>g.season===s&&Number(g.min)>0)}
+// a prop selector that switches every pane in its box (movement, ladder, history log) to one prop
+function sharpPick(sel){const box=sel.closest('.sharpBox');if(!box)return;box.querySelectorAll('.sharpPane').forEach(p=>{p.style.display=p.getAttribute('data-prop')===sel.value?'':'none'})}
+function propSelect(keys,cur){return '<select class="sharpSel" onchange="sharpPick(this)" style="margin:2px 0 10px;padding:6px 8px;border-radius:8px;font-weight:800">'+keys.map(k=>'<option value="'+esc(k)+'"'+(k===cur?' selected':'')+'>'+esc(displayPropLabel(k))+'</option>').join('')+'</select>'}
+function pane(k,cur,html){return '<div class="sharpPane" data-prop="'+esc(k)+'"'+(k===cur?'':' style="display:none"')+'>'+html+'</div>'}
+
+// ---- A. MARKET READ: the books' fair (50/50) line per snapshot, how it moved, and the market's over% at each DFS line
+function marketReadBlock(m,games,legs){if(!m||!(m.props||[]).length)return '';
+  const labs=m.labels||[];const season=seasonGamesOf(games);
+  const rows=m.props.map(p=>{const dl=(p.dfs_lines||[]);const main=mainLineFor(p.prop,legs);const vals=season.map(g=>propGameValue(g,p.prop));
+    const r={'Prop':displayPropLabel(p.prop),'Books':p.books};labs.forEach(l=>{r['Fair '+labName(l)]=p.fair[l]!=null?String(p.fair[l]):'—'});
+    r['Fair Move']=p.fair_move!=null?sgn(p.fair_move):'—';r['Board Line']=main!=null?String(main):'—';
+    const at=dl.find(x=>x.line===main);r['Market Over% @ Board']=at&&at.p_over!=null?at.p_over+'%':'—';
+    const lastFair=labs.length?p.fair[labs[labs.length-1]]:null;r['Board vs Fair']=main!=null&&lastFair!=null?sgn(main-lastFair):'—';
+    r['His Season Over%']=main!=null&&vals.length?overPct(vals,main)+'%':'—';r['Season Avg']=nOrDash(avgOf(vals));return r});
+  const hdr=['Prop','Books'].concat(labs.map(l=>'Fair '+labName(l))).concat(['Fair Move','Board Line','Board vs Fair','Market Over% @ Board','His Season Over%','Season Avg']);
+  return sectionWide('Market Read — Sportsbook Fair Line',table(hdr,rows),'The sportsbooks\' no-vig consensus for every prop: the fair line is where the books make over and under 50/50 ('+(m.label_note||'')+'). Board vs Fair < 0 means the DFS line sits below the market\'s fair line (leans over); > 0 leans under. Market Over% @ Board = the books\' no-vig chance of the over at the DFS board line.')}
+// ---- B + K. LINE MOVEMENT (each book's main line and prices per snapshot) and the LINE LADDER (every half-point line)
+function movementLadderBlock(m,games,legs,focus){if(!m||!(m.props||[]).length)return '';
+  const keys=m.props.map(p=>p.prop);const cur=keys.includes(focus)?focus:keys[0];const labs=m.labels||[];
+  const season=seasonGamesOf(games);const l10=games.filter(g=>Number(g.min)>0).slice(0,10);
+  const panes=m.props.map(p=>{
+    const mv=(p.book_lines||[]).map(b=>{const r={'Book':cap(b.book)};labs.forEach(l=>{const x=b[l];r[labName(l)]=x?x.line+' ('+amer(x.over)+' / '+amer(x.under)+')':'—'});
+      const f=b[labs[0]],t=b[labs[labs.length-1]];r['Line Move']=f&&t?sgn(t.line-f.line):'—';r['No-Vig Over%']=t?t.p_over+'%':'—';r['Hold']=t?t.hold+'%':'—';return r});
+    const mvH=['Book'].concat(labs.map(labName)).concat(['Line Move','No-Vig Over%','Hold']);
+    const sv=season.map(g=>propGameValue(g,p.prop)),tv=l10.map(g=>propGameValue(g,p.prop));
+    const offers={};(p.dfs_lines||[]).forEach(d=>{offers[d.line]=d.offers.map(o=>appLabel(o.app)+(o.line_type&&o.line_type!=='regular'?' '+lineLabel(o.line_type):'')+(o.multiplier?' '+o.multiplier+'x':'')).join(', ')});
+    const lines=[...new Set((p.ladder||[]).map(x=>x.line).concat((p.dfs_lines||[]).map(d=>d.line)))].sort((a,b)=>a-b);
+    const ld=lines.map(line=>{const x=(p.ladder||[]).find(y=>y.line===line)||{};const r={'Line':line};labs.forEach(l=>{r['Mkt Over% '+labName(l)]=x[l]!=null?x[l]+'%':'—'});
+      const d=(p.dfs_lines||[]).find(y=>y.line===line);if(!x[labs[labs.length-1]]&&d&&d.p_over!=null)r['Mkt Over% '+labName(labs[labs.length-1])]=d.p_over+'% (interp.)';
+      r['Books']=x.books||'—';r['His Season Over%']=sv.length?overPct(sv,line)+'%':'—';r['His L10 Over%']=tv.length?overPct(tv,line)+'%':'—';r['DFS Offers']=offers[line]||'';return r});
+    const ldH=['Line'].concat(labs.map(l=>'Mkt Over% '+labName(l))).concat(['Books','His Season Over%','His L10 Over%','DFS Offers']);
+    return pane(p.prop,cur,'<div class="small" style="margin:2px 0;font-weight:900">Line movement — each book\'s main line (over / under price)</div>'+table(mvH,mv)
+      +'<div class="small" style="margin:10px 0 2px;font-weight:900">Line ladder — market vs his own record at every line</div>'+table(ldH,ld))});
+  return sectionWide('Line Movement & Ladder','<div class="sharpBox">'+propSelect(keys,cur)+panes.join('')+'</div>',
+    'How each sportsbook moved this prop through the day and, line by line, the market\'s no-vig over% next to how often he actually cleared it (season / last 10) and which DFS apps offer that line (goblin / demon / multiplier).')}
+// ---- L. VS THE MARKET: his recent games against the closing fair line (does the market under- or over-rate him lately?)
+function vsMarketBlock(h,focus){if(!h||!(h.props||[]).length)return '';
+  const sum=h.props.map(p=>({'Prop':displayPropLabel(p.prop),'G':p.games,'Over-Under vs Close':p.over+'-'+p.under,'Over%':Math.round(100*p.over/Math.max(1,p.over+p.under))+'%','L5 Over':p.l5_over+'/'+p.l5_games,'Avg Actual − Line':sgn(p.avg_diff),'Line Trend':p.line_trend!=null?sgn(p.line_trend):'—'}));
+  const keys=h.props.map(p=>p.prop);const cur=keys.includes(focus)?focus:keys[0];
+  const panes=h.props.map(p=>pane(p.prop,cur,table(['Date','Opp','Fair Line','Actual','Diff','Result'],p.rows.map(r=>({'Date':r.game_date,'Opp':r.opp,'Fair Line':r.fair,'Actual':r.actual,'Diff':sgn(r.diff),'Result':r.result})))));
+  return sectionWide('Vs The Market — His Record Against The Closing Line',table(['Prop','G','Over-Under vs Close','Over%','L5 Over','Avg Actual − Line','Line Trend'],sum)
+    +'<div class="small" style="margin:10px 0 2px;font-weight:900">Game by game</div><div class="sharpBox">'+propSelect(keys,cur)+panes.join('')+'</div>',
+    'Each of his recent games against the sportsbooks\' fair line at the close (pre-game window when no close). A player beating the market line again and again is one the books are slow on. Line Trend = newest fair line minus the oldest in the sample (how the market has re-rated him).')}
+// ---- D. PROJECTION: per-minute production x expected minutes x tonight's pace (and his share of the implied team total)
+function projectionBlock(sh,games,legs,depth,teamAbbr){
+  const cfg=(sh&&sh.config)||{};const w=cfg.proj_rate_weights||{last10:0.5,season:0.5};const N=cfg.proj_minutes_window||10;
+  const played=games.filter(g=>Number(g.min)>0);if(played.length<5)return '';const season=seasonGamesOf(games);const lastN=played.slice(0,N);
+  const expMin=avgOf(lastN.map(g=>g.min));
+  const tt=(depth&&depth.team_trends)||[];const mine=tt.filter(t=>t.team===teamAbbr);const opp=tt.filter(t=>t.team!==teamAbbr);
+  const pace=(rows,win)=>{const r=rows.find(x=>win==='l10'?x.window==='Last 10':String(x.window).startsWith('Season'));return r?Number(r.pace):null};
+  const gamePace=pace(mine,'l10')!=null&&pace(opp,'l10')!=null?(pace(mine,'l10')+pace(opp,'l10'))/2:null;const teamPace=pace(mine,'season');
+  const pf=gamePace&&teamPace?gamePace/teamPace:1;
+  const m=(sh&&sh.market)||{};const fairOf=k=>{const p=(m.props||[]).find(x=>x.prop===k);if(!p)return null;const l=(m.labels||[]);return l.length?p.fair[l[l.length-1]]:null};
+  const keys=['points','rebounds','assists','threes_made','pra','pts_reb','pts_ast','reb_ast','steals','blocks','stocks','turnovers'];
+  const rate=(set,k)=>{const mins=set.reduce((a,g)=>a+Number(g.min||0),0);return mins?set.reduce((a,g)=>a+(propGameValue(g,k)||0),0)/mins:null};
+  const rows=keys.map(k=>{const r10=rate(played.slice(0,10),k),rs=rate(season.length>=5?season:played,k);if(r10==null||rs==null)return null;
+    const blend=(w.last10*r10+w.season*rs)/((w.last10+w.season)||1);const proj=blend*expMin*pf;const line=mainLineFor(k,legs);const fair=fairOf(k);
+    return {'Prop':displayPropLabel(k),'Per-36 L10':nOrDash(36*r10),'Per-36 Season':nOrDash(36*rs),'Projection':nOrDash(proj),'Board Line':line!=null?line:'—','Proj − Line':line!=null?sgn(proj-line):'—','Market Fair':fair!=null?fair:'—','Proj − Fair':fair!=null?sgn(proj-fair):'—'}}).filter(Boolean);
+  if(!rows.length)return '';
+  const st=(sh&&sh.tonight_script)||null;const ud=depth&&depth.usage_detail&&(depth.usage_detail.usage||[]).find(x=>x.window==='Last 10');
+  const share=st&&st.team_implied!=null&&ud&&ud.tm_pts!=null?st.team_implied*ud.tm_pts/100:null;
+  const note='Projection = per-minute rate ('+Math.round(100*w.last10/((w.last10+w.season)||1))+'% last 10 / '+Math.round(100*w.season/((w.last10+w.season)||1))+'% season) × expected minutes '+nOrDash(expMin)+' (last '+N+' avg) × pace factor '+(Math.round(pf*1000)/1000)
+    +(gamePace?' (tonight\'s pace est. '+nOrDash(gamePace)+' = both teams\' last-10 average, vs his team\'s season '+nOrDash(teamPace)+')':' (no pace data - 1.0)')+'. A transparent box-score estimate, not the model.'
+    +(share!=null?' Points by team share: '+nOrDash(ud.tm_pts)+'% of team points (last 10) × implied team total '+st.team_implied+' = '+nOrDash(share)+'.':'');
+  return sectionWide('Box-Score Projection',table(['Prop','Per-36 L10','Per-36 Season','Projection','Board Line','Proj − Line','Market Fair','Proj − Fair'],rows),note)}
+// ---- J. FORM SIGNAL: recent games against his own season spread (z-score) - hot / cold beyond normal variance
+function formSignalBlock(sh,games){const n=((sh&&sh.config)||{}).form_z_window||5;const season=seasonGamesOf(games);if(season.length<8)return '';
+  const keys=['points','rebounds','assists','threes_made','pra','steals','blocks','turnovers'];
+  const rows=keys.map(k=>{const sv=season.map(g=>propGameValue(g,k));const m=avgOf(sv),sd=sdOf(sv);const recent=season.slice(0,n).map(g=>propGameValue(g,k));const ra=avgOf(recent);
+    if(m==null||!sd||ra==null)return null;const z=(ra-m)/(sd/Math.sqrt(recent.length));return {'Prop':displayPropLabel(k),'Season Avg':nOrDash(m),'Game SD':nOrDash(sd),['Last '+n+' Avg']:nOrDash(ra),'z':sgn(z,2),'Read':z>=2?'🔥 Hot':z>=1?'Warm':z<=-2?'🧊 Cold':z<=-1?'Cool':'Normal'}}).filter(Boolean);
+  const mins=season.map(g=>Number(g.min));const mm=avgOf(mins),ms=sdOf(mins),mr=avgOf(mins.slice(0,n));
+  if(mm!=null&&ms&&mr!=null){const z=(mr-mm)/(ms/Math.sqrt(Math.min(n,mins.length)));rows.unshift({'Prop':'Minutes','Season Avg':nOrDash(mm),'Game SD':nOrDash(ms),['Last '+n+' Avg']:nOrDash(mr),'z':sgn(z,2),'Read':z>=2?'⬆ Role up':z<=-2?'⬇ Role down':Math.abs(z)>=1?(z>0?'Up':'Down'):'Normal'})}
+  if(!rows.length)return '';
+  return sectionWide('Form Signal — Recent vs His Own Spread',table(['Prop','Season Avg','Game SD','Last '+n+' Avg','z','Read'],rows),'z = (last '+n+' average − season average) ÷ (game-to-game SD ÷ √'+n+'). |z| ≥ 2 is a real shift (role, health, scheme), |z| < 1 is ordinary noise - the difference between a trend and a streak.')}
+// ---- C. GAME SCRIPT: tonight's spread / total / blowout risk and his numbers by script (margin, favorite / underdog, total)
+function gameScriptBlock(sh,focus){const env=(sh&&sh.env)||[];const st=sh&&sh.tonight_script;const cfg=(sh&&sh.config)||{};const B=cfg.blowout_margin||15,F=cfg.big_favorite_spread||8;
+  if(!env.length&&!st)return '';const k=focus&&propFamilyKeys().includes(focus)?focus:'points';
+  const top=st?section('Tonight\'s Script',[['His Team Spread',sgn(st.spread)],['Game Total',st.total??'—'],['Implied Team Total',st.team_implied??'—'],['Win Probability',st.p_win+'%'],['Blowout Either Way ('+st.blowout_margin+'+)',st.p_blowout+'%'],['Win by '+st.blowout_margin+'+',st.p_win_by_blowout+'%'],['Lose by '+st.blowout_margin+'+',st.p_lose_by_blowout+'%']],
+    'From the consensus spread (normal margin model, sd '+st.margin_sd+' - approximate). Blowouts cut starters\' minutes in the 4th quarter.'):'';
+  const stat=(set,kk)=>nOrDash(avgOf(set.map(g=>propGameValue(g,kk))));
+  const mk=(name,set)=>set.length?{'Script':name,'G':set.length,'MIN':nOrDash(avgOf(set.map(g=>g.min))),'PTS':stat(set,'points'),'REB':stat(set,'rebounds'),'AST':stat(set,'assists'),'3PM':stat(set,'threes_made'),'PRA':stat(set,'pra'),[displayPropLabel(k)]:stat(set,k)}:null;
+  const withM=env.filter(g=>g.margin!=null),withS=env.filter(g=>g.spread!=null),withT=env.filter(g=>g.total!=null);
+  const tMed=withT.length?quantile(withT.map(g=>g.total).sort((a,b)=>a-b),0.5):null;
+  const rows=[mk('All games',env),mk('Won by '+B+'+',withM.filter(g=>g.margin>=B)),mk('Within '+(B-1),withM.filter(g=>Math.abs(g.margin)<B)),mk('Lost by '+B+'+',withM.filter(g=>g.margin<=-B)),
+    mk('Favored by '+F+'+',withS.filter(g=>g.spread<=-F)),mk('Favored by < '+F,withS.filter(g=>g.spread<0&&g.spread>-F)),mk('Underdog / pick',withS.filter(g=>g.spread>=0)),
+    tMed!=null?mk('Total ≥ '+tMed,withT.filter(g=>g.total>=tMed)):null,tMed!=null?mk('Total < '+tMed,withT.filter(g=>g.total<tMed)):null,
+    mk('Team scored 120+',env.filter(g=>g.team_pts!=null&&g.team_pts>=120)),mk('Team scored < 105',env.filter(g=>g.team_pts!=null&&g.team_pts<105))].filter(Boolean);
+  const cm=withM.length>=10?corrOf(withM.map(g=>Math.abs(g.margin)),withM.map(g=>Number(g.min))):null;const ct=withT.length>=10?corrOf(withT.map(g=>g.total),withT.map(g=>propGameValue(g,k))):null;
+  const cp=env.filter(g=>g.team_pts!=null);const ctp=cp.length>=10?corrOf(cp.map(g=>g.team_pts),cp.map(g=>propGameValue(g,k))):null;
+  const hdr=['Script','G','MIN','PTS','REB','AST','3PM','PRA'].concat(propFamilyKeys().includes(k)&&!['points','rebounds','assists','threes_made','pra'].includes(k)?[displayPropLabel(k)]:[]);
+  return '<div class="dossierGrid">'+top+sectionWide('Game Script Splits ('+env.length+' games)',table(hdr,rows)
+    +'<div class="small" style="margin-top:8px">Correlations: |final margin| vs his minutes r = '+(cm==null?'—':sgn(cm,2))+' • pregame total vs his '+esc(displayPropLabel(k))+' r = '+(ct==null?'—':sgn(ct,2))+' • team points vs his '+esc(displayPropLabel(k))+' r = '+(ctp==null?'—':sgn(ctp,2))+'.</div>',
+    'His last '+env.length+' games (incl. prior season / playoffs) by how the game played out and how it was priced: final margin, pregame spread (median of books) and pregame total. Tells you whether blowouts cost him minutes and whether he needs a shootout.')+'</div>'}
+// ---- H. FOUL TROUBLE
+function foulTroubleBlock(sh,games){const cut=((sh&&sh.config)||{}).foul_trouble_pf||5;const season=seasonGamesOf(games);if(season.length<5)return '';
+  const pf=season.map(g=>Number(g.pf||0)),mins=season.map(g=>Number(g.min||0));const tot=mins.reduce((a,b)=>a+b,0);
+  const hi=season.filter(g=>Number(g.pf)>=cut),lo=season.filter(g=>Number(g.pf)<cut);
+  return section('Foul Trouble ('+season.length+' G)',[['Fouls / Game',nOrDash(avgOf(pf))],['Fouls / 36',tot?nOrDash(36*pf.reduce((a,b)=>a+b,0)/tot):'—'],['Games with 4+ PF',Math.round(100*season.filter(g=>Number(g.pf)>=4).length/season.length)+'%'],
+    ['Games with '+cut+'+ PF',Math.round(100*hi.length/season.length)+'%'],['Foul-Outs (6 PF)',season.filter(g=>Number(g.pf)>=6).length],['MIN in '+cut+'+ PF games',nOrDash(avgOf(hi.map(g=>g.min)))],['MIN in other games',nOrDash(avgOf(lo.map(g=>g.min)))]],
+    'This season. Foul-prone players lose minutes - read with the officials\' foul tendency above.')}
+// ---- G. AVAILABILITY & MINUTES RAMP
+function availabilityBlock(a){if(!a)return '';
+  const rows=[['Team Games / Played / Missed',a.team_games+' / '+a.played+' / '+a.missed],['Currently Out',a.current_out_streak?a.current_out_streak+' straight team games (since '+a.current_out_since+')':'No']];
+  const abs=(a.absences||[]).slice(0,4).map(x=>({'Out From':x.from,'To':x.to,'Team Games Missed':x.games,'Returned':x.return_date||'—'}));
+  let ramp='';if(a.ramp){const r=a.ramp;rows.push(['Latest Return',r.return_date+' after '+r.games_missed+' games'],['Games Since Return',r.games_since_return],['MIN Since Return / Before',nOrDash(r.min_since_return)+' / '+nOrDash(r.min_before_absence)],['PTS Since Return / Before',nOrDash(r.pts_since_return)+' / '+nOrDash(r.pts_before_absence)]);
+    ramp='<div class="small" style="margin:10px 0 2px;font-weight:900">First '+(r.since_return||[]).length+' games back</div>'+table(['Date','MIN','PTS','REB','AST'],(r.since_return||[]).map(g=>({'Date':g.game_date,'MIN':nOrDash(g.min),'PTS':g.pts,'REB':g.reb,'AST':g.ast})))}
+  return sectionWide('Availability & Minutes Ramp ('+esc(a.season)+')',infoRows(rows)+(abs.length?'<div class="small" style="margin:10px 0 2px;font-weight:900">Absences ('+(a.absences||[]).length+')</div>'+table(['Out From','To','Team Games Missed','Returned'],abs):'')+ramp,
+    'Games he missed for his current team this season and how his minutes have come back since the latest return - teams ease players back in, which caps minutes-driven props.')}
+// ---- I. TRAVEL
+function travelBlock(t){if(!(t||[]).length)return '';
+  const rows=t.map(x=>({'Team':x.team+(x.is_home?' (home)':' (road)'),'Last Game':x.last_game?x.last_game+' @ '+x.last_site:'—','Rest Days':x.rest_days??'—','Miles In':x.miles_to_tonight??'—','Time Zones':x.tz_change_hours==null?'—':(x.tz_change_hours===0?'0':sgn(x.tz_change_hours,0)+' h'),
+    'Altitude':x.tonight_elev_ft!=null?x.tonight_elev_ft+' ft'+(x.high_altitude?' ⛰':''):'—','Road Trip':x.road_trip_game?'Game '+x.road_trip_game:'—','Home Stand':x.home_stand_game?'Game '+x.home_stand_game:'—','G / Miles Last 7d':x.games_last_week+' / '+x.miles_last_week}));
+  return sectionWide('Travel & Fatigue',table(['Team','Last Game','Rest Days','Miles In','Time Zones','Altitude','Road Trip','Home Stand','G / Miles Last 7d'],rows),
+    'Both teams\' trip into tonight: distance from the last game\'s city, time-zone change (+ = clock moves forward, eastbound), altitude (⛰ = Denver / Utah), road-trip / home-stand game number and the last 7 days\' load. Coordinates and elevations are approximate (city level).')}
+// ---- E. OPPONENT DEFENDERS
+function defendersBlock(d,injuries){if(!d||!(d.rows||[]).length)return '';const inj=((injuries&&injuries.rows)||[]);
+  const st=n=>{const k=String(n||'').normalize('NFKD').replace(/[^A-Za-z]/g,'').toLowerCase();const r=inj.find(x=>String(x.player||'').normalize('NFKD').replace(/[^A-Za-z]/g,'').toLowerCase()===k);return r?r.status:''};
+  const rows=d.rows.map(r=>({'Defender':r.name+(st(r.name)?' ('+st(r.name)+')':''),'Pos':r.position||'','Ht':heightTxt(r.height_inches)||'—','GP':r.gp,'MIN':nOrDash(r.min),'STL':nOrDash(r.stl),'BLK':nOrDash(r.blk),'STL/36':nOrDash(r.stl36),'BLK/36':nOrDash(r.blk36),'PF':nOrDash(r.pf),'DREB':nOrDash(r.dreb),'D-DPM':r.d_dpm==null?'—':sgn(r.d_dpm)}));
+  return sectionWide('Opponent Defenders ('+esc(d.season)+')',table(['Defender','Pos','Ht','GP','MIN','STL','BLK','STL/36','BLK/36','PF','DREB','D-DPM'],rows),
+    'The opponent\'s rotation by minutes this season with tonight\'s injury status: size, hands (steals), rim protection (blocks), fouls and public defensive impact (DARKO D-DPM, + = better defender'+(d.darko_updated?', updated '+d.darko_updated:'')+'). Who is out on their side matters as much as who is out on his.')}
+// ---- F. TEAMMATE CORRELATION
+function teammateCorrBlock(c){if(!c||!(c.rows||[]).length)return '';const f=v=>v==null?'—':sgn(v,2);
+  const rows=c.rows.map(r=>({'Teammate':r.name,'Shared G':r.games,'Mate MIN':nOrDash(r.min),'PTS↔PTS':f(r.r_pts_pts),'REB↔REB':f(r.r_reb_reb),'His AST↔Mate PTS':f(r.r_ast_pts),'His PTS↔Mate AST':f(r.r_pts_ast),'3PM↔3PM':f(r.r_3pm_3pm),'PRA↔PRA':f(r.r_pra_pra)}));
+  return sectionWide('Teammate Correlation ('+esc(c.season)+')',table(['Teammate','Shared G','Mate MIN','PTS↔PTS','REB↔REB','His AST↔Mate PTS','His PTS↔Mate AST','3PM↔3PM','PRA↔PRA'],rows),
+    'Same-game correlation (Pearson r) of his line with each rotation teammate\'s this season. Positive = they tend to hit together (stack them); negative = one eats the other\'s production (avoid pairing overs). Needs '+(c.min_games||10)+'+ shared games.')}
+// the whole sharp layer; opts: {focus, injuries, depth, teamAbbr}
+function sharpHtml(sh,games,legs,opts){if(!sh)return '';opts=opts||{};const focus=opts.focus;
+  const errs=(sh.errors||[]).length?'<div class="small err" style="margin:4px 0">Sharp read partly unavailable: '+esc(sh.errors.join(' | '))+'</div>':'';
+  return '<div class="sectionLabel" style="margin-top:18px">Sharp Read — Market, Projection, Script, Matchup</div>'+errs+'<div class="dossierGrid">'
+    +marketReadBlock(sh.market,games,legs)+movementLadderBlock(sh.market,games,legs,focus)+vsMarketBlock(sh.market_history,focus)
+    +projectionBlock(sh,games,legs,opts.depth,opts.teamAbbr)+formSignalBlock(sh,games)+'</div>'
+    +gameScriptBlock(sh,focus)
+    +'<div class="dossierGrid">'+foulTroubleBlock(sh,games)+availabilityBlock(sh.availability)+travelBlock(sh.travel)+defendersBlock(sh.opp_defenders,opts.injuries)+teammateCorrBlock(sh.teammate_corr)+'</div>'}
