@@ -2040,6 +2040,8 @@ bands**; holdout 2024-25 **points `0.9` / rebounds `0.7`, 1 thin band***. 🔑 *
 moved from the enrichment lock into the BASELINE, measured then re-certified — **owner rule: never
 lose calibration**."*
 
+🆕 *(additional sweep `8`, pass 484, `§P484` — `T10`, `2026-09-09`, `21:34Z` and `21:54Z`)* **The curve this measurement replaced, AS STATED**: the enrichment lock's factor list carried *"Return ramp 65% / 80% / 95% of baseline minutes by game back, conditioned on injury class"* and a *"vulturing"* note (*"a returning center takes the power forward's boards"*); the measured result was followed by *"Per-minute scoring rate is unchanged (~1.0), so the published 65/80/95% curve was too aggressive for short absences."*
+
 ⚠ **`AS STATED` in `T9`/`T10`, not re-run by this sweep.**
 
 ---
