@@ -24,11 +24,11 @@ function pane(k,cur,html){return '<div class="sharpPane" data-prop="'+esc(k)+'"'
 // ---- A. MARKET READ: the books' fair (50/50) line per snapshot, how it moved, and the market's over% at each DFS line
 function marketReadBlock(m,games,legs){if(!m||!(m.props||[]).length)return '';
   const labs=m.labels||[];const season=seasonGamesOf(games);
-  const rows=m.props.map(p=>{const dl=(p.dfs_lines||[]);const main=mainLineFor(p.prop,legs);const vals=season.map(g=>propGameValue(g,p.prop));
-    const r={'Prop':displayPropLabel(p.prop),'Books':p.books};labs.forEach(l=>{r['Fair '+labName(l)]=p.fair[l]!=null?String(p.fair[l]):'—'});
-    r['Fair Move']=p.fair_move!=null?sgn(p.fair_move):'—';r['Board Line']=main!=null?String(main):'—';
-    const at=dl.find(x=>x.line===main);r['Market Over% @ Board']=at&&at.p_over!=null?at.p_over+'%':'—';
-    const lastFair=labs.length?p.fair[labs[labs.length-1]]:null;r['Board vs Fair']=main!=null&&lastFair!=null?sgn(main-lastFair):'—';
+  const rows=m.props.map(p=>{const dl=(p.dfs_lines||[]);const main=regularLineFor(p.prop,legs);const vals=season.map(g=>propGameValue(g,p.prop));
+    const r={'Prop':displayPropLabel(p.prop),'Books':p.books};labs.forEach(l=>{r['Fair '+labName(l)]=fairCell(p,l)});
+    r['Fair Move']=p.fair_move!=null?sgn(p.fair_move):'—';r['Standard Line']=main!=null?String(main):'— (alt lines only)';
+    const at=dl.find(x=>x.line===main);r['Market Over% @ Standard']=at&&at.p_over!=null?at.p_over+'%':'—';
+    const lastFair=labs.length?p.fair[labs[labs.length-1]]:null;r['Standard vs Fair']=main!=null&&lastFair!=null?sgn(main-lastFair):'—';
     r['His Season Over%']=main!=null&&vals.length?overPct(vals,main)+'%':'—';r['Season Avg']=nOrDash(avgOf(vals));return r});
   const hdr=['Prop','Books'].concat(labs.map(l=>'Fair '+labName(l))).concat(['Fair Move','Board Line','Board vs Fair','Market Over% @ Board','His Season Over%','Season Avg']);
   return sectionWide('Market Read — Sportsbook Fair Line',table(hdr,rows),'The sportsbooks\' no-vig consensus for every prop: the fair line is where the books make over and under 50/50 ('+(m.label_note||'')+'). Board vs Fair < 0 means the DFS line sits below the market\'s fair line (leans over); > 0 leans under. Market Over% @ Board = the books\' no-vig chance of the over at the DFS board line.')}
