@@ -445,6 +445,30 @@ jobs:
           BT2_DATE: ${{ steps.d.outputs.asof }}   # the resolved slate, not the runner clock (round 2 P3#11)
         run: python nba/build_board_tiers_v2.py
 
+      # PRICE KEYS FOR THE WINDOW BOARD (2026-10-15 full pass). nba_market.pp_leg_price (the pick's price source) needs a price
+      # key per (market, anchor, line, side, kind); new keys were only created by the payout-map run, which on game days fires
+      # BEFORE this tier build - a window leg whose key did not exist yet had no factor and was silently dropped from the pick
+      # (10-13: 19 of 570 priced legs got their key 74 minutes after P3). pp_refresh_prices() creates the missing keys, rescues
+      # anchorless legs and prices them under every registered model; idempotent.
+      - name: PrizePicks price keys for the slate's tiers
+        id: soft_ppkeys
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SLATE: ${{ steps.d.outputs.asof }}
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              ra, rb, nk, npr = c.execute("SELECT * FROM nba_market.pp_refresh_prices(%s::date - 1)", (os.environ["SLATE"],)).fetchone()
+              c.commit()
+              left = c.execute("""SELECT count(*) FILTER (WHERE price_reason = 'no_price_key_yet'), count(*) FROM nba_market.pp_leg_price
+                                  WHERE game_date = %s AND snapshot_label = 'window'""", (os.environ["SLATE"],)).fetchone()
+          print(f"price refresh: rescued {ra}+{rb}, new keys {nk}, new prices {npr}; window legs still without a key: {left[0]} of {left[1]}")
+          EOF
+
       # 2b) LIVE SPORTSBOOK PLAYER PROPS - the market term (owner 2026-10-09: "for props we use ParlayAPI"; strategy §31ac).
       #     ParlayAPI's live NBA props (every sportsbook; 3 credits) -> raw capture (nba_market.parlay_props_captures) and the
       #     sportsbook rows into nba_market.board_snapshots in the Odds API backfill's shape, so build_rung_market below counts
