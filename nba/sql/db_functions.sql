@@ -552,7 +552,7 @@ BEGIN
   ), book AS (
     SELECT game_date, player, market_key AS m, bookmaker, percentile_cont(0.5) WITHIN GROUP (ORDER BY line) AS bl
     FROM nba_market.board_snapshots
-    WHERE bookmaker NOT IN ('prizepicks','underdog','sleeper','pick6','betr_us_dfs') AND side = 'Over' AND game_date >= p_since
+    WHERE bookmaker NOT IN ('prizepicks','underdog','sleeper','pick6','betr_us_dfs','betr','fliff') AND side = 'Over' AND game_date >= p_since
       AND market_key IN ('player_points','player_rebounds','player_assists','player_threes','player_points_rebounds',
                          'player_points_assists','player_rebounds_assists','player_points_rebounds_assists')
     GROUP BY 1, 2, 3, 4
