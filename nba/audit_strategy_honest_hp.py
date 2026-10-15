@@ -144,6 +144,10 @@ def main():
                 "allhit_realized": a["allhit_full"] / a["slips_full"] if a["slips_full"] else None,
                 "allhit_model": a["allhit_model"] / a["slips_full"] if a["slips_full"] else None,
                 "allhit_honest": a["allhit_honest"] / a["slips_full"] if a["slips_full"] else None,
+                "leg_cell": a["cell_g"] / a["graded_c"] if a["graded_c"] else None,
+                "leg_hit_c": a["hit_c"] / a["graded_c"] if a["graded_c"] else None,
+                "roi_cell_realized": a["payout_cell"] / a["stake_cell"] - 1 if a["stake_cell"] else None,
+                "roi_exp_cell": a["ev_cell"] / a["stake_cell"] - 1 if a["stake_cell"] else None,
             }
             out.append(row)
 
