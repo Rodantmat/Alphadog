@@ -348,9 +348,7 @@ def reliability(p, y, edges=(0, .5, .55, .6, .65, .7, .75, .8, .85, .9, .95, 1.0
 def pull(conn_str, d0, d1, label):
     with psycopg.connect(conn_str) as c:
         c.execute("SET statement_timeout = 0")
-        cur = c.cursor(row_factory=dict_row)
-        cur.execute(FEATURE_SQL, {"d0": d0, "d1": d1, "lab": label})
-        return cur.fetchall()
+        return fetch_rows(c, d0, d1, label)
 
 
 def main():
