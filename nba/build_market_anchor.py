@@ -15,7 +15,8 @@ WHAT THIS DOES, per board leg (player, prop, line L, side s):
                                                                market's ~50/50 line vs the model's P(over) there
   z     = a + b*x_m + c*d_dk*has_dk + e*d_pp*has_pp + f*has_dk + g*has_pp + k_easy*easy + k_hard*hard
           (easy / hard = the leg's line is easier / harder than the standard line for its side: goblin- / demon-like)
-  true_hp = sigmoid(z), fitted per (side, prop) by L2-regularised logistic regression (IRLS), pooled-by-side fallback.
+  true_hp = sigmoid(z), fitted per (side, prop) by L2-regularised logistic regression (IRLS), pooled-by-side fallback,
+          then a monotone (isotonic) stage-2 map per side fitted on the same fit set (bends the thin top tail the logistic cannot).
 
 FIT SETS (as-of, no leakage, the recalibration-map convention): '2024-25' and '2025-26' (each fit on its own season and APPLIED
 TO THE OTHER season's history) and 'POOLED' (both seasons, for live dates). GATE: written only if the out-of-sample log-loss
