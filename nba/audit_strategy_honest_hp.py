@@ -75,8 +75,8 @@ def main():
                  for r in conn.execute(f"""SELECT game_date, k, stake, payout, hits FROM {ts}
                                            WHERE composition = %s AND size = %s AND structure = %s AND k <= %s""",
                                        (comp, size, structure, cap))}
-        for d, k, player, prop, side, line, factor, hit in conn.execute(
-                f"""SELECT game_date, k, player, prop, side, line::float8, factor, hit FROM {tl}
+        for d, k, player, prop, side, line, factor, hit, cell, tier in conn.execute(
+                f"""SELECT game_date, k, player, prop, side, line::float8, factor, hit, cell, tier FROM {tl}
                     WHERE composition = %s AND size = %s AND structure = %s AND k <= %s""", (comp, size, structure, cap)):
             s = slips.get((d, k))
             if s is None:
