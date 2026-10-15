@@ -20,7 +20,10 @@ export async function apiDossier(sql, cfg, url, version) {
     C.playerInfo(sql, pidT), C.gameLog(sql, pidT, leg.date, 100), C.splits(sql, pidT), C.shotProfile(sql, pidT), C.advanced(sql, pidT),
     C.playerBoardRows(sql, cfg, leg.date, selected.player_name)]);
   const game = selected.team_id ? await C.gameFor(sql, leg.date, selected.team_id) : null;
-  const gctx = game ? await C.gameContext(sql, cfg, { date: leg.date, game, teamId: selected.team_id, position: selected.position || (info && info.position) }) : null;
+  // the matchup context and the bettor depth (usage, tracking, career, head-to-head, with/without, lineups, team form) in parallel
+  const gctxP = game ? C.gameContext(sql, cfg, { date: leg.date, game, teamId: selected.team_id, position: selected.position || (info && info.position) }) : Promise.resolve(null);
+  const [gctx, depth] = await Promise.all([gctxP,
+    D.bettorDepth(sql, { pidT, beforeDate: leg.date, teamId: selected.team_id, game, oppAbbr: selected.opponent_abbr, injuries: gctxP.then(g => g && g.injuries) })]);
   const seasonGames = games.filter(g => g.season === (games[0] && games[0].season));
   const ctx = {
     player_profile: info ? { ...info, team_abbr: selected.team_abbr || info.team_abbr, team_name: selected.team_name || info.team_name } : { full_name: selected.player_name },
