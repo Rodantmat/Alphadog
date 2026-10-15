@@ -1721,3 +1721,76 @@ items; scheduler health logging; P3 time budget on a 15-game night; Fliff stat m
 estimated anchors; PrizePicks `snapshot_ts` = board time; `paper_results` single-survivor rule; certifier L11 should check
 every table; `stake_weight` in the ROI views; preseason rows in `live_state_history`; ParlayAPI credits used by another
 consumer (~45 / day); `kind` / `tier` NULL in `board_scored` (no reader).
+
+### THE DECISIONS, GROUNDED — C_WSTOCKS, THE WAY OUT OF RED, AND MORE ROI (owner 2026-10-15 13:29 PT: "Ground the decisions on data, online research and debug. Do not cancel or cut anything, just adjust for the best possible outcome. Also keeping improving logics, looking at other models to improve ROI")
+Tools (all read-only or rolled back): `nba/research_portfolio_roi.py` (per-strategy CIs, daily-profit correlation, portfolio
+with / without each strategy, cap slots, cross-season sizing models, unit size), `nba/research_leg_rank_models.py` (the certified
+engine rebuilt in memory with alternative leg orderings; V0 reproduces every backtest table exactly), `nba/audit_release_path.py`
+(the release path on real slips, rolled back); runner `nba-research-run.yml` (scripts named research_* / audit_* only).
+Online research: testing-by-betting / anytime-valid sequential tests (arXiv 2603.19551), Kelly for simultaneous bets
+(J. Quant. Anal. Sports, doi 10.1515/jqas-2020-0122: fractional Kelly against estimation error), pick'em correlation practice
+(Stokastic). Gemini (validation only): flags the multiple-look risk of a weekly release check; agrees flat stakes are right when
+fitted weights do not transfer across seasons.
+
+**1. C_wstocks_4flex — kept, and adjusted up, not cut.** Its cap-1 record is +1.5% / +52.5% (pooled +26.9%, 95% CI −0.8 / +57.1).
+It ADDS to the portfolio: with it +2,304 units pooled vs +2,221 without, net / max drawdown 11.25 vs 10.96; its daily profit is
+nearly uncorrelated with D_points_3power (−0.08) and A_core_3power (0.09). Its second slip is better than its first in the weak
+season (k = 2: +36.5% / +44.6%, pooled CI +9.9 / +75.1), so its cap rises to 2 (rule below): record at cap 2 +19.0% / +48.5%,
+pooled +33.7% with the CI now above zero (+7.7 / +62.2). A Flex-aware demon ordering would lift its weak season further
+(+27.8%) but failed the portfolio rule (below) and is not adopted.
+
+**2. The way out of red — built (it was one-way).** Debugged: P5 released a red strategy only on a validator PASS, but the
+validator's window is fixed history and its verdict is NOT_IN_TOP30 for 10 of 12 strategies; and its live-season record was read
+from the backtest table, which holds no in-season days (pp_model_vs_price → prop_universe → tier_map_legs → slip engine is built
+from history only). Now `live_slip_engine.release_record` reads the strategy's OWN season record — the backtest table when it
+holds ≥ 40 days, else the live ledger, where a red strategy keeps building and grading its shadow slips (same engine, same
+board, exact live parity). P5 (and the replay's simulate_p5) releases a red strategy to PAPER when that record's day-blocked
+bootstrap lower bound > 0 on ≥ 40 days, whatever the fixed-window verdict; a FAIL reds a strategy unless its live record already
+clears that bar. Paper still needs the ordinary paper gate before a unit is staked. Cap-0 reds (the demon Flex pair) come back at
+`RELEASE_CAP` = 1 (never their old caps, which were certified on the wrong Flex tiers). **Proof (audit_release_path, rolled
+back, PASS):** backtest source A_wsteals 2026-02-15 (≥ 40 days); live source — the real B_demon_5flex slips of 2025-11 .. 2026-02
+replayed one year later as graded shadows: 86 days, lower bound −59% → stays red (correct); < 40 days → holds; ledger and state
+unchanged after rollback. **Multiple looks, measured (simulation, 4-Flex payout profile, weekly looks days 40–160):** a ZERO-edge
+strategy is released 7–9% of the time at the 2.5% bound (vs 2.5% nominal); at a 0.5% bound 1.5–4%, but a +30%-edge strategy's
+release drops 65% → 40% (cap 1). Kept at 2.5%: a release only reaches paper, and the paper gate is a second, independent bar.
+An anytime-valid e-process was considered (the research's recommendation): at these payout variances it would need on the order of
+150 slate days to release a +30% strategy (rough growth-rate estimate) — inside one season that is the one-way door again.
+
+**3. More ROI — what was tested, what was adopted.**
+- **Caps (ADOPTED).** Every next slip beyond each live cap, measured on the true payouts (rule written before the run: rise one
+  slot at a time while the next slot is ≥ +15% in BOTH seasons and its pooled 95% lower bound > 0): A_wsteals 6 → 9 (k7 +87/+77,
+  k8 +31/+65, k9 +57/+77; k10 +28/+97 also passes, left out for concentration — 9 was already the validated late-March level),
+  A_regular 1 → 2 (k2 +40/+144; k3 −30 stops), A_wrebounds 1 → 3 (k2 +37/+77, k3 +29/+59; k4 +11 stops), C_wstocks 1 → 2.
+  Unchanged: A_core_3power (k4 −15%), D_points_3power (k4 +3%). Portfolio (daily strategies, flat units), 2024-25 / 2025-26:
+  net +663 → +1,150 / +1,641 → +2,478 units, ROI +28.5 → +33.8% / +71.0 → +73.1%, net / max drawdown 3.24 → 4.56 / 17.98 →
+  18.75 — better in BOTH seasons on every measure; max drawdown 205 → 252 units (profit grows faster). Total daily caps 23, under
+  the 36 ceiling. Wired: STRATEGIES caps, `classification_config['nba_main_ui'].pp_strategies`, paper rows' live_cap,
+  live_strategy_calib recalibrated (P4 calibrate 38806117823), edge_monitor_ref rebuilt (38806389091; 28,553 legs), EDGE_DELTA
+  re-solved −0.0649 → −0.0662 (pooled thinning; independence −6.65, 2024-25 −4.55, 2025-26 −8.58; 6,789 slips, ROI +53.4%;
+  38806157827), price-shop margin 0.0662 (code + DB). Late-March raise now never lowers a cap.
+- **Stake sizing (NOT adopted).** Half-Kelly (multi-strategy log-growth) and inverse-variance weights, fit on one season and
+  judged on the other at equal exposure: fit 2024-25 → 2025-26 both beat flat (log growth 0.0843 / 0.0853 vs 0.0801); fit
+  2025-26 → 2024-25 both lose (0.0204 / 0.0206 vs 0.0226). The weights do not transfer — flat units stay.
+- **Leg ordering inside the cells (NOT adopted).** The market-anchored honest probability separates hits inside each cell in
+  both seasons (terciles 0.499 / 0.540 / 0.558 and 0.550 / 0.576 / 0.596), so three orderings were rebuilt with the certified
+  engine (V0 = every table exactly): V1 honest-in-cell portfolio +39.7% / +48.3% (vs +28.5% / +71.0%), V2 Flex demon value
+  +35.1% / +65.3%, V3 both +33.0% / +47.2%. Each trades one season for the other; the pre-registered rule (better in BOTH
+  seasons) rejects all three. The certified ordering stays.
+- **Unit size (information for the owner; nothing in the system sets it).** Compounding flat stakes on the new caps, as a share
+  of the current bankroll per slip: 0.5% → log growth 0.024 / 0.065 per day, max drawdown 76% / 51%; 0.75% → 0.028 / 0.089,
+  91% / 67%; 1% → 0.029 / 0.109, 97.5% / 79%; 2% loses money in 2024-25. Growth peaks near 0.75–1% but with near-total
+  drawdowns in the weak season; ≤ 0.5% per slip keeps most of the growth (half-Kelly logic).
+
+**Also found and fixed in this pass:** the archive's synthetic event id carried the CAPTURE date, so the same future PrizePicks
+board re-archived on three days became three row sets (6,065 duplicate 'routine' rows this month; window / close never
+affected) — the id now carries the game date (`archive_live_boards.py`; rows retained). The 10-20 rehearsal crashed on an
+alternate posted AT the standard line (91 such legs on the 10-20 board; production tiers by PrizePicks' own label and is
+unaffected) — `sim_slate.py` skips them. The price-shop ledger's defaults had lost `ud_ref_per_leg` / `cell_margin` to an inline
+comment in this morning's margin edit (would have raised KeyError at the first pick; no ledger rows existed yet) — restored.
+
+**Re-verified after all changes:** certify_slip_system **66 checks, 0 FAIL** (38806839477, run 598a73cf); integration test **ALL
+PASS** (38806844811); UI end-to-end **92/92** on 2026-03-10 with the new caps (38808036426; C49: 93 legs, 22 strategy records
+reproduced; a first run during the rehearsal + certification load timed out at 13 s on 33 checks and passed clean on re-run);
+the **10-20 rehearsal** (38805449245) ran end to end: 967 board legs, small slate (3 games) → every strategy at cap 1 (29n), 9
+slips recorded (A_core_3power, A_regular_5power, A_wrebounds_4flex, C_wstocks_4flex as paper — nothing is staked before the
+paper gate; A_wsteals week-1 skip; both demons and R_stocks shadow), rolled back, production untouched.
