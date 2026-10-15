@@ -477,6 +477,12 @@ def main():
                         r[0] = dt.astimezone(ZoneInfo("America/New_York")).date()
                 except Exception:  # noqa: BLE001
                     pass
+            # ONE SET PER DAY (2026-10-15 full pass): the synthetic event id carried the CAPTURE date (ev(app, gd, ...)), so the
+            # same future board re-archived on three days became three row sets (10-20 board: fetched 10-13, 10-14, 10-15,
+            # identical snapshot_ts) and a game-day capture after 00:00 UTC got a second id. The id now carries the GAME date,
+            # so re-running a capture updates the same rows. Rows already stored keep their ids (retained, nothing deleted).
+            if isinstance(r[1], str) and r[0] != gd:
+                r[1] = r[1].replace(f"live-{app}-{gd}-", f"live-{app}-{r[0].isoformat()}-", 1)
             fixed.append(tuple(r))
         moved = sum(1 for a_, b_ in zip(rows, fixed) if a_[0] != b_[0])
         if moved:
