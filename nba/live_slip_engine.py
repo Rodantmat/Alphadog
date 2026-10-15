@@ -61,8 +61,11 @@ STRATEGIES = {
     'A_regular_5power':  ('regular',              5, 'power', 1, 0.61, 36.3, 13, 8),
     'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  1, 0.62, 21.6, 11, 8),
     'A_core_3power':     ('core',                 3, 'power', 3, 0.62, 74.6, 15, 8),
-    'B_demon_5flex':     ('demon',                5, 'flex',  6, 0.38, 40.0, 15, 4),   # cap 3->6 (29k pass 12): OOS +144% on 675 slips, best net/dd of any cap
-    'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.38, 14.6, 12, 4),
+    # B_demon_*: cap 0 since 2026-10-15 (full pass) - certification lost on PrizePicks' real Flex tiers (§31ad: 2024-25 -16% /
+    # -22%), red since 10-10. Their red lived only in DB rows, so a reset / non-resume replay put them back to paper at cap 6 / 1,
+    # and the edge monitor (strategies by code cap) still counted their shadow slips. Cap 0 = shadow record only, like A_core_5flex.
+    'B_demon_5flex':     ('demon',                5, 'flex',  0, 0.38, 40.0, 15, 4),   # was cap 6 (29k pass 12)
+    'B_demon_3flex':     ('demon',                3, 'flex',  0, 0.38, 14.6, 12, 4),   # was cap 1
     'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
     # 29p the drought menu (validated inside the five long droughts, positive both seasons):
     'D_points_3power':   ('single:points_R',      3, 'power', 3, 0.62, 30.0, 14, 5),   # +34% in long droughts / +33% normal / +60% on SINGLE bad days (uncorrelated with the defensive collapse) - all-weather, cap 3
