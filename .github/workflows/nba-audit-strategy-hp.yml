@@ -1,0 +1,32 @@
+name: NBA Audit - Honest HP vs Certified Slip Backtest
+
+# Read-only audit (nba/audit_strategy_honest_hp.py): for every certified strategy, the market-anchored hit probability of its
+# backtest legs vs what they hit, and the ROI each probability predicts (certified grader) vs the realized ROI.
+on:
+  workflow_dispatch:
+    inputs:
+      suffix:
+        description: "backtest table suffix ('_mf' = the market-free twin live calibrates against; '' = certified tables)"
+        default: "_mf"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy
+      - name: Audit
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AU_SUFFIX: ${{ github.event.inputs.suffix }}
+        run: python -u nba/audit_strategy_honest_hp.py
