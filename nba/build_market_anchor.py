@@ -293,7 +293,19 @@ def fit_params(X, y, meta, l2, min_n):
     # stage 2 (monotone, per side) on the fit set's own stage-1 output: the logistic shape cannot bend its thin top tail
     stage1 = predict(params, X, meta, iso=False)
     params["_iso"] = {side: iso_knots(stage1[sides == side], y[sides == side]) for side in ("Over", "Under")}
+    classes = np.array([m[4] for m in meta])
+    for side in ("Over", "Under"):
+        for ac in ANCHOR_CLASSES:
+            mc = (sides == side) & (classes == ac)
+            k = iso_knots(stage1[mc], y[mc]) if mc.sum() >= 2000 else None
+            if k:
+                params["_iso"][f"{side}|{ac}"] = k
     return params
+
+
+def iso_key(params, side, ac):
+    iso = params.get("_iso") or {}
+    return iso.get(f"{side}|{ac}") or iso.get(side)
 
 
 def predict(params, X, meta, iso=True):
