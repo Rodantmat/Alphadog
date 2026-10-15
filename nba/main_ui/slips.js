@@ -362,9 +362,24 @@ export async function apiHighHit(sql, cfg, url, version) {
       .sort((a, b) => Number(b.final_hp_raw) - Number(a.final_hp_raw)).slice(0, size)
       .map(l => slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name) })));
   }
-  if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - P3 builds them about 30 minutes before the first tip." : `No slips recorded for ${slate.date}.`);
+  if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - the afternoon run builds them at 1:16 PM PT, or 29 minutes before the first tip when that is earlier; they appear here a few minutes later." : `No slips recorded for ${slate.date}.`);
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, backup_pool: pool,
-    pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, timing_ms: (lap("build"), T) };
+    pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, stake_unit: bt.unit, timing_ms: (lap("build"), T) };
+}
+
+// THE OWNER SETS HIS OWN UNIT (2026-10-15, owner: "I'm going to start growing gradually. So $1.50, $2, $2.50, $3, $4, $5 ... I don't
+// need to be bugging you"). One number, written to classification_config['stake_unit'].unit_usd; the next pick (live engine) and
+// this screen read it. Bounded: never below the apps' minimum entry, never above 1000.
+export async function apiStakeUnit(sql, body, version) {
+  const rows = await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'");
+  const cur = rows[0] ? (typeof rows[0].config_json === "string" ? JSON.parse(rows[0].config_json) : rows[0].config_json) : {};
+  if (body == null) return { ok: true, version, route: "/api/stake-unit", stake_unit: cur };
+  const v = Math.round(Number(body.unit_usd) * 100) / 100;
+  const min = Number(cur.min_stake_usd || 1);
+  if (!Number.isFinite(v) || v < min || v > 1000) return { status: 400, body: { ok: false, version, error: `unit_usd must be between ${min} and 1000`, stake_unit: cur } };
+  await q(sql, "UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{unit_usd}', to_jsonb($1::numeric)) WHERE config_key = 'stake_unit'", [v]);
+  const after = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
+  return { ok: true, version, route: "/api/stake-unit", previous_unit_usd: cur.unit_usd, stake_unit: typeof after.config_json === "string" ? JSON.parse(after.config_json) : after.config_json };
 }
 
 // ------------------------------------------------------------------ save / recent
