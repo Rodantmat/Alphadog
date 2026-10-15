@@ -1438,7 +1438,7 @@ def edge_break_even(slips, p_ref):
         tot = 0.0
         for st, legs in usable:
             ps = [_expit(_logit(p_ref[key]) + shift) for key, f in legs]
-            tot += edge_exp_payout(ps, math.prod(f for key, f in legs), len(legs), st)
+            tot += edge_exp_payout(ps, math.prod(f for key, f in legs), len(legs), st, any(abs(f - 1.0) > 1e-9 for key, f in legs))
         return tot / len(usable) - 1
     lo, hi = -3.0, 1.0
     if roi(lo) > 0 or roi(hi) < 0:
