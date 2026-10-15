@@ -547,6 +547,19 @@
       "team_abbreviation": "NOP"
     },
     {
+      "id": 1630793,
+      "full_name": "Giorgi Bezhanishvili",
+      "last_comma_first": "Bezhanishvili, Giorgi",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "giorgi_bezhanishvili",
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
+    },
+    {
       "id": 1641844,
       "full_name": "Tarik Biberovic",
       "last_comma_first": "Biberovic, Tarik",
@@ -1286,19 +1299,6 @@
       "team_city": "Phoenix",
       "team_name": "Suns",
       "team_abbreviation": "PHX"
-    },
-    {
-      "id": 1642353,
-      "full_name": "Cam Christie",
-      "last_comma_first": "Christie, Cam",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2026",
-      "player_code": "cam_christie",
-      "team_id": 1610612746,
-      "team_city": "LA",
-      "team_name": "Clippers",
-      "team_abbreviation": "LAC"
     },
     {
       "id": 1631108,
@@ -3459,19 +3459,6 @@
       "team_abbreviation": "BKN"
     },
     {
-      "id": 1641998,
-      "full_name": "Trey Jemison III",
-      "last_comma_first": "Jemison III, Trey",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2026",
-      "player_code": "trey_jemison",
-      "team_id": 1610612761,
-      "team_city": "Toronto",
-      "team_name": "Raptors",
-      "team_abbreviation": "TOR"
-    },
-    {
       "id": 1642450,
       "full_name": "Daniss Jenkins",
       "last_comma_first": "Jenkins, Daniss",
@@ -4980,6 +4967,19 @@
       "team_abbreviation": "GSW"
     },
     {
+      "id": 1643869,
+      "full_name": "Chance Moore",
+      "last_comma_first": "Moore, Chance",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "chance_moore",
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
+    },
+    {
       "id": 1642922,
       "full_name": "Jalon Moore",
       "last_comma_first": "Moore, Jalon",
@@ -5524,19 +5524,6 @@
       "team_city": "Orlando",
       "team_name": "Magic",
       "team_abbreviation": "ORL"
-    },
-    {
-      "id": 1643007,
-      "full_name": "Taelon Peter",
-      "last_comma_first": "Peter, Taelon",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2026",
-      "player_code": "taelon_peter",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
     },
     {
       "id": 1643408,
@@ -6148,19 +6135,6 @@
       "team_city": "Detroit",
       "team_name": "Pistons",
       "team_abbreviation": "DET"
-    },
-    {
-      "id": 1642283,
-      "full_name": "Jaxson Robinson",
-      "last_comma_first": "Robinson, Jaxson",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "jaxson_robinson",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
     },
     {
       "id": 1629011,
@@ -6865,19 +6839,6 @@
       "team_abbreviation": "CHI"
     },
     {
-      "id": 1631306,
-      "full_name": "Cole Swider",
-      "last_comma_first": "Swider, Cole",
-      "roster_status": 1,
-      "from_year": "2022",
-      "to_year": "2026",
-      "player_code": "cole_swider",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
-    },
-    {
       "id": 1630256,
       "full_name": "Jae'Sean Tate",
       "last_comma_first": "Tate, Jae'Sean",
@@ -6902,19 +6863,6 @@
       "team_city": "Boston",
       "team_name": "Celtics",
       "team_abbreviation": "BOS"
-    },
-    {
-      "id": 1630678,
-      "full_name": "Terry Taylor",
-      "last_comma_first": "Taylor, Terry",
-      "roster_status": 1,
-      "from_year": "2021",
-      "to_year": "2026",
-      "player_code": "terry_taylor",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
     },
     {
       "id": 1643141,
@@ -7747,19 +7695,6 @@
       "team_city": "Oklahoma City",
       "team_name": "Thunder",
       "team_abbreviation": "OKC"
-    },
-    {
-      "id": 1642013,
-      "full_name": "Malik Williams",
-      "last_comma_first": "Williams, Malik",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2026",
-      "player_code": "malik_williams",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
     },
     {
       "id": 1631109,
