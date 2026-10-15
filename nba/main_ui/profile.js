@@ -3,6 +3,7 @@ import { q, pgArr, resolveSlate } from "./common.js";
 import { loadLegs } from "./board.js";
 import * as C from "./context.js";
 import * as D from "./bettor.js";
+import * as S from "./sharp.js";
 
 export async function apiPlayerSearch(sql, url, version) {
   const qs = String(url.searchParams.get("q") || "").trim();
