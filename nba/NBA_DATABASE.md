@@ -394,6 +394,8 @@ behind every 45-minute write."*
 ⚠ **The three expression indexes sum to 447 MB against fact 104's stated 487 MB** — *a 40 MB
 difference; **NOT RECORDED** whether that is a different measurement basis or reclaimed bloat.*
 
+🆕 *(additional sweep `5`, pass 362, `§P362`)* **A fifth index in `T18`'s own audit, never named here — `final_hp_lookup` on `final_hp`.** The build chat's index table of `2026-09-19` `18:58Z` lists it beside `baseline_history_lookup_idx` (*"1,334 MB | 22,305,046 | The one I built today — heavily used, validated"*) as *"| final_hp_lookup | 586 MB | 80,847 | Keep |"* (size, scans, verdict). ✅ Live today (`pg_indexes`, read with SELECT this pass): `nba_score.final_hp_lookup` exists on `final_hp`, at `54 MB`.
+
 🔴🔴 **`board_outcomes_nm_idx` carries 303 MB and `idx_scan = 0`.** ⚠ **RE-DERIVED `2026-09-25`,
 `§T26.24`: `14` scans, still 303 MB. ALL FOUR counters ROSE and `stats_reset` is STILL `NULL`, so the
 restart caveat below is now EXCLUDED and the window claim is CONFIRMED — the batch-mate took
