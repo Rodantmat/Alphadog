@@ -3,6 +3,7 @@
 import SHELL from "./client/shell.html";
 import CORE from "./client/core.js.txt";
 import DOSSIER from "./client/dossier.js.txt";
+import SHARP from "./client/sharp.js.txt";
 import BUILD from "./client/build.js.txt";
 import SLIPS from "./client/slips.js.txt";
 import PROFILE from "./client/profile.js.txt";
