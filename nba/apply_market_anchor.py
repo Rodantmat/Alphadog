@@ -39,6 +39,9 @@ assert SQL != MA.FEATURE_SQL, "feature SQL changed - the apply step must mirror 
 # MA_PARITY=<date> checks this against the SQL form for one slate (max abs difference must be < 1e-9).
 _qi, _qj = SQL.index("q AS MATERIALIZED ("), SQL.index("\nst AS")
 FAST_SQL = SQL[:_qi] + "q AS MATERIALIZED (SELECT anc.*, NULL::float8 q_dk, NULL::float8 q_pp FROM anc)," + SQL[_qj:]
+# the box-score CTE (a UNION ALL) inlined into the per-leg join re-scanned the game logs per leg (90 s+ a slate); materialized: ~4 s
+FAST_SQL = FAST_SQL.replace("\nst AS (", "\nst AS MATERIALIZED (", 1)
+assert "st AS MATERIALIZED (" in FAST_SQL
 LADDER_SQL = """SELECT DISTINCT ON (player_id, prop, line) player_id, prop, line::float8 line, least(greatest(p_more::float8,1e-4),1-1e-4) p
                 FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL' AND p_more IS NOT NULL
                 ORDER BY player_id, prop, line, game_id"""
