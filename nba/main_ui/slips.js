@@ -291,7 +291,9 @@ export async function apiHighHit(sql, cfg, url, version) {
     for (const x of lj) {
       const side = sideOut(x.side), line = Number(x.line);
       const hit = (x.player_id && byKey.get([s.app, String(x.player_id), x.prop, line, side].join("|"))) || byKey.get([s.app, "n:" + norm(x.player), x.prop, line, side].join("|"));
-      if (hit) legs.push(slipLeg(hit, { tier: x.tier, leg_factor: Number(x.factor) || hit.leg_factor, cell: x.cell, result_hit: x.hit == null ? null : Number(x.hit), board_percentile: percentile(s.app, Number(hit.score_0_100)), ...riskFor(risk, hit.player_name) }));
+      const cr = s.app === "prizepicks" && x.cell ? bt.cellRate.get(`${x.cell}|${x.tier}|${sideIn(x.side)}`) : null;
+      const cellFields = cr ? { cell_backtest_hit_0_100: r1(100 * cr.p), cell_backtest_legs: cr.n } : {};
+      if (hit) legs.push(slipLeg(hit, { tier: x.tier, leg_factor: Number(x.factor) || hit.leg_factor, cell: x.cell, result_hit: x.hit == null ? null : Number(x.hit), board_percentile: percentile(s.app, Number(hit.score_0_100)), ...cellFields, ...riskFor(risk, hit.player_name) }));
       else {
         unmatched++;
         legs.push({ board_row_id: `${slate.date}~${s.app}~${x.player_id || x.player}~${x.prop}~${line}~${sideIn(x.side)}`, player_name: x.player, canonical_prop_key: x.prop, prop_label: propLabel(x.prop),
