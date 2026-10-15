@@ -74,7 +74,7 @@ STRATEGIES = {
     # and the edge monitor (strategies by code cap) still counted their shadow slips. Cap 0 = shadow record only, like A_core_5flex.
     'B_demon_5flex':     ('demon',                5, 'flex',  0, 0.38, 40.0, 15, 4),   # was cap 6 (29k pass 12)
     'B_demon_3flex':     ('demon',                3, 'flex',  0, 0.38, 14.6, 12, 4),   # was cap 1
-    'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
+    'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  2, 0.60, 22.1, 11, 8),   # cap 1->2 (2026-10-15)
     # 29p the drought menu (validated inside the five long droughts, positive both seasons):
     'D_points_3power':   ('single:points_R',      3, 'power', 3, 0.62, 30.0, 14, 5),   # +34% in long droughts / +33% normal / +60% on SINGLE bad days (uncorrelated with the defensive collapse) - all-weather, cap 3
     'R_stocks_4power':   ('single:stocks_R',      4, 'power', 1, 0.60, 30.0, 14, 4),   # re-measured (pass 79): +27% in long droughts (34/16) / -6% normal - ROTATION-ONLY (staked only in the drought state)
