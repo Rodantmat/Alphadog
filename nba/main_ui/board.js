@@ -126,6 +126,12 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   const isHome = r.team_id && r.team_id === r.home_team_id;
   const oppAbbr = r.team_id ? (isHome ? r.away_team_tricode : r.home_team_tricode) : null;
   const gamePk = r.game_id || (r.team_id ? `${slate.date}-${r.team_id}` : `${slate.date}-${r.player_id}`);
+  // EDGE AGAINST THE LEG'S OWN BREAK-EVEN (2026-10-15 full pass). A leg paying factor f (PrizePicks goblin < 1 < demon; the
+  // Underdog / Sleeper payout modifier) breaks even at about 0.56 / f - a flat 0.56 showed every goblin as a strong edge
+  // (2026-01-14: 1,173 of 1,184 "positive" goblins were below their own break-even). 0.56 = build_final_hp.BREAKEVEN.
+  const legFactor = r.app === "prizepicks" ? (num(r.pp_factor) ?? (lt === "regular" ? 1 : null)) : num(r.app_mult);
+  const beBase = 0.56;
+  const breakeven = legFactor && legFactor > 0 ? Math.min(0.99, beBase / legFactor) : beBase;
   const out = {
     final_board_row_id: legId(r.game_date, r.app, r.player_id, r.prop, r.line, r.side),
     rank_order: i + 1,
