@@ -92,7 +92,65 @@ LEFT JOIN st ON st.player_id = 'nba_' || l.player_id AND st.game_date = l.game_d
 """
 
 PROPS = ["points", "rebounds", "assists", "threes_made", "pra", "pts_reb", "pts_ast", "reb_ast", "steals", "blocks", "turnovers", "stocks"]
-FEATS = ["one", "x_m", "d_dk", "d_pp", "has_dk", "has_pp", "easy", "hard"]
+FEATS = ["one", "x_m", "d_dk", "d_pp", "has_dk", "has_pp", "easy", "hard", "x_none"]
+# x_none = x_m on a leg with NO market anchor (no DraftKings main line, no DFS standard line), else 0: its own slope, because
+# without a market the model's number is all there is and it must be shrunk harder (2026-10-15 independent audit: unanchored
+# legs shown 68% hit 56% under the shared slope). Stage 2 is isotonic per (side, anchor class) for the same reason.
+ANCHOR_CLASSES = ("dk+pp", "dk", "pp", "none")
+
+
+# The ladder lookups (q_dk / q_pp) run in Python from one read of the range's FULL ladder: the SQL form's correlated
+# per-player-prop lookups ran 3-4 minutes a slate under load (parity with the SQL form exact, run 38695168452).
+_QI, _QJ = FEATURE_SQL.index("q AS MATERIALIZED ("), FEATURE_SQL.index("\nst AS")
+FAST_FEATURE_SQL = FEATURE_SQL[:_QI] + "q AS MATERIALIZED (SELECT anc.*, NULL::float8 q_dk, NULL::float8 q_pp FROM anc)," + FEATURE_SQL[_QJ:]
+LADDER_SQL = """SELECT DISTINCT ON (game_date, player_id, prop, line) game_date::text, player_id, prop, line::float8 line,
+                       least(greatest(p_more::float8,1e-4),1-1e-4) p
+                FROM nba_score.baseline_history WHERE game_date BETWEEN %s::date AND %s::date AND period = 'FULL' AND p_more IS NOT NULL
+                ORDER BY game_date, player_id, prop, line, game_id"""
+
+
+def load_ladder(conn, d0, d1):
+    lad = {}
+    for gd, pid, prop, line, p in conn.execute(LADDER_SQL, (d0, d1)).fetchall():
+        lad.setdefault((gd, pid, prop), []).append((float(line), float(p)))
+    for v in lad.values():
+        v.sort()
+    return lad
+
+
+def q_at(rungs, x):
+    """the model's P(over) at line x from the ladder: exact rung, else log-odds interpolation between the neighbours."""
+    if rungs is None or x is None:
+        return None
+    x = float(x)
+    lo = next((r for r in reversed(rungs) if r[0] <= x), None)
+    hi = next((r for r in rungs if r[0] >= x), None)
+    if lo is None or hi is None:
+        return None
+    if lo[0] == hi[0]:
+        return lo[1]
+    w = (x - lo[0]) / (hi[0] - lo[0])
+    z = (1 - w) * math.log(lo[1] / (1 - lo[1])) + w * math.log(hi[1] / (1 - hi[1]))
+    return 1 / (1 + math.exp(-z))
+
+
+def fetch_rows(conn, d0, d1, label, sql=None):
+    """the feature rows for a date range (FEATURE_SQL with the ladder lookups done in Python)."""
+    sql = sql or FAST_FEATURE_SQL
+    cur = conn.cursor(row_factory=dict_row)
+    cur.execute(sql, {"d0": d0, "d1": d1, "lab": label})
+    rows = cur.fetchall()
+    lad = load_ladder(conn, d0, d1)
+    for r in rows:
+        rungs = lad.get((str(r["game_date"]), r["player_id"], r["prop"]))
+        r["q_dk"] = q_at(rungs, r["dk_line"])
+        r["q_pp"] = q_at(rungs, r["pp_line"])
+    return rows
+
+
+def anchor_class(fr):
+    has_dk, has_pp = fr[4] > 0, fr[5] > 0
+    return "dk+pp" if has_dk and has_pp else "dk" if has_dk else "pp" if has_pp else "none"
 
 
 def season_of(d):
