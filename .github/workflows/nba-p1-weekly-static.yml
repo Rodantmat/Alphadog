@@ -285,8 +285,14 @@ jobs:
   # SLIP REQUALIFICATION (2026-10-01, section 29): after the weekly layer is certified, rebuild the certified slip
   # chain in delta mode, re-run the frozen 66-invariant pass, re-validate every live strategy walk-forward, and write
   # the week's verdict (PASS clears a red; FAIL sets one; the strategy list is never auto-edited). ~30 min.
+  # DECOUPLED FROM THE STATIC LAYER (2026-10-15, owner: "the system will auto-adjust ... I don't need to be bugging you"): P1 failed
+  # its static-load verification on 10-05 and 10-12 (writer workers for play types / shot quality landed partially), and because
+  # this job needed 'weekly' to SUCCEED, the weekly requalification - the loop that re-validates, releases reds and keeps the
+  # strategies honest - silently did not run either week. P5 reads the slip tables and the live ledger, nothing P1's static
+  # loads write, so it now runs whenever the run is claimed, whatever the static layer did (its failure is still reported).
   requalify:
-    needs: weekly
+    needs: [claim, weekly]
+    if: ${{ always() && needs.claim.outputs.proceed == 'true' }}
     uses: ./.github/workflows/nba-p5-weekly-requal.yml
     secrets:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
