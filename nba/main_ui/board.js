@@ -221,9 +221,11 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
   const minHp = num(url.searchParams.get("min_hit_probability"), 0) || 0;
   const t0 = Date.now();
   const rows = await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
+  // a leg without its market-anchored row falls back to the raw model number - said on the board, never silent (2026-10-15)
+  const honestMissing = rows.filter(r => !r.hp_is_market_anchored).length;
   return {
     ok: true, data_ok: true, version, route: "/api/main-board/current",
-    slate, row_count: rows.length, limit, min_score: minScore, min_hit_probability: minHp, rows,
+    slate: { ...slate, honest_missing: honestMissing }, row_count: rows.length, limit, min_score: minScore, min_hit_probability: minHp, rows,
     semantics: {
       main_number: "hit_probability_0_100 = nba_score.board_true_hp.true_hp (market-anchored hit probability of this exact leg; falls back to board_scored.final_hp when the slate has no anchored row) - model_hp_0_100 = the model's own number",
       secondary_number: "probability_confidence_0_100 = board_scored.confidence",
