@@ -326,7 +326,10 @@ def api_checks(conn, cfg):
         body = r.stdout
         same = True
         if p in src:
-            same = body == (ROOT / "nba/main_ui/client" / src[p]).read_bytes()
+            want = (ROOT / "nba/main_ui/client" / src[p]).read_bytes()
+            if p == "/js/dossier.js":   # the sharp-read part is served appended to the dossier part
+                want = want + b"\n" + (ROOT / "nba/main_ui/client/sharp.js.txt").read_bytes()
+            same = body == want
         if p == "/js/pricing.js":
             same = b"function nbaPayout(" in body and b"function nbaFlexAlt(" in body
             # the served file must RUN as a classic browser script in a clean global scope (no bundler helpers)
