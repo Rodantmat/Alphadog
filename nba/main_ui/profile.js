@@ -72,7 +72,8 @@ export async function apiPlayerProfile(sql, cfg, url, version) {
     metric_snapshots: C.formWindows(games, seasonGames), splits: sp,
     next_game: nextGame, next_game_context: nextCtx,
     advanced: { ...adv, shot_quality: shot }, availability,
-    depth
+    depth,
+    sharp: sharp && sharp.sharp
   } };
 }
 
