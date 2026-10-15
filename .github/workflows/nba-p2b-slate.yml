@@ -509,6 +509,8 @@ jobs:
           [ "${{ steps.soft_line.outcome }}" = "failure" ] && L="$L morning-game-line"
           [ "${{ steps.soft_blowout.outcome }}" = "failure" ] && L="$L blowout-refit"
           [ "${{ steps.soft_wn.outcome }}" = "failure" ] && L="$L whole-number-pricing"
+          [ "${{ steps.soft_injury_load.outcome }}" = "failure" ] && L="$L injury-snapshot-load"
+          [ "${{ steps.soft_params_snapshot.outcome }}" = "failure" ] && L="$L model-params-snapshot"
           L="${L# }"
           echo "list=$L" >> "$GITHUB_OUTPUT"
           if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
