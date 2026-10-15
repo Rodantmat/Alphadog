@@ -452,6 +452,7 @@ jobs:
       #   calibration is rebuilt per season, so the parameters that priced a past slate were unrecoverable. Snapshot them,
       #   as of this slate, into nba_score.model_params_history (append-only, idempotent) BEFORE final_hp reads them.
       - name: Snapshot the slate's model parameters (history)
+        id: soft_params_snapshot
         if: ${{ steps.d.outputs.has_games == '1' }}
         continue-on-error: true
         env:
