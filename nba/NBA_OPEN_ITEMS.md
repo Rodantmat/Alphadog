@@ -19619,3 +19619,14 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `351` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`): `T1`–`T29` done (`21,959` sentences); next `T30`.
+
+## §P352 — PASS 352 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T30` · NO RESIDUE
+*Angle (as NEXT set it):* (r17) `§P131`'s method on `T30`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching; the owner's console lines and the local path in them not reproduced.
+- **`T48-10` brought up to date** (`569a58995`): `3` commits not this sweep's landed after pass 351's census (`2ee712ba4`) — `1d681eb00` and `0f9d9f666` (`03:55Z`, main UI `v1.3.1`) and the deploy marker `6c07e5d01` (`03:56Z`); each diff's file list read, none touching the twelve; the row written after the burst had stood still for two minutes (pass 307's catch).
+- Tabulated in the shell before this line (the scan at pass 351's head): `T30` `35` of `40` sentences listed — the same `35` as `§P302` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **read whole** (the bounded figure triage: `1` with a figure not on file / `0` inside a longer number / `1` with every figure on file / `33` with none; `1 + 0 + 1 + 33 = 35`; the `1` is `§P302`'s console timestamp, judged).
+- On file, by substance (each grepped before it was written, every hit read): `§P302`'s list — the capture-export and upload troubleshooting, the blank-upload cause (UTF-16) and its remedies (`-Encoding utf8`, the raw `.mitm`, a `.zip`) in `§T31.1`, Sleeper's `available_alt` and one-sided calls (`§T31.1`, `§T29.1`). Judged, on `§P152`'s, `§P202`'s, `§P252`'s and `§P302`'s bases: the export and header-redaction commands, the owner's pasted console lines, and the further Sleeper endpoint named in passing, which no file in the repo uses.
+- **No residue in `T30`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`). Commits not this sweep's since `569a58995` (this pass's `T48-10` row; the log read at this pass's head and fetched again as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `352` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`): `T1`–`T30` done (`21,999` sentences); next `T31`.
