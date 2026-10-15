@@ -192,12 +192,21 @@ def fresh_absences(conn, day):
 
 
 def leg_team(conn, day, pids):
-    """player_id -> current team_id (latest game-log row before today)."""
+    """player_id -> current team_id: the current roster (nba_ref.players) when that team plays today, else the latest game-log
+    row before today. ROSTER FIRST (2026-10-15 full pass): game-log-only gave every offseason mover last season's team until his
+    first game is logged (6 of 32 players on the 10-20 boards)."""
     if not pids:
         return {}
     rows = conn.execute("""SELECT DISTINCT ON (nba_player_id) nba_player_id::text, team_id FROM nba_stats.player_game_log
                            WHERE nba_player_id::text = ANY(%s) AND game_date < %s ORDER BY nba_player_id, game_date DESC""", (list(pids), day)).fetchall()
-    return {r[0]: r[1] for r in rows}
+    out = {r[0]: r[1] for r in rows}
+    roster = conn.execute("""SELECT p.nba_player_id::text, p.team_id FROM nba_ref.players p
+                             WHERE p.nba_player_id::text = ANY(%s) AND p.team_id IS NOT NULL
+                               AND p.team_id IN (SELECT home_team_id FROM nba_calendar.slate_games WHERE game_date = %s
+                                                 UNION SELECT away_team_id FROM nba_calendar.slate_games WHERE game_date = %s)""",
+                          (list(pids), day, day)).fetchall()
+    out.update({r[0]: r[1] for r in roster})
+    return out
 
 
 def pick(conn, day):
