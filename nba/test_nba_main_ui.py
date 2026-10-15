@@ -376,6 +376,8 @@ def browser():
                 raise RuntimeError(f"dossier depth sections missing: {miss}")
             page.evaluate("[...document.querySelectorAll('#dossierBody .sectionLabel')].find(e => e.textContent.startsWith('Player Depth')).scrollIntoView()")
         step("02a_dossier_depth", dossier_depth)
+        for tag, head in (("02a1_line_profile", "Line Profile"), ("02a2_head_to_head", "Head-To-Head"), ("02a3_with_without", "With / Without"), ("02a4_tracking", "Skills")):
+            step(tag, lambda head=head: page.evaluate("(h => { const e = [...document.querySelectorAll('#dossierBody h3, #dossierBody .sectionLabel')].find(x => x.textContent.startsWith(h)); if (e) e.scrollIntoView(); })('" + head + "')"))
         step("02b_dossier_mid", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.45)"))
         step("02c_dossier_low", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.8)"))
 
