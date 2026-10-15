@@ -1069,6 +1069,7 @@ why the sweep records this as a CONFIRMATION rather than a discovery.
   the **peer-to-peer `Pick'em Arena`**.
 - ⚠ **The correction**: ***`Pick'em Arena` is STATE-DEPENDENT, not universal.*** The first statement
   was too strong and the researcher narrowed it in place.
+- 🆕 *(additional sweep `6`, pass `385`, `§P385` — `T13` `2026-09-10 19:16Z`–`19:56Z`, the sources the research passes named)*: the narrowed statement was Stokastic's — *So Stokastic's blanket "retired in the US" is overstated* — and the same reply adds that *PrizePicks additionally now offers CFTC-regulated event contracts (Team/Culture Picks)*. At `19:22Z` one source was flagged unreliable and excluded: oddsreference.com, which describes Demons as shifting the line in the player's favour at a reduced multiplier — *exactly backwards from PrizePicks' own documentation*; the owner answered that the source was right that multipliers change (`§0.9a`), and the reply held the inversion. At `19:56Z`: *Passes 9 and 10 returned mostly the same Stokastic/HeatCheck/PrizePicks help-center material with no new primary observations*.
 - 📌 **The one question research could not settle and the app settles in ten seconds**: ***which
   regime applies in California*** — *the owner's own jurisdiction, and therefore the one that decides
   whether any of this is the right product at all.*
