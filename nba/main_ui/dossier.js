@@ -24,8 +24,11 @@ export async function apiDossier(sql, cfg, url, version) {
   const game = selected.team_id ? await C.gameFor(sql, leg.date, selected.team_id) : null;
   // the matchup context and the bettor depth (usage, tracking, career, head-to-head, with/without, lineups, team form) in parallel
   const gctxP = game ? C.gameContext(sql, cfg, { date: leg.date, game, teamId: selected.team_id, position: selected.position || (info && info.position) }) : Promise.resolve(null);
-  const [gctx, depth] = await Promise.all([gctxP,
-    D.bettorDepth(sql, { pidT, beforeDate: leg.date, teamId: selected.team_id, game, oppAbbr: selected.opponent_abbr, injuries: gctxP.then(g => g && g.injuries) })]);
+  // and the sharp-bettor layer (market read / movement / history, game script, availability, travel, defenders, correlations)
+  const [gctx, depth, sharp] = await Promise.all([gctxP,
+    D.bettorDepth(sql, { pidT, beforeDate: leg.date, teamId: selected.team_id, game, oppAbbr: selected.opponent_abbr, injuries: gctxP.then(g => g && g.injuries) }),
+    S.sharpDepth(sql, cfg, { pidT, date: leg.date, teamId: selected.team_id, game, names: S.marketNames(info && info.full_name, selected.player_name), legs, games,
+      marketSummary: gctxP.then(g => g && g.market_summary) })]);
   const seasonGames = games.filter(g => g.season === (games[0] && games[0].season));
   const ctx = {
     player_profile: info ? { ...info, team_abbr: selected.team_abbr || info.team_abbr, team_name: selected.team_name || info.team_name } : { full_name: selected.player_name },
