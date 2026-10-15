@@ -19511,3 +19511,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `341` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T19` done (`13,530` sentences); next `T20`.
+
+## §P342 — PASS 342 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T20` · NO RESIDUE
+*Angle (as NEXT set it):* (h17) `§P131`'s method on `T20`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at this pass's head): `T20` `199` of `830` sentences listed — the same `199` as `§P292` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `30` with every figure on file / `169` with none; `0 + 0 + 30 + 169 = 199`).
+- On file, by substance (each grepped before it was written, every hit read): `§P292`'s list, plus B0's lane example (`+1300%` → `−13%`), the Flex partial tiers (`4/5`), the `~1.4×` geometric demon step against the measured break-evens, the selection bar (`n ≥ 30`), the Non-Arbitrage Principle, the zero-rest ranges that did not reproduce (`−1.5` to `−3.0`). Judged, on `§P192`'s, `§P242`'s and `§P292`'s bases: narration, the owner's documentation mandates (on file), progress tables and pass counts, a research citation on rest minutes.
+- **No residue in `T20`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`). Commits not this sweep's since `a70421286` (pass 341's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P310` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `342` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T20` done (`14,360` sentences); next `T21`.
