@@ -605,6 +605,7 @@ def browser():
                 raise RuntimeError(f"profile depth sections missing: {miss}")
             page.evaluate("[...document.querySelectorAll('#playerProfileBody .sectionLabel')].find(e => e.textContent.startsWith('Player Depth')).scrollIntoView()")
         step("06a_profile_depth", profile_depth)
+        step("06a1_profile_sharp", lambda: page.evaluate("[...document.querySelectorAll('#playerProfileBody .sectionLabel')].find(e => e.textContent.startsWith('Sharp Read')).scrollIntoView()"))
         step("06b_profile_low", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.6)"))
 
         def health():
