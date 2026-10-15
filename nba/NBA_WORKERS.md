@@ -3623,7 +3623,7 @@ these twelve.**
 | `build_tier_map_wi.py` (+ `wi2` later) | `nba-tier-map-wi.yml` / `-wi2.yml` | G1 gate-2 test leg table (`tier_map_legs_wi`, dropped) |
 | `gate2_compare.py` | `nba-gate2-backtest.yml` | control vs test slip builds per strategy and portfolio |
 | **`fit_whole_number_recal.py`** | `nba-wn-recal-fit.yml` (dry-run default) | stores the whole-number recalibration in `nba_config.classification_config` |
-| **`build_whole_number_hp.py`** | `nba-wn-build.yml` (dry-run default) | → `nba_score.final_hp_derived` (`whole_number`) — history cross-fit, live pooled |
+| **`build_whole_number_hp.py`** | `nba-wn-build.yml` (dry-run default) | → `nba_score.final_hp_derived` (`whole_number`) — history cross-fit, live pooled. 🆕 (additional sweep 5, pass 374, `§P374` — its switches by their own names; `S4`'s audit names `WN_DATE` among the date inputs P2A sets, `2026-10-08 06:39Z`; ✅ read in code): `WN_WRITE=1` writes (otherwise a dry run that only counts keys and priced legs); `WN_DATE` prices one date — P2A sets it to yesterday for the re-price after the prune; without it, `WN_FROM` / `WN_TO` price every date in that range that has a whole-number `FULL` key in `board_rung_keys`; it refuses to run without `classification_config['whole_number_recalibration']`. |
 | `ladder_depth_audit.py` | `nba-ladder-depth-audit.yml` | G2: unscored half-point board legs beyond the ladder |
 | *(research copies of both builders)* | `nba-ladder-tail-research.yml` | G2: the real builders at depth 24, reliability frame dumped before exit |
 | `rookie_prior_research.py` / `rookie_pricing_research.py` / `rookie_early_games_research.py` | `nba-rookie-pricing-research.yml`, `nba-rookie-early-research.yml` | G3 decided by evidence |
