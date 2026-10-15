@@ -111,7 +111,8 @@ function gameScriptBlock(sh,focus){const env=(sh&&sh.env)||[];const st=sh&&sh.to
     +'<div class="small" style="margin-top:8px">Correlations: |final margin| vs his minutes r = '+(cm==null?'—':sgn(cm,2))+' • pregame total vs his '+esc(displayPropLabel(k))+' r = '+(ct==null?'—':sgn(ct,2))+' • team points vs his '+esc(displayPropLabel(k))+' r = '+(ctp==null?'—':sgn(ctp,2))+'.</div>',
     'His last '+env.length+' games (incl. prior season / playoffs) by how the game played out and how it was priced: final margin, pregame spread (median of books) and pregame total. Tells you whether blowouts cost him minutes and whether he needs a shootout.')+'</div>'}
 // ---- H. FOUL TROUBLE
-function foulTroubleBlock(sh,games){const cut=((sh&&sh.config)||{}).foul_trouble_pf||5;const season=seasonGamesOf(games);if(season.length<5)return '';
+function foulTroubleBlock(sh,games){const cut=((sh&&sh.config)||{}).foul_trouble_pf||5;const season=seasonGamesOf(games);
+  if(season.length<5)return section('Foul Trouble ('+season.length+' G)',[['Fouls / Game',nOrDash(avgOf(season.map(g=>g.pf)))],['Sample','Only '+season.length+' game'+(season.length===1?'':'s')+' this season - rates need 5+']],'This season.');
   const pf=season.map(g=>Number(g.pf||0)),mins=season.map(g=>Number(g.min||0));const tot=mins.reduce((a,b)=>a+b,0);
   const hi=season.filter(g=>Number(g.pf)>=cut),lo=season.filter(g=>Number(g.pf)<cut);
   return section('Foul Trouble ('+season.length+' G)',[['Fouls / Game',nOrDash(avgOf(pf))],['Fouls / 36',tot?nOrDash(36*pf.reduce((a,b)=>a+b,0)/tot):'—'],['Games with 4+ PF',Math.round(100*season.filter(g=>Number(g.pf)>=4).length/season.length)+'%'],
