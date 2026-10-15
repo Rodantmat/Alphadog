@@ -328,6 +328,12 @@ def api_checks(conn, cfg):
            or not (lab.startswith(("PLAY", "SKIP")) or lab == "backtest replay"):
             bad50.append((s_.get("strategy"), s_.get("status"), lab, usd))
     check("C50 slips say PLAY $ (unit x stake weight) or SKIP with a reason", not bad50, f"unit ${unit:.2f}; bad {bad50[:3]}")
+    # C51: the owner's unit control - GET reads it, a value under the minimum is refused, re-saving the same value round-trips
+    cg, jg, _ = curl("/api/stake-unit")
+    cb, jb, _ = curl("/api/stake-unit", body={"unit_usd": 0.25})
+    cs, js_, _ = curl("/api/stake-unit", body={"unit_usd": unit})
+    check("C51 unit control: read, refuse below the minimum, save round-trips", cg == 200 and float((jg.get("stake_unit") or {}).get("unit_usd", -1)) == unit
+          and cb == 400 and cs == 200 and float((js_.get("stake_unit") or {}).get("unit_usd", -1)) == unit, f"GET {cg} below-min {cb} save {cs}")
     ids = [r["final_board_row_id"] for r in rows if r["source_key"] == "prizepicks"][:6]
     code, g, t = curl("/api/slips/generate", body={"leg_ids": ids}); save_sample("generate", g)
     gs = g.get("generated_slips") or []
