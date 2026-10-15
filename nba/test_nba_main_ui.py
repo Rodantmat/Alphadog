@@ -529,7 +529,10 @@ def browser():
         def dossier_depth():
             heads = page.evaluate("[...document.querySelectorAll('#dossierBody h3, #dossierBody .sectionLabel')].map(e => e.textContent.trim())")
             need = ["Line Profile — Every Prop", "Minutes & Role", "Usage & Efficiency", "Scoring Profile — Where His Points Come From", "Head-To-Head vs",
-                    "With / Without Teammates", "Team Form — Last 10 / Season", "Career — Season By Season", "Skills — Player Tracking", "Player Depth — Form, Role, Skills, Matchup"]
+                    "With / Without Teammates", "Team Form — Last 10 / Season", "Career — Season By Season", "Skills — Player Tracking", "Player Depth — Form, Role, Skills, Matchup",
+                    "Sharp Read — Market, Projection, Script, Matchup", "Market Read — Sportsbook Fair Line", "Line Movement & Ladder", "Vs The Market",
+                    "Box-Score Projection", "Form Signal", "Tonight's Script", "Game Script Splits", "Foul Trouble", "Availability & Minutes Ramp", "Travel & Fatigue",
+                    "Opponent Defenders", "Teammate Correlation"]
             miss = [n for n in need if not any(h.startswith(n) for h in heads)]
             if miss:
                 raise RuntimeError(f"dossier depth sections missing: {miss}")
