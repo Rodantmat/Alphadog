@@ -19847,3 +19847,19 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `368` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T46` done (`36,654` sentences); next `T47`.
+
+## §P369 — PASS 369 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T47` · ONE RESIDUE (THE MULTIPLIER PROGRAM'S SOURCES) · AND EVERY CITED SOURCE TITLE CHECKED ACROSS `T1`–`T48`
+*Angle (as NEXT set it):* (i18) `§P131`'s method on `T47`, with pass 361's identifier check.
+- Tabulated in the shell before this line (the scan at pass 368's head): `T47` `60` of `167` sentences listed — the same `60` as `§P319` listed, the two lists diffed in the shell (`0` dropped, `0` added). **All `60` read whole**. The bounded figure triage: `2` with a figure not on file — two source-link ids, as at passes `269` and `319` — / `0` inside a longer number / `23` with every figure on file / `35` with none (`2 + 0 + 23 + 35 = 60`).
+- 🔴 **One residue — a reply's closing source list read to its end** (pass 333's catch, as at pass 362). The `17:14Z` multiplier-program summary cites three sources: Sleeper's "Player Picks Rules", RotoWire's "Betr Picks vs ParlayPlay", and the `implied` package's de-vig vignette. None was named in the twelve. `NBA_MULTIPLIERS.md` `§T47.3` now names all three (`9eaf81048`).
+- **Every cited source title checked across `T1`–`T48`** (the same catch, run over the whole corpus in the shell): each markdown link title in the listed sentences was grepped in the twelve. Beyond `T40`'s (written at pass 362) and `T47`'s (this pass), the titles that returned `0` are:
+  - `T12`'s owner-pasted Underdog navigation links, judged;
+  - `T42`'s proxy-vendor pricing pages, judged and not reproduced;
+  - `T46`'s two sources, on file by publisher (Sportico, RotoWire);
+  - `T48`'s two (OddsAssist on file; Sleeper's "Player Picks Rules", now on file through this pass's `T47` write), left to pass 370.
+- The identifier check on `T47`'s listed sentences: none but the time-zone name.
+- On file, by substance (each grepped before it was written, every hit read): `§P319`'s list — `§T47.10`; Playoff Unders' gates and stress (`1.5%`; `6–12` units; `+24%`; `0.1%`; all `60` whole-line 5-Flex variants; strategy `§31z`); the replay parity (`9` of `9`) and the odds-free test fix; the multiplier program (`§31aa`; `1.871` / `1.843`; `0.500`; `3–7%` / `13–26%`; Pick6's table scaling; `0.997`; `−20%` to `+15%`; `+143%` vs `+10%`; the `12` of `12` at `1.55`); the Flex tables (`2.25/1.25`, `5/1.5`); the transcript pack and its stated gaps. Judged, on `§P169`'s, `§P219`'s, `§P269`'s and `§P319`'s bases: narration, the session's notices, source links, the owner's dictation.
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`; `§P357`'s strike-correction; `§P361`'s residue; `§P362`'s writes; `§P367`'s strike-correction; now this residue). Commits not this sweep's since `71407f8fc` (pass 368's census; the log read at this pass's head and fetched again as the last call before this patch, after the final draft): `0` — the one since is this pass's own `NBA_MULTIPLIERS.md` write. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P356` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `369` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, `§P362`'s seven writes, `§P369`'s sources): `T1`–`T47` done (`36,821` sentences); next `T48`.
