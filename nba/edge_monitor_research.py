@@ -58,7 +58,9 @@ def load(conn):
     slips = []   # (strategy, date, structure, k, stake, profit, legs[(key, factor, hit)])
     for name in DAILY:
         comp, size, structure, cap = L.STRATEGIES[name][:4]
-        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+        # the tables the live engine is measured against (live_backtest_suffix: '_mf' = the market-free twin), not the
+        # market-inclusive ones the monitor's reference rates do not come from (2026-10-15 full pass R1)
+        tbl = L.bt_table(conn, name)
         side_only = L.SIDE_FILTER_BY_STRATEGY.get(name)
         for d, k, stake, profit, lj in conn.execute(f"""SELECT game_date, size, stake, profit, legs_json FROM {tbl}
                 WHERE composition=%s AND size=%s AND structure=%s AND k<=%s AND phase<>'final7'""", (comp, size, structure, cap)).fetchall():
