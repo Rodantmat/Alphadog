@@ -219,38 +219,36 @@ jobs:
                                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (run_date, strategy) DO UPDATE SET verdict=EXCLUDED.verdict, v2_pass=EXCLUDED.v2_pass,
                                v6_pass=EXCLUDED.v6_pass, oos_roi=EXCLUDED.oos_roi, oos_ci_lo=EXCLUDED.oos_ci_lo""",
                             (today, name, comp, size, structure, v is not None, v2, v6, roi, lo, verdict))
+                  # THE PATH OUT OF RED (2026-10-15, owner: "ground the decisions on data ... do not cancel or cut anything"). Debugged: the
+                  # validator's window is fixed history (2024-25 -> 2025-26) and its verdict is NOT_IN_TOP30 for 10 of 12 strategies, so the
+                  # old 'release only on PASS' never fired; and its live-season walk-forward read the backtest table, which holds no live
+                  # days (the history chain is not extended in season) - red was one-way. Now the evidence is the strategy's OWN record this
+                  # season (live_slip_engine.release_record: backtest table when it holds >= 40 days, else the live ledger - a red strategy keeps
+                  # building and grading its shadow slips): a red strategy is released to PAPER (never straight to stake; the paper gate still
+                  # applies) when that record's day-blocked bootstrap lower bound > 0 on >= 40 days, whatever the fixed-window verdict; a
+                  # FAIL reds a strategy unless its live record already clears that bar (newer, decisive evidence). Cap-0 strategies come
+                  # back at RELEASE_CAP.
+                  from live_slip_engine import release_record, released_cap
                   if verdict == 'FAIL' and name in STATE_GATED:
                       verdict = 'FAIL_STATE_GATED'   # recorded for review; the strategy's own state gates it
-                  if verdict == 'FAIL':
+                  st = c.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
+                  lo_live, n_live, src = release_record(c, name, today) if ((st and st[0] == 'red') or verdict == 'FAIL') else (None, 0, '')
+                  live_ok = lo_live is not None and lo_live > 0
+                  if verdict == 'FAIL' and not live_ok:
                       c.execute("""UPDATE nba_score.live_strategy_state SET state='red', live_cap=0,
                                    hurdles = coalesce(hurdles,'{}'::jsonb) || jsonb_build_object('REQUAL','FAIL '||%s::text), updated_at=now() WHERE strategy=%s""", (today.isoformat(), name))
-                  elif verdict == 'PASS':
-                      # the ONLY path out of red: a clean weekly re-validation on a window that includes the live days that stopped it.
-                      # THE LIVE DAYS MUST ACTUALLY BE IN THE WINDOW (2026-10-08, certification round 2, P2A#5): the validator's
-                      # window is still 2024-25 -> 2025-26 (§29b rolls it later), so its PASS repeats every Monday regardless of
-                      # the live season - a strategy stopped by live hurdles would have been released every week and re-stopped
-                      # the next morning. Release now also requires the walk-forward test simulate_p5 applies: the day-blocked
-                      # bootstrap lower bound of the strategy's certified OOS slips THIS season (from Nov 1, >= 40 slate days) > 0.
-                      st = c.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
-                      if st and st[0] == 'red':
-                          from live_slip_engine import boot_lo, bt_table
-                          import datetime as _dt
-                          tbl = bt_table(c, name)   # the configured backtest (market-free twin since round 2)
-                          y0 = today.year if today.month >= 7 else today.year - 1
-                          season_now = f"{y0}-{(y0 + 1) % 100:02d}"
-                          g = c.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
-                                             AND season=%s AND phase<>'final7' AND game_date >= %s AND game_date < %s GROUP BY game_date""",
-                                        (comp, size, structure, cap, season_now, _dt.date(y0, 11, 1), today)).fetchall()
-                          lo_live = boot_lo([(float(r[0]), float(r[0]) + float(r[1])) for r in g], 2000) if len(g) >= 40 else None
-                          if lo_live is not None and lo_live > 0:
-                              c.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s,
-                                           hurdles = jsonb_build_object('REQUAL','PASS '||%s::text), updated_at=now() WHERE strategy=%s AND state='red'""", (cap, today.isoformat(), name))
-                              print(f"  {name:<20} red -> paper (live-season walk-forward lower bound {lo_live:+.0%} on {len(g)} days)")
-                          else:
-                              c.execute("""UPDATE nba_score.live_strategy_state SET hurdles = coalesce(hurdles,'{}'::jsonb) || jsonb_build_object('REQUAL','HOLD '||%s::text), updated_at=now()
-                                           WHERE strategy=%s AND state='red'""", (today.isoformat(), name))
-                              print(f"  {name:<20} stays red: validator PASS but live-season walk-forward not passed "
-                                    f"({len(g)} days; lower bound {'n/a' if lo_live is None else f'{lo_live:+.0%}'})")
+                  elif st and st[0] == 'red':
+                      if live_ok:
+                          c.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s,
+                                       hurdles = jsonb_build_object('REQUAL','PASS '||%s::text, 'RELEASED', '1'), updated_at=now() WHERE strategy=%s AND state='red'""",
+                                    (released_cap(name, cap), today.isoformat(), name))
+                          print(f"  {name:<20} red -> paper at cap {released_cap(name, cap)} ({src} record: lower bound {lo_live:+.0%} on {n_live} days)")
+                      else:
+                          c.execute("""UPDATE nba_score.live_strategy_state SET hurdles = coalesce(hurdles,'{}'::jsonb) || jsonb_build_object('REQUAL','HOLD '||%s::text), updated_at=now()
+                                       WHERE strategy=%s AND state='red'""", (today.isoformat(), name))
+                          print(f"  {name:<20} stays red: {src or 'no'} record {n_live} days, lower bound {'n/a' if lo_live is None else f'{lo_live:+.0%}'} (needs >= 40 days and > 0)")
+                  elif verdict == 'FAIL':
+                      print(f"  {name:<20} FAIL on the fixed window, not redded: its live record clears the release bar ({src}, {lo_live:+.0%} on {n_live} days)")
                   print(f"  {name:<20} {verdict:<12} {'' if roi is None else f'OOS {roi:+.0%} CI_lo {lo:+.0%}'}")
               c.commit()
           EOF
