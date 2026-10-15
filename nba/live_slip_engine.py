@@ -1411,8 +1411,10 @@ def _expit(x): return 1.0 / (1.0 + math.exp(-x))
 def _logit(p): return math.log(p / (1.0 - p))
 
 
-def edge_exp_payout(ps, fprod, k, structure):
-    """EXACT E[payout] for independent legs with probabilities ps: Poisson-binomial over hit counts x grade() rules."""
+def edge_exp_payout(ps, fprod, k, structure, alt=False):
+    """EXACT E[payout] for independent legs with probabilities ps: Poisson-binomial over hit counts x grade() rules.
+    alt=True (a Flex slip with a goblin / demon leg): PrizePicks' quote-derived Flex tiers, exactly as grade() pays them since
+    2026-10-10 (§31ad) - until 2026-10-15 this paid FLEX x factor product, the pre-fix rule (full pass R1)."""
     dist = [1.0]
     for p in ps:
         nd = [0.0] * (len(dist) + 1)
