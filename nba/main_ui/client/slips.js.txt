@@ -338,6 +338,15 @@ function slipSummaryHtml(filtered){
   const lines=[...byLab.keys()].sort().map(l=>'<div class="slipSummaryLine"><b>'+esc(l)+':</b> '+byLab.get(l).join(', ')+'</div>').join('');
   return '<div class="slipSummary"><div class="slipSummaryTotal">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+lines+'</div>';
 }
+function cellTag(leg){if(leg==null||leg.cell_backtest_hit_0_100==null)return '';return '<span class="small" title="This leg\'s certified cell hit '+esc(leg.cell_backtest_hit_0_100)+'% over '+esc(leg.cell_backtest_legs||'')+' backtest legs" style="font-size:10px;font-weight:800;opacity:0.8;margin-left:6px">cell '+esc(leg.cell_backtest_hit_0_100)+'%</span>'}
+function backtestLineHtml(s){
+  if(s.backtest_hit_probability_0_100==null&&s.strategy_cert_leg_hit_0_100==null&&!(s.strategy_backtest||[]).length)return '';
+  const parts=[];
+  if(s.backtest_hit_probability_0_100!=null)parts.push('these legs\' cells hit '+esc(s.backtest_hit_probability_0_100)+'%');
+  if(s.strategy_cert_leg_hit_0_100!=null)parts.push('strategy legs hit '+esc(s.strategy_cert_leg_hit_0_100)+'%');
+  for(const r of (s.strategy_backtest||[]))parts.push(esc(r.season)+' ROI '+(r.roi_pct>0?'+':'')+esc(r.roi_pct)+'% ('+esc(r.slips)+' slips)');
+  return '<div class="small" style="margin:0 0 6px;opacity:0.9"><b>Backtest:</b> '+parts.join(' • ')+'</div>';
+}
 function resultTag(leg){if(leg==null||leg.result_hit==null)return '';return leg.result_hit?'<span style="font-size:10px;font-weight:900;color:#7ee787;margin-left:6px">HIT</span>':'<span style="font-size:10px;font-weight:900;color:#ff8a8a;margin-left:6px">MISS</span>'}
 function legRowHtml(leg,slipIdx,legIdx){
   const un=slipUnchecked.get(slipIdx);
