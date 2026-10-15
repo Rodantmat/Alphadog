@@ -33,6 +33,11 @@ OUT = Path(os.environ.get("OUT_DIR", "nba_ui_probe"))
 OUT.mkdir(parents=True, exist_ok=True)
 (OUT / "api").mkdir(exist_ok=True)
 DATE = os.environ.get("UI_DATE", "").strip()
+# the board as the UI shows it (2026-10-14): the market-anchored probability / score where nba_score.board_true_hp has the leg
+HB = """(SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.confidence,
+                coalesce(th.true_hp::numeric, b0.final_hp) final_hp, coalesce(th.true_score::numeric, b0.score) score
+         FROM nba_score.board_scored b0 LEFT JOIN nba_score.board_true_hp th
+           ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop AND th.line = b0.line AND th.side = b0.side) hb"""
 REPORT = {"ui": UI, "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "checks": []}
 
 
