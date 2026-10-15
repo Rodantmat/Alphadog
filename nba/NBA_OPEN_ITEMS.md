@@ -20284,3 +20284,15 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `401` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`5` complete, each NOT clean. ⏳ **Additional sweep `6`** under way, **not clean** (`§P383`'s sources, `§P384`'s season tables, `§P385`'s two, `§P386`'s coach changes, `§P387`'s, `§P388`'s and `§P389`'s sources, `§P393`'s `T48-10` and `T48-9` updates, `§P394`'s `T48-9` facts, `§P396`'s simulator specification, `§P399`'s secret names): `T1`–`T29` done (`21,959` sentences); next `T30`.
+
+## §P402 — PASS 402 (`2026-10-15`): ADDITIONAL SWEEP `6` — `T30` · NO RESIDUE
+*Angle (as NEXT set it):* (p19) `§P131`'s method on `T30`, with pass 361's identifier check and the catches of passes 383–401, each grepped in the twelve minus the pass ledgers; the owner's console lines and the local path in them not reproduced.
+- Tabulated in the shell before this line (the scan at pass 401's head): `T30` `35` of `40` sentences listed — the same `35` as `§P352`, the two lists diffed in the shell (`0` dropped, `0` added). **`35` read whole** (the bounded figure triage: `1` with a figure not on file / `0` inside a longer number / `1` with every figure on file / `33` with none; `1 + 0 + 1 + 33 = 35`; the `1` is a console timestamp, judged).
+- The identifier check (pass 361's catch), counted with `wc`: `3` names with `0` hits — `flow_detail` (an export flag of the capture tool), `sleeper_clean` (an export file name) and `payouts/legs_boost_map`, the further Sleeper endpoint named in passing. All three judged as `§P302` judged the last: named nowhere in the twelve, and used by no file in the repo.
+- On file, by substance (each grepped before it was written, every hit read outside the ledgers): the capture-export and upload troubleshooting, the blank-upload cause (UTF-16) and its remedies (`-Encoding utf8`, the raw `.mitm`, a `.zip`), Sleeper's `available_alt` and one-sided calls.
+- Judged, on `§P152`'s, `§P202`'s, `§P252`'s, `§P302`'s and `§P352`'s bases: the export and header-redaction commands, the owner's pasted console lines.
+- **No residue in `T30`.**
+- **Additional sweep `6` stays not clean** (`§P383`–`§P389`'s writes, `§P393`'s two open-item updates, `§P394`'s `T48-9` facts, `§P396`'s and `§P399`'s). Commits not this sweep's since `3acaa95cb` (`§P401`'s ledger; the log fetched as the last call before this patch, after the final draft): `0`. `T48-10` was checked by the log of the main-UI paths, COMPASS, the certification ledger, the strategy document and `deployed_sha.txt`: `0` commits. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `402` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`5` complete, each NOT clean. ⏳ **Additional sweep `6`** under way, **not clean** (`§P383`'s sources, `§P384`'s season tables, `§P385`'s two, `§P386`'s coach changes, `§P387`'s, `§P388`'s and `§P389`'s sources, `§P393`'s `T48-10` and `T48-9` updates, `§P394`'s `T48-9` facts, `§P396`'s simulator specification, `§P399`'s secret names): `T1`–`T30` done (`21,999` sentences); next `T31`.
