@@ -451,6 +451,16 @@ def main():
             print(f"    {g}", flush=True)
         for ac, rel in res["by_class"].items():
             print(f"  anchor {ac:<6} {[x for x in rel if x[0] >= '0.55']}", flush=True)
+        res["defensive"] = {}
+        for prop in ("steals", "stocks", "turnovers", "blocks"):        # the certified cells' props, too small for the sub-group gate
+            for sd in ("Over", "Under"):
+                mm = (pr_t == prop) & (sd_t == sd)
+                if mm.sum():
+                    rel = reliability(pt[mm], yt[mm], edges=(0, .45, .5, .55, .6, .65, 1.0001))
+                    rawrel = reliability(raw[mm], yt[mm], edges=(0, .45, .5, .55, .6, .65, 1.0001))
+                    res["defensive"][f"{sd}/{prop}"] = rel
+                    print(f"  {sd:<5} {prop:<10} new {rel}  | raw {rawrel}", flush=True)
+        print("  per-prop stage-2 maps kept: " + (", ".join(sorted(k for k in prm["_iso"] if "|p:" in k)) or "none"), flush=True)
         res["gate"] = bool(gate)
         ok_all = ok_all and gate
         report["oos"][f"{fit_s}->{test_s}"] = res
