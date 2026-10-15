@@ -255,12 +255,16 @@ BOARD_SQL = """
           UNION SELECT away_team_id FROM nba_calendar.slate_games WHERE game_date = %s)
         SELECT pid.player_id, pr.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
                {price_cols},
+               -- ROSTER FIRST (2026-10-15 full pass): the current roster (nba_ref.players, refreshed daily) is the authority; the
+               -- latest game-log team is only the fallback. Game-log-first gave every offseason mover LAST season's team on
+               -- opening night whenever that old team also played (10-20: Brown, George, Robinson, Harris) - wrong same-team
+               -- / opposing-team pairing and two-team checks until his first game is logged.
                CASE WHEN evt.home_id IS NOT NULL OR evt.away_id IS NOT NULL THEN
-                      CASE WHEN gl.team_id IN (evt.home_id, evt.away_id) THEN gl.team_id
-                           WHEN pl.team_id IN (evt.home_id, evt.away_id) THEN pl.team_id END
+                      CASE WHEN pl.team_id IN (evt.home_id, evt.away_id) THEN pl.team_id
+                           WHEN gl.team_id IN (evt.home_id, evt.away_id) THEN gl.team_id END
                     ELSE
-                      CASE WHEN gl.team_id IN (SELECT t FROM playing) THEN gl.team_id
-                           WHEN pl.team_id IN (SELECT t FROM playing) THEN pl.team_id END
+                      CASE WHEN pl.team_id IN (SELECT t FROM playing) THEN pl.team_id
+                           WHEN gl.team_id IN (SELECT t FROM playing) THEN gl.team_id END
                END team_id,
                evt.event_id
         FROM pr
