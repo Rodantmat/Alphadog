@@ -282,7 +282,7 @@ def load_board_legs_live(conn, day, label='window'):
     Player: nba_ref.norm_name(raw player) -> player_name_map, the ONE canonical resolver (score_board_legs 2026-09-25); NOT the
     tiers table's nm, which keeps suffixes ('craigporterjr' vs canonical 'craigporter') and silently dropped every Jr/Sr/II/III
     player in the universe path. Event: the PrizePicks window board's own event id. Team: whichever of the event's two teams
-    matches the player - his latest game-log team before today, else his current roster team (correct on a trade day)."""
+    matches the player - his current roster team, else his latest game-log team before today (roster first since 2026-10-15)."""
     # PERFORMANCE (2026-10-03, measured): the first version took > 2 min per slate - the planner mis-estimated row counts and
     # re-ran the event CTE (norm_name over ~500 board rows) inside a nested loop for each of ~3,600 legs, and the team lookup
     # compared nba_player_id::text, which disables the (nba_player_id, game_date) index. Fixed: every set MATERIALIZED and
