@@ -239,7 +239,8 @@ async function backtestContext(sql, cfg, names) {
     record.set(name, rows.map(r => ({ season: r.season, slips: r.slips, roi_pct: r.stake ? r1(100 * (r.payout / r.stake - 1)) : null,
       leg_hit_0_100: r.legs ? r1(100 * r.hits / r.legs) : null })));
   }
-  return { cellRate, certHit, record, suffix };
+  const stateOf = new Map((await q(sql, "SELECT strategy, state FROM nba_score.live_strategy_state")).map(s => [s.strategy, s.state]));
+  return { cellRate, certHit, record, suffix, stateOf };
 }
 
 export async function apiHighHit(sql, cfg, url, version) {
