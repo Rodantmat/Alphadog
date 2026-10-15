@@ -2068,7 +2068,7 @@ is not.*
 > `44%`.*** 🔑 **AND THERE ARE TWO DIFFERENT `44%`-OF-THE-BOARD DEFECTS IN THIS CORPUS** — this
 > combos gap, and `norm_market()`'s naive `replace('player_','')` that would have scored **`23,286`
 > legs** nothing *(`OPEN_ITEMS:11078`, `FSC:3660`, `RECIPE:298`)*. **A coincidence of proportion,
-> not a shared cause, and a reader greping `44%` will meet both.***
+> not a shared cause, and a reader greping `44%` will meet both.*** 🆕 *(additional sweep `8`, pass 490, `§P490` — `T18` `2026-09-19 22:25Z` → `2026-09-20 00:17Z`, AS STATED)* The scorer's sizes as the reply gave them: the board is *"~510k legs across apps"* against `140k` full-ladder rungs (`22:25Z`), and the first correctly-mapped board-scoped run scored **`52,560` legs across `12` props** — *"that's `23,286` legs, `44%` of the board"* the old string-stripping would have dropped (`00:17Z`); `15,156` PRA legs alone were the largest prop group on that date's board (`00:02Z`).
 
 ### 1 · What the test was, and why it had to be per-player
 
