@@ -270,7 +270,7 @@ def api_checks(conn, cfg):
     in_slip = {l["board_row_id"] for s in sl for l in s["legs"]}
     want_pool = []
     for app in ("prizepicks", "underdog"):
-        rows_ = conn.execute("""SELECT app, player_id, prop, line::float8, side FROM nba_score.board_scored WHERE game_date=%s AND app=%s AND round(score::numeric, 1) >= %s
+        rows_ = conn.execute(f"""SELECT app, player_id, prop, line::float8, side FROM {HB} WHERE game_date=%s AND app=%s AND round(score::numeric, 1) >= %s
                                 ORDER BY final_hp DESC, score DESC, player, prop, line, side""", (sd, app, bp["min_score"])).fetchall()
         picked = []
         for a, pid, prop, line, side in rows_:
