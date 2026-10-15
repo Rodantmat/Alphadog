@@ -12,7 +12,7 @@ import { WORKER_NAME, jsonResponse, readJsonSafe, withPg, loadConfig, resolveSla
 import { apiCurrent, apiFilters } from "./main_ui/board.js";
 import { apiDossier } from "./main_ui/dossier.js";
 import { apiPlayerSearch, apiPlayerProfile } from "./main_ui/profile.js";
-import { apiGenerate, apiHighHit, apiSave, apiRecent } from "./main_ui/slips.js";
+import { apiGenerate, apiHighHit, apiSave, apiRecent, apiStakeUnit } from "./main_ui/slips.js";
 import { apiHealth, apiHealthRerun, apiCalibrationReport, apiCalibrationApply } from "./main_ui/health.js";
 import { ASSETS } from "./main_ui/assets.js";
 
