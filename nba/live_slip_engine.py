@@ -636,7 +636,7 @@ def pick(conn, day, require_fresh=True):
         if state == 'off':
             continue
         if late_march and state == 'active' and cap > 0 and live_cap >= cap and name in LATE_MARCH_RAISE:
-            live_cap = LATE_MARCH_RAISE[name]
+            live_cap = max(live_cap, LATE_MARCH_RAISE[name])   # never lowers a cap (A_wsteals' base cap is 9 since 2026-10-15)
         week2 = week2_trough   # the SIGNAL decides the structure (29o); the grade's 'week2' state is only a cap-1 caution for a normal build
         if state == 'week2' and not week2_trough:
             live_cap = min(live_cap, 1) if live_cap else 1
