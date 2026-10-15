@@ -300,12 +300,26 @@ def fit_params(X, y, meta, l2, min_n):
             k = iso_knots(stage1[mc], y[mc]) if mc.sum() >= 2000 else None
             if k:
                 params["_iso"][f"{side}|{ac}"] = k
+        # per prop (2026-10-15 strategy audit): one map per side is dominated by the points family, where the market is
+        # efficient, and it flattened the defensive props (steals / stocks / turnovers) where the model carries real signal
+        for prop in PROPS:
+            mp = (sides == side) & (props == prop)
+            k = iso_knots(stage1[mp], y[mp]) if mp.sum() >= 2000 else None
+            if k:
+                params["_iso"][f"{side}|p:{prop}"] = k
+            for ac in ANCHOR_CLASSES:                   # and per (side, prop, anchor class) where that cell is large enough
+                mpc = mp & (classes == ac)
+                k = iso_knots(stage1[mpc], y[mpc]) if mpc.sum() >= 2000 else None
+                if k:
+                    params["_iso"][f"{side}|p:{prop}|{ac}"] = k
     return params
 
 
-def iso_key(params, side, ac):
+def iso_key(params, side, ac, prop=None):
+    """stage-2 map, most specific first (each fitted only on 2,000+ legs): (side, prop, anchor class), (side, prop),
+    (side, anchor class), the side's."""
     iso = params.get("_iso") or {}
-    return iso.get(f"{side}|{ac}") or iso.get(side)
+    return ((iso.get(f"{side}|p:{prop}|{ac}") or iso.get(f"{side}|p:{prop}")) if prop else None) or iso.get(f"{side}|{ac}") or iso.get(side)
 
 
 def predict(params, X, meta, iso=True):
