@@ -19,6 +19,14 @@ import { ASSETS } from "./main_ui/assets.js";
 const VERSION = "alphadog-v2-nba-main-ui-v1.1.2";
 const ASSET_HASH = VERSION.replace(/^.*-v/, "v");   // browser cache key for the client parts: bump VERSION on any client change
 
+// every route this worker answers (also returned on a 404, as the MLB worker does)
+const ALLOWED_ROUTES = ["GET /", "GET /index.html", "GET /app.js", "GET /js/{pricing,dossier,build,slips,profile,admin}.js", "GET /health", "GET /diagnostic",
+  "POST /run", "GET /api/main-board/current", "GET /api/main-board/filters", "GET /api/main-board/dossier", "GET /api/main-board/health",
+  "POST /api/main-board/health/rerun", "GET /api/calibration/report", "POST /api/calibration/apply", "GET /api/player-search", "GET /api/player-profile",
+  "POST /api/slips/generate", "POST /api/slips/save", "GET /api/slips/recent", "POST /api/slips/high-hit", "POST /api/slips/auto-create",
+  "POST /api/slips/research-create", "POST /api/slips/high-hit-underdog", "POST /api/slips/regular", "POST /api/slips/goblin", "POST /api/slips/demon",
+  "GET /main_alphadog_logo.png", "GET /main_alphadog_favicon.png", "GET /main_alphadog_apple_touch_icon.png"];
+
 const STATIC = {
   "/": ["index.html", "text/html; charset=utf-8"],
   "/index.html": ["index.html", "text/html; charset=utf-8"],
