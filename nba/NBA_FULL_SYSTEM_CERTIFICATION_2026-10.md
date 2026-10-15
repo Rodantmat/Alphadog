@@ -1545,3 +1545,50 @@ red, the rest paper with their caps).
 - **What still needs NEW data (not in the database):** who guards him (per-possession matchup data), quarter / half splits
   (play-by-play), public betting % / handle and sharp-money splits, confirmed starting lineups at tip, real-time news / beat
   reports, closing-line value of the DFS line itself at lock.
+
+### THE HONEST HIT PROBABILITY — THE SCORING CHAIN TRACED, THE OVERCONFIDENCE FIXED (owner 2026-10-14 22:21 PT: "Does the percentage really makes sense?"; 22:25 PT: "find the issues, fix whatever you need to fix, find and track the full scoring system and understand where the issues are")
+- **The chain (traced end to end).** P2 `nba_score.baseline_history` (the per-player ladder: P(more) / P(less) at every rung) →
+  P3 `score_board_legs.py` per leg: baseline_hp → availability delta → as-of `cal_shift` (log-odds, `ladder_calibration_asof`) →
+  `final_hp`; confidence from the deduction model; `score_and_edge` (`build_final_hp.py`) → `nba_score.board_scored` (what the UI
+  and the paper logger read). The certified slip engine (`live_slip_engine.py`) ranks `nba_score.final_hp` inside certified cells
+  and is certified on REALIZED hit rates; it is not touched by anything below.
+- **Defect 1: the board showed the raw model probability, and it is overconfident.** All graded PrizePicks / Underdog / Sleeper legs
+  (422 slates, 1.48M legs, both seasons) — the number shown vs. what hit: shown 74.7% → hit 67.1%; 83.3% → 71.6%; 92.4% → 70.5%.
+  Unders were worst (shown 85%+: hit 56% in 2024-25, 62% in 2025-26). The 10-06 recalibration map (`nba_score.calibrated_p`) existed
+  but nothing read it.
+- **Root cause, measured at the sportsbook's own line** (Over legs whose line = the DraftKings main line, 165,372 legs): realized
+  over 48.5% / 48.1%; DraftKings no-vig 49.6% / 49.7%; model 47.0% / 47.9%. Log-loss: model 0.705 / 0.704 (WORSE than a coin flip,
+  0.693), DraftKings 0.690 / 0.690. The ladder is centred below the market on Overs for every prop in both seasons (mean shift
+  +0.12 to +0.20 log-odds; median |miscentre| ~0.35 log-odds; ~10% of player-props off by more than 1 log-odds, e.g. Wembanyama PRA
+  6/13: model 43.8% over 34.5 with DraftKings' main line at 44.5). The ladder's spread is the information; its centre is noise the
+  market already removed.
+- **Fix: the market-anchored hit probability** (`nba/build_market_anchor.py`, params in `classification_config['hp_market_anchor']`).
+  Per (side, prop) L2 logistic on: logit(model), the model's distance from DraftKings' no-vig main line (the model's own curve read
+  at the DraftKings line), its distance from the DFS standard line, presence flags, goblin / demon flags; pooled-by-side fallback;
+  then an isotonic stage per side. Gate, out of sample in BOTH directions: fit 2024-25 → 2025-26 (936,073 legs) log-loss 0.6331 →
+  0.6176, shown ≥75%: 80.3% shown → 71.7% hit before, 75.4% → 77.5% after; fit 2025-26 → 2024-25 (544,143 legs) 0.6668 → 0.6505,
+  80.3% → 66.6% before, 76.3% → 72.6% after. History uses the OTHER season's fit; the live season uses POOLED.
+- **Applied:** `nba/apply_market_anchor.py` → `nba_score.board_true_hp` (model_hp, true_hp, market_hp, true_score, true_edge, anchor,
+  dk_line, dk_p, pp_line, fit_set), all 422 slates, 1,490,056 legs (run 38695782980). Ladder interpolation moved to Python (one
+  ladder read per slate; parity vs the SQL form exact, max difference 0 over 1,536 anchors, run 38695168452) and the box-score CTE
+  materialized: ~4 s a slate instead of 3–4 minutes. Live: P3 afternoon step "Market-anchored hit probability (UI)"
+  (`soft_mahp`, after the price-shopping ledger; DraftKings rows from the ParlayAPI window capture, the history's exact shape).
+- **Full-history reliability after the fix** (out-of-sample fits): shown 54.1% → hit 53.9%; 64.8% → 65.5%; 73.3% → 73.7%; log-loss
+  0.6455 → 0.6297. Before: 64.3% → 60.2%; 74.7% → 67.1%; 83.3% → 71.6%; 92.4% → 70.5%. The honest number tops out near 75–76% on
+  Overs and ~66% on Unders, because that is what the best legs actually hit.
+- **Display defects fixed in the same pass:** Calibration Shift was log-odds ×100 shown as points (−46.3 pp; v1.3.4); Edge was
+  double-scaled ×100 (v1.4.0); the dossier's "Sportsbook-Implied HP" (the model's curve moved onto DraftKings) is itself
+  overconfident in the tail (82–92% shown → 73–77% hit), so the dossier now shows DraftKings' real main line and no-vig split
+  instead (v1.4.1). Board, dossier, profile, builder and slips read `board_true_hp` over `board_scored` (`board.js` coalesce
+  join); the model's own number stays visible as "Model HP (before the market anchor)".
+- **Tests:** C3 (every board leg's HP / confidence / score equals the market-anchored board), C47 (every slate leg carries
+  `board_true_hp`: 1,033 of 1,033 on 2026-06-13), C48 (30 days before the slate, every band with 300+ legs within 5 points: 54.7 →
+  56.6, 64.7 → 69.6, 72.9 → 75.0 — the honest number errs slightly LOW there, the safe side). v1.4.0 default 91/91 (run
+  38696895993); `date=2026-03-10` pass (run 38697340600).
+- **What the honest number says about edge:** at the sportsbook's main line the honest probability ≈ the market (log-loss 0.689 vs
+  DraftKings 0.690). Standard-line "edges" from the raw model were mostly the model's miscentring. Real value lives where the DFS
+  line or payout differs from the market (goblins / demons priced off the market line, multipliers), which is where the certified
+  slip engine's cells already sit.
+- **Open (measured, not changed):** the ladder's centring (P2) is the upstream defect; re-centring the ladder on the market line before
+  P3 would improve every downstream number, but it changes `final_hp` and therefore the certified engine's inputs, so it is a
+  chained recertification, not a patch.
