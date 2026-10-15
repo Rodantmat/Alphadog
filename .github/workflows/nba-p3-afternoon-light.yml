@@ -690,6 +690,32 @@ jobs:
 
       # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): a failed Underdog pick never fails the run, so it was
       # invisible in nba_control.pipeline_runs. Recorded on the run row by the finish job (SOFT_FAILED) as a run warning + note.
+      # COVERAGE OF THE HONEST NUMBER (2026-10-15 full pass): the UI falls back to the raw model per leg when board_true_hp has no
+      # row; a slate-wide fallback must be visible. Fails softly (listed as a soft failure on the run row) below 99%.
+      - name: Market-anchored hit probability - coverage
+        id: soft_mahp_cov
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SLATE: ${{ steps.d.outputs.asof }}
+        run: |
+          python - <<'EOF'
+          import os, sys, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n, m, dk = c.execute("""SELECT count(*), count(th.true_hp), count(th.dk_line)
+                                      FROM (SELECT DISTINCT game_date, player_id, prop, line, side FROM nba_score.board_scored
+                                            WHERE game_date = %s AND app = ANY('{prizepicks,underdog,sleeper}'::text[])) b
+                                      LEFT JOIN nba_score.board_true_hp th USING (game_date, player_id, prop, line, side)""",
+                                   (os.environ["SLATE"],)).fetchone()
+          print(f"board_true_hp coverage {m:,} of {n:,} legs; DraftKings-anchored {dk:,}")
+          if n and dk == 0:
+              print("::warning::no leg has a DraftKings anchor - the sportsbook feed did not land for this slate")
+          if n and m / n < 0.99:
+              print(f"::error::only {m:,} of {n:,} legs carry the market-anchored probability - the UI shows the raw model for the rest")
+              sys.exit(1)
+          EOF
+
       - name: Collect soft-step failures
         id: soft
         if: always()
