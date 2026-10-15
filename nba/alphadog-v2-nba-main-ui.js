@@ -79,7 +79,7 @@ async function api(path, request, env, url) {
       r.route = path;
       return send(r);
     }
-    return jsonResponse({ ok: false, error: "not_found", path, version: VERSION }, 404);
+    return jsonResponse({ ok: false, error: "not_found", path, version: VERSION, allowed_routes: ALLOWED_ROUTES }, 404);
   });
 }
 
