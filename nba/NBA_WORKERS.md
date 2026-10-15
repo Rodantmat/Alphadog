@@ -543,7 +543,7 @@ writes. Grouped by role.
 |---|---|---|
 | 1–11 | `scrape_nba_stats_teams` · `_arenas` · `_players` · `player_bio` · `season_tables` · `team_stats` · `onoff` · `playtypes` · `player_tracking` · `darko` · `shotquality` | **— nothing to the DB** |
 | 12 | `build_defender_ratings.py` | `nba_ref.defender_ratings` |
-| 13 | `build_static_context.py` | **— nothing to the DB** |
+| 13 | `build_static_context.py` | **— nothing to the DB** · 🆕 *(additional sweep `6`, pass `386`, `§P386` — `T14` `2026-09-11 20:17Z`–`20:29Z`; ✅ read in code and in the files)*: it writes JSON under `nba/data/` — `nba_coach_changes_parsed_names.json` (names only, from the Wikipedia season pages, "cross-check against the verified dated set") and `nba_static_context_todo.json`. The dated coach changes are hand-verified, not scraped: `nba/data/nba_coach_changes_backfill.json` holds `8` in-season changes for `2023-24` / `2024-25` (MIL ×2, WAS, BKN; SAS, SAC, MEM, DEN), confidence `5` high / `2` medium / `1` low, its rule "effective_date is the first date the NEW coach is in charge. Games strictly before it belong to the outgoing coach"; `2025-26`'s two (POR, NOP) are dated in `nba/data/nba_coach_changes.json`. `T14`: *for Brooklyn I used Feb 22 (Ollie's first game) rather than Feb 19 (the announcement)*. |
 | 14 | `certify_pipeline.py` `PIPE=p1` | *(asserts only)* |
 
 🔑 ***Eleven of P1's fourteen scripts write NO database row.*** **They emit JSON that is committed to
