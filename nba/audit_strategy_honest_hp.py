@@ -106,6 +106,10 @@ def main():
                         a["honest_g"] += leg["honest"]
                     if leg["anchor"] == "none":
                         a["no_anchor"] += 1
+                if leg["cellp"] is not None and leg["hit"] is not None:
+                    a["graded_c"] += 1
+                    a["cell_g"] += leg["cellp"]
+                    a["hit_c"] += leg["hit"]
             full = len(s["legs"]) == size and all(leg["honest"] is not None for leg in s["legs"])
             if full:
                 a["slips_full"] += 1
@@ -113,6 +117,10 @@ def main():
                 a["payout_full"] += s["payout"]
                 a["ev_model"] += s["stake"] * expected_payout(s["legs"], structure, "model")
                 a["ev_honest"] += s["stake"] * expected_payout(s["legs"], structure, "honest")
+                if all(leg["cellp"] is not None for leg in s["legs"]):
+                    a["stake_cell"] += s["stake"]
+                    a["payout_cell"] += s["payout"]
+                    a["ev_cell"] += s["stake"] * expected_payout(s["legs"], structure, "cellp")
                 pm = ph = 1.0
                 for leg in s["legs"]:
                     pm *= leg["model"]; ph *= leg["honest"]
