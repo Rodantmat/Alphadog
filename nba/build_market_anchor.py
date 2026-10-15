@@ -437,7 +437,7 @@ def main():
         sub_ok = worst is None or abs(worst[5]) <= sub_tol
         res["sub_tol"] = sub_tol
         gate = ll_new < ll_raw and sub_ok and (not top_new.any() or abs(pt[top_new].mean() - yt[top_new].mean()) < abs(raw[top_raw].mean() - yt[top_raw].mean()))
-        print(f"  sub-groups at shown >= 0.60 (n >= 1,000): {len(groups)} checked, worst {worst} -> {'OK' if sub_ok else 'FAIL'}", flush=True)
+        print(f"  sub-groups at shown .55-.60 / >= .60 (n >= 1,000): {len(groups)} checked, worst {worst} -> {'OK' if sub_ok else 'FAIL'}", flush=True)
         for g in res["subgroups"][:8]:
             print(f"    {g}", flush=True)
         for ac, rel in res["by_class"].items():
