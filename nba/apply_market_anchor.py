@@ -97,9 +97,7 @@ def apply_date(conn, d, cfg, label="window"):
     fits = cfg["fit_sets"]
     fs = fit_set_for(d, fits)
     params = fits[fs]
-    cur = conn.cursor(row_factory=dict_row)
-    cur.execute(SQL, {"d0": d, "d1": d, "lab": label})
-    rows = cur.fetchall()
+    rows = fetch_rows(conn, d, label)
     conf = {(r[0], r[1], float(r[2]), r[3]): float(r[4]) for r in conn.execute(
         """SELECT player_id, prop, line, side, max(confidence) FROM nba_score.board_scored
            WHERE game_date = %s AND app = ANY('{prizepicks,underdog,sleeper}'::text[]) GROUP BY 1, 2, 3, 4""", (d,)).fetchall()}
