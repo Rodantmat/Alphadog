@@ -100,8 +100,15 @@ export default {
             pp_rules_loaded: Object.keys(cfg.pp), reliability_loaded: !!cfg.reliability, sleeper_rules_loaded: !!cfg.sleeper, timestamp_utc: new Date().toISOString() });
         });
       }
+      // the orchestrator's job slot (MLB parity): this worker is a read-only UI and never runs a pipeline from /run
+      if (request.method === "POST" && path === "/run") {
+        const input = await readJsonSafe(request);
+        return jsonResponse({ ok: true, worker: WORKER_NAME, version: VERSION, route: "/run", request_id: input.request_id || null, chain_id: input.chain_id || null,
+          job_key: input.job_key || null, status: "MAIN_UI_READ_ONLY_NOOP", rows_read: 0, rows_written: 0,
+          output_json: { noop: true, message: "NBA main UI worker is read-only and does not run pipelines; P1/P2A/P2B/P3 run from their own workflows." } });
+      }
       if (path.startsWith("/api/")) return await api(path, request, env, url);
-      return jsonResponse({ ok: false, error: "not_found", path, version: VERSION }, 404);
+      return jsonResponse({ ok: false, error: "not_found", path, version: VERSION, allowed_routes: ALLOWED_ROUTES }, 404);
     } catch (err) {
       return jsonResponse({ ok: false, error: String(err && err.message ? err.message : err), path, version: VERSION }, 500);
     }
