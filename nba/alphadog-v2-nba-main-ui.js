@@ -68,6 +68,8 @@ async function api(path, request, env, url) {
     if (post && path === "/api/slips/generate") return send(await apiGenerate(sql, cfg, await readJsonSafe(request), VERSION));
     if (path === "/api/slips/save" && post) return send(await apiSave(sql, cfg, await readJsonSafe(request), VERSION));
     if (path === "/api/slips/recent" && get) return send(await apiRecent(sql, url, VERSION));
+    if (path === "/api/stake-unit" && get) return send(await apiStakeUnit(sql, null, VERSION));
+    if (path === "/api/stake-unit" && post) return send(await apiStakeUnit(sql, await readJsonSafe(request), VERSION));
     // the Slips screen and every MLB slip route alias (same contract; NBA slips come from the engines, filtered per route)
     const slipRoutes = { "/api/slips/high-hit": null, "/api/slips/auto-create": null, "/api/slips/research-create": null, "/api/slips/high-hit-underdog": "underdog",
       "/api/slips/regular": "regular", "/api/slips/goblin": "goblin", "/api/slips/demon": "demon" };
