@@ -23366,6 +23366,7 @@ writing a rule and applying it — for the fourth time in this run.***
 column** — `factor_registry` has twelve columns and none carries it — and **there is no sub-factor
 table at all**, so the lock's *"~90 sub-factors"* exist only as prose in
 `NBA_ENRICHMENT_FACTOR_LOCK.md`.
+- ▶ 🆕 Additional sweep `5` (`2026-10-15`, pass 334): `§T10.32` — the sub-factor tree is also a config row, `nba_config.classification_config['enrichment_subfactor_tree']` (✅ live: eleven factor arrays, `78` entries, plus thin and retired lists), so "no sub-factor table" holds and "only as prose" does not — written in `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md`.
 
 #### 🔴 T10.4b — **The columnar shard scheme is live and complete, and carries two defects**
 
