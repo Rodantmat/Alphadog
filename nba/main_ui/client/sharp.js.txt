@@ -82,7 +82,8 @@ function projectionBlock(sh,games,legs,depth,teamAbbr){
     +(share!=null?' Points by team share: '+nOrDash(ud.tm_pts)+'% of team points (last 10) × implied team total '+st.team_implied+' = '+nOrDash(share)+'.':'');
   return sectionWide('Box-Score Projection',table(['Prop','Per-36 L10','Per-36 Season','Projection','Standard Line','Proj − Line','Market Fair','Proj − Fair'],rows),note)}
 // ---- J. FORM SIGNAL: recent games against his own season spread (z-score) - hot / cold beyond normal variance
-function formSignalBlock(sh,games){const n=((sh&&sh.config)||{}).form_z_window||5;const season=seasonGamesOf(games);if(season.length<8)return '';
+function formSignalBlock(sh,games){const n=((sh&&sh.config)||{}).form_z_window||5;const season=seasonGamesOf(games);
+  if(season.length<8)return sectionWide('Form Signal — Recent vs His Own Spread','<div class="small">Only '+season.length+' game'+(season.length===1?'':'s')+' this season - the form read needs 8+ to separate a trend from noise. Use the career, line profile and availability blocks instead.</div>');
   const keys=['points','rebounds','assists','threes_made','pra','steals','blocks','turnovers'];
   const rows=keys.map(k=>{const sv=season.map(g=>propGameValue(g,k));const m=avgOf(sv),sd=sdOf(sv);const recent=season.slice(0,n).map(g=>propGameValue(g,k));const ra=avgOf(recent);
     if(m==null||!sd||ra==null)return null;const z=(ra-m)/(sd/Math.sqrt(recent.length));return {'Prop':displayPropLabel(k),'Season Avg':nOrDash(m),'Game SD':nOrDash(sd),['Last '+n+' Avg']:nOrDash(ra),'z':sgn(z,2),'Read':z>=2?'🔥 Hot':z>=1?'Warm':z<=-2?'🧊 Cold':z<=-1?'Cool':'Normal'}}).filter(Boolean);
