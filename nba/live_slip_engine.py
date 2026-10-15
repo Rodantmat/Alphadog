@@ -66,8 +66,8 @@ STRATEGIES = {
     # 17.98 -> 18.75 (better in both). Unchanged: A_core_3power (k4 -15%), D_points_3power (k4 +3%).
     'A_wsteals_5flex':   ('weighted:steals_R',    5, 'flex',  9, 0.61, 59.5, 15, 8),   # cap 6->9 (2026-10-15); was 3->6 (29k pass 17)
     'A_core_5flex':      ('core',                 5, 'flex',  0, 0.61, 61.4, 15, 8),   # RETIRED (29k pass 14/17): 58% identical to wsteals; kept for its shadow record
-    'A_regular_5power':  ('regular',              5, 'power', 1, 0.61, 36.3, 13, 8),
-    'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  1, 0.62, 21.6, 11, 8),
+    'A_regular_5power':  ('regular',              5, 'power', 2, 0.61, 36.3, 13, 8),   # cap 1->2 (2026-10-15)
+    'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  3, 0.62, 21.6, 11, 8),   # cap 1->3 (2026-10-15)
     'A_core_3power':     ('core',                 3, 'power', 3, 0.62, 74.6, 15, 8),
     # B_demon_*: cap 0 since 2026-10-15 (full pass) - certification lost on PrizePicks' real Flex tiers (§31ad: 2024-25 -16% /
     # -22%), red since 10-10. Their red lived only in DB rows, so a reset / non-resume replay put them back to paper at cap 6 / 1,
