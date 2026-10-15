@@ -606,6 +606,19 @@ jobs:
           PSL_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/build_price_shop_ledger.py
 
+      # MARKET-ANCHORED HIT PROBABILITY (2026-10-14): the honest number the UI and the slip builder show (nba_score.board_true_hp),
+      # from the board this run scored + the sportsbook window capture above (nba/apply_market_anchor.py, params fitted and gated
+      # out-of-sample by nba/build_market_anchor.py). Display layer only - the certified pick above reads nba_score.final_hp, never
+      # this table. Soft and listed below when it fails (the UI then shows the model's own number for the slate).
+      - name: Market-anchored hit probability (UI)
+        id: soft_mahp
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MA_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/apply_market_anchor.py
+
       # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): a failed Underdog pick never fails the run, so it was
       # invisible in nba_control.pipeline_runs. Recorded on the run row by the finish job (SOFT_FAILED) as a run warning + note.
       - name: Collect soft-step failures
