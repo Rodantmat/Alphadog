@@ -455,7 +455,7 @@ def main():
         cfg = {"what": "Market-anchored hit probability (nba/build_market_anchor.py): per (side, prop) logistic weights over "
                        + ", ".join(FEATS) + ". History applies the OTHER season's fit; live applies POOLED.",
                "features": FEATS, "fit_sets": fits, "label": label, "report": {k: v for k, v in report.items() if k != "oos"},
-               "oos_summary": {k: {kk: v[kk] for kk in ("n", "logloss_raw", "logloss_new", "brier_raw", "brier_new", "top_raw", "top_new", "gate")}
+               "oos_summary": {k: {kk: v[kk] for kk in ("n", "logloss_raw", "logloss_new", "brier_raw", "brier_new", "top_raw", "top_new", "gate", "subgroups")}
                                for k, v in report["oos"].items()}}
         with psycopg.connect(url) as c:
             c.execute("""INSERT INTO nba_config.classification_config (config_key, config_json) VALUES ('hp_market_anchor', %s::text::jsonb)
