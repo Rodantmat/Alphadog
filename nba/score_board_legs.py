@@ -175,9 +175,11 @@ def main():
     if _labels:
         board = board[board["snapshot_label"].str.lower().isin(_labels)].copy()
         print(f"  BS_LABELS={_labels}: {len(board):,} of {raw:,} legs kept", flush=True)
-    elif "window" in _present and (_present & {"routine", "morning"}):
+    elif "window" in _present and (_present & {"routine", "morning", "probe"}):
+        # 'probe' (2026-10-15 full pass): Betr's probe harvests (days before the slate) were scored as opening-night legs and
+        # counted in f_books; once the window board exists they are advance captures like 'routine'
         n0 = len(board)
-        board = board[~board["snapshot_label"].str.lower().isin(["routine", "morning"])].copy()
+        board = board[~board["snapshot_label"].str.lower().isin(["routine", "morning", "probe"])].copy()
         print(f"  window board present: {n0 - len(board):,} routine/morning legs dropped, {len(board):,} kept "
               f"(labels {sorted(_present)})", flush=True)
     # BS_APPS (documented in the header since the first version, never read until 2026-09-26). Blank =
