@@ -4,6 +4,7 @@
 import { q, parseLegId, propLabel } from "./common.js";
 import { loadLegs } from "./board.js";
 import * as C from "./context.js";
+import * as D from "./bettor.js";
 
 export async function apiDossier(sql, cfg, url, version) {
   const id = url.searchParams.get("final_board_row_id") || url.searchParams.get("id");
