@@ -2172,6 +2172,8 @@ result ruled out, ending at *"ruling out IP-based blocking and **pointing at TLS
 instead**."* **The documents held the conclusion and pass 79 recovered the measurements; the
 reasoning that joins them was in this file all along.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 85*.
 
+🆕 *(additional sweep `8`, pass 493, `§P493` `T21` `2026-09-21` `00:40Z`–`01:08Z` AS STATED)* The Cowork sweep's `T2` pass *"flagged a contradiction without reconciling it — the trigger-file timestamp conflict between T1 and T2"*, and the chat's standing instruction on it was *"Leave the T1/T2 trigger-file contradiction open"* (and, at `00:49Z`, *"If T3 settles it, close it there with both references"*). The reply states only that a timestamp conflict on the trigger files exists between the two transcripts; the two conflicting values are not given in `T21`.
+
 ---
 
 ## 8b-i. ✅ THE WORKER UNIVERSE, DIFFED THREE WAYS — 21/21/21, NO DRIFT
