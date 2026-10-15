@@ -218,7 +218,7 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
     ok: true, data_ok: true, version, route: "/api/main-board/current",
     slate, row_count: rows.length, limit, min_score: minScore, min_hit_probability: minHp, rows,
     semantics: {
-      main_number: "hit_probability_0_100 = nba_score.board_scored.final_hp (calibrated hit probability of this exact app leg)",
+      main_number: "hit_probability_0_100 = nba_score.board_true_hp.true_hp (market-anchored hit probability of this exact leg; falls back to board_scored.final_hp when the slate has no anchored row) - model_hp_0_100 = the model's own number",
       secondary_number: "probability_confidence_0_100 = board_scored.confidence",
       tertiary_number: "score_0_100 = board_scored.score (confidence-enhanced 0-100 score)",
       rows_are: slate.mode === "live" ? "today's scored board (P3)" : `replay of the latest scored slate ${slate.date} - no scored board for today yet`
