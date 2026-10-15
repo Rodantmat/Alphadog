@@ -16,7 +16,7 @@ import { apiGenerate, apiHighHit, apiSave, apiRecent } from "./main_ui/slips.js"
 import { apiHealth, apiHealthRerun, apiCalibrationReport, apiCalibrationApply } from "./main_ui/health.js";
 import { ASSETS } from "./main_ui/assets.js";
 
-const VERSION = "alphadog-v2-nba-main-ui-v1.1.2";
+const VERSION = "alphadog-v2-nba-main-ui-v1.2.0";
 const ASSET_HASH = VERSION.replace(/^.*-v/, "v");   // browser cache key for the client parts: bump VERSION on any client change
 
 // every route this worker answers (also returned on a 404, as the MLB worker does)
