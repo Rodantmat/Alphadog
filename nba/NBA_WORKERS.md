@@ -2067,7 +2067,7 @@ All use **`curl_cffi` with browser impersonation** except where noted.
 | `scrape_nba_shotquality.py` | shot quality | |
 | `scrape_nba_schedule.py` | `scheduleleaguev2` | 2,666 games |
 | `scrape_nba_periods.py` | quarter/half splits | |
-| `scrape_nba_season_tables.py` | weekly as-of tables | pt_defend, hustle, clutch, coaches |
+| `scrape_nba_season_tables.py` | weekly as-of tables | pt_defend, hustle, clutch, coaches. 🆕 (additional sweep 6, pass 384, `§P384` — the build's tables and their endpoints by name; `T10` `2026-09-09 21:16Z`–`22:16Z` names `leagueseasonmatchups` and the five tables; ✅ read in code): `matchups` (`leagueseasonmatchups` — offense player × defense player: matchup minutes, partial possessions, points, attempts, shooting fouls; *~140,000 offense → defense pairings per season*, which has no date filter, so the parity path is the per-game `scrape_nba_matchups_pergame.py`), `pt_defend` (`leaguedashptdefend`, defended FG% against normal), `hustle` (`leaguehustlestatsplayer` — contested shots, deflections, charges, screen assists, loose balls, box-outs), `clutch` (`leaguedashplayerclutch`, last five minutes within five points), `preseason_logs` (`playergamelogs` with `SeasonType=Pre Season`, the opening prior for rookies and new arrivals), plus `all_players` (`commonallplayers`) and `coaches` (`commonteamroster`); `TABLES` picks them (default all), `SEASONS_N` the seasons (default `3`); the weekly as-of mode needs a table with `DateTo`. |
 | `scrape_nba_matchups_pergame.py` | matchup shards | feeds M1 |
 | `scrape_nba_injury_report.py` | NBA injury PDFs | **`INJURY_MODE`** = daily / probe / backfill |
 | `scrape_referee_assignments.py` | referee assignments | ~6–7 AM PT |
