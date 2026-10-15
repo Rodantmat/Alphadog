@@ -24,6 +24,7 @@ function renderPlayerProfileDream(j){
   html+=homeAwayBlock(homeGames,awayGames);
   html+=shotQualityBlock(advanced.shot_quality);
   html+=advancedMetricsBlock(advanced);
+  if(j.depth)html+=bettorDepthHtml(j.depth,games,legs,{oppAbbr:nextGame&&nextGame.opponent_abbr});
   html+='<div class="dossierGrid">'+sectionWide('Game Log',table(['Date','Opp','W/L','GS','MIN','PTS','REB','AST','3PM','STL','BLK','TOV','FG','FT','+/-','Phase'],rowsForRecentGames({recent_games:games.slice(0,25)})),'Most recent 25 games, newest first.')+'</div>';
   if(nextGame&&nextCtx){
     html+='<div class="sectionLabel" style="margin-top:16px">Next Game — Micro Factors</div><div class="microFactors">';
