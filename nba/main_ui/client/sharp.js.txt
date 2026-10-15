@@ -80,7 +80,7 @@ function projectionBlock(sh,games,legs,depth,teamAbbr){
   const note='Projection = per-minute rate ('+Math.round(100*w.last10/((w.last10+w.season)||1))+'% last 10 / '+Math.round(100*w.season/((w.last10+w.season)||1))+'% season) × expected minutes '+nOrDash(expMin)+' (last '+N+' avg) × pace factor '+(Math.round(pf*1000)/1000)
     +(gamePace?' (tonight\'s pace est. '+nOrDash(gamePace)+' = both teams\' last-10 average, vs his team\'s season '+nOrDash(teamPace)+')':' (no pace data - 1.0)')+'. A transparent box-score estimate, not the model.'
     +(share!=null?' Points by team share: '+nOrDash(ud.tm_pts)+'% of team points (last 10) × implied team total '+st.team_implied+' = '+nOrDash(share)+'.':'');
-  return sectionWide('Box-Score Projection',table(['Prop','Per-36 L10','Per-36 Season','Projection','Board Line','Proj − Line','Market Fair','Proj − Fair'],rows),note)}
+  return sectionWide('Box-Score Projection',table(['Prop','Per-36 L10','Per-36 Season','Projection','Standard Line','Proj − Line','Market Fair','Proj − Fair'],rows),note)}
 // ---- J. FORM SIGNAL: recent games against his own season spread (z-score) - hot / cold beyond normal variance
 function formSignalBlock(sh,games){const n=((sh&&sh.config)||{}).form_z_window||5;const season=seasonGamesOf(games);if(season.length<8)return '';
   const keys=['points','rebounds','assists','threes_made','pra','steals','blocks','turnovers'];
