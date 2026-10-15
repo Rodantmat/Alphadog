@@ -834,6 +834,8 @@ def pick_postseason(conn, day, legs):
                         st = 'placed_post_shadow'  # the aggregate daily ceiling (pass 43)
                     else:
                         placed_sigs.add(sig)
+            if st == 'placed_post' and below_min_stake(conn, star_under_weight(slip)):
+                st = 'placed_post_shadow'          # 2026-10-15: below the apps' minimum entry at the owner's unit - recorded, never staked
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight)
                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
