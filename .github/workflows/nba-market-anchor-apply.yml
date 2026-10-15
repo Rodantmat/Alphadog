@@ -1,0 +1,47 @@
+name: NBA Market-Anchored HP - Apply
+
+# Writes nba_score.board_true_hp (the market-anchored hit probability the UI shows) for a date or a date range, from the params
+# in nba_config.classification_config['hp_market_anchor'] (nba/build_market_anchor.py). History uses the OTHER season's fit;
+# the live season uses POOLED. One set per day (a date is deleted and rewritten in one transaction). P3 runs it for the slate.
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "one slate date (YYYY-MM-DD); blank = use d0..d1"
+        default: ""
+        required: false
+      d0:
+        description: "first date of a range"
+        default: ""
+        required: false
+      d1:
+        description: "last date of a range"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-market-anchor-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy pandas
+      - name: Apply
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MA_DATE: ${{ github.event.inputs.date }}
+          MA_D0: ${{ github.event.inputs.d0 }}
+          MA_D1: ${{ github.event.inputs.d1 }}
+        run: python -u nba/apply_market_anchor.py
