@@ -3,24 +3,23 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-14T20:19:19Z",
+  "fetched_at": "2026-10-15T20:20:18Z",
   "egress": {
-    "ip": "76.95.48.55",
-    "hostname": "syn-076-095-048-055.res.spectrum.com",
-    "city": "Moreno Valley",
+    "ip": "38.59.249.172",
+    "city": "San Jose",
     "region": "California",
     "country": "US",
-    "loc": "33.9375,-117.2306",
-    "org": "AS20001 Charter Communications Inc",
-    "postal": "92553",
+    "loc": "37.3394,-121.8950",
+    "org": "AS41378 Kirino LLC",
+    "postal": "95110",
     "timezone": "America/Los_Angeles",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 1014,
-  "row_count": 1014,
+  "rows": 984,
+  "row_count": 984,
   "total_pages": 1,
-  "future_pickable": 1014,
+  "future_pickable": 984,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
@@ -34,29 +33,29 @@
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 403,
-      "bytes": 94,
+      "bytes": 480,
       "error": "blocked"
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 1134897,
+      "bytes": 1101958,
       "total_pages": 1,
       "ok": true,
-      "rows": 1014,
-      "future_pickable": 1014
+      "rows": 984,
+      "future_pickable": 984
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 1134875,
+      "bytes": 1101936,
       "total_pages": 1,
       "ok": true,
-      "rows": 1014,
-      "future_pickable": 1014
+      "rows": 984,
+      "future_pickable": 984
     }
   ],
-  "github_run_id": "38630637972"
+  "github_run_id": "38800620990"
 }
