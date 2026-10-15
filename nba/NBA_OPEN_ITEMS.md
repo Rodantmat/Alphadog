@@ -19749,3 +19749,35 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `361` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY` in `NBA_WORKERS.md`): `T1`–`T39` done (`35,660` sentences); next `T40`.
+
+## §P362 — PASS 362 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T40` · ONE RESIDUE · AND THE IDENTIFIER CHECK RUN BACK OVER `T1`–`T39`, SIX MORE
+*Angle (as NEXT set it):* (b18) `§P131`'s method on `T40`, with pass 361's identifier check (every identifier the listed sentences name, grepped by its own name in the shell).
+
+**`T40`:**
+- Tabulated in the shell before this line (the scan at pass 361's head): `T40` `70` of `130` sentences listed — one fewer than `§P312` listed, the two lists diffed in the shell (`1` dropped, `0` added). The dropped sentence (the combos history builder at live depths) now matches `§P312`'s own on-file list, a coincidence; its substance was on file before (base `f6caaeb14`). **All `70` read whole**. The bounded figure triage: `3` with a figure not on file — the identifiers inside three research-source links, as at passes `262` and `312` — / `0` inside a longer number / `16` with every figure on file / `51` with none (`3 + 0 + 16 + 51 = 70`).
+- 🔴 **One residue — a reply's closing source list read to its end** (pass 333's catch). The `05:41Z` summary cites four sources, and the twelve carried only Baker & McHale. `NBA_SYSTEM_DESIGN.md`'s safety-discount line now names all four AS STATED (`19026312d`): PrizePicks' DNP / reboot / tie page, Baker & McHale, the classifier-calibration survey (arXiv `2112.10327`), the forecast-combinations review (arXiv `2205.04216`). The build chat's gloss is quoted verbatim (checked in the shell).
+- The identifier check on `T40`'s listed sentences: `conf_tier`, `final_hp_derived` and `Los_Angeles` all on file. The unnamed "database switch" is `classification_config['whole_number_selection'].enabled`, on file.
+- On file, by substance (each grepped before it was written, every hit read): `§P312`'s list — the deep-rung routing, the combos' deeper ladders (`17,260` unchanged, `7,866` new), the paper logger's leak, `conf_tier`, the worked example, the tie as half a win, the one-SE discount, the first backtest (`16.4%` / `7.8%`; `77.8% → 78.1%`; `137 → 158`), the history at live depths (`~157,000`; `77.1%` / `93.4%`), the Ighodaro parity case, the tie-aware grade and certify `L11`, the certified rebuild (`478,900`; `346,736`; `61,688`). Judged, on `§P162`'s, `§P212`'s, `§P262`'s and `§P312`'s bases: narration, run times, the time-zone notices, link identifiers, the local-clone notes, the table backup, the build chat's own SQL slip.
+
+**The identifier check run back over `T1`–`T39`** (pass 361's catch, applied to the transcripts this sweep had already passed):
+- Every `UPPER_CASE` and `snake_case` identifier in the listed sentences was extracted in the shell and grepped in the twelve by its own name: `282` lowercase and `30` uppercase names returned `0`. Each was read in its sentence. Six were system facts, now written:
+  1. **`PP_SPORT`** (`T18`) — the env-var bug row in this file (`6524cc318`), checked against the repo.
+  2. **`final_hp_lookup`** (`T18`'s index audit) — `NBA_DATABASE.md` (`4202f85fc`), read live: `54 MB`.
+  3. **`enrichment_round1_final_2026_09_13`** (`T27`) — beside the reality-check row in this file (`e5d89ca2b`; the live row's words then restated in plain quotes, `b0139d06f`).
+  4. **The whole `factor_registry` key list** (`T14`'s factor table and others; `33` of `67` keys absent) — `NBA_DATABASE.md` (`310e03721`; its source count strike-corrected and recounted in the shell, `0bf059d01`).
+  5. **`usg_trend`** (`T34`) — `NBA_DATABASE.md`'s `cand_leg_features` row (`821e26794`), read live.
+  6. **N1 v3's feature names** (`T17`, `T18`) — `NBA_BASELINE_CALIBRATION.md` (`939e3291e`), read in code (one location strike-corrected, `44276c0b1`).
+- Judged, the rest:
+  - inside `T32`'s and `T36`'s out-of-scope memory dumps;
+  - vendor API, auth, wallet and location fields (`T12`, `T13`, `T29`, `T31`), never reproduced;
+  - secret names (`T27`, `T29`, `T31`);
+  - code locals and function names;
+  - MLB, NFL and payout-track names;
+  - the documentation chat's own handoff files (`T21`);
+  - names planned and never shipped (`T11`'s `dfs_board_snapshots`, `T13`'s `phase1_1pm_pt`, both absent from code and the database);
+  - API columns and parameters whose substance is on file.
+
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`; `§P357`'s strike-correction; `§P361`'s residue; now these seven writes and their three same-pass strike-corrections). Commits not this sweep's since `368386cde` (pass 361's census; the log read at this pass's head and fetched again as the last call before this patch): `0` — the ten since are all this pass's own. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P356` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `362` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T40` done (`35,790` sentences); next `T41`.
