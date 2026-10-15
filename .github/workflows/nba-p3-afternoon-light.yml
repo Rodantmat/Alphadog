@@ -633,6 +633,7 @@ jobs:
           [ "${{ steps.soft_betr.outcome }}" = "failure" ] && L="$L betr-dispatch"
           [ "${{ steps.soft_udpick.outcome }}" = "failure" ] && L="$L underdog-pick"
           [ "${{ steps.soft_psl.outcome }}" = "failure" ] && L="$L price-shop-ledger"
+          [ "${{ steps.soft_mahp.outcome }}" = "failure" ] && L="$L market-anchored-hp"
           L="${L# }"
           echo "list=$L" >> "$GITHUB_OUTPUT"
           if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
