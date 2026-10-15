@@ -342,6 +342,161 @@ def api_checks(conn, cfg):
         check(f"C22 asset {p} served{' = source file(s)' if p in src else ''}", r.returncode == 0 and len(body) > 100 and same, f"{len(body)} bytes")
 
 
+# ------------------------------------------------------------------ C36-C46: the sharp read, reproduced from the database
+def _imp(p):
+    p = float(p)
+    return 100 / (p + 100) if p > 0 else -p / (-p + 100)
+
+
+def _fair(ladder):
+    lad = sorted(ladder)
+    for (l1, p1), (l2, p2) in zip(lad, lad[1:]):
+        if p1 >= 0.5 >= p2 and p1 != p2:
+            return l1 + (p1 - 0.5) / (p1 - p2) * (l2 - l1)
+    return None
+
+
+_STAT = {"points": lambda g: g["pts"], "rebounds": lambda g: g["reb"], "assists": lambda g: g["ast"], "threes_made": lambda g: g["fg3m"],
+         "steals": lambda g: g["stl"], "blocks": lambda g: g["blk"], "turnovers": lambda g: g["tov"], "pra": lambda g: g["pts"] + g["reb"] + g["ast"],
+         "pts_reb": lambda g: g["pts"] + g["reb"], "pts_ast": lambda g: g["pts"] + g["ast"], "reb_ast": lambda g: g["reb"] + g["ast"], "stocks": lambda g: g["stl"] + g["blk"]}
+
+
+def sharp_checks(conn, cfg, leg, ctx, pr):
+    sh = ctx.get("sharp") or {}
+    d0 = leg["official_date"]; pid = "nba_" + leg["player_id"]; team = leg.get("team_id")
+    check("C36 sharp read: every block built (no block error)", isinstance(sh.get("errors"), list) and not sh.get("errors") and sh.get("env"), sh.get("errors"))
+    sc = cfg.get("sharp") or {}
+    # C37 / C38 market read: fair line + ladder recomputed from board_snapshots (no-vig, book average), each book's main line prices
+    mk = sh.get("market") or {}
+    prop = leg["canonical_prop_key"]
+    mp = next((p for p in mk.get("props") or [] if p["prop"] == prop), None) or next(iter(mk.get("props") or []), None)
+    if mp:
+        lab = mp["labels"][-1]
+        keys = [k for k, p in cfg["market_to_prop"].items() if p == mp["prop"]]
+        rs = conn.execute("""SELECT DISTINCT ON (bookmaker, market_key, side, line) bookmaker, market_key, side, line::float8, price::float8
+                             FROM nba_market.board_snapshots WHERE game_date=%s AND player = ANY(%s) AND snapshot_label=%s AND right(market_key, 6) <> '_promo'
+                               AND replace(market_key, '_alternate', '') = ANY(%s) AND bookmaker <> ALL(%s)
+                             ORDER BY bookmaker, market_key, side, line, fetched_at DESC""", (d0, sh["names"], lab, keys, cfg["dfs_books"])).fetchall()
+        pairs = {}
+        for b, m, sd_, l, p in rs:
+            pairs.setdefault((b, m, l), {})[sd_.lower()] = p
+        byline = {}
+        for (b, m, l), v in pairs.items():
+            if "over" in v and "under" in v and v["over"] and v["under"]:
+                io, iu = _imp(v["over"]), _imp(v["under"])
+                byline.setdefault(l, []).append(io / (io + iu))
+        lad = [(l, sum(v) / len(v)) for l, v in byline.items()]
+        fair = _fair(lad)
+        ui_fair = mp["fair"].get(lab)
+        uil = {x["line"]: x.get(lab) for x in mp["ladder"]}
+        badl = [(l, round(100 * p, 1), uil.get(l)) for l, p in lad if uil.get(l) is None or abs(100 * p - uil[l]) > 0.11]
+        check(f"C37 market read: {mp['prop']} fair line + ladder ({lab}) == no-vig consensus recomputed from board_snapshots",
+              ((fair is None and ui_fair is None) or (fair is not None and ui_fair is not None and abs(fair - ui_fair) < 0.11)) and not badl,
+              f"ui {ui_fair} db {None if fair is None else round(fair, 2)} lines {len(lad)} bad {badl[:3]}")
+        badb = []
+        for bl in mp.get("book_lines") or []:
+            x = bl.get(lab)
+            if not x:
+                continue
+            v = next((pairs.get((bl["book"], k, x["line"])) for k in keys if not k.endswith("_alternate") and pairs.get((bl["book"], k, x["line"]))), None)
+            if not v or v.get("over") != x["over"] or v.get("under") != x["under"]:
+                badb.append((bl["book"], x["line"], x["over"], x["under"], v))
+        check("C38 line movement: every book's main line and prices == board_snapshots", mp.get("book_lines") and not badb, f"{len(mp.get('book_lines') or [])} books bad {badb[:3]}")
+    else:
+        check("C37 market read: sportsbook market present for the slate", False, "no market props")
+    # C39 vs the market: first game of the first prop - fair line from market_consensus (book-weighted) and his actual
+    mh = (sh.get("market_history") or {}).get("props") or []
+    if mh:
+        p0 = mh[0]; r0 = p0["rows"][0]
+        keys = [k for k, p in cfg["market_to_prop"].items() if p == p0["prop"]]
+        cs = conn.execute("""SELECT line::float8, books, p_over_mean::float8 FROM nba_market.market_consensus WHERE game_date=%s AND player = ANY(%s)
+                             AND replace(market_key, '_alternate', '') = ANY(%s) AND snapshot_label=%s""", (r0["game_date"], sh["names"], keys, r0["label"])).fetchall()
+        agg = {}
+        for l, bk, p in cs:
+            w = bk or 1
+            a = agg.setdefault(l, [0, 0]); a[0] += p * w; a[1] += w
+        f0 = _fair([(l, a[0] / a[1]) for l, a in agg.items()])
+        g = conn.execute("""SELECT pts::float8, reb::float8, ast::float8, fg3m::float8, stl::float8, blk::float8, tov::float8 FROM (
+                              SELECT game_date, pts, reb, ast, fg3m, stl, blk, tov FROM nba_stats.player_game_log WHERE player_id=%s
+                              UNION ALL SELECT game_date, pts, reb, ast, fg3m, stl, blk, tov FROM nba_stats.player_game_log_postseason WHERE player_id=%s) x WHERE game_date=%s""",
+                         (pid, pid, r0["game_date"])).fetchone()
+        act = _STAT[p0["prop"]](dict(zip(("pts", "reb", "ast", "fg3m", "stl", "blk", "tov"), g))) if g else None
+        check(f"C39 vs the market: {p0['prop']} {r0['game_date']} fair line + actual == market_consensus + box score",
+              f0 is not None and abs(f0 - r0["fair"]) < 0.11 and act == r0["actual"] and p0["over"] + p0["under"] <= p0["games"],
+              f"ui {r0['fair']}/{r0['actual']} db {None if f0 is None else round(f0, 2)}/{act}; {p0['over']}-{p0['under']} in {p0['games']}")
+    else:
+        check("C39 vs the market: history present", False, "no market history")
+    # C40 game script: env rows == his games (max env_games) and the first game's team score / margin / spread == the DB
+    env = sh.get("env") or []
+    ng = conn.execute("""SELECT count(*) FROM (SELECT game_id FROM nba_stats.player_game_log WHERE player_id=%s AND game_date < %s AND min > 0
+                         UNION ALL SELECT game_id FROM nba_stats.player_game_log_postseason WHERE player_id=%s AND game_date < %s AND min > 0) x""", (pid, d0, pid, d0)).fetchone()[0]
+    e0 = env[0] if env else {}
+    tg = conn.execute("""SELECT t.pts::float8, t.plus_minus::float8, tm.full_name FROM (SELECT team_id, game_id, game_date, pts, plus_minus FROM nba_team.team_game_log
+                         UNION ALL SELECT team_id, game_id, game_date, pts, plus_minus FROM nba_team.team_game_log_postseason) t JOIN nba_ref.teams tm ON tm.team_id = t.team_id
+                         WHERE t.game_date=%s AND t.team_id = (SELECT team_id FROM (SELECT team_id, game_date FROM nba_stats.player_game_log WHERE player_id=%s
+                           UNION ALL SELECT team_id, game_date FROM nba_stats.player_game_log_postseason WHERE player_id=%s) y WHERE game_date=%s LIMIT 1)""",
+                      (e0.get("game_date"), pid, pid, e0.get("game_date"))).fetchone() if env else None
+    sp = None
+    if tg:
+        for labl in cfg["game_lines_label_pref"]:
+            pts_ = sorted(r[0] for r in conn.execute("""SELECT point::float8 FROM nba_market.game_lines_snapshots WHERE game_date=%s AND snapshot_label=%s AND market='spreads'
+                                AND replace(outcome, 'Los Angeles Clippers', 'LA Clippers') = %s
+                                AND %s IN (replace(home_team, 'Los Angeles Clippers', 'LA Clippers'), replace(away_team, 'Los Angeles Clippers', 'LA Clippers'))""",
+                                (e0["game_date"], labl, tg[2], tg[2])).fetchall())
+            if pts_:
+                import math
+                sp = pts_[max(0, math.ceil(len(pts_) * 0.5) - 1)]
+                break
+    check("C40 game script: his games (max env_games) with team score, margin and pregame spread == the DB",
+          len(env) == min(sc.get("env_games", 100), ng) and tg and e0.get("team_pts") == tg[0] and e0.get("margin") == tg[1] and e0.get("spread") == sp,
+          f"env {len(env)} db {ng}; first {e0.get('game_date')} ui {e0.get('team_pts')}/{e0.get('margin')}/{e0.get('spread')} db {tg and tg[:2]}/{sp}")
+    # C41 tonight's script: his side of the consensus spread, probabilities consistent
+    st = sh.get("tonight_script"); ms = ctx.get("market_summary") or {}
+    if ms.get("home_spread") is not None:
+        want = ms["home_spread"] if leg.get("is_home") else -ms["home_spread"]
+        check("C41 tonight's script: his team's spread == the game market, blowout split adds up", st and abs(st["spread"] - want) < 1e-9
+              and abs(st["p_win_by_blowout"] + st["p_lose_by_blowout"] - st["p_blowout"]) <= 0.11 and 0 < st["p_win"] < 100, f"{st}")
+    # C42 availability: played == his games this season for the team; played + missed == team games
+    av = sh.get("availability")
+    if av:
+        mine = conn.execute("""SELECT count(*) FROM (SELECT game_date FROM nba_stats.player_game_log WHERE player_id=%s AND team_id=%s AND season=%s AND game_date < %s AND min > 0
+                               UNION ALL SELECT game_date FROM nba_stats.player_game_log_postseason WHERE player_id=%s AND team_id=%s AND season=%s AND game_date < %s AND min > 0) x""",
+                            (pid, team, av["season"], d0, pid, team, av["season"], d0)).fetchone()[0]
+        check("C42 availability: games played == his box scores for the team this season, played + missed == team games",
+              av["played"] == mine and av["played"] + av["missed"] == av["team_games"], f"played {av['played']} db {mine} missed {av['missed']} team {av['team_games']} absences {len(av.get('absences') or [])}")
+    # C43 travel: both teams, last game == the team's latest game before the slate
+    tv = sh.get("travel") or []
+    badt = []
+    for x in tv:
+        lg = conn.execute("""SELECT max(game_date)::text FROM (SELECT game_date FROM nba_team.team_game_log WHERE team_id=%s AND game_date BETWEEN %s::date - 30 AND %s::date - 1
+                             UNION SELECT game_date FROM nba_team.team_game_log_postseason WHERE team_id=%s AND game_date BETWEEN %s::date - 30 AND %s::date - 1) x""",
+                          (x["team_id"], d0, d0, x["team_id"], d0, d0)).fetchone()[0]
+        if lg != x["last_game"]:
+            badt.append((x["team"], x["last_game"], lg))
+    check("C43 travel: both teams, last game == team game log, miles / time zone / altitude filled", len(tv) == 2 and not badt and all(x["tonight_elev_ft"] is not None for x in tv),
+          f"{[(x['team'], x['last_game'], x['miles_to_tonight'], x['tz_change_hours']) for x in tv]} bad {badt}")
+    # C44 opponent defenders: the opponent's rotation by total minutes (players whose latest game was for the opponent)
+    od = sh.get("opp_defenders") or {}
+    opp_id = conn.execute("SELECT team_id FROM nba_ref.teams WHERE abbreviation=%s", (leg.get("opponent_abbr"),)).fetchone()
+    if opp_id and od.get("rows"):
+        top = conn.execute("""WITH lg AS (SELECT player_id, team_id, game_date, min FROM nba_stats.player_game_log WHERE season=%s AND game_date < %s AND min > 0),
+                              cur AS (SELECT DISTINCT ON (player_id) player_id, team_id FROM lg ORDER BY player_id, game_date DESC)
+                              SELECT p.full_name FROM lg JOIN cur ON cur.player_id = lg.player_id AND cur.team_id = %s JOIN nba_ref.players p ON p.player_id = lg.player_id
+                              WHERE lg.team_id = %s GROUP BY 1 ORDER BY sum(lg.min) DESC LIMIT %s""", (od["season"], d0, opp_id[0], opp_id[0], sc.get("opp_rotation", 8))).fetchall()
+        check("C44 opponent defenders == the opponent's rotation by minutes", [r["name"] for r in od["rows"]] == [t_[0] for t_ in top], f"ui {[r['name'] for r in od['rows']][:4]} db {[t_[0] for t_ in top][:4]}")
+    # C45 teammate correlation: r(his PTS, mate PTS) == Postgres corr() on the same games
+    tc = (sh.get("teammate_corr") or {}).get("rows") or []
+    r0 = next((r for r in tc if r.get("r_pts_pts") is not None), None)
+    if r0:
+        dbr = conn.execute("""SELECT corr(me.pts, t.pts) FROM nba_stats.player_game_log me JOIN nba_stats.player_game_log t ON t.game_id = me.game_id AND t.player_id = %s AND t.team_id = %s AND t.min > 0
+                              WHERE me.player_id=%s AND me.team_id=%s AND me.season=%s AND me.game_date < %s AND me.min > 0""",
+                           (r0["player_id"], team, pid, team, (sh.get("teammate_corr") or {}).get("season"), d0)).fetchone()[0]
+        check("C45 teammate correlation: r(PTS, PTS) == Postgres corr()", dbr is not None and abs(dbr - r0["r_pts_pts"]) < 0.0011, f"{r0['name']} ui {r0['r_pts_pts']} db {dbr} over {r0['games']} games")
+    ps = pr.get("sharp") or {}
+    check("C46 profile sharp read: built, no block error", ps and not ps.get("errors") and ps.get("env") and ps.get("market_history") is not None,
+          f"errors {ps.get('errors')} env {len(ps.get('env') or [])} history props {len((ps.get('market_history') or {}).get('props') or [])} market {bool(ps.get('market'))}")
+
+
 # ------------------------------------------------------------------ D. browser
 def browser():
     from playwright.sync_api import sync_playwright
