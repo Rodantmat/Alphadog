@@ -138,6 +138,24 @@ def main():
         cfg = row[0] if isinstance(row[0], dict) else json.loads(row[0])
         conn.execute(DDL)
         conn.commit()
+        if os.environ.get("MA_PARITY"):
+            d = os.environ["MA_PARITY"]
+            fast = {(r["player_id"], r["prop"], float(r["line"]), r["side"]): r for r in fetch_rows(conn, d, label)}
+            cur = conn.cursor(row_factory=dict_row)
+            cur.execute(SQL, {"d0": d, "d1": d, "lab": label})
+            slow = {(r["player_id"], r["prop"], float(r["line"]), r["side"]): r for r in cur.fetchall()}
+            assert set(fast) == set(slow), f"leg sets differ: {len(fast)} vs {len(slow)}"
+            worst, nq = 0.0, 0
+            for k, r in slow.items():
+                for c in ("q_dk", "q_pp"):
+                    a, b = r[c], fast[k][c]
+                    assert (a is None) == (b is None), f"{k} {c}: sql {a} vs python {b}"
+                    if a is not None:
+                        nq += 1
+                        worst = max(worst, abs(float(a) - float(b)))
+            print(f"PARITY {d}: {len(slow):,} legs, {nq:,} anchor probabilities, max |sql - python| = {worst:.3g}", flush=True)
+            assert worst < 1e-9, "PARITY FAILED"
+            return
         if os.environ.get("MA_DATE"):
             days = [os.environ["MA_DATE"]]
         else:
