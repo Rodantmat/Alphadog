@@ -62,7 +62,7 @@ dk AS MATERIALIZED (
   ORDER BY game_date, player, market_key,
            abs((CASE WHEN po > 0 THEN 100/(po+100) ELSE -po/(-po+100) END) / ((CASE WHEN po > 0 THEN 100/(po+100) ELSE -po/(-po+100) END) + (CASE WHEN pu > 0 THEN 100/(pu+100) ELSE -pu/(-pu+100) END)) - 0.5)),
 -- the DFS standard line (PrizePicks' anchor line for the prop)
-pp AS (SELECT DISTINCT ON (game_date, player, base_market) game_date, player, base_market, anchor_line::float8 line
+pp AS MATERIALIZED (SELECT DISTINCT ON (game_date, player, base_market) game_date, player, base_market, anchor_line::float8 line
        FROM nba_market.board_tiers_v2 WHERE game_date BETWEEN %(d0)s::date AND %(d1)s::date AND bookmaker = 'prizepicks' AND anchor_line IS NOT NULL
        ORDER BY game_date, player, base_market, array_position('{window,close,routine}'::text[], snapshot_label), built_at DESC),
 anc AS (SELECT pl.*, dk.line dk_line, dk.p_over dk_p, pp.line pp_line FROM pl
