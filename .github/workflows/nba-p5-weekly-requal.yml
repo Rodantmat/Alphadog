@@ -253,6 +253,15 @@ jobs:
               c.commit()
           EOF
 
+      # WEEKLY SELF-ADJUSTMENT (2026-10-15). Step 3f regrades the Flex-with-alternates backtest to PrizePicks' CURRENT payout tiers
+      # (rebuilt after every payout-map run), which moves the backtest's daily P&L - so the live hurdles calibrated on it (drawdown
+      # MC95/MC99, streaks) are refreshed the same week, on the same tables the live engine is measured against.
+      - name: 6b. Recalibrate the live hurdles on this week's backtest (live_strategy_calib)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LS_MODE: calibrate
+        run: python -u nba/live_slip_engine.py
+
       # §31w P-5/P-6 (2026-10-08): during the play-in / playoffs the postseason certification is refreshed weekly on the nights
       # played so far (the live postseason final_hp rows join the two certified postseasons): postseason tier map -> cells
       # weighed against their certified p.m -> slip engine _post / _post_nosteals -> per-strategy postseason gate + board floor.
