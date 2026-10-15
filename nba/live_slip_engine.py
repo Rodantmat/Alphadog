@@ -1133,6 +1133,9 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         prev = conn.execute("SELECT state, updated_at, hurdles FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
         prev_state = prev[0] if prev else 'paper'
         ph = prev[2] if (prev and prev[2] and isinstance(prev[2], dict)) else {}
+        if ph.get('RELEASED') == '1':
+            cap = released_cap(name, cap)   # a cap-0 strategy released by P5 on its live record runs at its RELEASE_CAP
+            h['RELEASED'] = '1'
         crit_since = ph.get('CRIT_SINCE'); clean_days = int(ph.get('CLEAN', 0))
         # paper gate: 50 slate days AND cap x 50 slips (a cap-1 strategy cannot be asked for 1,000 slips) AND bootstrap lower bound > 0
         paper_ok = days >= PAPER_DAYS and built >= cap * PAPER_DAYS and ci_lo is not None and ci_lo > 0
