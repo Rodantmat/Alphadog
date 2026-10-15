@@ -19541,3 +19541,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `344` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T22` done (`16,926` sentences); next `T23`.
+
+## §P345 — PASS 345 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T23` · NO RESIDUE
+*Angle (as NEXT set it):* (k17) `§P131`'s method on `T23`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 344's head): `T23` `230` of `477` sentences listed — the same `230` as `§P295` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **read whole** (the bounded figure triage: `8` with a figure not on file — `§P295`'s kinds: the pricing internals (out of scope), the one-date snapshot superseded by item 1's two-season verdict, re-score counts and run ids — / `0` inside a longer number / `50` with every figure on file / `172` with none; `8 + 0 + 50 + 172 = 230`).
+- On file, by substance (each grepped before it was written, every hit read): `§P295`'s list — `§T23.21`, `§T23.22` and `§T23.23`, the calibration wipe by the `03:24Z` P2 test run, the phase rule (`60` disagreeing days → `0`), the `9,904` cells, the shifts up to `0.72` log-odds, `score_history.py` and the `325` ladder dates, the deadlock that failed `181` of them, item 1's table and findings (`1.13` / `1.15` against the `1.10` breakeven), the `0.15` Platt guard left off, `item1_model_vs_price.sql`, the paper-trading log and its grading step. Judged, on `§P195`'s, `§P245`'s and `§P295`'s bases: the payout mapping, the pricing versions and WNBA mining (out of scope), narration, run waits.
+- **No residue in `T23`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`). Commits not this sweep's since `b91fb753b` (pass 344's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P310` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `345` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T23` done (`17,403` sentences); next `T24`.
