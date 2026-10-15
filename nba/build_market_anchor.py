@@ -180,9 +180,10 @@ def features(rows):
         over = str(r["side"]).lower().startswith("o")
         s = 1.0 if over else -1.0
         y = 1.0 if ((a > L) if over else (a < L)) else 0.0
-        out.append(feature_row(r, s))
+        fr = feature_row(r, s)
+        out.append(fr)
         ys.append(y)
-        meta.append((r["game_date"], r["prop"], "Over" if over else "Under", float(r["fin"])))
+        meta.append((r["game_date"], r["prop"], "Over" if over else "Under", float(r["fin"]), anchor_class(fr)))
     return np.array(out, dtype=float), np.array(ys, dtype=float), meta
 
 
