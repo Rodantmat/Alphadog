@@ -339,7 +339,7 @@ def api_checks(conn, cfg):
                   "process.stdout.write(JSON.stringify([ctx.nbaTiers(pr,'prizepicks','flex',legs),ctx.nbaBreakeven(pr,'underdog','power',legs)]))")
             rr = subprocess.run(["node", "-e", js, str(OUT / "_served_pricing.js")], input=json.dumps(hh.get("pricing") or {}), capture_output=True, text=True)
             check("C23 served pricing.js runs in a clean browser scope and prices a slip", rr.returncode == 0 and rr.stdout.startswith("[{"), (rr.stdout or rr.stderr)[-300:])
-        check(f"C22 asset {p} served{' = source file' if p in src else ''}", r.returncode == 0 and len(body) > 100 and same, f"{len(body)} bytes")
+        check(f"C22 asset {p} served{' = source file(s)' if p in src else ''}", r.returncode == 0 and len(body) > 100 and same, f"{len(body)} bytes")
 
 
 # ------------------------------------------------------------------ D. browser
