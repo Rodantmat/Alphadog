@@ -135,7 +135,8 @@ def apply_date(conn, d, cfg, label="window"):
     with conn.cursor() as c2:
         c2.execute("DELETE FROM nba_score.board_true_hp WHERE game_date = %s", (d,))
         c2.executemany("""INSERT INTO nba_score.board_true_hp (game_date, player_id, prop, line, side, model_hp, true_hp, market_hp,
-                          true_score, true_edge, anchor, dk_line, dk_p, pp_line, fit_set) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", out)
+                          true_score, true_edge, anchor, dk_line, dk_p, pp_line, fit_set) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                          ON CONFLICT (game_date, player_id, prop, line, side) DO NOTHING""", out)
     conn.commit()
     return len(out), fs
 
