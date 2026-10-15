@@ -43,15 +43,17 @@ export async function apiPlayerProfile(sql, cfg, url, version) {
   const team = (await q(sql, "SELECT team_id, abbreviation, full_name, conference, division FROM nba_ref.teams WHERE team_id = $1", [teamId || ""]))[0] || {};
   const ng = (await q(sql, `SELECT game_date::text game_date FROM nba_calendar.slate_games WHERE game_date >= $1::date AND $2 IN (home_team_id, away_team_id)
                             ORDER BY game_date, game_datetime_utc LIMIT 1`, [today, teamId || ""]))[0];
-  let nextGame = null, nextCtx = null;
-  if (ng) {
-    const g = await C.gameFor(sql, ng.game_date, teamId);
-    if (g) {
-      const isHome = g.home_team_id === teamId;
-      nextGame = { game_id: g.game_id, game_date: g.game_date, game_time_utc: g.game_time_utc, is_home: isHome, opponent_team_name: isHome ? g.away_name : g.home_name,
-        opponent_abbr: isHome ? g.away_abbr : g.home_abbr, arena: g.arena_name, arena_city: g.arena_city };
-      nextCtx = await C.gameContext(sql, cfg, { date: g.game_date, game: g, teamId, position: info.position });
-    }
+  let nextGame = null, nextCtx = null, depth = null;
+  const g = ng ? await C.gameFor(sql, ng.game_date, teamId) : null;
+  if (g) {
+    const isHome = g.home_team_id === teamId;
+    nextGame = { game_id: g.game_id, game_date: g.game_date, game_time_utc: g.game_time_utc, is_home: isHome, opponent_team_name: isHome ? g.away_name : g.home_name,
+      opponent_abbr: isHome ? g.away_abbr : g.home_abbr, arena: g.arena_name, arena_city: g.arena_city };
+    const ctxP = C.gameContext(sql, cfg, { date: g.game_date, game: g, teamId, position: info.position });
+    [nextCtx, depth] = await Promise.all([ctxP,
+      D.bettorDepth(sql, { pidT, beforeDate: g.game_date, teamId, game: g, oppAbbr: nextGame.opponent_abbr, injuries: ctxP.then(c => c && c.injuries) })]);
+  } else {
+    depth = await D.bettorDepth(sql, { pidT, beforeDate: today, teamId, game: null, oppAbbr: null, injuries: null });
   }
   const a = avail[0];
   const availability = a ? { availability_status: a.status, reason: a.reason, as_of: new Date(a.snapshot_ts).toISOString(), report_date: a.game_date }
