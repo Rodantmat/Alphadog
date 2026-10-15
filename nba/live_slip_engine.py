@@ -983,6 +983,7 @@ def grade(conn, day):
                       else 'graded_shadow' if status0 == 'placed_shadow'
                       else 'graded_week1_skip' if status0 == 'placed_week1_skip'
                       else 'graded_capped' if status0 == 'placed_capped'
+                      else 'graded_below_min' if status0 == 'placed_below_min'
                       else 'graded_late' if status0 == 'placed_late'
                       else 'graded_post_shadow' if status0 == 'placed_post_shadow'
                       else 'graded_post' if status0 == 'placed_post'
