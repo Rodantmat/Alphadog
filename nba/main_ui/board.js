@@ -229,7 +229,12 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
 
 export async function apiFilters(sql, cfg, slate, version) {
   const rows = await q(sql, `
-    WITH bs AS (SELECT app, player, prop, line, side, final_hp, score, confidence FROM nba_score.board_scored WHERE game_date = $1::date AND app = ANY($2::text[])),
+    WITH bs AS (SELECT b0.app, b0.player, b0.prop, b0.line, b0.side, coalesce(th.true_hp::numeric, b0.final_hp) final_hp,
+                       coalesce(th.true_score::numeric, b0.score) score, b0.confidence
+                FROM nba_score.board_scored b0
+                LEFT JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
+                                                    AND th.line = b0.line AND th.side = b0.side
+                WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[])),
     mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop)),
     pk AS (SELECT DISTINCT ON (t.player, mk.prop, t.side, t.line) t.player, mk.prop, t.side, t.line, t.kind
            FROM nba_market.board_tiers_v2 t JOIN mk ON mk.market_key = regexp_replace(t.base_market, '_(alternate|promo)$', '')
