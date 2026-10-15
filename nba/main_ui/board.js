@@ -179,7 +179,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     is_standard: lt === "regular" ? 1 : 0,
     more_only: (lt === "goblin" || lt === "demon") ? 1 : 0,
     pp_kind: r.pp_kind || null, pp_tier: r.pp_tier == null ? null : Number(r.pp_tier), anchor_line: r.anchor_line,
-    leg_factor: r.app === "prizepicks" ? (num(r.pp_factor) ?? (lt === "regular" ? 1 : null)) : num(r.app_mult),
+    leg_factor: legFactor,
     app_multiplier: num(r.app_mult),
     board_tier: lt,
     home_team_name: r.home_name || r.home_team_tricode || null,
