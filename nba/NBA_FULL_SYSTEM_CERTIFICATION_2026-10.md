@@ -1467,3 +1467,34 @@ red, the rest paper with their caps).
   past slates would run P3 a second time for those slates, which the run-once rule forbids, so it is the owner's call. In the UI a
   replayed slip leg missing from the scored board is shown without a probability and disclosed in the notes (1 of 75 legs on
   2026-04-12).
+
+#### FUNCTION PARITY AUDIT + BETTOR DEPTH (owner 2026-10-14 17:54 PT: "be sure all functions match properly … every single function that's on the MLB on the NBA … the dossier … and the player profile … very, very rich for bettors … raw, derived … not system information … player characteristics, player skills, player form")
+- **Which MLB code is live.** `alphadog-v2-certification-center.js` holds the live worker in its first ~9,200 lines; everything after
+  the `DUP_MARK_A` comment is a dead duplicate kept from an old bad patch (it sits inside a comment, so the file parses). The audit
+  used the live part and the actual `/app.js` the MLB serves (`extractAppScriptV2`: the client script plus MLB-only V2–V6 slip-track
+  patches, which do not apply to NBA tracks).
+- **Parity, measured:** routes — every live MLB route exists on NBA except `POST /run` (a read-only orchestrator no-op) and the
+  route list MLB returns on a 404; both added. Screens — the same 5 (`board`, `dossier`, `build`, `slips`, `playerProfile`); element
+  ids 74 = 74; buttons and controls 24 / 24 bindings; client API calls 10 = 10; delegated row handlers all present except MLB's
+  `.legBtn` handler, which targets elements MLB never renders (dead there too). Client functions: 51 MLB names have no same-named
+  NBA function — 10 are dead in MLB (no caller), the rest are baseball-specific (pitchers, weather, park, bullpen, umpire, arsenal,
+  quality of contact, the MLB Flex / goblin tier estimators) and are covered by their NBA counterparts (defense vs position, team
+  profiles, injuries, starters, officials, shot quality, `pricing.js`). Dossier blocks 19 MLB → all mapped; MLB's line table shows each
+  line's sample and hit-miss — NBA now shows each line's L10 and season hit-miss.
+- **Bettor depth (new module `nba/main_ui/bettor.js`, renderers in the dossier part, shared by dossier and profile):** Line
+  Profile for every prop (main line, avg, median, L5, L10, 10th / 90th percentile floor / ceiling, low-high, std dev, over % season /
+  L10 / L5, current streak, avg vs line); Minutes & Role (L5/L10/L20/season minutes, minutes std dev and range, starts, FGA / 3PA /
+  FTA / PF, starter vs bench, wins vs losses); Usage & Efficiency (USG%, TS%, eFG%, AST%, REB%, OREB%, DREB%, % of team PTS / REB /
+  AST / FGA, 3PA rate, FT rate, pace, ratings — per window); Scoring Profile (points from paint / mid-range / 3 / FT / fast break /
+  off turnovers, unassisted FGM, 3PA share); Skills — Player Tracking (passing incl. potential assists, rebounding incl. chances and
+  contested %, catch-and-shoot, pull-up, drives, touches); Head-To-Head vs the opponent (averages vs season + every meeting, playoffs
+  included); With / Without Teammates (his averages with each top-minutes teammate and anyone on the slate's injury report, with /
+  without, small samples flagged); Lineups (most-used 5-man units and 2-man pairs, +/- per 48); Team Form (both teams, last 10 and
+  season: PPG, Opp PPG, pace, ratings, the four factors for and against); Career season by season; Arena (capacity, altitude, time
+  zone). Per-game data is strictly before the slate; season-level boards (tracking, career, lineups) carry their season / update date
+  (they reflect the latest P1 refresh, so on a replayed past slate they are end-of-season, labelled). No model internals added.
+- **Certified (v1.2.0):** test C25–C35 reproduce the depth from the database — last-10 USG% / TS% equal the per-game advanced log;
+  tracking = one block per board; career rows = season rows; head-to-head = every game vs the opponent before the slate; with +
+  without games = his games for the team; lineups present iff the league data has them; both teams' form; profile depth around the
+  next game; `/run` no-op and the 404 route list; the browser must render every depth section on dossier and profile. Default replay
+  64/64 (run 38664882588); full regular-season slate `date=2026-03-10` 68/68 (run 38665642842, incl. screenshots of each new block).
