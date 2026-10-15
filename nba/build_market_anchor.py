@@ -400,7 +400,32 @@ def main():
             ms = sides[mt] == sd
             res["by_side"][sd] = {"raw": reliability(raw[ms], yt[ms]), "new": reliability(pt[ms], yt[ms]),
                                   "logloss_raw": round(logloss(raw[ms], yt[ms]), 5), "logloss_new": round(logloss(pt[ms], yt[ms]), 5)}
-        gate = ll_new < ll_raw and (not top_new.any() or abs(pt[top_new].mean() - yt[top_new].mean()) < abs(raw[top_raw].mean() - yt[top_raw].mean()))
+        # sub-group honesty (2026-10-15 audit): at shown >= 0.60, every (side, anchor class), (side, prop) and
+        # (side, anchor class, prop) group with 1,000+ legs must sit within 5 points of its realized rate
+        mt_idx = np.where(mt)[0]
+        sd_t = np.array([meta[i][2] for i in mt_idx]); ac_t = np.array([meta[i][4] for i in mt_idx]); pr_t = np.array([meta[i][1] for i in mt_idx])
+        hi6 = pt >= 0.60
+        groups, worst = [], None
+        for gname, keyf in (("side|class", lambda j: (sd_t[j], ac_t[j])), ("side|prop", lambda j: (sd_t[j], pr_t[j])),
+                            ("side|class|prop", lambda j: (sd_t[j], ac_t[j], pr_t[j]))):
+            acc = {}
+            for j in np.where(hi6)[0]:
+                acc.setdefault(keyf(j), []).append(j)
+            for k, idx in acc.items():
+                if len(idx) >= 1000:
+                    gap = float(pt[idx].mean() - yt[idx].mean())
+                    groups.append([gname, "/".join(k), len(idx), round(float(pt[idx].mean()), 3), round(float(yt[idx].mean()), 3), round(gap, 3)])
+        if groups:
+            worst = max(groups, key=lambda g: abs(g[5]))
+        res["subgroups"] = sorted(groups, key=lambda g: -abs(g[5]))[:15]
+        res["by_class"] = {ac: reliability(pt[ac_t == ac], yt[ac_t == ac]) for ac in ANCHOR_CLASSES if (ac_t == ac).any()}
+        sub_ok = worst is None or abs(worst[5]) <= 0.05
+        gate = ll_new < ll_raw and sub_ok and (not top_new.any() or abs(pt[top_new].mean() - yt[top_new].mean()) < abs(raw[top_raw].mean() - yt[top_raw].mean()))
+        print(f"  sub-groups at shown >= 0.60 (n >= 1,000): {len(groups)} checked, worst {worst} -> {'OK' if sub_ok else 'FAIL'}", flush=True)
+        for g in res["subgroups"][:8]:
+            print(f"    {g}", flush=True)
+        for ac, rel in res["by_class"].items():
+            print(f"  anchor {ac:<6} {[x for x in rel if x[0] >= '0.55']}", flush=True)
         res["gate"] = bool(gate)
         ok_all = ok_all and gate
         report["oos"][f"{fit_s}->{test_s}"] = res
