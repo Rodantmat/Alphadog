@@ -19097,3 +19097,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `301` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`3` complete, each NOT clean. ⏳ **Additional sweep `4`** under way, **not clean** (ledger strike-corrections at passes `284` and `287`; residue `§T28.5`): `T1`–`T29` done (`21,959` sentences); next `T30`.
+
+## §P302 — PASS 302 (`2026-10-15`): ADDITIONAL SWEEP `4` — `T30` · NO RESIDUE
+*Angle (as NEXT set it):* (t15) `§P131`'s method on `T30`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching; the owner's console lines and the local path in them not reproduced.
+- Tabulated in the shell before this line (the scan at pass 301's head): `T30` `35` of `40` sentences listed — the same `35` as at pass 251's head, the two lists diffed in the shell (`0` dropped, `0` added) — **read whole** (the bounded figure triage: `1` with a figure not on file / `0` inside a longer number / `1` with every figure on file / `33` with none; `1 + 0 + 1 + 33 = 35`; the `1` is `§P202`'s and `§P252`'s console timestamp, judged).
+- On file, by substance (each grepped before it was written, every hit read): `§P152`'s, `§P202`'s and `§P252`'s lists — the capture-export and upload troubleshooting, the blank-upload cause (UTF-16) and its remedies (`-Encoding utf8`, the raw `.mitm`, a `.zip`) in `§T31.1`, Sleeper's `available_alt` and one-sided calls (`§T31.1`, `§T29.1`). Judged, on `§P152`'s, `§P202`'s and `§P252`'s bases: the export and header-redaction commands, the owner's pasted console lines, and the further Sleeper endpoint named in passing — `payouts/legs_boost_map`, named nowhere in the twelve and, grepped in the repo, used by no file.
+- **No residue in `T30`.**
+- **Additional sweep `4` stays not clean** (the ledger strike-corrections of passes `284` and `287`; `§T28.5`). Commits not this sweep's since `1e435fcc1` (pass 301's census; the log and each diff's file list read, and re-read immediately before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the one `§P263` named. ✅ **`§T28.5`'s pointer in `NBA_MASTER_SUMMARY.md` landed** (`2bf704d95`, after `§T28.3`), on the fourth attempt — two at pass 300, one at pass 301's head, one after pass 301's census (`§P301`'s line was written before the fourth). The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `302` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`3` complete, each NOT clean. ⏳ **Additional sweep `4`** under way, **not clean** (ledger strike-corrections at passes `284` and `287`; residue `§T28.5`): `T1`–`T30` done (`21,999` sentences); next `T31`.
