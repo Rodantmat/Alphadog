@@ -1018,6 +1018,8 @@ what it IS:**
 | `none` | — | **43,370** |
 | **total** | **2,199,354** | **2,199,354** |
 
+🆕 *(additional sweep `8`, pass 490, `§P490` — `T18` `2026-09-20 03:42Z`, AS STATED)* The cells behind v1's two rows, as the reply tabulated them by `anchor_type`, kind and side: `explicit` demon Over **`586,037`** (tiers `+1` to `+7`), `explicit` goblin Over **`448,802`** (`1` to `6` rungs below), `explicit` standard Over/Under **`745,310`** (`0`) — `586,037 + 448,802 + 745,310 = 1,780,149`, the `explicit` row above; `switch_point` demon Over **`280,507`** (`+1` to `+8`) and `switch_point` goblin Over **`138,698`** (`1` to `5`) — `280,507 + 138,698 = 419,205`, the `switch_point` row above. The reply's own caveat in the same message: `board_tiers` classifies a **two-way** structure (goblin below the anchor, demon above, Over only), and *"under the new taxonomy a demon-Less sits below the anchor, which v1 would label a goblin"* (`04:00Z`).
+
 🔑🔑 ***`explicit` is identical to the row in both. The ENTIRE difference lies inside the
 non-explicit population: v1 calls all 419,205 of them `switch_point`; v2 anchors 375,835 and
 declines the rest.*** **`419,205 − 375,835 = 43,370` EXACTLY.** ✅ **So the residue is not a new or
