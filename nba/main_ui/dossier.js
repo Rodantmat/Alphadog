@@ -32,6 +32,7 @@ export async function apiDossier(sql, cfg, url, version) {
       probability_confidence_0_100: l.probability_confidence_0_100, score_0_100: l.score_0_100, edge_0_100: l.edge_0_100, leg_factor: l.leg_factor,
       baseline_hp_0_100: l.baseline_hp_0_100, calibration_shift_pp: l.calibration_shift_pp, interpolated: l.interpolated })),
     recent_games: games.slice(0, 30),
+    games_full: games,
     recent_form: C.formWindows(games, seasonGames),
     splits: sp,
     shot_quality: shot,
