@@ -245,6 +245,7 @@ def api_checks(conn, cfg):
     c_404, j_404, _ = curl("/nope")
     check("C35 /run is a read-only no-op and unknown paths list the allowed routes (MLB parity)", c_run == 200 and j_run.get("status") == "MAIN_UI_READ_ONLY_NOOP" and c_404 == 404 and len(j_404.get("allowed_routes") or []) >= 25,
           f"run {j_run.get('status')} 404 routes {len(j_404.get('allowed_routes') or [])}")
+    sharp_checks(conn, cfg, leg, ctx, pr)
     code, hh, t = curl("/api/slips/high-hit", body={}); save_sample("high_hit", hh)
     sl = hh.get("generated_slips") or []
     unpriced = [s["track_label"] for s in sl if not s.get("estimated_multiplier")]
