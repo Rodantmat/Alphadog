@@ -65,7 +65,7 @@ dk AS MATERIALIZED (
 pp AS MATERIALIZED (SELECT DISTINCT ON (game_date, player, base_market) game_date, player, base_market, anchor_line::float8 line
        FROM nba_market.board_tiers_v2 WHERE game_date BETWEEN %(d0)s::date AND %(d1)s::date AND bookmaker = 'prizepicks' AND anchor_line IS NOT NULL
        ORDER BY game_date, player, base_market, array_position('{window,close,routine}'::text[], snapshot_label), built_at DESC),
-anc AS (SELECT pl.*, dk.line dk_line, dk.p_over dk_p, pp.line pp_line FROM pl
+anc AS MATERIALIZED (SELECT pl.*, dk.line dk_line, dk.p_over dk_p, pp.line pp_line FROM pl
         LEFT JOIN dk ON dk.game_date = pl.game_date AND dk.player = pl.player AND dk.market_key = pl.mkey
         LEFT JOIN pp ON pp.game_date = pl.game_date AND pp.player = pl.player AND pp.base_market = pl.mkey),
 -- the model's P(over) at each anchor line (exact rung, else log-odds interpolation between the neighbouring rungs)
