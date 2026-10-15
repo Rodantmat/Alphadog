@@ -153,7 +153,7 @@ def api_checks(conn, cfg):
     check("C1 filters: prop and app totals == board_scored rows", code == 200 and ftot == tot == stot, f"{t}s props {ftot} apps {stot} db {tot} ({d})")
     code, cur, t = curl("/api/main-board/current?limit=200&min_score=80"); save_sample("current", cur)
     rows = cur.get("rows") or []
-    n80 = conn.execute("SELECT count(*) FROM nba_score.board_scored WHERE game_date=%s AND app = ANY(%s) AND score >= 80", (d, cfg["apps"])).fetchone()[0]
+    n80 = conn.execute(f"SELECT count(*) FROM {HB} WHERE game_date=%s AND app = ANY(%s) AND score >= 80", (d, cfg["apps"])).fetchone()[0]
     check("C2 current: answers, row count = min(200, legs with score >= 80)", code == 200 and len(rows) == min(200, n80), f"{t}s rows {len(rows)} db {n80}")
     bad = []
     for r in rows:
