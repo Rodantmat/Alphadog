@@ -339,8 +339,8 @@ export async function apiHighHit(sql, cfg, url, version) {
       // PAPER vs STAKED (2026-10-15 full pass): 'placed' only means the engine built it for a non-shadow strategy; whether money
       // goes on it is the strategy's state (paper = recorded, never staked, §29c; active = staked)
       strategy_state: s.app === "prizepicks" ? (bt.stateOf.get(s.strategy) || null) : null,
-      stake_label: s.app !== "prizepicks" ? "paper (Underdog engine)" : String(s.status || "").includes("shadow") ? "shadow (not staked)"
-        : bt.stateOf.get(s.strategy) === "active" ? "staked" : (s.status === "replay_backtest" ? "backtest replay" : `${bt.stateOf.get(s.strategy) || "paper"} - not staked`),
+      stake_label: stakeAdvice(s, bt).label,
+      play_usd: stakeAdvice(s, bt).play_usd,
       backtest_hit_probability_0_100: legs.length && legs.every(l => l.cell_backtest_hit_0_100 != null) ? r1(legs.reduce((a, l) => a + Number(l.cell_backtest_hit_0_100), 0) / legs.length) : null,
       strategy_cert_leg_hit_0_100: s.app === "prizepicks" && bt.certHit.get(s.strategy) != null ? r1(100 * bt.certHit.get(s.strategy)) : null,
       strategy_backtest: s.app === "prizepicks" ? (bt.record.get(s.strategy) || null) : null,
