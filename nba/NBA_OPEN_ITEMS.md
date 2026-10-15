@@ -19268,3 +19268,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `318` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`3` complete, each NOT clean. ⏳ **Additional sweep `4`** under way, **not clean** (ledger strike-corrections at passes `284`, `287`, `310` and `316`; residue `§T28.5`): `T1`–`T46` done (`36,654` sentences); next `T47`.
+
+## §P319 — PASS 319 (`2026-10-15`): ADDITIONAL SWEEP `4` — `T47` · NO RESIDUE
+*Angle (as NEXT set it):* (k16) `§P131`'s method on `T47`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 318's head): `T47` `60` of `167` sentences listed, no memory dump among them — the same count as at pass 268's head, the two lists diffed in the shell (`0` dropped, `0` added). **All `60` read whole** (the bounded figure triage: `2` with a figure not on file — two source-link ids, as at pass 269 — / `0` inside a longer number / `23` with every figure on file / `35` with none; `2 + 0 + 23 + 35 = 60`).
+- On file, by substance (each grepped before it was written, every hit read): `§P169`'s, `§P219`'s and `§P269`'s lists and `§T47.10` — Playoff Unders' gates and stress (`1.5%`; `6–12` units; `+24%`; `0.1%`; all `60` whole-line 5-Flex variants; strategy `§31z`), the replay parity (`9` of `9`) and the odds-free test fix, the multiplier program (`§31aa`; `1.871` / `1.843`; `0.500`; `3–7%` / `13–26%`; Pick6's table scaling and its gated value `1.12–1.15` against an even line; `0.997`; `−20%` to `+15%`; `+143%` vs `+10%`; the `12` of `12` at `1.55`), the Flex tables (`2.25/1.25`, `5/1.5`), and the transcript pack (`transcripts-2026-10-09.zip`, its stated gaps). Judged, on `§P169`'s, `§P219`'s and `§P269`'s bases: narration, the session's notices, source links, the owner's dictation.
+- **No residue in `T47`.**
+- **Additional sweep `4` stays not clean** (the ledger strike-corrections of passes `284`, `287`, `310` and `316`; `§T28.5`). Commits not this sweep's since `0b84dd1a8` (pass 318's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P310` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `319` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`3` complete, each NOT clean. ⏳ **Additional sweep `4`** under way, **not clean** (ledger strike-corrections at passes `284`, `287`, `310` and `316`; residue `§T28.5`): `T1`–`T47` done (`36,821` sentences); next `T48`.
