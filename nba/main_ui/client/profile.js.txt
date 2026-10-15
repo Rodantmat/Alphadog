@@ -18,6 +18,7 @@ function renderPlayerProfileDream(j){
   const propCards=propKeys.map(k=>propTrendCard(k,games,legsByProp[k]||[])).filter(Boolean);
   Object.keys(legsByProp).filter(k=>!propKeys.includes(k)).forEach(k=>{const c=propTrendCard(k,games,legsByProp[k]||[]);if(c)propCards.push(c)});
   html+='<div class="sectionLabel" style="margin-top:16px">Prop Trends — Last 5 / 10 / 20</div>'+(propCards.length?'<div class="cards">'+propCards.join('')+'</div>':'<div class="small">No recent box scores or current lines for this player yet.</div>');
+  html+=lineProfileBlock(games,legs,null);
   html+='<div class="dossierGrid">'+sectionWide('Recent Form Windows',table(['Window','G','GS','MIN','PTS','REB','AST','PRA','3PM','STL','BLK','TOV','FG%','3P%','FT%','+/-'],rowsForForm({recent_form:snapshots})),'Per-game averages, last 5 / 10 / 20 games and the season.')+'</div>';
   html+=splitsBlock(splits);
   html+=homeAwayBlock(homeGames,awayGames);
