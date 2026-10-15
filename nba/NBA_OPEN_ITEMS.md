@@ -20753,3 +20753,16 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `440` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`6` complete, each NOT clean. ⏳ **Additional sweep `7`** under way, clean so far: `T1`–`T18` done, no residue; next `T19` onward.
+
+## §P441 — PASS 441 (`2026-10-15`): ADDITIONAL SWEEP `7` — `T19` · NO RESIDUE
+*Angle (as NEXT set it):* (c21) `§P131`'s method on `T19` (as `§P191`, `§P241`, `§P291`, `§P341` and `§P391` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension) and pass 383's source-name catch.
+- Tabulated in the shell before this line (the scan at pass 440's head): `T19` `178` of `537` sentences listed — the same `178` `§P391` and `§P341` listed, the two lists diffed in the shell against `§P391` (`0` dropped, `0` added), the lists identical by construction (the fixed gold files) — **`178` read whole** (the bounded figure triage, unchanged since `§P391`: `0` with a figure not on file / `0` inside a longer number / `25` with every figure on file / `153` with none; `0 + 0 + 25 + 153 = 178`).
+- `§P391` recorded **no write** for `T19`, so there is none to re-verify; this pass confirms the same.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension), counted with `wc`: `0` names with `0` hits — the same as `§P391`; the camel-run extension adds none on `T19`. Nothing to judge; no store, no new residue.
+- The source-name check (pass 383's catch, each name grepped outside the ledgers): Cleaning the Glass (`4`) and Ben Falk (`2`) — the garbage-time-filtering authorities — and `swar/nba_api` (`5`) with its Issue #155 (`4`) all on file. Matches `§P391`.
+- On file, by substance (each grepped before it was read, every hit read outside the ledgers): `§P341`'s list — MLB's `~130` deployed workers against `116` registry rows and `team_aliases`' `157` rows, the dead stubs (`~5.3 KB`, still `enabled=1`), `blowout_model`'s ratios (`1.0333` competitive, `0.8748` won-by-25+), the `4,319` coach's-decision rows — plus the four-way rule and `board_tiers_ud` (`18`), `build_board_tiers_v2.py` (`41`), the `42,600`-ladder validation (`10`) and `group_key`, the play-type `3,364` / `3,282` discrepancy, `generate_wrangler_configs_nba.py` never built (`68`). Judged, on `§P191`'s, `§P241`'s, `§P291`'s and `§P341`'s bases: narration, the owner's exchange about the forgotten work (and his frustration), the session's account of its compacted context and the transcript-digest method (`dig.py` / `dig2.py` / `dig3.py`), per-transcript progress tables and pass counts, the extraction scripts' scratch paths. No device / location tokens or credentials appear in `T19`.
+- **No residue in `T19`.**
+- **Additional sweep `7` stays clean so far** (`T1`–`T19` done, no residue, `0` changes). Commits not this sweep's since `fa3d1a444` (`§P440`'s census; the log fetched as the last call before this patch, after the final draft): `0` — no co-writer commit landed; `HEAD` is `fa3d1a444`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `441` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`6` complete, each NOT clean. ⏳ **Additional sweep `7`** under way, clean so far: `T1`–`T19` done, no residue; next `T20` onward.
