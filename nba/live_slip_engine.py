@@ -72,6 +72,16 @@ STRATEGIES = {
     'R_stocks_4power':   ('single:stocks_R',      4, 'power', 1, 0.60, 30.0, 14, 4),   # re-measured (pass 79): +27% in long droughts (34/16) / -6% normal - ROTATION-ONLY (staked only in the drought state)
 }
 ROTATION_ONLY = {'R_stocks_4power'}
+# RELEASE CAP (2026-10-15, owner: "do not cancel or cut anything, just adjust for the best possible outcome"). A cap-0 strategy
+# that is red on its CERTIFICATION (the demon Flex pair, §31ad) keeps building one shadow slip a day; if its own live record
+# earns a P5 release (release_record: >= 40 days, day-blocked bootstrap lower bound > 0) it comes back at this cap - then the
+# ordinary paper gate (50 days, cap x 50 slips, live CI lower bound > 0) must pass before a unit is staked. Never above the
+# minimum stake: the backtest that certified the old caps (6 / 1) was graded on the wrong Flex tiers.
+RELEASE_CAP = {'B_demon_5flex': 1, 'B_demon_3flex': 1}
+
+
+def released_cap(name, cap):
+    return max(cap, RELEASE_CAP.get(name, 0))
 
 
 # THE BACKTEST THE LIVE ENGINE CALIBRATES AGAINST (round 2 P3#4, 2026-10-08). The certified history scored legs with the
