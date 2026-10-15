@@ -69,7 +69,7 @@ anc AS MATERIALIZED (SELECT pl.*, dk.line dk_line, dk.p_over dk_p, pp.line pp_li
         LEFT JOIN dk ON dk.game_date = pl.game_date AND dk.player = pl.player AND dk.market_key = pl.mkey
         LEFT JOIN pp ON pp.game_date = pl.game_date AND pp.player = pl.player AND pp.base_market = pl.mkey),
 -- the model's P(over) at each anchor line (exact rung, else log-odds interpolation between the neighbouring rungs)
-q AS (SELECT anc.*,
+q AS MATERIALIZED (SELECT anc.*,                         -- MATERIALIZED: the ladder lookups run once per player-prop, not per leg
         (SELECT CASE WHEN lo.line = hi.line THEN lo.p ELSE 1/(1+exp(-((1-(anc.dk_line-lo.line)/(hi.line-lo.line))*ln(lo.p/(1-lo.p)) + ((anc.dk_line-lo.line)/(hi.line-lo.line))*ln(hi.p/(1-hi.p))))) END
            FROM (SELECT line::float8 line, least(greatest(p_more::float8,1e-4),1-1e-4) p FROM nba_score.baseline_history h WHERE h.game_date = anc.game_date AND h.player_id = anc.player_id AND h.prop = anc.prop AND h.period = 'FULL' AND h.line <= anc.dk_line ORDER BY h.line DESC LIMIT 1) lo,
                 (SELECT line::float8 line, least(greatest(p_more::float8,1e-4),1-1e-4) p FROM nba_score.baseline_history h WHERE h.game_date = anc.game_date AND h.player_id = anc.player_id AND h.prop = anc.prop AND h.period = 'FULL' AND h.line >= anc.dk_line ORDER BY h.line ASC LIMIT 1) hi) q_dk,
