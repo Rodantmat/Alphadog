@@ -84,7 +84,8 @@ def main():
             pid = names.get((d, player))
             pr = thp.get((d, pid, prop, float(line), side)) if pid else None
             s["legs"].append({"hit": hit, "factor": float(factor), "model": pr[0] if pr else None,
-                              "honest": pr[1] if pr else None, "anchor": pr[2] if pr else None})
+                              "honest": pr[1] if pr else None, "anchor": pr[2] if pr else None,
+                              "cellp": cellp.get((cell, tier, side))})
         agg = defaultdict(lambda: defaultdict(float))
         for (d, k), s in slips.items():
             a = agg[season_of(d)]
