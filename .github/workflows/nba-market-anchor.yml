@@ -1,0 +1,51 @@
+name: NBA Market-Anchored HP
+
+# Market-anchored hit probability (nba/build_market_anchor.py): fit per (side, prop) on both seasons, out-of-sample gate in both
+# directions; report by default, write=1 writes nba_config.classification_config['hp_market_anchor'] only if the gate passes.
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "'1' = write the params if the gate passes; anything else = report"
+        default: "0"
+        required: false
+      l2:
+        description: "L2 penalty"
+        default: "1.0"
+        required: false
+      d0:
+        description: "first date (blank = both seasons)"
+        default: ""
+        required: false
+      d1:
+        description: "last date (blank = both seasons)"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-market-anchor
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy
+      - name: Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MA_WRITE: ${{ github.event.inputs.write }}
+          MA_L2: ${{ github.event.inputs.l2 }}
+          MA_D0: ${{ github.event.inputs.d0 }}
+          MA_D1: ${{ github.event.inputs.d1 }}
+        run: python -u nba/build_market_anchor.py
