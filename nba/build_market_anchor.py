@@ -255,7 +255,9 @@ def score_leg(params, leg):
     w = ps.get(leg["prop"]) or ps.get("_pooled")
     if w is None:
         return None
-    return float(sigmoid(np.dot(np.array(feature_row(leg, 1.0 if over else -1.0)), np.array(w))))
+    p1 = float(sigmoid(np.dot(np.array(feature_row(leg, 1.0 if over else -1.0)), np.array(w))))
+    knots = (params.get("_iso") or {}).get("Over" if over else "Under")
+    return float(apply_iso(np.array([p1]), knots)[0])
 
 
 def reliability(p, y, edges=(0, .5, .55, .6, .65, .7, .75, .8, .85, .9, .95, 1.0001)):
