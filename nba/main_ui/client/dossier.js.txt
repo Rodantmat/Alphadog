@@ -142,6 +142,7 @@ function renderDossier(d){const s=d.selected||{}, legs=d.other_player_legs||[], 
     +sectionWide('Source Lines / Current Board Inventory',table(['Source','Prop','Side','Line','Type','Snapshot','Updated'],rowsForSourceLines(ctx)),'Every DFS app line captured for this player on this slate.')
     +sectionWide('Scouting Note','<div class="dossierNote">'+esc(s.leg_insight_comment||'')+'</div>','Synthesis for the selected leg, from its numbers and his recent box scores.')
     +sectionWide('Other Current Legs For Player','<div class="miniLegGrid">'+other+'</div>','Tap another leg to open its dossier.')+'</div>'
+    +bettorDepthHtml(ctx,ctx.games_full||ctx.recent_games||[],legs,{oppAbbr:s.opponent_abbr})
     +advancedMetricsBlock(ctx.advanced);
   document.querySelectorAll('#dossierBody .miniLegCard[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.getAttribute('data-leg-id')))}
 async function openDossierPart(id){if(!id)return;setScreen('dossier');$('dossierBody').innerHTML='<div class="empty">Loading dossier...</div>';try{const j=await (await fetch('/api/main-board/dossier?final_board_row_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'dossier failed');currentDossier=j;renderDossier(j);window.scrollTo({top:0,behavior:'smooth'})}catch(e){$('dossierBody').innerHTML='<div class="empty err">Dossier load failed: '+esc(e.message||e)+'</div>'}}
