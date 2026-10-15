@@ -310,6 +310,9 @@ export async function apiHighHit(sql, cfg, url, version) {
       estimated_multiplier: tiers[legs.length] || null, estimated_multiplier_flex_tiers: mode === "flex" ? tiers : null,
       estimated_hit_probability_0_100: legs.every(l => l.hit_probability_0_100 != null) ? r1(legs.reduce((a, l) => a + Number(l.hit_probability_0_100), 0) / legs.length) : null,
       result: s.hits == null ? null : { hits: Number(s.hits), payout: num(s.payout) },
+      backtest_hit_probability_0_100: legs.length && legs.every(l => l.cell_backtest_hit_0_100 != null) ? r1(legs.reduce((a, l) => a + Number(l.cell_backtest_hit_0_100), 0) / legs.length) : null,
+      strategy_cert_leg_hit_0_100: s.app === "prizepicks" && bt.certHit.get(s.strategy) != null ? r1(100 * bt.certHit.get(s.strategy)) : null,
+      strategy_backtest: s.app === "prizepicks" ? (bt.record.get(s.strategy) || null) : null,
       legs
     });
   }
