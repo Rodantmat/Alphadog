@@ -134,11 +134,11 @@ def rows_prizepicks(doc, gd, label):
         mk = pp_market_key(a.get("stat_type"))
         if odds_type in ("goblin", "demon"):
             mk += "_alternate"
-        elif a.get("adjusted_odds") or a.get("is_promo") or a.get("flash_sale_line_score") is not None:
-            # 2026-10-15 full pass: a STANDARD leg with adjusted odds (its payout is not 1.0x - PrizePicks prices it apart) or a
-            # promo / flash-sale line (e.g. a "free square" 0.5 folded into a 27.5) was archived as a plain standard at factor 1.0.
-            # Filed under '<key>_promo' (the archive's convention; no engine reads it) until such legs are quoted.
-            mk += "_promo"
+        # NOTE (2026-10-15 full pass): a few STANDARD legs carry adjusted_odds=true (8 of 152 on the 10-20 board) and one carried a
+        # flash-sale line (flash_sale_line_score 0.5 beside its real 27.5). They stay archived as standards on purpose: the
+        # standard line is the ANCHOR every goblin / demon of that prop is priced from, and line_score is the real standard
+        # line (the flash line is a separate promo offer, not archived). Whether an adjusted-odds standard pays 1.0x is
+        # unquoted - open item: one standard quote per payout-map run.
         for side, price in (("Over", -137 if odds_type != "demon" else 100),
                             ("Under", -137 if odds_type == "standard" else None)):
             if price is None:
