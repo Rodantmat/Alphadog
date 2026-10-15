@@ -19692,3 +19692,23 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `358` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`): `T1`–`T36` done (`32,951` sentences); next `T37`.
+
+## §P359 — PASS 359 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T37` · NO RESIDUE
+*Angle (as NEXT set it):* (y17) `§P131`'s method on `T37`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 358's head): `T37` `755` of `1,166` sentences listed, no memory dump among them — two fewer than `§P309` listed, the two lists diffed in the shell (`2` dropped, `0` added). The newly matched trigrams were placed against the twelve as they stood at `f182b143e`. "cell and a" (the Underdog tier map's method sentence) now matches the NEXT's pass-333 clause ("a table row's last cell and a reply's closing lists"). "the half-stake absence rule" (the paper-test sentence) now matches `§P309`'s own on-file list. Both are coincidences, and the substance of both was on file before. **All `755` read whole** (the bounded figure triage: `1` with a figure not on file — a commit hash — / `0` inside a longer number / `154` with every figure on file / `600` with none; `1 + 0 + 154 + 600 = 755`).
+- On file, by substance (each grepped before it was written, every hit read): `§P309`'s list, including `§T37.9`–`§T37.10`:
+  - The Underdog tier map and its constancy: break-even `0.536`; steals `0` of `36`, points `32` of `36`; snapshots `19` minutes before tip.
+  - The signal matrix (`253,519` legs, `71,091` tests, the `~25%` noise rate) and the reverse side-by-side; the base build (`211,831` slips); the validation and the V3 null.
+  - The repricing: the strict version (`121` of `129`, `9–14%` tolerance, `40,400` MLB lines), the Odds API probe (`162/162`), and the balanced version (`0.951` vs `0.952`, the rebounds-favored cell `0.594 → 0.557`, `14` of `30`).
+  - The portfolios P1–P5 and the booster cell (`23–38%`); the drought envelope (`10,000` seasons, `43.8` units) and the period-table bug; the late-line movement (`0.51–0.54` vs `0.58–0.60`); late entry not viable (`45%` / `18%` / `8%` still on the close board); the half-stake absence rule (`4–20%` of net).
+  - The engine switches by their own names: `UD_EXCL_HOTFORM`, `UD_EXCL_FRESH`, `UD_MIN_NV`, `UD_MINFALL_PREF`. The reply's repurposed `excl_hotform` and `minfall_pref` workflow slots are read in the repo's `nba-ud-slip-engine.yml`, whose inputs today are `excl_fresh` and `min_nv`.
+  - The PrizePicks portfolio envelope (`+5,322`, the `66th` percentile, `~250` units); the public-Over bias and the Under-only test; travel (`2+` zones eastward, `+2–3` points); the Clippers' name mismatch; the `$500` entry cap; the morning DFS capture.
+  - The live Underdog engine and its end-to-end audit with its blockers; the name-map refresh (`5,169` → `5,213`, `629` active players); the live leg loader (`3.8 s`); the `10`-slate sample (`389` of `389`; `80` identical, `31` by suffix).
+  - The 30-slate parity (`360/360`; `11,109` suffixed legs, `3,237` alias legs); the production pick (`22` slips from `3,149` legs, `~18 s`); the scheduler at `v2.1.0` (`12,900` test cases).
+  - The scorer timing (`38,551` legs, `20` s, the `~29`-minute window); the Underdog 2025-26 parity (`871` payouts, `893` of `894`, the Bridges–Diabaté tie); the final-week fix; the early-board label fix (`196` projections, `233` legs as close; `routine` by Eastern date).
+  Judged, on `§P159`'s, `§P209`'s, `§P259`'s and `§P309`'s bases: narration, run waits, commit hashes, named player examples, the build chat's note of two commits by another surface.
+- **No residue in `T37`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`; `§P357`'s strike-correction). Commits not this sweep's since `fcf44f845` (pass 358's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P356` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `359` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`): `T1`–`T37` done (`34,117` sentences); next `T38`.
