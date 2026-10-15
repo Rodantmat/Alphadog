@@ -79,7 +79,7 @@ function projectionBlock(sh,games,legs,depth,teamAbbr){
   if(!rows.length)return '';
   const st=(sh&&sh.tonight_script)||null;const ud=depth&&depth.usage_detail&&(depth.usage_detail.usage||[]).find(x=>x.window==='Last 10');
   const share=st&&st.team_implied!=null&&ud&&ud.tm_pts!=null?st.team_implied*ud.tm_pts/100:null;
-  const note='Projection = per-minute rate ('+Math.round(100*w.last10/((w.last10+w.season)||1))+'% last 10 / '+Math.round(100*w.season/((w.last10+w.season)||1))+'% season) × expected minutes '+nOrDash(expMin)+' (last '+N+' avg) × pace factor '+(Math.round(pf*1000)/1000)
+  const note='Projection = per-minute rate ('+Math.round(100*w.last10/((w.last10+w.season)||1))+'% last 10 / '+Math.round(100*w.season/((w.last10+w.season)||1))+'% season) × expected minutes '+nOrDash(expMin)+' ('+minNote+') × pace factor '+(Math.round(pf*1000)/1000)
     +(gamePace?' (tonight\'s pace est. '+nOrDash(gamePace)+' = both teams\' last-10 average, vs his team\'s season '+nOrDash(teamPace)+')':' (no pace data - 1.0)')+'. A transparent box-score estimate, not the model.'
     +(share!=null?' Points by team share: '+nOrDash(ud.tm_pts)+'% of team points (last 10) × implied team total '+st.team_implied+' = '+nOrDash(share)+'.':'');
   return sectionWide('Box-Score Projection',table(['Prop','Per-36 L10','Per-36 Season','Projection','Standard Line','Proj − Line','Market Fair','Proj − Fair'],rows),note)}
