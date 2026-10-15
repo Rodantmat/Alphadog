@@ -161,6 +161,11 @@ def main():
               f"{f(r['leg_model'], False):>9} {f(r['leg_honest'], False):>7} {f(r['leg_hit'], False):>7} | "
               f"{f(r['roi_full_realized']):>8} {f(r['roi_exp_model']):>8} {f(r['roi_exp_honest']):>9} | "
               f"{f(r['allhit_realized'], False):>12} {f(r['allhit_model'], False):>7} {f(r['allhit_honest'], False):>7}", flush=True)
+    print("\nCERTIFIED CELL RATE (the backtest's measured hit rate of the leg's cell, edge_monitor_ref) as the leg probability:", flush=True)
+    print(f"{'strategy':<20} {'season':<8} | {'leg cell':>8} {'hit':>7} | {'ROI real':>8} {'E[cell]':>8}", flush=True)
+    for r in out:
+        print(f"{r['strategy']:<20} {r['season']:<8} | {f(r['leg_cell'], False):>8} {f(r['leg_hit_c'], False):>7} | "
+              f"{f(r['roi_cell_realized']):>8} {f(r['roi_exp_cell']):>8}", flush=True)
     print("\nREAD: 'honest' near 'hit' and E[honest] near the realized ROI = the shown probability reflects the backtest;"
           " E[model] far above = the old board number overstated the slips.", flush=True)
 
