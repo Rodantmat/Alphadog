@@ -45,7 +45,8 @@ export async function apiPlayerProfile(sql, cfg, url, version) {
   const team = (await q(sql, "SELECT team_id, abbreviation, full_name, conference, division FROM nba_ref.teams WHERE team_id = $1", [teamId || ""]))[0] || {};
   const ng = (await q(sql, `SELECT game_date::text game_date FROM nba_calendar.slate_games WHERE game_date >= $1::date AND $2 IN (home_team_id, away_team_id)
                             ORDER BY game_date, game_datetime_utc LIMIT 1`, [today, teamId || ""]))[0];
-  let nextGame = null, nextCtx = null, depth = null;
+  let nextGame = null, nextCtx = null, depth = null, sharp = null;
+  const names = S.marketNames(info.full_name, legs[0] && legs[0].player_name);
   const g = ng ? await C.gameFor(sql, ng.game_date, teamId) : null;
   if (g) {
     const isHome = g.home_team_id === teamId;
