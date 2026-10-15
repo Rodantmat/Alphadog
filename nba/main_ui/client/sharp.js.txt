@@ -26,7 +26,7 @@ function marketReadBlock(m,games,legs){if(!m||!(m.props||[]).length)return '';
   const labs=m.labels||[];const season=seasonGamesOf(games);
   const rows=m.props.map(p=>{const dl=(p.dfs_lines||[]);const main=regularLineFor(p.prop,legs);const vals=season.map(g=>propGameValue(g,p.prop));
     const r={'Prop':displayPropLabel(p.prop),'Books':p.books};labs.forEach(l=>{r['Fair '+labName(l)]=fairCell(p,l)});
-    r['Fair Move']=p.fair_move!=null?sgn(p.fair_move):'—';r['Standard Line']=main!=null?String(main):'— (alt lines only)';
+    r['Fair Move']=p.fair_move!=null?sgn(p.fair_move):'—';r['Standard Line']=main!=null?String(main):((legs||[]).some(l=>l.canonical_prop_key===p.prop)?'— (alt lines only)':'— (not on board)');
     const at=dl.find(x=>x.line===main);r['Market Over% @ Standard']=at&&at.p_over!=null?at.p_over+'%':'—';
     const lastFair=labs.length?p.fair[labs[labs.length-1]]:null;r['Standard vs Fair']=main!=null&&lastFair!=null?sgn(main-lastFair):'—';
     r['His Season Over%']=main!=null&&vals.length?overPct(vals,main)+'%':'—';r['Season Avg']=nOrDash(avgOf(vals));return r});
