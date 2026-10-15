@@ -163,7 +163,7 @@ def api_checks(conn, cfg):
         if not db or abs(float(db[0]) * 100 - r["estimated_hit_probability_0_100"]) > 0.051 or abs(float(db[2]) - r["score_0_100"]) > 0.051 \
                 or abs(float(db[1]) * 100 - r["probability_confidence_0_100"]) > 0.051:
             bad.append((r["final_board_row_id"], db))
-    check("C3 every board leg's HP / confidence / score == nba_score.board_scored", not bad and rows, bad[:3])
+    check("C3 every board leg's HP / confidence / score == the market-anchored board (board_true_hp over board_scored)", not bad and rows, bad[:3])
     miss_game = [r["final_board_row_id"] for r in rows if not r.get("official_game_time_utc") or not r.get("team_abbr")]
     check("C4 every leg resolved to a team and a game", not miss_game, miss_game[:3])
     pp = [r for r in rows if r["source_key"] == "prizepicks"][:40]
