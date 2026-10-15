@@ -2673,6 +2673,8 @@ avg_walks_per_game, avg_runs_per_game…) — **the model for the NBA referee fa
 single-valued `baseball_mlb`/`MLB`) · `market.prizepicks_board_current` (`league='mlb'`)
 `score.real_slip_leg_observations` · `control.user_placed_slips_log`
 
+🆕 *(additional sweep `8`, pass 491, `§P491` — `T19` `2026-09-20 04:37Z`, AS STATED)* The reply's tally of what T1's second pass added: *"The complete MLB universe measurements: 18 schemas, 116 workers, 21 control tables, 15 config tables, with full column lists for worker_definitions, job_queue, worker…"* — the `21` and `15` are the control- and config-table counts of that universe (the `18` schemas and `116` registry rows are on file above and at the Phase-1 verification).
+
 **All 12 MLB D1 bindings report FALSE** — MLB migrated to Postgres before the NBA build began.
 
 ---
