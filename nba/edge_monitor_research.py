@@ -37,8 +37,9 @@ def logit(p): return math.log(p / (1 - p))
 def expit(x): return 1 / (1 + math.exp(-x))
 
 
-def exp_payout(legs_p, fprod, k, structure):
-    """E[payout] with independent legs of probabilities legs_p: Poisson-binomial over hit counts x the engine's grade()."""
+def exp_payout(legs_p, fprod, k, structure, alt=False):
+    """E[payout] with independent legs of probabilities legs_p: Poisson-binomial over hit counts x the engine's grade().
+    alt=True: a Flex slip with a goblin / demon leg is paid on PrizePicks' quote-derived tiers, as grade() does (2026-10-15)."""
     dist = [1.0]
     for p in legs_p:
         nd = [0.0] * (len(dist) + 1)
