@@ -421,6 +421,14 @@ def browser():
             page.locator(".searchResult").first.click()
             page.wait_for_selector(".p2Hero")
         step("06_profile", profile)
+        def profile_depth():
+            heads = page.evaluate("[...document.querySelectorAll('#playerProfileBody h3, #playerProfileBody .sectionLabel')].map(e => e.textContent.trim())")
+            need = ["Line Profile — Every Prop", "Minutes & Role", "Usage & Efficiency", "Career — Season By Season", "Skills — Player Tracking", "Player Depth — Form, Role, Skills, Matchup"]
+            miss = [n for n in need if not any(h.startswith(n) for h in heads)]
+            if miss:
+                raise RuntimeError(f"profile depth sections missing: {miss}")
+            page.evaluate("[...document.querySelectorAll('#playerProfileBody .sectionLabel')].find(e => e.textContent.startsWith('Player Depth')).scrollIntoView()")
+        step("06a_profile_depth", profile_depth)
         step("06b_profile_low", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.6)"))
 
         def health():
