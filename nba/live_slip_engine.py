@@ -56,7 +56,15 @@ BOOT_DRAWS = int(os.environ.get('LS_BOOT', '10000'))
 # the validated families (28j), with the backtest stress numbers each hurdle compares against
 STRATEGIES = {
     #  name                         composition           size structure cap  cert_leg_hit  worst_dd  longest_streak  pool_floor
-    'A_wsteals_5flex':   ('weighted:steals_R',    5, 'flex',  6, 0.61, 59.5, 15, 8),   # cap 3->6 (29k pass 17): k4-6 +67%, 'wsteals 6 + core 0' beat every allocation
+    # CAPS 2026-10-15 (owner: "keep improving logics ... to improve ROI"; nba/research_portfolio_roi.py, ledger "THE DECISIONS,
+    # GROUNDED"): on the TRUE Flex payouts (market-free twin, final-7 out) every next slip beyond the old caps was measured; rule
+    # written before the run - a cap rises one slot at a time only while the next slot is >= +15% in BOTH seasons and its pooled
+    # day-blocked 95% lower bound > 0. Raised: A_wsteals 6->9 (k7 +87/+77, k8 +31/+65, k9 +57/+77; k10 +28/+97 also passes, left
+    # out - concentration on one family; 9 was already the validated late-March level), A_regular 1->2 (k2 +40/+144; k3 -30 stops),
+    # A_wrebounds 1->3 (k2 +37/+77, k3 +29/+59; k4 +11 stops), C_wstocks 1->2 (k2 +37/+45; k3 +1 stops). Portfolio, both seasons:
+    # net +663 -> +1,150 / +1,641 -> +2,478 units, ROI +28.5 -> +33.8% / +71.0 -> +73.1%, net / max drawdown 3.24 -> 4.56 /
+    # 17.98 -> 18.75 (better in both). Unchanged: A_core_3power (k4 -15%), D_points_3power (k4 +3%).
+    'A_wsteals_5flex':   ('weighted:steals_R',    5, 'flex',  9, 0.61, 59.5, 15, 8),   # cap 6->9 (2026-10-15); was 3->6 (29k pass 17)
     'A_core_5flex':      ('core',                 5, 'flex',  0, 0.61, 61.4, 15, 8),   # RETIRED (29k pass 14/17): 58% identical to wsteals; kept for its shadow record
     'A_regular_5power':  ('regular',              5, 'power', 1, 0.61, 36.3, 13, 8),
     'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  1, 0.62, 21.6, 11, 8),
