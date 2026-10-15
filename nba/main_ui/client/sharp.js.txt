@@ -63,7 +63,9 @@ function vsMarketBlock(h,focus){if(!h||!(h.props||[]).length)return '';
 function projectionBlock(sh,games,legs,depth,teamAbbr){
   const cfg=(sh&&sh.config)||{};const w=cfg.proj_rate_weights||{last10:0.5,season:0.5};const N=cfg.proj_minutes_window||10;
   const played=games.filter(g=>Number(g.min)>0);if(played.length<5)return '';const season=seasonGamesOf(games);const lastN=played.slice(0,N);
-  const expMin=avgOf(lastN.map(g=>g.min));
+  // a player still ramping back from an absence plays the minutes he has played since returning, not his old load
+  const ramp=sh&&sh.availability&&sh.availability.ramp;const ramping=ramp&&ramp.games_since_return>=1&&ramp.games_since_return<N&&ramp.min_since_return!=null;
+  const expMin=ramping?Number(ramp.min_since_return):avgOf(lastN.map(g=>g.min));const minNote=ramping?'since his '+ramp.return_date+' return ('+ramp.games_since_return+' G)':'last '+N+' avg';
   const tt=(depth&&depth.team_trends)||[];const mine=tt.filter(t=>t.team===teamAbbr);const opp=tt.filter(t=>t.team!==teamAbbr);
   const pace=(rows,win)=>{const r=rows.find(x=>win==='l10'?x.window==='Last 10':String(x.window).startsWith('Season'));return r?Number(r.pace):null};
   const gamePace=pace(mine,'l10')!=null&&pace(opp,'l10')!=null?(pace(mine,'l10')+pace(opp,'l10'))/2:null;const teamPace=pace(mine,'season');
