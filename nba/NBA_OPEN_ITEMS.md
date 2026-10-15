@@ -20137,7 +20137,7 @@ are worth more per pass than any re-derivation.***
 - **Additional sweep `6` stays not clean** (`§P383`–`§P390`'s writes). Commits not this sweep's since `7c7a95b4b` (pass 390's census; the log read at this pass's head and fetched again as the last call before this patch, after the final draft): `0`. ~~`T48-10` checked at this pass's head: no main-UI commit since the ones `§P370`'s update named.~~ ⚠ (strike-correction, pass `393`, `§P393`): wrong — main-UI commits had landed since and were not named (from `18ddbadbb`, `06:10Z`, before `§P380`'s ledger); `T48-10`'s pass-393 update names them. The credential grep on the twelve returns `0`.
 
 **Ledger**: pass `391` complete (`2026-10-15`).
-- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`5` complete, each NOT clean. ⏳ **Additional sweep `6`** under way, **not clean** (`§P383`'s sources, `§P384`'s season tables, `§P385`'s two, `§P386`'s coach changes, `§P387`'s, `§P388`'s and `§P389`'s sources, `§P390`'s test): `T1`–`T19` done (`13,530` sentences); next `T20`.
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`5` complete, each NOT clean. ⏳ **Additional sweep `6`** under way, **not clean** (`§P383`'s sources, `§P384`'s season tables, `§P385`'s two, `§P386`'s coach changes, `§P387`'s, `§P388`'s and `§P389`'s sources, ~~`§P390`'s test~~ — struck, pass `393`, `§P393`): `T1`–`T19` done (`13,530` sentences); next `T20`.
 
 ## §P392 — PASS 392 (`2026-10-15`): ADDITIONAL SWEEP `6` — `T20` · NO RESIDUE
 *Angle (as NEXT set it):* (f19) `§P131`'s method on `T20`, with pass 361's identifier check and the catches of passes 383–390, each grepped outside the ledgers.
