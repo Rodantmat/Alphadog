@@ -19825,3 +19825,14 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `366` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T44` done (`36,430` sentences); next `T45`.
+
+## §P367 — PASS 367 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T45` · NO RESIDUE
+*Angle (as NEXT set it):* (g18) `§P131`'s method on `T45`, with pass 361's identifier check.
+- Tabulated in the shell before this line (the scan at pass 366's head): `T45` `25` of `50` sentences listed — the same `25` as `§P317` listed, the two lists diffed in the shell (`0` dropped, `0` added). **All `25` read whole**. The bounded figure triage: `0` / `0` / `4` with every figure on file / `21` with none (`0 + 0 + 4 + 21 = 25`), as at pass 317.
+- The identifier check: the one code name the listed sentences carry, the scheduler's `firstTip`, returns `0` in the twelve; it is a function, judged as function names are. Its substance is on file and was read in the code (`nba/alphadog-v2-nba-scheduler.js`, read only): since `v2.3.0` the first tip of a date comes from `nba_calendar.slate_games` (game ids `002` + `004` + `005`), and the twelve record that predicate (`30` hits).
+- On file, by substance (each grepped before it was written, every hit read): `§P317`'s list — the postseason weighting (`K = 50`, the eligible cells), the strategies at one slip a night (`+62%` on `25` nights), the postseason-native search, the postseason board floor (`485`), the Underdog engine's postseason stand-down, the live probe on three past nights, and the Betr harvester's "NO BOARD". Judged, on `§P167`'s, `§P217`'s, `§P267`'s and `§P317`'s bases: narration, the session's notices, and the MLB lines (out of scope).
+- **No residue in `T45`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`; `§P357`'s strike-correction; `§P361`'s residue; `§P362`'s writes). Commits not this sweep's since `5453ba9cf` (pass 366's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P356` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `367` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T45` done (`36,480` sentences); next `T46`.
