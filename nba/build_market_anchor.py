@@ -80,7 +80,7 @@ q AS MATERIALIZED (SELECT anc.*,                         -- MATERIALIZED: the la
            FROM (SELECT line::float8 line, least(greatest(p_more::float8,1e-4),1-1e-4) p FROM nba_score.baseline_history h WHERE h.game_date = anc.game_date AND h.player_id = anc.player_id AND h.prop = anc.prop AND h.period = 'FULL' AND h.line <= anc.pp_line ORDER BY h.line DESC LIMIT 1) lo,
                 (SELECT line::float8 line, least(greatest(p_more::float8,1e-4),1-1e-4) p FROM nba_score.baseline_history h WHERE h.game_date = anc.game_date AND h.player_id = anc.player_id AND h.prop = anc.prop AND h.period = 'FULL' AND h.line >= anc.pp_line ORDER BY h.line ASC LIMIT 1) hi) q_pp
       FROM anc),
-st AS (SELECT player_id, game_date, pts::float8 pts, reb::float8 reb, ast::float8 ast, fg3m::float8 fg3m, stl::float8 stl, blk::float8 blk, tov::float8 tov
+st AS MATERIALIZED (SELECT player_id, game_date, pts::float8 pts, reb::float8 reb, ast::float8 ast, fg3m::float8 fg3m, stl::float8 stl, blk::float8 blk, tov::float8 tov
        FROM nba_stats.player_game_log WHERE game_date BETWEEN %(d0)s::date AND %(d1)s::date AND min > 0
        UNION ALL SELECT player_id, game_date, pts, reb, ast, fg3m, stl, blk, tov FROM nba_stats.player_game_log_postseason WHERE game_date BETWEEN %(d0)s::date AND %(d1)s::date AND min > 0)
 SELECT l.game_date::text game_date, l.player_id, l.prop, l.line, l.side, l.base, l.fin, q.dk_line, q.dk_p, q.q_dk, q.pp_line, q.q_pp,
