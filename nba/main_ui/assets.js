@@ -19,5 +19,5 @@ const PRICING_JS = "// NBA payout + EV math - the worker's nba/main_ui/pricing.j
   Object.values(PRICING).filter(f => typeof f === "function").map(f => f.toString()).join("\n") + "\n";
 if (!/function nbaPayout\(/.test(PRICING_JS) || !/function nbaFlexAlt\(/.test(PRICING_JS)) throw new Error("pricing.js did not serialize - client payout math unavailable");
 
-export const ASSETS = { "index.html": SHELL, "core.js": CORE, "dossier.js": DOSSIER, "build.js": BUILD, "slips.js": SLIPS, "profile.js": PROFILE,
+export const ASSETS = { "index.html": SHELL, "core.js": CORE, "dossier.js": DOSSIER + "\n" + SHARP, "build.js": BUILD, "slips.js": SLIPS, "profile.js": PROFILE,
   "admin.js": ADMIN, "pricing.js": PRICING_JS, "logo.png.b64": String(LOGO_B64).trim() };
