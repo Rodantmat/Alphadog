@@ -24,7 +24,7 @@ permissions:
 
 concurrency:
   group: nba-market-anchor-apply
-  cancel-in-progress: false
+  cancel-in-progress: true    # a newer apply supersedes a running one (each date is its own transaction; a rerun rewrites it)
 
 jobs:
   apply:
