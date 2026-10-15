@@ -15,6 +15,10 @@ function seasonGamesOf(games){const s=seasonOf(games);return games.filter(g=>g.s
 // a prop selector that switches every pane in its box (movement, ladder, history log) to one prop
 function sharpPick(sel){const box=sel.closest('.sharpBox');if(!box)return;box.querySelectorAll('.sharpPane').forEach(p=>{p.style.display=p.getAttribute('data-prop')===sel.value?'':'none'})}
 function propSelect(keys,cur){return '<select class="sharpSel" onchange="sharpPick(this)" style="margin:2px 0 10px;padding:6px 8px;border-radius:8px;font-weight:800">'+keys.map(k=>'<option value="'+esc(k)+'"'+(k===cur?' selected':'')+'>'+esc(displayPropLabel(k))+'</option>').join('')+'</select>'}
+// the standard (regular) DFS line of a prop on this slate - goblin / demon / payout-adjusted lines are not comparable to the market's fair line
+function regularLineFor(k,legs){const ls=(legs||[]).filter(l=>l.canonical_prop_key===k&&(!l.line_type||l.line_type==='regular'));if(!ls.length)return null;const c={};ls.forEach(l=>{const x=Number(l.line_value);c[x]=(c[x]||0)+1});return Number(Object.entries(c).sort((a,b)=>b[1]-a[1]||Number(a[0])-Number(b[0]))[0][0])}
+// the fair line, or (a one-line market such as blocks 0.5) that line with its no-vig over%
+function fairCell(p,l){if(p.fair[l]!=null)return String(p.fair[l]);const c=(p.ladder||[]).filter(x=>x[l]!=null).sort((a,b)=>Math.abs(a[l]-50)-Math.abs(b[l]-50))[0];return c?c.line+' (o '+c[l]+'%)':'—'}
 function pane(k,cur,html){return '<div class="sharpPane" data-prop="'+esc(k)+'"'+(k===cur?'':' style="display:none"')+'>'+html+'</div>'}
 
 // ---- A. MARKET READ: the books' fair (50/50) line per snapshot, how it moved, and the market's over% at each DFS line
