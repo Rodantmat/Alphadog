@@ -227,6 +227,9 @@ def fit_params(X, y, meta, l2, min_n):
             mp = ms & (props == prop)
             if mp.sum() >= min_n:
                 params[side][prop] = fit_logistic(X[mp], y[mp], l2).tolist()
+    # stage 2 (monotone, per side) on the fit set's own stage-1 output: the logistic shape cannot bend its thin top tail
+    stage1 = predict(params, X, meta, iso=False)
+    params["_iso"] = {side: iso_knots(stage1[sides == side], y[sides == side]) for side in ("Over", "Under")}
     return params
 
 
