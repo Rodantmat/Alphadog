@@ -287,6 +287,36 @@ def api_checks(conn, cfg):
     if hh.get("source") == "replay_backtest" and sl:
         res = [s for s in sl if s.get("result")]
         check("C14 replay slips carry the backtest result", len(res) == len(sl), f"{len(res)}/{len(sl)}")
+    # C49: each PrizePicks certified slip shows the backtest behind it - every leg's certified cell rate equals
+    # nba_score.edge_monitor_ref, and the strategy's backtest record by season is recomputed here from the backtest tables
+    cellp = {(c, t, sd_): round(100 * float(p_), 1) for c, t, sd_, p_ in conn.execute("SELECT cell, tier, side, p FROM nba_score.edge_monitor_ref")}
+    sfx_row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'live_backtest_suffix'").fetchone()
+    sfx = ((sfx_row[0] if isinstance(sfx_row[0], dict) else json.loads(sfx_row[0])) if sfx_row else {}).get("suffix") or ""
+    caps = dict(conn.execute("SELECT strategy, live_cap FROM nba_score.live_strategy_state").fetchall())
+    bad49, n49, nrec = [], 0, 0
+    for s_ in [x for x in sl if x.get("source_key") == "prizepicks"]:
+        for l_ in s_["legs"]:
+            if l_.get("cell"):
+                want = cellp.get((l_["cell"], l_.get("tier"), "Over" if str(l_.get("selected_side")).lower() in ("more", "over") else "Under"))
+                n49 += 1
+                got = l_.get("cell_backtest_hit_0_100")
+                if want is None or got is None or abs(want - float(got)) > 0.051:      # JS / Python rounding of the same rate
+                    bad49.append((s_.get("strategy"), l_["cell"], want, l_.get("cell_backtest_hit_0_100")))
+        spec = (cfg.get("pp_strategies") or {}).get(s_.get("strategy"))
+        if spec and s_.get("strategy_backtest") is not None:
+            tbl = f"nba_score.slip_engine_slips{sfx}{'_nosteals' if str(s_['strategy'])[:2] in ('C_', 'D_', 'R_', 'W_') else ''}"
+            want_rec = [{"season": se, "slips": int(n_), "roi_pct": round(100 * (pay / st - 1), 1)} for se, n_, st, pay in conn.execute(
+                f"SELECT season, count(*), sum(stake), sum(payout) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s GROUP BY season ORDER BY season",
+                (spec["composition"], spec["size"], spec["structure"], max(1, int(caps.get(s_["strategy"]) or 0)))).fetchall()]
+            got_rec = [{k: r[k] for k in ("season", "slips", "roi_pct")} for r in s_["strategy_backtest"]]
+            nrec += 1
+            same = len(got_rec) == len(want_rec) and all(a["season"] == b["season"] and a["slips"] == b["slips"]
+                                                         and a["roi_pct"] is not None and abs(float(a["roi_pct"]) - b["roi_pct"]) <= 0.051
+                                                         for a, b in zip(got_rec, want_rec))
+            if not same:
+                bad49.append((s_.get("strategy"), "record", want_rec, got_rec))
+    check("C49 certified slips show their backtest: cell rates == edge_monitor_ref, strategy record == backtest tables",
+          not bad49 and (n49 or not [x for x in sl if x.get("source_key") == "prizepicks"]), f"{n49} legs, {nrec} records checked; bad {bad49[:3]}")
     ids = [r["final_board_row_id"] for r in rows if r["source_key"] == "prizepicks"][:6]
     code, g, t = curl("/api/slips/generate", body={"leg_ids": ids}); save_sample("generate", g)
     gs = g.get("generated_slips") or []
