@@ -173,6 +173,8 @@ shape as the two-season historical backfill, idempotent on re-runs."* ⚠ **`eve
 live boards have no Odds-API event id, so a stable one is SYNTHESISED** — *recorded here because a
 synthesised key is a joinability constraint downstream.*
 
+🆕 *(additional sweep `8`, pass 487, `§P487` T15 — AS STATED)* The run totals, in the transcript's words: the first working archive run — *"The archiver works — 6,557 live legs landed in board_snapshots: Underdog 5,281 legs across 216 players and 46 markets, Sleeper 1,276 across 94 players"* — failed *after* Underdog and Sleeper succeeded, *"so Fliff's shape broke it"* (Fliff sends empty-string lines on some legs, team markets without a numeric line). After the fix — *"The archiver now runs green and reports honestly: 8,100 legs archived, and it tells us Fliff skipped all 4,592 legs for having no usable line rather than silently producing nothing"* — and Fliff's line lives on each proposal, not at the top level the generic parser read. In the same session the oreb baseline load is stated as *"281,872 rows, but loading isn't the gate; calibration is."*
+
 ---
 
 ## 0f-1. 🔴🔴 **CORRECTION 2026-09-22 (T13 pass 3, §T13.4a) — THERE ARE FIVE BOARD SOURCES, NOT FOUR. THE FIFTH IS BETR.**
