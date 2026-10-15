@@ -21531,6 +21531,19 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `501` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`7` complete, each NOT clean. ⏳ **Additional sweep `8`** under way, NOT clean (the writes in `T9`, `T10`, `T11`, `T12`, `T13`, `T14`, `T15`, `T16`, `T17`, `T18`, `T19`, `T20`, `T21`, `T23`, `T26`, `T27`, `T28` and `T29`): `T1`–`T29` done; next `T30` onward.
 
+## §P502 — PASS 502 (`2026-10-15`): ADDITIONAL SWEEP `8` — `T30` · ONE WRITE (THE SLEEPER CAPTURE'S CONTENTS, `payouts/legs_boost_map`, `NBA_MULTIPLIERS.md`)
+*Angle (as NEXT set it):* (l23) `§P131`'s method on `T30` (as `§P152`, `§P202`, `§P252`, `§P302`, `§P352`, `§P402` and `§P452` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; the owner's console lines and the local path in them not reproduced.
+- Tabulated in the shell before this line (the scan at pass 501's head): `T30` `35` of `40` sentences listed — the same `35` `§P452` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`35` read whole** (the bounded figure triage, unchanged since `§P452`: `1` with a figure not on file / `0` inside a longer number / `1` with every figure on file / `33` with none; `1 + 0 + 1 + 33 = 35`; the `1` is a console timestamp, judged).
+- `§P452` recorded no write for `T30`; there is no write to re-verify.
+- **One write, found by re-reading the identifier check against the store.** `§P452` judged `payouts/legs_boost_map` (named in passing as "a bonus" among the three requests the filtered Sleeper save file held, beside `available_alt` for wnba `16.9k` and `available` with one-sided lines `16.6k`) as named nowhere in the twelve and used by no file in the repo, and wrote nothing. A fact the corpus holds only in the transcript is a fact the twelve lack: the endpoint's existence on Sleeper's API is recorded in `NBA_MULTIPLIERS.md` on the Sleeper row, labelled as stated, with its body marked unread in the transcript and no caller in the repo (`5daeb60d9`); the two sizes with it.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension), counted with `grep -c` on the uncut sentences: `3` names with `0` hits — `flow_detail` (an export flag of the capture tool), `sleeper_clean` (an export file name) and `legs_boost_map` (written above). The camel-run extension adds none.
+- The source-name and store-name checks: the Sleeper board and its `available_alt` endpoint, the capture tool and the findings document's sections on file; no new source named.
+- Judged on `§P452`'s basis: the capture-export and upload troubleshooting (the empty documents, the `.mitm` / `.zip` fallbacks, the PowerShell redirect failing, the owner's console lines and the local path — not reproduced), the export commands.
+- **Additional sweep `8` is NOT clean** (the writes in `T9` … `T21`, `T23`, `T26` … `T30` stand); the three-sweep count stays `0`. Commits not this sweep's since `9c5a0e71d` (`§P501`'s census; the log fetched before this patch): `0` — the only commit is this pass's write. `T48-10` was checked by the log of the main-UI paths, COMPASS, the certification ledger, the strategy document and `deployed_sha.txt`: `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `502` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`7` complete, each NOT clean. ⏳ **Additional sweep `8`** under way, NOT clean (the writes in `T9`, `T10`, `T11`, `T12`, `T13`, `T14`, `T15`, `T16`, `T17`, `T18`, `T19`, `T20`, `T21`, `T23`, `T26`, `T27`, `T28`, `T29` and `T30`): `T1`–`T30` done; next `T31` onward.
+
 
 
 
