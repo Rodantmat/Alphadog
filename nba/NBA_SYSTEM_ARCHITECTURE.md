@@ -2034,7 +2034,7 @@ refuted by reading the live MLB code (T7); the *"potential assists aren't in our
 ***J. Sports Sciences* 2025** (altitude, p=0.005) · **PMC 10-season study** (eastward jet lag) ·
 **`swar/nba_api`** — the source of the canonical headers and the static TEAM_ID list; **Issue #155**
 tracks header changes and is the first place to look if scraping breaks.
-🆕 (additional sweep 6, pass 383, `§P383` — a source `T7`'s research names, absent from this list): **Chu & Swartz** — cited for the per-player foul-trouble factor, `T7` `2026-09-09 00:27Z`: *per-player foul-trouble risk (PF/min from logs; Chu & Swartz confirm it's modelable)*.
+🆕 (additional sweep 6, pass 383, `§P383` — a source `T7`'s research names, absent from this list): **Chu & Swartz** — cited for the per-player foul-trouble factor, `T7` `2026-09-09 00:27Z`: *per-player foul-trouble risk (PF/min from logs; Chu & Swartz confirm it's modelable)*. And the two sources the same reply cites for modelling minutes first, neither named here before (the minutes-first rule itself is on file): **RotoGrinders** and **GAGE** — *Every NBA source — RotoGrinders ("everything is multiplied by minutes"), GAGE ("anchor to minutes"), Gemini (flagged strongly) — says NBA must model minutes as its own distribution first*.
 
 ### The proxy — `PROXY_URL`
 Residential, egress verified **US/California**. **Inherited from MLB's own scraper**, not created here.
