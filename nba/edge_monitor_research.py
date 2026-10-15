@@ -72,7 +72,7 @@ def roi_at(slips, p_of, shift):
     for name, d, structure, k, stake, profit, legs in slips:
         ps = [expit(logit(p_of[key]) + shift) for key, f, h in legs]
         fprod = math.prod(f for key, f, h in legs)
-        tot_e += stake * exp_payout(ps, fprod, k, structure); tot_s += stake
+        tot_e += stake * exp_payout(ps, fprod, k, structure, any(abs(f - 1.0) > 1e-9 for key, f, h in legs)); tot_s += stake
     return tot_e / tot_s - 1
 
 
