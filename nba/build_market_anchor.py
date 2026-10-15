@@ -67,13 +67,14 @@ dk AS MATERIALIZED (
   FROM dkraw WHERE po IS NOT NULL AND pu IS NOT NULL AND po <> 0 AND pu <> 0
   ORDER BY game_date, player_id, market_key,
            abs((CASE WHEN po > 0 THEN 100/(po+100) ELSE -po/(-po+100) END) / ((CASE WHEN po > 0 THEN 100/(po+100) ELSE -po/(-po+100) END) + (CASE WHEN pu > 0 THEN 100/(pu+100) ELSE -pu/(-pu+100) END)) - 0.5)),
--- the DFS standard line (PrizePicks' anchor line for the prop) from the WINDOW board only: that is the board the decision is
--- made on; the history's 'close' board (tip - 25 min, after the news) never exists at P3 time (2026-10-15 full pass)
+-- the DFS standard line (PrizePicks' anchor line for the prop): window first, else close, else routine. Tested window-only
+-- (2026-10-15 full pass): a history leg whose anchor exists only on the close board was itself only on the close board, so
+-- dropping the close anchor moved ~84k legs into the unanchored class and broke its calibration (gate run 38797606643:
+-- Over/none -10.5 / +8.2 pts by season) - the label preference stands. Live, a window leg has its window anchor.
 pp AS MATERIALIZED (SELECT DISTINCT ON (t.game_date, m.player_id, t.base_market) t.game_date, m.player_id, t.base_market, t.anchor_line::float8 line
        FROM nba_market.board_tiers_v2 t JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(t.player)
        WHERE t.game_date BETWEEN %(d0)s::date AND %(d1)s::date AND t.bookmaker = 'prizepicks' AND t.anchor_line IS NOT NULL
-         AND t.snapshot_label = 'window'
-       ORDER BY t.game_date, m.player_id, t.base_market, t.built_at DESC),
+       ORDER BY t.game_date, m.player_id, t.base_market, array_position('{window,close,routine}'::text[], t.snapshot_label), t.built_at DESC),
 anc AS MATERIALIZED (SELECT pl.*, dk.line dk_line, dk.p_over dk_p, pp.line pp_line FROM pl
         LEFT JOIN dk ON dk.game_date = pl.game_date AND dk.player_id = pl.player_id AND dk.market_key = pl.mkey
         LEFT JOIN pp ON pp.game_date = pl.game_date AND pp.player_id = pl.player_id AND pp.base_market = pl.mkey),
