@@ -163,6 +163,36 @@ MIN_BOARD_LEGS = int(os.environ.get('LS_MIN_BOARD', '179'))   # §31j: smallest 
 STAR_UNDER_LINES = {'points': 24.5, 'pra': 34.5, 'pts_ast': 29.5, 'pts_reb': 29.5}
 
 
+# THE OWNER'S UNIT (2026-10-15, owner: "the unit is going to be $1 on the beginning ... I cannot go less on most of the apps").
+# nba_config.classification_config['stake_unit'] = {unit_usd, min_stake_usd, below_min, play_from_day1}. A slip whose stake
+# (unit x stake_weight) is below the apps' minimum cannot be placed: with below_min = 'skip' it is recorded as
+# 'placed_below_min' (built, graded, never staked). Measured before choosing 'skip' over rounding up to $1 (daily strategies at the
+# live caps, market-free twin, final-7 out): the half-stake star-Under slips are 4.5% of slips at +8.1% / -1.4% ROI, so skipping
+# them gives portfolio ROI +35.1% / +76.4% vs +34.4% / +74.7% at half stake and +33.8% / +73.1% at full stake, net units equal
+# within 13 (2024-25) - ROI is the owner's measure. The unit itself never changes what the engine builds.
+_STAKE_UNIT = None
+STAKE_UNIT_DEFAULT = {"unit_usd": 1.0, "min_stake_usd": 1.0, "below_min": "skip", "play_from_day1": True}
+
+
+def stake_unit(conn):
+    global _STAKE_UNIT
+    if _STAKE_UNIT is None:
+        cfg = dict(STAKE_UNIT_DEFAULT)
+        try:
+            row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='stake_unit'").fetchone()
+            if row and row[0]:
+                cfg.update(row[0] if isinstance(row[0], dict) else json.loads(row[0]))
+        except Exception:  # noqa: BLE001
+            pass
+        _STAKE_UNIT = cfg
+    return _STAKE_UNIT
+
+
+def below_min_stake(conn, weight):
+    u = stake_unit(conn)
+    return u.get("below_min", "skip") == "skip" and float(weight) * float(u["unit_usd"]) < float(u["min_stake_usd"]) - 1e-9
+
+
 def star_under_weight(slip):
     """0.5 if the slip holds a star-line balanced Under (validated default thresholds), else 1.0."""
     for l in slip:
