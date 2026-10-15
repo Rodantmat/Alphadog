@@ -1503,6 +1503,8 @@ FACTOR — opponent paint share, opponent turnover rate — not as its own prop 
 > **`ot_rule`**, and OT handling **differs by app** — lesson #14's prop-definition-mismatch trap.
 > `NBA_OPEN_ITEMS.md` → FROM T1 PASS 62.
 
+🆕 *(additional sweep `8`, pass 492, `§P492` `T20` `2026-09-20` `16:03Z` AS STATED)* The reply's own sizing of the OT-rule point: with `board_outcomes` at *"6.9M legs across five apps"*, *"a single league-wide OT rule would misgrade every Sleeper quarter leg in overtime games — roughly 6% of the schedule"* (the reply's estimate, not a measured table; the measured P(OT | spread) of `5.3%` at pick'em falling to `1.9%` at `15+` is on file in `NBA_OPEN_ITEMS.md`, T9).
+
 ### `nba_config.factor_registry` — **67 rows** *(seeded at 29 in T8)*
 Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it is a **baseline** or
 **enrichment** factor, and which cluster it belongs to. **It has more than doubled since T8**, and is
