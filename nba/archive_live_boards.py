@@ -190,7 +190,16 @@ def rows_underdog(doc, gd, label):
            (" @ " in str(l.get("player")) and not l.get("player_id")):
             continue   # team markets (moneyline / margin / total ladders - 'Total Points' shares stat_key 'points' with player points)
         _disp = str(l.get("stat") or l.get("stat_key") or "")
-        mk = _ud.get(_disp.strip().lower())
+        _key = " ".join(_disp.strip().lower().split())
+        mk = _ud.get(_key)
+        # 2026-10-15 full pass: Underdog now writes "Blocks + Steals" (was "Blks + Stls") and period markets as "1Q Rebounds";
+        # both were archived under raw keys no engine reads. Period prefix -> the canonical _q1.._q4 / _h1 / _h2 suffix.
+        if mk is None and _key in ("blocks + steals", "blocks+steals", "blks+stls", "stocks"):
+            mk = "player_blocks_steals"
+        if mk is None:
+            _pm = re.match(r"^(1q|2q|3q|4q|1h|2h)\s+(.+)$", _key)
+            if _pm and _ud.get(_pm.group(2)) in ("player_points", "player_rebounds", "player_assists", "player_threes"):
+                mk = _ud[_pm.group(2)] + "_" + ({"1h": "h1", "2h": "h2"}.get(_pm.group(1)) or ("q" + _pm.group(1)[0]))
         if mk is None:
             mk = "player_" + _disp.lower().replace(" ", "_")
             _unmapped.add(_disp)
