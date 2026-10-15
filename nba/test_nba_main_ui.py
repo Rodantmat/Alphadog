@@ -367,6 +367,15 @@ def browser():
         q = ("?date=" + DATE) if DATE else ""
         step("01_board", lambda: (page.goto(UI + "/" + q), page.wait_for_selector(".card")))
         step("02_dossier", lambda: (page.locator(".card").first.click(), page.wait_for_selector("#dossierBody .dossierHero")))
+        def dossier_depth():
+            heads = page.evaluate("[...document.querySelectorAll('#dossierBody h3, #dossierBody .sectionLabel')].map(e => e.textContent.trim())")
+            need = ["Line Profile — Every Prop", "Minutes & Role", "Usage & Efficiency", "Scoring Profile — Where His Points Come From", "Head-To-Head vs",
+                    "With / Without Teammates", "Team Form — Last 10 / Season", "Career — Season By Season", "Skills — Player Tracking", "Player Depth — Form, Role, Skills, Matchup"]
+            miss = [n for n in need if not any(h.startswith(n) for h in heads)]
+            if miss:
+                raise RuntimeError(f"dossier depth sections missing: {miss}")
+            page.evaluate("[...document.querySelectorAll('#dossierBody .sectionLabel')].find(e => e.textContent.startsWith('Player Depth')).scrollIntoView()")
+        step("02a_dossier_depth", dossier_depth)
         step("02b_dossier_mid", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.45)"))
         step("02c_dossier_low", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.8)"))
 
