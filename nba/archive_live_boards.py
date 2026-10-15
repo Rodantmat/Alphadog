@@ -128,10 +128,17 @@ def rows_prizepicks(doc, gd, label):
         who = (inc.get(rel.get("id"), {}).get("attributes") or {}).get("display_name")
         if not who or a.get("line_score") is None:
             continue
+        if a.get("is_live") or a.get("in_game"):
+            continue   # an in-game projection is not a pre-game board leg (2026-10-15 full pass)
         odds_type = (a.get("odds_type") or "standard").lower()
         mk = pp_market_key(a.get("stat_type"))
         if odds_type in ("goblin", "demon"):
             mk += "_alternate"
+        elif a.get("adjusted_odds") or a.get("is_promo") or a.get("flash_sale_line_score") is not None:
+            # 2026-10-15 full pass: a STANDARD leg with adjusted odds (its payout is not 1.0x - PrizePicks prices it apart) or a
+            # promo / flash-sale line (e.g. a "free square" 0.5 folded into a 27.5) was archived as a plain standard at factor 1.0.
+            # Filed under '<key>_promo' (the archive's convention; no engine reads it) until such legs are quoted.
+            mk += "_promo"
         for side, price in (("Over", -137 if odds_type != "demon" else 100),
                             ("Under", -137 if odds_type == "standard" else None)):
             if price is None:
