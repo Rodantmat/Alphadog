@@ -414,16 +414,16 @@ def main():
             ms = sides[mt] == sd
             res["by_side"][sd] = {"raw": reliability(raw[ms], yt[ms]), "new": reliability(pt[ms], yt[ms]),
                                   "logloss_raw": round(logloss(raw[ms], yt[ms]), 5), "logloss_new": round(logloss(pt[ms], yt[ms]), 5)}
-        # sub-group honesty (2026-10-15 audit): at shown >= 0.60, every (side, anchor class), (side, prop) and
-        # (side, anchor class, prop) group with 1,000+ legs must sit within 5 points of its realized rate
+        # sub-group honesty (2026-10-15 audits): in each band a bettor acts on (shown .55-.60 and >= .60), every (side, anchor
+        # class), (side, prop) and (side, anchor class, prop) group with 1,000+ legs must sit within sub_tol of its realized rate
         mt_idx = np.where(mt)[0]
         sd_t = np.array([meta[i][2] for i in mt_idx]); ac_t = np.array([meta[i][4] for i in mt_idx]); pr_t = np.array([meta[i][1] for i in mt_idx])
-        hi6 = pt >= 0.60
+        band_t = np.where(pt >= 0.60, ">=.60", np.where(pt >= 0.55, ".55-.60", ""))     # both bands a bettor acts on
         groups, worst = [], None
-        for gname, keyf in (("side|class", lambda j: (sd_t[j], ac_t[j])), ("side|prop", lambda j: (sd_t[j], pr_t[j])),
-                            ("side|class|prop", lambda j: (sd_t[j], ac_t[j], pr_t[j]))):
+        for gname, keyf in (("side|class", lambda j: (sd_t[j], ac_t[j], band_t[j])), ("side|prop", lambda j: (sd_t[j], pr_t[j], band_t[j])),
+                            ("side|class|prop", lambda j: (sd_t[j], ac_t[j], pr_t[j], band_t[j]))):
             acc = {}
-            for j in np.where(hi6)[0]:
+            for j in np.where(band_t != "")[0]:
                 acc.setdefault(keyf(j), []).append(j)
             for k, idx in acc.items():
                 if len(idx) >= 1000:
