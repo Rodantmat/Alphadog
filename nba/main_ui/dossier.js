@@ -46,7 +46,8 @@ export async function apiDossier(sql, cfg, url, version) {
     prop_market_consensus: boards.consensus,
     prepared_lines: boards.dfs,
     ...(gctx || {}),
-    ...depth
+    ...depth,
+    ...sharp
   };
   return { status: 200, body: { ok: true, data_ok: true, version, route: "/api/main-board/dossier", slate, selected, other_player_legs: legs, dossier_context: ctx, raw_context: {} } };
 }
