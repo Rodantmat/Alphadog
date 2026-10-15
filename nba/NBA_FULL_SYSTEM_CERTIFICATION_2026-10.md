@@ -1631,3 +1631,93 @@ red, the rest paper with their caps).
   +23.3 / −10.3 (rotation-only, drought state); B_demon_3flex −19.4 / +42.4 and B_demon_5flex −24.4 / +88.9 stay **red / cap 0**
   (§31ad). These are every-day records at cap; the live engine's calendar rules (week-2 trough, final-7, All-Star, rotation)
   sit on top, as certified.
+
+### FULL PASS 2026-10-15 — EVERY PIPELINE, CALIBRATION AND ROI FIRST (owner 2026-10-15 12:28 PT: "Do another full pass in the whole system, all pipelines. Especially calibration and ROI, but not only that, everything, data consumption, board handling, all apps, all legs, literally everything on the system, all steps, all pipelines")
+Method: every daily workflow (P1, P2A, P2B, P3, P5, close capture, scheduler) read step by step against the code each step
+runs; every board path (PrizePicks, Underdog, Sleeper, Fliff, Betr, sportsbooks) from archive to scored leg to slip; the
+calibration chain (final_hp → market anchor → board_true_hp → UI) and the ROI chain (backtest tables → calib → edge monitor →
+break-even → stake) recomputed from the DB. Each finding is fixed and proven, or written below as an owner decision.
+
+**Calibration**
+- **A1 BLOCKER — fixed. The market anchor joined players by NAME.** The apps spell one player differently (Jokić / Jokic,
+  Murphy III / Murphy, V. Wembanyama); one player-prop became two rows, legs duplicated, and the apply step's unique key
+  crashed on the first such slate. `build_market_anchor.py`: players by id everywhere — the DraftKings and PrizePicks anchors
+  resolve their book's spelling through the scorer's own map (`nba_ref.player_name_map` on `nba_ref.norm_name`), `anc`
+  joins on player_id. `apply_market_anchor.py`: dedupe by (player, prop, line, side) with a warning + `ON CONFLICT DO
+  NOTHING`. **Parity:** 2025-03-10 re-applied — 4,788 legs, sum of honest HP 2,230.64 vs 2,230.65 before, DraftKings anchors
+  3,700 / PrizePicks 3,754 unchanged. No refit needed (history features unchanged). A window-only PrizePicks anchor was tried
+  and REVERTED: its gate run (38797606643) broke the unanchored class (Over/none −10.5 / +8.2 pts); the label preference
+  (window, close, routine) stays.
+- **C2 — fixed. The board's edge was measured against the flat 56% break-even** for every leg; a goblin (factor < 1) needs
+  more, a demon less. `board.js`: break-even = 0.56 / leg factor (capped 0.99), edge = honest HP − that; the dossier says
+  "this leg breaks even at X%".
+- **C3 — fixed. A row without the honest HP fell back silently to the model's number.** The API now counts those rows
+  (`honest_missing`) and the board header shows a ⚠ warning when any exist. P3 got a coverage step ("Market-anchored hit
+  probability - coverage"): fails below 99% of the slate's legs, warns when 0 DraftKings anchors.
+- **B3 — fixed. Probe rows were scored next to the window board** (a second, earlier price for the same leg). The scorer drops
+  `probe` labels once a window board exists, as it already did routine / morning.
+- **Not changed, recorded:** C4 score-lift ordering, C7 history results are cross-fitted (by design), Under log-loss /
+  P2 re-centring — no defect found, residuals as in "DOUBLE CHECK".
+
+**ROI**
+- **R1 — fixed. `EDGE_DELTA` (the edge monitor's break-even distance) was −0.0916, measured before the Flex grader fix
+  (§31ad).** Re-solved on the true payouts (run 38798523913): pooled thinning **−6.49 pp** (independence −6.75; 2024-25
+  −4.06, 2025-26 −8.60; 4,633 slips; portfolio ROI +49.7%). Engine default −0.0649; `price_shop_ledger.margin_pp` 0.0649 in
+  code and in `classification_config`. `edge_exp_payout` and `edge_monitor_research.exp_payout` now pay Flex-with-alternates
+  through `flex_alt_payout` (they used the old FLEX × ∏factor), and the research loader reads the market-free twin
+  (`bt_table`).
+- **R4 / R5 — fixed. B_demon_5flex / B_demon_3flex are red (§31ad) but kept caps 9 / 6 in code and `pp_strategies`**; a late-March
+  raise could have re-enabled one. Caps 0 in the engine and in `nba_main_ui.pp_strategies`; the late-March raise requires
+  cap > 0.
+- **R6 — fixed. The slips screen's backtest ROI included the final-7 phase**, which the live engine never stakes. `slips.js`
+  and C49 exclude `phase = 'final7'`.
+- **R7 — fixed. The slips screen did not say which slips are money.** Each slip now carries its live state and a stake label:
+  staked / "<state> - not staked" / shadow (not staked) / backtest replay / paper (Underdog engine).
+- **R2 — OWNER DECISION. C_wstocks_4flex's true record is +1.5% / +52.5%** (2024-25 / 2025-26, market-free no-steals twin —
+  the table the live engine uses for every C_/D_/R_/W_ strategy — own cap, final-7 out; 155 / 154 slips). §31ad's +31 / +66
+  were read from the main table (`slip_engine_slips_mf`), the wrong family. 2024-25 is break-even; it is positive in both
+  seasons so the §31ad red rule (negative weaker season) does not fire. Keep at cap 1, or red.
+- **R3 — OWNER DECISION. A red strategy cannot come back in season:** P5's requalification reads `nba_market.prop_universe`,
+  which is built only from history, never from the live season. Options: (a) build the season's `prop_universe` in P2A
+  (`build_prop_universe` / finalize) so P5 sees the live season; (b) release a red strategy on its live shadow record (the
+  edge monitor on shadow slips). Until decided, red is one-way for the season.
+
+**Data consumption and boards**
+- **B1 — fixed. Movers took the team from the game log** (last season's team for a traded player). Live engine `BOARD_SQL`
+  and the Underdog engine resolve the team roster-first (`nba_ref.players`, when that team plays the slate), game log only as
+  fallback.
+- **B2 — fixed. New PrizePicks tiers had no price key until the next P2B.** P3 runs `pp_refresh_prices(slate − 1)` right
+  after "Board tiers" and reports what is still unpriced (`soft_ppkeys`). Board tiers stay HARD: `pp_leg_price` is a view over
+  `board_tiers_v2`, the pick depends on it.
+- **B4 — fixed. Underdog stat names:** "blocks + steals" and its variants → `player_blocks_steals`; period prefixes
+  (1q / 2q / 3q / 4q / 1h / 2h) → the canonical `_q1` / `_h1` keys; whitespace normalized; unit-tested. Existing rows remapped
+  in the DB (`player_pts_+_rebs_+_asts`, `player_1q_rebounds`, `player_blocks_+_steals`).
+- **PrizePicks in-game projections skipped** at archive (`is_live` / `in_game`); a projection posted after tip is not a
+  pre-game price. Adjusted-odds standards stay standards (they ARE the anchor); the 8 seen need a quote — open item.
+- **B12 — fixed. The sportsbook-consensus anchor rescue (`pp_refresh_prices`) excluded Betr only by its history name
+  `betr_us_dfs`;** live rows are `betr` and `fliff` (496 rows in the last 3 days) and would have counted as sportsbooks.
+  Both excluded; applied to the DB and verified in `pg_get_functiondef`; repo dump updated. No in-season rescue existed yet
+  (0 rows since 10-01), so nothing to undo. The two derived-backsim functions read history only (`betr_us_dfs`), unchanged.
+
+**Pipelines**
+- **P1 — fixed. P3's non-essential steps could fail the pick:** rung-key refresh, market snapshot / rung market are soft
+  (timeout 8). P3 job timeout 25 → 45.
+- **P2 — fixed. P3 could start while P2B was still building the slate.** New step waits while P2B's `pipeline_runs` row is
+  `claimed` (poll 20 s; deadline min(first tip − 10 min, now + 20 min)).
+- **P3 — fixed. P2A graded on whatever box scores existed.** New hard step: every team of yesterday's final games
+  (`game_status = 3`) must have rows in `player_game_log` / `_postseason`, else the run fails before grading.
+- **P4 — fixed.** P2B's injury load and params snapshot carry ids and sit in the soft-failure list (they were soft without
+  being reported).
+
+**Proof after the fixes**
+- UI v1.4.3 deployed (run 38799864937). End-to-end test 2026-03-10: **92/92** (run 38800330643), C49 with final-7 out: 61 legs,
+  15 records, bad []. Default slate: **92/92** (run 38801015832).
+- Certification unchanged by this pass (no backtest table, cell or grader changed): certify 66 / 0, validator 13 vs null 0
+  (runs 38772726753 / 38772731793).
+
+**Open, recorded (not fixed in this pass):** close capture per tip cluster (one close board per slate today); the paths not
+exercised before 10-20 (scheduler `/simulate`, morning-line capture, referee polling); ParlayAPI returns success on zero
+items; scheduler health logging; P3 time budget on a 15-game night; Fliff stat map; Betr tier persistence; demons below 1 on
+estimated anchors; PrizePicks `snapshot_ts` = board time; `paper_results` single-survivor rule; certifier L11 should check
+every table; `stake_weight` in the ROI views; preseason rows in `live_state_history`; ParlayAPI credits used by another
+consumer (~45 / day); `kind` / `tier` NULL in `board_scored` (no reader).
