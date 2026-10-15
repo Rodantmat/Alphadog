@@ -553,6 +553,41 @@ jobs:
       # the board offers. Cost then tracks BOARD SIZE and NUMBER OF STATUS CHANGES - both bounded - not
       # the fitting cost, which is fixed and belongs overnight. This is also the only shape that scales
       # as the board grows with new goblins/demons and full ladders across four apps.
+      # WAIT FOR P2B (2026-10-15 full pass). On early-tip days the scheduler's P3 deadline (first tip - 30 min) falls before P3's
+      # own start (first tip - 29 min), so P3 was dispatched even while P2B was still building - and build_final_hp commits one
+      # prop at a time, so scoring could read a half-built final_hp (39 of 156 slates in 2026-27, opening night included). P3
+      # now waits, bounded, while P2B for this slate is still 'claimed'; it never waits past first tip - 10 min.
+      - name: Wait for P2B to finish this slate
+        if: ${{ steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        timeout-minutes: 22
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SLATE: ${{ steps.d.outputs.asof }}
+        run: |
+          python - <<'EOF'
+          import os, time, psycopg
+          from datetime import datetime, timedelta, timezone
+          slate = os.environ["SLATE"]
+          with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as c:
+              tip = c.execute("SELECT min(game_datetime_utc) FROM nba_calendar.slate_games WHERE game_date = %s", (slate,)).fetchone()[0]
+              deadline = min(tip - timedelta(minutes=10), datetime.now(timezone.utc) + timedelta(minutes=20))
+              while True:
+                  row = c.execute("SELECT status, claimed_at, finished_at FROM nba_control.pipeline_runs WHERE pipeline = 'P2B' AND run_key = %s",
+                                  (slate,)).fetchone()
+                  st = row[0] if row else None
+                  if st != "claimed":
+                      break
+                  if datetime.now(timezone.utc) >= deadline:
+                      print(f"::warning::P2B for {slate} is still running at the wait deadline ({deadline:%H:%M} UTC) - scoring proceeds on what is built")
+                      break
+                  print(f"  P2B {slate} still running (claimed {row[1]:%H:%M:%S} UTC) - waiting", flush=True)
+                  time.sleep(20)
+          if st is None:
+              print(f"::warning::no P2B run recorded for {slate} - scoring proceeds on the existing final_hp")
+          elif st != "claimed":
+              print(f"P2B {slate}: {st}" + ("" if st == "success" else " - ::warning:: P2B did not succeed"))
+          EOF
+
       - name: Availability delta (which teams changed since the day-before report)
         if: ${{ steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
         env:
