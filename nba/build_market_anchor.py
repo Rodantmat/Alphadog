@@ -344,6 +344,8 @@ def main():
     report["gate_pass"] = bool(ok_all)
     print("\nPOOLED coefficients (" + ", ".join(FEATS) + "):", flush=True)
     for sd, d in pooled.items():
+        if sd == "_iso":
+            continue
         for k, w in d.items():
             print(f"  {sd:<5} {k:<12} " + " ".join(f"{v:+.3f}" for v in w), flush=True)
     print(f"\nGATE (both directions): {'PASS' if ok_all else 'FAIL'}", flush=True)
