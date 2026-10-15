@@ -52,4 +52,5 @@ jobs:
           MA_L2: ${{ github.event.inputs.l2 }}
           MA_D0: ${{ github.event.inputs.d0 }}
           MA_D1: ${{ github.event.inputs.d1 }}
+          MA_SUB_TOL: ${{ github.event.inputs.sub_tol }}
         run: python -u nba/build_market_anchor.py
