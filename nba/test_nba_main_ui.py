@@ -538,8 +538,19 @@ def browser():
                 raise RuntimeError(f"dossier depth sections missing: {miss}")
             page.evaluate("[...document.querySelectorAll('#dossierBody .sectionLabel')].find(e => e.textContent.startsWith('Player Depth')).scrollIntoView()")
         step("02a_dossier_depth", dossier_depth)
-        for tag, head in (("02a1_line_profile", "Line Profile"), ("02a2_head_to_head", "Head-To-Head"), ("02a3_with_without", "With / Without"), ("02a4_tracking", "Skills")):
-            step(tag, lambda head=head: page.evaluate("(h => { const e = [...document.querySelectorAll('#dossierBody h3, #dossierBody .sectionLabel')].find(x => x.textContent.startsWith(h)); if (e) e.scrollIntoView(); })('" + head + "')"))
+        for tag, head in (("02a1_line_profile", "Line Profile"), ("02a2_head_to_head", "Head-To-Head"), ("02a3_with_without", "With / Without"), ("02a4_tracking", "Skills"),
+                          ("02a5_market_read", "Market Read"), ("02a6_movement_ladder", "Line Movement"), ("02a7_vs_market", "Vs The Market"), ("02a8_projection", "Box-Score Projection"),
+                          ("02a9_game_script", "Tonight's Script"), ("02a10_ramp_travel", "Availability"), ("02a11_defenders", "Opponent Defenders"), ("02a12_teammates", "Teammate Correlation")):
+            step(tag, lambda head=head: page.evaluate("(h => { const e = [...document.querySelectorAll('#dossierBody h3, #dossierBody .sectionLabel')].find(x => x.textContent.startsWith(h)); if (!e) throw new Error('missing ' + h); e.scrollIntoView(); })", head))
+
+        def prop_switch():
+            r = page.evaluate("""(() => { const sel = document.querySelector('#dossierBody .sharpSel'); if (!sel || sel.options.length < 2) return 'single';
+                const v = sel.options[1].value; sel.value = v; sel.dispatchEvent(new Event('change'));
+                const box = sel.closest('.sharpBox'); const shown = [...box.querySelectorAll('.sharpPane')].filter(p => p.style.display !== 'none').map(p => p.dataset.prop);
+                sel.scrollIntoView(); return shown.length === 1 && shown[0] === v ? 'ok' : 'bad ' + shown.join(','); })()""")
+            if r not in ("ok", "single"):
+                raise RuntimeError("prop selector did not swap panes: " + r)
+        step("02a13_prop_switch", prop_switch)
         step("02b_dossier_mid", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.45)"))
         step("02c_dossier_low", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.8)"))
 
