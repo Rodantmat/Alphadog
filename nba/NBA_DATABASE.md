@@ -861,6 +861,8 @@ later.***
 > `23,120` inserted against `13,216` deleted leaves exactly the **`9,904`** cells the rebuild
 > produced *(`§T23.10`)*, and the `3,639 → 9,904` prop-mapping fix is visible in the gap.
 >
+> 🆕 *(additional sweep `8`, pass 495, `§P495` `T23` `2026-09-21` `07:16Z`–`07:24Z` AS STATED)* The reply's own readouts of the repair: the re-scored chunk (January `15`) showed **`52,560` legs with `24,906` carrying a shift** — *"the exact counts yesterday's scoring had"* (re-scored at `07:14:47`); the rebuild is fitted on exactly the probabilities the scorer corrects, *"identical on all 5,283 PrizePicks legs tested"*; the scorer's phase rule was made identical to the builder's (*"60 disagreeing days → 0"*, proven locally over every day of both seasons before the compute was spent); and the repaired calibration's shifts averaged `0.09`–`0.15` log-odds per prop, up to `0.72` (about `17` pp at even odds).
+>
 > ⚠⚠ **`RULE 30` APPLIES AND IS VISIBLE IN THIS VERY TABLE.** *`n_live_tup` reports `board_scored` at
 > `12,798,976`. **An exact `count(*)` the same day returned `12,818,715`** *(`§T22.23`)* — **a
 > `19,739`-row disagreement, `0.15%`.*** 🔑 ***Both numbers are correct; only one of them is a count.***
