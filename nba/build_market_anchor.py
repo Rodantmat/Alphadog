@@ -201,7 +201,7 @@ def feature_row(r, s):
         if diff != 0:
             easier = (diff < 0) if s > 0 else (diff > 0)
             easy, hard = (1.0, 0.0) if easier else (0.0, 1.0)
-    return [1.0, x_m, d_dk, d_pp, 1.0 if has_dk else 0.0, 1.0 if has_pp else 0.0, easy, hard]
+    return [1.0, x_m, d_dk, d_pp, 1.0 if has_dk else 0.0, 1.0 if has_pp else 0.0, easy, hard, 0.0 if (has_dk or has_pp) else x_m]
 
 
 def fit_logistic(X, y, l2=1.0, iters=30):
