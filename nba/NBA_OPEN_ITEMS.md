@@ -19531,3 +19531,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `343` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T21` done (`16,094` sentences); next `T22`.
+
+## §P344 — PASS 344 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T22` · NO RESIDUE
+*Angle (as NEXT set it):* (j17) `§P131`'s method on `T22`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching; the owner's session cookies, headers and location fields in his paste not reproduced.
+- Tabulated in the shell before this line (the scan at pass 343's head): `T22` `515` of `832` sentences listed — the same `515` as `§P294` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **read whole** (the bounded figure triage: `15` with a figure not on file — `§P294`'s kinds: the PrizePicks payout mapping, out of scope and cross-referenced to `nba/PP_PAYOUT_FINDINGS.md`, one MLB row, one browser string — / `0` inside a longer number / `104` with every figure on file / `396` with none; `15 + 0 + 104 + 396 = 515`).
+- On file, by substance (each grepped before it was written, every hit read): `§P294`'s list — the chronological correction, the static-layer freeze (nine tables inside `2026-08-31`–`09-03`), the hardcoded `'2025-26'` insert, the preseason dates, the `17,902`-row double-encoded finding, the `GITHUB_TOKEN` lead, the `43,370` no-center legs, the `2,199,354`-leg history, the `game_types` payload, Chalkboard as app-only, `NBA_SWEEP_RUN_LOG.md`, the OWNER DECISION mark and the resume note. Judged, on `§P194`'s, `§P244`'s and `§P294`'s bases: the payout mapping and its pricing tables (out of scope), the MLB repair, the owner's step-by-step browser instructions, narration.
+- **No residue in `T22`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`). Commits not this sweep's since `ff569ff71` (pass 343's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P310` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `344` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`): `T1`–`T22` done (`16,926` sentences); next `T23`.
