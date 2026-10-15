@@ -41,7 +41,7 @@ function movementLadderBlock(m,games,legs,focus){if(!m||!(m.props||[]).length)re
       const f=b[labs[0]],t=b[labs[labs.length-1]];r['Line Move']=f&&t?sgn(t.line-f.line):'—';r['No-Vig Over%']=t?t.p_over+'%':'—';r['Hold']=t?t.hold+'%':'—';return r});
     const mvH=['Book'].concat(labs.map(labName)).concat(['Line Move','No-Vig Over%','Hold']);
     const sv=season.map(g=>propGameValue(g,p.prop)),tv=l10.map(g=>propGameValue(g,p.prop));
-    const offers={};(p.dfs_lines||[]).forEach(d=>{offers[d.line]=d.offers.map(o=>appLabel(o.app)+(o.line_type&&o.line_type!=='regular'?' '+lineLabel(o.line_type):'')+(o.multiplier?' '+o.multiplier+'x':'')).join(', ')});
+    const offers={};(p.dfs_lines||[]).forEach(d=>{offers[d.line]=[...new Set(d.offers.map(o=>appLabel(o.app)+(o.line_type&&o.line_type!=='regular'?' '+lineLabel(o.line_type):'')+(o.multiplier?' '+o.multiplier+'x':'')))].join(', ')});
     const lines=[...new Set((p.ladder||[]).map(x=>x.line).concat((p.dfs_lines||[]).map(d=>d.line)))].sort((a,b)=>a-b);
     const ld=lines.map(line=>{const x=(p.ladder||[]).find(y=>y.line===line)||{};const r={'Line':line};labs.forEach(l=>{r['Mkt Over% '+labName(l)]=x[l]!=null?x[l]+'%':'—'});
       const d=(p.dfs_lines||[]).find(y=>y.line===line);if(!x[labs[labs.length-1]]&&d&&d.p_over!=null)r['Mkt Over% '+labName(labs[labs.length-1])]=d.p_over+'% (interp.)';
