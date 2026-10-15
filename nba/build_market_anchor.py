@@ -233,12 +233,18 @@ def fit_params(X, y, meta, l2, min_n):
     return params
 
 
-def predict(params, X, meta):
+def predict(params, X, meta, iso=True):
     out = np.empty(len(meta))
     for i, m in enumerate(meta):
         ps = params.get(m[2]) or {}
         w = ps.get(m[1]) or ps.get("_pooled")
         out[i] = sigmoid(float(np.dot(X[i], w))) if w is not None else m[3]
+    if iso and params.get("_iso"):
+        sides = np.array([m[2] for m in meta])
+        for side, knots in params["_iso"].items():
+            ms = sides == side
+            if ms.any():
+                out[ms] = apply_iso(out[ms], knots)
     return out
 
 
