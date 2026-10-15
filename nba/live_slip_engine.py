@@ -1400,7 +1400,13 @@ EDGE_NW_LAGS = 7
 # §31s recertification (2026-10-07, slips rebuilt on tier_map_legs_sel = certified map + whole-number legs): pooled thinning
 # -9.16 pp (independence -9.37, gap 0.21 < the 1.0 pp switch rule; 2024-25 -8.48, 2025-26 -9.63; 6,196 slips, ROI +86.8%).
 # The constant follows the certified system it monitors: -0.0899 -> -0.0916 (0.08 pp from the -9.24 the boundaries were calibrated at).
-EDGE_DELTA = float(os.environ.get('LS_EDGE_DELTA', '-0.0916'))
+# 2026-10-15 full pass (R1): -0.0916 was solved on the PRE-10-10 Flex payouts (alternates paid FLEX x factor product) and on the
+# market-inclusive tables. Re-solved on PrizePicks' real Flex tiers (§31ad), the market-free twin the live engine is measured
+# against (live_backtest_suffix), the 6 daily strategies (demons cap 0): pooled thinning -6.49 pp (independence -6.75, gap
+# 0.26 < 1.0 -> thinning stands; 2024-25 -4.06, 2025-26 -8.60; 4,633 slips, ROI +49.7%; run 38798523913). The edge is thinner
+# than the old constant said: the monitor now CONFIRMS later and ALARMS sooner, as it should. Boundaries (z 3.28 / -3.09) are
+# unchanged - they were calibrated as false-fire rates around whatever break-even, by block bootstrap.
+EDGE_DELTA = float(os.environ.get('LS_EDGE_DELTA', '-0.0649'))
 
 
 def edge_daily_strategies():
