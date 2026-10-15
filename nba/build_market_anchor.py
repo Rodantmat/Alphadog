@@ -419,7 +419,9 @@ def main():
             worst = max(groups, key=lambda g: abs(g[5]))
         res["subgroups"] = sorted(groups, key=lambda g: -abs(g[5]))[:15]
         res["by_class"] = {ac: reliability(pt[ac_t == ac], yt[ac_t == ac]) for ac in ANCHOR_CLASSES if (ac_t == ac).any()}
-        sub_ok = worst is None or abs(worst[5]) <= 0.05
+        sub_tol = float(os.environ.get("MA_SUB_TOL") or "0.05")      # recorded in the written report
+        sub_ok = worst is None or abs(worst[5]) <= sub_tol
+        res["sub_tol"] = sub_tol
         gate = ll_new < ll_raw and sub_ok and (not top_new.any() or abs(pt[top_new].mean() - yt[top_new].mean()) < abs(raw[top_raw].mean() - yt[top_raw].mean()))
         print(f"  sub-groups at shown >= 0.60 (n >= 1,000): {len(groups)} checked, worst {worst} -> {'OK' if sub_ok else 'FAIL'}", flush=True)
         for g in res["subgroups"][:8]:
