@@ -16,6 +16,7 @@ history's exact shape). History: MA_D0..MA_D1. One set per day: a date is delete
 Env: DATABASE_URL, MA_DATE or MA_D0 / MA_D1, MA_LABEL (default window).
 """
 import json
+import math
 import os
 import sys
 from datetime import date, timedelta
