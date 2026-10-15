@@ -53,10 +53,12 @@ export async function apiPlayerProfile(sql, cfg, url, version) {
     nextGame = { game_id: g.game_id, game_date: g.game_date, game_time_utc: g.game_time_utc, is_home: isHome, opponent_team_name: isHome ? g.away_name : g.home_name,
       opponent_abbr: isHome ? g.away_abbr : g.home_abbr, arena: g.arena_name, arena_city: g.arena_city };
     const ctxP = C.gameContext(sql, cfg, { date: g.game_date, game: g, teamId, position: info.position });
-    [nextCtx, depth] = await Promise.all([ctxP,
-      D.bettorDepth(sql, { pidT, beforeDate: g.game_date, teamId, game: g, oppAbbr: nextGame.opponent_abbr, injuries: ctxP.then(c => c && c.injuries) })]);
+    [nextCtx, depth, sharp] = await Promise.all([ctxP,
+      D.bettorDepth(sql, { pidT, beforeDate: g.game_date, teamId, game: g, oppAbbr: nextGame.opponent_abbr, injuries: ctxP.then(c => c && c.injuries) }),
+      S.sharpDepth(sql, cfg, { pidT, date: g.game_date, teamId, game: g, names, legs: legs.filter(l => l.official_date === g.game_date), games, marketSummary: ctxP.then(c => c && c.market_summary) })]);
   } else {
-    depth = await D.bettorDepth(sql, { pidT, beforeDate: today, teamId, game: null, oppAbbr: null, injuries: null });
+    [depth, sharp] = await Promise.all([D.bettorDepth(sql, { pidT, beforeDate: today, teamId, game: null, oppAbbr: null, injuries: null }),
+      S.sharpDepth(sql, cfg, { pidT, date: today, teamId, game: null, names, legs, games, marketSummary: null })]);
   }
   const a = avail[0];
   const availability = a ? { availability_status: a.status, reason: a.reason, as_of: new Date(a.snapshot_ts).toISOString(), report_date: a.game_date }
