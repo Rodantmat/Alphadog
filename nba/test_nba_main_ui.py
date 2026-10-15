@@ -598,7 +598,8 @@ def browser():
         step("06_profile", profile)
         def profile_depth():
             heads = page.evaluate("[...document.querySelectorAll('#playerProfileBody h3, #playerProfileBody .sectionLabel')].map(e => e.textContent.trim())")
-            need = ["Line Profile — Every Prop", "Minutes & Role", "Usage & Efficiency", "Career — Season By Season", "Skills — Player Tracking", "Player Depth — Form, Role, Skills, Matchup"]
+            need = ["Line Profile — Every Prop", "Minutes & Role", "Usage & Efficiency", "Career — Season By Season", "Skills — Player Tracking", "Player Depth — Form, Role, Skills, Matchup",
+                    "Sharp Read — Market, Projection, Script, Matchup", "Vs The Market", "Box-Score Projection", "Form Signal", "Game Script Splits", "Foul Trouble", "Teammate Correlation"]
             miss = [n for n in need if not any(h.startswith(n) for h in heads)]
             if miss:
                 raise RuntimeError(f"profile depth sections missing: {miss}")
