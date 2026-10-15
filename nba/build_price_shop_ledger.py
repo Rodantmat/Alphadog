@@ -183,7 +183,7 @@ def main():
         conn.execute(stmt)
     conn.commit()
     c = cfg(conn)
-    margin = float(c.get('margin_pp', 0.0916))
+    margin = float(c.get('margin_pp', 0.0649))
     ud_ref = float(c.get('ud_ref_per_leg', DEFAULT_CFG['ud_ref_per_leg']))
     cell_margin = float(c.get('cell_margin', DEFAULT_CFG['cell_margin']))
     # SLEEPER (2026-10-09, owner: "be sure [Sleeper's rule] is replicated to NBA"): a Sleeper slip pays the PRODUCT of the
