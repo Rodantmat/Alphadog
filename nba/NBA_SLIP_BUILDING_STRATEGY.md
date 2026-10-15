@@ -2775,6 +2775,23 @@ references. A plan strategy still stakes only if its own live state allows (a re
 no plan runs — the normal portfolio, which beats every alternative in both post-break windows. Small-sample caution: 14 slate
 days in all, two seasons; the plan is chosen because it is the only shape positive and even in both seasons, not for its size.
 
+### 31af. Caps on the true payouts, the way out of red, and the models that did not transfer (2026-10-15; owner: "ground the decisions on data, online research and debug. Do not cancel or cut anything, just adjust for the best possible outcome. Also keeping improving logics, looking at other models to improve ROI")
+**Caps (live, `live_slip_engine.STRATEGIES`).** Rule written before the run: a cap rises one slot at a time while the NEXT slip
+(the next distinct slip the certified engine builds) is ≥ +15% in BOTH seasons with a pooled day-blocked 95% lower bound > 0
+(market-free twin, true Flex tiers, final-7 out). A_wsteals_5flex 6 → 9, A_regular_5power 1 → 2, A_wrebounds_4flex 1 → 3,
+C_wstocks_4flex 1 → 2; A_core_3power and D_points_3power unchanged (their next slot fails). Daily portfolio 2024-25 / 2025-26:
++663 → +1,150 / +1,641 → +2,478 units, ROI +28.5 → +33.8% / +71.0 → +73.1%, net / max drawdown better in both seasons.
+EDGE_DELTA follows (−0.0662, pooled thinning on 6,789 slips). The small-slate rule (≤ 4 games → cap 1), week-2, final-7, All-Star
+plans and the 36-slip daily ceiling are unchanged and sit on top.
+**C_wstocks_4flex** is kept: positive both seasons, adds profit and lowers risk per unit (daily profit −0.08 correlated with
+D_points_3power); §31ad's numbers were corrected (true +1.5% / +52.5% at cap 1); at cap 2 +19.0% / +48.5%, pooled CI > 0.
+**Release from red.** A red strategy keeps building and grading its slips as shadows; `release_record` (the backtest table when it
+holds ≥ 40 days of the season, else the live ledger) gives P5 a real walk-forward record, and a positive day-blocked lower bound
+over ≥ 40 days releases it to paper (the paper gate still decides staking). Cap-0 reds return at RELEASE_CAP 1.
+**Tested, not adopted (fail "better in both seasons"):** half-Kelly and inverse-variance stake weights (fit on one season, worse
+than flat on the other); leg orderings by the market-anchored honest probability inside the cells and by a Flex-aware demon value
+(each trades one season for the other). Detail and every number: ledger "THE DECISIONS, GROUNDED".
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
