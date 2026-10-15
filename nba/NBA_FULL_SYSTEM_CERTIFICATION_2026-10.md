@@ -1498,3 +1498,50 @@ red, the rest paper with their caps).
   without games = his games for the team; lineups present iff the league data has them; both teams' form; profile depth around the
   next game; `/run` no-op and the 404 route list; the browser must render every depth section on dossier and profile. Default replay
   64/64 (run 38664882588); full regular-season slate `date=2026-03-10` 68/68 (run 38665642842, incl. screenshots of each new block).
+
+#### THE SHARP READ — WHAT EXPERIENCED PROP BETTORS LOOK AT (owner 2026-10-14 20:17 PT: "Complete pass again … see all the possible factors you can add, that will add differential, uniqueness, what the bettors, the best and most experienced ones look for … factors and information that will make it complete and over the top")
+- **New server module `nba/main_ui/sharp.js` + client part `nba/main_ui/client/sharp.js.txt`** (served appended to the dossier part;
+  both the dossier and the Player Profile render it under "Sharp Read — Market, Projection, Script, Matchup"). All public,
+  bettor-facing information; no model internals. Tunables: new `nba_config.classification_config['nba_main_ui'].sharp` (labels,
+  sample sizes, blowout margin 15, margin sd 12, big-favorite 8, correlation min 10 games, rotation sizes, projection weights,
+  form-z window, foul cut, altitude flag, static team geography — arena coordinates, IANA time zone, city elevation).
+- **Blocks:** (1) **Market Read** — the books' no-vig ladder per prop per snapshot (`board_snapshots`, sportsbooks only, both sides
+  de-vigged, main + alternate merged), the fair 50/50 line per snapshot and its move, the standard DFS line vs fair, the market's
+  over % at that line; one-line markets (blocks / steals 0.5) show the line with its over %. (2) **Line Movement & Ladder** — each
+  book's main line and over / under prices per snapshot (early / pre-game / close), hold; every half-point line with the market's
+  over % next to his own season / L10 over % and the DFS offers at that line (goblin / demon / UD multipliers); a prop selector.
+  (3) **Vs The Market** — his last 20 games per prop against the closing fair line (`market_consensus`, book-weighted): over-under
+  record, L5, average actual − line, how the market re-rated him. (4) **Box-Score Projection** — per-minute rate (50 % L10 / 50 %
+  season) × expected minutes × tonight's pace factor (both teams' L10 pace vs his team's season pace), vs the standard line and the
+  market fair line, plus points by team share × implied team total; while a player ramps back from an absence the minutes are his
+  since-return minutes. (5) **Form Signal** — L5 vs season in game-SD units (z), minutes first; small seasons say why it is empty.
+  (6) **Tonight's Script** — his team's spread, total, implied team total, win %, blowout % either way (normal margin model,
+  labelled approximate). (7) **Game Script Splits** — his last 100 games by final margin (15+ win / within / 15+ loss), pregame
+  spread (big favorite / small favorite / underdog), pregame total (above / below his median), team score; correlations of |margin|
+  with his minutes and of the total / team points with the prop (pregame spreads / totals from `game_lines_snapshots`, median of
+  books). (8) **Foul Trouble** — PF / game, PF / 36, % of games with 4+ / 5+ PF, foul-outs, minutes in foul-trouble games.
+  (9) **Availability & Minutes Ramp** — team games played / missed this season (current team; traded players from the join date),
+  every absence of 2+ games, current out streak, minutes / points since the latest return vs before, the first games back.
+  (10) **Travel & Fatigue** — both teams: last game and city, rest, miles in, time-zone change, altitude flag, road-trip / home-stand
+  game number, games and miles in the last 7 days. (11) **Opponent Defenders** — the opponent's rotation by minutes this season
+  (players whose latest game was for them): size, STL / BLK per game and per 36, PF, DREB, DARKO D-DPM (+ = better; the internal
+  `defender_ratings` were NOT used — their sign does not read cleanly as a public metric, e.g. Wembanyama +17 next to Gobert −9.7),
+  tonight's injury status. (12) **Teammate Correlation** — Pearson r of his PTS / REB / AST / 3PM / PRA with each top-8 teammate's
+  in shared games this season (stack / avoid).
+- **Data checked before building:** `game_lines_snapshots` covers every regular-season month of both seasons (spread / total per
+  past game), `market_consensus` covers ~300+ players a day for both seasons (vs-market history), `board_snapshots` holds
+  routine / window / close (routine only PP / UD / DK / Sleeper); the arena table has no time zone / altitude (geography therefore
+  in config); market feeds name players without accents / periods (`Nikola Jokic`, `Jaren Jackson Jr`) — the module queries the
+  board name and the accent-free name.
+- **Certified (v1.3.3):** C36–C46 reproduce the sharp read from the database — C37 fair line + ladder recomputed from
+  `board_snapshots` (independent no-vig in Python), C38 every book's main-line prices, C39 the vs-market fair line from
+  `market_consensus` + the box-score actual, C40 his game count and the first game's team score / margin / pregame spread, C41
+  tonight's spread side and blowout arithmetic, C42 games played / missed, C43 both teams' last game, C44 the opponent rotation,
+  C45 teammate r == Postgres `corr()`, C46 the profile's sharp read; C22 now checks the dossier part = dossier + sharp source bytes;
+  the browser requires every sharp section, screenshots each and checks the prop selector swaps panes. Default replay 89/89 (run
+  38680529328, Josh Hart 2026-06-13); `date=2026-03-10` 88/88 (run 38680225270, Tatum's first week back: 62 games missed, ramp shown,
+  projection on his since-return 27.1 minutes). Review fixes in this pass: the market is compared with the standard DFS line only
+  (goblin / demon lines live in the ladder), offers de-duplicated, small samples explained instead of hidden, ramp-aware minutes.
+- **What still needs NEW data (not in the database):** who guards him (per-possession matchup data), quarter / half splits
+  (play-by-play), public betting % / handle and sharp-money splits, confirmed starting lineups at tip, real-time news / beat
+  reports, closing-line value of the DFS line itself at lock.
