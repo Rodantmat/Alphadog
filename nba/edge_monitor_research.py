@@ -50,7 +50,7 @@ def exp_payout(legs_p, fprod, k, structure, alt=False):
     for h, q in enumerate(dist):
         base = (ENG.POWER[k] if h == k else 0.0) if structure == 'power' else ENG.FLEX.get((k, h), 0.0)
         if base > 0:
-            e += q * ENG.compress(base * fprod)
+            e += q * (ENG.flex_alt_payout(k, k - h, fprod) if (structure != 'power' and alt) else ENG.compress(base * fprod))
     return e
 
 
