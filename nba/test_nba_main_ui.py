@@ -317,6 +317,17 @@ def api_checks(conn, cfg):
                 bad49.append((s_.get("strategy"), "record", want_rec, got_rec))
     check("C49 certified slips show their backtest: cell rates == edge_monitor_ref, strategy record == backtest tables",
           not bad49 and (n49 or not [x for x in sl if x.get("source_key") == "prizepicks"]), f"{n49} legs, {nrec} records checked; bad {bad49[:3]}")
+    # C50 (2026-10-15): every PrizePicks slip says PLAY $x or SKIP - reason; PLAY carries the dollar stake = unit x stake_weight
+    su = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='stake_unit'").fetchone()
+    su = su[0] if su else {}
+    unit = float(su.get("unit_usd", 1)); bad50 = []
+    for s_ in [x for x in sl if x.get("source_key") == "prizepicks"]:
+        lab, usd = str(s_.get("stake_label") or ""), s_.get("play_usd")
+        w = 1.0 if s_.get("stake_weight") is None else float(s_["stake_weight"])
+        if (usd is not None) != lab.startswith("PLAY") or (usd is not None and abs(float(usd) - round(unit * w, 2)) > 0.005) \
+           or not (lab.startswith(("PLAY", "SKIP")) or lab == "backtest replay"):
+            bad50.append((s_.get("strategy"), s_.get("status"), lab, usd))
+    check("C50 slips say PLAY $ (unit x stake weight) or SKIP with a reason", not bad50, f"unit ${unit:.2f}; bad {bad50[:3]}")
     ids = [r["final_board_row_id"] for r in rows if r["source_key"] == "prizepicks"][:6]
     code, g, t = curl("/api/slips/generate", body={"leg_ids": ids}); save_sample("generate", g)
     gs = g.get("generated_slips") or []
