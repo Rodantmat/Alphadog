@@ -141,7 +141,9 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     final_hp_raw: num(r.final_hp),
     probability_confidence_0_100: conf,
     baseline_hp_0_100: r1(num(r.baseline_hp) * 100),
-    calibration_shift_pp: r1(num(r.cal_shift) * 100),
+    // cal_shift is stored on the log-odds scale (final = sigmoid(logit(baseline) + cal_shift)) - show the real move in points
+    calibration_shift_pp: r1((num(r.final_hp) - num(r.baseline_hp)) * 100),
+    calibration_shift_logit: num(r.cal_shift),
     edge_0_100: r1(num(r.edge) * 100),
     interpolated: !!r.interpolated,
     line_type: lt,
