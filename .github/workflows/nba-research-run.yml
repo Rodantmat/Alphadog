@@ -1,0 +1,43 @@
+name: NBA Research Run (read-only script)
+
+# Runs one READ-ONLY research / audit script under nba/ (name must start with research_ or audit_) with optional KEY=VALUE env
+# pairs. Research scripts never write production tables; this workflow commits nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: "script under nba/ (research_*.py or audit_*.py)"
+        required: true
+      env:
+        description: "optional env pairs, space separated: KEY=VALUE KEY2=VALUE2"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy scipy pandas
+      - name: Run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SCRIPT: ${{ github.event.inputs.script }}
+          EXTRA_ENV: ${{ github.event.inputs.env }}
+        run: |
+          set -euo pipefail
+          [[ "$SCRIPT" =~ ^(research|audit)_[a-z0-9_]+\.py$ ]] || { echo "refused: $SCRIPT"; exit 1; }
+          for kv in $EXTRA_ENV; do
+            [[ "$kv" =~ ^[A-Z][A-Z0-9_]*=[A-Za-z0-9_.,:+-]*$ ]] || { echo "refused env pair: $kv"; exit 1; }
+            export "$kv"
+          done
+          python -u "nba/$SCRIPT"
