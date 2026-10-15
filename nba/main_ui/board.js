@@ -154,7 +154,13 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     probability_confidence_0_100: conf,
     baseline_hp_0_100: r1(num(r.baseline_hp) * 100),
     // cal_shift is stored on the log-odds scale (final = sigmoid(logit(baseline) + cal_shift)) - show the real move in points
-    calibration_shift_pp: r1((num(r.final_hp) - num(r.baseline_hp)) * 100),
+    calibration_shift_pp: r1((num(r.model_hp ?? r.final_hp) - num(r.baseline_hp)) * 100),
+    // the market-anchored probability is the main number; the model's own number and the sportsbook's are shown beside it
+    model_hp_0_100: r.model_hp == null ? null : r1(num(r.model_hp) * 100),
+    model_score_0_100: r.model_score == null ? null : r1(r.model_score),
+    market_hp_0_100: r.market_hp == null ? null : r1(num(r.market_hp) * 100),
+    hp_anchor: r.hp_anchor || null, dk_line: num(r.dk_line), dk_p_over_0_100: r.dk_p == null ? null : r1(num(r.dk_p) * 100), pp_line: num(r.pp_line),
+    hp_fit_set: r.true_fit || null, hp_is_market_anchored: r.true_fit ? 1 : 0,
     calibration_shift_logit: num(r.cal_shift),
     edge_0_100: r1(num(r.edge) * 100),
     interpolated: !!r.interpolated,
