@@ -19836,3 +19836,14 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `367` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T45` done (`36,480` sentences); next `T46`.
+
+## §P368 — PASS 368 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T46` · NO RESIDUE
+*Angle (as NEXT set it):* (h18) `§P131`'s method on `T46`, with pass 361's identifier check.
+- Tabulated in the shell before this line (the scan at pass 367's head): `T46` `94` of `174` sentences listed — the same `94` as `§P318` listed, the two lists diffed in the shell (`0` dropped, `0` added). **All `94` read whole**. The bounded figure triage: `2` with a figure not on file — two source-link ids, as at passes `268` and `318` — / `0` inside a longer number / `31` with every figure on file / `61` with none (`2 + 0 + 31 + 61 = 94`).
+- The identifier check: `A_wsteals_5flex`, `B_demon_3flex`, `B_demon_5flex` and `built_at` (and the time-zone name) all return hits in the twelve. The `05:16Z` reply's closing source list, read to its end, names Sportico and RotoWire, both on file.
+- On file, by substance (each grepped before it was written, every hit read): `§P318`'s list — `§T46.9`; the regular season untouched (`478,900` / `478,580` / `475,060`; the `48` certified rows); the confidence fit's exclusion of postseason legs; the post-backfill book (`+3%` over `96` nights; `298` slips at `−12%`); the earlier figures withdrawn; the three strategies left with nothing to bet; the playoff production finding (`57% / 62% / 64%`; the `58%` cut-off); Playoff Unders; strategies `§31w` / `§31x` / `§31y`; the honest walk-forward (`26` vs `~12`); the computed Flex edge (`+25%` / `+38%`); the withdrawn Underdog `+34%`; the postseason game-key defect. Judged, on `§P168`'s, `§P218`'s, `§P268`'s and `§P318`'s bases: narration, the session's notices, research-source links, COMPASS item numbers.
+- **No residue in `T46`.**
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`; `§P357`'s strike-correction; `§P361`'s residue; `§P362`'s writes; `§P367`'s strike-correction). Commits not this sweep's since `a584b4535` (pass 367's census; the log read at this pass's head and fetched again as the last call before this patch, after the final draft): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P356` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `368` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY`, and `§P362`'s seven writes): `T1`–`T46` done (`36,654` sentences); next `T47`.
