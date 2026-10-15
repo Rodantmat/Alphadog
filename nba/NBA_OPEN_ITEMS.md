@@ -19228,3 +19228,13 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `314` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`3` complete, each NOT clean. ⏳ **Additional sweep `4`** under way, **not clean** (ledger strike-corrections at passes `284`, `287` and `310`; residue `§T28.5`): `T1`–`T42` done (`36,071` sentences); next `T43`.
+
+## §P315 — PASS 315 (`2026-10-15`): ADDITIONAL SWEEP `4` — `T43` · NO RESIDUE
+*Angle (as NEXT set it):* (g16) `§P131`'s method on `T43`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 314's head): `T43` `28` of `41` sentences listed, no memory dump among them — the same count as at pass 264's head, the two lists diffed in the shell (`0` dropped, `0` added). **All `28` read whole** (the bounded figure triage: `0` / `0` / `0` / `28` with none; every line is a step announcement).
+- On file, by substance (each grepped before it was written, every hit read, in `§T43.2`'s round-2 table): `§P165`'s, `§P215`'s and `§P265`'s lists — the whole-number prune, the replay `asof` plumbing, the grader's team check, the Underdog budget, the NBA-owned PrizePicks producer, injury names through the daily roster, the gzipped dated ladder (`.json.gz`), the market-free table and `bt_table()`, the `edge_monitor_ref` rebuild and its `built_at` / `calibrated_at`, the combos builder's component pickles and the failed components / combos / periods step. Judged, on their bases: narration, and the build chat's internal helper names (`team_hist`, `_pmap`).
+- **No residue in `T43`.**
+- **Additional sweep `4` stays not clean** (the ledger strike-corrections of passes `284`, `287` and `310`; `§T28.5`). Commits not this sweep's since `f16a10e76` (pass 314's census; the log read at this pass's head and fetched again as the last call before this patch): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P310` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `315` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`3` complete, each NOT clean. ⏳ **Additional sweep `4`** under way, **not clean** (ledger strike-corrections at passes `284`, `287` and `310`; residue `§T28.5`): `T1`–`T43` done (`36,112` sentences); next `T44`.
