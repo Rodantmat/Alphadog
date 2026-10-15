@@ -17,6 +17,9 @@ WHAT THIS DOES, per board leg (player, prop, line L, side s):
           (easy / hard = the leg's line is easier / harder than the standard line for its side: goblin- / demon-like)
   true_hp = sigmoid(z), fitted per (side, prop) by L2-regularised logistic regression (IRLS), pooled-by-side fallback,
           then a monotone (isotonic) stage-2 map per side fitted on the same fit set (bends the thin top tail the logistic cannot).
+          2026-10-15 (independent audit): + k_none*x_none (the model's own slope on legs with NO market anchor) and the
+          isotonic stage per (side, anchor class: dk+pp / dk / pp / none) with the side's map as fallback; the gate also
+          requires every sub-group (side x class, side x prop, side x class x prop; 1,000+ legs at shown >= 0.60) within 5 points.
 
 FIT SETS (as-of, no leakage, the recalibration-map convention): '2024-25' and '2025-26' (each fit on its own season and APPLIED
 TO THE OTHER season's history) and 'POOLED' (both seasons, for live dates). GATE: written only if the out-of-sample log-loss
