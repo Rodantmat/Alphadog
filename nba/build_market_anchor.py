@@ -294,6 +294,7 @@ def fit_params(X, y, meta, l2, min_n):
     stage1 = predict(params, X, meta, iso=False)
     params["_iso"] = {side: iso_knots(stage1[sides == side], y[sides == side]) for side in ("Over", "Under")}
     classes = np.array([m[4] for m in meta])
+    dates = np.array([m[0] for m in meta])
     for side in ("Over", "Under"):
         for ac in ANCHOR_CLASSES:
             mc = (sides == side) & (classes == ac)
