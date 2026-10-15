@@ -64,6 +64,35 @@ def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
     daily = {n: s for n, s in STRATEGIES.items() if s[3] > 0 and n not in ROTATION_ONLY and n not in ALLSTAR_ONLY}
+
+    # ---- CAP SLOTS: the marginal slip k = cap+1 .. cap+3 of each daily strategy (the next-best distinct slip the certified
+    # engine builds), per season and pooled with a day-blocked bootstrap interval. Rule written before the run: a cap rises one
+    # slot at a time only while the NEXT slot is >= +15% in BOTH seasons and its pooled 95% lower bound is > 0.
+    print("== CAP SLOTS - the next slips beyond each live cap (market-free twin, final-7 out) ==", flush=True)
+    for name, (comp, size, structure, cap, *_r) in daily.items():
+        tbl = bt_table(conn, name)
+        for k in range(cap + 1, cap + 4):
+            rows = conn.execute(f"""SELECT season, game_date, sum(stake), sum(payout) FROM {tbl} WHERE composition=%s AND size=%s
+                                    AND structure=%s AND k=%s AND phase<>'final7' GROUP BY 1, 2""", (comp, size, structure, k)).fetchall()
+            by = defaultdict(list)
+            for s, _d, st, pay in rows:
+                by[s].append((float(st), float(pay)))
+            if not by:
+                continue
+            parts = []
+            for s in sorted(by):
+                st = sum(a for a, _ in by[s]); pay = sum(b for _, b in by[s])
+                parts.append(f"{s} {pay / st - 1:+6.1%}")
+            allr = [x for s in by for x in by[s]]
+            lo, hi = boot_ci(allr, 4000)
+            st = sum(a for a, _ in allr); pay = sum(b for _, b in allr)
+            print(f"  {name:<20} k={k}  " + "  ".join(parts) + f"  pooled {pay / st - 1:+6.1%} [{lo:+6.1%}, {hi:+6.1%}]", flush=True)
+
+    # PR_CAPS (e.g. "A_wrebounds_4flex:3,C_wstocks_4flex:2"): measure the portfolio at candidate caps
+    over = {kv.split(':')[0]: int(kv.split(':')[1]) for kv in os.environ.get('PR_CAPS', '').split(',') if ':' in kv}
+    if over:
+        daily = {n: (s[:3] + (over.get(n, s[3]),) + tuple(s[4:])) for n, s in daily.items()}
+        print(f"\nCAPS UNDER TEST: {over}", flush=True)
     prof = defaultdict(lambda: defaultdict(float))     # (season) -> {(day, strat): profit}
     stake = defaultdict(lambda: defaultdict(float))
     days = defaultdict(set)
