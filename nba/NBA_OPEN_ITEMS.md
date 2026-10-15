@@ -20124,3 +20124,15 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `390` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`5` complete, each NOT clean. ⏳ **Additional sweep `6`** under way, **not clean** (`§P383`'s sources, `§P384`'s season tables, `§P385`'s two, `§P386`'s coach changes, `§P387`'s, `§P388`'s and `§P389`'s sources, `§P390`'s test): `T1`–`T18` done (`12,993` sentences); next `T19`.
+
+## §P391 — PASS 391 (`2026-10-15`): ADDITIONAL SWEEP `6` — `T19` · NO RESIDUE
+*Angle (as NEXT set it):* (e19) `§P131`'s method on `T19`, with pass 361's identifier check and the catches of passes 383–390, each grepped outside the ledgers.
+- Tabulated in the shell before this line (the scan at pass 390's head): `T19` `178` of `537` sentences listed — the same `178` as `§P341` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`178` read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `25` with every figure on file / `153` with none; `0 + 0 + 25 + 153 = 178`).
+- The identifier check (pass 361's catch), counted with `wc`: `0` names with `0` hits.
+- The source-name check (passes 383–384's catches, each name grepped outside the ledgers): Cleaning the Glass and Ben Falk (garbage-time filtering), `swar/nba_api` and its Issue #155 — all on file.
+- On file, by substance (each grepped before it was written, every hit read outside the ledgers): `§P341`'s list — MLB's `~130` deployed workers against `116` registry rows and `team_aliases`' `157` rows, the dead stubs (`~5.3 KB`), `blowout_model`'s ratios (`1.0333`, `0.8748`), the `4,319` coach's-decision rows — plus the four-way rule and `board_tiers_ud`, `build_board_tiers_v2.py`, the `42,600`-ladder validation and `group_key`, the play-type `3,364` / `3,282` discrepancy, `generate_wrangler_configs_nba.py` never built. Judged, on `§P191`'s, `§P241`'s, `§P291`'s and `§P341`'s bases: narration, the owner's exchange about the forgotten work, the session's account of its compacted context, per-transcript progress tables and pass counts, the extraction scripts' scratch paths.
+- **No residue in `T19`.**
+- **Additional sweep `6` stays not clean** (`§P383`–`§P390`'s writes). Commits not this sweep's since `7c7a95b4b` (pass 390's census; the log read at this pass's head and fetched again as the last call before this patch, after the final draft): `0`. `T48-10` checked at this pass's head: no main-UI commit since the ones `§P370`'s update named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `391` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`5` complete, each NOT clean. ⏳ **Additional sweep `6`** under way, **not clean** (`§P383`'s sources, `§P384`'s season tables, `§P385`'s two, `§P386`'s coach changes, `§P387`'s, `§P388`'s and `§P389`'s sources, `§P390`'s test): `T1`–`T19` done (`13,530` sentences); next `T20`.
