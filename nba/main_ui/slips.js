@@ -209,6 +209,37 @@ async function replaySlips(sql, cfg, slate) {
   return { source: "replay_backtest", suffix, pp, ud };
 }
 
+// THE BACKTEST BEHIND EACH CERTIFIED SLIP (2026-10-15; owner: "be sure it also reflects the backtest"). The board's hit
+// probability is the market-anchored number for ANY leg; a certified slip's legs come from cells whose hit rate the backtest
+// measured and certified, and the strategy audit (nba/audit_strategy_honest_hp.py) showed that measured cell rate tracks what
+// the strategies' legs hit (within 3-5 points a season) while a per-leg board number does not see the cell selection. So each
+// PrizePicks engine slip also carries: per leg the certified cell rate (nba_score.edge_monitor_ref, the edge monitor's own
+// reference), and per slip the strategy's certified leg hit rate (live_strategy_calib.cert_leg_hit) and its backtest record by
+// season (the market-free twin the live engine calibrates against, at the strategy's live cap).
+async function backtestContext(sql, cfg, names) {
+  const cells = await q(sql, "SELECT cell, tier, side, p, n FROM nba_score.edge_monitor_ref");
+  const cellRate = new Map(cells.map(r => [`${r.cell}|${r.tier}|${r.side}`, { p: Number(r.p), n: Number(r.n) }]));
+  const calib = await q(sql, "SELECT strategy, cert_leg_hit FROM nba_score.live_strategy_calib");
+  const certHit = new Map(calib.map(r => [r.strategy, r.cert_leg_hit == null ? null : Number(r.cert_leg_hit)]));
+  const sfxRow = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = $1", [cfg.ui.replay_backtest.pp_table_suffix_config]))[0];
+  const sfxCfg = sfxRow ? (typeof sfxRow.config_json === "string" ? JSON.parse(sfxRow.config_json) : sfxRow.config_json) : {};
+  const suffix = String(sfxCfg.suffix || "").replace(/[^a-z0-9_]/gi, "");
+  const states = new Map((await q(sql, "SELECT strategy, live_cap FROM nba_score.live_strategy_state")).map(s => [s.strategy, Number(s.live_cap)]));
+  const record = new Map();
+  for (const name of names) {
+    const spec = (cfg.ui.pp_strategies || {})[name];
+    if (!spec) continue;
+    const cap = Math.max(1, states.get(name) || 0);
+    const table = `nba_score.slip_engine_slips${suffix}${/^[CDRW]_/.test(name) ? "_nosteals" : ""}`;
+    const rows = await q(sql, `SELECT season, count(*)::int slips, sum(stake)::float stake, sum(payout)::float payout, sum(hits)::float hits, sum(size)::float legs
+                               FROM ${table} WHERE composition = $1 AND size = $2 AND structure = $3 AND k <= $4 GROUP BY season ORDER BY season`,
+      [spec.composition, spec.size, spec.structure, cap]);
+    record.set(name, rows.map(r => ({ season: r.season, slips: r.slips, roi_pct: r.stake ? r1(100 * (r.payout / r.stake - 1)) : null,
+      leg_hit_0_100: r.legs ? r1(100 * r.hits / r.legs) : null })));
+  }
+  return { cellRate, certHit, record, suffix };
+}
+
 export async function apiHighHit(sql, cfg, url, version) {
   const T = {}; let tp = Date.now();
   const lap = k => { T[k] = Date.now() - tp; tp = Date.now(); };
