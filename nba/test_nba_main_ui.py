@@ -158,7 +158,7 @@ def api_checks(conn, cfg):
     bad = []
     for r in rows:
         dd, app, pid, prop, line, side = r["final_board_row_id"].split("~")
-        db = conn.execute("""SELECT final_hp, confidence, score FROM nba_score.board_scored WHERE game_date=%s AND app=%s AND player_id=%s AND prop=%s AND line=%s AND side=%s""",
+        db = conn.execute(f"""SELECT final_hp, confidence, score FROM {HB} WHERE game_date=%s AND app=%s AND player_id=%s AND prop=%s AND line=%s AND side=%s""",
                           (dd, app, pid, prop, float(line), side)).fetchone()
         if not db or abs(float(db[0]) * 100 - r["estimated_hit_probability_0_100"]) > 0.051 or abs(float(db[2]) - r["score_0_100"]) > 0.051 \
                 or abs(float(db[1]) * 100 - r["probability_confidence_0_100"]) > 0.051:
