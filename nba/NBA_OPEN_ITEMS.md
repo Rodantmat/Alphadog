@@ -15059,6 +15059,8 @@ owner's desk.*
 > — `nba_config.classification_config`, `config_key = 'enrichment_reality_check_2026_09_13'`,
 > `THE_REMAINING_OPPORTUNITY`, `updated_at 2026-09-13T19:25:18.669Z`
 
+🆕 *(additional sweep `5`, pass 362, `§P362`)* **The companion row, never named in the twelve: `enrichment_round1_final_2026_09_13`.** `T27`'s build chat names both keys (`2026-09-24` `07:48Z`): *"Two keys I hadn't seen change the M1 question — enrichment_reality_check_2026_09_13: *"the certified baseline beats every enrichment factor at…"* and enrichment_round1_final_2026_09_13: *"1 shipped, 6 rejected, all on held-out tests."*"* ✅ Live (`nba_config.classification_config`, read with SELECT this pass): `updated_at 2026-09-13T16:00:16.027Z`, three hours before the reality check. Its keys are `scorecard`, `still_open`, `THE_FINDING`, `D1_referee_capture` and `test_first_question_for_any_future_factor`. Its `scorecard` lists as shipped *"A2 teammate redistribution"* and, as its input, *"N1 status resolution - the measured probabilities that make A2 work at 2:30 PM"*. Its six `rejected_on_held_out_tests` are A2 rate response, B4 v1, B4 v2, B4 v3 (*"0 of 5 props … a genuine null"*), A5 projected lineups and M1 (*"0 of 7, betas correct sign (+0.066..+0.102) but too small to beat the noise added"*). Those verdicts are on file from COMPASS facts `84` / `86`; the row itself was not.
+
 ### Why it is an item and not a closed question
 
 *`A2` is `CLOSED` — `§F6.12`, four forms tested, anchor wins every slice. **But the row that closes
