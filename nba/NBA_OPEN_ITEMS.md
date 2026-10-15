@@ -19722,3 +19722,28 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `360` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`): `T1`–`T38` done (`34,677` sentences); next `T39`.
+
+## §P361 — PASS 361 (`2026-10-15`): ADDITIONAL SWEEP `5` — `T39` · ONE RESIDUE (`ROSTER_SYNC_DRY`, written in `NBA_WORKERS.md`)
+*Angle (as NEXT set it):* (a18) `§P131`'s method on `T39`, each listed sentence searched on file by its substance and figures; the figure triage run with bounded matching.
+- Tabulated in the shell before this line (the scan at pass 360's head): `T39` `622` of `983` sentences listed, no memory dump among them — two fewer than `§P311` listed, the two lists diffed in the shell (`2` dropped, `0` added). The newly matched trigrams were placed against the twelve as they stood at `97ecf91ff`: both dropped sentences (the `9,096` changed shifts; 2025-26 still confirming at slate `60`) now match `§P311`'s own on-file list, a coincidence, and their substance was on file before. **All `622` read whole** (the bounded figure triage: `3` with a figure not on file / `0` inside a longer number / `86` with every figure on file / `533` with none; `3 + 0 + 86 + 533 = 622`; `88 − 2 = 86`, both dropped lines having been among the `88`). The `3` are as at passes `261` and `311`: a run's leg count, a regex example row, an attachment notice. The last `16` (list ids `607`–`622` in this numbering, `§P311`'s `609`–`624`) are `15` session notices (time zone, attachments, file paths), judged and not reproduced, and `609`, the build chat's narration.
+- 🔴 **One residue — a switch on file only by its behaviour, never by its name** (pass 300's catch). Every identifier the listed sentences name was grepped in the twelve by its own name in the shell. One, the env var **`ROSTER_SYNC_DRY`** (`2026-10-05` `05:53Z`, list id `159`), returned `0`. `NBA_WORKERS.md`'s `sync_current_rosters.py` row carried only "(dry-run default)". It is now written there AS STATED (`dadacd6e5`): the build chat's sentence quoted verbatim (checked in the shell), and the code read today — the script rolls back on `"1"`, `nba-roster-sync.yml` maps its `dry` input (default `"1"`) onto it, and P2B's step sets no such variable. The other names that returned `0` are narration (`LEG_SQL`, `config_value`, `out_rows`) or attachment file names; the same check run on `T34`–`T38` finds only names inside `T36`'s out-of-scope memory dump.
+- On file, by substance (each grepped before it was written, every hit read): `§P311`'s list, including `§T39.2`, `§T39.9` and `§T39.11`:
+  - The fixed break-evens (`10.98` drifting, `8.48` / `9.61` stable; 2025-26 at slate `60`, z `+4.22`).
+  - The snapshot's `9,116` differing cells and `9,096` changed shifts.
+  - The late pick retired; `_calib_before_prune` / `_probe_keys` and `scheduler_test`.
+  - The monitor reading every graded status (`graded_week2`, `graded_capped`).
+  - The daily roster sync (`commonallplayers`, `494` of `16,765` player-days), the replay rows (`101 → 103` and the others), the `166` mid-season moves, LeBron on the 76ers.
+  - The unscored-leg trace (`211` / `~185` / `36`).
+  - The whole-number program: `0.103` / `0.402`; `64,000` legs, `11.5%` vs `14.8%`; `75,797` of `78,773`; `44.67` and the `25.8` check; `5,412` rows identical; `200,000` cases; `29,232` pairs; `final_hp_derived`.
+  - The Underdog stat keys (`player_3-pointers_made`) and the per-stat `LADDER_DEPTH`.
+  - The rebounds `6 → 10` change and its revert (`408` slip entries, `96%` vs `76%`; `976` rows).
+  - The tie prior (blocks `0 → 1.34`, near `1.37`).
+  - The rookies (`66` / `77`, `301` debut legs).
+  - The deep-line accuracy (`70.6%` → `68.9%`).
+  - The recalibration map (`0.690`; `768,632`; `_bucket`, `calibrated_p`).
+  - The anchors (`+0.267`) and the certified-depth diversion.
+  Judged, on `§P161`'s, `§P211`'s, `§P261`'s and `§P311`'s bases: narration, run waits, commit hashes, run sizes and check counts, the harness slips the build chat caught itself, the retired Gemini model's `404`.
+- **Additional sweep `5` stays not clean** (`§T8.37`, `§T10.32`, `§T27.10`; `§P357`'s strike-correction; now this residue). Commits not this sweep's since `4f0c3d667` (pass 360's census; the log read at this pass's head and fetched again as the last call before this patch): `0` — the one commit since is this pass's own `NBA_WORKERS.md` write (`dadacd6e5`). `T48-10` checked at this pass's head: no main-UI commit since the ones `§P356` named. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `361` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. 🔁 Additional sweeps `1`–`4` complete, each NOT clean. ⏳ **Additional sweep `5`** under way, **not clean** (`§T8.37`, `§T10.32`, `§T27.10`, `ROSTER_SYNC_DRY` in `NBA_WORKERS.md`): `T1`–`T39` done (`35,660` sentences); next `T40`.
