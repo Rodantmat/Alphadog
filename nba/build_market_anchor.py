@@ -178,6 +178,42 @@ def logloss(p, y):
     return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
 
 
+def pav(values, weights):
+    """weighted pooled-adjacent-violators: the non-decreasing sequence closest (weighted L2) to values."""
+    blocks = []
+    for v, w in zip(values, weights):
+        blocks.append([v * w, w, 1])
+        while len(blocks) > 1 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
+            b = blocks.pop(); blocks[-1][0] += b[0]; blocks[-1][1] += b[1]; blocks[-1][2] += b[2]
+    out = []
+    for s_, w, c in blocks:
+        out += [s_ / w] * c
+    return out
+
+
+def iso_knots(p, y, nb=60):
+    """stage 2: a monotone map from the stage-1 probability to the realized rate - equal-count bins, isotonic over the bin rates.
+    Returns [[x, y], ...] for np.interp (flat beyond the ends)."""
+    if len(p) < 500:
+        return None
+    o = np.argsort(p)
+    ps, ys = p[o], y[o]
+    edges = np.linspace(0, len(ps), nb + 1).astype(int)
+    xs, rs, ws = [], [], []
+    for a, b in zip(edges[:-1], edges[1:]):
+        if b > a:
+            xs.append(float(ps[a:b].mean())); rs.append(float(ys[a:b].mean())); ws.append(float(b - a))
+    iso = pav(rs, ws)
+    return [[round(x, 5), round(v, 5)] for x, v in zip(xs, iso)]
+
+
+def apply_iso(p, knots):
+    if not knots:
+        return p
+    k = np.array(knots, dtype=float)
+    return np.interp(p, k[:, 0], k[:, 1])
+
+
 def fit_params(X, y, meta, l2, min_n):
     """{'Over'|'Under': {'_pooled': w, prop: w}} - per (side, prop) when it has min_n legs, else the side's pooled fit."""
     params = {}
