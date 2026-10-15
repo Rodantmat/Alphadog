@@ -21544,6 +21544,19 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `502` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`7` complete, each NOT clean. ⏳ **Additional sweep `8`** under way, NOT clean (the writes in `T9`, `T10`, `T11`, `T12`, `T13`, `T14`, `T15`, `T16`, `T17`, `T18`, `T19`, `T20`, `T21`, `T23`, `T26`, `T27`, `T28`, `T29` and `T30`): `T1`–`T30` done; next `T31` onward.
 
+## §P503 — PASS 503 (`2026-10-15`): ADDITIONAL SWEEP `8` — `T31` · NO RESIDUE
+*Angle (as NEXT set it):* (m23) `§P131`'s method on `T31` (as `§P153`, `§P203`, `§P253`, `§P303`, `§P353`, `§P403` and `§P453` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 502's head): `T31` `1,424` of `1,750` sentences listed — the same count `§P453` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`1,424` read whole** (the bounded figure triage, unchanged since `§P453`: `23` with a figure not on file / `11` inside a longer number / `111` with every figure on file / `1,279` with none; `23 + 11 + 111 + 1,279 = 1,424`; the `23` and the `11` are `§P453`'s kinds — capture-setup and proxy figures, Chalkboard pricing (cross-reference only, `PP_PAYOUT_FINDINGS.md`), Betr token lifetimes and probe counts, console timestamps).
+- `§P453` recorded no write for `T31`; there is no write to re-verify.
+- Substance greps on the twelve (`grep -c -F`, each zero re-grepped in its no-space / dash-stripped / lower-case forms and its context read): the Sleeper parser changes, the Chalkboard mechanism (App Attest, Envoy, the `403 Undefined Device` replay from the owner's laptop, the 11% hold, the payout function, `chalkboard_payout_model.py`, `probe_chalkboard`) and the Betr stretch (`BETR_BUILD_STATE.md`, `LeagueUpcomingEvents`, `getUpcomingEventsV2`, the offline refresh token and its secrets, the probe count, the Turnstile and UC Mode research, `betr_harvest`) are on file or judged on `§P153`/`§P203`/`§P253`/`§P303`/`§P353`/`§P403`/`§P453`'s basis (the Chalkboard API map and the Betr auth and edge passages, not followed).
+- The identifier check (pass 361's catch, with pass 384's camel-run extension), counted with `grep -c` on the uncut sentences: the names with `0` hits are Chalkboard / Betr API fields, capture-tool export names, secret names and token fragments — the same kinds `§P453` judged; no new source or store named.
+- Judged on `§P453`'s basis: the capture-setup and PowerShell / CMD troubleshooting, the CDN-cache download retries, the owner's pasted credentials (not reproduced), the progress and run-wait lines, the owner's instructions and expletives.
+- **Additional sweep `8` is NOT clean** (the writes in `T9` … `T21`, `T23`, `T26` … `T30` stand); the three-sweep count stays `0`. Commits not this sweep's since `4edf9a1fa` (`§P502`'s census; the log fetched before this patch): `0`. `T48-10` was checked by the log of the main-UI paths, COMPASS, the certification ledger, the strategy document and `deployed_sha.txt`: `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `503` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`7` complete, each NOT clean. ⏳ **Additional sweep `8`** under way, NOT clean (the writes in `T9`, `T10`, `T11`, `T12`, `T13`, `T14`, `T15`, `T16`, `T17`, `T18`, `T19`, `T20`, `T21`, `T23`, `T26`, `T27`, `T28`, `T29` and `T30`): `T1`–`T31` done; next `T32` onward.
+
+
 
 
 
