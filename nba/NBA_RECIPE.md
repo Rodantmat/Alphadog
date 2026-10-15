@@ -739,7 +739,7 @@ everyone else's projections break too**."*
 market spread, since the derived proxy could not resolve these bands.** ✅ **Re-certification held**:
 *rebounds, **360,272 graded rows** — less side worst band **1.7 pp**; more side 1.7 pp or better on
 every band except **(0.65, 0.70) at −5.9 pp on n = 1,095 — 0.3% of the prop** — with the
-31,284-row band at **0.952 → 0.952**.* ⚠ *Read per the derived-penalty rule: **worst-band numbers
+31,284-row band at **0.952 → 0.952**.* 🆕 *(additional sweep `8`, pass 488, `§P488` — `T16` `2026-09-13 22:34Z`, AS STATED)* The flagged cell was the rebounds one; the other bands moved `0.514→0.508`, `0.582→0.586`, `0.620→0.615`, `0.732→0.741`, `0.776→0.766`, `0.820→0.815`, `0.874→0.883`, and *"Points shows the same shape, with its large [0.90, 1.01) band at 67,211 rows landing +0.1 pp."* ⚠ *Read per the derived-penalty rule: **worst-band numbers
 over-penalise thin cells while volume-weighted calibration is near-perfect*** *(`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T15 §6)*.
 
 ### 🔑 THE FACT-63 TRAP, CHECKED RATHER THAN ASSUMED
