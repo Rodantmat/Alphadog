@@ -329,11 +329,11 @@ def predict(params, X, meta, iso=True):
         w = ps.get(m[1]) or ps.get("_pooled")
         out[i] = sigmoid(float(np.dot(X[i], w))) if w is not None else m[3]
     if iso and params.get("_iso"):
-        keys = np.array([f"{m[2]}|{m[4]}" for m in meta])
+        keys = np.array([f"{m[2]}|{m[4]}|{m[1]}" for m in meta])
         for key in set(keys.tolist()):
             ms = keys == key
-            side, ac = key.split("|")
-            out[ms] = apply_iso(out[ms], iso_key(params, side, ac))
+            side, ac, prop = key.split("|")
+            out[ms] = apply_iso(out[ms], iso_key(params, side, ac, prop))
     return out
 
 
