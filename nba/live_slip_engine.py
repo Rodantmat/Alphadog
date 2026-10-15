@@ -1228,19 +1228,12 @@ def simulate_p5(conn, day):
         st = conn.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
         if not st or st[0] != 'red':
             continue
-        tbl = bt_table(conn, name)
-        y0 = day.year if day.month >= 7 else day.year - 1
-        season = f"{y0}-{(y0 + 1) % 100:02d}"
-        g = conn.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
-                             AND season=%s AND phase<>'final7' AND game_date >= %s AND game_date < %s GROUP BY game_date""",
-                         (comp, size, structure, cap, season, dt.date(y0, 11, 1), day)).fetchall()
-        if len(g) < 40:
-            continue
-        lo = boot_lo([(float(r[0]), float(r[0]) + float(r[1])) for r in g], 2000)
+        lo, n_days, source = release_record(conn, name, day)   # backtest table, else the live ledger (2026-10-15)
         if lo is not None and lo > 0:
-            conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s, hurdles=jsonb_build_object('REQUAL', 'PASS(sim) '||%s::text),
-                            updated_at=now() WHERE strategy=%s""", (cap, day.isoformat(), name))
-            print(f"  P5(sim) {day}: {name} red -> paper (walk-forward lower bound {lo:+.0%} on {len(g)} days)", flush=True)
+            conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s,
+                            hurdles=jsonb_build_object('REQUAL', 'PASS(sim) '||%s::text, 'RELEASED', '1'),
+                            updated_at=now() WHERE strategy=%s""", (released_cap(name, cap), day.isoformat(), name))
+            print(f"  P5(sim) {day}: {name} red -> paper (walk-forward lower bound {lo:+.0%} on {n_days} days, {source} record)", flush=True)
     conn.commit()
 
 
