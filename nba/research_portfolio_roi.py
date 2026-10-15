@@ -176,6 +176,15 @@ def main():
                 print(f"{label:<10} {fit_s:<8} {test_s:<8} {g:>10.5f} {b:>9.3f} {dd:>7.1%} {roi:>+7.1%}  "
                       + " ".join(f"{n.split('_')[1][:7]}={x * 100:.2f}%" for n, x in zip(names, f)), flush=True)
             print(f"           (flat average exposure on {test_s}: {avg_exp_flat:.1%} of bankroll per day)", flush=True)
+
+    # ---- the unit size: flat stakes as a share of the bankroll, each season (the risk the owner actually carries) ----
+    print("\n== UNIT SIZE - flat stake per slip as a share of the CURRENT bankroll (compounding), each season ==", flush=True)
+    print(f"{'unit':>6} {'season':<8} {'log g/day':>10} {'bankroll x':>11} {'maxDD':>7} {'avg daily exposure':>19}", flush=True)
+    for unit in (0.0025, 0.005, 0.0075, 0.01, 0.015, 0.02):
+        f = np.full(len(names), unit)
+        for s in seasons:
+            g, b, dd, _roi = run(f, s)
+            print(f"{unit:>6.2%} {s:<8} {g:>10.5f} {b:>11.2f} {dd:>7.1%} {np.mean((f * mats[s][1]).sum(1)):>19.1%}", flush=True)
     conn.close()
 
 
