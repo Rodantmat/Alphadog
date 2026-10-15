@@ -1592,3 +1592,42 @@ red, the rest paper with their caps).
 - **Open (measured, not changed):** the ladder's centring (P2) is the upstream defect; re-centring the ladder on the market line before
   P3 would improve every downstream number, but it changes `final_hp` and therefore the certified engine's inputs, so it is a
   chained recertification, not a patch.
+
+### DOUBLE CHECK — THE HONEST NUMBER AGAINST THE BACKTEST, AND THE SLIP STRATEGY RE-PROVEN (owner 2026-10-15 08:51 PT: "Double check and be sure, be sure it also reflects the backtest and the slip strategy is sound")
+- **Independent audit (separate agent, different outcome source: `nba_market.board_outcomes`, the system's own grader).**
+  Confirmed exactly: the pooled reliability and log-losses above; DraftKings comparison; fit sets out of sample on every row
+  (0 mislabelled); DraftKings 'window' snapshots captured before tip (0 after tip; 2025-26 min lead 79 min vs the calendar tip);
+  coverage 1,490,056 legs, 0 missing. **Found and fixed:** legs with NO market anchor (no DraftKings line, no PrizePicks standard
+  line) were shown ~68% and hit ~56% (combo props, 2024-25). Fix: the unanchored leg gets its own model slope (`x_none`) and
+  the isotonic stage runs per (side, anchor class). Refit run 38774101368 (gate written with sub-group tolerance 0.07, recorded
+  in the config's report); re-applied to all 422 slates. Full history now: shown 34.7 → hit 34.4, 54.1 → 53.8, 65.2 → 65.3,
+  73.9 → 74.4; log-loss 0.6287 (was 0.6297; raw model 0.6455). 2024-25 top band 74.1 → 73.3 (was 74.1 → 71.2). Unanchored at
+  ≥60%: Under 66.6 → 64.0 (was 68 → 56). **Residual, measured and left as is:** cross-season drift on thin Under groups —
+  2024-25 Unders with only a PrizePicks line 62.9 → 56.6 (1,549 legs) — and, in the 55–60% band, thin groups off up to ±7
+  points in BOTH directions between seasons. A per-prop isotonic stage was tried two ways (always, then only when it beats the
+  broader map on the later half of the fit season); it did not improve out of sample (log-loss 0.61678 → 0.61703 / 0.64927 →
+  0.64933) and is kept in code only behind that in-fit-set test (runs 38777503034, 38778584776; the config in force is the
+  17:08 fit, which the code scores identically).
+- **Does the honest number reflect the backtest? (`nba/audit_strategy_honest_hp.py`, workflow `nba-audit-strategy-hp.yml`,
+  read-only.)** For every certified strategy's backtest slips (market-free twin, own cap), each leg's model / honest
+  probability vs what it hit, and the ROI each implies through the certified grader vs the realized ROI (runs 38776746728,
+  38779586626). Result: on the legs the strategies PICK, the raw model over-states (A_wsteals_5flex legs model 0.61 / 0.66,
+  hit 0.56 / 0.61) and the honest board number under-states (0.51 / 0.53): the certified cells' selection (defensive props,
+  rank inside the cell) carries signal a per-leg calibration fitted on the whole board cannot see. The certified CELL RATE
+  (`nba_score.edge_monitor_ref`, the backtest's measured hit rate of each cell) tracks the picked legs within 3–5 points a
+  season (A_core_3power cell 0.62 / 0.63 vs hit 0.59 / 0.65; D_points_3power 0.59 / 0.59 vs 0.57 / 0.60). Expected ROI from
+  cell rates under independence sits above the realized average by about the certified same-slate thinning (EDGE_DELTA −9.16 pp).
+- **So the slips screen now shows the backtest behind each certified slip (UI v1.4.2):** per leg the certified cell rate
+  ("cell 64.4%") beside the board's honest probability; per slip "Backtest: these legs' cells hit X% • strategy legs hit Y%
+  (live_strategy_calib.cert_leg_hit) • 2024-25 ROI • 2025-26 ROI (slips)" from the backtest tables at the strategy's live cap.
+  C49 reproduces every one of those numbers from the DB (default slate: 61 legs, 15 records; 2026-03-10: 61 legs, 15 records;
+  both 92/92, runs 38780836230 / 38781614084). Covering indexes on the four backtest slip tables (composition, size,
+  structure, k) keep the screen at 7 s.
+- **The slip strategy re-proven (nothing in it changed; the engine never reads `board_true_hp`):** certify_slip_system
+  **66 checks, 0 FAIL** (run 38772726753); validator on the market-free twin: **13 real survivors vs a zero-edge null of 0.00
+  (95th pct 0)** over 200 draws (run 38772731793). Backtest records at live cap (market-free, true payouts), 2024-25 / 2025-26:
+  A_wsteals_5flex +31.5% / +73.5%, A_core_3power +32.4 / +73.1, A_regular_5power +61.7 / +99.8, A_wrebounds_4flex +36.3 / +81.6,
+  C_wstocks_4flex +2.7 / +50.2, D_points_3power +9.0 / +32.9, W_core_3power +14.1 / +37.4 (pre-break week only); R_stocks_4power
+  +23.3 / −10.3 (rotation-only, drought state); B_demon_3flex −19.4 / +42.4 and B_demon_5flex −24.4 / +88.9 stay **red / cap 0**
+  (§31ad). These are every-day records at cap; the live engine's calendar rules (week-2 trough, final-7, All-Star, rotation)
+  sit on top, as certified.
