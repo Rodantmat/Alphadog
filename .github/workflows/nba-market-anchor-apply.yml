@@ -18,6 +18,10 @@ on:
         description: "last date of a range"
         default: ""
         required: false
+      parity:
+        description: "a date: check the Python ladder interpolation against the SQL form, write nothing"
+        default: ""
+        required: false
 
 permissions:
   contents: read
