@@ -330,8 +330,9 @@ def score_leg(params, leg):
     w = ps.get(leg["prop"]) or ps.get("_pooled")
     if w is None:
         return None
-    p1 = float(sigmoid(np.dot(np.array(feature_row(leg, 1.0 if over else -1.0)), np.array(w))))
-    knots = (params.get("_iso") or {}).get("Over" if over else "Under")
+    fr = feature_row(leg, 1.0 if over else -1.0)
+    p1 = float(sigmoid(np.dot(np.array(fr[:len(w)]), np.array(w))))     # [:len(w)]: params fitted before x_none still score
+    knots = iso_key(params, "Over" if over else "Under", anchor_class(fr))
     return float(apply_iso(np.array([p1]), knots)[0])
 
 
