@@ -21,6 +21,10 @@ on:
         description: "last date (blank = both seasons)"
         default: ""
         required: false
+      sub_tol:
+        description: "max |shown - hit| for any sub-group of 1,000+ legs at shown >= 0.60 (default 0.05)"
+        default: "0.05"
+        required: false
 
 permissions:
   contents: read
