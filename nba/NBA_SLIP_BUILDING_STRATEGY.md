@@ -2746,7 +2746,9 @@ were paid 2–5x too much — and demon Flex slips win most of their money on pa
 backtest tables regraded (old payouts in `payout_grader_v1`); P5 step 3f keeps them on the current tiers.
 **Re-measured (market-free twin, own cap, 2024-25 / 2025-26):** B_demon_3flex −16% / +31%, B_demon_5flex −22% / +84% (were
 +52 / +90 and +70 / +204) — the weaker season is negative, so both are **red / cap 0**; A_wsteals_5flex +36 / +79, C_wstocks_4flex
-+31 / +66, A_wrebounds_4flex +38 / +88 (positive, smaller); every Power strategy unchanged. P5 38023098995: 66/66 certified;
++31 / +66 [CORRECTED 2026-10-15 full pass: those were read from the main table; C_ strategies run on the no-steals twin —
+true record +1.5% / +52.5%, final-7 out, 155 / 154 slips; positive both seasons, keep-or-red is an owner decision],
+A_wrebounds_4flex +38 / +88 (positive, smaller); every Power strategy unchanged. P5 38023098995: 66/66 certified;
 A_wsteals_5flex and B_demon_5flex fall out of the validator's top 30 (were PASS). Live hurdles recalibrated on the true
 payouts (95th-percentile drawdowns 1.2–4x larger). **Consequence for the opening-night portfolio:** the Flex families carry
 less edge and more drawdown than certified on 10-08; the Power strategies are untouched. Detail: ledger "PAYOUTS PROVEN APP BY
