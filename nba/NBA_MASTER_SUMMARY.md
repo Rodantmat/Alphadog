@@ -15209,6 +15209,7 @@ because 2H pace rises and OT is excluded.
 
 **This is the strategic thesis of the whole goblin/demon effort**, stated in one line: the edge is in
 the tails because that is where everyone else's Gaussian is wrong.
+- ▶ 🆕 Additional sweep `5` (`2026-10-15`, pass 333): `§T8.37` — the same message's edge map (mispriced vs efficiently priced), its two self-corrections (1Q dud risk minimal, not zero; the 2H/4Q both-directions framing) and the 1Q row's fifth factor — written in `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md`.
 
 #### T8.16d — **Attempt-volume props are both a product AND an input**
 > *"**`Points = FGA × FG% + FTM`** — attempts are **pure role/intent with no shooting-percentage
