@@ -33,6 +33,52 @@ from build_final_hp import score_and_edge              # noqa: E402  the certifi
 SQL = MA.FEATURE_SQL.replace("FROM nba_score.board_scored b JOIN mk ON mk.prop = b.prop",
                              "FROM nba_score.board_scored b LEFT JOIN mk ON mk.prop = b.prop")
 assert SQL != MA.FEATURE_SQL, "feature SQL changed - the apply step must mirror the fit's legs"
+# The ladder lookups (q_dk / q_pp) are done in Python from one read of the slate's FULL ladder: the SQL form's correlated
+# per-player-prop lookups ran 3-4 minutes a slate under load. Same arithmetic: the rung at or below the anchor line and the rung
+# at or above it, interpolated in log-odds (p clipped to [1e-4, 1-1e-4]); no rung on either side -> NULL (no anchor).
+# MA_PARITY=<date> checks this against the SQL form for one slate (max abs difference must be < 1e-9).
+_qi, _qj = SQL.index("q AS MATERIALIZED ("), SQL.index("\nst AS")
+FAST_SQL = SQL[:_qi] + "q AS MATERIALIZED (SELECT anc.*, NULL::float8 q_dk, NULL::float8 q_pp FROM anc)," + SQL[_qj:]
+LADDER_SQL = """SELECT DISTINCT ON (player_id, prop, line) player_id, prop, line::float8 line, least(greatest(p_more::float8,1e-4),1-1e-4) p
+                FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL' AND p_more IS NOT NULL
+                ORDER BY player_id, prop, line, game_id"""
+
+
+def load_ladder(conn, d):
+    lad = {}
+    for pid, prop, line, p in conn.execute(LADDER_SQL, (d,)).fetchall():
+        lad.setdefault((pid, prop), []).append((float(line), float(p)))
+    for v in lad.values():
+        v.sort()
+    return lad
+
+
+def q_at(rungs, x):
+    """the model's P(over) at line x from the ladder: exact rung, else log-odds interpolation between the neighbours."""
+    if rungs is None or x is None:
+        return None
+    x = float(x)
+    lo = next((r for r in reversed(rungs) if r[0] <= x), None)
+    hi = next((r for r in rungs if r[0] >= x), None)
+    if lo is None or hi is None:
+        return None
+    if lo[0] == hi[0]:
+        return lo[1]
+    w = (x - lo[0]) / (hi[0] - lo[0])
+    z = (1 - w) * math.log(lo[1] / (1 - lo[1])) + w * math.log(hi[1] / (1 - hi[1]))
+    return 1 / (1 + math.exp(-z))
+
+
+def fetch_rows(conn, d, label):
+    cur = conn.cursor(row_factory=dict_row)
+    cur.execute(FAST_SQL, {"d0": d, "d1": d, "lab": label})
+    rows = cur.fetchall()
+    lad = load_ladder(conn, d)
+    for r in rows:
+        rungs = lad.get((r["player_id"], r["prop"]))
+        r["q_dk"] = q_at(rungs, r["dk_line"])
+        r["q_pp"] = q_at(rungs, r["pp_line"])
+    return rows
 
 DDL = """CREATE TABLE IF NOT EXISTS nba_score.board_true_hp (
   game_date date NOT NULL, player_id text NOT NULL, prop text NOT NULL, line numeric NOT NULL, side text NOT NULL,
