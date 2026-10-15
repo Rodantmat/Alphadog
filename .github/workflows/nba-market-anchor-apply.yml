@@ -48,4 +48,5 @@ jobs:
           MA_DATE: ${{ github.event.inputs.date }}
           MA_D0: ${{ github.event.inputs.d0 }}
           MA_D1: ${{ github.event.inputs.d1 }}
+          MA_PARITY: ${{ github.event.inputs.parity }}
         run: python -u nba/apply_market_anchor.py
