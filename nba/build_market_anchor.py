@@ -55,7 +55,7 @@ dkraw AS (
   FROM nba_market.board_snapshots s
   WHERE s.game_date BETWEEN %(d0)s::date AND %(d1)s::date AND s.bookmaker = 'draftkings' AND s.snapshot_label = %(lab)s AND s.market_key !~ '_alternate$'
   GROUP BY 1, 2, 3, 4),
-dk AS (
+dk AS MATERIALIZED (
   SELECT DISTINCT ON (game_date, player, market_key) game_date, player, market_key, line,
          (CASE WHEN po > 0 THEN 100/(po+100) ELSE -po/(-po+100) END) / ((CASE WHEN po > 0 THEN 100/(po+100) ELSE -po/(-po+100) END) + (CASE WHEN pu > 0 THEN 100/(pu+100) ELSE -pu/(-pu+100) END)) p_over
   FROM dkraw WHERE po IS NOT NULL AND pu IS NOT NULL AND po <> 0 AND pu <> 0
