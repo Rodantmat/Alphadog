@@ -1852,6 +1852,7 @@ nothing could query the factor that gates availability.** ✅ **The freshness ch
 `BINDING`**, and `§T26.30` records the payoff: *`build_availability_delta.py` now reads it from Postgres
 instead of fetching shards over HTTP, which is what closed **`T20-17`** — **"a lost shard produced a
 smaller-but-normal-looking delta that then decided which legs P3 scores."*** ▶ `§T26.30`, `§T26.43`.
+🆕 (additional sweep 5, pass 376, `§P376` — its switches by their own names; `S6`'s write-path inventory names `INJURY_LOAD_MODE`, `2026-10-08 17:45Z`: *shards not loaded unless INJURY_LOAD_MODE backfill (load_injury_report.py:68)*; ✅ read in code): `INJURY_LOAD_MODE` is `current` (the default — `nba_injury_report_current.json`, what P2B and P3 just scraped; both set it explicitly, as the maintenance workflow does) or `archive` — the inventory's "backfill" — which loads every monthly shard of the season named by `INJURY_LOAD_SLUG` (e.g. `2025_26`) and aborts when none is found; `INJURY_DATA_DIR` (default `nba/data`) is where it looks; `nba-injury-load.yml` passes the mode from its dispatch input.
 
 **whole-universe comparison** · T1 (blueprint §9) · Scrutiny technique 1: diff the **live config**
 against the **real formula/logic** for **every entry in a universe at once** — every prop, every
