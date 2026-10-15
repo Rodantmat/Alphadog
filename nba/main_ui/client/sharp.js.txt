@@ -72,8 +72,8 @@ function projectionBlock(sh,games,legs,depth,teamAbbr){
   const keys=['points','rebounds','assists','threes_made','pra','pts_reb','pts_ast','reb_ast','steals','blocks','stocks','turnovers'];
   const rate=(set,k)=>{const mins=set.reduce((a,g)=>a+Number(g.min||0),0);return mins?set.reduce((a,g)=>a+(propGameValue(g,k)||0),0)/mins:null};
   const rows=keys.map(k=>{const r10=rate(played.slice(0,10),k),rs=rate(season.length>=5?season:played,k);if(r10==null||rs==null)return null;
-    const blend=(w.last10*r10+w.season*rs)/((w.last10+w.season)||1);const proj=blend*expMin*pf;const line=mainLineFor(k,legs);const fair=fairOf(k);
-    return {'Prop':displayPropLabel(k),'Per-36 L10':nOrDash(36*r10),'Per-36 Season':nOrDash(36*rs),'Projection':nOrDash(proj),'Board Line':line!=null?line:'—','Proj − Line':line!=null?sgn(proj-line):'—','Market Fair':fair!=null?fair:'—','Proj − Fair':fair!=null?sgn(proj-fair):'—'}}).filter(Boolean);
+    const blend=(w.last10*r10+w.season*rs)/((w.last10+w.season)||1);const proj=blend*expMin*pf;const line=regularLineFor(k,legs);const fair=fairOf(k);
+    return {'Prop':displayPropLabel(k),'Per-36 L10':nOrDash(36*r10),'Per-36 Season':nOrDash(36*rs),'Projection':nOrDash(proj),'Standard Line':line!=null?line:'—','Proj − Line':line!=null?sgn(proj-line):'—','Market Fair':fair!=null?fair:'—','Proj − Fair':fair!=null?sgn(proj-fair):'—'}}).filter(Boolean);
   if(!rows.length)return '';
   const st=(sh&&sh.tonight_script)||null;const ud=depth&&depth.usage_detail&&(depth.usage_detail.usage||[]).find(x=>x.window==='Last 10');
   const share=st&&st.team_implied!=null&&ud&&ud.tm_pts!=null?st.team_implied*ud.tm_pts/100:null;
