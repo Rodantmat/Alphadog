@@ -485,8 +485,13 @@ jobs:
         run: python -u nba/capture_parlay_props.py
 
       # 3) THE MARKET at the window - de-vigged book probability per rung
+      # SOFT (2026-10-15 full pass): rung_market is read only by the market refresh below, which is switched off; a slow rebuild
+      # (~1.1M rows) must never skip the scoring and the pick.
       - name: Market snapshot and rung market
+        id: soft_market
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
+        timeout-minutes: 8
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
