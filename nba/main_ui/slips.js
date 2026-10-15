@@ -240,7 +240,30 @@ async function backtestContext(sql, cfg, names) {
       leg_hit_0_100: r.legs ? r1(100 * r.hits / r.legs) : null })));
   }
   const stateOf = new Map((await q(sql, "SELECT strategy, state FROM nba_score.live_strategy_state")).map(s => [s.strategy, s.state]));
-  return { cellRate, certHit, record, suffix, stateOf };
+  // THE OWNER'S UNIT (2026-10-15): classification_config['stake_unit'] - what one unit is in dollars, the apps' minimum entry, and
+  // whether paper strategies are played from the first night (owner: "I'm going to start from the beginning of the season").
+  const suRow = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
+  const su = suRow ? (typeof suRow.config_json === "string" ? JSON.parse(suRow.config_json) : suRow.config_json) : {};
+  const unit = { usd: Number(su.unit_usd || 1), min: Number(su.min_stake_usd || 1), playPaper: su.play_from_day1 !== false };
+  return { cellRate, certHit, record, suffix, stateOf, unit };
+}
+
+// PLAY OR SKIP, AND HOW MUCH (2026-10-15). Until today the label read only 'shadow' from the status, so a slip the engine recorded
+// but did not stake (week-1 / week-2 rules, the daily ceiling, below the minimum entry) showed "staked" for an active strategy.
+const SKIP_REASON = [["shadow", "shadow strategy"], ["week1_skip", "week-1 rule"], ["week2_skip", "week-2 rule"],
+  ["capped", "daily ceiling reached"], ["below_min", "its half stake is below the minimum entry"]];
+function stakeAdvice(s, bt) {
+  if (s.app !== "prizepicks") return { label: "paper (Underdog engine)", play_usd: null };
+  const st = String(s.status || "");
+  if (st === "replay_backtest") return { label: "backtest replay", play_usd: null };
+  const skip = SKIP_REASON.find(([k]) => st.includes(k));
+  if (skip) return { label: `SKIP - ${skip[1]}`, play_usd: null };
+  const state = bt.stateOf.get(s.strategy) || "paper";
+  const plays = state === "active" || (bt.unit.playPaper && ["paper", "yellow", "critical", "week2"].includes(state));
+  if (!plays) return { label: `SKIP - strategy ${state}`, play_usd: null };
+  const usd = Math.round(bt.unit.usd * (s.stake_weight == null ? 1 : Number(s.stake_weight)) * 100) / 100;
+  if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
+  return { label: "PLAY $" + usd.toFixed(2) + (state === "active" ? "" : " (" + state + ")"), play_usd: usd };
 }
 
 export async function apiHighHit(sql, cfg, url, version) {
