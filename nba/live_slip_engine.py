@@ -969,6 +969,37 @@ def boot_lo(day_items, draws=10000, seed=7):
     return out[int(0.025 * draws)]
 
 
+def release_record(conn, name, day, draws=2000):
+    """THE PATH OUT OF RED (2026-10-15, owner: "ground the decisions on data ... do not cancel or cut anything, just adjust for
+    the best possible outcome"). P5's release needs the strategy's walk-forward record THIS season: the day-blocked bootstrap
+    lower bound of its slips from Nov 1 (the ranker-warmup rule) to the day before, >= 40 slate days, > 0.
+    Debugged 2026-10-15: that record was read only from the backtest slip table, and the backtest chain (pp_model_vs_price ->
+    prop_universe -> tier_map_legs -> slip engine) is built from history and never extended in season - the live season has
+    0 rows there, so a red could never be released (one-way). A red strategy keeps producing its slips every day as SHADOWS
+    (same engine, same board, at max(cap, 1)) and they are graded with the certified grader in nba_score.live_slips: that IS
+    its walk-forward record, at exact live parity. Source order: the backtest table when it holds >= 40 days of the season
+    (an in-season backtest chain, if built later), else the live ledger (every graded status of the regular season, staked
+    or shadow, k <= max(cap, 1); the k = 900 rotation observer and the postseason are excluded; 1 unit per slip, like the
+    backtest). Returns (lower_bound or None, days, source)."""
+    comp, size, structure, cap = STRATEGIES[name][:4]
+    y0 = day.year if day.month >= 7 else day.year - 1
+    season_now = f"{y0}-{(y0 + 1) % 100:02d}"
+    since = dt.date(y0, 11, 1)
+    tbl = bt_table(conn, name)
+    g = conn.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
+                         AND season=%s AND phase<>'final7' AND game_date >= %s AND game_date < %s GROUP BY game_date""",
+                     (comp, size, structure, cap, season_now, since, day)).fetchall()
+    source = 'backtest'
+    if len(g) < 40:
+        g = conn.execute("""SELECT count(*), sum(profit) FROM nba_score.live_slips
+                            WHERE strategy=%s AND status LIKE 'graded%%' AND status NOT LIKE 'graded_post%%' AND k <= %s
+                              AND profit IS NOT NULL AND game_date >= %s AND game_date < %s GROUP BY game_date""",
+                         (name, max(cap, 1), since, day)).fetchall()
+        source = 'live'
+    lo = boot_lo([(float(r[0]), float(r[0]) + float(r[1])) for r in g], draws) if len(g) >= 40 else None
+    return lo, len(g), source
+
+
 def regular_season_window(conn, today):
     """(first, last) regular-season game dates of the season containing today - the schedule merged with the played-games
     log (season_block), so a historical season the calendar does not hold (2024-25) resolves correctly."""
