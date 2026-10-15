@@ -60,7 +60,7 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_score.price_shop_ledger (
 # Standard 3.5^(1/2) = 1.8708 (its most lenient break-even, 53.45%; the P5 portfolio's mains 2-Standard) - it was the 5-pick
 # 20^(1/5) = 1.8206 (§31v), which priced every Underdog leg 2.7% too low. Flat-table apps (PrizePicks, Betr) have no per-leg
 # price - availability is the question.
-DEFAULT_CFG = {"margin_pp": 0.0916, "ud_ref_per_leg": 1.8708, "cell_margin": 0.03,
+DEFAULT_CFG = {"margin_pp": 0.0649,   # = EDGE_DELTA re-solved 2026-10-15 on the real Flex tiers (was 0.0916) "ud_ref_per_leg": 1.8708, "cell_margin": 0.03,
                "apps": ["prizepicks", "underdog", "sleeper", "fliff", "betr", "betr_us_dfs"],
                "note": "price-shopping ledger (§31v, §31aa): margin_pp = certified break-even distance for the model-p gate; ud_ref_per_leg = "
                        "Underdog 2-pick Standard root 3.5^0.5; cell_margin = safety above break-even for the backtest-hit-rate gate"}
