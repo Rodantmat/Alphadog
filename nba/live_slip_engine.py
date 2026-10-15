@@ -1619,7 +1619,7 @@ def edge_monitor(conn, day):
     names = edge_daily_strategies()
     # §31q: EVERY slip the daily strategies built and grading settled - the validated design measures the backtest series
     # (all slips at the caps, regardless of live staking rules), so the built-but-unstaked statuses count too:
-    # graded / graded_void / graded_shadow / graded_week1_skip / graded_week2_skip / graded_capped. k < 100 excludes the
+    # graded / graded_void / graded_shadow / graded_week1_skip / graded_week2_skip / graded_capped / graded_below_min. k < 100 excludes the
     # rotation-observation slips (k = 900) and the retired late pick (k >= 101); 'dup' slips are never graded (their legs are
     # already counted through the identical original).
     rows = conn.execute("""SELECT game_date, structure, legs_json FROM nba_score.live_slips
