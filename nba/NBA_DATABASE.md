@@ -830,6 +830,8 @@ later.***
 > different states and the distinction is load-bearing: **`void` means the player sat out; `ungraded`
 > means the box score does not exist.***
 >
+> 🆕 *(additional sweep `8`, pass 504, `§P504` `T32` `2026-09-28` `21:24Z` AS STATED)* The build chat's later data-layer check of the rebuilt `prop_universe` (its `null_conf` column being its own alias for a null `hit`): **`48,923` ungraded legs** (*"the ~3% ungraded legs"*) and **`51,091` null-`model_p` legs** (*"legs outside the 10 ladder"*), both called *"the documented expected slices (DNPs, legs outside the 10 ladder)"*, against **`1,606,299` fully usable legs (`96.4%`)** — graded, `model_p` present, factor `> 0` — of `1,667,024`. The `48,923` and `51,091` overlap (the two exclude `1,667,024 − 1,606,299 = 60,725`); the figures are on the transcript only and belong to the rebuilt table, not to the `2026-09-22` snapshot above (`1,606,151` usable).
+>
 > ### 🔧 **AND THREE ENGINEERING FAILURES RECORDED AS "DO NOT REPEAT"**
 > | | |
 > |---|---|
