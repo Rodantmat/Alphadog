@@ -2190,7 +2190,7 @@ reproduction (5.4 vs 5.8) and team-specific starter pull (0.81 Orlando → 1.10 
 | `nba/baseline/build_baseline_history.py` | season backfill (singles) |
 | `nba/baseline/build_combos_history.py` · `build_periods_history.py` | season backfill |
 | `nba/load_baseline_ladder.py` | **fetches over HTTP from the repo**; **refuses a singles-only slate** |
-| `nba/load_baseline_history.py` | bulk history loader |
+| `nba/load_baseline_history.py` | bulk history loader → 🆕 `2026-10-15` (additional sweep `4`, pass 300): loads board-scoped by default; `HISTORY_SCOPE=full` writes the whole ladder and skips the `board_rung_keys` check, and no workflow sets it — `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md`, `§T28.5` |
 | `nba/nba_asof.py` | cutoffs — `PHASE1_CUTOFF_LOCAL = "16:00"` (1 PM PT) |
 | `nba/nba_season.py` | **`current_season()` vs `active_stats_season()`** — the season-hardcoding fix; both honour `NBA_SEASON`. ⚠ Oct 1–2 edge case |
 
