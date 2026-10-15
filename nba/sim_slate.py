@@ -80,6 +80,8 @@ def main():
                 tier = 'R'
             elif std_line is None:
                 continue                                   # alternate with no standard line: tier undefined
+            elif line == std_line:
+                continue                                   # an alternate posted AT the standard line (10-20 board, 2026-10-15): no ladder position; production tiers by PrizePicks' own label
             elif line > std_line:
                 tier = 'D' + str(min(above.index(line) + 1, 3))
             else:
