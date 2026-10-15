@@ -16,7 +16,7 @@ import { apiGenerate, apiHighHit, apiSave, apiRecent } from "./main_ui/slips.js"
 import { apiHealth, apiHealthRerun, apiCalibrationReport, apiCalibrationApply } from "./main_ui/health.js";
 import { ASSETS } from "./main_ui/assets.js";
 
-const VERSION = "alphadog-v2-nba-main-ui-v1.3.2";   // v1.3.x: the Sharp Read (main_ui/sharp.js + client/sharp.js.txt); .1 standard-line comparisons, .2 small-sample notes
+const VERSION = "alphadog-v2-nba-main-ui-v1.3.3";   // v1.3.x: the Sharp Read (main_ui/sharp.js + client/sharp.js.txt); .1 standard-line comparisons, .2 small-sample notes, .3 ramp-aware projection
 const ASSET_HASH = VERSION.replace(/^.*-v/, "v");   // browser cache key for the client parts: bump VERSION on any client change
 
 // every route this worker answers (also returned on a 404, as the MLB worker does)
