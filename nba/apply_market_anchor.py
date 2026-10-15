@@ -122,6 +122,16 @@ def apply_date(conn, d, cfg, label="window"):
                     None if mkt is None else round(mkt, 5), float(sc[0]), float(ed[0]),
                     ("dk+pp" if has_dk and has_pp else "dk" if has_dk else "pp" if has_pp else "none"),
                     r["dk_line"], None if r["dk_p"] is None else round(float(r["dk_p"]), 5), r["pp_line"], fs))
+    # one row per leg, always (2026-10-15 full pass): a duplicated feature row must never roll the whole slate back
+    seen, uniq = set(), []
+    for row in out:
+        k = (row[1], row[2], row[3], row[4])
+        if k not in seen:
+            seen.add(k)
+            uniq.append(row)
+    if len(uniq) != len(out):
+        print(f"  WARNING {d}: {len(out) - len(uniq)} duplicate feature rows dropped (one leg, one probability)", flush=True)
+    out = uniq
     with conn.cursor() as c2:
         c2.execute("DELETE FROM nba_score.board_true_hp WHERE game_date = %s", (d,))
         c2.executemany("""INSERT INTO nba_score.board_true_hp (game_date, player_id, prop, line, side, model_hp, true_hp, market_hp,
