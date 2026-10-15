@@ -21251,6 +21251,16 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `479` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`6` complete, each NOT clean. ⏳ **Additional sweep `7`** under way, NOT clean (the writes in `T36`, `T37`, `T38`, `T40` and `S9`): `T1`–`T48` and `S1`–`S9` done; next the twelve 📑 INDEX blocks.
 
+## §P480 — PASS 480 (`2026-10-15`): ADDITIONAL SWEEP `7` — THE TWELVE 📑 INDEX BLOCKS; SWEEP `7` CLOSES, NOT CLEAN
+*Angle (as NEXT set it):* (p22) `§P180`'s, `§P230`'s, `§P280`'s, `§P330`'s, `§P380`'s and `§P430`'s method — each file's `📏` census against its live heading count, computed in the shell, and every `§…` id in the twelve INDEX blocks resolved to a heading or a row / bold label in the `nba/*.md` files, each unresolved one read in context.
+- **Census, computed in the shell** (`grep -cE '^(> *)*#{1,6} '`, live on `origin/main` after pass 479): `GLOSSARY` `52` · `SYSTEM_DESIGN` `214` · `DATABASE` `218` · `RECIPE` `103` · `GOBLIN_DEMON` `120` · `BASELINE_CALIBRATION` `170` · `SYSTEM_ARCHITECTURE` `148` · `MULTIPLIERS` `163` · `WORKERS` `217` · `MASTER_SUMMARY` `3,345` · `OPEN_ITEMS` `1,232` — **each equal to its own `📏` stamp**, and the ten files outside `OPEN_ITEMS` the same counts `§P430` computed (this heading makes `OPEN_ITEMS` `1,233`, stamped with this pass). Sweep `7`'s writes added no heading to them (each a row, a bullet or a note). `NBA_FINAL_SCORING_CALIBRATION.md`: live `384`, stamp `332` — unchanged since `§P180`, the gap on file and deliberate (`T26-16`); read, not edited.
+- **Section ids, computed in the shell** (`§P230`'s extraction: every `§…` id in the twelve INDEX blocks, distinct per block, summed): `1,215` ids — `50` more than at pass 430's census (`1,165`, `§P430`), every added id a pass ledger `§P430`–`§P479` in `NBA_OPEN_ITEMS.md`'s INDEX (all `50` present in the shell, no gap), none removed — each resolved to its `## §P…` heading, **except `3`, the same three `§P230`, `§P280`, `§P330`, `§P380` and `§P430` read, none a defect**: `NBA_WORKERS.md`'s `§T20.3x` and `§0.x`, `NBA_MASTER_SUMMARY.md`'s `§F7.x` (INDEX pattern placeholders, not ids).
+- **Additional sweep `7` closes not clean** (`§P458`'s `T36` margin figure, `§P459`'s `T37` bankroll sizing figures, `§P460`'s three writes in `T38`, `§P462`'s `T48-10` write and `§P479`'s two `S9` gaps, Dabble's `Hedge` option and the boost example). The `T1`–`T48` and `S1`–`S9` passes otherwise carried no residue. A new sweep, `8`, starts from `T1` at pass `481`; the three-sweep count stays `0`, and three consecutive clean sweeps are still needed. Commits not this sweep's since `6cbf62117` (`§P479`'s census; the log fetched as the last call before this patch, after the final draft): `0`. `T48-10` was checked by the log of the main-UI paths, COMPASS, the certification ledger, the strategy document and `deployed_sha.txt`: `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `480` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`7` complete, each NOT clean. ⏳ **Additional sweep `8`** begins next at `T1`; the three-sweep count stays `0`.
+
+
 
 
 
