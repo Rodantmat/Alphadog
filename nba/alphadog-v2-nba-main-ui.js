@@ -16,7 +16,7 @@ import { apiGenerate, apiHighHit, apiSave, apiRecent } from "./main_ui/slips.js"
 import { apiHealth, apiHealthRerun, apiCalibrationReport, apiCalibrationApply } from "./main_ui/health.js";
 import { ASSETS } from "./main_ui/assets.js";
 
-const VERSION = "alphadog-v2-nba-main-ui-v1.4.1";   // v1.4.1: dossier shows the sportsbook's real main line + no-vig split instead of a derived "implied HP". v1.4.0: honest hit probability - the board shows the market-anchored HP (nba_score.board_true_hp) beside the model's own; edge no longer double-scaled. v1.3.x: the Sharp Read
+const VERSION = "alphadog-v2-nba-main-ui-v1.4.2";   // v1.4.2: certified slips show the backtest behind them (cell rates, certified leg hit, backtest ROI by season). v1.4.1: dossier shows the sportsbook's real main line + no-vig split instead of a derived "implied HP". v1.4.0: honest hit probability - the board shows the market-anchored HP (nba_score.board_true_hp) beside the model's own; edge no longer double-scaled. v1.3.x: the Sharp Read
 const ASSET_HASH = VERSION.replace(/^.*-v/, "v");   // browser cache key for the client parts: bump VERSION on any client change
 
 // every route this worker answers (also returned on a 404, as the MLB worker does)
