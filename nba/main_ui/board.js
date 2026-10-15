@@ -12,10 +12,20 @@ const STATS_COLS = "min, pts, reb, ast, fg3m, fg3a, stl, blk, tov, fgm, fga, ftm
 export function legsSql(where, limit) {
   return `
 WITH bs AS (
+  -- HONEST PROBABILITY (2026-10-14): final_hp / score / edge are the market-anchored values (nba_score.board_true_hp, written by
+  -- nba/apply_market_anchor.py) wherever they exist; the model's own number travels beside them as model_hp / model_score.
   SELECT b.game_date, b.app, b.player_id, b.player, b.prop, b.line, b.side, b.final_hp, b.baseline_hp, b.cal_shift,
-         b.confidence, b.score, b.edge, b.interpolated, b.built_at
-  FROM nba_score.board_scored b
-  WHERE b.game_date = $1::date AND b.app = ANY($2::text[]) ${where || ""}
+         b.confidence, b.score, b.edge, b.interpolated, b.built_at, b.model_hp, b.model_score, b.market_hp, b.hp_anchor,
+         b.dk_line, b.dk_p, b.pp_line, b.true_fit
+  FROM (SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.baseline_hp, b0.cal_shift, b0.confidence,
+               b0.interpolated, b0.built_at, coalesce(th.true_hp::numeric, b0.final_hp) final_hp, coalesce(th.true_score::numeric, b0.score) score,
+               coalesce(th.true_edge::numeric, b0.edge) edge, b0.final_hp model_hp, b0.score model_score, th.market_hp, th.anchor hp_anchor,
+               th.dk_line, th.dk_p, th.pp_line, th.fit_set true_fit
+        FROM nba_score.board_scored b0
+        LEFT JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
+                                            AND th.line = b0.line AND th.side = b0.side
+        WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[])) b
+  WHERE true ${where || ""}
   ORDER BY b.score DESC, b.final_hp DESC, b.player, b.prop, b.line, b.side
   LIMIT ${Number(limit) || 200}),
 pids AS (SELECT DISTINCT player_id, ('nba_' || player_id) pid_t, player_id::bigint pid_n FROM bs WHERE player_id ~ '^[0-9]+$'),
