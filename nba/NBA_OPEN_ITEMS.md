@@ -21044,7 +21044,7 @@ are worth more per pass than any re-derivation.***
 - **Additional sweep `7` stays NOT clean** (`§P458`'s, `§P459`'s, `§P460`'s and this pass's writes); the three-sweep count stays `0`. Commits not this sweep's since `b20fb8074` (`§P461`'s census): `7` read-only-source commits (above), HEAD `6a3617989` (`§P462`'s census) at the log read; `0` touched `NBA_OPEN_ITEMS.md` beyond this chat's own; `T48-10` updated. The credential grep on the twelve returns `0`.
 
 **Ledger**: pass `462` complete (`2026-10-15`).
-- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`6` complete, each NOT clean. ⏳ **Additional sweep `7`** under way, NOT clean (the writes in `T36`, `T37` and `T38`): `T1`–`T40` done; next `T41` onward.
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`6` complete, each NOT clean. ⏳ **Additional sweep `7`** under way, NOT clean (the writes in `T36`, `T37`, `T38` and `T40`): `T1`–`T40` done; next `T41` onward.
 
 
 
