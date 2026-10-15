@@ -231,8 +231,10 @@ async function backtestContext(sql, cfg, names) {
     if (!spec) continue;
     const cap = Math.max(1, states.get(name) || 0);
     const table = `nba_score.slip_engine_slips${suffix}${/^[CDRW]_/.test(name) ? "_nosteals" : ""}`;
+    // final7 excluded (2026-10-15 full pass): the engine stakes nothing in the last 7 days and certification excludes them
     const rows = await q(sql, `SELECT season, count(*)::int slips, sum(stake)::float stake, sum(payout)::float payout, sum(hits)::float hits, sum(size)::float legs
-                               FROM ${table} WHERE composition = $1 AND size = $2 AND structure = $3 AND k <= $4 GROUP BY season ORDER BY season`,
+                               FROM ${table} WHERE composition = $1 AND size = $2 AND structure = $3 AND k <= $4 AND phase <> 'final7'
+                               GROUP BY season ORDER BY season`,
       [spec.composition, spec.size, spec.structure, cap]);
     record.set(name, rows.map(r => ({ season: r.season, slips: r.slips, roi_pct: r.stake ? r1(100 * (r.payout / r.stake - 1)) : null,
       leg_hit_0_100: r.legs ? r1(100 * r.hits / r.legs) : null })));
