@@ -1961,6 +1961,7 @@ rename inside the patcher's search strings.**
 - *"The anchor check did exactly its job — **it failed loudly**"*
 - *"**Verify all five anchors against the repo harness BEFORE re-triggering**"*
 - *"The patch didn't apply (**third anchor mismatch**) — **that run was unchanged v17**"*
+- 🆕 *(additional sweep `8`, pass 483, `§P483` — `T9`, `2026-09-09` `19:58Z`, the production ladder builder's first Actions build)* **The cause of that anchor failure, AS STATED**: *"the repo copy of the harness has a trailing comment on the walk-forward line that my working copy didn't."* Fixed by verifying all five anchors against the repo harness programmatically before the re-trigger.
 
 **The anchor assertions convert a silent stale reference into a loud failure. That is the mitigation
 the rest of the codebase lacks.**
