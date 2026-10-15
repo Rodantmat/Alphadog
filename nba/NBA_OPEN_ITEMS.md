@@ -20896,3 +20896,16 @@ are worth more per pass than any re-derivation.***
 
 **Ledger**: pass `451` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`6` complete, each NOT clean. ⏳ **Additional sweep `7`** under way, clean so far: `T1`–`T29` done, no residue; next `T30` onward.
+
+## §P452 — PASS 452 (`2026-10-15`): ADDITIONAL SWEEP `7` — `T30` · NO RESIDUE
+*Angle (as NEXT set it):* (n21) `§P131`'s method on `T30` (as `§P152`, `§P202`, `§P252`, `§P302`, `§P352` and `§P402` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension) and pass 383's source-name catch; the owner's console lines and the local path in them not reproduced.
+- Tabulated in the shell before this line (the scan at pass 451's head): `T30` `35` of `40` sentences listed — the same `35` as `§P402` listed, the two lists diffed in the shell against `§P402` (`0` dropped, `0` added), the lists identical by construction (the fixed gold files) — **`35` read whole** (the bounded figure triage, unchanged since `§P402`: `1` with a figure not on file / `0` inside a longer number / `1` with every figure on file / `33` with none; `1 + 0 + 1 + 33 = 35`; the `1` is a console timestamp, judged).
+- `§P402` recorded **no write** for `T30`; there is no write to re-verify, and this pass confirms the same — no store.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension), counted with `wc`: `3` names extracted with `0` hits — as `§P402`: `flow_detail` (an export flag of the capture tool), `sleeper_clean` (an export file name) and `payouts/legs_boost_map` (the further Sleeper endpoint named in passing). All three judged as `§P302` and `§P402` judged them: named nowhere in the twelve, and used by no file in the repo. The camel-run extension adds none.
+- The source-name check (pass 383's catch, each name grepped outside the ledgers): the Sleeper board and its `available_alt` endpoint and the owner's capture tooling; no new source named. Matches `§P402`.
+- On file, by substance (each grepped before it was read, every hit read outside the ledgers): `§P402`'s list — the capture-export and upload troubleshooting, the blank-upload cause (UTF-16) and its remedies (`-Encoding utf8`, the raw `.mitm`, a `.zip`), Sleeper's `available_alt` and one-sided calls. Judged, on `§P152`'s, `§P202`'s, `§P252`'s, `§P302`'s, `§P352`'s and `§P402`'s bases: the export and header-redaction commands, the owner's pasted console lines. The credential grep on the twelve stays `0`.
+- **No residue in `T30`.**
+- **Additional sweep `7` stays clean so far** (`T1`–`T30` done, no residue, `0` changes). Commits not this sweep's since `02f183e77` (`§P451`'s census; the log fetched as the last call before this patch, after the final draft): `0` — none landed in the window; `0` touched `NBA_OPEN_ITEMS.md`, census unaffected; `0` touched the NBA main-UI paths, COMPASS, the certification ledger, the strategy document or `deployed_sha.txt` (`T48-10` unchanged); `HEAD` is `02f183e77`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `452` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`6` complete, each NOT clean. ⏳ **Additional sweep `7`** under way, clean so far: `T1`–`T30` done, no residue; next `T31` onward.
