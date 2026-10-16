@@ -24356,6 +24356,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `716` complete (`2026-10-16`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`11` complete: `1`–`9` each NOT clean, `10` and `11` CLEAN. ⏳ **Additional sweep `12`** under way, clean so far: `T1`–`T44` done, no residue; next `T45` onward.
 
+## §P717 — PASS 717 (`2026-10-16`): ADDITIONAL SWEEP `12` — `T45` · NO RESIDUE
+*Angle (as NEXT set it):* (a27) `§P131`'s method on `T45` (as `§P167`, `§P217`, `§P267`, `§P317`, `§P367`, `§P417`, `§P467`, `§P517`, `§P567`, `§P617` and `§P667` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 716's head): `T45` `25` of `50` sentences listed, no memory dump among them — the same count `§P667` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`25` read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `4` with every figure on file / `21` with none; `0 + 0 + 4 + 21 = 25`; as `§P667` recorded). The figures that read as `0` hits on a first grep — the Parlay API match-odds backfill (`445` game dates, the daily re-ask of the last `4` days), Betr's stale MLB file, the Odds API mining leftover and the MLB monthly archive and World Series collection — belong to the MLB / NHL track, out of scope and cross-reference only on `§P667`'s basis; the time-zone and message-sent notices are session notices, judged and not reproduced.
+- `§P667` recorded no write for `T45`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its regex forms and its context read): the play-in and playoff wiring in every stage, the three-season postseason collection, grading of every playoff game day, the playoff / regular-season blend (`pm_w`, `K = 50`) and the eligible-categories list, the strategy results (stocks 4-Flex `+62%` on `25` days, core 3-Power `+15%`, points 3-Power `+11%`), the null postseason-native search (`0` of `29`), the scheduler's version bump and the Underdog engine's postseason stand-down, the overnight postseason box-score gap audit, the `485`-leg postseason floor, the no-save live parity probe on three past nights, and the two failures seen and left alone (the Betr harvester's no-board at 00:22Z while pointed at the WNBA) — all on file.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `1` name with `0` hits — `firstTip`, the scheduler's code-internal name (`first_tip` and the first-tip rule are on file), judged. No new source or store named.
+- Judged on `§P667`'s basis: narration, run waits, scheduled-trigger and message-sent notices, the MLB / NHL credit and archive planning (cross-reference only), the owner's instructions to the documentation chat.
+- No residue in `T45`: the zeros (the MLB match-odds backfill and Betr's stale MLB file, the leftover credits, the World Series collection) are MLB / NHL cross-reference, and `firstTip` a code-internal name, all judged on `§P517`'s basis.
+- **Additional sweep `12` is clean so far** (`T1`–`T45` done, no residue; the three-sweep count is `2` and stays `2` until sweep `12` closes). Commits not this sweep's since `d7c469718` (`§P716`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `717` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`11` complete: `1`–`9` each NOT clean, `10` and `11` CLEAN. ⏳ **Additional sweep `12`** under way, clean so far: `T1`–`T45` done, no residue; next `T46` onward.
+
+
 
 
 
