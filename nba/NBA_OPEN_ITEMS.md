@@ -22871,6 +22871,21 @@ are worth more per pass than any re-derivation.***
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T31` done, no residue; next `T32` onward.
 
 
+## §P604 — PASS 604 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T32` · NO RESIDUE
+*Angle (as NEXT set it):* (n25) `§P131`'s method on `T32` (as `§P154`, `§P204`, `§P254`, `§P304`, `§P354`, `§P404`, `§P454`, `§P504` and `§P554` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 603's head): `T32` `3,301` of `4,360` sentences listed — the same count `§P554` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`3,301` read whole** (the bounded figure triage, unchanged since `§P554`: `24` with a figure not on file / `12` inside a longer number / `672` with every figure on file / `2,593` with none; `24 + 12 + 672 + 2,593 = 3,301`). The memory reply of `09-28` `18:21Z` was counted apart (memory dump, out of scope).
+- `§P554` recorded no write for `T32` (its writes lay in `T17`, `T18`, `T26` and `T28`); `§P504`'s two (the `prop_universe` ungraded / null-`model_p` slice counts; the `official_tendency` example values) are on file, re-verified; no new write.
+- Substance greps on the twelve (each zero re-grepped in its alternate forms and its context read): the Betr cloud solve, the five-app audit, the backdata certification, the doc-chat drift episode, the overconfidence and recalibration maps (COMPASS facts `123`–`127`), the correlation measurements, the Flex / Power break-evens and the `0.535` crossover table, the void and push rates, the first slip backtests and the tie-break / all-combos hardening (`+68.2%` / `+23.4%`, `+23.9%`), the threshold and depth frontier (`+64.6%`, `+101.3%`, `+84.9%`, the `+427%` mirage), the Flex-5 versus Power-5 split, the rank catalog (`8`–`8p`), the replicability gate (CLV demoted), the signal tests (usage, opponent defense, referee crews, WOWY `+2.7pp`, DvP, rest, pace, team total) and the meta-model concept — all on file. The `1.416` / `1.348` spot pair (`p_s` `0.56`) lies between rows of the on-file §7e table (interim spot figure); the `49,084`-byte memory-file size is memory-dump narration.
+- The identifier check, counted on the uncut sentences: the names with `0` hits (`FEATURE_SQL`, `meta_full`, `flex3_paying_days`, `total_days`, `x_slots`, the Betr / Chalkboard API and capture-tool names) are scratch variables, SQL aliases, Betr / Chalkboard API fields and file names, capture-tool and secret names — the same kinds `§P554` judged; no new source or store named.
+- Judged on `§P554`'s basis: capture-setup and proxy walkthroughs, run ids and commit hashes, progress and run-wait lines, the owner's dictation and expletives, the Betr probes (`BETR_BUILD_STATE.md`) and Chalkboard map (`PP_PAYOUT_FINDINGS.md` `0i`) as read-only cross-references.
+- No residue in `T32`: every figure and name on file by substance, in a read-only cross-reference (`BETR_BUILD_STATE.md`, `PP_PAYOUT_FINDINGS.md` `0i`) or judged out of scope.
+- **Additional sweep `10` is clean so far** (`T1`–`T32` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `c1cfc1b2d` (`§P603`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `604` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T32` done, no residue; next `T33` onward.
+
+
+
 
 
 
