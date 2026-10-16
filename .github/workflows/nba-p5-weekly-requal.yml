@@ -97,6 +97,30 @@ jobs:
           SE_TABLE_SUFFIX="_mf" python -u nba/build_slip_engine.py
           SE_TABLE_SUFFIX="_mf_nosteals" SE_EXCLUDE_CELLS="steals_R,steals_R_U" python -u nba/build_slip_engine.py
 
+      # WINDOW-ONLY TWIN (2026-10-16): live P3 scores with the market term from the books visible at the WINDOW capture
+      # (market_feed.refresh_final_hp); the certified history counted window AND close books. *_wo / *_wo_nosteals rescore the
+      # certified selection with the window books only (nba_score.build_tier_map_legs_sel_wo, nba/sql) - the faithful
+      # simulation of live with the term on, and the live engine's backtest while live_backtest_suffix = '_wo'.
+      - name: "3d. Window-only selection table (live scoring with the window market term), then its slip engines - DELTA"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SE_CAP: "10"
+          SE_SIZES: "2,3,4,5,6"
+          SE_DELTA: "1"
+          SE_LEGS_TABLE: nba_score.tier_map_legs_sel_wo
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              c.execute("SET statement_timeout = 0")
+              c.execute(open("nba/sql/build_tier_map_legs_sel_wo.sql").read())
+              n = c.execute("SELECT nba_score.build_tier_map_legs_sel_wo()").fetchone()[0]
+              c.commit()
+              print(f"tier_map_legs_sel_wo: {n:,} legs (window-only market term rescoring of the certified selection)", flush=True)
+          EOF
+          SE_TABLE_SUFFIX="_wo" python -u nba/build_slip_engine.py
+          SE_TABLE_SUFFIX="_wo_nosteals" SE_EXCLUDE_CELLS="steals_R,steals_R_U" python -u nba/build_slip_engine.py
+
       # UNDERDOG MARKET-FREE TWIN (round 3 #4, 2026-10-09; strategy §31ab): the Underdog paper engine is measured against
       # nba_score.ud_slip_engine_slips_dlt_orig2_mf, built from ud_tier_map_legs_curr_mf (nba_score.build_ud_tier_map_legs_curr_mf,
       # nba/sql) with the certified build's exact configuration. The Underdog backtest does not grow in season, but the
