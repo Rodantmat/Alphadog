@@ -21811,6 +21811,9 @@ are worth more per pass than any re-derivation.***
 - **No residue in `S3`.**
 - **Additional sweep `8` is NOT clean** (the writes in `T9`, `T10`, `T11`, `T12`, `T13`, `T14`, `T15`, `T16`, `T17`, `T18`, `T19`, `T20`, `T21`, `T23`, `T26`, `T27`, `T28`, `T29`, `T30`, `T32` and `T36` stand); the three-sweep count stays `0`. Commits not this sweep's since `1f3d5d9b5` (`§P522`'s census; the log fetched before this patch): `0`. The credential grep on the twelve returns `0`.
 
+**Ledger**: pass `523` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`7` complete, each NOT clean. ⏳ **Additional sweep `8`** under way, NOT clean (the writes in `T9`, `T10`, `T11`, `T12`, `T13`, `T14`, `T15`, `T16`, `T17`, `T18`, `T19`, `T20`, `T21`, `T23`, `T26`, `T27`, `T28`, `T29`, `T30`, `T32` and `T36`): `T1`–`T48`, `S1`, `S2` and `S3` done; next `S4` onward.
+
 
 
 
