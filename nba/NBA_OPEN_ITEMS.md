@@ -22725,6 +22725,20 @@ are worth more per pass than any re-derivation.***
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T21` done, no residue; next `T22` onward.
 
 
+## §P594 — PASS 594 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T22` · NO RESIDUE
+*Angle (as NEXT set it):* (d25) `§P131`'s method on `T22` (as `§P194`, `§P244`, `§P294`, `§P344`, `§P394`, `§P444`, `§P494` and `§P544` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 593's head): `T22` `515` of `832` sentences listed — the same count `§P544` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`515` read whole** (the bounded figure triage, unchanged since `§P544`: `15` with a figure not on file / `0` inside a longer number / `104` with every figure on file / `396` with none; `15 + 0 + 104 + 396 = 515`). The `15` are `§P544`'s kinds: `13` from the PrizePicks payout track (the Price IDs, the rescue tiers, the pricing errors, the no-center legs, the `3.83` Flex snap), out of scope as `§P144` judged and cross-referenced to `nba/PP_PAYOUT_FINDINGS.md`; one MLB row (`team.bullpen_history`); one browser user-agent string from an owner paste (not reproduced).
+- `§P394`'s `T48-9` read-only-facts update for `T22` and its strike-corrections stand on file (that write is sweep `6`'s). There is no write for `T22` in this sweep — no store.
+- The identifier check, counted on the uncut sentences: `6` names with `0` hits — the same six `§P544` found: five from the PrizePicks payout track, out of scope (`external_game_ids`, `pp_payout_mapper`, `pp_payouts_1789958`, `pp_price_drift`, `sportsbook_consensus`) and one cookie name from the owner's paste, not reproduced. All judged on `§P302`'s basis; no store, no new residue.
+- The payout-track figures and names that returned `0` on first grep (the Price-ID counts, the rescue-tier counts and labels, `94.26%`, `2,130,482`, `9,993`, `4,192`, `0.73%`, `3.11%`, the `112` live-leg validation, the Abramowitz–Stegun normal function in the pricing view, the `Tampermonkey` option, the console-paste steps) belong to the PrizePicks payout map, out of scope and cross-referenced as `§P144` judged; the MLB rows are out of scope.
+- On file, by substance (each grepped before it was read, every hit read, a zero-hit phrase re-grepped in other forms): `§P544`'s list — the chronological correction, the static-layer freeze (nine tables inside `2026-08-31`–`09-03`), the hardcoded `'2025-26'` insert, the `17,902`-row double-encoded finding across `14` tables (against the earlier `1,306`), the `GITHUB_TOKEN` lead, the `43,370` no-center legs, the `2,199,354`-leg history and `236,890` ladders, `board_tiers_v2`'s four facts and `anchor_type`, the `game_types` payload and its `league_id=7` NBA games call, the `state_code` CA / CO modes and the prizepools mode, Chalkboard as app-only, Sleeper's per-side multipliers, `NBA_SWEEP_RUN_LOG.md`, the OWNER DECISION mark and the resume note, the balldontlie key rotation, `scope_lock`, the writer workers' unauthenticated `POST /run`. Judged: the payout mapping and its pricing tables, narration, the owner's paste-in steps, the reply's schedule and ordering advice, MLB rows, code and file bodies, the owner's expletives (not reproduced). No device / location tokens or credentials appear in `T22`.
+- **No residue in `T22`.**
+- **Additional sweep `10` is clean so far** (`T1`–`T22` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `2b947e926` (`§P593`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `594` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T22` done, no residue; next `T23` onward.
+
+
 
 
 
