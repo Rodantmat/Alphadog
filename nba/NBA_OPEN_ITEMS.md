@@ -22813,6 +22813,21 @@ are worth more per pass than any re-derivation.***
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T27` done, no residue; next `T28` onward.
 
 
+## §P600 — PASS 600 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T28` · NO RESIDUE
+*Angle (as NEXT set it):* (j25) `§P131`'s method on `T28` (as `§P150`, `§P200`, `§P250`, `§P300`, `§P350`, `§P400`, `§P450`, `§P500` and `§P550` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 599's head): `T28` `346` of `604` sentences listed — the same `346` `§P550` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`346` read whole** (the bounded figure triage, unchanged since `§P550`: `14` with a figure not on file / `0` inside a longer number / `74` with every figure on file / `258` with none; `14 + 0 + 74 + 258 = 346`).
+- `§P550`'s write re-grepped and still on file: the `_asof` profile snapshots (`530` / `3,282` / `2,285` / `582` / `4,656` / `4,652` rows) and the `6,126` NULL `proj_min` rehearsal count, in `NBA_WORKERS.md`; and `§P500`'s write: the `T20-13` closure (`21` full-game props, the certifier's gate at `20`), the grader's offline test (`30` points, `H1` `23` + `H2` `7`, fantasy `43.1`) and the period stat forms, after `§T28.1`.
+- The figure-flagged zeros beyond those, read in alternate forms and judged on `§P550`'s basis: the first board-scoped rebuild's interim counts (`3,557,150`, `3,605,328`, `3,220,682`, `6.8M`; the final `3,811,766` / `3,399,146` on file), `431,820` stale rows released by `threes_made_q1`, `2,311,696` / `2,183,315` (the 2025-26 half of the key build; `4,522,732` across `379` dates on file), `263,798` / `171,787` (the first scoped loads), `444,958` / `460,052` (the first pairs), `27.07M` board rows, `10.8M` rows pruned (`10,805,395` on file), `45/47` recovered players (the `561`-of-`561` name resolution on file), `8,543,355` rows intact (the `8,696,305` store on file), `17,459` lines of the open-items ledger. Variant E (`7,128` legs; `0.7260`) and every other flagged figure on file.
+- The identifier check, counted on the uncut sentences: `0` names with `0` hits — as `§P550`. No new store.
+- The source-name and store-name checks: `BS_APPS`, `board_rung_keys`, `prop_reliability_audit_latest`, `_calib_before_prune` and the findings document on file; no new source named.
+- On file, by substance: `§P550`'s list — the `25,962`-cell snapshot, the `COPY` loader, `board_rung_keys`, the `8,696,305`-row store, `7,210,912` `final_hp` rows, `F6-1`'s `6,183` groups, `DELTA_SEASON`, `active_stats_season()` and October `20`, the `-05:00` / `-08:00` pairing, the `1,391`-leg reconciliation. Judged: narration, the owner's instructions, run waits, per-pair load counts and progress counts, the security reminder (no value reproduced).
+- No residue in `T28`: every figure and name on file by substance or judged out of scope (interim counts superseded in the same transcript; narration; run waits; the security reminder).
+- **Additional sweep `10` is clean so far** (`T1`–`T28` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `adb82f973` (`§P599`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `600` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T28` done, no residue; next `T29` onward.
+
+
 
 
 
