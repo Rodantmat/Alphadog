@@ -22057,6 +22057,21 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `542` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T20` done; next `T21` onward.
 
+## §P543 — PASS 543 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T21` · NO RESIDUE
+*Angle (as NEXT set it):* (c24) `§P131`'s method on `T21` (as `§P193`, `§P243`, `§P293`, `§P343`, `§P393`, `§P443` and `§P493` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 542's head): `T21` `768` of `1,734` sentences listed — the same count `§P493` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`768` read whole** (the bounded figure triage, unchanged since `§P493`: `0` with a figure not on file / `0` inside a longer number / `122` with every figure on file / `646` with none; `0 + 0 + 122 + 646 = 768`).
+- `§P393`'s writes from `T21` (none) — nothing to re-grep. `§P493`'s write re-grepped and still on file: the Cowork sweep's T2 pass flagging the T1 / T2 trigger-file timestamp conflict without reconciling it, with the instruction to leave it open (`NBA_SYSTEM_ARCHITECTURE.md`, the `8b-ii` log note).
+- The figure-flagged zeros: `99.4%`, `0.39`–`0.55`, the document-size cells (`423` / `444` / `402` K), `227` / `222` files and the T2 sample's `2` defects in `97` each returned `0` in one form and were on file in another (or are the sweep tool's own coverage percentages, call counts and document-size growth tables, judged out of scope on `§P443`'s and `§P493`'s basis). The dash-stripped forms `2535 hours`, `3040 hours`, `7899%`, `910%`, `T3T9` / `T3T6`, `0.160.35`, `6080` and `1220 passes` read as the ranges.
+- The identifier check, counted on the uncut sentences: `5` names with `0` hits — `COWORK_PROMPT`, `push_transcripts`, `nba_missing_files`, `nba_transcripts`, `supporting_docs`, the same five `§P493` judged (the chat's handoff packages, prompt and upload script for the documentation sessions — chat deliverables, not the system).
+- The source-name and store-name checks: BallDontLie, Cowork, `nba_ref.arenas`, `nba_calendar.games`, `ladder_calibration_asof`, `known_empty_games`, `minutes_mixture`, `scope_lock`, `x_minutes`, `year_founded` on file. No store gap.
+- On file, by substance (each grepped before it was read, every hit read, a zero-hit phrase re-grepped in other forms): `§P493`'s list — the T1 lessons `#2`, `#4`, `#6`, `#12`, `#13`, `#14`, `#24` and their figures (`t = 1.573` vs `2.755`), the BallDontLie tier (`$39.99`), the `0.2640` / `0.9924` `now_out` displacement, the blueprint sections `4k`–`7a`, the mandate messages and work-order parts, the git-push refusal and `[skip ci]` not suppressing Pages, the credential-in-transcripts exposure (`21` times) and the rotate-not-redact advice, the matcher figures (`17,061` blocks, `0.40`, `342`, `309`), the `T2` re-read findings (the nine static tables inside `2026-08-31`–`09-03`, `scope_lock`, the officials ID gap, `year_founded`, `80/80`, `9` of `24` fields, `x_minutes`, `1,200` vs `1,230`). Judged: narration, the session's pace estimates and ordering advice, model-choice reply, upload logistics, the `ghp_` scan result (not reproduced) and the owner's expletives (not reproduced). No device / location tokens or credentials appear in `T21`.
+- **No residue in `T21`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17` and `T18`); the three-sweep count stays `0`. Commits not this sweep's since `89cf1eb0f` (`§P542`'s census; the log fetched before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `543` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T21` done; next `T22` onward.
+
+
 
 
 
