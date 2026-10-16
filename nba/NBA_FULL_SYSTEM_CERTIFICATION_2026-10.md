@@ -1794,3 +1794,51 @@ reproduced; a first run during the rehearsal + certification load timed out at 1
 the **10-20 rehearsal** (38805449245) ran end to end: 967 board legs, small slate (3 games) → every strategy at cap 1 (29n), 9
 slips recorded (A_core_3power, A_regular_5power, A_wrebounds_4flex, C_wstocks_4flex as paper — nothing is staked before the
 paper gate; A_wsteals week-1 skip; both demons and R_stocks shadow), rolled back, production untouched.
+
+### THE OWNER'S $1 UNIT AND THE HANDS-OFF LOOP (owner 2026-10-15 16:10 PT: "the unit is going to be $1 on the beginning ... I cannot go less on most of the apps ... ROI is the gold here ... be sure that the system will auto-adjust ... so I don't need to be bugging you all the time"; 16:14 PT: "I'm going to start from the beginning of the season ... I need timing, I need to understand if I can put the slips, if the slips are available, if the legs change")
+**The unit is one setting.** `nba_config.classification_config['stake_unit']` = {unit_usd 1.0, min_stake_usd 1.0, below_min 'skip',
+play_from_day1 true}. The owner changes it himself on the Slips screen ("My unit (USD)" + Set unit → `POST /api/stake-unit`,
+bounded min..1000; UI v1.4.5); the next pick and the screen read it. Nothing the engine builds depends on the unit.
+**Every slip now says what to do.** PLAY $x (unit × stake weight; "(paper)" while the strategy is still in its paper gate — the
+owner plays from the first night by his decision, the gate stays the system's measure for raising and stopping) or SKIP with the
+reason (shadow strategy, week-1 rule, week-2 rule, daily ceiling, below the minimum entry, strategy red / off), plus the day's
+total ("To play today: N slips, $T"). Fixed on the way: the old label read only 'shadow' from the status, so a slip held back by
+the week-1 / week-2 rules or the daily ceiling showed "staked" for an active strategy.
+**Half stakes at a $1 unit.** The validated star-Under half stake (§31n) is $0.50 at a $1 unit — not placeable. Measured on the
+live caps (market-free twin, final-7 out): those slips are 4.5% of slips at +8.1% / −1.4% ROI; skipping them gives +35.1% / +76.4%
+vs +34.4% / +74.7% at half stake and +33.8% / +73.1% at full stake, net units within 13 — ROI-best, so the engine records them as
+'placed_below_min' (built, graded, never staked; postseason: shadow). When the unit reaches $2 the half stake is $1 and they are
+played again automatically.
+**When the slips appear (scheduler, PT).** 03:31 P2A grades last night and moves every strategy's state; 08:06 P2B builds the
+day's model; PrizePicks payout map twice before the window; **P3 at 13:16, or 29 minutes before the first tip when that is
+earlier** (opening night: first tip BOS@DET 12:00 → P3 11:31) → slips on the screen ~5–8 minutes later; close capture at first
+tip − 25 min; Mondays P1 + P5. **Legs change:** on 2025-26 slates 10.1% of the picked legs were gone from PrizePicks' board by
+the close capture and 16.8% more had moved line — 27% in all. Place right after the slips appear; a leg that is gone or moved is
+not the leg the strategy picked (the backup pool exists for that, and skipping the slip is the conservative choice).
+**What adjusts itself, with no one touching it:** daily grade → per-strategy hurdles (paper → active after 50 slate days and a
+positive live lower bound; yellow halves the cap; red stops; critical grace; clean hysteresis), calendar rules (week 1 / week 2,
+small slates at cap 1, All-Star plan, final 7 off, drought rotation), the PrizePicks payout tiers (rebuilt every payout-map run),
+Betr's session renewal; weekly P5: re-validation, the red release on the live record (§31af), and — new — **6b: the live hurdles
+recalibrated on the regraded backtest**. **Found and fixed:** P5 ran only if P1's static layer succeeded, and P1 failed its
+static-load check on 10-05 and 10-12 (play-type / shot-quality writer workers landed partially) — so the weekly loop silently did
+not run either week; P5 now runs whenever P1's run is claimed (`needs: [claim, weekly]`, `if: always()`), the static failure is
+still reported.
+**Proof — a whole season, hands off (`nba/audit_season_replay.py`, rolled back):** the production daily loop over the
+whole 2025-26 regular season (2025-10-21 .. 2026-04-12; pick on that day's real board, grade on the real box scores, hurdles and
+states every day, the P5 release check every Monday), no human input, one transaction, rolled back (run 38822926709, PASS;
+live_slips 0 -> 0, states unchanged). The PLAY ledger at 1 USD per slip (the slips the screen would have said PLAY for):
+2025-10 101 slips +75.45 (+74.7%) | 11: 420, +441.11 (+105.0%) | 12: 429, +397.86 (+92.7%) | 2026-01: 542, +321.88 (+59.4%) |
+02: 225, -13.14 (-5.8%) | 03: 557, +537.97 (+96.6%) | 04: 62, +122.62 (+197.8%) | **TOTAL 2,336 slips, 2,336 staked, 4,219.76
+returned, +1,883.76, ROI +80.6%** (one losing month). Held back by the rules: below the minimum 37 slips (+44.9%), shadow 749
+(+56.0%), week-1 skip 10 (-24.1%), week-2 skip 19 (-24.7%) - both calendar skips were right. What the loop did on its own:
+every strategy paper on opening night, week2 at cap 1 on 10-28, back to paper 11-04; A_wrebounds active 12-27, A_wsteals active
+01-03; D_points yellow (cap 1) from 11-12; on 02-10 / 02-11 the shared steals anchor failed (trailing-14-day leg hit 0.340 vs
+0.634, z 3.33) and all four family-A strategies went yellow then red together (H7); the first Monday after the break, 02-23, P5
+released them on their own records (lower bounds +40% .. +50% on 102 days) and A_core / A_wsteals / A_wrebounds were active the
+same day (their paper gate already met), A_regular back at paper and active 04-02; C_wstocks active 03-05; drought rotation on
+and off several times; everything off for the final 7 days (04-05). February's -5.8% is the anchor trough the red stopped - the
+loop cut the family's stakes inside two days and restored them without anyone touching it.
+**Process notes:** the patch tool's replacement-pattern expansion (a dollar sign followed by a quote in the new text, here
+produced by a decoded unicode escape) corrupted the slips client once more - repaired with a byte-verified full-file put; the
+rolled-back replay holds `live_slips`' table lock for its whole run (ensure_tables' ALTER), so the Slips screen waits while it
+runs - never run it near P2A / P3.
