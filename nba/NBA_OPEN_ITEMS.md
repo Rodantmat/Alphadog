@@ -22306,6 +22306,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `561` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T39` done; next `T40` onward.
 
+## §P562 — PASS 562 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T40` · NO RESIDUE
+*Angle (as NEXT set it):* (v24) `§P131`'s method on `T40` (as `§P162`, `§P212`, `§P262`, `§P312`, `§P362`, `§P412`, `§P462` and `§P512` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 561's head): `T40` `65` of `130` sentences listed, as at `§P512` (the scan's own trigram count; the gold list the shell reads holds `70` lines — the `65` listed plus the session notices and link lines `§P512` read; `0` dropped, `0` added). **All `70` read whole.** The bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `19` with every figure on file / `51` with none (`0 + 0 + 19 + 51 = 70`) — the same as `§P512`.
+- `§P512` recorded no write for `T40`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its no-space / dash-stripped / comma / regex forms and its context read): the G2 dry run and the main write-path split (deep rungs to `final_hp_derived`, the `14 → 10` depth comparison), the deeper combo ladders (PRA `24`, pts+reb and pts+ast `21`, `17,260` unchanged rows, `7,866` new rungs), the pre-existing whole-number path and its 4-date test (`10 / 11 / 4 / 17` → `0`), the `conf_tier` cut-point defect, the parity check (the Ighodaro leg, `2025-04-11`), the whole-number pricing (`60 / 85` = `71%`, the one-standard-error discount, a tie as half a win and the `6x` → `3x` drop, the equal-footing score), the two-season table (`16.4%` / `7.8%` of slips, `77.8%` → `78.1%`, `94.0%` → `93.9%`, drawdown `137 → 158` / `86 → 80`), the live addition (`~157,000` rungs, `~1%` of slips, `77.1%` / `93.4%`), the tie-aware validation scripts and the L11 recompute, and the rebuilt main family (`478,900` vs `438,234` slips, `346,736` identical, `61,688` with a whole-number leg, `7,434` tied) — all on file; the combos build time ("about 2 minutes") is run clock.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `0` names with `0` hits. No new source or store named.
+- Judged on `§P512`'s basis: narration, run waits and run-clock estimates, the time-zone and message-sent notices, the build chat's file-sha and blob-match proofs, the link lines (the research-source titles; the DOI inside one is an identifier inside a link, not reproduced), Gemini's passes, the owner's instructions to the documentation chat.
+- **No residue in `T40`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17`, `T18`, `T26`, `T28` and `T37`); the three-sweep count stays `0`. Commits not this sweep's since `729af482d` (`§P561`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `562` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T40` done; next `T41` onward.
+
+
 
 
 
