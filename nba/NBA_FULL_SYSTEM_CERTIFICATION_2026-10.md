@@ -1898,3 +1898,60 @@ test runs, both rolled back with live_slips 0 -> 0 and states unchanged; audit_r
 **66 checks, 0 FAIL** (run cbdb1d0b); integration test **ALL PASS**; UI end-to-end **94/94**.
 **Process notes:** two replays dispatched together deadlocked on live_slips' ALTER (each waited on the other's lock; one
 failed, nothing written) - replays must run one at a time. Replay runs take 30–45 minutes each.
+
+### PRE-SEASON PASS, FOUR DAYS OUT — FEASIBILITY, REPEATABILITY, EVERY BOARD (owner 2026-10-16 10:25 PT: "Do another complete pass, understand the feasibility and repeatability for the season that's coming up. Cover all bases and be sure of what you're doing, and that's gonna work. And we're one day closer, check all the boards, check everything again.")
+**Pipelines (this week, from nba_control.pipeline_runs):** P2A / P2B / P3 claimed and green every day 10-12 .. 10-16 (P2A 10–13
+min, P2B 4–5 min, P3 5–7 min on non-slate days); the run-once guard refused a second P2A dispatch today (17:37Z, "already
+claimed ... no pipeline runs twice"). Scheduler v2.4.0 enabled, last tick 17:31Z, GitHub token present; its own plan for
+opening week: **10-20 P2A 03:30, P2B 08:05, P3 11:31 (first tip 12:00 BOS@DET), 10-21 P3 13:16 (first tip 16:00, 12 games),
+10-22 P3 13:16 (2 games)**; the PrizePicks payout map dispatches on game days only (am between P2B and P3 − 40 min, pm in
+the last 40 minutes) and its crons stand down then. P1 10-12 failed its static-load check (play-type and shot-quality writer
+workers landed partially; the repair re-invocation was refused 403 by urllib) — the repair path now uses curl (commits
+e45e572c / be8ad318) and the tables were reloaded 10-14 03:16Z; P5 no longer depends on P1's static layer (2026-10-15). The
+first live proof of the curl repair is P1 on Monday 10-19.
+**Can opening night finish before the tip? Measured, not assumed.** No production P3 has ever scored a slate (preseason days
+skip scoring), so the two slate-only costs were timed on real data: the board scorer on the LARGEST 2025-26 board (2025-12-05,
+87,413 legs, scratch output — nba-p3-scoring-timing.yml run 38940558521) **31 seconds**; the live pick + grade for both apps
+~20 seconds (integration test). P3 = ~5–7 min of captures + ~1 min of scoring/picks + soft steps → slips on the screen
+~11:40 PT on 10-20, 20 minutes before the first tip. P2B's slate build for a 3-game slate takes ~17–27 min (the 10-15 and 10-16 rehearsals);
+it starts 08:05 (crew wait capped at 09:25 = P3 − 125 min), so it is done hours before P3. Season rollover checked:
+active_stats_season() returns 2025-26 through 10-20 and 2026-27 from 10-21 (P2A at 03:31 PT 10-21 mines the 10-20 box scores
+into the same tables the grader reads by game date — no season filter in the grade).
+**Today's opening-night rehearsal (nba-sim-slate 2026-10-20, run 38941066356, sandboxed, rolled back, production untouched):**
+967 board legs, small slate (3 games) → every strategy at cap 1; **PLAY: A_core_3power, A_wrebounds_4flex, C_wstocks_4flex**
+(3 slips, $3 at $1); held back by the rules: A_wsteals_5flex week-1 skip, A_regular_5power below the minimum entry (a star
+Under = half stake = $0.50), both demons and R_stocks shadow. On a 3-game slate the PLAY slips share legs (same two or three
+games) — expected, and why small slates run at cap 1.
+**Every board (nba_market.board_snapshots, captured by P3 10-15 and earlier):** PrizePicks 10-20 board posted for all three
+games (31 players, 1,137 legs per capture; its lines last changed 10-13 21:55Z — snapshot_ts is the line's own update time,
+re-archived daily); Sleeper 27 players (647 rows); Underdog 3 players so far (posts closer to game day); Betr: a 10-14 probe
+capture already holds 31 players for 10-20 (the window harvest switches from WNBA to NBA on 10-20); Fliff still team markets only (0 player
+props parsed; check owed 10-20). ParlayAPI 3,169 items 10-15, 12,507 credits left (the market refresh stays gated off).
+Payout map: flex_alt_tiers rebuilt 10-15 22:47Z (twice-daily runs). Credentials: all keys in nba_config.external_credentials.
+**Betr's first self-renewal happened today and was checked:** the access token (valid to 10-28) entered its 12-day window;
+today's window harvest (run 38961429765, dispatched by P3 at 20:19Z) refreshed it with the offline token and persisted the
+renewed session to the credential store ('betr_session_state' and 'betr_refresh_token', both written 20:21:53Z — read
+first from now on; the GitHub secret is only the seed), then harvested on the renewed session (WNBA 440 legs, 13 players;
+NBA switches on 10-20). Today's P3 green in 5m18s.
+**Repeatability — what the two hands-off seasons say (rolled-back replays on the adopted configuration, $1 per slip):**
+| | 2024-25 (the hard season) | 2025-26 |
+|---|---|---|
+| PLAY slips / per slate day | 2,059 / 13.5 | 2,373 / 15.6 |
+| net / ROI | +$759.53 / +36.9% | +$2,044.62 / +86.2% |
+| losing days | 62.5% | 45.4% |
+| worst day / best day | −$21.2 / +$159.6 | −$19.6 / +$126.3 |
+| worst 7 / 14 / 30 slate days | −$77.5 / −$119.5 / −$139.9 | −$62.4 / −$32.4 / +$103.5 |
+| 30-day windows that lose | 23.6% | 0% |
+| max drawdown | $143.4 (trough 2024-11-24) | $72.6 |
+| after the first month | −$45.4 | +$413.7 |
+| days below the starting bankroll | 20 (last on 2025-01-12) | 1 |
+By strategy, every staked strategy is positive in BOTH seasons except C_wstocks_4flex (−6.3% on 184 slips in 2024-25; its k2
+slot −11.9% on 73 — the cap-2 raise rests on the backtest rule, the live replay is weaker; the hurdles watch it) and the
+rotation-only R_stocks (38 slips) and the pre-break-week W_coredemon (3 slips, −$3). Honest expectation: these replays run strategies that were selected with both seasons in
+view, so they are not out-of-sample; the out-of-sample evidence is the walk-forward calibration (configs chosen on 2024-25
+alone averaged ≈ +43% on the untouched 2025-26, 18 of 20 positive; an average config ≈ +30%). Plan on a positive season in
+the +20–45% range with the 2025-26 figure as the upside, most days losing, wins arriving in a few big days, and a first month
+that can be negative. Bankroll: the hard season's $143 drawdown at $1 is why ≤ 0.5% of bankroll per slip (≈ $200+ at a $1
+unit) is the guidance.
+**Owed on 10-20 (unchanged list):** first real P2B / P3 slate; Fliff player props; Betr NBA chip; Sleeper legs priced in the
+first window ledger; P1 + P5 on 10-19 (curl repair path, weekly requal on the new caps).
