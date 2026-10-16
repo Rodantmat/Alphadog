@@ -22255,6 +22255,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `557` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26` and `T28`): `T1`–`T35` done; next `T36` onward.
 
+## §P558 — PASS 558 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T36` · NO RESIDUE
+*Angle (as NEXT set it):* (r24) `§P131`'s method on `T36` (as `§P158`, `§P208`, `§P258`, `§P308`, `§P358`, `§P408`, `§P458` and `§P508` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 557's head): `T36` `965` of `1,625` sentences listed — the same count `§P508` listed, the two lists diffed in the shell (`0` dropped, `0` added). Counted apart: `228` lines of the memory dump (ids `378`–`605`). **Read whole: `737`**; `737 + 228 = 965`. The bounded figure triage: `6` / `1` / `282` / `676` (`6 + 1 + 282 + 676 = 965`) — the same as `§P508`; the flagged lines fall inside the dump.
+- `§P508`'s one write (the named-team example, Dallas / Atlanta / OKC against Milwaukee / Golden State / San Antonio, in `NBA_BASELINE_CALIBRATION.md`) was re-verified on file: `1` hit.
+- Substance greps on the twelve (each zero re-grepped in its alternate forms and its context read): the as-of-pick injury table, the low-foul key, the drought rotation and EWMA, replays #5–#7 (`+2,582`, `+2,879` / `115%`, `+2,627` / `113%`), the old mega-drought (`911` slips, `+584`, `64%`) against the rest (`858`, `+814`, `95%`), the pre-break week (`33` vs `76` slips, `+40.1` / `122%` vs `+53.5` / `70%`), the calendar states and Cup nights, the scheduler audit (medians `4 h 23` / `2 h 59`, worst `5 h 38` / `3 h 46`, `34.5` h), the Cloudflare scheduler and run-once claim (`16` of `16` tests), the P2A / P2B / P3 split and its time rules (`41` early slates, `8:05`, `11:31`, `6:41`, `5:11`, `1,200` games), the Betr / Sleeper / Fliff plan (`131` days), the Underdog price / modifier program (`471,711` legs, `450,206` window legs, `1.04`, `4.69%`, `0.967`, `0.92`, `86` legs of January 7) — all on file; the `115` early-complement is derived (`156 − 41`), and the run-progress readouts ("`17` of about `158`", "`517`-line" workflow size) are run clock and code detail, judged out of scope.
+- The identifier check: the `24` names with `0` hits all fall inside the memory dump (ids `378`–`605`), judged on `§P508`'s basis; none in the read lines. No new source or store named.
+- Judged on `§P508`'s basis: narration, run waits, progress readouts, the owner's instructions, the memory dump (counted apart), capture / proxy walkthroughs.
+- **No residue in `T36`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17`, `T18`, `T26` and `T28`); the three-sweep count stays `0`. Commits not this sweep's since `8fd888949` (`§P557`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `558` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26` and `T28`): `T1`–`T36` done; next `T37` onward.
+
+
 
 
 
