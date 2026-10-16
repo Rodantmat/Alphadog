@@ -296,10 +296,23 @@ async function backtestContext(sql, cfg, names) {
 // but did not stake (week-1 / week-2 rules, the daily ceiling, below the minimum entry) showed "staked" for an active strategy.
 const SKIP_REASON = [["shadow", "shadow strategy"], ["week1_skip", "week-1 rule"], ["week2_skip", "week-2 rule"],
   ["capped", "daily ceiling reached"], ["below_min", "its half stake is below the minimum entry"]];
+function udAdvice(s, bt) {
+  const st = String(s.status || "");
+  if (!bt.unit.udPlay) return { label: "paper (Underdog engine)", play_usd: null };
+  if (st.startsWith("stand_down")) return { label: "SKIP - Underdog stand-down (" + st.slice(11) + ")", play_usd: null };
+  if (st.startsWith("shadow") || s.portfolio === "P4") return { label: "SKIP - shadow portfolio", play_usd: null };
+  if (bt.udAlarm) return { label: "SKIP - Underdog edge monitor ALARM (stopped)", play_usd: null };
+  const w = Number(s.stake == null ? 1 : s.stake);
+  if (!(w > 0)) return { label: "SKIP - not staked", play_usd: null };
+  const usd = Math.round(bt.unit.usd * w * 100) / 100;
+  if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
+  return { label: "PLAY $" + usd.toFixed(2) + " (Underdog)", play_usd: usd };
+}
 function stakeAdvice(s, bt) {
-  if (s.app !== "prizepicks") return { label: "paper (Underdog engine)", play_usd: null };
   const st = String(s.status || "");
   if (st === "replay_backtest") return { label: "backtest replay", play_usd: null };
+  if (s.app === "underdog") return udAdvice(s, bt);
+  if (s.app !== "prizepicks") return { label: "paper", play_usd: null };
   const skip = SKIP_REASON.find(([k]) => st.includes(k));
   if (skip) return { label: `SKIP - ${skip[1]}`, play_usd: null };
   const state = bt.stateOf.get(s.strategy) || "paper";
