@@ -23416,8 +23416,20 @@ are worth more per pass than any re-derivation.***
 - **No residue in `T22`.**
 - **Additional sweep `11` is clean so far** (`T1`–`T22` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `4fc57dbd6` (`§P643`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
 
-**Ledger**: pass `644` complete (`2026-10-16`).
-- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T22` done, no residue; next `T23` onward.
+## §P645 — PASS 645 (`2026-10-16`): ADDITIONAL SWEEP `11` — `T23` · NO RESIDUE
+*Angle (as NEXT set it):* (e26) `§P131`'s method on `T23` (as `§P195`, `§P245`, `§P295`, `§P345`, `§P395`, `§P445`, `§P495`, `§P545` and `§P595` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 644's head): `T23` `230` of `477` sentences listed — the same count `§P595` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`230` read whole** (the bounded figure triage, unchanged since `§P595`: `8` with a figure not on file / `0` inside a longer number / `50` with every figure on file / `172` with none; `8 + 0 + 50 + 172 = 230`). The `8` are `§P595`'s kinds: the PrizePicks pricing internals (out of scope), the one-date snapshot that item 1's two-season verdict supersedes, re-score counts and run ids.
+- `§P395`'s writes from `T23` (none) — nothing to re-grep. `§P595`'s write re-grepped and still on file: the re-scored January `15` chunk (`52,560` legs, `24,906` carrying a shift) and the rebuild *"identical on all 5,283 PrizePicks legs tested"*, with the shift sizes (`0.09`–`0.15` log-odds on average, up to `0.72`), in `NBA_DATABASE.md` beside the `ladder_calibration_asof` row-history note.
+- The figure-flagged zeros beyond that write: `9,993` and `58,879` (the payout map's unpriced and extrapolated-leg counts), the `v2-full` / `v2-cap` version names, run ids `35572323173` / `35633593875` and the one-date `64.5%` actual goblin hit rate — PrizePicks payout track or run ids, out of scope as `§P144` judged and cross-referenced to `nba/PP_PAYOUT_FINDINGS.md`. Every other flagged figure was on file in a comma, bare or unit form (`9,904` cells, the `325` dates, `60` → `0` disagreeing days, `4,748`, `18.5`, `587`, `1.87`, `1,315` / `51.9%`, `31.9%` / `73.5%`, `1.008` / `1.069`, `452`, `115`, `93%` / `99%`, `37.5`, `9,036`).
+- The identifier check, counted on the uncut sentences: `3` names with `0` hits — the same three `§P595` found: `pp_price_version` and `pp_refresh_prices` (the payout map's pricing function and refresh call, out of scope) and `GITHUB_ENV` (the Actions step-to-step environment file the payout workflow used to pass the league). Judged on `§P302`'s basis; no store, no new residue.
+- The source-name and store-name checks: `ladder_calibration_asof`, `score_history.py`, `board_tiers_v2`, `PP_PAYOUT_FINDINGS.md` and the WNBA mining as evidence for NBA gaps on file. No store gap.
+- On file, by substance: `§P595`'s list — the calibration wipe (`2026-09-20` `03:24` UTC, *"passing one season made the builder delete EVERY season"*), the `9,904` cells, the `325` dates (`162` + `163`), the phase-rule mismatch, the deadlock, the WNBA mining as evidence for NBA gaps (`4,748` NBA legs repriced), the paper-trading log, the standards backtest, the Fantasy Score weights and the points-line agreement. Judged: the payout mapping and pricing tables, narration, tool-limit and wait messages, the owner's shrinkage and conservative-margin instructions (on file in the payout track). No device / location tokens or credentials appear in `T23`.
+- **No residue in `T23`.**
+- **Additional sweep `11` is clean so far** (`T1`–`T23` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `85dd00f47` (`§P644`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `645` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T23` done, no residue; next `T24` onward.
+
 
 
 
