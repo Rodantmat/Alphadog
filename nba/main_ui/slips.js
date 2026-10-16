@@ -410,8 +410,11 @@ export async function apiHighHit(sql, cfg, url, version) {
     });
   }
   const plays = slips.filter(x => x.play_usd != null);
-  if (eng.source !== "replay_backtest" && slips.some(x => x.source_key === "prizepicks"))
-    notes.push("To play today: " + plays.length + " PrizePicks slip(s), $" + plays.reduce((a, x) => a + x.play_usd, 0).toFixed(2) + " at $" + bt.unit.usd.toFixed(2) + " per unit - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).");
+  if (eng.source !== "replay_backtest" && slips.length) {
+    const byApp = ["prizepicks", "underdog"].map(a => [a, plays.filter(x => x.source_key === a)]).filter(([, xs]) => xs.length)
+      .map(([a, xs]) => xs.length + (a === "prizepicks" ? " PrizePicks" : " Underdog") + " slip(s) $" + xs.reduce((t, x) => t + x.play_usd, 0).toFixed(2));
+    notes.push("To play today: " + (byApp.length ? byApp.join(" + ") : "0 slips") + " (total $" + plays.reduce((a, x) => a + x.play_usd, 0).toFixed(2) + ") at $" + bt.unit.usd.toFixed(2) + " per unit - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).");
+  }
   if (eng.source !== "replay_backtest" && plays.length) {
     const by = new Map();
     for (const x of plays) by.set(x.place_by_pt || "unknown", (by.get(x.place_by_pt || "unknown") || 0) + 1);
