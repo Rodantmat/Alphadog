@@ -23018,6 +23018,21 @@ are worth more per pass than any re-derivation.***
 
 
 
+## §P614 — PASS 614 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T42` · NO RESIDUE
+*Angle (as NEXT set it):* (x25) `§P131`'s method on `T42` (as `§P164`, `§P214`, `§P264`, `§P314`, `§P364`, `§P414`, `§P464`, `§P514` and `§P564` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 613's head): `T42` `82` of `145` sentences listed, no memory dump among them — the same count `§P564` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`82` read whole** (the bounded figure triage: `2` with a figure not on file / `0` inside a longer number / `21` with every figure on file / `59` with none; `2 + 0 + 21 + 59 = 82`; as `§P564` recorded — an attachment notice's file name and a proxy port, judged and not reproduced). The last `50` listed (ids `33`–`82`) are the time-zone and message-sent notices, the attachment notices and the build chat's narration, plus the proxy-traffic estimate and provider comparison that `§P414` placed on file; credential-class detail (provider names, gateway host and port, exit networks and ISPs) judged and not reproduced.
+- `§P564` recorded no write for `T42`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its dash-stripped / regex forms and its context read): Pass F's sticky-red and opening-window-yellow changes and the unique-half-point board guard, the Underdog edge monitor's shared season block and Pacific clock, Pass G's reliability work (soft-step failures landing on the `pipeline_runs` row, the retired legacy crons, P3 no longer dying as a whole on one app's `407`), Pass E's dress-rehearsal finding (the sandbox broke with 31s and let a production `DELETE` through, `0` rows affected), Pass H's COMPASS facts `87` / `135` and strategy `31t`, the weekly requalification's `17` survivors against a null of `0` (`478,900` slips), the `407` block and its consequences (forced P1, P2A / P2B mining, the Betr harvest proof), the nine NBA proxy workflows reading the stored URL, the forced P1 run, the Sleeper schedule stamp (`game_date`) and the market-free study table — all on file; the traffic estimate and the provider price table are credential-class detail already judged and placed on file at `§P414`; the exit-network names are not reproduced.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `1` name with `0` hits — `inlined_image_paths`, the key of an attachment notice (a session notice, judged and not reproduced). No new source or store named.
+- Judged on `§P564`'s basis: narration, run waits, the time-zone and message-sent notices, the attachment notices, the local and remote blob-sha proofs, provider names, gateway host and port, exit networks, prices and traffic meters of the proxy (credential-class, not reproduced), the owner's instructions to the documentation chat.
+- No residue in `T42`: every figure and name on file by substance, or judged out of scope; the zeros re-grepped in their other forms — the build chat's pass labels ("Pass F" / "Pass H" on file as the certification findings `F-4`…`F-9` and "pass H"), the Sleeper per-leg game date (`game_date`, on file) and the blob-sha proofs (judged).
+- **Additional sweep `10` is clean so far** (`T1`–`T42` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `cdcef5608` (`§P613`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `614` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T42` done, no residue; next `T43` onward.
+
+
+
 
 
 
