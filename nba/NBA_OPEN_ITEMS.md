@@ -23728,6 +23728,19 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `668` complete (`2026-10-16`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T46` done, no residue; next `T47` onward.
 
+## §P669 — PASS 669 (`2026-10-16`): ADDITIONAL SWEEP `11` — `T47` · NO RESIDUE
+*Angle (as NEXT set it):* (c26) `§P131`'s method on `T47` (as `§P169`, `§P219`, `§P269`, `§P319`, `§P369`, `§P419`, `§P469`, `§P519`, `§P569` and `§P619` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 668's head): `T47` `60` of `167` sentences listed, no memory dump among them — the same count `§P619` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`60` read whole** (the bounded figure triage: `2` with a figure not on file / `0` inside a longer number / `23` with every figure on file / `35` with none; `2 + 0 + 23 + 35 = 60`; the two are the research-source links' publisher article ids, judged and not reproduced).
+- `§P619`'s one write for `T47` re-verified on file (`1` hit each): the Pick6 statement *"our gated legs look about 13% better than an even line"*, the reason no action followed (*"Pick6 doesn't publish its payout table and we don't scrape it live, so I took no action"*) and *"That board is still tiny, so only one new quote has come in so far"* — all present as said.
+- Substance greps on the twelve (each zero re-grepped in its regex forms and its context read): the playoff-Unders variation grid and its gates, the `1.5%` chance of a losing `50`-night postseason and the drawdown (`6.4` / `11.6` units), the `+24%` with every leg `5` points weaker, the Underdog `0.1%`, the three-night live-engine replay (`9` of `9` plus the Underdog slip) and the odds-free-score test fix, all `60` whole-number 5-Flex versions positive, strategy `31z` / `31aa`, COMPASS `143` / `144`, the multiplier directive and pricing laws (`1.871`, `1.843`, `0.500`, the alternate-line cut `3`–`7%` / `13`–`26%`, Pick6's table, Underdog `0.997`), the `+143%` versus `+10%` filter, the old model-based check (`12` of `12`, `1.548`), the PrizePicks help-centre Flex tables (`2.25` / `1.25`, `5` / `1.5`), the transcript-pack exchange (the Sep 28 last upload, the two stretches with no turn-by-turn transcript, the pack contents) — all on file.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `0` names with `0` hits. No new source or store named.
+- Judged on `§P619`'s basis: narration, run waits, message-sent and time-zone notices, the research-source links and their ids, the pack's file listing, the owner's instructions to the documentation chat.
+- No residue in `T47`: the one zero (the `m*` of the multiplier check) is on file as `m_star`; the `612` of the drawdown line is the `6–12`-unit drawdown (`6–12-unit` on file), and the transcript-pack exchange is session process, judged on `§P519`'s basis.
+- **Additional sweep `11` is clean so far** (`T1`–`T47` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `1d87eb485` (`§P668`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `669` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T47` done, no residue; next `T48` onward.
+
 
 
 
