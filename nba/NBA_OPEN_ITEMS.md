@@ -22607,6 +22607,19 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `585` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T13` done, no residue; next `T14` onward.
 
+## §P586 — PASS 586 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T14` · NO RESIDUE
+*Angle (as NEXT set it):* (v24) `§P131`'s method on `T14` (as `§P186`, `§P236`, `§P286`, `§P336`, `§P386`, `§P436`, `§P486` and `§P536` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 585's head): `T14` `602` of `1,201` sentences listed — the same count `§P536` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`602` read whole** (the bounded figure triage, unchanged since `§P536`: `0` with a figure not on file / `0` inside a longer number / `127` with every figure on file / `475` with none; `0 + 0 + 127 + 475 = 602`).
+- `§P486`'s write from `T14` re-grepped and still on file (the coach-change trail and the event-map build in `NBA_SYSTEM_ARCHITECTURE.md`): the eight dated in-season coach changes, the `Feb 22` rule, `StringIO` `1`, `player_name_map`, `rung_market`, `board_tiers`, `§P486` ×`4`.
+- The identifier check, counted on the uncut sentences: `4` names with `0` hits (`hp_morn`, `boardNBA`, `market_consensus_new`, `slip_cum`) — scratch and experiment table names (the `1,177`-table MLB backtest schema, dropped, with its count on file; the NBA scratch tables beside `schedule_norm` and `board_tiers_ud`, both on file) and a join-prose label; no store, no new residue.
+- The source-name and store-name checks: every source and store named in `T14` on file.
+- On file, by substance (each grepped before it was read, every hit read, a zero-hit figure re-grepped in other forms): the disk incident and its reclaim, the baseline-duplicate offset, the coverage check, the coach-change parser, the day-by-day baseline (`7.19M` rows for the singles, `12.49M` with the combos), the combos builds (`2.7M` / `2.61M`), the game-line snapshots (`307,604` rows), the event–game map (`2,454` of `2,556` events, `96%`, the `9` unrecoverable snapshots, the empty `nba_teams_current.json`), the board-coverage measure (`89.6%`; the points-combo out-of-range losses `4,804` / `3,638`), the four new box-score stats and the `oreb` exclusion, the periods history (`152` of `163` game-days — the quarter files missing about `11` dates), the dunks deferral, the `2 vCPU / 4 GB / 60 GiB / 97 connections` sizing and the `$30.45` plan with its autoscale rule, and the open-items list. Judged: narration, run waits and probe figures superseded in the same turns (the `148`-of-`~650` snapshot count, the `658`-snapshot probe), superseded cost estimates (the `$40.75` and `$60.90` tiers and the premium-disk delta), the scenario-precompute timing estimates, owner dictation, MLB-track figures, code and file bodies.
+- **No residue in `T14`.**
+- **Additional sweep `10` is clean so far** (`T1`–`T14` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `4495d932c` (`§P585`'s last commit; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `586` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T14` done, no residue; next `T15` onward.
+
 
 
 
