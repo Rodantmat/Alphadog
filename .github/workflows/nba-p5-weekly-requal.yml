@@ -195,6 +195,8 @@ jobs:
         run: |
           SV_TABLE_SUFFIX="_mf" python -u nba/validate_slip_strategies.py
           SV_TABLE_SUFFIX="_mf_nosteals" python -u nba/validate_slip_strategies.py
+          SV_TABLE_SUFFIX="_wo" python -u nba/validate_slip_strategies.py
+          SV_TABLE_SUFFIX="_wo_nosteals" python -u nba/validate_slip_strategies.py
 
       # 5d. VERDICT HISTORY (retention audit 2026-10-08): the validator and certifier tables are whole-table replaces - last
       #     week's inputs to the step-6 verdicts were gone. Snapshot them under this run's date (append-only, idempotent).
