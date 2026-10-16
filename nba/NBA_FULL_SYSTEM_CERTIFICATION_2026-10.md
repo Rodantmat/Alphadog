@@ -1955,3 +1955,20 @@ that can be negative. Bankroll: the hard season's $143 drawdown at $1 is why ≤
 unit) is the guidance.
 **Owed on 10-20 (unchanged list):** first real P2B / P3 slate; Fliff player props; Betr NBA chip; Sleeper legs priced in the
 first window ledger; P1 + P5 on 10-19 (curl repair path, weekly requal on the new caps).
+
+### PLACE BY ON EVERY SLIP; THE TWO-RUN SPLIT REJECTED (owner 2026-10-16 13:37 PT: "20 minutes is tight to put slips on, how many slips is it prospected to generate?"; 13:39 PT: "The place by is a good idea. I don't like the split in 2 runs.")
+**Decision:** the afternoon run stays ONE run per slate (P3 at min(13:15 PT, first tip − 30 min) + 1 min) - no second run for
+late games. Instead every slip says when it must be entered.
+**What was built (main UI v1.4.6, `nba/main_ui/slips.js` + client):** each slip carries `place_by_utc` / `place_by_pt` /
+`place_by_game` = the FIRST tip among its own legs' games - each leg's game is its player's team that day (the box score's team on
+a played date, else today's roster in nba_ref.players, refreshed by P2B every morning, so off-season moves count; a leg without an
+id is resolved through nba_ref.player_name_map, the grader's own name map) joined to nba_calendar.slate_games (the official tip,
+not an app's displayed start - PrizePicks shows +10 min). A slip with any leg that cannot be placed falls back to the slate's first
+tip and says "(first tip)" - conservative. The card reads "Place by 12:00 PM PT (BOS@DET tips)"; the day's notes add "Place by
+(each slip closes when the first game among its legs tips): N by 12:00 PM PT, M by 4:00 PM PT".
+**Why it matters:** on 38 of the 39 2026-27 slates with a tip before 1:45 PM PT only ~2.3 of ~7.7 games are early, so most slips on
+those days have hours, not 20 minutes. Opening night (3 games, first tip 12:00 PT) is the tight case: slips ~11:40 PT.
+**Certified:** new UI check C52 recomputes every slip's place-by independently from its leg names (name map → roster / box score
+→ slate_games), ±1 s, ends "PT", never before the first tip. UI end-to-end **95/95** on 2026-03-10 (26 slips, all matched) and
+**95/95** on the default (today) path; integration test **ALL PASS**. (A first run overlapped the integration test's rolled-back
+transaction and timed out C12 / C18 at 13 s - the health endpoint does not touch this code; rerun alone, green.)
