@@ -21973,6 +21973,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `536` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, clean so far: `T1`–`T14` done, no residue; next `T15` onward.
 
+## §P537 — PASS 537 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T15` · NO RESIDUE
+*Angle (as NEXT set it):* (w23) `§P131`'s method on `T15` (as `§P187`, `§P237`, `§P287`, `§P337`, `§P387`, `§P437` and `§P487` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 536's head): `T15` `580` of `1,084` sentences listed — the same count `§P487` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`580` read whole** (the bounded figure triage, unchanged since `§P487`: `25` with a figure not on file / `3` inside a longer number / `147` with every figure on file / `405` with none; `25 + 3 + 147 + 405 = 580`).
+- `§P487`'s write from `T15` re-grepped and still on file (the live archiver's run totals and the oreb load in `NBA_SYSTEM_ARCHITECTURE.md`): `§P487` ×`4`, Underdog `5,281`, Fliff `1,394`, Sleeper `1,276`, the `8,100`-leg run, `281,872` rows.
+- The figure-flagged zeros, each re-grepped in comma, bare and unit forms and read: the absence-panel and allocator intermediates (`2,557` / `1,477` / `48,946` rows, the sample `32,654` rows across `385` games, `679` team-games, the M2 weights' second column `6.020`, the points-MAE second column `6.374` / `6.296`, the `4,661` / `1,928` rotation-split cells), the oreb hypothesis tables (the opportunity-basis anchor bands `5,509` / `7,667` / `4,221` / `1,778`, the `k` sweep's MAE column `0.8946`–`0.9123`) and the pair-scrape probes (`141.4` minutes, the `720` requests). All inside tables or probes whose verdicts are on file: the retracted panels and the conservation values (`0.10` / `-0.05` / `-0.37` / `0.25`–`0.49`), the `0.9930` allocator and its multipliers (`1.265` → `1.222`), the `26,069` / `1.3147` / `1.3696` A2 table, the oreb four-hypothesis verdicts and the `0.241` → `0.045` fix. Judged on `§P437`'s and `§P487`'s bases (retracted panels' rows, diagnostic and progress counts, intermediate probe figures superseded in the same turns).
+- The identifier check, counted on the uncut sentences: `14` names with `0` hits — the same set `§P487` listed (`P_usage`, `X_out`, `opponent_quality`, `log_base`, `log_recent`, `opp_prior_roster`, `q_ratio`, `team_of_game`, `usage_mult`, `with_min`, `t_142_selection_param_1`, `percentageTotalTimeBothOn`, `personIdDef`, `personIdOff`), judged on `§P302`'s basis with their substance on file; no store, no new residue.
+- The source-name and store-name checks: Fliff, Underdog, Sleeper, `board_snapshots`, `score_prop_reliability.py`, `leaguedashlineups` on file; no store beyond `§P487`'s write.
+- On file, by substance: the N1 status table (`0.503`, `0.552`, `0.828`, Doubtful `0.005`), B4's two rejections, the sanity gate, A2's conserving multiplier (`15` of `19` props), the oreb `SHIFT_LAMBDA` `0.5`, the archetype fix and the `0.1` pp penalty, fantasy's `2.92` pp and double-double's `7.32` pp, the `27` certified props, the A5 / A1 / A6 build order. Judged: narration, owner dictation, code and file bodies; no device / location tokens or credentials appear in `T15`.
+- **No residue in `T15`.**
+- **Additional sweep `9` stays clean so far** (`T1`–`T15` done, no residue, `0` changes). Commits not this sweep's since `0fa636848` (`§P536`'s census; the log fetched before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `537` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, clean so far: `T1`–`T15` done, no residue; next `T16` onward.
+
 
 
 
