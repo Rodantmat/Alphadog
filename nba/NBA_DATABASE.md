@@ -2278,6 +2278,8 @@ lesson — this table's `side` is a real population split; the Platt fit's is no
 `level, prop, band, side, phase, n, s_norm, lo_scale, hi_scale`. 253 full / 66 mid / 22 coarse groups
 + global. *Superseded by the deduction model but retained.*
 
+🆕 *(additional sweep `9`, pass `539`, `§P539` — `T17` `2026-09-18 00:41Z`, the group-score range, AS STATED)*: *"Group scores span 0.566 (most reliable) to 1.004 (least), with a population scale of 0.143–2.298."* — the `0.566` → `1.004` span was on file; the population scale `0.143`–`2.298` was not.
+
 ### `nba_score.scenario_realised` — 1,942 rows
 `season, game_date, game_id, branch_key, branch_prob, n_uncertain, n_branches, realised,
 was_most_likely, rank_by_prob, phase`. **Only the realised branch is stored.**
