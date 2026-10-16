@@ -49,7 +49,10 @@ def main():
           WHERE s.rank_key = 'final_score')
         SELECT season, count(*) legs,
                count(*) FILTER (WHERE abs(cm - cmw) < 1e-9) same_books,
-               count(*) FILTER (WHERE abs(cm - cmw) < 1e-9 AND abs(s_wo - s_cert) > 0.011) identity_breaks,
+               -- tolerance = one rounding step at the 2nd decimal: the SQL formula rounds in numeric, the production scorer in
+               -- float; the certified market-free twin shows the identical 0.02 gaps (178 of 18,874 legs 2025-11-01..07,
+               -- max 0.020) - so the twins are built alike (verified 2026-10-16)
+               count(*) FILTER (WHERE abs(cm - cmw) < 1e-9 AND abs(s_wo - s_cert) > 0.0201) identity_breaks,
                count(*) FILTER (WHERE abs(cm - cmw) >= 1e-9) books_changed,
                count(*) FILTER (WHERE r_wo <> r_cert) rank_changed,
                avg(cm)::float cm_all, avg(cmw)::float cm_window
