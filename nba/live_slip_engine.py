@@ -1251,7 +1251,9 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             h['REQUAL'] = ph['REQUAL']   # keep P5's verdict text across daily evaluations
         # the drawdown episode start: the day of the running peak (one-shot grace clock, never reset by a brief recovery)
         clean_release = False
-        if sticky_red and red_release(conn)[0] == 'clean':
+        # never for a cap-0 strategy (retired / certification-red: B_demon_*) or a red that P5 SET on a failed certification
+        # (REQUAL 'FAIL ...'): those come back only through P5 (validator PASS / live record) - found by audit_release_path.
+        if sticky_red and red_release(conn)[0] == 'clean' and cap > 0 and not str(ph.get('REQUAL', '')).startswith('FAIL'):
             fresh = any(v in ('yellow', 'red') for v in flags.values())
             rc = int(ph.get('RED_CLEAN', 0))
             if ph.get('RED_CLEAN_LAST') != day.isoformat():   # one count per slate, like CLEAN
