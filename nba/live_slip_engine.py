@@ -192,7 +192,8 @@ def stake_unit(conn):
 # identification"). H7 (29f) reds ALL of family A when the shared steals anchor's trailing-14-day hit falls 3 sigma. It predates
 # the drought rotation (29p), which answers the same steals drought by rebuilding family A WITHOUT steals - so in a steals
 # drought H7 stops a family that is no longer playing the failing cell, and its sticky red outlives the drought. Modes:
-#   red    (default until the replay test decides) - as before: yellow at 2 sigma, red at 3 sigma
+#   red    (KEPT, 2026-10-16: off tested on both hands-off replays - +569.4 vs +559.4 in 2024-25 but +2,037.5 vs +2,044.6 in
+#          2025-26, not better in both; classification_config['anchor_h7'] = red) - yellow at 2 sigma, red at 3 sigma
 #   yellow - H7 can only half the cap, never stop the family
 #   off    - H7 recorded in the hurdles (H7_obs) for the record, no state effect; the rotation is the steals-drought response
 # Source: env LS_H7_MODE (replay / research override), else classification_config['anchor_h7'].mode, else 'red'.
