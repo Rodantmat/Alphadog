@@ -23048,6 +23048,21 @@ are worth more per pass than any re-derivation.***
 
 
 
+## §P616 — PASS 616 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T44` · NO RESIDUE
+*Angle (as NEXT set it):* (z25) `§P131`'s method on `T44` (as `§P166`, `§P216`, `§P266`, `§P316`, `§P366`, `§P416`, `§P466`, `§P516` and `§P566` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 615's head): `T44` `160` of `318` sentences listed, no memory dump among them — the same count `§P566` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`160` read whole** (the bounded figure triage: `2` with a figure not on file / `0` inside a longer number / `52` with every figure on file / `106` with none; `2 + 0 + 52 + 106 = 160`; as `§P566` recorded — a workflow run-id list and the MLB credit balance, judged and not reproduced).
+- `§P566` recorded no write for `T44`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its regex forms and its context read): the P5 market-free re-run, strategy `31u` / `31v` and COMPASS facts, the five-app board paper ledger, the research pass's verdict, the P4 reset, the retention audit (`board_tiers_v2` for the four readers, the per-slate snapshots, the replay guard, referee-crew logging, the day-before injury snapshots, the git and release archives), the closing "certified, with one honest qualifier about timing" answer and its four additions first executing inside real pipelines on their own dates, the NBA postseason backfill and the postseason-not-yet-wired note (pipelines treat regular-season games as slates; the postseason gets its own tables) — all on file; the proxy-secret rotation is credential-class detail, judged and not reproduced.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `0` names not on file. No new source or store named.
+- Judged on `§P566`'s basis: narration, run waits, scheduled-trigger and message-sent notices, run-id lists, the MLB / NHL credit and board-time planning (cross-reference only), the owner's instructions to the documentation chat.
+- No residue in `T44`: the substance probe's zeros (`50 + 47` dates, `620`, `1.9 M`, `5.2 M`, `4.92 M`, `3.6 M`, `5:00 PM`, `37` markets, June 23, `560k`, `2:30 AM`, `653 KB`, `23 tables`, a commit hash, `no 9 AM`) were re-grepped: the NBA ones are on file in other forms (`50` / `47` dates with `11,622` / `11,922` rows, the `23` DB-only ledgers, the `1.49 M`-row postseason pull, the `4,999,977` credit balance) and the rest are the MLB / NHL credit and board-time planning, judged on `§P516`'s basis as cross-reference only.
+- **Additional sweep `10` is clean so far** (`T1`–`T44` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `691a1c91f` (`§P615`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `616` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T44` done, no residue; next `T45` onward.
+
+
+
 
 
 
