@@ -22280,6 +22280,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `559` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T37` done; next `T38` onward.
 
+## §P560 — PASS 560 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T38` · NO RESIDUE
+*Angle (as NEXT set it):* (t24) `§P131`'s method on `T38` (as `§P160`, `§P210`, `§P260`, `§P310`, `§P360`, `§P410`, `§P460` and `§P510` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 559's head): `T38` `307` of `560` sentences listed, no memory dump among them — the same count `§P510` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`307` read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `71` with every figure on file / `236` with none; `0 + 0 + 71 + 236 = 307`; the same as `§P510`).
+- `§P460`'s three writes (the sandbox run times and test-table footprint; the money-terms bankroll guidance; the archiver's routine-history note) re-verified on file (`50`–`80` minutes, `148` MB, `$60`–`80`, "one copy per capture day"); no further write for `T38`.
+- Substance greps on the twelve (each zero re-grepped in its no-space / dash-stripped / comma / lower-case forms and its context read): the isolated slate simulation (`256` scored legs, no claim, no commit, the rolled-back picker), the live-board team-name bug and its schedule-based fix (LeBron's roster team, the `30`-slate parity `360` of `360` / `1,146`), the six-star opening board and the cells that built nothing, the star-Under finding (`37%` vs `57%`, `51%`), the board-size finding (`~2,300` priced legs, `+9.6%`, `5,000+` legs, the `179` / `178` thresholds, `126` and `178` blocked), the star-Under slip result (`−14.5%` / `−7.3%`), the stored-series table (`P5` `+464` on `522`, `60`–`88`, `43.8`, `17` win / `137` lose days and the `34`-slate streak, `64%`, `$137` / `$250` / `$60`–`80`, stocks 4-Power `−8%`), the weekly table totals (`+2,948` / `+464`, `8` of `23` weeks), the realistic-expectation work (`58.6%` / `65.4%`, `56`–`57%`, `1`-in-`3`, the H1 hurdle `13` / `20` points, `±18`–`25` points, `+3%` to `+64%`), the sequential-monitor research and calibration (Waudby-Smith & Ramdas, Newey-West, `16%`, `54/84/96/100`, `6%` / `5%`, checkpoints `30`–`150`, `2.25` / `5` review-site tables, `55.03`), the exact return curve (`+86%` … `−6%`, `$2,667` … `$178`, break-even margin `9.2`), the revised `+23%` to `+44%`, the monitor wiring (`186` lines, the 2024-25 row `2.9` / `11.0`, December 26), the star-Under half-stake test (three thresholds, `77.8%` / `94.0%`, `~3%` less money, `16` test tables, `10` test cases) — all on file; the commit hash `336468a` and the team-id string format are run and code detail, judged on `§P510`'s basis.
+- The identifier check: the `1` name with `0` hits — `nba_1610612765` (a team-id text format in a query, code-internal) — judged on `§P302`'s basis. No new source or store named.
+- Judged on `§P510`'s basis: narration, run waits and run-clock estimates, commit hashes, the build chat's offers, the owner's instructions to the documentation chat.
+- **No residue in `T38`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17`, `T18`, `T26`, `T28` and `T37`); the three-sweep count stays `0`. Commits not this sweep's since `bcd39b749` (`§P559`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `560` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T38` done; next `T39` onward.
+
+
 
 
 
