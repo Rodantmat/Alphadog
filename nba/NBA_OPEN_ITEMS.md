@@ -24304,6 +24304,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `712` complete (`2026-10-16`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`11` complete: `1`–`9` each NOT clean, `10` and `11` CLEAN. ⏳ **Additional sweep `12`** under way, clean so far: `T1`–`T40` done, no residue; next `T41` onward.
 
+## §P713 — PASS 713 (`2026-10-16`): ADDITIONAL SWEEP `12` — `T41` · NO RESIDUE
+*Angle (as NEXT set it):* (w27) `§P131`'s method on `T41` (as `§P163`, `§P213`, `§P263`, `§P313`, `§P363`, `§P413`, `§P463`, `§P513`, `§P563`, `§P613` and `§P663` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 712's head): `T41` `75` of `136` sentences listed, no memory dump among them — the same count `§P663` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`75` read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `22` with every figure on file / `53` with none; `0 + 0 + 22 + 53 = 75`; as `§P663` recorded). The last `28` listed (ids `48`–`75`) are the session's time-zone, message-sent, local-command-caveat and model-switch notices and the build chat's narration of its own steps (the file-sha proofs, the helper test on a throwaway repo, the push by patches or by put), judged and not reproduced.
+- `§P663` recorded no write for `T41`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its dash-stripped / date / regex forms and its context read): the recertification on the live leg pool (`66` checks over `7,434` tied slips, `478,900` / `61,688` / `346,736`, `+77.8% → +78.4%` and `+94.0% → +94.9%`, `EDGE_DELTA` `8.99 → 9.16`, the monitor reaching the same decisions at slates `60` and `120`, calibration moves ≤ `0.01`), `live_strategy_calib` read before the fallback constants, the official P5 (`13` survivors against a null of `0`, the eight not in the top 30, the low-foul rebuild of 10-02, `+81%` / `+120%` / `+90%`), Underdog's whole-number window (`0.6%` of its board, `2024-10 → 2025-02`), the `_bk_*_hp` backups and the `372 MB` comparison table, the dead-claim recovery, the verifier rewrite, the first referee rows (`4` games × `3` officials, 2026-10-06) and the #3 / #5 / #6 findings — all on file.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `0` names with `0` hits. No new source or store named.
+- Judged on `§P663`'s basis: narration, run waits, the time-zone, message-sent, caveat and model-switch notices, the build chat's file-sha and throwaway-repo proofs, the owner's instructions to the documentation chat.
+- No residue in `T41`: every figure and name on file by substance, or judged out of scope; the zeros re-grepped in their other forms — Underdog's whole-number window (`2024-10 → 2025-02`, written with arrows and no month word), the monitor's confirmations at slate `60` (`2025-26`, z `+4.22`) and `120` (`2024-25`, z `+3.64`) written "at 60" / "at 120", the dead-claim recovery (`stale_claim_closed`, scheduler `v2.2.0`) and the build chat's "Pass A" (its certification round `1`, on file as the verification round).
+- **Additional sweep `12` is clean so far** (`T1`–`T41` done, no residue; the three-sweep count is `2` and stays `2` until sweep `12` closes). Commits not this sweep's since `337b970c9` (`§P712`'s census; the log and each diff's file list read before this line): `1` — `8de316fa5` (the NBA main UI build, `nba/main_ui/slips.js`); it does not touch the twelve. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `713` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`11` complete: `1`–`9` each NOT clean, `10` and `11` CLEAN. ⏳ **Additional sweep `12`** under way, clean so far: `T1`–`T41` done, no residue; next `T42` onward.
+
+
 
 
 
