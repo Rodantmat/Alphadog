@@ -22216,6 +22216,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `554` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26` and `T28`): `T1`–`T32` done; next `T33` onward.
 
+## §P555 — PASS 555 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T33` · NO RESIDUE
+*Angle (as NEXT set it):* (o24) `§P131`'s method on `T33` (as `§P155`, `§P205`, `§P255`, `§P305`, `§P355`, `§P405`, `§P455` and `§P505` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 554's head): `T33` `467` of `760` sentences listed — the same count `§P505` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`467` read whole** (the bounded figure triage, unchanged since `§P505`: `1` with a figure not on file / `1` inside a longer number / `185` with every figure on file / `280` with none; `1 + 1 + 185 + 280 = 467`; the "not on file" one is `36.4%` of the all-turnovers cell, held on file as the `+118%` / `165` slips / `39` days result in the strategy-document 13i entry, and the other is `0.495`, the goblin all-3 hit rate of the same Over / Under pricing table; the tier-history "223 days" is the dash-stripped `2–23` days on file in `NBA_GOBLIN_DEMON.md`'s ladder-expansion line).
+- `§P505` recorded no write for `T33`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its alternate forms and its context read): the composition sweep and its levers (cell concentration `+58.7%` / `+127%`, threshold `0.62`, depth, the `6`-pick `+427%` mirage, Power vs Flex `+132%`), the single-cell all-turnovers result with its same-prop correlation, the caps and portfolio coverage, the Over / Under and goblin pricing table, the simulated-line correction and the real-only harness (`22,967` priced legs, `2,092` configs, `1,269` positive), the season-effect and swapped-seasons controls, the bootstrap Gate 1, the real-lines signal re-check, Underdog's table and the same-player correlation, the sort-key finding, the board correction (`+29.9%` → `+10.3%`; `86%` / `88%` board join; Gate 1's `13` → `1`), the ranks as pure selectors, `nba_score.slip_leg_features`, the anchor tiers, the tier map and its cells (the top-n hit rates, the demon jackpot cells, the near and below bands, the Regular ledger of §19i), the goblin verdict and the durable / sharp / wide-flat depth bands of §19j — all on file.
+- The identifier check, counted on the uncut sentences: the same `3` names as `§P505` with `0` hits — `player_hr`, `roi_std` and the `cal_p0` dash-strip of `cal_p ≥ 0.6x` — judged on `§P302`'s basis; the other names (`build_slip_config_sweep.py`, `CS_S1_FROM`, `CS_PROBE`, `line_source`, the `_alternate` markets) are on file. No new source or store named.
+- Judged on `§P505`'s basis: narration, run waits and run ids, the build chat's offers to stop, figures superseded inside the transcript, the owner's instructions to the documentation chat.
+- **No residue in `T33`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17`, `T18`, `T26` and `T28`); the three-sweep count stays `0`. Commits not this sweep's since `7fa9a8813` (`§P554`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `555` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26` and `T28`): `T1`–`T33` done; next `T34` onward.
+
+
 
 
 
