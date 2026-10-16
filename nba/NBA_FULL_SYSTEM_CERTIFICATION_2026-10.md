@@ -1842,3 +1842,59 @@ loop cut the family's stakes inside two days and restored them without anyone to
 produced by a decoded unicode escape) corrupted the slips client once more - repaired with a byte-verified full-file put; the
 rolled-back replay holds `live_slips`' table lock for its whole run (ensure_tables' ALTER), so the Slips screen waits while it
 runs - never run it near P2A / P3.
+
+### THE FEBRUARY DIP — IDENTIFIED, UNDERSTOOD, AND WHAT CHANGED (owner 2026-10-15 18:01 PT: "Is there any way to prevent the February deep? Test and find a way to identify and improve it, not just avoid blindly, but understand and about it after identification")
+Tools: `audit_season_replay.py` gained `AR_SAVE` (the replayed slips and daily states copied over a second connection into the
+research tables `nba_score.replay_audit_slips` / `replay_audit_states`, so they survive the rollback; production untouched);
+`research_h7_canary.py` (is a steals-anchor collapse a canary for family A's other legs?); `research_release_window.py` (how
+fast a red should come back: replay episodes + null / edge simulation). Engine switches added with the old behaviour as the
+code fallback: `h7_mode` (classification_config['anchor_h7']: red | yellow | off) and `red_release` (['red_release']: p5 |
+clean, clean_days). Gemini (validation only) proposed the canary test used below.
+
+**1. What the dip was, leg by leg.** The −$13 February of the first replay had three parts. (a) **Jan 30 – Feb 5, a steals
+cold streak:** the 0.5-line steals Unders hit 12 of 26 (46% vs a calibrated 63%; z ≈ −1.8 — ordinary variance for a cell
+whose legs lose to a single steal). Checked and ruled out: the trade deadline (every picked steals player had played for one team in the 30 days before
+each game but one, Jared McCain, who hit; the 2024-25 deadline week was +140 units), league steals rate (8.4 / 8.7 per
+team-game in those weeks, inside the season's 7.8–9.2 weekly range). No board-side signal exists — the same conclusion as the 80+ drought passes of
+§29m–§29u. The drought rotation (§29p) switched on Feb 2 (on / off daily until it held from Feb 6) and its steals-free family A build made +110 units on the backtest
+across Jan 29 – Feb 12 while the steals build lost 88. (b) **Feb 11 – 22, the H7 red:** the steals anchor (trailing 14 slates,
+0.340 vs 0.634, z 3.33) stopped all of family A — a family the rotation had already moved off steals — and the red held over
+the All-Star break. (c) **The replay's P5 ran only on Mondays that were slate days**, so the break's Monday (Feb 16) was
+skipped and the release waited for Feb 23. Production runs P5 every Monday (P1's weekly cron, slate or not).
+**Fixed (replay fidelity):** `live_slip_engine.replay` now runs the P5 simulation on every Monday between slates. With
+production parity the same season is **Feb +147.7 on 262 slips (+56%)** and the season **+2,044.62 on 2,373 slips, ROI
++86.2%** (was +1,883.76 / +80.6%); the family was released on Feb 16 and played the post-break days (Feb 19: +126).
+What remains of the dip is (a): Feb 1–5 −28.5 on 64 slips — the cost of a variance streak before the rotation can see it.
+
+**2. H7 — tested, KEPT.** Canary test (backtest, certified family-A legs, both seasons): the anchor never reaches red on the
+certified legs (2025-26: 3 yellow days, which were among the season's best); its replay reds read the live ledger's steals
+legs (shadows and the rotation observer included), a wider set. Hands-off replays with H7 off: 2024-25 +569.4 vs +559.4, 2025-26 +2,037.5 vs +2,044.6 — not better in
+both seasons (both inside noise), so H7 stays red (classification_config['anchor_h7'] = red).
+
+**3. The bigger cost the study found — a red that outlives its cause (ADOPTED: red_release = clean, 10 days).** In the
+2024-25 replay A_wsteals_5flex (cap 9, the largest strategy) went red on 2024-12-28 (H1: trailing-14-day leg hit 3σ low, at
+the bottom of that season's long drought) and stayed red until 2025-03-31 while its shadow slips earned +197 units (+26%):
+P5's release reads the SEASON-TO-DATE record, which still carries the weeks that caused the red, and on the live-ledger path it
+would never have released it that season. Tested: (i) a trailing-40 / 30-day release window — released A_wsteals five weeks
+earlier but doubled the false-release rate on a zero-edge null (4.7–6.7% → 10–15%) and missed the 2026 releases: rejected;
+(ii) **clean release** — a red strategy returns to YELLOW (half cap) after 10 consecutive slate evaluations with every hurdle
+clean on its own record (H1 reads its graded shadow legs while it is red); a fresh hurdle fire resets the count; the calendar
+windows never release; P5's weekly PASS still releases as before. Rule written before the runs: net and ROI ≥ the p5-only
+baseline in BOTH seasons, max drawdown not worse by > 10%. **Result: 2024-25 +559.4 → +759.5 units, ROI 34.9% → 36.9%, max
+drawdown 143.4 → 143.4 (A_wsteals back 2025-01-22; February 2025 +66.4 → +154.0; every month ≥ baseline); 2025-26 identical
+(+2,044.62, 86.2%, 72.6).** Adopted in the DB (classification_config['red_release'] = {mode clean, clean_days 10}).
+Known limits: a released strategy that is really broken costs half stakes until H1–H3 re-red it (they do, from its staked
+record); a red set by H2 / H3 cannot clean-release while red (those read the staked record, frozen while red) — P5 remains
+their path.
+
+**Guard found while certifying:** the release-path audit (audit_release_path, PASS) shows both demon Flex strategies red with
+cap 0 and a P5 FAIL verdict; the clean path would have handed them yellow at cap 1. Clean release now never applies to a
+cap-0 strategy or to a red P5 SET on a failed certification (REQUAL 'FAIL ...') - those come back only through P5. (No replay
+changed: the replays' reds were all H1 reds on capped strategies.)
+**Re-verified on the adopted configuration (read from the DB, no overrides):** hands-off replays 2025-26 **+2,044.62 on 2,373
+slips, ROI +86.2%, max DD 72.6, no losing month (Feb +147.73, +56%)** and 2024-25 **+759.53 on 2,059 slips, ROI +36.9%, max DD
+143.4** (its one losing month is Nov 2024, −57.2, the start of that season's ten-week mega-drought) - both identical to the
+test runs, both rolled back with live_slips 0 -> 0 and states unchanged; audit_release_path PASS; certify_slip_system
+**66 checks, 0 FAIL** (run cbdb1d0b); integration test **ALL PASS**; UI end-to-end **94/94**.
+**Process notes:** two replays dispatched together deadlocked on live_slips' ALTER (each waited on the other's lock; one
+failed, nothing written) - replays must run one at a time. Replay runs take 30–45 minutes each.
