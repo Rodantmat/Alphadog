@@ -28,10 +28,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'], autocommit=True)
     conn.execute("SET statement_timeout = 0")
-    conn.execute(open(os.path.join(HERE, 'sql', 'build_tier_map_legs_sel_wo.sql')).read())
-    t0 = time.time()
-    n = conn.execute("SELECT nba_score.build_tier_map_legs_sel_wo()").fetchone()[0]
-    print(f"tier_map_legs_sel_wo: {n:,} legs in {time.time() - t0:.0f}s", flush=True)
+    if os.environ.get('WO_CHECK_ONLY') != '1':      # WO_CHECK_ONLY=1: re-run the checks on the existing table (no DROP while engines read it)
+        conn.execute(open(os.path.join(HERE, 'sql', 'build_tier_map_legs_sel_wo.sql')).read())
+        t0 = time.time()
+        n = conn.execute("SELECT nba_score.build_tier_map_legs_sel_wo()").fetchone()[0]
+        print(f"tier_map_legs_sel_wo: {n:,} legs in {time.time() - t0:.0f}s", flush=True)
     nw = conn.execute("SELECT count(*), sum(books) FROM nba_score.rung_books_window").fetchone()
     print(f"rung_books_window: {nw[0]:,} window rungs keyed to a player id", flush=True)
     chk = conn.execute("""
