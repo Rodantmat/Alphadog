@@ -23179,6 +23179,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `624` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T48`, `S1`–`S4` done, no residue; next `S5` onward.
 
+## §P625 — PASS 625 (`2026-10-15`): ADDITIONAL SWEEP `10` — `S5` · NO RESIDUE
+*Angle (as NEXT set it):* (i25) `§P131`'s method on `S5`, the online research report (`2026-10-08` `17:14 → 17:19Z`) (as `§P175`, `§P225`, `§P275`, `§P325`, `§P375`, `§P425`, `§P475`, `§P525` and `§P575` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension) and pass 383's source-name catch, each name grepped in the twelve; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 624's head): `S5` `68` of `114` sentences listed, no memory dump among them — the same count `§P575` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`68` read whole** (the bounded figure triage: `7` with a figure not on file / `0` inside a longer number / `13` with every figure on file / `48` with none; `7 + 0 + 13 + 48 = 68`; as `§P575` recorded). The flagged lines are `§P575`'s kinds — article ids, the NFL stack study, the report's own break-even arithmetic and the hold computation's quoted pairs. The first-grep zeros on third-party names and figures (`54.25` and `-119` beside the report's own `~54.3%`; `1,762` games and the study's `12.8%` against a `10%` break-even, the NFL stack study, out of scope; the sums `112.7`–`112.9%` and the `3.1x` two-pick from the quoted player pairs; `Losak`, `Clemson`, `Sickfade`, `OddsShopper`, `Props.com`, `ATS.io`, `Kelce`, `Prescott`) were re-grepped case-insensitively and in their stated forms and read — the report's source vendors are the report's own scope note (marketing, not measured returns); the figures that carry a result are on file (`57.7%` / `55.0%` / `56.2%` / `54.9%`, `-136` to `-122`, `14.6×` vs `17.8×`, `16.78` / `2.67` / `28.87`, `58.5%` / `56.2%` / `54.9%` / `56.7%`, `$500` / `$750`, `~15 s`, the Betr `Dynamic` tables).
+- `§P575` recorded no write for `S5`; there is no write to re-verify.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): the listed sentences carry no underscore or camelCase identifier, so `0` names return `0` hits — as `§P575` found. No new residue; no new source or store named beyond the report's own third-party citations (out of scope on `§P325`'s basis).
+- Judged on `§P575`'s basis, and not reproduced: the prompt, the article URLs, the third-party vendor claims and anecdotes; the owner's other chats and the MLB / NHL mining track, out of scope; code, workflow and file bodies, run ids, agent ids and commit hashes; any Betr / proxy credential passage (credential rule).
+- No residue in `S5`: every listed sentence is on file in substance (the structure figures, the Sleeper `14.6×` vs `17.8×` and hold, the Betr `Dynamic` tables, the limits) or is the report's own third-party vendor material, out of scope.
+- **Additional sweep `10` is clean so far** (`T1`–`T48`, `S1`–`S5` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `87297f211` (`§P624`'s census; the log fetched as the last call before this patch): `19` — `13` automated board / mining / deploy-marker commits and `6` by the build chat (live-engine code, the compass and the certification ledger, none of them one of the twelve; the live-engine red-release / H7 decision recorded there is a build-chat record, not a transcript or source, and is left to the build chat's own files). The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `625` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T48`, `S1`–`S5` done, no residue; next `S6` onward.
+
+
+
 
 
 
