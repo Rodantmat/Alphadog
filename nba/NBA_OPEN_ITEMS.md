@@ -22754,6 +22754,20 @@ are worth more per pass than any re-derivation.***
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T23` done, no residue; next `T24` onward.
 
 
+## §P596 — PASS 596 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T24` · NO RESIDUE
+*Angle (as NEXT set it):* (f25) `§P131`'s method on `T24` (as `§P196`, `§P246`, `§P296`, `§P346`, `§P396`, `§P446`, `§P496` and `§P546` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 595's head): `T24` `73` of `226` sentences listed — the same count `§P546` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`73` read whole** (the bounded figure triage, unchanged since `§P546`: `3` with a figure not on file / `0` inside a longer number / `37` with every figure on file / `33` with none; `3 + 0 + 37 + 33 = 73`). The `3` are `§P546`'s kinds: the derived props' first-build Over rates beside the `35.7%`–`47.2%` range on file, and two goblin-floor ratios (`1.025`, `2.017`; pricing internals, out of scope).
+- `§P396`'s one write for `T24` (the slip simulator's specification in `NBA_GOBLIN_DEMON.md`) stands on file (`simulate_slips`, `sim_slip`, `sim_results` carry outside the ledgers); that write is sweep `6`'s. There is no write for `T24` in this sweep — no store.
+- The identifier check, counted on the uncut sentences: `1` name with `0` hits — `derived_line_shift`, a `pp_*` policy key, out of scope, cross-referenced to `nba/PP_PAYOUT_FINDINGS.md` (the same as `§P546`). Judged on `§P302`'s and pass 300's bases; no store, no new residue.
+- The source-name and store-name checks: no document data-source newly named in `T24`; `build_fs_backsim`, `fs_backsim`, `leg_edge_map`, `paper_pick_slips`, `sim_strategy`, `pp_leg_price_cons`, `player_game_map` and `pp_conservative_policy` on file as documented objects.
+- On file, by substance (each grepped before it was read, every hit read): `§P546`'s list — `32,170` player-nights, `197,416` first-build legs, the universe's `1,088,192` / `128,680` / `337,748` / `112,404` and `1,606,151` usable, the `14,271` ungraded legs, `88,886` + `90,826` derived legs, the `1,024` goblin keys repriced and the `115,150` the wrong audit rule flagged, `goblin_floor` superseded, `derived_center_offset`, the Pritchard check, the `5.33` vs `6.0` mixed bases, the PL/pgSQL substitution break and the fixed-rung spacing schedules. Judged: the `pp_*` policy keys and pricing tables, build-performance notes, narration. No device / location tokens or credentials appear in `T24`.
+- **No residue in `T24`.**
+- **Additional sweep `10` is clean so far** (`T1`–`T24` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `a17a3cd37` (`§P595`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `596` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T24` done, no residue; next `T25` onward.
+
+
 
 
 
