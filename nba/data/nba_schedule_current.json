@@ -21806,8 +21806,8 @@
       "away_team_tricode": "OKC",
       "arena_name": "Toyota Center",
       "arena_city": "Houston",
-      "game_status": 1,
-      "game_status_text": "8:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21821,8 +21821,8 @@
       "away_team_tricode": "TOR",
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
