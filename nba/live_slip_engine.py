@@ -212,6 +212,29 @@ def h7_mode(conn):
     return _H7_MODE
 
 
+# RED RELEASE MODE (2026-10-16, the February-dip study; ledger "THE FEBRUARY DIP"). A red is sticky until P5's weekly PASS,
+# and P5 reads the strategy's SEASON-TO-DATE record - which still carries the bad weeks that caused the red, so the bound
+# recovers ever more slowly as the season grows (2024-25 replay: A_wsteals_5flex red 2024-12-28 -> 2025-03-31 while its shadow
+# slips earned +197 units). Modes:
+#   p5     (default until the replay test decides) - only P5's weekly PASS releases a red
+#   clean  - ALSO released, to YELLOW (half cap), after RED_CLEAN_DAYS consecutive slate evaluations with every hurdle clean on
+#            the strategy's own record (H1 reads its graded shadow legs while it is red); then the ordinary path (3 clean
+#            evaluations -> paper / active). A fresh hurdle fire resets the count; the calendar windows never release.
+# Source: env LS_RED_RELEASE, else classification_config['red_release'].mode (and .clean_days), else 'p5'.
+_RED_RELEASE = None
+
+
+def red_release(conn):
+    global _RED_RELEASE
+    if _RED_RELEASE is None:
+        row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='red_release'").fetchone()
+        cfg = (row[0] if isinstance(row[0], dict) else json.loads(row[0])) if (row and row[0]) else {}
+        m = (os.environ.get('LS_RED_RELEASE') or cfg.get('mode') or 'p5').strip().lower()
+        n = int(os.environ.get('LS_RED_CLEAN_DAYS') or cfg.get('clean_days') or 10)
+        _RED_RELEASE = (m if m in ('p5', 'clean') else 'p5', max(3, n))
+    return _RED_RELEASE
+
+
 def below_min_stake(conn, weight):
     u = stake_unit(conn)
     return u.get("below_min", "skip") == "skip" and float(weight) * float(u["unit_usd"]) < float(u["min_stake_usd"]) - 1e-9
