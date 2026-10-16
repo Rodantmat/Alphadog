@@ -23465,6 +23465,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `648` complete (`2026-10-16`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T26` done, no residue; next `T27` onward.
 
+## §P649 — PASS 649 (`2026-10-16`): ADDITIONAL SWEEP `11` — `T27` · NO RESIDUE
+*Angle (as NEXT set it):* (i26) `§P131`'s method on `T27` (as `§P199`, `§P249`, `§P299`, `§P349`, `§P399`, `§P449`, `§P499`, `§P549` and `§P599` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 648's head): `T27` `655` of `1,173` sentences listed — the same count `§P599` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`655` read whole** (the bounded figure triage, unchanged since `§P599`: `4` with a figure not on file / `1` inside a longer number / `125` with every figure on file / `525` with none; `4 + 1 + 125 + 525 = 655`).
+- `§P499`'s two writes re-grepped and still on file: the P1 ten-writer hand-load counts and lessons in `NBA_WORKERS.md` (`4,652`, `2,267`, `8,000` lineup, `594` players) and the one-set-per-day store audit readouts in `NBA_DATABASE.md` (`735,128`, `77,479`, `8,283`, `93.6%`, `118,759` against `113,357`, `'FULL'`); `§P449`'s secret names in `NBA_RECIPE.md` stand; no commit since `§P599`'s changed them.
+- First-grep zeros (`13,625`, `126,260` / `106,438` (the replay's final_hp input and archived-leg counts), `9.71M`, `35,345`, `137 of 162`, `8.4M`, `4.49M`, `261,702`, `13.8M`, `22.5M`, `34.9 MB`, `4.4M`, the owner's "three variations over, three down") read in alternate forms and judged on `§P599`'s basis: the `13,625` / `261,702` figures are the superseded first-rule probe's counts, `22.5M` / `13.8M` / `4.49M` / `4.4M` the `final_hp` rebuild's and the prune's interim row counts, `137 of 162` the prune's progress count, `9.71M` the season dry run's total (its kept and deleted splits on file), `35,345` the replay's combos build counter, `34.9 MB` the player log's size during the P2 replay diagnosis, `4.9 GB` / `7.9 GB` the interim index-to-heap probe on `baseline_history` (the reclaim to `2.8 GB` is on file), the intermediate `45 22` cron the session reverted to `15 21` (the final cron is on file), `8.4M` the baseline store after the prune (`8,708,333` on file at the later reading); the owner's "three over, three down" is the board-rung rule itself ("whatever a board showed is kept"), on file as the retention rule.
+- The identifier check, counted on the uncut sentences: `2` names with `0` hits — `atomic_write_text` and `live_rows`, build-time detail on `§P399`'s basis. Matches `§P599`; no store, no new residue.
+- The source-name and store-name checks: no new source named; `baseline_prune_log` and `_calib_before_prune` on file.
+- On file, by substance: `§P599`'s list — the retention rule and its enforcement (`5.35M`, `9,749,883`, `77,585` → `16,253`), the shape-parity break, the preseason gate across P2, P3, the prune and the certifier, `board_outcomes`' `6,905,452` rows and `1.55 GB`, the `25,962`-cell snapshot, the `VACUUM FULL` reclaim of `final_hp`, `3.04M` legs, P3's single `15 21` cron. Judged: narration, the owner's instructions and expletives (not reproduced), run waits, the session's corrections superseded within the transcript.
+- **No residue in `T27`.**
+- **Additional sweep `11` is clean so far** (`T1`–`T27` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `9958dd707` (`§P648`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `649` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T27` done, no residue; next `T28` onward.
+
 
 
 
