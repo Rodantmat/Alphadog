@@ -22029,6 +22029,21 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `540` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T18` done; next `T19` onward.
 
+## §P541 — PASS 541 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T19` · NO RESIDUE
+*Angle (as NEXT set it):* (a24) `§P131`'s method on `T19` (as `§P191`, `§P241`, `§P291`, `§P341`, `§P391`, `§P441` and `§P491` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 540's head): `T19` `178` of `537` sentences listed — the same count `§P491` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`178` read whole** (the bounded figure triage, unchanged since `§P491`: `0` with a figure not on file / `0` inside a longer number / `25` with every figure on file / `153` with none; `0 + 0 + 25 + 153 = 178`).
+- `§P391`'s writes from `T19` (none) — nothing to re-grep. `§P491`'s write re-grepped and still on file: the MLB universe's tally *"18 schemas, 116 workers, 21 control tables, 15 config tables"* (`NBA_DATABASE.md`), with the `116` registry rows beside the `~130` deployed workers and the `~19` dead stubs at `~5.3 KB`.
+- The figure-flagged zeros: none beyond the phrase *"157 workers"*, which was a split form — the `157` rows and `130` workers of the owner's "two numbers" line were each on file (`116` the recorded count). `42,600`, `3,364` / `3,282`, `4,319` (the DNP rows), `1.0333` / `0.8748` (the blowout ratios) and `3,690` were on file in comma, bare or unit forms.
+- The identifier check, counted on the uncut sentences: `0` names with `0` hits — the same as `§P491`. Nothing to judge.
+- The source-name and store-name checks: Cleaning the Glass, Ben Falk, `swar/nba_api`, `leaguedashlineups`, `nba_score.blowout_model`, `player_game_starter_status`, `nba_stats.player_playtype_profile`, `board_tiers_v2` on file. No store gap.
+- On file, by substance: the owner's four-way tier-rework outburst and the grep-the-transcripts-first admission, the documentation instructions (eight documents, glossary, repeated passes, three consecutive clean passes), and the progress reports on T1–T6 (the T3 differential worker never scheduled, the T4 baseline design, the T5 coverage and starter-status scope, the T6 findings). Judged: narration, owner directives on file and progress reports; no credentials appear.
+- **No residue in `T19`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17` and `T18`); the three-sweep count stays `0`. Commits not this sweep's since `5676454a7` (`§P540`'s census; the log fetched before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `541` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T19` done; next `T20` onward.
+
+
 
 
 
