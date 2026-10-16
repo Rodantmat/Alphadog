@@ -22111,6 +22111,21 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `546` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T24` done; next `T25` onward.
 
+## §P547 — PASS 547 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T25` · NO RESIDUE
+*Angle (as NEXT set it):* (g24) `§P131`'s method on `T25` (as `§P197`, `§P247`, `§P297`, `§P347`, `§P397`, `§P447` and `§P497` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 546's head): `T25` `312` of `585` sentences listed — the same count `§P497` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`312` read whole** (the bounded figure triage, unchanged since `§P497`: `0` with a figure not on file / `0` inside a longer number / `80` with every figure on file / `232` with none; `0 + 0 + 80 + 232 = 312`).
+- `§P397` recorded no write for `T25`; nothing to re-verify — no store.
+- The figure-flagged zeros: `97,954`, `1,284,785` and `1,606,146` (the payout mapping's superseded count and materialized-table row counts) and `2.8` MB (the documentation chat's process-history sizes, at the level on file) each returned `0` in one form; the first three are payout track, out of scope as `§P144` judged and cross-referenced to `nba/PP_PAYOUT_FINDINGS.md`, and every other flagged figure was on file in a comma, bare or unit form (`15,916`, `32,170`, `50.4%`, `1,652,753`, `1,606,151`, `1,667,024`, the `~757`-row misestimate, `153` → `158`, `938 MB`, `+15.8%`, `1.36`–`1.63`, `950,947`, `4` of `11`, the `25` breaches of `[skip ci]`, `131` rows, `2,369` segments, `157`). Dash-stripped forms read as on file: `1.361.63`, `1.031.04`, `T21T24`.
+- The identifier check, counted on the uncut sentences: `2` names with `0` hits — `derived_alt_rules` and `derived_line_shift`, the `pp_*` policy keys earlier passes judged out of scope (payout track, cross-referenced to `nba/PP_PAYOUT_FINDINGS.md`). Matches `§P497`; no store, no new residue.
+- The source-name and store-name checks: `NBA_SWEEP_RUN_LOG.md`, `NBA_OPEN_ITEMS.md`, `PP_PAYOUT_FINDINGS.md` and the twelve's mandated names on file; `paper_pick_candidates`, `paper_pick_slips`, `log_paper_picks` and `pp_conservative_policy` on file as documented objects; no new source named.
+- On file, by substance (each grepped before it was read, every hit read, a zero-hit phrase re-grepped in other forms): `§P497`'s list — the Fantasy back-simulation, the derived standards (`88,886`), the universe, the planner's `~757`-row misestimate, the flag count, the `938 MB` table, the slip simulator's `+15.8%`, PrizePicks' void reversion, the twelve-prop list hardcoded twice, the `950,947`-character offset, the glossary's bucket repair, the census-stamp contradiction, the six MAINTENANCE tasks and the rebuild walk (`NBA_RECIPE.md`). Judged: the payout mapping, build-performance notes, narration, and the documentation chat's process history at the level on file. No device / location tokens or credentials appear in `T25`.
+- **No residue in `T25`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17` and `T18`); the three-sweep count stays `0`. Commits not this sweep's since `9ffc22124` (`§P546`'s census; the log fetched before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `547` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T25` done; next `T26` onward.
+
+
 
 
 
