@@ -22,6 +22,7 @@ import random
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import psycopg
