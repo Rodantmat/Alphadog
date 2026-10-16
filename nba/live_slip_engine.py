@@ -1181,7 +1181,13 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             h['H3'] = 'red' if streak >= 1.5 * longest else ('yellow' if streak >= 1.25 * longest else 'ok')
         h['H4'] = 'yellow' if (pool_avg is not None and pool_avg < pool_floor and days_into_season > 21) else 'ok'
         if name.startswith('A_') and anchor_state != 'ok':
-            h['H7'] = anchor_state   # the shared steals anchor is failing: the whole family moves together
+            hm = h7_mode(conn)
+            if hm == 'red':
+                h['H7'] = anchor_state   # the shared steals anchor is failing: the whole family moves together
+            elif hm == 'yellow':
+                h['H7'] = 'yellow'       # H7 can half the cap, never stop the family (see h7_mode)
+            else:
+                h['H7_obs'] = anchor_state   # recorded only; the drought rotation is the response (see h7_mode)
         if ddm_state != 'ok':
             h['H8'] = 'red' if ddm_state == 'drift' else 'yellow'   # concept drift in the shared ordering (29f)
         if days_into_season <= 21:
