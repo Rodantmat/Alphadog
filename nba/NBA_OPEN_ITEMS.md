@@ -23033,6 +23033,21 @@ are worth more per pass than any re-derivation.***
 
 
 
+## §P615 — PASS 615 (`2026-10-15`): ADDITIONAL SWEEP `10` — `T43` · NO RESIDUE
+*Angle (as NEXT set it):* (y25) `§P131`'s method on `T43` (as `§P165`, `§P215`, `§P265`, `§P315`, `§P365`, `§P415`, `§P465`, `§P515` and `§P565` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 614's head): `T43` `28` of `41` sentences listed, no memory dump among them — the same count `§P565` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`28` read whole** (the bounded figure triage: `0` with a figure not on file / `0` inside a longer number / `0` with every figure on file / `28` with none; `0 + 0 + 0 + 28 = 28` — every line a step announcement, as `§P565` recorded).
+- `§P565` recorded no write for `T43`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its regex forms and its context read): the P2A prune-versus-whole-number re-price and the deletes covering both derivations, the as-of replay plumbing in the P2A workflow, the grader's team check (a DNP only when the player's team played that day), the opening-night tip against the scheduler plan, the Betr harvester's parallel ladder fetches under a time budget, the gzip of the dated ladder record, the daily-roster indexing in both builders, the market-free validation and selection table, the `bt_table()` resolver, the P5 workflow's market-free build and suffix-aware verdicts, the recalibration dispatch and the component-pickle fix for the season-file builders — all on file.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `1` name with `0` hits — `team_hist`, a local variable of the grader's team check (the check itself is on file) — judged on `§P302`'s basis. No new source or store named.
+- Judged on `§P565`'s basis: narration, step announcements, run waits, the owner's instructions to the documentation chat.
+- No residue in `T43`: all `28` lines are step announcements with no figure; every named piece is on file by substance (the substance probe over ten terms returned no zero).
+- **Additional sweep `10` is clean so far** (`T1`–`T43` done, no residue; the three-sweep count stays `0` until a sweep closes clean). Commits not this sweep's since `85379c9b0` (`§P614`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `615` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`9` complete, each NOT clean. ⏳ **Additional sweep `10`** under way, clean so far: `T1`–`T43` done, no residue; next `T44` onward.
+
+
+
 
 
 
