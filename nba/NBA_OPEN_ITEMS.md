@@ -23373,8 +23373,20 @@ are worth more per pass than any re-derivation.***
 - **No residue in `T18`.**
 - **Additional sweep `11` is clean so far** (`T1`–`T18` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `b5b41ffb2` (`§P639`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
 
-**Ledger**: pass `640` complete (`2026-10-16`).
-- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T18` done, no residue; next `T19` onward.
+## §P641 — PASS 641 (`2026-10-16`): ADDITIONAL SWEEP `11` — `T19` · NO RESIDUE
+*Angle (as NEXT set it):* (a26) `§P131`'s method on `T19` (as `§P191`, `§P241`, `§P291`, `§P341`, `§P391`, `§P441`, `§P491`, `§P541` and `§P591` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 640's head): `T19` `178` of `537` sentences listed — the same count `§P591` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`178` read whole** (the bounded figure triage, unchanged since `§P591`: `0` with a figure not on file / `0` inside a longer number / `25` with every figure on file / `153` with none; `0 + 0 + 25 + 153 = 178`).
+- `§P391`'s writes from `T19` (none) — nothing to re-grep. `§P491`'s write re-grepped and still on file: the MLB universe's tally *"18 schemas, 116 workers, 21 control tables, 15 config tables"* (`NBA_DATABASE.md`), with the `116` registry rows beside the `~130` deployed workers and the `~19` dead stubs at `~5.3 KB`.
+- The figure-flagged zeros: none. Every figure was re-grepped in comma, bare and unit forms and found: `42,600`, `3,364` / `3,282`, `4,319` (the DNP rows), `1.0333` / `0.8748` (the blowout ratios), `3,690`, `1,230`, the `157` rows and `130` workers of the owner's "two numbers" line (`116` the recorded count) and `1 MB` / `1.2 MB` (the Contents API's silent-empty limit).
+- The identifier check, counted on the uncut sentences: `32` names in the sentences, `0` of them absent from the twelve — the same result as `§P591`'s. Nothing to judge.
+- The source-name and store-name checks: Cleaning the Glass, Ben Falk, `swar/nba_api`, `leaguedashlineups`, `nba_score.blowout_model`, `player_game_starter_status`, `nba_stats.player_playtype_profile`, `build_board_tiers_v2.py` / `board_tiers_ud`, `generate_wrangler_configs_nba.py` on file. No store gap.
+- On file, by substance: the owner's four-way tier-rework outburst and the grep-the-transcripts-first admission (the direction-aware tier sign, the position-signed tiers), the documentation instructions (eight documents, glossary, repeated passes, three consecutive clean passes), and the progress reports on T1–T6 (the T3 differential worker never scheduled, the T4 baseline design and the blowout-ratio check, the T5 coverage and starter-status scope, the T6 findings and the PK lesson). Judged: narration, the documentation sweep's own pass counts (*"ten distinct bugs"*, *"pass 24"*, dimension tables), owner directives on file and progress reports; no credentials appear.
+- **No residue in `T19`.**
+- **Additional sweep `11` is clean so far** (`T1`–`T19` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `f333fc3ee` (`§P640`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `641` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T19` done, no residue; next `T20` onward.
+
 
 
 
