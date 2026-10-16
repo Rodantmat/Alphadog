@@ -1567,7 +1567,10 @@ EDGE_NW_LAGS = 7
 # unchanged - they were calibrated as false-fire rates around whatever break-even, by block bootstrap.
 # 2026-10-15 cap raises (A_wsteals 9, A_regular 2, A_wrebounds 3, C_wstocks 2): re-solved on the new portfolio - pooled thinning
 # -6.62 pp (independence -6.65, gap 0.03; 2024-25 -4.55, 2025-26 -8.58; 6,789 slips, ROI +53.4%; run 38806157827).
-EDGE_DELTA = float(os.environ.get('LS_EDGE_DELTA', '-0.0662'))
+# 2026-10-16 market term ON (live_backtest_suffix '_wo', the window-only market twin): re-solved on that twin - pooled thinning
+# -7.48 pp (independence -6.84, gap 0.64 < 1.0 -> thinning stands; 2024-25 -5.94, 2025-26 -8.86; 6,789 slips, ROI +62.4%;
+# run 38983824833). Revert to -0.0662 together with the suffix if the market term is switched off.
+EDGE_DELTA = float(os.environ.get('LS_EDGE_DELTA', '-0.0748'))
 
 
 def edge_daily_strategies():
