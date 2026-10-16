@@ -22358,6 +22358,20 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `565` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T43` done; next `T44` onward.
 
+## §P566 — PASS 566 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T44` · NO RESIDUE
+*Angle (as NEXT set it):* (z24) `§P131`'s method on `T44` (as `§P166`, `§P216`, `§P266`, `§P316`, `§P366`, `§P416`, `§P466` and `§P516` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 565's head): `T44` `160` of `318` sentences listed, no memory dump among them — the same count `§P516` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`160` read whole** (the bounded figure triage: `2` with a figure not on file / `0` inside a longer number / `52` with every figure on file / `106` with none; `2 + 0 + 52 + 106 = 160`; as `§P516` recorded — a workflow run-id list and the MLB credit balance, judged and not reproduced).
+- `§P516` recorded no write for `T44`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its regex forms and its context read): the P5 market-free re-run, strategy `31u` / `31v` and COMPASS facts, the five-app board paper ledger, the research pass's verdict, the P4 reset, the retention audit (`board_tiers_v2` for the four readers, the per-slate snapshots, the replay guard, referee-crew logging, the day-before injury snapshots, the git and release archives), the closing "certified, with one honest qualifier about timing" answer and its four additions first executing inside real pipelines on their own dates, the NBA postseason backfill and the postseason-not-yet-wired note (pipelines treat regular-season games as slates; the postseason gets its own tables) — all on file; the proxy-secret rotation is credential-class detail, judged and not reproduced.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `0` names not on file. No new source or store named.
+- Judged on `§P516`'s basis: narration, run waits, scheduled-trigger and message-sent notices, run-id lists, the MLB / NHL credit and board-time planning (cross-reference only), the owner's instructions to the documentation chat.
+- **No residue in `T44`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17`, `T18`, `T26`, `T28` and `T37`); the three-sweep count stays `0`. Commits not this sweep's since `7ca335402` (`§P565`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `566` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T44` done; next `T45` onward.
+
+
 
 
 
