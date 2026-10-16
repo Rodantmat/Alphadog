@@ -1972,3 +1972,39 @@ those days have hours, not 20 minutes. Opening night (3 games, first tip 12:00 P
 → slate_games), ±1 s, ends "PT", never before the first tip. UI end-to-end **95/95** on 2026-03-10 (26 slips, all matched) and
 **95/95** on the default (today) path; integration test **ALL PASS**. (A first run overlapped the integration test's rolled-back
 transaction and timed out C12 / C18 at 13 s - the health endpoint does not touch this code; rerun alone, green.)
+
+### FULL SWEEP, FOUR DAYS OUT — READINESS, ROI, AND THE ONE LEVER LEFT (owner 2026-10-16 15:48 PT: "do another full sweep, be sure that everything is ready, be sure that everything's behaving properly, be sure of the ROI, these leaps, the strategy, if there's no way for improvement")
+**Readiness (read from the DB and the runs, not assumed):** P2A / P2B / P3 green 10-15 and 10-16 (10.7 / 4.2 / 5.3 min today);
+scheduler enabled, ticking (last 22:48Z), dispatch chain P2A → P2B → P3 by completion; P1 last 10-12 failure/skipped (known; the
+curl repair's first live run is P1 10-19). Ledger clean for opening night (live_slips 0, live_pool 0; live_state_history holds
+only the preseason daily snapshots). Strategy states: every staked strategy 'paper' at its cap, both demons red cap 0 (P5 FAIL),
+_ROTATION normal; stake_unit {unit $1, min $1, below_min skip, play_from_day1 true} - the screen says PLAY for paper strategies,
+as decided. Config rows in force: anchor_h7 red, red_release clean/10. Credentials: Betr session + refresh token renewed 10-16
+20:21Z, ParlayAPI 12,455 credits. **Certification:** certify_slip_system **66 checks, 0 FAIL** (run 5d773afe); audit_release_path
+**PASS**; integration **ALL PASS**; UI **95/95** (both paths).
+**Boards for opening night (board_snapshots, game_date 10-20):** PrizePicks 31 players / 8,900 rows; Sleeper 27 / 852; Betr 31 / 496
+(probe); Underdog 3 / 11 (10-21 already 19 players / 1,577 - posts close to the day); DraftKings 21 players / 338 (ParlayAPI,
+label routine); Fliff P3 run 646 NBA legs, all team markets (props owed 10-20). Sportsbooks post no player props for preseason
+games (the 10-16 ParlayAPI Bovada rows are quarter / range / team markets, correctly refused by the guard), so the live market
+term's first real reading is opening night.
+**ROI - the opening weeks (hands-off replays, $1):** week 1 +$33.9 (+38.5%) / +$59.1 (+61.5%); weeks 1–4 2024-25 −$35.2,
+2025-26 +$418.1 - the hard season's November was its drought, the rules held through it.
+**ROI - the one lever left: the live market term (open item T48-2).** Live legs are scored market-free
+(market_feed.refresh_final_hp = false; hurdles on the _mf twins). At today's caps the market-inclusive backtest is better:
+portfolio **2024-25 +33.8% → +46.8% (+443 units), 2025-26 +73.1% → +78.3% (+175)**; A_wsteals_5flex +43.1 → +57.4 / +76.7 →
++93.8, D_points +11.3 → +41.9 / +36.4 → +32.5, C_wstocks +19.0 → +28.7 / +48.5 → +40.8. The hands-off replays already read the
+history's market-inclusive final_hp, so the market-free live season should be expected nearer the _mf figures until the switch.
+**Built: `nba/audit_market_coverage.py`** (read-only; nba-research-run) - per live date, the share of PrizePicks window rungs
+priced by the certified book set, players matched, books per priced rung, which books, and name mismatches; verdict READY when,
+over ≥ 5 live slate dates, coverage and depth are ≥ 85% of the LOWER certified season and the player match ≥ 95%.
+**Instrument check (before any live reading):** a past week read as live (2025-11-03..10) first came back NOT READY against
+the two-season MEAN - the archives differ (2024-25 opening 25,433 rungs at 2.77 books / 69.3% coverage; 2025-26 114,466 at
+2.11 / 64.3%) and the model was certified on both - so the bar became the lower season; the same week then reads **READY**
+(coverage 63.9%, depth 2.06, players 99.6%, 0 name mismatches, all eight books present). Default run today: NOT READY - no live
+slate yet. **Plan:** run it after 10-26 (7 slate dates); READY → flip the four rows together the same day (refresh_final_hp true,
+live_backtest_suffix '', ud_table _dlt_orig2, ud_edge_monitor certified).
+**Tested and rejected:** stand C_wstocks_4flex down in the drought rotation - its replay legs hit 46–50% in 2024-25's
+November–January, but on the larger market-free backtest it is POSITIVE on rotation days in both seasons (+14.3% on 84 slips /
++71.6% on 28) - the replay dip is leg-selection variance, not a drought signal. Kept: below_min skip (the replay's +53% / +45% on
+those slips is in-sample and market-inclusive; the faithful _mf twin measured them at +8.1% / −1.4%), the week-1 / week-2 rules
+(their skipped slips: ±small, no evidence to change).
