@@ -23806,6 +23806,12 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `674` complete (`2026-10-16`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T48`, `S1`–`S4` done, no residue; next `S5` onward.
 
+## §P675 — PASS 675 (`2026-10-16`): ADDITIONAL SWEEP `11` — `S5` · NO RESIDUE
+*Angle (as NEXT set it):* (i26) `§P131`'s method on `S5`, the online research report (`2026-10-08` `17:14 → 17:19Z`) (as `§P175`, `§P225`, `§P275`, `§P325`, `§P375`, `§P425`, `§P475`, `§P525`, `§P575` and `§P625` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension) and pass 383's source-name catch, each name grepped in the twelve; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 674's head): `S5` `68` of `114` sentences listed, no memory dump among them — the same count `§P625` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`68` read whole** (the bounded figure triage: `7` with a figure not on file / `0` inside a longer number / `13` with every figure on file / `48` with none; `7 + 0 + 13 + 48 = 68`; as `§P625` recorded). The flagged lines are `§P625`'s kinds — article ids, the NFL stack study, the report's own break-even arithmetic and the hold computation's quoted pairs. The first-grep zeros on third-party names and figures (`54.25` and `-119` beside the report's own `~54.3%`; `1,762` games and the study's `12.8%` against a `10%` break-even, the NFL stack study, out of scope; the sums `112.7`–`112.9%` and the `3.1x` two-pick from the quoted player pairs; `Losak`, `Clemson`, `Sickfade`, `OddsShopper`, `Props.com`, `ATS.io`, `Kelce`, `Prescott`) were re-grepped case-insensitively and in their stated forms and read — the report's source vendors are the report's own scope note (marketing, not measured returns); the figures that carry a result are on file (`57.7%` / `55.0%` / `56.2%` / `54.9%`, `-136` to `-122`, `14.6×` vs `17.8×`, `16.78` / `2.67` / `28.87`, `58.5%` / `56.2%` / `54.9%` / `56.7%`, `$500` / `$750`, `~15 s`, the Betr `Dynamic` tables).
+- `§P625` recorded no write for `S5`; there is no write to re-verify.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): the listed sentences carry no underscore or camelCase identifier, so `0` names return `0` hits — as `§P625`
+
 
 
 
