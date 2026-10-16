@@ -1246,8 +1246,20 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if ph.get('REQUAL'):
             h['REQUAL'] = ph['REQUAL']   # keep P5's verdict text across daily evaluations
         # the drawdown episode start: the day of the running peak (one-shot grace clock, never reset by a brief recovery)
+        clean_release = False
+        if sticky_red and red_release(conn)[0] == 'clean':
+            fresh = any(v in ('yellow', 'red') for v in flags.values())
+            rc = int(ph.get('RED_CLEAN', 0))
+            if ph.get('RED_CLEAN_LAST') != day.isoformat():   # one count per slate, like CLEAN
+                rc = 0 if fresh else rc + 1
+            h['RED_CLEAN'] = rc; h['RED_CLEAN_LAST'] = day.isoformat()
+            if rc >= red_release(conn)[1] and 'H6' not in h and 'W2' not in h:
+                sticky_red, clean_release = False, True
+                h['RED_RELEASED_CLEAN'] = day.isoformat(); h['CLEAN'] = 0; h.pop('RED_CLEAN', None)
         if sticky_red:
             state, live_cap = 'red', 0   # a red is sticky in EVERY branch until P5's weekly PASS clears it
+        elif clean_release:
+            state, live_cap = 'yellow', max(1, cap // 2)   # red_release 'clean': back at half cap, then the ordinary path
         elif 'H6' in h:
             state, live_cap = 'off', 0
         elif 'W2' in h:
