@@ -216,7 +216,10 @@ def h7_mode(conn):
 # and P5 reads the strategy's SEASON-TO-DATE record - which still carries the bad weeks that caused the red, so the bound
 # recovers ever more slowly as the season grows (2024-25 replay: A_wsteals_5flex red 2024-12-28 -> 2025-03-31 while its shadow
 # slips earned +197 units). Modes:
-#   p5     (default until the replay test decides) - only P5's weekly PASS releases a red
+#   p5     (code fallback) - only P5's weekly PASS releases a red
+#   DECIDED 2026-10-16: classification_config['red_release'] = clean / 10 days - hands-off replays, pre-registered rule
+#   (net and ROI >= the p5 baseline in BOTH seasons, max DD not worse by > 10%): 2024-25 +559.4 -> +759.5 units (34.9 -> 36.9%,
+#   DD 143.4 both; A_wsteals red 2024-12-28 back 2025-01-22 instead of 2025-03-31), 2025-26 identical (+2,044.6, 86.2%, DD 72.6)
 #   clean  - ALSO released, to YELLOW (half cap), after RED_CLEAN_DAYS consecutive slate evaluations with every hurdle clean on
 #            the strategy's own record (H1 reads its graded shadow legs while it is red); then the ordinary path (3 clean
 #            evaluations -> paper / active). A fresh hurdle fire resets the count; the calendar windows never release.
