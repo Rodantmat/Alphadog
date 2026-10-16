@@ -329,6 +329,35 @@ def api_checks(conn, cfg):
            or not (lab.startswith(("PLAY", "SKIP")) or lab == "backtest replay"):
             bad50.append((s_.get("strategy"), s_.get("status"), lab, usd))
     check("C50 slips say PLAY $ (unit x stake weight) or SKIP with a reason", not bad50, f"unit ${unit:.2f}; bad {bad50[:3]}")
+    # C52 (2026-10-16, owner: "The place by is a good idea"): every slip carries a place-by time = the first tip among its legs'
+    # games (box-score team on a played date, else today's roster; official tips from nba_calendar.slate_games) - recomputed here
+    # independently from the leg names / ids; a slip whose legs cannot all be placed must fall back to the slate's first tip
+    slate_d = (hh.get("slate") or {}).get("date")
+    first_tip = conn.execute("SELECT min(game_datetime_utc) FROM nba_calendar.slate_games WHERE game_date=%s::date", (slate_d,)).fetchone()[0] if slate_d else None
+    bad52 = []; n52 = 0
+    for s_ in sl:
+        n52 += 1
+        tips = []; whole = True
+        for l_ in s_.get("legs") or []:
+            nm = (l_.get("player_name") or "").lower()
+            r_ = conn.execute("""SELECT min(s.game_datetime_utc) FROM nba_ref.player_name_map m
+                                 JOIN nba_ref.players p ON p.nba_player_id::text = m.player_id
+                                 JOIN LATERAL (SELECT COALESCE((SELECT g.team_id FROM nba_stats.player_game_log g WHERE g.nba_player_id = p.nba_player_id AND g.game_date = %s::date LIMIT 1),
+                                                               (SELECT g.team_id FROM nba_stats.player_game_log_postseason g WHERE g.nba_player_id = p.nba_player_id AND g.game_date = %s::date LIMIT 1),
+                                                               p.team_id) team) t ON true
+                                 JOIN nba_calendar.slate_games s ON s.game_date = %s::date AND t.team IN (s.home_team_id, s.away_team_id)
+                                 WHERE m.norm_name = nba_ref.norm_name(%s)""", (slate_d, slate_d, slate_d, nm)).fetchone()[0]
+            if r_ is None:
+                whole = False
+            else:
+                tips.append(r_)
+        want = min(tips) if (tips and whole) else first_tip
+        got = s_.get("place_by_utc")
+        if want is None or got is None or abs((datetime.fromisoformat(got.replace("Z", "+00:00")) - want).total_seconds()) > 1 \
+           or not str(s_.get("place_by_pt") or "").endswith("PT") or (first_tip is not None and want < first_tip):
+            bad52.append((s_.get("strategy") or s_.get("track_label"), got, want and want.isoformat()))
+    check("C52 every slip carries its place-by time (first tip among its legs' games), recomputed independently",
+          not bad52 and (n52 > 0 or not sl), f"{n52} slips; first tip {first_tip}; bad {bad52[:3]}")
     # C51: the owner's unit control - GET reads it, a value under the minimum is refused, re-saving the same value round-trips
     cg, jg, _ = curl("/api/stake-unit")
     cb, jb, _ = curl("/api/stake-unit", body={"unit_usd": 0.25})
