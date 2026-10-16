@@ -23507,6 +23507,19 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `651` complete (`2026-10-16`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T29` done, no residue; next `T30` onward.
 
+## §P652 — PASS 652 (`2026-10-16`): ADDITIONAL SWEEP `11` — `T30` · NO RESIDUE
+*Angle (as NEXT set it):* (l26) `§P131`'s method on `T30` (as `§P152`, `§P202`, `§P252`, `§P302`, `§P352`, `§P402`, `§P452`, `§P502`, `§P552` and `§P602` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; the owner's console lines and the local path in them not reproduced.
+- Tabulated in the shell before this line (the scan at pass 651's head): `T30` `35` of `40` sentences listed — the same `35` `§P602` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`35` read whole** (the bounded figure triage, unchanged since `§P602`: `1` with a figure not on file / `0` inside a longer number / `1` with every figure on file / `33` with none; `1 + 0 + 1 + 33 = 35`; the `1` is a console timestamp, judged).
+- `§P502`'s write re-grepped and still on file: `payouts/legs_boost_map` and the two sizes (`16.9k` for `available_alt` on WNBA, `16.6k` for `available` with one-sided lines) in `NBA_MULTIPLIERS.md`, Sleeper row.
+- First-grep zeros (the `mitmdump` commands, the empty-upload sentences) read in alternate forms and judged on `§P452`'s and `§P602`'s basis: the capture-export and upload troubleshooting (the empty documents, the `.mitm` / `.zip` fallbacks, the PowerShell redirect failing, the owner's console lines and the local path — not reproduced).
+- The identifier check, counted on the uncut sentences: `2` names with `0` hits — `flow_detail` (an export flag of the capture tool) and `sleeper_clean` (an export file name); `legs_boost_map` is on file from `§P502`'s write. Matches `§P602`; no store, no new residue.
+- The source-name and store-name checks: the Sleeper board and its `available_alt` endpoint, the capture tool and the findings document's sections on file; no new source named.
+- No residue in `T30`: the capture-export and upload troubleshooting judged out of scope (the owner's console lines and local path not reproduced).
+- **Additional sweep `11` is clean so far** (`T1`–`T30` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `0e4623132` (`§P651`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `652` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T30` done, no residue; next `T31` onward.
+
 
 
 
