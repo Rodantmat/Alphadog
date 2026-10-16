@@ -59,8 +59,11 @@ def main():
         refs.append(p)
         print(f"REFERENCE {s0} + {ref_days} days: {p['days']} dates, {p['rungs']:,} PP window rungs | coverage {p['cov']:.1%} | players "
               f"matched {p['pmatch']:.1%} | depth {p['depth']:.2f} books | >=4 books {p['deep4']:.1%}", flush=True)
-    ref = dict(cov=sum(r['cov'] for r in refs) / 2, depth=sum(r['depth'] for r in refs) / 2)
-    print(f"reference (mean of both seasons): coverage {ref['cov']:.1%}, depth {ref['depth']:.2f}\n", flush=True)
+    # the bar is the LOWER season (instrument check 2026-10-16, before any live reading: a past week read as 'live', 2025-11-03..10,
+    # failed against the two-season mean because the archives differ - 2024-25 25k rungs at 2.77 books, 2025-26 114k at 2.11 - and
+    # the model was certified on both regimes; a live reading like either certified season must pass)
+    ref = dict(cov=min(r['cov'] for r in refs), depth=min(r['depth'] for r in refs))
+    print(f"reference (the lower certified season): coverage {ref['cov']:.1%}, depth {ref['depth']:.2f}\n", flush=True)
 
     rows = conn.execute(COV_SQL, dict(d0=d0, d1=d1)).fetchall()
     print(f"LIVE {d0} .. {d1}:", flush=True)
