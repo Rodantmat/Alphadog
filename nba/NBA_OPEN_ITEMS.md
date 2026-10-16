@@ -22474,6 +22474,18 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `574` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28`, `T37` and `T47`): `T1`–`T48`, `S1`, `S2`, `S3` and `S4` done; next `S5` onward.
 
+## §P575 — PASS 575 (`2026-10-15`): ADDITIONAL SWEEP `9` — `S5` · NO RESIDUE
+*Angle (as NEXT set it):* (i24) `§P131`'s method on `S5`, the online research report (`2026-10-08` `17:14 → 17:19Z`) (as `§P175`, `§P225`, `§P275`, `§P325`, `§P375`, `§P425`, `§P475` and `§P525` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension) and pass 383's source-name catch, each name grepped in the twelve; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 574's head): `S5` `68` of `114` sentences listed, no memory dump among them — the same count `§P525` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`68` read whole** (the bounded figure triage: `7` with a figure not on file / `0` inside a longer number / `13` with every figure on file / `48` with none; `7 + 0 + 13 + 48 = 68`; as `§P525` recorded). The flagged lines are `§P525`'s kinds — article ids, the NFL stack study, the report's own break-even arithmetic and the hold computation's quoted pairs. The first-grep zeros on third-party names and figures (`54.25` and `-119` beside the report's own `~54.3%`; `1,762` games and the study's `12.8%` against a `10%` break-even, the NFL stack study, out of scope; the sums `112.7`–`112.9%` and the `3.1x` two-pick from the quoted player pairs; `Losak`, `Clemson`, `Sickfade`, `OddsShopper`, `Props.com`, `ATS.io`, `Kelce`, `Prescott`) were re-grepped case-insensitively and in their stated forms and read — the report's source vendors are the report's own scope note (marketing, not measured returns); the figures that carry a result are on file (`57.7%` / `55.0%` / `56.2%` / `54.9%`, `-136` to `-122`, `14.6×` vs `17.8×`, `16.78` / `2.67` / `28.87`, `58.5%` / `56.2%` / `54.9%` / `56.7%`, `$500` / `$750`, `~15 s`, the Betr `Dynamic` tables).
+- `§P525` recorded no write for `S5`; there is no write to re-verify.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): the listed sentences carry no underscore or camelCase identifier, so `0` names return `0` hits — as `§P525` found. No new residue; no new source or store named beyond the report's own third-party citations (out of scope on `§P325`'s basis).
+- Judged on `§P525`'s basis, and not reproduced: the prompt, the article URLs, the third-party vendor claims and anecdotes; the owner's other chats and the MLB / NHL mining track, out of scope; code, workflow and file bodies, run ids, agent ids and commit hashes; any Betr / proxy credential passage (credential rule).
+- **No residue in `S5`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17`, `T18`, `T26`, `T28`, `T37` and `T47`); the three-sweep count stays `0`. Commits not this sweep's since `90166869c` (`§P574`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `575` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28`, `T37` and `T47`): `T1`–`T48`, `S1`, `S2`, `S3`, `S4` and `S5` done; next `S6` onward.
+
 
 
 
