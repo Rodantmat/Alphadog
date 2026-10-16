@@ -280,8 +280,16 @@ async function backtestContext(sql, cfg, names) {
   // whether paper strategies are played from the first night (owner: "I'm going to start from the beginning of the season").
   const suRow = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
   const su = suRow ? (typeof suRow.config_json === "string" ? JSON.parse(suRow.config_json) : suRow.config_json) : {};
-  const unit = { usd: Number(su.unit_usd || 1), min: Number(su.min_stake_usd || 1), playPaper: su.play_from_day1 !== false };
-  return { cellRate, certHit, record, suffix, stateOf, unit };
+  const unit = { usd: Number(su.unit_usd || 1), min: Number(su.min_stake_usd || 1), playPaper: su.play_from_day1 !== false,
+                 udPlay: su.ud_play === true };
+  // UNDERDOG STOP (2026-10-16, owner: "full force since day one ... if things are not going well, then we start changing"): the
+  // Underdog P5 portfolio is played when stake_unit.ud_play is true; its edge monitor's ALARM (sticky per season, §31o) stops it.
+  let udAlarm = false;
+  try {
+    udAlarm = !!((await q(sql, `SELECT bool_or(decision = 'ALARM') a FROM nba_score.ud_edge_monitor
+                                WHERE season_start = (SELECT max(season_start) FROM nba_score.ud_edge_monitor)`))[0] || {}).a;
+  } catch (_e) { udAlarm = false; }
+  return { cellRate, certHit, record, suffix, stateOf, unit, udAlarm };
 }
 
 // PLAY OR SKIP, AND HOW MUCH (2026-10-15). Until today the label read only 'shadow' from the status, so a slip the engine recorded
