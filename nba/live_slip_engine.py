@@ -114,7 +114,7 @@ def bt_suffix(conn):
                 _BT_SUFFIX = str(cfg.get('suffix') or '')
             except Exception:  # noqa: BLE001
                 _BT_SUFFIX = ''
-        print(f"  backtest tables: nba_score.slip_engine_slips{_BT_SUFFIX}[_nosteals] ({'market-free' if _BT_SUFFIX else 'certified, market-inclusive'})", flush=True)
+        print(f"  backtest tables: nba_score.slip_engine_slips{_BT_SUFFIX}[_nosteals] ({ {'_mf': 'market-free twin', '_wo': 'window-only market twin'}.get(_BT_SUFFIX, _BT_SUFFIX) if _BT_SUFFIX else 'certified, market-inclusive'})", flush=True)
     return _BT_SUFFIX
 
 
