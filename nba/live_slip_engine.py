@@ -1339,9 +1339,16 @@ def replay(conn, d0, d1):
     conn.commit()
     days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND game_date BETWEEN %s AND %s ORDER BY 1""", (d0, d1)).fetchall()]
     print(f"  REPLAY {d0} .. {d1}: {len(days)} slate days", flush=True)
+    prev_day = None
     for day in days:
-        if day.weekday() == 0:
-            simulate_p5(conn, day)   # Monday: P5's weekly verdict, the only path out of red
+        # P5 runs EVERY Monday in production (the P1 weekly cron), slate or not. Replay fidelity fix (2026-10-15): the replay
+        # used to run it only on Mondays that were slate days, so a red set before the All-Star break waited for the first
+        # post-break Monday slate (2026-02-23) instead of the break's Monday (02-16) - four post-break slates late.
+        span = [day] if prev_day is None else [prev_day + dt.timedelta(days=i) for i in range(1, (day - prev_day).days + 1)]
+        for m in span:
+            if m.weekday() == 0:
+                simulate_p5(conn, m)   # Monday: P5's weekly verdict, the only path out of red
+        prev_day = day
         pick(conn, day, require_fresh=False)
         grade(conn, day)
         conn.execute("""INSERT INTO nba_score.live_state_history (game_date, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak, hurdles)
