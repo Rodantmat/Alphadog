@@ -182,6 +182,42 @@ async function engineSlips(sql, cfg, slate) {
   return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })) };
 }
 
+// PLACE BY (2026-10-16, owner: "The place by is a good idea"). A slip can be entered until the FIRST of its own legs' games tips,
+// not the slate's first tip: on 38 of the 39 2026-27 slates with a game before 1:45 PM PT only ~2 of ~8 games are early, and the
+// afternoon run moves to first tip - 29 min for the whole slate. Each leg's game = its player's team that day (the box score's
+// team on a played date, else today's roster in nba_ref.players - refreshed by P2B every morning, so off-season moves count; a leg
+// without an id is resolved by nba_ref.player_name_map, the grader's own name map)
+// joined to nba_calendar.slate_games (the official tip, not an app's displayed start). A leg that cannot be placed in a game
+// makes its slip fall back to the slate's first tip (conservative) and says so.
+async function placeByMap(sql, date, keys) {
+  const pids = [...new Set(keys.map(k => k.pid).filter(Boolean))], names = [...new Set(keys.map(k => k.name).filter(Boolean))];
+  const first = (await q(sql, "SELECT min(game_datetime_utc) t FROM nba_calendar.slate_games WHERE game_date = $1::date", [date]))[0];
+  const out = { tip: new Map(), first: first && first.t ? new Date(first.t) : null };
+  if (!pids.length && !names.length) return out;
+  const rows = await q(sql, `WITH k AS (SELECT x AS key, x AS pid FROM unnest($2::text[]) x
+        UNION ALL SELECT n, m.player_id FROM unnest($3::text[]) n JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(n)),
+      t AS (SELECT k.key, COALESCE((SELECT g.team_id FROM nba_stats.player_game_log g WHERE g.nba_player_id::text = k.pid AND g.game_date = $1::date LIMIT 1),
+                                   (SELECT g.team_id FROM nba_stats.player_game_log_postseason g WHERE g.nba_player_id::text = k.pid AND g.game_date = $1::date LIMIT 1),
+                                   (SELECT p.team_id FROM nba_ref.players p WHERE p.nba_player_id::text = k.pid LIMIT 1)) team FROM k)
+      SELECT t.key, min(s.game_datetime_utc) tip, min(s.away_team_tricode || '@' || s.home_team_tricode) game
+      FROM t JOIN nba_calendar.slate_games s ON s.game_date = $1::date AND t.team IN (s.home_team_id, s.away_team_id) GROUP BY t.key`,
+    [date, pgArr(pids), pgArr(names)]);
+  for (const r of rows) out.tip.set(r.key, { at: new Date(r.tip), game: r.game });
+  return out;
+}
+function legKey(x) { return x.player_id ? String(x.player_id) : String(x.player || "").toLowerCase(); }
+function ptClock(d) { return d ? d.toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "2-digit" }) + " PT" : null; }
+function placeBy(lj, pb) {
+  let best = null, game = null, exact = lj.length > 0;
+  for (const x of lj) {
+    const t = pb.tip.get(legKey(x));
+    if (!t) { exact = false; continue; }
+    if (!best || t.at < best) { best = t.at; game = t.game; }
+  }
+  if (!exact || !best) { best = pb.first; game = null; }
+  return { place_by_utc: best ? best.toISOString() : null, place_by_pt: ptClock(best), place_by_game: game, place_by_exact: exact && !!game };
+}
+
 async function replaySlips(sql, cfg, slate) {
   const sfxRow = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = $1", [cfg.ui.replay_backtest.pp_table_suffix_config]))[0];
   const sfxCfg = sfxRow ? (typeof sfxRow.config_json === "string" ? JSON.parse(sfxRow.config_json) : sfxRow.config_json) : {};
