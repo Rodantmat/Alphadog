@@ -22384,6 +22384,19 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `567` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T45` done; next `T46` onward.
 
+## §P568 — PASS 568 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T46` · NO RESIDUE
+*Angle (as NEXT set it):* (b24) `§P131`'s method on `T46` (as `§P168`, `§P218`, `§P268`, `§P318`, `§P368`, `§P418`, `§P468` and `§P518` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch; no credential, token, proxy value, local path, account identifier or browser string reproduced.
+- Tabulated in the shell before this line (the scan at pass 567's head): `T46` `94` of `174` sentences listed, no memory dump among them — the same count `§P518` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`94` read whole** (the bounded figure triage: `2` with a figure not on file / `0` inside a longer number / `31` with every figure on file / `61` with none; `2 + 0 + 31 + 61 = 94`; the two are the research-source links, a publisher article id and a long link, judged and not reproduced). The figures that read as `0` hits on a first grep were each re-grepped in their stated forms and their context read: `26 to 29` (the `29` / `26` nights of the rebounds and stocks strategies), `48 certified` (the `48` rows of `cand_certified`), `62 passes` / `58 expected` (the research table's `62` vs `58` signal-filter row), the `298`-slip combined case (the combined `−12%` on file), `item 141` / `142` (COMPASS items), the playoff leg rates (`59.0%` / `55.3%`, `54.5%` / `55.3%` against `53.6%`) and the research-only tables with no builder — all on file in their stated forms.
+- `§P518` recorded no write for `T46`; there is no write to re-verify.
+- Substance greps on the twelve (each zero re-grepped in its regex forms and its context read): the playoff re-price on filled inputs (`97` nights; `50` / `47` dates), the leak closed, the best row (`+3%` over `96` nights, lower bound `−38%`), the unchanged regular-season certification (`478,900`, `478,580` and `475,060` slips, the fingerprints, the as-of calibration cells and the `04:26 PT` timestamp), the per-strategy playoff table, the pre-backfill `+62%` / `+15%` / `+11%`, the walk-forward verdict (`+150%` to `+260%` in sample → `−88%` to `+32%`), the `+25%` / `+38%` Flex implications (weaker year `+7%` / `+10%`; independent-legs caveat), the Underdog `+34%` withdrawal, the game-key defect, the "Playoff Unders" practice strategy and its 2027 grading, strategy `31w` / `31x` / `31y` and the certification ledger's "POSTSEASON BACKFILL TO FULL PARITY" — all on file.
+- The identifier check (pass 361's catch, with pass 384's camel-run extension): `1` name with `0` hits — `showArticle`, a fragment of a research link, judged and not counted. No new source or store named.
+- Judged on `§P518`'s basis: narration, run waits, message-sent and time-zone notices, the research-source links and their ids, COMPASS item numbers, the owner's instructions to the documentation chat.
+- **No residue in `T46`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17`, `T18`, `T26`, `T28` and `T37`); the three-sweep count stays `0`. Commits not this sweep's since `503545ced` (`§P567`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `568` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17`, `T18`, `T26`, `T28` and `T37`): `T1`–`T46` done; next `T47` onward.
+
 
 
 
