@@ -204,7 +204,7 @@ jobs:
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SNAP_TABLES: "nba_score.slip_validation,nba_score.slip_validation_nosteals,nba_score.slip_validation_mf,nba_score.slip_validation_mf_nosteals,nba_score.cand_certified,nba_score.tier_map_summary"
+          SNAP_TABLES: "nba_score.slip_validation,nba_score.slip_validation_nosteals,nba_score.slip_validation_mf,nba_score.slip_validation_mf_nosteals,nba_score.slip_validation_wo,nba_score.slip_validation_wo_nosteals,nba_score.cand_certified,nba_score.tier_map_summary"
         run: python nba/snapshot_model_params.py
 
       - name: 6. Verdicts -> live strategy state (fail = red/cap 0, flagged; never auto-replaced)
