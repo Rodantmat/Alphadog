@@ -391,6 +391,12 @@ export async function apiHighHit(sql, cfg, url, version) {
   const plays = slips.filter(x => x.play_usd != null);
   if (eng.source !== "replay_backtest" && slips.some(x => x.source_key === "prizepicks"))
     notes.push("To play today: " + plays.length + " PrizePicks slip(s), $" + plays.reduce((a, x) => a + x.play_usd, 0).toFixed(2) + " at $" + bt.unit.usd.toFixed(2) + " per unit - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).");
+  if (eng.source !== "replay_backtest" && plays.length) {
+    const by = new Map();
+    for (const x of plays) by.set(x.place_by_pt || "unknown", (by.get(x.place_by_pt || "unknown") || 0) + 1);
+    const order = [...by.keys()].sort((u, v) => String((plays.find(x => x.place_by_pt === u) || {}).place_by_utc).localeCompare(String((plays.find(x => x.place_by_pt === v) || {}).place_by_utc)));
+    notes.push("Place by (each slip closes when the first game among its legs tips): " + order.map(k => by.get(k) + " by " + k).join(", ") + ".");
+  }
   if (unmatched) notes.push(`${unmatched} slip legs are not on the scored board (shown without a probability).`);
   if (fallbackNote) notes.push(fallbackNote);
   if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${eng.suffix ? "market-free twin" : "certified tables"}), with results.`);
