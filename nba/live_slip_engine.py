@@ -188,6 +188,30 @@ def stake_unit(conn):
     return _STAKE_UNIT
 
 
+# H7 MODE (2026-10-15, owner: "is there any way to prevent the February dip? ... understand it and act on it after
+# identification"). H7 (29f) reds ALL of family A when the shared steals anchor's trailing-14-day hit falls 3 sigma. It predates
+# the drought rotation (29p), which answers the same steals drought by rebuilding family A WITHOUT steals - so in a steals
+# drought H7 stops a family that is no longer playing the failing cell, and its sticky red outlives the drought. Modes:
+#   red    (default until the replay test decides) - as before: yellow at 2 sigma, red at 3 sigma
+#   yellow - H7 can only half the cap, never stop the family
+#   off    - H7 recorded in the hurdles (H7_obs) for the record, no state effect; the rotation is the steals-drought response
+# Source: env LS_H7_MODE (replay / research override), else classification_config['anchor_h7'].mode, else 'red'.
+_H7_MODE = None
+
+
+def h7_mode(conn):
+    global _H7_MODE
+    if _H7_MODE is None:
+        m = os.environ.get('LS_H7_MODE')
+        if not m:
+            row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='anchor_h7'").fetchone()
+            cfg = (row[0] if isinstance(row[0], dict) else json.loads(row[0])) if (row and row[0]) else {}
+            m = cfg.get('mode', 'red')
+        m = str(m).strip().lower()
+        _H7_MODE = m if m in ('red', 'yellow', 'off') else 'red'
+    return _H7_MODE
+
+
 def below_min_stake(conn, weight):
     u = stake_unit(conn)
     return u.get("below_min", "skip") == "skip" and float(weight) * float(u["unit_usd"]) < float(u["min_stake_usd"]) - 1e-9
