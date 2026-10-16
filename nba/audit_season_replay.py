@@ -73,6 +73,33 @@ def main():
             if last.get(s) != (state, cap):
                 print(f"  {d}  {s:<20} -> {state:<9} cap {cap}", flush=True)
                 last[s] = (state, cap)
+        save = os.environ.get("AR_SAVE", "")
+        if save:
+            if not save.replace("_", "").isalnum() or not save.islower():
+                raise SystemExit(f"bad AR_SAVE label {save!r}")
+            sl = conn.execute("""SELECT game_date, strategy, k, legs_json::text, size, structure, status, hits, payout, profit,
+                                        coalesce(stake_weight, 1) FROM nba_score.live_slips WHERE status LIKE 'graded%%'""").fetchall()
+            sh = conn.execute("""SELECT game_date, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak,
+                                        hurdles::text FROM nba_score.live_state_history""").fetchall()
+            with psycopg.connect(os.environ["DATABASE_URL"]) as w:
+                w.execute("""CREATE TABLE IF NOT EXISTS nba_score.replay_audit_slips (label text, game_date date, strategy text, k int,
+                             legs_json jsonb, size int, structure text, status text, hits int, payout double precision,
+                             profit double precision, stake_weight double precision, saved_at timestamptz DEFAULT now())""")
+                w.execute("""CREATE TABLE IF NOT EXISTS nba_score.replay_audit_states (label text, game_date date, strategy text,
+                             state text, live_cap int, days int, slips int, net double precision, roi double precision,
+                             ci_lo double precision, leg_hit double precision, drawdown double precision, streak int, hurdles jsonb,
+                             saved_at timestamptz DEFAULT now())""")
+                w.execute("DELETE FROM nba_score.replay_audit_slips WHERE label=%s", (save,))
+                w.execute("DELETE FROM nba_score.replay_audit_states WHERE label=%s", (save,))
+                with w.cursor() as c:
+                    c.executemany("""INSERT INTO nba_score.replay_audit_slips (label, game_date, strategy, k, legs_json, size, structure,
+                                     status, hits, payout, profit, stake_weight) VALUES (%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,%s,%s,%s)""",
+                                  [(save,) + tuple(r) for r in sl])
+                    c.executemany("""INSERT INTO nba_score.replay_audit_states (label, game_date, strategy, state, live_cap, days, slips,
+                                     net, roi, ci_lo, leg_hit, drawdown, streak, hurdles) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)""",
+                                  [(save,) + tuple(r) for r in sh])
+                w.commit()
+            print(f"saved under label {save!r}: {len(sl)} slips, {len(sh)} state rows (research tables)", flush=True)
         if not play["TOTAL"][0]:
             ok = False; print("FAIL: the loop produced no playable slips", flush=True)
     finally:
