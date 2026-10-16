@@ -22043,6 +22043,21 @@ are worth more per pass than any re-derivation.***
 **Ledger**: pass `541` complete (`2026-10-15`).
 - ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T19` done; next `T20` onward.
 
+## §P542 — PASS 542 (`2026-10-15`): ADDITIONAL SWEEP `9` — `T20` · NO RESIDUE
+*Angle (as NEXT set it):* (b24) `§P131`'s method on `T20` (as `§P192`, `§P242`, `§P292`, `§P342`, `§P392`, `§P442` and `§P492` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 541's head): `T20` `198` of `830` sentences listed — the same count `§P492` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`198` read whole** (the bounded figure triage, unchanged since `§P492`: `0` with a figure not on file / `0` inside a longer number / `30` with every figure on file / `168` with none; `0 + 0 + 30 + 168 = 198`).
+- `§P392`'s writes from `T20` (none) — nothing to re-grep. `§P492`'s write re-grepped and still on file: the reply's sizing of the OT-rule point (*"roughly 6% of the schedule"*, `NBA_DATABASE.md`), beside the `6,905,452` board_outcomes rows and the measured P(OT | spread) `5.3%` → `1.9%`.
+- The figure-flagged zeros: the session's own transcript-grep counts of its documentation sweep (`13` goblin / `27` multiplier hits in T1, `21` in T4, `23` / `68` in T8, `60` / `20` in T9 — progress counts, out of scope on `§P442`'s and `§P492`'s basis); every other flagged figure was on file in a comma, bare or unit form (`0.0283`, `0.72`, `58.7`, `35` / `460`, `121` passes / `92`, `1,610` m / `1,290` m, `+1300%`, `216.5`, `5.31` / `5.32`, `1.15`–`2.09`). The dash-stripped forms `1520 band`, `4080 games`, `1.53.0`, `v1v17`, `1013` and `T3T9` read as the `15`–`20` band, `40`–`80`, `−1.5` to `−3.0`, `v1`–`v17`, items `10`–`13` and `T3`–`T9`.
+- The identifier check, counted on the uncut sentences: `0` names with `0` hits — the same as `§P492`. Nothing to judge.
+- The source-name and store-name checks: `player_game_starter_status`, `active_stats_season`, `nba-p1-weekly-static.yml`, `load_baseline_ladder.py`, `score_board_legs.py`, `grade_board_outcomes.py`, `known_empty_games`, `factor_relevance`, `SLEEPER_SPORTS`, `dud_lognormal`, `tiered_inelastic`, `gain_vs_anchor` on file. No store gap.
+- On file, by substance (each grepped before it was read, every hit read, a zero-hit phrase re-grepped in other forms): `§P492`'s list — the `4,319` coach's-decision rows, the east-bound jet-lag asymmetry, `f_role` `55.6%`, the hierarchical empirical fallback, `max gap`, the `58.7%` vs `95%` stacking bug, the return ramp, the mandate messages and clean-pass rules, the T1 lessons (`#9`, `#13`, `#14`, `#16`, `#18`, `#24`), Parts C–F, B0 / B0a / B0b / B0c, the bootstrap day-unit rule, the Single-Tier Non-Arbitrage Principle, the thirteen guards, the `26`-lesson standard. Judged: narration, the session's own grep counts, progress counts and the owner's mandates (on file). No device / location tokens or credentials appear in `T20`.
+- **No residue in `T20`.**
+- **Additional sweep `9` is NOT clean** (the writes in `T17` and `T18`); the three-sweep count stays `0`. Commits not this sweep's since `373080bed` (`§P541`'s census; the log fetched before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `542` complete (`2026-10-15`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`8` complete, each NOT clean. ⏳ **Additional sweep `9`** under way, NOT clean (the writes in `T17` and `T18`): `T1`–`T20` done; next `T21` onward.
+
+
 
 
 
