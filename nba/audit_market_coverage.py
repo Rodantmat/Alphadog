@@ -17,7 +17,8 @@ Reported per live date and pooled:
   books      which certified books appear (ParlayAPI vs the Odds API backfill)
   names      PrizePicks players with no book row that day under their own name but one under nba_ref.norm_name (fixable)
 Verdict (rule fixed before any live reading): READY when, pooled over >= 5 live slate dates, coverage >= 0.85 x the reference,
-mean depth >= 0.85 x the reference and the player match >= 0.95; otherwise NOT READY with the reason.
+mean depth >= 0.85 x the reference and the player match >= 0.95; otherwise NOT READY with the reason. The reference is the LOWER
+of the two certified seasons' values (both regimes were certified; calibrated on a past week read as live - see main()).
 Env: DATABASE_URL, MC_FROM (first live date, default 2026-10-20), MC_TO (default today), MC_REF_DAYS (default 28).
 """
 import datetime as dt
