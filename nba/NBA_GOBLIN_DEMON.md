@@ -518,6 +518,8 @@ because a demon-Less now sits *below* the anchor.
 **PrizePicks enabled LESS in 2026-08** (MLB and WNBA first; owner screenshots confirm it live on
 WNBA).
 
+🆕 *(additional sweep `9`, pass `540`, `§P540` — `T18` `2026-09-20 03:37Z`, the screenshots' content, AS STATED)*: *"your WNBA screenshots prove it's live: image 6765 shows Awa Fam 6.5 Rebs+Asts with a demon on the Less side, and 6766 shows Kamilla Cardoso 2.5 Assists with both Less and More available."*
+
 **Consequence**: a **demon-Less now sits BELOW the anchor** — and the price-based v1 label calls it a
 **goblin**. **The two-way taxonomy cannot express the board any more.**
 
