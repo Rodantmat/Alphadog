@@ -23395,8 +23395,20 @@ are worth more per pass than any re-derivation.***
 - **No residue in `T20`.**
 - **Additional sweep `11` is clean so far** (`T1`–`T20` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `bec8cff6f` (`§P641`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
 
-**Ledger**: pass `642` complete (`2026-10-16`).
-- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T20` done, no residue; next `T21` onward.
+## §P643 — PASS 643 (`2026-10-16`): ADDITIONAL SWEEP `11` — `T21` · NO RESIDUE
+*Angle (as NEXT set it):* (c26) `§P131`'s method on `T21` (as `§P193`, `§P243`, `§P293`, `§P343`, `§P393`, `§P443`, `§P493`, `§P543` and `§P593` read it, each alone), with pass 361's identifier check (and pass 384's camel-run extension), pass 383's source-name catch and pass 334's store-name catch.
+- Tabulated in the shell before this line (the scan at pass 642's head): `T21` `768` of `1,734` sentences listed — the same count `§P593` listed, the two lists diffed in the shell (`0` dropped, `0` added) — **`768` read whole** (the bounded figure triage, unchanged since `§P593`: `0` with a figure not on file / `0` inside a longer number / `122` with every figure on file / `646` with none; `0 + 0 + 122 + 646 = 768`).
+- `§P393`'s writes from `T21` (none) — nothing to re-grep.
+- The figure-flagged zeros, each re-grepped in comma, bare and unit forms and read: `92.5%` (the documentation-sweep tool's own coverage percentage for `T13` in a list of tail-yield percentages — a progress cell of the tool, not a system fact), the `23.6 MB` / `3.6 MB` transcript file sizes and the `26 calls` count (upload logistics and the tool's call counts), the model name in the owner's speed question, and the `37 day` window (found in another form: the *"37 day rolling re-verification window"* is the speech-to-text form of the blueprint's *"3–4 day, up to roughly a week"* rolling correction pass, quoted in full in `NBA_SYSTEM_ARCHITECTURE.md` and `NBA_OPEN_ITEMS.md`, with the tension against the baseline's point-in-time rule recorded). The sweep tool's own coverage percentages, call counts and document-size cells are judged out of scope on `§P443`'s and `§P493`'s basis.
+- The identifier check, counted on the uncut sentences: `5` names with `0` hits — `COWORK_PROMPT`, `push_transcripts`, `nba_missing_files`, `nba_transcripts`, `supporting_docs`, the same five `§P593` judged (the chat's handoff packages, prompt and upload script for the documentation sessions — chat deliverables, not the system).
+- The source-name and store-name checks: BallDontLie, Cowork, `nba_calendar.games`, `ladder_calibration_asof`, `x_minutes` on file. No store gap.
+- On file, by substance (each grepped before it was read, every hit read, a zero-hit phrase re-grepped in other forms — *"genuine tension"* found as the *"tension with T1's blueprint §4k"* note, *"double-JSON-encoded"* and *"unwrap"* found as the stringified-JSON column rule): `§P593`'s list — the T1 lessons (`#2`, `#4`, `#6`, `#9`–`#14`, `#18`) and their figures (`t = 1.573` vs `2.755`), the BallDontLie tier (`$39.99`, `600` requests a minute), the rounding-convention bug (`14.5%`), the matcher figures (`17,061` blocks, `342` / `309` / `244` segments, `52.6%`), the live-audit items (the nine static tables inside `2026-08-31`–`09-03`, `nba_calendar.games`, `1,200` vs `1,230`, `2,762` cells vs the empty `ladder_calibration_asof`, `x_minutes`), the mandate messages and work-order parts. Judged: narration, the session's pace estimates, upload logistics and the owner's expletives (not reproduced). No device / location tokens or credentials appear in `T21`.
+- **No residue in `T21`.**
+- **Additional sweep `11` is clean so far** (`T1`–`T21` done, no residue; the three-sweep count is `1` and stays `1` until sweep `11` closes). Commits not this sweep's since `42932b914` (`§P642`'s census; the log fetched as the last call before this patch): `0`. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `643` complete (`2026-10-16`).
+- ✅ **CLOSED**: every transcript and source, bases `§P127`. 🔁 Additional sweeps `1`–`10` complete: `1`–`9` each NOT clean, `10` CLEAN. ⏳ **Additional sweep `11`** under way, clean so far: `T1`–`T21` done, no residue; next `T22` onward.
+
 
 
 
