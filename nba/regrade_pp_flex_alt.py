@@ -20,7 +20,7 @@ import psycopg
 
 TABLES = [t.strip() for t in (os.environ.get("REGRADE_TABLES") or
           "slip_engine_slips,slip_engine_slips_mf,slip_engine_slips_nosteals,slip_engine_slips_mf_nosteals,"
-          "slip_engine_slips_post,slip_engine_slips_post_nosteals").split(",") if t.strip()]
+          "slip_engine_slips_post,slip_engine_slips_post_nosteals,slip_engine_slips_wo,slip_engine_slips_wo_nosteals").split(",") if t.strip()]
 
 SQL = """WITH s AS (
   SELECT ctid id, hits,
