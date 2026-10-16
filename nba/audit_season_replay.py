@@ -13,7 +13,10 @@ Reported:
     not skipped by a calendar rule, the daily ceiling or the minimum entry), at $1, by month and in total: slips, staked, net, ROI
   - the SKIPPED slips by reason (week-1 / week-2 / ceiling / below the minimum / shadow), with what they would have returned
   - every state change per strategy (paper -> active -> yellow / red -> released ...), with the date
-Env: DATABASE_URL, AR_FROM (2025-10-21), AR_TO (2026-04-12), AR_UNIT (1.0).
+Env: DATABASE_URL, AR_FROM (2025-10-21), AR_TO (2026-04-12), AR_UNIT (1.0), AR_SAVE (optional label [a-z0-9_]: before the
+rollback, the replayed slips and daily states are copied - over a SEPARATE connection, so they survive the rollback - into the
+research tables nba_score.replay_audit_slips / replay_audit_states under that label, for leg-level study. Production tables
+are never written; the label's previous rows are replaced).
 """
 import datetime as dt
 import os
