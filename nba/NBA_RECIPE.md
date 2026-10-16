@@ -1352,6 +1352,8 @@ remediated: whether the check was re-pointed is **NOT RECORDED** (`RULE 6`).*
 | year-over-year persistence | **`0.26`** |
 | ⇒ true persistent effect | **`~0.7` fouls on a `37`–`40` baseline — under `2%`** |
 
+🆕 *(additional sweep `9`, pass 548, `§P548` — `T26` 2026-09-23 `22:42Z`, AS STATED)* The reply's sample size for the persistence line: *"Year-over-year persistence is 0.26 across 66 officials, so most of even that spread is noise."* — the `0.26` is measured over **`66` officials** (the table above carried the figure without its `n`; the `3,414` trios / `3,687` games / `3,172` once are the crew-repetition measure beside it).
+
 > 🔑 ***"a predictor for an **unpredictable assignment** worth **under 2%** isn't worth the failure
 > surface."***
 
