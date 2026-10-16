@@ -347,6 +347,10 @@ export async function apiHighHit(sql, cfg, url, version) {
   if (board.length >= BOARD_CAP) notes.push(`The slate has more than ${BOARD_CAP} legs - only the top ${BOARD_CAP} by score were matched.`);
   let unmatched = 0;
   const slips = [];
+  const ljOf = s => (typeof s.legs_json === "string" ? JSON.parse(s.legs_json) : s.legs_json || []);
+  const pb = await placeByMap(sql, slate.date, [...eng.pp, ...eng.ud].flatMap(s => ljOf(s).map(x => ({
+    pid: x.player_id ? String(x.player_id) : null, name: x.player_id ? null : String(x.player || "").toLowerCase() }))));
+  lap("place_by");
   for (const s of [...eng.pp, ...eng.ud]) {
     const lj = typeof s.legs_json === "string" ? JSON.parse(s.legs_json) : s.legs_json || [];
     const legs = [];
