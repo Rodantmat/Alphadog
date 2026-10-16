@@ -328,6 +328,31 @@ def api_checks(conn, cfg):
         if (usd is not None) != lab.startswith("PLAY") or (usd is not None and abs(float(usd) - round(unit * w, 2)) > 0.005) \
            or not (lab.startswith(("PLAY", "SKIP")) or lab == "backtest replay"):
             bad50.append((s_.get("strategy"), s_.get("status"), lab, usd))
+    # Underdog (2026-10-16, "full force since day one"): with stake_unit.ud_play the P5 portfolio says PLAY $ (unit x stake), P4 /
+    # stand-down / an edge-monitor ALARM say SKIP; without it every Underdog slip stays 'paper (Underdog engine)'
+    ud_play = su.get("ud_play") is True
+    try:
+        ud_alarm = bool(conn.execute("""SELECT bool_or(decision = 'ALARM') FROM nba_score.ud_edge_monitor
+                                        WHERE season_start = (SELECT max(season_start) FROM nba_score.ud_edge_monitor)""").fetchone()[0])
+    except Exception:  # noqa: BLE001
+        conn.rollback(); ud_alarm = False
+    min_usd = float(su.get("min_stake_usd", 1))
+    for s_ in [x for x in sl if x.get("source_key") == "underdog"]:
+        lab, usd, st = str(s_.get("stake_label") or ""), s_.get("play_usd"), str(s_.get("status") or "")
+        w = 1.0 if s_.get("stake_weight") is None else float(s_["stake_weight"])
+        if st == "replay_backtest":
+            want = None
+        elif not ud_play:
+            want = None
+            if lab != "paper (Underdog engine)":
+                bad50.append(("UD", st, lab, usd)); continue
+        else:
+            playable = (" P5 " in f" {s_.get('track_label') or ''} ") and not st.startswith(("stand_down", "shadow")) and not ud_alarm \
+                       and w > 0 and round(unit * w, 2) >= min_usd
+            want = round(unit * w, 2) if playable else None
+        if (want is None) != (usd is None) or (want is not None and abs(float(usd) - want) > 0.005) \
+           or (usd is not None) != lab.startswith("PLAY"):
+            bad50.append(("UD " + str(s_.get("track_label")), st, lab, usd))
     check("C50 slips say PLAY $ (unit x stake weight) or SKIP with a reason", not bad50, f"unit ${unit:.2f}; bad {bad50[:3]}")
     # C52 (2026-10-16, owner: "The place by is a good idea"): every slip carries a place-by time = the first tip among its legs'
     # games (box-score team on a played date, else today's roster; official tips from nba_calendar.slate_games) - recomputed here
