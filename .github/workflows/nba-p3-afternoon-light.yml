@@ -568,6 +568,37 @@ jobs:
               print(f"P2B {slate}: {st}" + ("" if st == "success" else " - ::warning:: P2B did not succeed"))
           EOF
 
+      # 3b) MARKET REFRESH of final_hp (strategy §31ac). The history scored every leg with a book count per rung; live final_hp
+      #     is built by P2B in the morning, before any sportsbook line exists. Re-running the SAME builder on the SAME inputs plus
+      #     today's rung_market (the ParlayAPI window capture above) gives the leg its market term from the books visible NOW.
+      #     GATED by classification_config['market_feed'].refresh_final_hp, switched on together with live_backtest_suffix ->
+      #     '_wo' (the WINDOW-ONLY twin: the history's market term had close-capture books live cannot see - ledger 2026-10-16).
+      #     Placed AFTER the P2B wait (it rewrites today's final_hp) and SOFT: a failure or timeout leaves P2B's market-free
+      #     scores for the props not yet rewritten (each prop is rewritten in its own transaction) and the pick proceeds.
+      - name: Market refresh of final_hp (gated by the market_feed tunable)
+        id: soft_mrefresh
+        if: ${{ github.event.inputs.skip_scrape != 'true' && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 8
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_DATE: ${{ steps.d.outputs.asof }}
+          FE_WRITE: "1"
+          WN_DATE: ${{ steps.d.outputs.asof }}
+          WN_WRITE: "1"
+        run: |
+          ON=$(psql "$DATABASE_URL" -Atqc "SELECT coalesce((config_json->>'refresh_final_hp')::boolean, false) FROM nba_config.classification_config WHERE config_key='market_feed'" 2>/dev/null || echo f)
+          if [ "$ON" = "t" ]; then
+            psql "$DATABASE_URL" -Atqc "SELECT 'window rungs priced today: ' || count(*) || ' (books avg ' || round(avg(books),2) || ')' FROM nba_market.rung_market WHERE game_date = '$FE_DATE' AND snapshot_label = 'window'" || true
+            echo "market refresh ON: rebuilding final_hp for $FE_DATE with today's rung_market"
+            T0=$(date +%s)
+            python nba/build_final_hp.py
+            python -u nba/build_whole_number_hp.py
+            echo "market refresh done in $(( $(date +%s) - T0 ))s"
+          else
+            echo "market refresh OFF (classification_config['market_feed'].refresh_final_hp) - final_hp stays as P2B built it (market-free scoring, the twin references)"
+          fi
+
       - name: Availability delta (which teams changed since the day-before report)
         if: ${{ steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
         env:
