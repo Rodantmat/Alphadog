@@ -1,7 +1,4 @@
 Trigger for nba-injury-report.yml
-mode: backfill
-from: 2026-04-14
-to: 2026-06-14
-slug: 2025_26
-last_triggered_utc: 2026-10-08T21:39:00Z
-trigger_reason: strategy §31w P-1 - 2025-26 postseason injury reports (play-in Apr 14 -> Finals Jun 13); 2024-25 postseason completed 21:38Z (71/71 days)
+mode: probe
+last_triggered_utc: 2026-10-17T20:50:00Z
+trigger_reason: pre-season pass 2026-10-17 - the newest injury snapshot is 10-07 (league publishes regular-season reports from the day before opening night); probe the CDN path and the parser on the known-good 2026-04-08 02:30 PM report (direct and proxy) before opening night. Previous: mode backfill 2026-04-14..2026-06-14 slug 2025_26 (2025-26 postseason, complete).
