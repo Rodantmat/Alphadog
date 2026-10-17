@@ -21836,8 +21836,8 @@
       "away_team_tricode": "ATL",
       "arena_name": "American Airlines Center",
       "arena_city": "Dallas",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21851,8 +21851,8 @@
       "away_team_tricode": "BOS",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": "Preseason"
     },
     {
@@ -21866,8 +21866,8 @@
       "away_team_tricode": "POR",
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21881,8 +21881,8 @@
       "away_team_tricode": "MIA",
       "arena_name": "Kia Center",
       "arena_city": "Orlando",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21896,8 +21896,8 @@
       "away_team_tricode": "TOR",
       "arena_name": "Little Caesars Arena",
       "arena_city": "Detroit",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21911,8 +21911,8 @@
       "away_team_tricode": "MIL",
       "arena_name": "Gainbridge Fieldhouse",
       "arena_city": "Indianapolis",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": "Preseason"
     },
     {
@@ -21926,8 +21926,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "United Center",
       "arena_city": "Chicago",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21941,8 +21941,8 @@
       "away_team_tricode": "CHA",
       "arena_name": "FedExForum",
       "arena_city": "Memphis",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21956,8 +21956,8 @@
       "away_team_tricode": "WAS",
       "arena_name": "Smoothie King Center",
       "arena_city": "New Orleans",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21971,8 +21971,8 @@
       "away_team_tricode": "SAC",
       "arena_name": "Frost Bank Center",
       "arena_city": "San Antonio",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21986,8 +21986,8 @@
       "away_team_tricode": "UTA",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -22001,8 +22001,8 @@
       "away_team_tricode": "DEN",
       "arena_name": "Crypto.com Arena",
       "arena_city": "Los Angeles",
-      "game_status": 1,
-      "game_status_text": "10:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -22354,7 +22354,7 @@
       "game_id": "0022600099",
       "season": "2026-27",
       "game_date": "2026-10-23T00:00:00Z",
-      "game_datetime_utc": "2026-10-24T00:00:00Z",
+      "game_datetime_utc": "2026-10-23T20:00:00Z",
       "home_team_id": 1610612749,
       "home_team_tricode": "MIL",
       "away_team_id": 1610612741,
@@ -22362,7 +22362,7 @@
       "arena_name": "Fiserv Forum",
       "arena_city": "Milwaukee",
       "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status_text": "4:00 pm ET",
       "game_label": ""
     },
     {
