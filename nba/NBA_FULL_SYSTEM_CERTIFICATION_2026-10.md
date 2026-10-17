@@ -2054,3 +2054,25 @@ untouched: baseline_history / final_hp / final_hp_derived / live_slips all 0 aft
 PLAY A_core_3power, A_wrebounds_4flex, C_wstocks_4flex (unchanged; the 10-20 window has no sportsbook rows yet, so the market
 term's first real reading is the live P3); certify_slip_system **66 checks, 0 FAIL** (run 14ec69db, on the _wo references);
 integration test **ALL PASS** (rolled back, ledgers 0 -> 0).
+
+### THE DOCUMENTATION'S T49 OPEN ITEMS, RE-READ AGAINST THE LIVE SYSTEM (owner 2026-10-16 17:40 PT: "take a look ... see if anything needs to be addressed on the issues ... Do not fix documentation")
+The documentation chat's T49 intake (NBA_OPEN_ITEMS.md §T49.9, covering to 16:04 PT) was re-read item by item; the ones the
+market-term switch made load-bearing were acted on, the rest verified:
+- **"Certifier L11 checking every table" - FIXED.** New L11b runs L11's invariants on the live engine's own backtest tables
+  (the live_backtest_suffix pair, now _wo / _wo_nosteals). Its first run FAILED 2 checks (11,392 / 19,401 payout mismatches) -
+  every one a **size-2 Flex slip with alternates**: since 10-10 the engine pays those 0 (no PrizePicks quote tier for n = 2),
+  while tables built before keep the old FLEX(2,h) x product (the regrade touches 3+ live picks only), and the recompute assumed
+  the old table. 2-pick Flex is not a PrizePicks product and no strategy builds 2-pick slips - no live strategy, hurdle or the
+  mf / wo comparison is affected. Excluded from the L11b payout recompute and counted. **certify_slip_system 82 checks, 0 FAIL
+  (run 888b665e).** (The certified tables still carry the old value for that non-product; harmless, recorded.)
+- **"ParlayAPI success on zero items" - FIXED** (capture_parlay_props.py): an empty capture no longer blocks the day's re-run,
+  and zero sportsbook rows for a regular-season slate stores the capture then fails the step - P3 runs it soft, so the run stays
+  green, 'sportsbook-props' appears in the soft-failure list and that day's legs score market-free.
+- **ParlayAPI credits shared - verified, no action:** our capture costs 3 credits per 10,000-row page (a few to ~12 a day); the
+  ~50/day burn is the MLB postseason market capture, which ends in early November; 12,455 credits cover the NBA season.
+- **Referee polling / morning line not exercised before 10-20 - verified safe:** the referee step ends `exit 0` and is bounded by
+  the day's deadline; the morning line is soft. The scheduler's /simulate path is not used in production.
+- **Preseason rows in live_state_history - verified harmless:** the hysteresis / clean-release counters live in each strategy's
+  hurdles in live_strategy_state (all empty), never in the history table.
+- **Disk:** 38 GB (the window-only twin tables are 1.7 GB of it).
+- **Close capture per tip cluster** stays a recorded build item (it feeds line-movement research, never the pick).
