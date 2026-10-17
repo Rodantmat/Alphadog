@@ -290,8 +290,17 @@ def main():
                     n_written=EXCLUDED.n_written, unmapped=EXCLUDED.unmapped, payload=EXCLUDED.payload""",
                  (slate, store_label, SPORT, status, len(items), remaining, written, json.dumps(unmapped), json.dumps(items)))
     conn.commit()
+    # ZERO SPORTSBOOK ROWS ON A SLATE DAY (2026-10-16): the market term is live (market_feed.refresh_final_hp), so a window capture
+    # that priced nothing for a regular-season slate means today's legs score market-free. Stored as above (lossless), then the
+    # step FAILS - P3 runs it soft, so the run stays green, the soft-failure list names 'sportsbook-props', and the refresh still
+    # runs (legs without books keep the market-free score). Preseason / no-slate days stay quiet.
+    games = conn.execute("SELECT count(*) FROM nba_calendar.slate_games WHERE game_date = %s", (slate,)).fetchone()[0]
     conn.close()
     print(f"DONE ({MODE}) {slate} {LABEL}: raw capture stored, {written} rows into board_snapshots", flush=True)
+    if MODE == "capture" and games and n_slate == 0:
+        print(f"::warning::ParlayAPI returned no sportsbook rows for the {slate} slate ({games} games) - today's legs score market-free; "
+              f"the capture can be re-run (an empty capture never blocks it)", flush=True)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
