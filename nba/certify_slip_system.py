@@ -359,8 +359,16 @@ def main():
               count(*) FILTER (WHERE abs(payout - (CASE WHEN nlv = 0 THEN 1.0
                                                         WHEN est = 'flex' AND live_alt AND nlv >= 3 THEN nba_market.pp_flex_alt_payout(nlv, nlv - hits, fprod)
                                                         WHEN nlv = 1 AND nl > 1 THEN (CASE WHEN lh = 1 THEN least(1.5*coalesce(fprod,1), 9.1*power(1.5*coalesce(fprod,1)/9.1,0.857)) ELSE 0 END)
-                                                        WHEN raw <= 0 THEN 0 WHEN raw<=9.1 THEN raw ELSE 9.1*power(raw/9.1,0.857) END))>1e-6)
+                                                        WHEN raw <= 0 THEN 0 WHEN raw<=9.1 THEN raw ELSE 9.1*power(raw/9.1,0.857) END))>1e-6
+                                   -- 2-PICK FLEX IS NOT A PRIZEPICKS PRODUCT (Flex is 3-6 picks; no strategy builds 2-pick slips). Since
+                                   -- 10-10 the engine pays a 2-pick Flex WITH alternates 0 (no quote tier for n = 2), while tables built
+                                   -- before kept the old FLEX[(2,h)] x product (the regrade touches 3+ live picks only). Found by this
+                                   -- check's first run on the _wo tables (11,392 / 19,401 rows, every one size-2 Flex with alternates):
+                                   -- excluded here, counted below.
+                                   AND NOT (structure = 'flex' AND nl = 2)),
+              count(*) FILTER (WHERE structure = 'flex' AND nl = 2)
             FROM p""")
+        print(f"  (size-2 Flex rows excluded from the payout recompute - not a PrizePicks product: {r[5]})", flush=True)
         check(conn, f"L11b.{t}.no_player_twice", r[0] == 0, r[0])
         check(conn, f"L11b.{t}.two_teams_minimum", r[1] == 0, r[1])
         check(conn, f"L11b.{t}.size_equals_legs", r[2] == 0, r[2])
