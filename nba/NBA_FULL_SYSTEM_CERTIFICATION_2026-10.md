@@ -2008,3 +2008,49 @@ November–January, but on the larger market-free backtest it is POSITIVE on rot
 +71.6% on 28) - the replay dip is leg-selection variance, not a drought signal. Kept: below_min skip (the replay's +53% / +45% on
 those slips is in-sample and market-inclusive; the faithful _mf twin measured them at +8.1% / −1.4%), the week-1 / week-2 rules
 (their skipped slips: ±small, no evidence to change).
+
+### FULL FORCE FROM DAY ONE — THE MARKET TERM ON (WINDOW-ONLY), UNDERDOG PLAYED, MONITORED DAILY (owner 2026-10-16 16:18 PT: "implement and run all the tools, all the strategies, everything that you have, all the filters, everything that improves ... run it since day one. And then you monitor it. And if it's not as useful as you thought it was, then we change it. But don't wait.")
+**Inventory of what was still off** (classification_config, open items): the live market term (T48-2, gated on a first-week
+coverage reading) and the Underdog P5 portfolio (paper since §31u, "conservative"). Everything else that tested as an improvement
+was already on (the 10-15 cap raises, clean release, H7 red, rotation, below-min skip). Sleeper / Fliff / Betr have no certified backtest
+(paper under §31u) - nothing to switch on.
+**1. The market term - a lookahead found and removed before switching.** The certified market-inclusive scoring counts books per
+rung over EVERY rung_market label of the day: final_hp.c_market equals the all-label count on 100% of 93,452 legs (2025-11-10..12),
+the window-only count on 97.5%; on 2025-11 PrizePicks window rungs 7.8% are priced only at the close capture and 7.6% by more
+books at the close. Live P3 scores at the window, before the close exists. So the +13 pt gain (market-inclusive vs market-free)
+could not be trusted as is. **Built the window-only twin** - `nba_score.build_tier_map_legs_sel_wo()` (`nba/sql/build_tier_map_legs_sel_wo.sql`,
+the market-free twin's formula with c_market = least(1, window books / 4)), `nba/research_window_only_twin.py` (identity check:
+wherever window and all-label counts agree the rescored score equals the certified score within one 2nd-decimal rounding step -
+the certified market-free twin shows the identical 0.02 gaps, 178 of 18,874 legs; 0 breaks both seasons; 5.4% / 6.8% of legs'
+books changed), slip engines `slip_engine_slips_wo` 479,002 / `_wo_nosteals` 475,564 (both graded on today's Flex tiers - 0 of
+1,394 alternate Flex slips differ from the DB regrade). **Pre-registered rule** (`nba/research_market_term_value.py`, written
+before the tables existed: ON if the wo portfolio's net AND ROI beat market-free in BOTH seasons) - **run 38983335802: SWITCH ON.**
+Portfolio at live caps: 2024-25 market-free +33.8% (+1,150) -> window-only **+46.0% (+1,564)** (all-label +46.8%); 2025-26 +73.1%
+(+2,478) -> **+79.0% (+2,675)** (all-label +78.3%) - the gain is the window's, not the close's. By strategy (mf -> wo): A_wsteals
++43.1 -> +56.2 / +76.7 -> +94.5; A_regular +42.7 -> +51.7 / +126.3 = +126.3; A_wrebounds +34.5 -> +40.2 / +74.8 -> +72.6; A_core
++31.9 -> +29.5 / +78.4 -> +76.6; C_wstocks +19.0 -> +26.1 / +48.5 -> +42.7; D_points +11.3 -> +47.1 / +36.4 -> +33.8.
+**Switched (2026-10-16 23:5xZ):** market_feed.refresh_final_hp = true; live_backtest_suffix.suffix = '_wo' (NOT '' - the certified
+tables carry the lookahead); Underdog keys unchanged (the Underdog engine strips the market term itself, market_free_score).
+Chain: validations `slip_validation_wo` / `_wo_nosteals` (A_wsteals, A_regular, D_points now PASS - on _mf they were NOT_IN_TOP30;
+no staked strategy fails), P4 calibrate on _wo (live_strategy_calib, _ANCHOR_steals 0.630), edge_monitor_ref rebuilt (19 keys),
+break-even re-solved on _wo: pooled thinning **-7.48 pp** (independence -6.84, gap 0.64 < 1.0; run 38983824833) -> EDGE_DELTA
+-0.0662 -> -0.0748. P5: new 3d (window-only twin + engines, delta), 5c validates _wo, 5d snapshots them; the regrade covers the
+_wo tables. **P3 hardened:** the market refresh moved BELOW the P2B wait (it rewrites today's final_hp - never while P2B writes
+it), made soft (failure leaves P2B's market-free scores; each prop rewritten in its own transaction), timed, logs the day's
+window rungs priced. Timing: build_final_hp dry run on the largest board (2025-12-05, 41,626 legs) ~2 min -> opening-night
+slips ~11:43 PT. **Revert (one decision, same day):** refresh_final_hp false + suffix _mf + P4 calibrate + P4 edge rebuild +
+EDGE_DELTA -0.0662.
+**2. Underdog played from opening night.** The P5 portfolio on its faithful market-free twin (final week out): 4-Standard
++115.7% / +88.7%, 6-Flex +44.6% / +174.6%, mains 2-Standard +31.9% / +36.4%. stake_unit.ud_play = true; the Slips screen
+(UI v1.4.7) says PLAY for Underdog P5 slips, SKIP for P4 (shadow), stand-down weeks, a half stake below the minimum, and for
+EVERY Underdog slip once the Underdog edge monitor records ALARM (sticky per season). The day note totals both apps. UI test C50
+covers Underdog; a local unit test of the advice function passed 10/10 cases (play, half stake, P4, stand-down, ALARM, switch
+off, postseason shadow / paper, PrizePicks paper, replay).
+**3. Monitoring.** Scheduled task "AlphaDog NBA morning monitor" (05:52 PT daily, push): pipelines, yesterday's results per app,
+state / hurdle changes, both edge monitors, the market term (window rungs priced; audit_market_coverage verdict from the 7th
+slate), today's boards; GREEN / WATCH / ACTION. Read-only - it names what needs attention; changes are decided here.
+**Verified with everything on:** opening-night rehearsal (nba-sim-slate 2026-10-20, run 38984079295, sandboxed, production
+untouched: baseline_history / final_hp / final_hp_derived / live_slips all 0 after) - 1,032 scored legs, small slate cap 1,
+PLAY A_core_3power, A_wrebounds_4flex, C_wstocks_4flex (unchanged; the 10-20 window has no sportsbook rows yet, so the market
+term's first real reading is the live P3); certify_slip_system **66 checks, 0 FAIL** (run 14ec69db, on the _wo references);
+integration test **ALL PASS** (rolled back, ledgers 0 -> 0).
