@@ -332,6 +332,47 @@ def main():
     r = one(conn, """SELECT count(*) FROM (SELECT game_date, composition, size, structure, max(k) mk, count(*) c FROM nba_score.slip_engine_slips GROUP BY 1,2,3,4 HAVING max(k)<>count(*)) x""")
     check(conn, "L11.k_is_contiguous_per_day", r[0] == 0, r[0], "(slip k=1..n with no gaps)")
 
+    # ---------------- L11b the live engine's OWN backtest tables (2026-10-16, open item "certifier L11 checking every table") ----
+    # L11 certifies the market-inclusive table; the live engine's hurdles, edge reference and P5 verdicts read the twin named by
+    # classification_config['live_backtest_suffix'] (_mf, now _wo - the window-only market twin). Same invariants on both of its
+    # tables: coverage, one player once, two teams, size, hits, the tie- and alternate-aware payout recompute, final-7 flag, k.
+    row = conn.execute("SELECT config_json->>'suffix' FROM nba_config.classification_config WHERE config_key='live_backtest_suffix'").fetchone()
+    sfx = (row[0] if row else '') or ''
+    for t in ([f"slip_engine_slips{sfx}", f"slip_engine_slips{sfx}_nosteals"] if sfx else []):
+        print(f"L11b live backtest table nba_score.{t}", flush=True)
+        r = one(conn, f"SELECT count(*), count(DISTINCT game_date) FROM nba_score.{t}")
+        check(conn, f"L11b.{t}.slips_exist_all_days", r[0] > 400_000 and r[1] == 323, f"{r[0]} slips / {r[1]} days")
+        r = one(conn, f"""WITH s AS (
+            SELECT size, hits, payout, teams, structure,
+              (SELECT count(DISTINCT j->>'player') FROM jsonb_array_elements(legs_json) j) dp,
+              (SELECT sum((j->>'hit')::int) FROM jsonb_array_elements(legs_json) j) lh,
+              (SELECT count(*) FILTER (WHERE (j->>'hit') IS NOT NULL) FROM jsonb_array_elements(legs_json) j)::int nlv,
+              (SELECT exp(sum(ln((j->>'factor')::float)) FILTER (WHERE (j->>'hit') IS NOT NULL)) FROM jsonb_array_elements(legs_json) j) fprod,
+              (SELECT coalesce(bool_or(abs((j->>'factor')::float - 1) > 1e-9) FILTER (WHERE (j->>'hit') IS NOT NULL), false) FROM jsonb_array_elements(legs_json) j) live_alt,
+              jsonb_array_length(legs_json) nl
+            FROM nba_score.{t}),
+          e AS (SELECT *, CASE WHEN structure='flex' AND nlv < nl AND nlv < 3 THEN 'power' ELSE structure END est FROM s),
+          p AS (SELECT *, (CASE WHEN est='power' THEN (CASE WHEN hits=nlv THEN (CASE nlv WHEN 2 THEN 3 WHEN 3 THEN 6 WHEN 4 THEN 10 WHEN 5 THEN 20 ELSE 37.5 END) ELSE 0 END)
+                      ELSE (CASE (nlv,hits) WHEN (2,2) THEN 2 WHEN (2,1) THEN 0.5 WHEN (3,3) THEN 3 WHEN (3,2) THEN 1 WHEN (4,4) THEN 6 WHEN (4,3) THEN 1.5
+                            WHEN (5,5) THEN 10 WHEN (5,4) THEN 2 WHEN (5,3) THEN 0.4 WHEN (6,6) THEN 25 WHEN (6,5) THEN 2 WHEN (6,4) THEN 0.4 ELSE 0 END) END)*coalesce(fprod, 1) raw FROM e)
+            SELECT count(*) FILTER (WHERE dp<nl), count(*) FILTER (WHERE teams<2), count(*) FILTER (WHERE nl<>size), count(*) FILTER (WHERE hits<>coalesce(lh, 0)),
+              count(*) FILTER (WHERE abs(payout - (CASE WHEN nlv = 0 THEN 1.0
+                                                        WHEN est = 'flex' AND live_alt AND nlv >= 3 THEN nba_market.pp_flex_alt_payout(nlv, nlv - hits, fprod)
+                                                        WHEN nlv = 1 AND nl > 1 THEN (CASE WHEN lh = 1 THEN least(1.5*coalesce(fprod,1), 9.1*power(1.5*coalesce(fprod,1)/9.1,0.857)) ELSE 0 END)
+                                                        WHEN raw <= 0 THEN 0 WHEN raw<=9.1 THEN raw ELSE 9.1*power(raw/9.1,0.857) END))>1e-6)
+            FROM p""")
+        check(conn, f"L11b.{t}.no_player_twice", r[0] == 0, r[0])
+        check(conn, f"L11b.{t}.two_teams_minimum", r[1] == 0, r[1])
+        check(conn, f"L11b.{t}.size_equals_legs", r[2] == 0, r[2])
+        check(conn, f"L11b.{t}.hits_equals_leg_hits", r[3] == 0, r[3])
+        check(conn, f"L11b.{t}.payout_equals_compression_recompute", r[4] == 0, r[4], "(tie- and alternate-aware)")
+        r = one(conn, f"""WITH b AS (SELECT season, max(game_date) s1 FROM nba_score.{t} GROUP BY season)
+                         SELECT count(*) FILTER (WHERE (b.s1-e.game_date)<=7 AND e.phase<>'final7'), count(*) FILTER (WHERE (b.s1-e.game_date)>7 AND e.phase='final7')
+                         FROM nba_score.{t} e JOIN b ON b.season=e.season""")
+        check(conn, f"L11b.{t}.final7_flag_matches_season_end", r[0] == 0 and r[1] == 0, f"{r[0]} / {r[1]} mismatches")
+        r = one(conn, f"""SELECT count(*) FROM (SELECT game_date, composition, size, structure, max(k) mk, count(*) c FROM nba_score.{t} GROUP BY 1,2,3,4 HAVING max(k)<>count(*)) x""")
+        check(conn, f"L11b.{t}.k_is_contiguous_per_day", r[0] == 0, r[0], "(slip k=1..n with no gaps)")
+
     conn.commit()
     print(f"\nRESULT: {CHECKS} checks, {FAILS} FAIL  (run {RUN_ID})", flush=True)
     conn.close()
