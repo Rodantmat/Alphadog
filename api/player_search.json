@@ -1,0 +1,14 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.7",
+ "route": "/api/player-search",
+ "rows": [
+  {
+   "player_id": "nba_1641705",
+   "player_name": "Victor Wembanyama",
+   "primary_position": "F-C \u2022 SAS",
+   "active": 1
+  }
+ ]
+}

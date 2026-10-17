@@ -1,0 +1,483 @@
+{
+ "ui": "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev",
+ "started": "2026-10-17T00:35:10Z",
+ "checks": [
+  {
+   "name": "A1 market_to_prop == score_board_legs.MARKET_TO_PROP",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "A2 pp_strategies == live_slip_engine.STRATEGIES",
+   "ok": true,
+   "detail": "set()"
+  },
+  {
+   "name": "A3 ud_portfolios == ud_live_slip_engine.PORTFOLIOS",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "A4 ud_payout == build_ud_slip_engine.STD / FLEX",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "B1 PrizePicks payouts identical to build_slip_engine.grade (400 slips)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "B2 Underdog payouts identical to ud_live_slip_engine.payout (400 slips)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "C0 /health ok",
+   "ok": true,
+   "detail": "0.53s alphadog-v2-nba-main-ui-v1.4.7 slate {'date': '2026-06-13', 'today': '2026-10-16', 'mode': 'replay', 'latest_scored': '2026-06-13', 'next_slate': '2026-10-20', 'first_tip_today': None, 'requested': None}"
+  },
+  {
+   "name": "C1 filters: prop and app totals == board_scored rows",
+   "ok": true,
+   "detail": "0.82s props 1033 apps 1033 db 1033 (2026-06-13)"
+  },
+  {
+   "name": "C2 current: answers, row count = min(200, legs with score >= 80)",
+   "ok": true,
+   "detail": "1.13s rows 96 db 96"
+  },
+  {
+   "name": "C3 every board leg's HP / confidence / score == the market-anchored board (board_true_hp over board_scored)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "C4 every leg resolved to a team and a game",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "C5 PrizePicks variation (goblin/regular/demon) == board_tiers_v2 (40 legs)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "C6 every card carries a scouting line",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "C7 dossier: selected leg + every line of the player",
+   "ok": true,
+   "detail": "4.88s lines 68 db 68"
+  },
+  {
+   "name": "C8 dossier: game log is the player's, before the slate",
+   "ok": true,
+   "detail": "latest 2026-06-10 db 2026-06-10"
+  },
+  {
+   "name": "C9 dossier: context sections present",
+   "ok": true,
+   "detail": "10/10 ['player_profile', 'recent_form', 'splits', 'team_profiles', 'schedule_spot', 'injuries', 'officials', 'market_summary', 'prepared_lines', 'advanced']"
+  },
+  {
+   "name": "C10 player search finds the player",
+   "ok": true,
+   "detail": "0.49s 1 rows"
+  },
+  {
+   "name": "C11 profile: identity, game log, snapshots, legs",
+   "ok": true,
+   "detail": "4.15s games 100 legs 68 next {'game_id': '0022600003', 'game_date': '2026-10-20', 'game_time_utc': '2026-10-21T01:30:00.000Z', 'is_home': True, 'opponent_team_name': 'Oklahoma City Thunder', 'opponent_abbr': 'OKC', 'arena': 'Frost Bank Center', 'arena_city': 'San Antonio'}"
+  },
+  {
+   "name": "C25 dossier depth: every block built (no block error)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "C26 usage & efficiency: last-10 USG% / TS% == the per-game advanced log",
+   "ok": true,
+   "detail": "ui (28.9, 58.8) db (28.9, 58.8)"
+  },
+  {
+   "name": "C27 tracking skills: one block per tracking board (touch boards merged)",
+   "ok": true,
+   "detail": "groups ['Passing', 'Rebounding', 'CatchShoot', 'PullUpShot', 'Drives', 'Touches'] boards 8"
+  },
+  {
+   "name": "C28 career: one row per season / team on record",
+   "ok": true,
+   "detail": "ui 3 db 3 latest 2025-26"
+  },
+  {
+   "name": "C29 head-to-head: every game vs the opponent before the slate (max 20)",
+   "ok": true,
+   "detail": "vs NYK: ui 9 db 9"
+  },
+  {
+   "name": "C30 with/without: with + without games == his games for the team this season",
+   "ok": true,
+   "detail": "Luke Kornet: 64 vs db 64; 6 teammates"
+  },
+  {
+   "name": "C31 lineups: most-used units present when the league data has them",
+   "ok": true,
+   "detail": "five 6 pairs 8 db rows 98"
+  },
+  {
+   "name": "C32 team form: both teams, last 10 + season",
+   "ok": true,
+   "detail": "[('SAS', 'Last 10', 10), ('SAS', 'Season 2025-26', 104), ('NYK', 'Last 10', 10), ('NYK', 'Season 2025-26', 100)]"
+  },
+  {
+   "name": "C33 dossier ships the full pre-slate log for line records",
+   "ok": true,
+   "detail": "100 games for 68 lines"
+  },
+  {
+   "name": "C34 profile depth: built around the next game, no block error",
+   "ok": true,
+   "detail": "errors [] next OKC vs-opp 16 ww 5"
+  },
+  {
+   "name": "C35 /run is a read-only no-op and unknown paths list the allowed routes (MLB parity)",
+   "ok": true,
+   "detail": "run MAIN_UI_READ_ONLY_NOOP 404 routes 31"
+  },
+  {
+   "name": "C36 sharp read: every block built (no block error)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "C37 market read: pra fair line + ladder (close) == no-vig consensus recomputed from board_snapshots",
+   "ok": true,
+   "detail": "ui 43.7 db 43.7 lines 5 bad []"
+  },
+  {
+   "name": "C38 line movement: every book's main line and prices == board_snapshots",
+   "ok": true,
+   "detail": "6 books bad []"
+  },
+  {
+   "name": "C39 vs the market: points 2026-06-10 fair line + actual == market_consensus + box score",
+   "ok": true,
+   "detail": "ui 27.1/24 db 27.1/24.0; 7-13 in 20"
+  },
+  {
+   "name": "C40 game script: his games (max env_games) with team score, margin and pregame spread == the DB",
+   "ok": true,
+   "detail": "env 100 db 202; first 2026-06-10 ui 106/-1/2 db (106.0, -1.0)/2.0"
+  },
+  {
+   "name": "C41 tonight's script: his team's spread == the game market, blowout split adds up",
+   "ok": true,
+   "detail": "{'spread': -5.5, 'total': 216, 'expected_margin': 5.5, 'margin_sd': 12, 'blowout_margin': 15, 'p_win': 67.7, 'p_win_by_blowout': 21.4, 'p_lose_by_blowout': 4.4, 'p_blowout': 25.8, 'team_implied': 110.8}"
+  },
+  {
+   "name": "C42 availability: games played == his box scores for the team this season, played + missed == team games",
+   "ok": true,
+   "detail": "played 85 db 85 missed 19 team 104 absences 2"
+  },
+  {
+   "name": "C43 travel: both teams, last game == team game log, miles / time zone / altitude filled",
+   "ok": true,
+   "detail": "[('SAS', '2026-06-10', 1580, -1), ('NYK', '2026-06-10', 1580, -1)] bad []"
+  },
+  {
+   "name": "C44 opponent defenders == the opponent's rotation by minutes",
+   "ok": true,
+   "detail": "ui ['Mikal Bridges', 'Jalen Brunson', 'Karl-Anthony Towns', 'OG Anunoby'] db ['Mikal Bridges', 'Jalen Brunson', 'Karl-Anthony Towns', 'OG Anunoby']"
+  },
+  {
+   "name": "C45 teammate correlation: r(PTS, PTS) == Postgres corr()",
+   "ok": true,
+   "detail": "De'Aaron Fox ui 0.159 db 0.1586661513374024 over 54 games"
+  },
+  {
+   "name": "C46 profile sharp read: built, no block error",
+   "ok": true,
+   "detail": "errors [] env 100 history props 11 market True"
+  },
+  {
+   "name": "C47 every board leg carries the market-anchored probability (board_true_hp)",
+   "ok": true,
+   "detail": "1,033 of 1,033 legs (2026-06-13)"
+  },
+  {
+   "name": "C48 the probability the board shows matches reality (30 days before the slate: |shown - hit| <= 5 pts in every band with 300+ legs)",
+   "ok": true,
+   "detail": "band(0.5-1.0 in fifths) n / shown / model-would-show / hit: [(1, 3366, 0.548, 0.564, 0.567), (2, 2453, 0.651, 0.596, 0.689), (3, 1507, 0.738, 0.643, 0.735)]"
+  },
+  {
+   "name": "C12 Slips screen: engine slips load and are priced",
+   "ok": true,
+   "detail": "30.95s source replay_backtest slips 26 pool 80 unpriced []"
+  },
+  {
+   "name": "C13 Slips screen (replay): unmatched legs are disclosed, the rest matched",
+   "ok": true,
+   "detail": "1 slips with an unscored leg of 26; 107 legs"
+  },
+  {
+   "name": "C24 backup pool == the pool picked from the whole slate (light load is exact)",
+   "ok": true,
+   "detail": "got 80 want 80; first diff None"
+  },
+  {
+   "name": "C14 replay slips carry the backtest result",
+   "ok": true,
+   "detail": "26/26"
+  },
+  {
+   "name": "C49 certified slips show their backtest: cell rates == edge_monitor_ref, strategy record == backtest tables",
+   "ok": true,
+   "detail": "93 legs, 22 records checked; bad []"
+  },
+  {
+   "name": "C50 slips say PLAY $ (unit x stake weight) or SKIP with a reason",
+   "ok": true,
+   "detail": "unit $1.00; bad []"
+  },
+  {
+   "name": "C52 every slip carries its place-by time (first tip among its legs' games), recomputed independently",
+   "ok": true,
+   "detail": "26 slips; first tip 2026-04-12 22:00:00+00:00; bad []"
+  },
+  {
+   "name": "C51 unit control: read, refuse below the minimum, save round-trips",
+   "ok": true,
+   "detail": "GET 200 below-min 400 save 200"
+  },
+  {
+   "name": "C15 builder: recommendation EV == independent Python EV (certified grader)",
+   "ok": true,
+   "detail": "1.14s 1 slips: ['4-pick Flex']"
+  },
+  {
+   "name": "C16 save writes nba_score.ui_saved_slips and refuses the identical slip the same day",
+   "ok": true,
+   "detail": "first 0 second 0 dup 1"
+  },
+  {
+   "name": "C17 saved slips list",
+   "ok": true,
+   "detail": "5"
+  },
+  {
+   "name": "C18 health: every layer reported",
+   "ok": true,
+   "detail": "1.23s overall yellow layers ['P2A:green', 'P2B:green', 'P3:green', 'P1:green', 'board:yellow', 'capture:yellow', 'inputs:green', 'engines:green', 'calendar:green']"
+  },
+  {
+   "name": "C19 rerun refuses an unknown target",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "C20 calibration report = prop_reliability_audit_latest",
+   "ok": true,
+   "detail": "21 props"
+  },
+  {
+   "name": "C21 calibration apply refuses an empty selection",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "C22 asset / served",
+   "ok": true,
+   "detail": "35712 bytes"
+  },
+  {
+   "name": "C22 asset /app.js served = source file(s)",
+   "ok": true,
+   "detail": "23541 bytes"
+  },
+  {
+   "name": "C22 asset /js/dossier.js served = source file(s)",
+   "ok": true,
+   "detail": "75948 bytes"
+  },
+  {
+   "name": "C22 asset /js/build.js served = source file(s)",
+   "ok": true,
+   "detail": "8994 bytes"
+  },
+  {
+   "name": "C22 asset /js/slips.js served = source file(s)",
+   "ok": true,
+   "detail": "29147 bytes"
+  },
+  {
+   "name": "C22 asset /js/profile.js served = source file(s)",
+   "ok": true,
+   "detail": "6923 bytes"
+  },
+  {
+   "name": "C22 asset /js/admin.js served = source file(s)",
+   "ok": true,
+   "detail": "9922 bytes"
+  },
+  {
+   "name": "C23 served pricing.js runs in a clean browser scope and prices a slip",
+   "ok": true,
+   "detail": "[{\"2\":1,\"3\":3},53.58]"
+  },
+  {
+   "name": "C22 asset /js/pricing.js served",
+   "ok": true,
+   "detail": "5978 bytes"
+  },
+  {
+   "name": "C22 asset /main_alphadog_logo.png served",
+   "ok": true,
+   "detail": "7970 bytes"
+  },
+  {
+   "name": "D 01_board",
+   "ok": true,
+   "detail": "3.0s scrollWidth 430"
+  },
+  {
+   "name": "D 02_dossier",
+   "ok": true,
+   "detail": "5.1s scrollWidth 430"
+  },
+  {
+   "name": "D 02a_dossier_depth",
+   "ok": true,
+   "detail": "0.7s scrollWidth 430"
+  },
+  {
+   "name": "D 02a1_line_profile",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a2_head_to_head",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a3_with_without",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a4_tracking",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a5_market_read",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a6_movement_ladder",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a7_vs_market",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a8_projection",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a9_game_script",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a10_ramp_travel",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a11_defenders",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a12_teammates",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02a13_prop_switch",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02b_dossier_mid",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 02c_dossier_low",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 03_builder",
+   "ok": true,
+   "detail": "1.5s scrollWidth 430"
+  },
+  {
+   "name": "D 04_slips",
+   "ok": true,
+   "detail": "28.2s scrollWidth 430"
+  },
+  {
+   "name": "D 05_slips_substitution",
+   "ok": true,
+   "detail": "0.8s scrollWidth 430"
+  },
+  {
+   "name": "D 06_profile",
+   "ok": true,
+   "detail": "7.6s scrollWidth 430"
+  },
+  {
+   "name": "D 06a_profile_depth",
+   "ok": true,
+   "detail": "0.7s scrollWidth 430"
+  },
+  {
+   "name": "D 06a1_profile_sharp",
+   "ok": true,
+   "detail": "0.6s scrollWidth 430"
+  },
+  {
+   "name": "D 06b_profile_low",
+   "ok": true,
+   "detail": "0.7s scrollWidth 430"
+  },
+  {
+   "name": "D 07_health",
+   "ok": true,
+   "detail": "2.2s scrollWidth 430"
+  },
+  {
+   "name": "D 08_calibration",
+   "ok": true,
+   "detail": "1.1s scrollWidth 430"
+  },
+  {
+   "name": "D9 no script errors in any screen",
+   "ok": true,
+   "detail": "[]"
+  }
+ ],
+ "finished": "2026-10-17T00:37:33Z",
+ "summary": "95/95 passed"
+}

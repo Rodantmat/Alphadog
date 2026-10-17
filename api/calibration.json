@@ -1,0 +1,104 @@
+{
+ "ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.7",
+ "route": "/api/calibration/report",
+ "read_only": true,
+ "response": {
+  "report": [
+   {
+    "prop": "assists",
+    "severity": "recommend",
+    "status": "PENALIZED_REMEASURE_AVAILABLE",
+    "on_board": true,
+    "metrics": {
+     "n": 234152,
+     "brier": 0.143,
+     "ece_pp": 1.3366,
+     "worst_band_pp": 2.8093,
+     "lift_pct": 12.88,
+     "penalty_pp": 0.506
+    },
+    "summary": "Calibration is 1.34 pp off on 234,152 graded legs (worst band 2.8 pp), so P2B already shrinks this prop by a 0.51 pp penalty. Apply re-measures every prop on the latest graded games; the new penalty (or its removal) flows into the next P2B automatically."
+   },
+   {
+    "prop": "pra",
+    "severity": "recommend",
+    "status": "PENALIZED_REMEASURE_AVAILABLE",
+    "on_board": true,
+    "metrics": {
+     "n": 483705,
+     "brier": 0.2011,
+     "ece_pp": 1.701,
+     "worst_band_pp": 2.5488,
+     "lift_pct": 5.7,
+     "penalty_pp": 0.8704
+    },
+    "summary": "Calibration is 1.70 pp off on 483,705 graded legs (worst band 2.5 pp), so P2B already shrinks this prop by a 0.87 pp penalty. Apply re-measures every prop on the latest graded games; the new penalty (or its removal) flows into the next P2B automatically."
+   },
+   {
+    "prop": "pts_ast",
+    "severity": "recommend",
+    "status": "PENALIZED_REMEASURE_AVAILABLE",
+    "on_board": true,
+    "metrics": {
+     "n": 350939,
+     "brier": 0.2033,
+     "ece_pp": 2.3064,
+     "worst_band_pp": 4.5146,
+     "lift_pct": 5.45,
+     "penalty_pp": 1.4758
+    },
+    "summary": "Calibration is 2.31 pp off on 350,939 graded legs (worst band 4.5 pp), so P2B already shrinks this prop by a 1.48 pp penalty. Apply re-measures every prop on the latest graded games; the new penalty (or its removal) flows into the next P2B automatically."
+   },
+   {
+    "prop": "pts_reb",
+    "severity": "recommend",
+    "status": "PENALIZED_REMEASURE_AVAILABLE",
+    "on_board": true,
+    "metrics": {
+     "n": 449295,
+     "brier": 0.2052,
+     "ece_pp": 1.9797,
+     "worst_band_pp": 4.6247,
+     "lift_pct": 4.89,
+     "penalty_pp": 1.1491
+    },
+    "summary": "Calibration is 1.98 pp off on 449,295 graded legs (worst band 4.6 pp), so P2B already shrinks this prop by a 1.15 pp penalty. Apply re-measures every prop on the latest graded games; the new penalty (or its removal) flows into the next P2B automatically."
+   },
+   {
+    "prop": "stocks",
+    "severity": "recommend",
+    "status": "PENALIZED_REMEASURE_AVAILABLE",
+    "on_board": true,
+    "metrics": {
+     "n": 28916,
+     "brier": 0.2151,
+     "ece_pp": 3.1372,
+     "worst_band_pp": 15.4761,
+     "lift_pct": 5.37,
+     "penalty_pp": 2.3065
+    },
+    "summary": "Calibration is 3.14 pp off on 28,916 graded legs (worst band 15.5 pp), so P2B already shrinks this prop by a 2.31 pp penalty. Apply re-measures every prop on the latest graded games; the new penalty (or its removal) flows into the next P2B automatically."
+   },
+   {
+    "prop": "turnovers",
+    "severity": "recommend",
+    "status": "PENALIZED_REMEASURE_AVAILABLE",
+    "on_board": true,
+    "metrics": {
+     "n": 11550,
+     "brier": 0.2444,
+     "ece_pp": 4.4034,
+     "worst_band_pp": 12.1902,
+     "lift_pct": -0.37,
+     "penalty_pp": 3.5727
+    },
+    "summary": "Calibration is 4.40 pp off on 11,550 graded legs (worst band 12.2 pp), so P2B already shrinks this prop by a 3.57 pp penalty. Apply re-measures every prop on the latest graded games; the new penalty (or its removal) flows into the next P2B automatically."
+   },
+   "... 15 more"
+  ],
+  "generated_at": "2026-09-26T07:29:50.230Z",
+  "total_props": 21,
+  "source": "nba_config.classification_config['prop_reliability_audit_latest'] (nba/score_prop_reliability.py)"
+ }
+}

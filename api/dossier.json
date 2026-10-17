@@ -1,0 +1,5001 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.7",
+ "route": "/api/main-board/dossier",
+ "slate": {
+  "date": "2026-06-13",
+  "mode": "replay"
+ },
+ "selected": {
+  "final_board_row_id": "2026-06-13~prizepicks~1641705~pra~34.5~Over",
+  "rank_order": 1,
+  "source_key": "prizepicks",
+  "source_display_label": "PrizePicks",
+  "game_pk": "0042500405",
+  "official_date": "2026-06-13",
+  "official_game_time_utc": "2026-06-14T00:30:00.000Z",
+  "mlb_player_id": "1641705",
+  "player_id": "1641705",
+  "player_name": "Victor Wembanyama",
+  "team_id": "nba_1610612759",
+  "team_abbr": "SAS",
+  "team_name": "San Antonio Spurs",
+  "opponent_abbr": "NYK",
+  "is_home": 1,
+  "position": "F-C",
+  "canonical_prop_key": "pra",
+  "prop_label": "Pts+Rebs+Asts",
+  "prop_family": "combo",
+  "line_value": 34.5,
+  "selected_side": "more",
+  "score_0_100": 86.3,
+  "confidence_0_100": 97.1,
+  "overall_score_0_100": 86.3,
+  "certainty_0_100": 97.1,
+  "hit_probability_0_100": 77.1,
+  "estimated_hit_probability_0_100": 77.1,
+  "final_hp_raw": 0.77096,
+  "probability_confidence_0_100": 97.1,
+  "baseline_hp_0_100": 39,
+  "calibration_shift_pp": 4.8,
+  "model_hp_0_100": 43.8,
+  "model_score_0_100": 66.5,
+  "market_hp_0_100": 91.6,
+  "hp_anchor": "dk+pp",
+  "dk_line": 44.5,
+  "dk_p_over_0_100": 49.6,
+  "pp_line": 43.5,
+  "hp_fit_set": "2024-25",
+  "hp_is_market_anchored": 1,
+  "calibration_shift_logit": 0.20005,
+  "edge_0_100": -13,
+  "breakeven_0_100": 90.1,
+  "interpolated": false,
+  "line_type": "goblin",
+  "line_type_label": "Goblin",
+  "app_line_label": "PrizePicks \u2022 Goblin",
+  "is_goblin": 1,
+  "is_demon": 0,
+  "is_standard": 0,
+  "more_only": 1,
+  "pp_kind": "goblin",
+  "pp_tier": -3,
+  "anchor_line": 43.5,
+  "leg_factor": 0.621849796965512,
+  "app_multiplier": 0,
+  "board_tier": "goblin",
+  "home_team_name": "San Antonio Spurs",
+  "away_team_name": "New York Knicks",
+  "home_team_abbr": "SAS",
+  "away_team_abbr": "NYK",
+  "venue_name": "Frost Bank Center, San Antonio",
+  "game_status_code": "Final",
+  "hp_sample_size": 64,
+  "hp_non_push_sample": 64,
+  "live_playable": 0,
+  "review_playable": 1,
+  "replay_mode": 1,
+  "slate_date": "2026-06-13",
+  "scored_at": "2026-10-09T04:04:58.078Z",
+  "leg_insight_comment": "Fair read at 77.1% - worth a look, not a headline play. A bigger role lately - 41 minutes in the last 3. Home game vs NYK."
+ },
+ "other_player_legs": [
+  {
+   "final_board_row_id": "2026-06-13~prizepicks~1641705~pra~34.5~Over",
+   "rank_order": 1,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0042500405",
+   "official_date": "2026-06-13",
+   "official_game_time_utc": "2026-06-14T00:30:00.000Z",
+   "mlb_player_id": "1641705",
+   "player_id": "1641705",
+   "player_name": "Victor Wembanyama",
+   "team_id": "nba_1610612759",
+   "team_abbr": "SAS",
+   "team_name": "San Antonio Spurs",
+   "opponent_abbr": "NYK",
+   "is_home": 1,
+   "position": "F-C",
+   "canonical_prop_key": "pra",
+   "prop_label": "Pts+Rebs+Asts",
+   "prop_family": "combo",
+   "line_value": 34.5,
+   "selected_side": "more",
+   "score_0_100": 86.3,
+   "confidence_0_100": 97.1,
+   "overall_score_0_100": 86.3,
+   "certainty_0_100": 97.1,
+   "hit_probability_0_100": 77.1,
+   "estimated_hit_probability_0_100": 77.1,
+   "final_hp_raw": 0.77096,
+   "probability_confidence_0_100": 97.1,
+   "baseline_hp_0_100": 39,
+   "calibration_shift_pp": 4.8,
+   "model_hp_0_100": 43.8,
+   "model_score_0_100": 66.5,
+   "market_hp_0_100": 91.6,
+   "hp_anchor": "dk+pp",
+   "dk_line": 44.5,
+   "dk_p_over_0_100": 49.6,
+   "pp_line": 43.5,
+   "hp_fit_set": "2024-25",
+   "hp_is_market_anchored": 1,
+   "calibration_shift_logit": 0.20005,
+   "edge_0_100": -13,
+   "breakeven_0_100": 90.1,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 43.5,
+   "leg_factor": 0.621849796965512,
+   "app_multiplier": 0,
+   "board_tier": "goblin",
+   "home_team_name": "San Antonio Spurs",
+   "away_team_name": "New York Knicks",
+   "home_team_abbr": "SAS",
+   "away_team_abbr": "NYK",
+   "venue_name": "Frost Bank Center, San Antonio",
+   "game_status_code": "Final",
+   "hp_sample_size": 64,
+   "hp_non_push_sample": 64,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-06-13",
+   "scored_at": "2026-10-09T04:04:58.078Z",
+   "leg_insight_comment": "Fair read at 77.1% - worth a look, not a headline play. A bigger role lately - 41 minutes in the last 3. Home game vs NYK."
+  },
+  {
+   "final_board_row_id": "2026-06-13~prizepicks~1641705~reb_ast~11.5~Over",
+   "rank_order": 2,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0042500405",
+   "official_date": "2026-06-13",
+   "official_game_time_utc": "2026-06-14T00:30:00.000Z",
+   "mlb_player_id": "1641705",
+   "player_id": "1641705",
+   "player_name": "Victor Wembanyama",
+   "team_id": "nba_1610612759",
+   "team_abbr": "SAS",
+   "team_name": "San Antonio Spurs",
+   "opponent_abbr": "NYK",
+   "is_home": 1,
+   "position": "F-C",
+   "canonical_prop_key": "reb_ast",
+   "prop_label": "Rebs+Asts",
+   "prop_family": "combo",
+   "line_value": 11.5,
+   "selected_side": "more",
+   "score_0_100": 86.3,
+   "confidence_0_100": 97.1,
+   "overall_score_0_100": 86.3,
+   "certainty_0_100": 97.1,
+   "hit_probability_0_100": 77,
+   "estimated_hit_probability_0_100": 77,
+   "final_hp_raw": 0.77047,
+   "probability_confidence_0_100": 97.1,
+   "baseline_hp_0_100": 51.9,
+   "calibration_shift_pp": 2.5,
+   "model_hp_0_100": 54.4,
+   "model_score_0_100": 72.7,
+   "market_hp_0_100": 89.4,
+   "hp_anchor": "dk+pp",
+   "dk_line": 15.5,
+   "dk_p_over_0_100": 46.2,
+   "pp_line": 15,
+   "hp_fit_set": "2024-25",
+   "hp_is_market_anchored": 1,
+   "calibration_shift_logit": 0.10182,
+   "edge_0_100": -11.2,
+   "breakeven_0_100": 88.2,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 15,
+   "leg_factor": 0.634841487800651,
+   "app_multiplier": 0,
+   "board_tier": "goblin",
+   "home_team_name": "San Antonio Spurs",
+   "away_team_name": "New York Knicks",
+   "home_team_abbr": "SAS",
+   "away_team_abbr": "NYK",
+   "venue_name": "Frost Bank Center, San Antonio",
+   "game_status_code": "Final",
+   "hp_sample_size": 64,
+   "hp_non_push_sample": 64,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-06-13",
+   "scored_at": "2026-10-09T04:04:58.078Z",
+   "leg_insight_comment": "Usable candidate at 77.0%, not a blind play. A bigger role lately - 41 minutes in the last 3. Goblin line: an easier rung than the main line, priced lower on PrizePicks."
+  },
+  {
+   "final_board_row_id": "2026-06-13~prizepicks~1641705~rebounds~8.5~Over",
+   "rank_order": 3,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0042500405",
+   "official_date": "2026-06-13",
+   "official_game_time_utc": "2026-06-14T00:30:00.000Z",
+   "mlb_player_id": "1641705",
+   "player_id": "1641705",
+   "player_name": "Victor Wembanyama",
+   "team_id": "nba_1610612759",
+   "team_abbr": "SAS",
+   "team_name": "San Antonio Spurs",
+   "opponent_abbr": "NYK",
+   "is_home": 1,
+   "position": "F-C",
+   "canonical_prop_key": "rebounds",
+   "prop_label": "Rebounds",
+   "prop_family": "single",
+   "line_value": 8.5,
+   "selected_side": "more",
+   "score_0_100": 86.2,
+   "confidence_0_100": 97,
+   "overall_score_0_100": 86.2,
+   "certainty_0_100": 97,
+   "hit_probability_0_100": 77.1,
+   "estimated_hit_probability_0_100": 77.1,
+   "final_hp_raw": 0.77096,
+   "probability_confidence_0_100": 97,
+   "baseline_hp_0_100": 77.1,
+   "calibration_shift_pp": -2.1,
+   "model_hp_0_100": 75,
+   "model_score_0_100": 85,
+   "market_hp_0_100": 90.9,
+   "hp_anchor": "dk+pp",
+   "dk_line": 11.5,
+   "dk_p_over_0_100": 51.6,
+   "pp_line": 11.5,
+   "hp_fit_set": "2024-25",
+   "hp_is_market_anchored": 1,
+   "calibration_shift_logit": -0.11673,
+   "edge_0_100": -14.1,
+   "breakeven_0_100": 91.2,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 11.5,
+   "leg_factor": 0.614301,
+   "app_multiplier": 0,
+   "board_tier": "goblin",
+   "home_team_name": "San Antonio Spurs",
+   "away_team_name": "New York Knicks",
+   "home_team_abbr": "SAS",
+   "away_team_abbr": "NYK",
+   "venue_name": "Frost Bank Center, San Antonio",
+   "game_status_code": "Final",
+   "hp_sample_size": 64,
+   "hp_non_push_sample": 64,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-06-13",
+   "scored_at": "2026-10-09T04:04:58.078Z",
+   "leg_insight_comment": "Usable candidate at 77.1%, not a blind play. Home game vs NYK. Rebounds track minutes closely; lineup size and the opponent's miss rate drive the rest."
+  },
+  {
+   "final_board_row_id": "2026-06-13~prizepicks~1641705~pts_reb~32.5~Over",
+   "rank_order": 4,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0042500405",
+   "official_date": "2026-06-13",
+   "official_game_time_utc": "2026-06-14T00:30:00.000Z",
+   "mlb_player_id": "1641705",
+   "player_id": "1641705",
+   "player_name": "Victor Wembanyama",
+   "team_id": "nba_1610612759",
+   "team_abbr": "SAS",
+   "team_name": "San Antonio Spurs",
+   "opponent_abbr": "NYK",
+   "is_home": 1,
+   "position": "F-C",
+   "canonical_prop_key": "pts_reb",
+   "prop_label": "Pts+Rebs",
+   "prop_family": "combo",
+   "line_value": 32.5,
+   "selected_side": "more",
+   "score_0_100": 85,
+   "confidence_0_100": 95.4,
+   "overall_score_0_100": 85,
+   "certainty_0_100": 95.4,
+   "hit_probability_0_100": 77.1,
+   "estimated_hit_probability_0_100": 77.1,
+   "final_hp_raw": 0.77096,
+   "probability_confidence_0_100": 95.4,
+   "baseline_hp_0_100": 39.6,
+   "calibration_shift_pp": 8,
+   "model_hp_0_100": 47.6,
+   "model_score_0_100": 65.8,
+   "market_hp_0_100": 91,
+   "hp_anchor": "dk+pp",
+   "dk_line": 40.5,
+   "dk_p_over_0_100": 51.6,
+   "pp_line": 40.5,
+   "hp_fit_set": "2024-25",
+   "hp_is_market_anchored": 1,
+   "calibration_shift_logit": 0.32801,
+   "edge_0_100": -10.8,
+   "breakeven_0_100": 87.9,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 40.5,
+   "leg_factor": 0.637408203228651,
+   "app_multiplier": 0,
+   "board_tier": "goblin",
+   "home_team_name": "San Antonio Spurs",
+   "away_team_name": "New York Knicks",
+   "home_team_abbr": "SAS",
+   "away_team_abbr": "NYK",
+   "venue_name": "Frost Bank Center, San Antonio",
+   "game_status_code": "Final",
+   "hp_sample_size": 64,
+   "hp_non_push_sample": 64,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-06-13",
+   "scored_at": "2026-10-09T04:04:58.078Z",
+   "leg_insight_comment": "Usable candidate at 77.1%, not a blind play. A bigger role lately - 41 minutes in the last 3. Points + rebounds smooths some variance by combining two stats."
+  },
+  {
+   "final_board_row_id": "2026-06-13~prizepicks~1641705~pts_reb~33.5~Over",
+   "rank_order": 5,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0042500405",
+   "official_date": "2026-06-13",
+   "official_game_time_utc": "2026-06-14T00:30:00.000Z",
+   "mlb_player_id": "1641705",
+   "player_id": "1641705",
+   "player_name": "Victor Wembanyama",
+   "team_id": "nba_1610612759",
+   "team_abbr": "SAS",
+   "team_name": "San Antonio Spurs",
+   "opponent_abbr": "NYK",
+   "is_home": 1,
+   "position": "F-C",
+   "canonical_prop_key": "pts_reb",
+   "prop_label": "Pts+Rebs",
+   "prop_family": "combo",
+   "line_value": 33.5,
+   "selected_side": "more",
+   "score_0_100": 84.6,
+   "confidence_0_100": 95.3,
+   "overall_score_0_100": 84.6,
+   "certainty_0_100": 95.3,
+   "hit_probability_0_100": 76.4,
+   "estimated_hit_probability_0_100": 76.4,
+   "final_hp_raw": 0.76442,
+   "probability_confidence_0_100": 95.3,
+   "baseline_hp_0_100": 32.6,
+   "calibration_shift_pp": 7.6,
+   "model_hp_0_100": 40.2,
+   "model_score_0_100": 60.8,
+   "market_hp_0_100": 88.2,
+   "hp_anchor": "dk+pp",
+   "dk_line": 40.5,
+   "dk_p_over_0_100": 51.6,
+   "pp_line": 40.5,
+   "hp_fit_set": "2024-25",
+   "hp_is_market_anchored": 1,
+   "calibration_shift_logit": 0.32801,
+   "edge_0_100": -8,
+   "breakeven_0_100": 84.4,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -2,
+   "anchor_line": 40.5,
+   "leg_factor": 0.663400331264524,
+   "app_multiplier": 0,
+   "board_tier": "goblin",
+   "home_team_name": "San Antonio Spurs",
+   "away_team_name": "New York Knicks",
+   "home_team_abbr": "SAS",
+   "away_team_abbr": "NYK",
+   "venue_name": "Frost Bank Center, San Antonio",
+   "game_status_code": "Final",
+   "hp_sample_size": 64,
+   "hp_non_push_sample": 64,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-06-13",
+   "scored_at": "2026-10-09T04:04:58.078Z",
+   "leg_insight_comment": "Middle-of-the-board profile at 76.4%: nothing screams avoid, nothing screams lock. Hosting NYK tonight. PrizePicks goblin - the line sits below the main number, so the payout factor is reduced."
+  },
+  {
+   "final_board_row_id": "2026-06-13~prizepicks~1641705~rebounds~9.5~Over",
+   "rank_order": 6,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0042500405",
+   "official_date": "2026-06-13",
+   "official_game_time_utc": "2026-06-14T00:30:00.000Z",
+   "mlb_player_id": "1641705",
+   "player_id": "1641705",
+   "player_name": "Victor Wembanyama",
+   "team_id": "nba_1610612759",
+   "team_abbr": "SAS",
+   "team_name": "San Antonio Spurs",
+   "opponent_abbr": "NYK",
+   "is_home": 1,
+   "position": "F-C",
+   "canonical_prop_key": "rebounds",
+   "prop_label": "Rebounds",
+   "prop_family": "single",
+   "line_value": 9.5,
+   "selected_side": "more",
+   "score_0_100": 84.1,
+   "confidence_0_100": 97.1,
+   "overall_score_0_100": 84.1,
+   "certainty_0_100": 97.1,
+   "hit_probability_0_100": 73.5,
+   "estimated_hit_probability_0_100": 73.5,
+   "final_hp_raw": 0.7349,
+   "probability_confidence_0_100": 97.1,
+   "baseline_hp_0_100": 58.1,
+   "calibration_shift_pp": 1.5,
+   "model_hp_0_100": 59.7,
+   "model_score_0_100": 75.9,
+   "market_hp_0_100": 83.1,
+   "hp_anchor": "dk+pp",
+   "dk_line": 11.5,
+   "dk_p_over_0_100": 51.6,
+   "pp_line": 11.5,
+   "hp_fit_set": "2024-25",
+   "hp_is_market_anchored": 1,
+   "calibration_shift_logit": 0.06398,
+   "edge_0_100": -9.2,
+   "breakeven_0_100": 82.7,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -2,
+   "anchor_line": 11.5,
+   "leg_factor": 0.677007459920819,
+   "app_multiplier": 0,
+   "board_tier": "goblin",
+   "home_team_name": "San Antonio Spurs",
+   "away_team_name": "New York Knicks",
+   "home_team_abbr": "SAS",
+   "away_team_abbr": "NYK",
+   "venue_name": "Frost Bank Center, San Antonio",
+   "game_status_code": "Final",
+   "hp_sample_size": 64,
+   "hp_non_push_sample": 64,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-06-13",
+   "scored_at": "2026-10-09T04:04:58.078Z",
+   "leg_insight_comment": "Middle-of-the-board profile at 73.5%: nothing screams avoid, nothing screams lock. Hosting NYK tonight. A boards prop lives on minutes and who else is on the glass."
+  },
+  "... 62 more"
+ ],
+ "dossier_context": {
+  "player_profile": {
+   "player_id": "nba_1641705",
+   "nba_player_id": "1641705",
+   "full_name": "Victor Wembanyama",
+   "first_name": "Victor",
+   "last_name": "Wembanyama",
+   "position": "F-C",
+   "height_inches": 88,
+   "weight_lbs": 235,
+   "birth_date": null,
+   "age": 22,
+   "years_pro": 3,
+   "college": "None",
+   "country": "France",
+   "draft_year": 2023,
+   "draft_round": 1,
+   "draft_number": 1,
+   "active": 1,
+   "team_id": "nba_1610612759",
+   "team_abbr": "SAS",
+   "team_name": "San Antonio Spurs"
+  },
+  "hp_lines": [
+   {
+    "final_board_row_id": "2026-06-13~prizepicks~1641705~pra~34.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "pra",
+    "prop_label": "Pts+Rebs+Asts",
+    "selected_side": "more",
+    "line_value": 34.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 77.1,
+    "probability_confidence_0_100": 97.1,
+    "score_0_100": 86.3,
+    "edge_0_100": -13,
+    "leg_factor": 0.621849796965512,
+    "baseline_hp_0_100": 39,
+    "calibration_shift_pp": 4.8,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-06-13~prizepicks~1641705~reb_ast~11.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "reb_ast",
+    "prop_label": "Rebs+Asts",
+    "selected_side": "more",
+    "line_value": 11.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 77,
+    "probability_confidence_0_100": 97.1,
+    "score_0_100": 86.3,
+    "edge_0_100": -11.2,
+    "leg_factor": 0.634841487800651,
+    "baseline_hp_0_100": 51.9,
+    "calibration_shift_pp": 2.5,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-06-13~prizepicks~1641705~rebounds~8.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "rebounds",
+    "prop_label": "Rebounds",
+    "selected_side": "more",
+    "line_value": 8.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 77.1,
+    "probability_confidence_0_100": 97,
+    "score_0_100": 86.2,
+    "edge_0_100": -14.1,
+    "leg_factor": 0.614301,
+    "baseline_hp_0_100": 77.1,
+    "calibration_shift_pp": -2.1,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-06-13~prizepicks~1641705~pts_reb~32.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "pts_reb",
+    "prop_label": "Pts+Rebs",
+    "selected_side": "more",
+    "line_value": 32.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 77.1,
+    "probability_confidence_0_100": 95.4,
+    "score_0_100": 85,
+    "edge_0_100": -10.8,
+    "leg_factor": 0.637408203228651,
+    "baseline_hp_0_100": 39.6,
+    "calibration_shift_pp": 8,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-06-13~prizepicks~1641705~pts_reb~33.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "pts_reb",
+    "prop_label": "Pts+Rebs",
+    "selected_side": "more",
+    "line_value": 33.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 76.4,
+    "probability_confidence_0_100": 95.3,
+    "score_0_100": 84.6,
+    "edge_0_100": -8,
+    "leg_factor": 0.663400331264524,
+    "baseline_hp_0_100": 32.6,
+    "calibration_shift_pp": 7.6,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-06-13~prizepicks~1641705~rebounds~9.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "rebounds",
+    "prop_label": "Rebounds",
+    "selected_side": "more",
+    "line_value": 9.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 73.5,
+    "probability_confidence_0_100": 97.1,
+    "score_0_100": 84.1,
+    "edge_0_100": -9.2,
+    "leg_factor": 0.677007459920819,
+    "baseline_hp_0_100": 58.1,
+    "calibration_shift_pp": 1.5,
+    "interpolated": false
+   },
+   "... 62 more"
+  ],
+  "recent_games": [
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500404",
+    "game_date": "2026-06-10",
+    "opponent_abbr": "NYK",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 43.9,
+    "pts": 24,
+    "reb": 13,
+    "ast": 1,
+    "fg3m": 2,
+    "fg3a": 8,
+    "stl": 0,
+    "blk": 3,
+    "tov": 0,
+    "fgm": 9,
+    "fga": 25,
+    "ftm": 4,
+    "fta": 7,
+    "oreb": 5,
+    "dreb": 8,
+    "pf": 1,
+    "plus_minus": 1,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500403",
+    "game_date": "2026-06-08",
+    "opponent_abbr": "NYK",
+    "is_home": 0,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 38.7,
+    "pts": 32,
+    "reb": 8,
+    "ast": 6,
+    "fg3m": 2,
+    "fg3a": 4,
+    "stl": 2,
+    "blk": 3,
+    "tov": 1,
+    "fgm": 11,
+    "fga": 18,
+    "ftm": 8,
+    "fta": 9,
+    "oreb": 1,
+    "dreb": 7,
+    "pf": 3,
+    "plus_minus": 7,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500402",
+    "game_date": "2026-06-05",
+    "opponent_abbr": "NYK",
+    "is_home": 1,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 40.3,
+    "pts": 29,
+    "reb": 9,
+    "ast": 2,
+    "fg3m": 2,
+    "fg3a": 6,
+    "stl": 2,
+    "blk": 4,
+    "tov": 4,
+    "fgm": 11,
+    "fga": 21,
+    "ftm": 5,
+    "fta": 8,
+    "oreb": 3,
+    "dreb": 6,
+    "pf": 2,
+    "plus_minus": 6,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500401",
+    "game_date": "2026-06-03",
+    "opponent_abbr": "NYK",
+    "is_home": 1,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 37.8,
+    "pts": 26,
+    "reb": 12,
+    "ast": 2,
+    "fg3m": 2,
+    "fg3a": 9,
+    "stl": 1,
+    "blk": 3,
+    "tov": 6,
+    "fgm": 6,
+    "fga": 21,
+    "ftm": 12,
+    "fta": 13,
+    "oreb": 3,
+    "dreb": 9,
+    "pf": 2,
+    "plus_minus": -3,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500317",
+    "game_date": "2026-05-30",
+    "opponent_abbr": "OKC",
+    "is_home": 0,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 41.9,
+    "pts": 22,
+    "reb": 7,
+    "ast": 2,
+    "fg3m": 3,
+    "fg3a": 5,
+    "stl": 1,
+    "blk": 1,
+    "tov": 1,
+    "fgm": 7,
+    "fga": 15,
+    "ftm": 5,
+    "fta": 7,
+    "oreb": 1,
+    "dreb": 6,
+    "pf": 5,
+    "plus_minus": 7,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500316",
+    "game_date": "2026-05-28",
+    "opponent_abbr": "OKC",
+    "is_home": 1,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 28.4,
+    "pts": 28,
+    "reb": 10,
+    "ast": 2,
+    "fg3m": 4,
+    "fg3a": 9,
+    "stl": 2,
+    "blk": 3,
+    "tov": 3,
+    "fgm": 10,
+    "fga": 21,
+    "ftm": 4,
+    "fta": 4,
+    "oreb": 4,
+    "dreb": 6,
+    "pf": 0,
+    "plus_minus": 13,
+    "team_id": "nba_1610612759"
+   },
+   "... 24 more"
+  ],
+  "games_full": [
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500404",
+    "game_date": "2026-06-10",
+    "opponent_abbr": "NYK",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 43.9,
+    "pts": 24,
+    "reb": 13,
+    "ast": 1,
+    "fg3m": 2,
+    "fg3a": 8,
+    "stl": 0,
+    "blk": 3,
+    "tov": 0,
+    "fgm": 9,
+    "fga": 25,
+    "ftm": 4,
+    "fta": 7,
+    "oreb": 5,
+    "dreb": 8,
+    "pf": 1,
+    "plus_minus": 1,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500403",
+    "game_date": "2026-06-08",
+    "opponent_abbr": "NYK",
+    "is_home": 0,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 38.7,
+    "pts": 32,
+    "reb": 8,
+    "ast": 6,
+    "fg3m": 2,
+    "fg3a": 4,
+    "stl": 2,
+    "blk": 3,
+    "tov": 1,
+    "fgm": 11,
+    "fga": 18,
+    "ftm": 8,
+    "fta": 9,
+    "oreb": 1,
+    "dreb": 7,
+    "pf": 3,
+    "plus_minus": 7,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500402",
+    "game_date": "2026-06-05",
+    "opponent_abbr": "NYK",
+    "is_home": 1,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 40.3,
+    "pts": 29,
+    "reb": 9,
+    "ast": 2,
+    "fg3m": 2,
+    "fg3a": 6,
+    "stl": 2,
+    "blk": 4,
+    "tov": 4,
+    "fgm": 11,
+    "fga": 21,
+    "ftm": 5,
+    "fta": 8,
+    "oreb": 3,
+    "dreb": 6,
+    "pf": 2,
+    "plus_minus": 6,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500401",
+    "game_date": "2026-06-03",
+    "opponent_abbr": "NYK",
+    "is_home": 1,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 37.8,
+    "pts": 26,
+    "reb": 12,
+    "ast": 2,
+    "fg3m": 2,
+    "fg3a": 9,
+    "stl": 1,
+    "blk": 3,
+    "tov": 6,
+    "fgm": 6,
+    "fga": 21,
+    "ftm": 12,
+    "fta": 13,
+    "oreb": 3,
+    "dreb": 9,
+    "pf": 2,
+    "plus_minus": -3,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500317",
+    "game_date": "2026-05-30",
+    "opponent_abbr": "OKC",
+    "is_home": 0,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 41.9,
+    "pts": 22,
+    "reb": 7,
+    "ast": 2,
+    "fg3m": 3,
+    "fg3a": 5,
+    "stl": 1,
+    "blk": 1,
+    "tov": 1,
+    "fgm": 7,
+    "fga": 15,
+    "ftm": 5,
+    "fta": 7,
+    "oreb": 1,
+    "dreb": 6,
+    "pf": 5,
+    "plus_minus": 7,
+    "team_id": "nba_1610612759"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500316",
+    "game_date": "2026-05-28",
+    "opponent_abbr": "OKC",
+    "is_home": 1,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 28.4,
+    "pts": 28,
+    "reb": 10,
+    "ast": 2,
+    "fg3m": 4,
+    "fg3a": 9,
+    "stl": 2,
+    "blk": 3,
+    "tov": 3,
+    "fgm": 10,
+    "fga": 21,
+    "ftm": 4,
+    "fta": 4,
+    "oreb": 4,
+    "dreb": 6,
+    "pf": 0,
+    "plus_minus": 13,
+    "team_id": "nba_1610612759"
+   },
+   "... 94 more"
+  ],
+  "recent_form": [
+   {
+    "metric_window": "last_5_games",
+    "games_count": 5,
+    "min": 40.5,
+    "pts": 26.6,
+    "reb": 9.8,
+    "ast": 2.6,
+    "fg3m": 2.2,
+    "stl": 1.2,
+    "blk": 2.8,
+    "tov": 2.4,
+    "pra": 39,
+    "fg_pct": 44,
+    "fg3_pct": 34.4,
+    "ft_pct": 77.3,
+    "plus_minus": 3.6,
+    "starts": 5
+   },
+   {
+    "metric_window": "last_10_games",
+    "games_count": 10,
+    "min": 37.6,
+    "pts": 26.1,
+    "reb": 9.4,
+    "ast": 3,
+    "fg3m": 2.3,
+    "stl": 1.4,
+    "blk": 2.9,
+    "tov": 2.7,
+    "pra": 38.5,
+    "fg_pct": 45,
+    "fg3_pct": 35.4,
+    "ft_pct": 84,
+    "plus_minus": 5.7,
+    "starts": 10
+   },
+   {
+    "metric_window": "last_20_games",
+    "games_count": 20,
+    "min": 34,
+    "pts": 23.5,
+    "reb": 11,
+    "ast": 2.8,
+    "fg3m": 1.7,
+    "stl": 1.1,
+    "blk": 3.6,
+    "tov": 2.7,
+    "pra": 37.3,
+    "fg_pct": 48.3,
+    "fg3_pct": 32.4,
+    "ft_pct": 85,
+    "plus_minus": 9.8,
+    "starts": 20
+   },
+   {
+    "metric_window": "season_to_date",
+    "games_count": 85,
+    "min": 30.3,
+    "pts": 24.8,
+    "reb": 11.3,
+    "ast": 3,
+    "fg3m": 1.9,
+    "stl": 1,
+    "blk": 3.2,
+    "tov": 2.5,
+    "pra": 39.1,
+    "fg_pct": 50.7,
+    "fg3_pct": 34.9,
+    "ft_pct": 83.2,
+    "plus_minus": 10.4,
+    "starts": 76
+   }
+  ],
+  "splits": [
+   {
+    "split_type": "days_rest",
+    "group_value": "0 Days Rest",
+    "season": "2025-26",
+    "gp": 12,
+    "min": 332.6,
+    "pts": 264,
+    "reb": 130,
+    "ast": 36,
+    "fg3m": 20,
+    "stl": 18,
+    "blk": 27,
+    "tov": 25,
+    "fg_pct": 0.489,
+    "fg3_pct": 0.27,
+    "ft_pct": 0.821,
+    "plus_minus": 164
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "1 Days Rest",
+    "season": "2025-26",
+    "gp": 34,
+    "min": 996.665,
+    "pts": 875,
+    "reb": 388,
+    "ast": 105,
+    "fg3m": 76,
+    "stl": 30,
+    "blk": 118,
+    "tov": 78,
+    "fg_pct": 0.53,
+    "fg3_pct": 0.4,
+    "ft_pct": 0.842,
+    "plus_minus": 390
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "2 Days Rest",
+    "season": "2025-26",
+    "gp": 12,
+    "min": 382.7266666666667,
+    "pts": 280,
+    "reb": 153,
+    "ast": 35,
+    "fg3m": 13,
+    "stl": 11,
+    "blk": 35,
+    "tov": 40,
+    "fg_pct": 0.449,
+    "fg3_pct": 0.232,
+    "ft_pct": 0.798,
+    "plus_minus": 35
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "3 Days Rest",
+    "season": "2025-26",
+    "gp": 3,
+    "min": 82.31166666666667,
+    "pts": 89,
+    "reb": 36,
+    "ast": 17,
+    "fg3m": 8,
+    "stl": 4,
+    "blk": 11,
+    "tov": 5,
+    "fg_pct": 0.548,
+    "fg3_pct": 0.381,
+    "ft_pct": 0.867,
+    "plus_minus": 39
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "4 Days Rest",
+    "season": "2025-26",
+    "gp": 1,
+    "min": 29.678333333333335,
+    "pts": 40,
+    "reb": 15,
+    "ast": 1,
+    "fg3m": 1,
+    "stl": 1,
+    "blk": 3,
+    "tov": 0,
+    "fg_pct": 0.714,
+    "fg3_pct": 0.5,
+    "ft_pct": 0.818,
+    "plus_minus": 31
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "5 Days Rest",
+    "season": "2025-26",
+    "gp": 1,
+    "min": 21.016666666666666,
+    "pts": 30,
+    "reb": 5,
+    "ast": 3,
+    "fg3m": 3,
+    "stl": 1,
+    "blk": 1,
+    "tov": 2,
+    "fg_pct": 0.5,
+    "fg3_pct": 0.5,
+    "ft_pct": 0.875,
+    "plus_minus": 2
+   },
+   "... 15 more"
+  ],
+  "shot_quality": {
+   "by_defender_distance": [
+    {
+     "range": "0-2 Feet - Very Tight",
+     "freq": 15.4,
+     "fga": 166,
+     "fg_pct": 54.2,
+     "efg_pct": 54.5,
+     "fg3a_freq": 0.5,
+     "fg3_pct": 20
+    },
+    {
+     "range": "2-4 Feet - Tight",
+     "freq": 44.2,
+     "fga": 476,
+     "fg_pct": 53.6,
+     "efg_pct": 56.7,
+     "fg3a_freq": 8.6,
+     "fg3_pct": 32.3
+    },
+    {
+     "range": "4-6 Feet - Open",
+     "freq": 26.9,
+     "fga": 290,
+     "fg_pct": 46.9,
+     "efg_pct": 55.5,
+     "fg3a_freq": 13.8,
+     "fg3_pct": 33.6
+    },
+    {
+     "range": "6+ Feet - Wide Open",
+     "freq": 13,
+     "fga": 140,
+     "fg_pct": 49.3,
+     "efg_pct": 63.9,
+     "fg3a_freq": 9.6,
+     "fg3_pct": 39.8
+    }
+   ],
+   "delta": {
+    "actual_efg": 57,
+    "expected_efg": 54.1,
+    "delta_pp": 2.9,
+    "fga": 1072
+   },
+   "zones": [
+    {
+     "zone": "Restricted Area",
+     "fgm": 290,
+     "fga": 386,
+     "fg_pct": 75.1
+    },
+    {
+     "zone": "Above the Break 3",
+     "fgm": 109,
+     "fga": 321,
+     "fg_pct": 34
+    },
+    {
+     "zone": "Mid-Range",
+     "fgm": 76,
+     "fga": 186,
+     "fg_pct": 40.9
+    },
+    {
+     "zone": "In The Paint (Non-RA)",
+     "fgm": 65,
+     "fga": 158,
+     "fg_pct": 41.1
+    },
+    {
+     "zone": "Corner 3",
+     "fgm": 13,
+     "fga": 29,
+     "fg_pct": 44.8
+    },
+    {
+     "zone": "Right Corner 3",
+     "fgm": 10,
+     "fga": 24,
+     "fg_pct": 41.7
+    },
+    "... 2 more"
+   ]
+  },
+  "advanced": {
+   "season_profile": {
+    "season": "2025-26",
+    "games": 64,
+    "pts_per_game": 25,
+    "reb_per_game": 11.5,
+    "ast_per_game": 3.1,
+    "usage_pct": 31.6,
+    "true_shooting_pct": 62.6,
+    "assist_pct": 17,
+    "oreb_pct": 7.1,
+    "dreb_pct": 28.5,
+    "net_rating": 17
+   },
+   "tracking": {
+    "season": "2025-26",
+    "speed_mph": 4.2,
+    "speed_off": 4.7,
+    "speed_def": 3.9,
+    "miles": 2.1,
+    "miles_off": 1.1,
+    "miles_def": 1
+   },
+   "impact": {
+    "dpm": 6.4,
+    "o_dpm": 4,
+    "d_dpm": 2.4,
+    "box_dpm": 6.2,
+    "on_off_dpm": 6.4,
+    "rank": 2,
+    "source": "DARKO_APP_GITHUB_COMMITTED_SCRAPE"
+   },
+   "on_off": {
+    "season": "2025-26",
+    "net_on": 17,
+    "net_off": 0.6,
+    "net_diff": 16.4,
+    "off_on": 120.5,
+    "off_off": 114.3,
+    "def_on": 103.6,
+    "def_off": 113.7
+   },
+   "play_types": [
+    {
+     "play_type": "Transition",
+     "grouping": "Offensive",
+     "gp": 62,
+     "poss_pct": 18.2,
+     "ppp": 1.254,
+     "efg_pct": 68.4,
+     "percentile": 75.7
+    },
+    {
+     "play_type": "Spotup",
+     "grouping": "Offensive",
+     "gp": 62,
+     "poss_pct": 15.2,
+     "ppp": 1.019,
+     "efg_pct": 49.4,
+     "percentile": 44.1
+    },
+    {
+     "play_type": "Isolation",
+     "grouping": "Offensive",
+     "gp": 62,
+     "poss_pct": 11.7,
+     "ppp": 0.847,
+     "efg_pct": 39.8,
+     "percentile": 39.9
+    },
+    {
+     "play_type": "Postup",
+     "grouping": "Offensive",
+     "gp": 62,
+     "poss_pct": 9.8,
+     "ppp": 0.956,
+     "efg_pct": 47.4,
+     "percentile": 41.2
+    },
+    {
+     "play_type": "Cut",
+     "grouping": "Offensive",
+     "gp": 62,
+     "poss_pct": 9.5,
+     "ppp": 1.53,
+     "efg_pct": 77.3,
+     "percentile": 89.3
+    },
+    {
+     "play_type": "PRRollMan",
+     "grouping": "Offensive",
+     "gp": 62,
+     "poss_pct": 9.1,
+     "ppp": 1.246,
+     "efg_pct": 65.9,
+     "percentile": 74.3
+    },
+    "... 2 more"
+   ]
+  },
+  "prop_market_current_lines": [
+   {
+    "source_key": "betmgm",
+    "book_key": "betmgm",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "more",
+    "line_value": 3.5,
+    "price_american": 105,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betmgm",
+    "book_key": "betmgm",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "less",
+    "line_value": 3.5,
+    "price_american": -140,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betmgm",
+    "book_key": "betmgm",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists_alternate",
+    "side": "more",
+    "line_value": 2.5,
+    "price_american": -275,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betmgm",
+    "book_key": "betmgm",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists_alternate",
+    "side": "more",
+    "line_value": 4.5,
+    "price_american": 195,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betmgm",
+    "book_key": "betmgm",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists_alternate",
+    "side": "more",
+    "line_value": 6.5,
+    "price_american": 750,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betmgm",
+    "book_key": "betmgm",
+    "prop_key": "blocks",
+    "canonical_prop_key": "blocks",
+    "market_key": "player_blocks",
+    "side": "more",
+    "line_value": 3.5,
+    "price_american": -105,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   "... 594 more"
+  ],
+  "prop_market_consensus": [
+   {
+    "prop": "assists",
+    "line": 2.5,
+    "books": 1,
+    "p_over": 64.6,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "assists",
+    "line": 3.5,
+    "books": 6,
+    "p_over": 44.5,
+    "sd": 0.7,
+    "label": "window"
+   },
+   {
+    "prop": "blocks",
+    "line": 2.5,
+    "books": 1,
+    "p_over": 66.5,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "blocks",
+    "line": 3.5,
+    "books": 3,
+    "p_over": 46.8,
+    "sd": 1,
+    "label": "window"
+   },
+   {
+    "prop": "blocks",
+    "line": 4.5,
+    "books": 1,
+    "p_over": 29.7,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "stocks",
+    "line": 4.5,
+    "books": 1,
+    "p_over": 51.9,
+    "sd": 0,
+    "label": "window"
+   },
+   "... 108 more"
+  ],
+  "prepared_lines": [
+   {
+    "source_key": "betr_us_dfs",
+    "book_key": "betr_us_dfs",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists_alternate",
+    "side": "more",
+    "line_value": 1.5,
+    "price_american": -137,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betr_us_dfs",
+    "book_key": "betr_us_dfs",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists_alternate",
+    "side": "more",
+    "line_value": 2.5,
+    "price_american": -137,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betr_us_dfs",
+    "book_key": "betr_us_dfs",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists_alternate",
+    "side": "more",
+    "line_value": 4.5,
+    "price_american": -137,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betr_us_dfs",
+    "book_key": "betr_us_dfs",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists_alternate",
+    "side": "more",
+    "line_value": 5.5,
+    "price_american": -137,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betr_us_dfs",
+    "book_key": "betr_us_dfs",
+    "prop_key": "stocks",
+    "canonical_prop_key": "stocks",
+    "market_key": "player_blocks_steals",
+    "side": "less",
+    "line_value": 4.5,
+    "price_american": -137,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   {
+    "source_key": "betr_us_dfs",
+    "book_key": "betr_us_dfs",
+    "prop_key": "points",
+    "canonical_prop_key": "points",
+    "market_key": "player_points",
+    "side": "more",
+    "line_value": 28.5,
+    "price_american": -137,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-08T19:38:36.915Z"
+   },
+   "... 189 more"
+  ],
+  "game": {
+   "game_id": "0042500405",
+   "game_date": "2026-06-13",
+   "game_datetime_utc": "2026-06-14T00:30:00.000Z",
+   "home_team_id": "nba_1610612759",
+   "away_team_id": "nba_1610612752",
+   "home_team_tricode": "SAS",
+   "away_team_tricode": "NYK",
+   "arena_name": "Frost Bank Center",
+   "arena_city": "San Antonio",
+   "game_status_text": "Final",
+   "home_name": "San Antonio Spurs",
+   "away_name": "New York Knicks",
+   "home_abbr": "SAS",
+   "away_abbr": "NYK",
+   "game_time_utc": "2026-06-14T00:30:00.000Z"
+  },
+  "opponent_team_id": "nba_1610612752",
+  "team_profiles": [
+   {
+    "team_id": "nba_1610612752",
+    "abbreviation": "NYK",
+    "full_name": "New York Knicks",
+    "conference": "East",
+    "division": "Atlantic",
+    "season": "2025-26",
+    "games_played": 82,
+    "wins": 53,
+    "losses": 29,
+    "pace": 97.71,
+    "off_rating": 118.7,
+    "def_rating": 112.3,
+    "net_rating": 6.4,
+    "last10": "WLWWWWWWWW",
+    "last10_record": "9-1"
+   },
+   {
+    "team_id": "nba_1610612759",
+    "abbreviation": "SAS",
+    "full_name": "San Antonio Spurs",
+    "conference": "West",
+    "division": "Southwest",
+    "season": "2025-26",
+    "games_played": 82,
+    "wins": 62,
+    "losses": 20,
+    "pace": 100.72,
+    "off_rating": 118.7,
+    "def_rating": 110.4,
+    "net_rating": 8.4,
+    "last10": "LWLLWWLWLL",
+    "last10_record": "4-6"
+   }
+  ],
+  "defense_vs_position": {
+   "position": "F-C",
+   "season": "2025-26",
+   "games_sampled": 43,
+   "avg_pts_allowed": 11.3,
+   "avg_reb_allowed": 5.5,
+   "avg_ast_allowed": 1.5,
+   "avg_fg_pct_allowed": 44.4,
+   "pts_rank": 14,
+   "reb_rank": 15,
+   "ast_rank": 24,
+   "fg_rank": 25,
+   "teams": 30,
+   "note": "rank 1 = allows the most to this position"
+  },
+  "injuries": {
+   "as_of": "2026-06-14T00:30:00.000Z",
+   "rows": [
+    {
+     "team": "New York Knicks",
+     "player": "Mitchell Robinson",
+     "status": "Available",
+     "reason": "Right 5th Metacarpal"
+    },
+    {
+     "team": "San Antonio Spurs",
+     "player": "Luke Kornet",
+     "status": "Questionable",
+     "reason": "Injury/Illness - \" \"; Illness"
+    }
+   ]
+  },
+  "starters": [
+   {
+    "team_id": "nba_1610612752",
+    "team_abbr": "NYK",
+    "game_date": "2026-06-10",
+    "player": "Jalen Brunson",
+    "start_position": "G",
+    "min": 44.455
+   },
+   {
+    "team_id": "nba_1610612752",
+    "team_abbr": "NYK",
+    "game_date": "2026-06-10",
+    "player": "Mikal Bridges",
+    "start_position": "G",
+    "min": 28.1116666666667
+   },
+   {
+    "team_id": "nba_1610612752",
+    "team_abbr": "NYK",
+    "game_date": "2026-06-10",
+    "player": "Josh Hart",
+    "start_position": "F",
+    "min": 32.7916666666667
+   },
+   {
+    "team_id": "nba_1610612752",
+    "team_abbr": "NYK",
+    "game_date": "2026-06-10",
+    "player": "OG Anunoby",
+    "start_position": "F",
+    "min": 41.4666666666667
+   },
+   {
+    "team_id": "nba_1610612752",
+    "team_abbr": "NYK",
+    "game_date": "2026-06-10",
+    "player": "Karl-Anthony Towns",
+    "start_position": "C",
+    "min": 25.7416666666667
+   },
+   {
+    "team_id": "nba_1610612759",
+    "team_abbr": "SAS",
+    "game_date": "2026-06-10",
+    "player": "De'Aaron Fox",
+    "start_position": "G",
+    "min": 37.4166666666667
+   },
+   "... 4 more"
+  ],
+  "schedule_spot": [
+   {
+    "team_id": "nba_1610612752",
+    "team_abbr": "NYK",
+    "team_name": "New York Knicks",
+    "last_game": "2026-06-10",
+    "days_rest": 2,
+    "back_to_back": 0,
+    "games_in_4_nights": 2,
+    "games_in_6_nights": 3,
+    "three_in_four": 0,
+    "four_in_six": 0,
+    "last_game_location": "home",
+    "schedule_risk_level": "rested"
+   },
+   {
+    "team_id": "nba_1610612759",
+    "team_abbr": "SAS",
+    "team_name": "San Antonio Spurs",
+    "last_game": "2026-06-10",
+    "days_rest": 2,
+    "back_to_back": 0,
+    "games_in_4_nights": 2,
+    "games_in_6_nights": 3,
+    "three_in_four": 0,
+    "four_in_six": 0,
+    "last_game_location": "road",
+    "schedule_risk_level": "rested"
+   }
+  ],
+  "officials": {
+   "source": null,
+   "rows": []
+  },
+  "market_summary": {
+   "label": "window",
+   "books": 11,
+   "home_team": "SAS",
+   "away_team": "NYK",
+   "home_ml": -200,
+   "away_ml": 165,
+   "best_home_ml": -188,
+   "best_away_ml": 175,
+   "home_spread": -5.5,
+   "total": 216,
+   "home_implied": 110.8,
+   "away_implied": 105.3,
+   "updated": "2026-10-08T19:42:35.000Z"
+  },
+  "market_odds": [
+   {
+    "book": "betmgm",
+    "market": "h2h",
+    "outcome": "New York Knicks",
+    "point": null,
+    "price": 165,
+    "updated": "2026-10-08T19:42:35.419Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "h2h",
+    "outcome": "San Antonio Spurs",
+    "point": null,
+    "price": -200,
+    "updated": "2026-10-08T19:42:35.419Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "spreads",
+    "outcome": "New York Knicks",
+    "point": 5.5,
+    "price": -110,
+    "updated": "2026-10-08T19:42:35.419Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "spreads",
+    "outcome": "San Antonio Spurs",
+    "point": -5.5,
+    "price": -110,
+    "updated": "2026-10-08T19:42:35.419Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "totals",
+    "outcome": "Over",
+    "point": 216.5,
+    "price": -110,
+    "updated": "2026-10-08T19:42:35.419Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "totals",
+    "outcome": "Under",
+    "point": 216.5,
+    "price": -110,
+    "updated": "2026-10-08T19:42:35.419Z"
+   },
+   "... 60 more"
+  ],
+  "usage_detail": {
+   "usage": [
+    {
+     "window": "Last 5",
+     "games": 5,
+     "min": 40.5,
+     "usg": 28.3,
+     "ts": 56.8,
+     "efg": 50.8,
+     "astp": 12.7,
+     "rebp": 11.4,
+     "orebp": 6.2,
+     "drebp": 16.4,
+     "pace": 94.3,
+     "ortg": 112.3,
+     "drtg": 108.3,
+     "tm_pts": 30.1,
+     "tm_reb": 26.9,
+     "tm_ast": 13.9,
+     "tm_fga": 28.6,
+     "tm_fg3a": 20.5,
+     "fga": 20,
+     "fg3a": 6.4,
+     "fta": 8.8,
+     "three_rate": 32,
+     "ft_rate": 44
+    },
+    {
+     "window": "Last 10",
+     "games": 10,
+     "min": 37.6,
+     "usg": 28.9,
+     "ts": 58.8,
+     "efg": 51.4,
+     "astp": 16.5,
+     "rebp": 11.8,
+     "orebp": 7,
+     "drebp": 16.5,
+     "pace": 97.2,
+     "ortg": 112.8,
+     "drtg": 104.7,
+     "tm_pts": 31.2,
+     "tm_reb": 27.8,
+     "tm_ast": 15.5,
+     "tm_fga": 29,
+     "tm_fg3a": 21.6,
+     "fga": 18.9,
+     "fg3a": 6.5,
+     "fta": 8.1,
+     "three_rate": 34.4,
+     "ft_rate": 42.9
+    },
+    {
+     "window": "Last 20",
+     "games": 20,
+     "min": 34,
+     "usg": 27.3,
+     "ts": 60.2,
+     "efg": 53,
+     "astp": 14.8,
+     "rebp": 15.1,
+     "orebp": 7.4,
+     "drebp": 21.3,
+     "pace": 99.3,
+     "ortg": 114.2,
+     "drtg": 100.9,
+     "tm_pts": 28.8,
+     "tm_reb": 33.9,
+     "tm_ast": 16.3,
+     "tm_fga": 26.6,
+     "tm_fg3a": 19.1,
+     "fga": 16.2,
+     "fg3a": 5.1,
+     "fta": 7.4,
+     "three_rate": 31.6,
+     "ft_rate": 45.5
+    },
+    {
+     "window": "Season 2025-26",
+     "games": 85,
+     "min": 30.3,
+     "usg": 30.9,
+     "ts": 62,
+     "efg": 56.3,
+     "astp": 16.5,
+     "rebp": 17.7,
+     "orebp": 7.1,
+     "drebp": 26.6,
+     "pace": 101.7,
+     "ortg": 119.4,
+     "drtg": 102.3,
+     "tm_pts": 32.6,
+     "tm_reb": 37.8,
+     "tm_ast": 16.8,
+     "tm_fga": 30.5,
+     "tm_fg3a": 22.6,
+     "fga": 16.8,
+     "fg3a": 5.4,
+     "fta": 7.1,
+     "three_rate": 32.2,
+     "ft_rate": 42.3
+    }
+   ],
+   "scoring": [
+    {
+     "window": "Last 5",
+     "games": 5,
+     "paint": 39.5,
+     "mid": 9.3,
+     "three": 25.7,
+     "ft": 25.5,
+     "fb": 10.3,
+     "offtov": 21.9,
+     "uast": 39.3,
+     "fga3": 31.8
+    },
+    {
+     "window": "Last 10",
+     "games": 10,
+     "paint": 40.9,
+     "mid": 6,
+     "three": 26.5,
+     "ft": 26.6,
+     "fb": 8.3,
+     "offtov": 19.7,
+     "uast": 33.1,
+     "fga3": 34.4
+    },
+    {
+     "window": "Last 20",
+     "games": 20,
+     "paint": 48.8,
+     "mid": 5.6,
+     "three": 18.9,
+     "ft": 26.7,
+     "fb": 8.6,
+     "offtov": 14.4,
+     "uast": 34.3,
+     "fga3": 31.4
+    },
+    {
+     "window": "Season 2025-26",
+     "games": 85,
+     "paint": 46.8,
+     "mid": 8.5,
+     "three": 21.2,
+     "ft": 23.6,
+     "fb": 9,
+     "offtov": 12.7,
+     "uast": 30.7,
+     "fga3": 31.7
+    }
+   ],
+   "per_game": [
+    {
+     "game_date": "2026-06-10",
+     "phase": "Playoffs",
+     "min": 43.9,
+     "usg": 26.7,
+     "ts": 42.7,
+     "tm_pts": 24.2,
+     "tm_reb": 34.2,
+     "tm_ast": 4.5,
+     "pace": 92.4,
+     "paint": 50,
+     "three": 25
+    },
+    {
+     "game_date": "2026-06-08",
+     "phase": "Playoffs",
+     "min": 38.7,
+     "usg": 28,
+     "ts": 72.9,
+     "tm_pts": 35.2,
+     "tm_reb": 28.6,
+     "tm_ast": 26.1,
+     "pace": 90.5,
+     "paint": 50,
+     "three": 18.8
+    },
+    {
+     "game_date": "2026-06-05",
+     "phase": "Playoffs",
+     "min": 40.3,
+     "usg": 30.8,
+     "ts": 59.1,
+     "tm_pts": 31.9,
+     "tm_reb": 24.3,
+     "tm_ast": 11.1,
+     "pace": 97,
+     "paint": 48.3,
+     "three": 20.7
+    },
+    {
+     "game_date": "2026-06-03",
+     "phase": "Playoffs",
+     "min": 37.8,
+     "usg": 35.5,
+     "ts": 48.7,
+     "tm_pts": 36.1,
+     "tm_reb": 26.1,
+     "tm_ast": 16.7,
+     "pace": 98.4,
+     "paint": 30.8,
+     "three": 23.1
+    },
+    {
+     "game_date": "2026-05-30",
+     "phase": "Playoffs",
+     "min": 41.9,
+     "usg": 20.7,
+     "ts": 60.8,
+     "tm_pts": 23.2,
+     "tm_reb": 21.2,
+     "tm_ast": 11.1,
+     "pace": 93.4,
+     "paint": 18.2,
+     "three": 40.9
+    },
+    {
+     "game_date": "2026-05-28",
+     "phase": "Playoffs",
+     "min": 28.4,
+     "usg": 38.2,
+     "ts": 61.5,
+     "tm_pts": 41.2,
+     "tm_reb": 34.5,
+     "tm_ast": 11.1,
+     "pace": 99.6,
+     "paint": 42.9,
+     "three": 42.9
+    },
+    "... 14 more"
+   ]
+  },
+  "tracking_skills": {
+   "games": 64,
+   "min_per_game": 29.2,
+   "updated": "2026-10-12",
+   "groups": [
+    {
+     "key": "Passing",
+     "title": "Passing & Playmaking",
+     "rows": [
+      [
+       "Passes Made",
+       35.1
+      ],
+      [
+       "Passes Received",
+       38
+      ],
+      [
+       "Assists",
+       3.1
+      ],
+      [
+       "Potential Assists",
+       5.5
+      ],
+      [
+       "Secondary Assists",
+       0.9
+      ],
+      [
+       "FT Assists",
+       0.2
+      ],
+      "... 2 more"
+     ]
+    },
+    {
+     "key": "Rebounding",
+     "title": "Rebounding",
+     "rows": [
+      [
+       "Rebounds",
+       11.5
+      ],
+      [
+       "Rebound Chances",
+       14.1
+      ],
+      [
+       "Rebound Chance %",
+       81.6
+      ],
+      [
+       "Contested Reb %",
+       38.5
+      ],
+      [
+       "OREB Chances",
+       3.1
+      ],
+      [
+       "OREB Chance %",
+       66.3
+      ],
+      "... 3 more"
+     ]
+    },
+    {
+     "key": "CatchShoot",
+     "title": "Catch & Shoot",
+     "rows": [
+      [
+       "C&S Points",
+       5
+      ],
+      [
+       "C&S FGA",
+       4.6
+      ],
+      [
+       "C&S FG%",
+       39.2
+      ],
+      [
+       "C&S 3PA",
+       3.8
+      ],
+      [
+       "C&S 3PM",
+       1.4
+      ],
+      [
+       "C&S 3P%",
+       36.5
+      ],
+      "... 1 more"
+     ]
+    },
+    {
+     "key": "PullUpShot",
+     "title": "Pull-Up Shooting",
+     "rows": [
+      [
+       "Pull-Up Points",
+       3.2
+      ],
+      [
+       "Pull-Up FGA",
+       4.1
+      ],
+      [
+       "Pull-Up FG%",
+       34.2
+      ],
+      [
+       "Pull-Up 3PA",
+       1.5
+      ],
+      [
+       "Pull-Up 3PM",
+       0.5
+      ],
+      [
+       "Pull-Up 3P%",
+       29.3
+      ],
+      "... 1 more"
+     ]
+    },
+    {
+     "key": "Drives",
+     "title": "Drives",
+     "rows": [
+      [
+       "Drives",
+       7.6
+      ],
+      [
+       "Drive Points",
+       4.9
+      ],
+      [
+       "Drive FGA",
+       3.3
+      ],
+      [
+       "Drive FG%",
+       50.5
+      ],
+      [
+       "Drive FTA",
+       1.8
+      ],
+      [
+       "Drive Assists",
+       0.6
+      ],
+      "... 2 more"
+     ]
+    },
+    {
+     "key": "Touches",
+     "title": "Touches",
+     "rows": [
+      [
+       "Touches",
+       55.8
+      ],
+      [
+       "Paint Touches",
+       6.9
+      ],
+      [
+       "Paint Touch Points",
+       5.7
+      ],
+      [
+       "Post Touches",
+       3.1
+      ],
+      [
+       "Post Touch Points",
+       1.3
+      ],
+      [
+       "Elbow Touches",
+       4.8
+      ],
+      "... 1 more"
+     ]
+    }
+   ]
+  },
+  "career": [
+   {
+    "season": "2025-26",
+    "team": "SAS",
+    "age": 22,
+    "gp": 64,
+    "gs": 55,
+    "min": 29.2,
+    "pts": 25,
+    "reb": 11.5,
+    "ast": 3.1,
+    "fg3m": 1.9,
+    "stl": 1,
+    "blk": 3.1,
+    "tov": 2.4,
+    "pra": 39.6,
+    "fg_pct": 51.2,
+    "fg3_pct": 34.9,
+    "ft_pct": 82.7
+   },
+   {
+    "season": "2024-25",
+    "team": "SAS",
+    "age": 21,
+    "gp": 46,
+    "gs": 46,
+    "min": 33.2,
+    "pts": 24.3,
+    "reb": 11,
+    "ast": 3.7,
+    "fg3m": 3.1,
+    "stl": 1.1,
+    "blk": 3.8,
+    "tov": 3.2,
+    "pra": 38.9,
+    "fg_pct": 47.6,
+    "fg3_pct": 35.2,
+    "ft_pct": 83.6
+   },
+   {
+    "season": "2023-24",
+    "team": "SAS",
+    "age": 20,
+    "gp": 71,
+    "gs": 71,
+    "min": 29.7,
+    "pts": 21.4,
+    "reb": 10.6,
+    "ast": 3.9,
+    "fg3m": 1.8,
+    "stl": 1.2,
+    "blk": 3.6,
+    "tov": 3.7,
+    "pra": 35.9,
+    "fg_pct": 46.5,
+    "fg3_pct": 32.5,
+    "ft_pct": 79.6
+   }
+  ],
+  "vs_opponent": [
+   {
+    "phase": "Playoffs",
+    "game_date": "2026-06-10",
+    "season": "2025-26",
+    "matchup": "SAS @ NYK",
+    "wl": "L",
+    "min": 43.9166666666667,
+    "pts": 24,
+    "reb": 13,
+    "ast": 1,
+    "fg3m": 2,
+    "stl": 0,
+    "blk": 3,
+    "tov": 0,
+    "fgm": 9,
+    "fga": 25,
+    "ftm": 4,
+    "fta": 7,
+    "plus_minus": 1,
+    "is_home": 0,
+    "opponent_abbr": "NYK"
+   },
+   {
+    "phase": "Playoffs",
+    "game_date": "2026-06-08",
+    "season": "2025-26",
+    "matchup": "SAS @ NYK",
+    "wl": "W",
+    "min": 38.7333333333333,
+    "pts": 32,
+    "reb": 8,
+    "ast": 6,
+    "fg3m": 2,
+    "stl": 2,
+    "blk": 3,
+    "tov": 1,
+    "fgm": 11,
+    "fga": 18,
+    "ftm": 8,
+    "fta": 9,
+    "plus_minus": 7,
+    "is_home": 0,
+    "opponent_abbr": "NYK"
+   },
+   {
+    "phase": "Playoffs",
+    "game_date": "2026-06-05",
+    "season": "2025-26",
+    "matchup": "SAS vs. NYK",
+    "wl": "L",
+    "min": 40.3166666666667,
+    "pts": 29,
+    "reb": 9,
+    "ast": 2,
+    "fg3m": 2,
+    "stl": 2,
+    "blk": 4,
+    "tov": 4,
+    "fgm": 11,
+    "fga": 21,
+    "ftm": 5,
+    "fta": 8,
+    "plus_minus": 6,
+    "is_home": 1,
+    "opponent_abbr": "NYK"
+   },
+   {
+    "phase": "Playoffs",
+    "game_date": "2026-06-03",
+    "season": "2025-26",
+    "matchup": "SAS vs. NYK",
+    "wl": "L",
+    "min": 37.8,
+    "pts": 26,
+    "reb": 12,
+    "ast": 2,
+    "fg3m": 2,
+    "stl": 1,
+    "blk": 3,
+    "tov": 6,
+    "fgm": 6,
+    "fga": 21,
+    "ftm": 12,
+    "fta": 13,
+    "plus_minus": -3,
+    "is_home": 1,
+    "opponent_abbr": "NYK"
+   },
+   {
+    "phase": "Regular",
+    "game_date": "2026-03-01",
+    "season": "2025-26",
+    "matchup": "SAS @ NYK",
+    "wl": "L",
+    "min": 34.2,
+    "pts": 25,
+    "reb": 13,
+    "ast": 2,
+    "fg3m": 1,
+    "stl": 0,
+    "blk": 4,
+    "tov": 7,
+    "fgm": 8,
+    "fga": 17,
+    "ftm": 8,
+    "fta": 9,
+    "plus_minus": -15,
+    "is_home": 0,
+    "opponent_abbr": "NYK"
+   },
+   {
+    "phase": "Regular",
+    "game_date": "2025-12-31",
+    "season": "2025-26",
+    "matchup": "SAS vs. NYK",
+    "wl": "W",
+    "min": 23.716666666666665,
+    "pts": 31,
+    "reb": 13,
+    "ast": 1,
+    "fg3m": 2,
+    "stl": 0,
+    "blk": 1,
+    "tov": 3,
+    "fgm": 10,
+    "fga": 12,
+    "ftm": 9,
+    "fta": 10,
+    "plus_minus": 17,
+    "is_home": 1,
+    "opponent_abbr": "NYK"
+   },
+   "... 3 more"
+  ],
+  "vs_opponent_abbr": "NYK",
+  "with_without": {
+   "season": "2025-26",
+   "rows": [
+    {
+     "player_id": "nba_1628436",
+     "name": "Luke Kornet",
+     "mate_mins": 1430.08,
+     "with": {
+      "games": 52,
+      "min": 28.2,
+      "pts": 25.3,
+      "reb": 11.1,
+      "ast": 3,
+      "fg3m": 1.9,
+      "fga": 16.9,
+      "pra": 39.3
+     },
+     "without": {
+      "games": 12,
+      "min": 33.4,
+      "pts": 23.8,
+      "reb": 13.4,
+      "ast": 3.6,
+      "fg3m": 1.8,
+      "fga": 16.7,
+      "pra": 40.8
+     },
+     "status": "Questionable",
+     "reason": "Injury/Illness - \" \"; Illness"
+    },
+    {
+     "player_id": "nba_1630577",
+     "name": "Julian Champagnie",
+     "mate_mins": 2265.963333333334,
+     "with": {
+      "games": 64,
+      "min": 29.2,
+      "pts": 25,
+      "reb": 11.5,
+      "ast": 3.1,
+      "fg3m": 1.9,
+      "fga": 16.9,
+      "pra": 39.6
+     },
+     "without": null,
+     "status": null,
+     "reason": null
+    },
+    {
+     "player_id": "nba_1628368",
+     "name": "De'Aaron Fox",
+     "mate_mins": 2231.065,
+     "with": {
+      "games": 54,
+      "min": 28.5,
+      "pts": 25,
+      "reb": 11.4,
+      "ast": 3.1,
+      "fg3m": 2.1,
+      "fga": 16.7,
+      "pra": 39.5
+     },
+     "without": {
+      "games": 10,
+      "min": 32.8,
+      "pts": 25.2,
+      "reb": 12,
+      "ast": 3.2,
+      "fg3m": 0.7,
+      "fga": 17.6,
+      "pra": 40.4
+     },
+     "status": null,
+     "reason": null
+    },
+    {
+     "player_id": "nba_1630170",
+     "name": "Devin Vassell",
+     "mate_mins": 2044.231666666667,
+     "with": {
+      "games": 51,
+      "min": 29.9,
+      "pts": 25.2,
+      "reb": 12.1,
+      "ast": 3.4,
+      "fg3m": 1.8,
+      "fga": 16.9,
+      "pra": 40.6
+     },
+     "without": {
+      "games": 13,
+      "min": 26.2,
+      "pts": 24.3,
+      "reb": 9.3,
+      "ast": 2.2,
+      "fg3m": 2.5,
+      "fga": 16.7,
+      "pra": 35.8
+     },
+     "status": null,
+     "reason": null
+    },
+    {
+     "player_id": "nba_1642264",
+     "name": "Stephon Castle",
+     "mate_mins": 2037.7433333333324,
+     "with": {
+      "games": 60,
+      "min": 29.2,
+      "pts": 24.7,
+      "reb": 11.6,
+      "ast": 3.1,
+      "fg3m": 2,
+      "fga": 16.8,
+      "pra": 39.4
+     },
+     "without": {
+      "games": 4,
+      "min": 28.8,
+      "pts": 29.8,
+      "reb": 10.3,
+      "ast": 3.5,
+      "fg3m": 1.3,
+      "fga": 18.5,
+      "pra": 43.5
+     },
+     "status": null,
+     "reason": null
+    },
+    {
+     "player_id": "nba_203084",
+     "name": "Harrison Barnes",
+     "mate_mins": 1986.4750000000001,
+     "with": {
+      "games": 59,
+      "min": 29.1,
+      "pts": 24.7,
+      "reb": 11.6,
+      "ast": 3.2,
+      "fg3m": 1.7,
+      "fga": 16.9,
+      "pra": 39.4
+     },
+     "without": {
+      "games": 5,
+      "min": 30.3,
+      "pts": 28.6,
+      "reb": 10.6,
+      "ast": 2.4,
+      "fg3m": 3.8,
+      "fga": 16.6,
+      "pra": 41.6
+     },
+     "status": null,
+     "reason": null
+    }
+   ]
+  },
+  "lineups": {
+   "season": "2025-26",
+   "five": [
+    {
+     "group": "D. Fox - D. Vassell - J. Champagnie - V. Wembanyama - S. Castle",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 29,
+     "record": "23-6",
+     "min": 284.3,
+     "plus_minus": 108,
+     "per48": 18.2,
+     "pts": 776
+    },
+    {
+     "group": "H. Barnes - D. Fox - J. Champagnie - V. Wembanyama - S. Castle",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 19,
+     "record": "13-6",
+     "min": 136.4,
+     "plus_minus": 57,
+     "per48": 20.1,
+     "pts": 384
+    },
+    {
+     "group": "H. Barnes - D. Vassell - J. Champagnie - V. Wembanyama - S. Castle",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 17,
+     "record": "12-5",
+     "min": 132.8,
+     "plus_minus": 41,
+     "per48": 14.8,
+     "pts": 328
+    },
+    {
+     "group": "H. Barnes - D. Fox - D. Vassell - V. Wembanyama - S. Castle",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 16,
+     "record": "11-5",
+     "min": 90.8,
+     "plus_minus": 49,
+     "per48": 25.9,
+     "pts": 237
+    },
+    {
+     "group": "K. Johnson - D. Vassell - V. Wembanyama - S. Castle - D. Harper",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 20,
+     "record": "17-3",
+     "min": 47.6,
+     "plus_minus": 39,
+     "per48": 39.3,
+     "pts": 134
+    },
+    {
+     "group": "H. Barnes - D. Fox - D. Vassell - J. Champagnie - V. Wembanyama",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 10,
+     "record": "7-3",
+     "min": 45.3,
+     "plus_minus": 19,
+     "per48": 20.1,
+     "pts": 106
+    }
+   ],
+   "pairs": [
+    {
+     "group": "J. Champagnie - V. Wembanyama",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 64,
+     "record": "50-14",
+     "min": 1230.6,
+     "plus_minus": 526,
+     "per48": 20.5,
+     "pts": 3222
+    },
+    {
+     "group": "V. Wembanyama - S. Castle",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 60,
+     "record": "46-14",
+     "min": 1213.2,
+     "plus_minus": 440,
+     "per48": 17.4,
+     "pts": 3139
+    },
+    {
+     "group": "D. Fox - V. Wembanyama",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 54,
+     "record": "43-11",
+     "min": 1143.9,
+     "plus_minus": 411,
+     "per48": 17.2,
+     "pts": 2989
+    },
+    {
+     "group": "D. Vassell - V. Wembanyama",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 51,
+     "record": "41-10",
+     "min": 1002.9,
+     "plus_minus": 466,
+     "per48": 22.3,
+     "pts": 2661
+    },
+    {
+     "group": "H. Barnes - V. Wembanyama",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 59,
+     "record": "45-14",
+     "min": 901,
+     "plus_minus": 246,
+     "per48": 13.1,
+     "pts": 2270
+    },
+    {
+     "group": "K. Johnson - V. Wembanyama",
+     "team": "SAS",
+     "season": "2025-26",
+     "gp": 64,
+     "record": "50-14",
+     "min": 693.6,
+     "plus_minus": 236,
+     "per48": 16.3,
+     "pts": 1733
+    },
+    "... 2 more"
+   ]
+  },
+  "team_trends": [
+   {
+    "team_id": "nba_1610612759",
+    "team": "SAS",
+    "window": "Last 10",
+    "games": 10,
+    "record": "4-6",
+    "ppg": 108.7,
+    "opp_ppg": 107.6,
+    "pace": 97.5,
+    "ortg": 112,
+    "drtg": 110.2,
+    "efg": 51.2,
+    "opp_efg": 50.7,
+    "tov": 14.2,
+    "opp_tov": 14,
+    "oreb": 30.3,
+    "opp_oreb": 33,
+    "ftr": 30.6,
+    "opp_ftr": 27.5
+   },
+   {
+    "team_id": "nba_1610612759",
+    "team": "SAS",
+    "window": "Season 2025-26",
+    "games": 104,
+    "record": "75-29",
+    "ppg": 118.5,
+    "opp_ppg": 110.2,
+    "pace": 100.3,
+    "ortg": 117.8,
+    "drtg": 109.5,
+    "efg": 55.5,
+    "opp_efg": 51.6,
+    "tov": 13.6,
+    "opp_tov": 13,
+    "oreb": 30.2,
+    "opp_oreb": 28.1,
+    "ftr": 28.3,
+    "opp_ftr": 23.7
+   },
+   {
+    "team_id": "nba_1610612752",
+    "team": "NYK",
+    "window": "Last 10",
+    "games": 10,
+    "record": "9-1",
+    "ppg": 115.5,
+    "opp_ppg": 102.6,
+    "pace": 96.2,
+    "ortg": 119,
+    "drtg": 105.7,
+    "efg": 56.4,
+    "opp_efg": 50.4,
+    "tov": 13.8,
+    "opp_tov": 14.1,
+    "oreb": 33.7,
+    "opp_oreb": 26.3,
+    "ftr": 28.6,
+    "opp_ftr": 29.3
+   },
+   {
+    "team_id": "nba_1610612752",
+    "team": "NYK",
+    "window": "Season 2025-26",
+    "games": 100,
+    "record": "68-32",
+    "ppg": 116.6,
+    "opp_ppg": 108.6,
+    "pace": 97.5,
+    "ortg": 119.1,
+    "drtg": 111,
+    "efg": 56.1,
+    "opp_efg": 53.5,
+    "tov": 13.9,
+    "opp_tov": 14.8,
+    "oreb": 32.7,
+    "opp_oreb": 28,
+    "ftr": 25,
+    "opp_ftr": 27.3
+   }
+  ],
+  "arena": {
+   "arena_name": "Frost Bank Center",
+   "city": "San Antonio",
+   "state": null,
+   "capacity": 18694,
+   "altitude_ft": null,
+   "timezone": null
+  },
+  "depth_errors": [],
+  "sharp": {
+   "market": {
+    "date": "2026-06-13",
+    "labels": [
+     "window",
+     "close"
+    ],
+    "label_note": "routine = earlier in the day, window = pre-game window, close = at tip",
+    "props": [
+     {
+      "prop": "blocks",
+      "labels": [
+       "window",
+       "close"
+      ],
+      "books": 4,
+      "fair": {
+       "window": 3.3,
+       "close": 3.3
+      },
+      "fair_move": 0,
+      "ladder": [
+       {
+        "line": 2.5,
+        "window": 66.5,
+        "close": 66.5,
+        "books": 1
+       },
+       {
+        "line": 3.5,
+        "window": 46.8,
+        "close": 46.8,
+        "books": 4
+       },
+       {
+        "line": 4.5,
+        "window": 29.7,
+        "close": 29.7,
+        "books": 1
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "betmgm",
+        "window": {
+         "book": "betmgm",
+         "line": 3.5,
+         "over": -105,
+         "under": -135,
+         "p_over": 47.1,
+         "hold": 8.7,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betmgm",
+         "line": 3.5,
+         "over": -105,
+         "under": -135,
+         "p_over": 47.1,
+         "hold": 8.7,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 3.5,
+         "over": 100,
+         "under": -130,
+         "p_over": 46.9,
+         "hold": 6.5,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "bovada",
+         "line": 3.5,
+         "over": 100,
+         "under": -130,
+         "p_over": 46.9,
+         "hold": 6.5,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 3.5,
+         "over": 105,
+         "under": -139,
+         "p_over": 45.6,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "draftkings",
+         "line": 3.5,
+         "over": 106,
+         "under": -140,
+         "p_over": 45.4,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "fanduel",
+        "window": {
+         "book": "fanduel",
+         "line": 3.5,
+         "over": -104,
+         "under": -128,
+         "p_over": 47.6,
+         "hold": 7.1,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "fanduel",
+         "line": 3.5,
+         "over": -104,
+         "under": -128,
+         "p_over": 47.6,
+         "hold": 7.1,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       }
+      ],
+      "dfs_lines": []
+     },
+     {
+      "prop": "points",
+      "labels": [
+       "window",
+       "close"
+      ],
+      "books": 6,
+      "fair": {
+       "window": 28.5,
+       "close": 28.4
+      },
+      "fair_move": -0.1,
+      "ladder": [
+       {
+        "line": 20.5,
+        "window": 82.4,
+        "close": 82.4,
+        "books": 1
+       },
+       {
+        "line": 21.5,
+        "window": 79.7,
+        "close": 79.7,
+        "books": 1
+       },
+       {
+        "line": 22.5,
+        "window": 76.1,
+        "close": 76.1,
+        "books": 1
+       },
+       {
+        "line": 23.5,
+        "window": 71.7,
+        "close": 72.1,
+        "books": 1
+       },
+       {
+        "line": 24.5,
+        "window": 68.7,
+        "close": 69,
+        "books": 2
+       },
+       {
+        "line": 25.5,
+        "window": 64.3,
+        "close": 64.5,
+        "books": 2
+       },
+       "... 11 more"
+      ],
+      "book_lines": [
+       {
+        "book": "betmgm",
+        "window": {
+         "book": "betmgm",
+         "line": 28.5,
+         "over": -120,
+         "under": -110,
+         "p_over": 51,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betmgm",
+         "line": 28.5,
+         "over": -120,
+         "under": -110,
+         "p_over": 51,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "betrivers",
+        "window": {
+         "book": "betrivers",
+         "line": 28.5,
+         "over": -109,
+         "under": -125,
+         "p_over": 48.4,
+         "hold": 7.7,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betrivers",
+         "line": 28.5,
+         "over": -109,
+         "under": -125,
+         "p_over": 48.4,
+         "hold": 7.7,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 29.5,
+         "over": -105,
+         "under": -125,
+         "p_over": 48,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "bovada",
+         "line": 29.5,
+         "over": -105,
+         "under": -125,
+         "p_over": 48,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 28.5,
+         "over": -122,
+         "under": -104,
+         "p_over": 51.9,
+         "hold": 5.9,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "draftkings",
+         "line": 29.5,
+         "over": -103,
+         "under": -123,
+         "p_over": 47.9,
+         "hold": 5.9,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "fanduel",
+        "window": {
+         "book": "fanduel",
+         "line": 28.5,
+         "over": -104,
+         "under": -122,
+         "p_over": 48.1,
+         "hold": 5.9,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "fanduel",
+         "line": 28.5,
+         "over": -104,
+         "under": -122,
+         "p_over": 48.1,
+         "hold": 5.9,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "williamhill_us",
+        "window": {
+         "book": "williamhill_us",
+         "line": 28.5,
+         "over": -121,
+         "under": -112,
+         "p_over": 50.9,
+         "hold": 7.6,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "williamhill_us",
+         "line": 28.5,
+         "over": -121,
+         "under": -112,
+         "p_over": 50.9,
+         "hold": 7.6,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 22.5,
+        "p_over": 76.1,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 23.5,
+        "p_over": 72.1,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 24.5,
+        "p_over": 69,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 25.5,
+        "p_over": 64.5,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 27.5,
+        "p_over": 54.4,
+        "offers": [
+         {
+          "app": "underdog",
+          "line_type": "higher_payout",
+          "side": "less",
+          "multiplier": 1.02
+         },
+         {
+          "app": "underdog",
+          "line_type": "lower_payout",
+          "side": "more",
+          "multiplier": 0.89
+         }
+        ]
+       },
+       {
+        "line": 28.5,
+        "p_over": 49.8,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       "... 4 more"
+      ]
+     },
+     {
+      "prop": "steals",
+      "labels": [
+       "window",
+       "close"
+      ],
+      "books": 3,
+      "fair": {
+       "window": null,
+       "close": null
+      },
+      "fair_move": null,
+      "ladder": [
+       {
+        "line": 1.5,
+        "window": 38.5,
+        "close": 38.2,
+        "books": 3
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 1.5,
+         "over": 135,
+         "under": -180,
+         "p_over": 39.8,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "bovada",
+         "line": 1.5,
+         "over": 135,
+         "under": -180,
+         "p_over": 39.8,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 1.5,
+         "over": 134,
+         "under": -179,
+         "p_over": 40,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "draftkings",
+         "line": 1.5,
+         "over": 139,
+         "under": -185,
+         "p_over": 39.2,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "fanduel",
+        "window": {
+         "book": "fanduel",
+         "line": 1.5,
+         "over": 162,
+         "under": -220,
+         "p_over": 35.7,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "fanduel",
+         "line": 1.5,
+         "over": 162,
+         "under": -220,
+         "p_over": 35.7,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       }
+      ],
+      "dfs_lines": []
+     },
+     {
+      "prop": "threes_made",
+      "labels": [
+       "window",
+       "close"
+      ],
+      "books": 6,
+      "fair": {
+       "window": 2,
+       "close": 2
+      },
+      "fair_move": 0,
+      "ladder": [
+       {
+        "line": 1.5,
+        "window": 62.6,
+        "close": 61.4,
+        "books": 4
+       },
+       {
+        "line": 2.5,
+        "window": 38.9,
+        "close": 38,
+        "books": 4
+       },
+       {
+        "line": 3.5,
+        "window": 20.3,
+        "close": 19.9,
+        "books": 1
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "betmgm",
+        "window": {
+         "book": "betmgm",
+         "line": 2.5,
+         "over": 130,
+         "under": -175,
+         "p_over": 40.6,
+         "hold": 7.1,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betmgm",
+         "line": 2.5,
+         "over": 130,
+         "under": -175,
+         "p_over": 40.6,
+         "hold": 7.1,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "betrivers",
+        "window": {
+         "book": "betrivers",
+         "line": 1.5,
+         "over": -205,
+         "under": 145,
+         "p_over": 62.2,
+         "hold": 8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betrivers",
+         "line": 1.5,
+         "over": -205,
+         "under": 145,
+         "p_over": 62.2,
+         "hold": 8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 1.5,
+         "over": -185,
+         "under": 140,
+         "p_over": 60.9,
+         "hold": 6.6,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "bovada",
+         "line": 1.5,
+         "over": -180,
+         "under": 135,
+         "p_over": 60.2,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 1.5,
+         "over": -188,
+         "under": 142,
+         "p_over": 61.2,
+         "hold": 6.6,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "draftkings",
+         "line": 1.5,
+         "over": -179,
+         "under": 135,
+         "p_over": 60.1,
+         "hold": 6.7,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "fanduel",
+        "window": {
+         "book": "fanduel",
+         "line": 2.5,
+         "over": 140,
+         "under": -180,
+         "p_over": 39.3,
+         "hold": 6,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "fanduel",
+         "line": 2.5,
+         "over": 148,
+         "under": -192,
+         "p_over": 38,
+         "hold": 6.1,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "williamhill_us",
+        "window": {
+         "book": "williamhill_us",
+         "line": 2.5,
+         "over": 135,
+         "under": -182,
+         "p_over": 39.7,
+         "hold": 7.1,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "williamhill_us",
+         "line": 2.5,
+         "over": 138,
+         "under": -190,
+         "p_over": 39.1,
+         "hold": 7.5,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 1.5,
+        "p_over": 61.4,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 2.5,
+        "p_over": 38,
+        "offers": [
+         {
+          "app": "underdog",
+          "line_type": "lower_payout",
+          "side": "less",
+          "multiplier": 0.76
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "underdog",
+          "line_type": "higher_payout",
+          "side": "more",
+          "multiplier": 1.07
+         }
+        ]
+       },
+       {
+        "line": 3.5,
+        "p_over": 19.9,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 4.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "prop": "assists",
+      "labels": [
+       "window",
+       "close"
+      ],
+      "books": 6,
+      "fair": {
+       "window": 3.2,
+       "close": 3.2
+      },
+      "fair_move": 0,
+      "ladder": [
+       {
+        "line": 2.5,
+        "window": 64.6,
+        "close": 64.6,
+        "books": 1
+       },
+       {
+        "line": 3.5,
+        "window": 44.5,
+        "close": 43.7,
+        "books": 6
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "betmgm",
+        "window": {
+         "book": "betmgm",
+         "line": 3.5,
+         "over": 105,
+         "under": -140,
+         "p_over": 45.5,
+         "hold": 7.1,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betmgm",
+         "line": 3.5,
+         "over": 115,
+         "under": -155,
+         "p_over": 43.3,
+         "hold": 7.3,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "betrivers",
+        "window": {
+         "book": "betrivers",
+         "line": 3.5,
+         "over": 107,
+         "under": -148,
+         "p_over": 44.7,
+         "hold": 8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betrivers",
+         "line": 3.5,
+         "over": 108,
+         "under": -148,
+         "p_over": 44.6,
+         "hold": 7.8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 3.5,
+         "over": 110,
+         "under": -145,
+         "p_over": 44.6,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "bovada",
+         "line": 3.5,
+         "over": 110,
+         "under": -145,
+         "p_over": 44.6,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 3.5,
+         "over": 112,
+         "under": -147,
+         "p_over": 44.2,
+         "hold": 6.7,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "draftkings",
+         "line": 3.5,
+         "over": 109,
+         "under": -143,
+         "p_over": 44.8,
+         "hold": 6.7,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "fanduel",
+        "window": {
+         "book": "fanduel",
+         "line": 3.5,
+         "over": 118,
+         "under": -150,
+         "p_over": 43.3,
+         "hold": 5.9,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "fanduel",
+         "line": 3.5,
+         "over": 130,
+         "under": -166,
+         "p_over": 41.1,
+         "hold": 5.9,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "williamhill_us",
+        "window": {
+         "book": "williamhill_us",
+         "line": 3.5,
+         "over": 110,
+         "under": -145,
+         "p_over": 44.6,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "williamhill_us",
+         "line": 3.5,
+         "over": 114,
+         "under": -152,
+         "p_over": 43.7,
+         "hold": 7,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 2.5,
+        "p_over": 64.6,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 3.5,
+        "p_over": 43.7,
+        "offers": [
+         {
+          "app": "underdog",
+          "line_type": "lower_payout",
+          "side": "less",
+          "multiplier": 0.83
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "underdog",
+          "line_type": "higher_payout",
+          "side": "more",
+          "multiplier": 1.08
+         }
+        ]
+       },
+       {
+        "line": 4.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 5.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 6.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "prop": "rebounds",
+      "labels": [
+       "window",
+       "close"
+      ],
+      "books": 6,
+      "fair": {
+       "window": 11.6,
+       "close": 11.5
+      },
+      "fair_move": -0.1,
+      "ladder": [
+       {
+        "line": 8.5,
+        "window": 77.8,
+        "close": 77.7,
+        "books": 1
+       },
+       {
+        "line": 9.5,
+        "window": 72.4,
+        "close": 71.2,
+        "books": 1
+       },
+       {
+        "line": 10.5,
+        "window": 62.4,
+        "close": 60.6,
+        "books": 2
+       },
+       {
+        "line": 11.5,
+        "window": 51.2,
+        "close": 49.8,
+        "books": 6
+       },
+       {
+        "line": 12.5,
+        "window": 42.7,
+        "close": 38.8,
+        "books": 3
+       },
+       {
+        "line": 13.5,
+        "window": 31.8,
+        "close": 29.9,
+        "books": 2
+       },
+       "... 2 more"
+      ],
+      "book_lines": [
+       {
+        "book": "betmgm",
+        "window": {
+         "book": "betmgm",
+         "line": 12.5,
+         "over": 105,
+         "under": -140,
+         "p_over": 45.5,
+         "hold": 7.1,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betmgm",
+         "line": 11.5,
+         "over": -125,
+         "under": -105,
+         "p_over": 52,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "betrivers",
+        "window": {
+         "book": "betrivers",
+         "line": 11.5,
+         "over": -120,
+         "under": -114,
+         "p_over": 50.6,
+         "hold": 7.8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "betrivers",
+         "line": 11.5,
+         "over": -118,
+         "under": -115,
+         "p_over": 50.3,
+         "hold": 7.6,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 11.5,
+         "over": -125,
+         "under": -105,
+         "p_over": 52,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "bovada",
+         "line": 11.5,
+         "over": -115,
+         "under": -115,
+         "p_over": 50,
+         "hold": 7,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 11.5,
+         "over": -123,
+         "under": -107,
+         "p_over": 51.6,
+         "hold": 6.8,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "draftkings",
+         "line": 11.5,
+         "over": -111,
+         "under": -119,
+         "p_over": 49.2,
+         "hold": 6.9,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "fanduel",
+        "window": {
+         "book": "fanduel",
+         "line": 11.5,
+         "over": -118,
+         "under": -108,
+         "p_over": 51,
+         "hold": 6.1,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "fanduel",
+         "line": 11.5,
+         "over": -106,
+         "under": -120,
+         "p_over": 48.5,
+         "hold": 6,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       },
+       {
+        "book": "williamhill_us",
+        "window": {
+         "book": "williamhill_us",
+         "line": 11.5,
+         "over": -120,
+         "under": -112,
+         "p_over": 50.8,
+         "hold": 7.4,
+         "at": "2026-10-08T19:38:36.915Z"
+        },
+        "close": {
+         "book": "williamhill_us",
+         "line": 11.5,
+         "over": -114,
+         "under": -117,
+         "p_over": 49.7,
+         "hold": 7.2,
+         "at": "2026-10-08T19:38:55.472Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 8.5,
+        "p_over": 77.7,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 9.5,
+        "p_over": 71.2,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 10.5,
+        "p_over": 60.6,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 11.5,
+        "p_over": 49.8,
+        "offers": [
+         {
+          "app": "underdog",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 1
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "underdog",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 1
+         }
+        ]
+       },
+       {
+        "line": 13.5,
+        "p_over": 29.9,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 14.5,
+        "p_over": 19.1,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       "... 2 more"
+      ]
+     },
+     "... 5 more"
+    ]
+   },
+   "market_history": {
+    "label_pref": [
+     "close",
+     "window"
+    ],
+    "props": [
+     {
+      "prop": "points",
+      "games": 20,
+      "over": 7,
+      "under": 13,
+      "avg_diff": -3.1,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": -0.4,
+      "rows": [
+       {
+        "game_date": "2026-06-10",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 27.1,
+        "actual": 24,
+        "diff": -3.1,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-08",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 27.5,
+        "actual": 32,
+        "diff": 4.5,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-06-05",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 27.6,
+        "actual": 29,
+        "diff": 1.4,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-06-03",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 26.8,
+        "actual": 26,
+        "diff": -0.8,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-30",
+        "opp": "@ OKC",
+        "label": "close",
+        "fair": 26.4,
+        "actual": 22,
+        "diff": -4.4,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-28",
+        "opp": "vs OKC",
+        "label": "close",
+        "fair": 28.2,
+        "actual": 28,
+        "diff": -0.2,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "rebounds",
+      "games": 20,
+      "over": 10,
+      "under": 10,
+      "avg_diff": -1.5,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": -0.8,
+      "rows": [
+       {
+        "game_date": "2026-06-10",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 11.1,
+        "actual": 13,
+        "diff": 1.9,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-06-08",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 11.7,
+        "actual": 8,
+        "diff": -3.7,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-05",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 11.9,
+        "actual": 9,
+        "diff": -2.9,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-03",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 11.6,
+        "actual": 12,
+        "diff": 0.4,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-05-30",
+        "opp": "@ OKC",
+        "label": "close",
+        "fair": 12.7,
+        "actual": 7,
+        "diff": -5.7,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-28",
+        "opp": "vs OKC",
+        "label": "close",
+        "fair": 12.5,
+        "actual": 10,
+        "diff": -2.5,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "assists",
+      "games": 20,
+      "over": 5,
+      "under": 13,
+      "avg_diff": -0.3,
+      "l5_over": 1,
+      "l5_games": 5,
+      "line_trend": 0.1,
+      "rows": [
+       {
+        "game_date": "2026-06-10",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 3.2,
+        "actual": 1,
+        "diff": -2.2,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-08",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 3,
+        "actual": 6,
+        "diff": 3,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-06-05",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 3.1,
+        "actual": 2,
+        "diff": -1.1,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-03",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 3,
+        "actual": 2,
+        "diff": -1,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-30",
+        "opp": "@ OKC",
+        "label": "close",
+        "fair": 3.1,
+        "actual": 2,
+        "diff": -1.1,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-28",
+        "opp": "vs OKC",
+        "label": "close",
+        "fair": 3.2,
+        "actual": 2,
+        "diff": -1.2,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "threes_made",
+      "games": 20,
+      "over": 7,
+      "under": 10,
+      "avg_diff": -0.3,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": -0.2,
+      "rows": [
+       {
+        "game_date": "2026-06-10",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 1.9,
+        "actual": 2,
+        "diff": 0.1,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-06-08",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 2,
+        "actual": 2,
+        "diff": 0,
+        "result": "Push"
+       },
+       {
+        "game_date": "2026-06-05",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 2,
+        "actual": 2,
+        "diff": 0,
+        "result": "Push"
+       },
+       {
+        "game_date": "2026-06-03",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 2,
+        "actual": 2,
+        "diff": 0,
+        "result": "Push"
+       },
+       {
+        "game_date": "2026-05-30",
+        "opp": "@ OKC",
+        "label": "close",
+        "fair": 1.9,
+        "actual": 3,
+        "diff": 1.1,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-05-28",
+        "opp": "vs OKC",
+        "label": "close",
+        "fair": 1.8,
+        "actual": 4,
+        "diff": 2.2,
+        "result": "Over"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "pra",
+      "games": 20,
+      "over": 7,
+      "under": 13,
+      "avg_diff": -5.4,
+      "l5_over": 1,
+      "l5_games": 5,
+      "line_trend": -1.2,
+      "rows": [
+       {
+        "game_date": "2026-06-10",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 41.7,
+        "actual": 38,
+        "diff": -3.7,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-08",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 42.5,
+        "actual": 46,
+        "diff": 3.5,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-06-05",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 43.4,
+        "actual": 40,
+        "diff": -3.4,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-03",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 41.9,
+        "actual": 40,
+        "diff": -1.9,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-30",
+        "opp": "@ OKC",
+        "label": "close",
+        "fair": 42.6,
+        "actual": 31,
+        "diff": -11.6,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-28",
+        "opp": "vs OKC",
+        "label": "close",
+        "fair": 44.7,
+        "actual": 40,
+        "diff": -4.7,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "pts_reb",
+      "games": 20,
+      "over": 6,
+      "under": 14,
+      "avg_diff": -4.8,
+      "l5_over": 1,
+      "l5_games": 5,
+      "line_trend": -1.3,
+      "rows": [
+       {
+        "game_date": "2026-06-10",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 38.2,
+        "actual": 37,
+        "diff": -1.2,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-08",
+        "opp": "@ NYK",
+        "label": "close",
+        "fair": 39.5,
+        "actual": 40,
+        "diff": 0.5,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-06-05",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 39.9,
+        "actual": 38,
+        "diff": -1.9,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-06-03",
+        "opp": "vs NYK",
+        "label": "close",
+        "fair": 38.3,
+        "actual": 38,
+        "diff": -0.3,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-30",
+        "opp": "@ OKC",
+        "label": "close",
+        "fair": 39.3,
+        "actual": 29,
+        "diff": -10.3,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-05-28",
+        "opp": "vs OKC",
+        "label": "close",
+        "fair": 40.9,
+        "actual": 38,
+        "diff": -2.9,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     "... 5 more"
+    ]
+   },
+   "env": [
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-06-10",
+     "matchup": "SAS @ NYK",
+     "wl": "L",
+     "min": 43.9,
+     "pts": 24,
+     "reb": 13,
+     "ast": 1,
+     "fg3m": 2,
+     "stl": 0,
+     "blk": 3,
+     "tov": 0,
+     "pf": 1,
+     "fga": 25,
+     "fta": 7,
+     "team_pts": 106,
+     "margin": -1,
+     "opp_pts": 107,
+     "spread": 2,
+     "total": 216.5
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-06-08",
+     "matchup": "SAS @ NYK",
+     "wl": "W",
+     "min": 38.7,
+     "pts": 32,
+     "reb": 8,
+     "ast": 6,
+     "fg3m": 2,
+     "stl": 2,
+     "blk": 3,
+     "tov": 1,
+     "pf": 3,
+     "fga": 18,
+     "fta": 9,
+     "team_pts": 115,
+     "margin": 4,
+     "opp_pts": 111,
+     "spread": 2,
+     "total": 215.5
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-06-05",
+     "matchup": "SAS vs. NYK",
+     "wl": "L",
+     "min": 40.3,
+     "pts": 29,
+     "reb": 9,
+     "ast": 2,
+     "fg3m": 2,
+     "stl": 2,
+     "blk": 4,
+     "tov": 4,
+     "pf": 2,
+     "fga": 21,
+     "fta": 8,
+     "team_pts": 104,
+     "margin": -1,
+     "opp_pts": 105,
+     "spread": -6.5,
+     "total": 217.5
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-06-03",
+     "matchup": "SAS vs. NYK",
+     "wl": "L",
+     "min": 37.8,
+     "pts": 26,
+     "reb": 12,
+     "ast": 2,
+     "fg3m": 2,
+     "stl": 1,
+     "blk": 3,
+     "tov": 6,
+     "pf": 2,
+     "fga": 21,
+     "fta": 13,
+     "team_pts": 95,
+     "margin": -10,
+     "opp_pts": 105,
+     "spread": -5,
+     "total": 217
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-05-30",
+     "matchup": "SAS @ OKC",
+     "wl": "W",
+     "min": 41.9,
+     "pts": 22,
+     "reb": 7,
+     "ast": 2,
+     "fg3m": 3,
+     "stl": 1,
+     "blk": 1,
+     "tov": 1,
+     "pf": 5,
+     "fga": 15,
+     "fta": 7,
+     "team_pts": 111,
+     "margin": 8,
+     "opp_pts": 103,
+     "spread": 3.5,
+     "total": 212.5
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-05-28",
+     "matchup": "SAS vs. OKC",
+     "wl": "W",
+     "min": 28.4,
+     "pts": 28,
+     "reb": 10,
+     "ast": 2,
+     "fg3m": 4,
+     "stl": 2,
+     "blk": 3,
+     "tov": 3,
+     "pf": 0,
+     "fga": 21,
+     "fta": 4,
+     "team_pts": 118,
+     "margin": 27,
+     "opp_pts": 91,
+     "spread": -3.5,
+     "total": 219
+    },
+    "... 94 more"
+   ],
+   "tonight_script": {
+    "spread": -5.5,
+    "total": 216,
+    "expected_margin": 5.5,
+    "margin_sd": 12,
+    "blowout_margin": 15,
+    "p_win": 67.7,
+    "p_win_by_blowout": 21.4,
+    "p_lose_by_blowout": 4.4,
+    "p_blowout": 25.8,
+    "team_implied": 110.8
+   },
+   "availability": {
+    "season": "2025-26",
+    "team_games": 104,
+    "played": 85,
+    "missed": 19,
+    "current_out_streak": 0,
+    "current_out_since": null,
+    "absences": [
+     {
+      "from": "2026-01-02",
+      "to": "2026-01-03",
+      "games": 2,
+      "return_date": "2026-01-06"
+     },
+     {
+      "from": "2025-11-16",
+      "to": "2025-12-10",
+      "games": 12,
+      "return_date": "2025-12-13"
+     }
+    ],
+    "ramp": {
+     "return_date": "2026-01-06",
+     "games_missed": 2,
+     "games_since_return": 64,
+     "since_return": [
+      {
+       "game_date": "2026-01-06",
+       "min": 21,
+       "pts": 30,
+       "reb": 5,
+       "ast": 3
+      },
+      {
+       "game_date": "2026-01-07",
+       "min": 26,
+       "pts": 16,
+       "reb": 14,
+       "ast": 2
+      },
+      {
+       "game_date": "2026-01-10",
+       "min": 26.4,
+       "pts": 21,
+       "reb": 6,
+       "ast": 1
+      },
+      {
+       "game_date": "2026-01-11",
+       "min": 27,
+       "pts": 29,
+       "reb": 7,
+       "ast": 1
+      },
+      {
+       "game_date": "2026-01-13",
+       "min": 27.7,
+       "pts": 17,
+       "reb": 7,
+       "ast": 1
+      }
+     ],
+     "min_since_return": 30.5,
+     "min_before_absence": 29.8,
+     "pts_since_return": 24.9,
+     "pts_before_absence": 24.3
+    }
+   },
+   "travel": [
+    {
+     "team_id": "nba_1610612759",
+     "team": "SAS",
+     "is_home": true,
+     "last_game": "2026-06-10",
+     "last_site": "NYK",
+     "rest_days": 2,
+     "miles_to_tonight": 1580,
+     "tz_change_hours": -1,
+     "tonight_tz": "America/Chicago",
+     "tonight_elev_ft": 650,
+     "high_altitude": false,
+     "road_trip_game": null,
+     "home_stand_game": 1,
+     "games_last_week": 3,
+     "miles_last_week": 3160,
+     "recent_path": [
+      {
+       "date": "2026-05-30",
+       "site": "OKC",
+       "away": true,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-03",
+       "site": "SAS",
+       "away": false,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-05",
+       "site": "SAS",
+       "away": false,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-08",
+       "site": "NYK",
+       "away": true,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-10",
+       "site": "NYK",
+       "away": true,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-13",
+       "site": "SAS",
+       "away": false,
+       "tonight": true
+      }
+     ]
+    },
+    {
+     "team_id": "nba_1610612752",
+     "team": "NYK",
+     "is_home": false,
+     "last_game": "2026-06-10",
+     "last_site": "NYK",
+     "rest_days": 2,
+     "miles_to_tonight": 1580,
+     "tz_change_hours": -1,
+     "tonight_tz": "America/Chicago",
+     "tonight_elev_ft": 650,
+     "high_altitude": false,
+     "road_trip_game": 1,
+     "home_stand_game": null,
+     "games_last_week": 3,
+     "miles_last_week": 3160,
+     "recent_path": [
+      {
+       "date": "2026-05-25",
+       "site": "CLE",
+       "away": true,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-03",
+       "site": "SAS",
+       "away": true,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-05",
+       "site": "SAS",
+       "away": true,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-08",
+       "site": "NYK",
+       "away": false,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-10",
+       "site": "NYK",
+       "away": false,
+       "tonight": false
+      },
+      {
+       "date": "2026-06-13",
+       "site": "SAS",
+       "away": true,
+       "tonight": true
+      }
+     ]
+    }
+   ],
+   "opp_defenders": {
+    "season": "2025-26",
+    "darko_updated": "2026-10-12",
+    "rows": [
+     {
+      "player_id": "nba_1628969",
+      "name": "Mikal Bridges",
+      "position": "G-F",
+      "height_inches": 78,
+      "weight_lbs": 209,
+      "gp": 82,
+      "min": 32.8,
+      "stl": 1.3,
+      "blk": 0.8,
+      "pf": 2,
+      "dreb": 2.8,
+      "stl36": 1.4,
+      "blk36": 0.8,
+      "d_dpm": 0,
+      "dpm": 0.5
+     },
+     {
+      "player_id": "nba_1628973",
+      "name": "Jalen Brunson",
+      "position": "G",
+      "height_inches": 74,
+      "weight_lbs": 190,
+      "gp": 74,
+      "min": 35,
+      "stl": 0.8,
+      "blk": 0.1,
+      "pf": 2.3,
+      "dreb": 2.9,
+      "stl36": 0.8,
+      "blk36": 0.1,
+      "d_dpm": -1,
+      "dpm": 3.4
+     },
+     {
+      "player_id": "nba_1626157",
+      "name": "Karl-Anthony Towns",
+      "position": "C-F",
+      "height_inches": 84,
+      "weight_lbs": 248,
+      "gp": 75,
+      "min": 31,
+      "stl": 0.9,
+      "blk": 0.5,
+      "pf": 3.4,
+      "dreb": 8.7,
+      "stl36": 1,
+      "blk36": 0.6,
+      "d_dpm": 1.2,
+      "dpm": 3.6
+     },
+     {
+      "player_id": "nba_1628384",
+      "name": "OG Anunoby",
+      "position": "F-G",
+      "height_inches": 79,
+      "weight_lbs": 240,
+      "gp": 67,
+      "min": 33.2,
+      "stl": 1.6,
+      "blk": 0.7,
+      "pf": 2.4,
+      "dreb": 4,
+      "stl36": 1.7,
+      "blk36": 0.8,
+      "d_dpm": 1.8,
+      "dpm": 3.6
+     },
+     {
+      "player_id": "nba_1628404",
+      "name": "Josh Hart",
+      "position": "G",
+      "height_inches": 77,
+      "weight_lbs": 215,
+      "gp": 66,
+      "min": 30.2,
+      "stl": 1.1,
+      "blk": 0.3,
+      "pf": 2.5,
+      "dreb": 6,
+      "stl36": 1.4,
+      "blk36": 0.3,
+      "d_dpm": 0.6,
+      "dpm": 0.5
+     },
+     {
+      "player_id": "nba_203903",
+      "name": "Jordan Clarkson",
+      "position": "G",
+      "height_inches": 77,
+      "weight_lbs": 194,
+      "gp": 72,
+      "min": 17.8,
+      "stl": 0.4,
+      "blk": 0.1,
+      "pf": 1.7,
+      "dreb": 0.9,
+      "stl36": 0.8,
+      "blk36": 0.3,
+      "d_dpm": -0.9,
+      "dpm": -1.7
+     },
+     "... 2 more"
+    ]
+   },
+   "teammate_corr": {
+    "season": "2025-26",
+    "min_games": 10,
+    "rows": [
+     {
+      "player_id": "nba_1628368",
+      "name": "De'Aaron Fox",
+      "games": 54,
+      "min": 30.5,
+      "r_pts_pts": 0.159,
+      "r_reb_reb": 0.015,
+      "r_ast_pts": -0.094,
+      "r_pts_ast": 0.173,
+      "r_pra_pra": 0.159,
+      "r_3pm_3pm": 0.178
+     },
+     {
+      "player_id": "nba_1630170",
+      "name": "Devin Vassell",
+      "games": 51,
+      "min": 30.2,
+      "r_pts_pts": -0.344,
+      "r_reb_reb": -0.16,
+      "r_ast_pts": 0.032,
+      "r_pts_ast": -0.051,
+      "r_pra_pra": -0.296,
+      "r_3pm_3pm": -0.288
+     },
+     {
+      "player_id": "nba_1642264",
+      "name": "Stephon Castle",
+      "games": 60,
+      "min": 30.1,
+      "r_pts_pts": -0.167,
+      "r_reb_reb": 0.138,
+      "r_ast_pts": 0.166,
+      "r_pts_ast": 0.067,
+      "r_pra_pra": 0.042,
+      "r_3pm_3pm": -0.033
+     },
+     {
+      "player_id": "nba_1630577",
+      "name": "Julian Champagnie",
+      "games": 64,
+      "min": 27.2,
+      "r_pts_pts": -0.058,
+      "r_reb_reb": -0.348,
+      "r_ast_pts": -0.083,
+      "r_pts_ast": -0.022,
+      "r_pra_pra": -0.158,
+      "r_3pm_3pm": -0.023
+     },
+     {
+      "player_id": "nba_203084",
+      "name": "Harrison Barnes",
+      "games": 59,
+      "min": 24.4,
+      "r_pts_pts": -0.081,
+      "r_reb_reb": -0.077,
+      "r_ast_pts": 0.115,
+      "r_pts_ast": -0.065,
+      "r_pra_pra": -0.036,
+      "r_3pm_3pm": -0.084
+     },
+     {
+      "player_id": "nba_1629640",
+      "name": "Keldon Johnson",
+      "games": 64,
+      "min": 22.9,
+      "r_pts_pts": -0.05,
+      "r_reb_reb": -0.099,
+      "r_ast_pts": 0.047,
+      "r_pts_ast": 0.044,
+      "r_pra_pra": -0.051,
+      "r_3pm_3pm": -0.096
+     },
+     "... 2 more"
+    ]
+   },
+   "names": [
+    "Victor Wembanyama"
+   ],
+   "config": {
+    "blowout_margin": 15,
+    "margin_sd": 12,
+    "big_favorite_spread": 8,
+    "proj_minutes_window": 10,
+    "proj_rate_weights": {
+     "last10": 0.5,
+     "season": 0.5
+    },
+    "form_z_window": 5,
+    "foul_trouble_pf": 5,
+    "corr_min_games": 10
+   },
+   "errors": []
+  }
+ },
+ "raw_context": {}
+}

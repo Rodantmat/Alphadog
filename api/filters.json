@@ -1,0 +1,183 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.7",
+ "route": "/api/main-board/filters",
+ "slate": {
+  "date": "2026-06-13",
+  "today": "2026-10-16",
+  "mode": "replay",
+  "latest_scored": "2026-06-13",
+  "next_slate": "2026-10-20",
+  "first_tip_today": null,
+  "requested": null
+ },
+ "source_table": "nba_score.board_scored",
+ "summary": {
+  "total_rows": 1033,
+  "max_hp": 77.1,
+  "min_hp": 8.2,
+  "max_score": 86.3,
+  "min_score": 25.8,
+  "max_certainty": 97.4,
+  "min_certainty": 89.4
+ },
+ "prop_groups": {
+  "hitter": [
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "points",
+    "label": "Points",
+    "rows": 195
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "rebounds",
+    "label": "Rebounds",
+    "rows": 137
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "assists",
+    "label": "Assists",
+    "rows": 93
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "threes_made",
+    "label": "3-PT Made",
+    "rows": 94
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "blocks",
+    "label": "Blocks",
+    "rows": 0,
+    "documented": true
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "steals",
+    "label": "Steals",
+    "rows": 0,
+    "documented": true
+   },
+   "... 1 more"
+  ],
+  "pitcher": [
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "pts_reb",
+    "label": "Pts+Rebs",
+    "rows": 114
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "pts_ast",
+    "label": "Pts+Asts",
+    "rows": 113
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "reb_ast",
+    "label": "Rebs+Asts",
+    "rows": 117
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "pra",
+    "label": "Pts+Rebs+Asts",
+    "rows": 148
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "stocks",
+    "label": "Blks+Stls",
+    "rows": 16
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "fantasy_score",
+    "label": "Fantasy Score",
+    "rows": 0,
+    "documented": true
+   }
+  ],
+  "other": []
+ },
+ "prop_group_labels": {
+  "hitter": "Single Stat Props",
+  "pitcher": "Combo Props"
+ },
+ "source_groups": {
+  "prizepicks": [
+   {
+    "source_key": "prizepicks",
+    "line_type": "goblin",
+    "label": "Goblin",
+    "line_type_label": "Goblin",
+    "app_line_label": "PrizePicks \u2022 Goblin",
+    "rows": 298
+   },
+   {
+    "source_key": "prizepicks",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "PrizePicks \u2022 Regular",
+    "rows": 172
+   },
+   {
+    "source_key": "prizepicks",
+    "line_type": "demon",
+    "label": "Demon",
+    "line_type_label": "Demon",
+    "app_line_label": "PrizePicks \u2022 Demon",
+    "rows": 385
+   }
+  ],
+  "sleeper": [
+   {
+    "source_key": "sleeper",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "Sleeper \u2022 Regular",
+    "rows": 0,
+    "documented": true
+   }
+  ],
+  "underdog": [
+   {
+    "source_key": "underdog",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "Underdog \u2022 Regular",
+    "rows": 52
+   },
+   {
+    "source_key": "underdog",
+    "line_type": "higher_payout",
+    "label": "Higher Payout",
+    "line_type_label": "Higher Payout",
+    "app_line_label": "Underdog \u2022 Higher Payout",
+    "rows": 63
+   },
+   {
+    "source_key": "underdog",
+    "line_type": "lower_payout",
+    "label": "Lower Payout",
+    "line_type_label": "Lower Payout",
+    "app_line_label": "Underdog \u2022 Lower Payout",
+    "rows": 63
+   }
+  ],
+  "other": []
+ },
+ "probability_bands": [],
+ "probability_grades": [],
+ "board_tiers": [],
+ "writes_performed": 0,
+ "timestamp_utc": "2026-10-17T00:35:13.522Z"
+}

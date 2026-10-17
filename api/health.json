@@ -1,0 +1,169 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.7",
+ "route": "/api/main-board/health",
+ "slate": {
+  "date": "2026-06-13",
+  "today": "2026-10-16",
+  "mode": "replay",
+  "latest_scored": "2026-06-13",
+  "next_slate": "2026-10-20",
+  "first_tip_today": null,
+  "requested": null
+ },
+ "overall_status": "yellow",
+ "generated_at": "2026-10-17T00:36:27.120Z",
+ "total_board_players": 36,
+ "total_board_games": 1,
+ "layers": [
+  {
+   "key": "P2A",
+   "label": "P2A - Results & stats (box scores, grading)",
+   "status": "green",
+   "last_update": "2026-10-16 \u2022 success \u2022 2026-10-16 10:41 UTC",
+   "window_note": "Daily ~03:30 PT: prior-night box scores, grading, stats refresh.",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 1,
+     "expected": 1,
+     "unit": "success",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-16",
+    "status": "success"
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "P2B",
+   "label": "P2B - Slate model (baseline, injuries, crews, morning line)",
+   "status": "green",
+   "last_update": "2026-10-16 \u2022 success \u2022 2026-10-16 15:10 UTC",
+   "window_note": "No slate today - P2B is optional.",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 1,
+     "expected": null,
+     "unit": "success",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-16",
+    "status": "success"
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "P3",
+   "label": "P3 - Board capture, scoring & engine picks",
+   "status": "green",
+   "last_update": "2026-10-16 \u2022 success \u2022 2026-10-16 20:22 UTC",
+   "window_note": "No slate today.",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 1,
+     "expected": null,
+     "unit": "success",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-16",
+    "status": "success"
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "P1",
+   "label": "P1 - Weekly static refresh",
+   "status": "green",
+   "last_update": "2026-10-12 \u2022 failure/skipped \u2022 2026-10-12 19:31 UTC",
+   "window_note": "Mondays 12:00 PT: rosters, profiles, tracking, ratings.",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 0,
+     "expected": null,
+     "unit": "not run today",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-12",
+    "status": "failure/skipped"
+   },
+   "rerun_action": {
+    "target": "P1",
+    "mode": "dispatch",
+    "label": "Start P1 now (run-once guarded)"
+   }
+  },
+  {
+   "key": "board",
+   "label": "Scored Board (2026-06-13, replay)",
+   "status": "yellow",
+   "last_update": "2026-10-09 04:04 UTC",
+   "window_note": "No scored board for today (2026-10-16) - the screen replays the latest scored slate.",
+   "metrics": [
+    {
+     "label": "prizepicks legs",
+     "covered": 855,
+     "expected": null,
+     "unit": "legs",
+     "note": "18 players"
+    },
+    {
+     "label": "underdog legs",
+     "covered": 178,
+     "expected": null,
+     "unit": "legs",
+     "note": "18 players"
+    },
+    {
+     "label": "sleeper legs",
+     "covered": 0,
+     "expected": null,
+     "unit": "legs",
+     "note": "no legs scored for this app on this slate"
+    }
+   ],
+   "totals": {
+    "legs": 1033
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "capture",
+   "label": "DFS Board Capture (2026-10-16)",
+   "status": "yellow",
+   "last_update": "2026-10-16 20:20 UTC",
+   "window_note": "Latest capture on or before today, per app and snapshot label (routine / window / close).",
+   "metrics": [
+    {
+     "label": "sleeper \u2022 window",
+     "covered": 210,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-16 20:20 UTC"
+    },
+    {
+     "label": "underdog \u2022 window",
+     "covered": 140,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-16 20:20 UTC"
+    }
+   ],
+   "totals": null,
+   "rerun_action": null
+  },
+  "... 3 more"
+ ]
+}
