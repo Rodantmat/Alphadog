@@ -177,7 +177,8 @@ function riskFor(map, name) {
 
 async function engineSlips(sql, cfg, slate) {
   // streak_note via to_jsonb: the column is added by the engine's next run (2026-10-17) - reading it this way never breaks the screen
-  const pp = await q(sql, `SELECT strategy, k, legs_json, size, structure, status, stake_weight, hits, payout, to_jsonb(s) ->> 'streak_note' AS streak_note
+  const pp = await q(sql, `SELECT strategy, k, legs_json, size, structure, status, stake_weight, hits, payout, to_jsonb(s) ->> 'streak_note' AS streak_note,
+                                  to_jsonb(s) ->> 'unit_usd' AS unit_usd
                            FROM nba_score.live_slips s WHERE game_date = $1::date AND status NOT IN ('dup') ORDER BY strategy, k`, [slate.date]);
   const ud = await q(sql, `SELECT portfolio, composition, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.ud_live_slips WHERE game_date = $1::date ORDER BY portfolio, composition, size, k`, [slate.date]);
   return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })) };
