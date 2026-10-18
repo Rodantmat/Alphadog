@@ -62,9 +62,11 @@ def main():
         skip = defaultdict(lambda: [0, 0.0, 0.0])
         for d, strat, status, w, pay, size in rows:
             if status in ("graded", "graded_void", "graded_week2"):   # the statuses the screen says PLAY for
-                a = play[d.strftime("%Y-%m")]
-                a[0] += 1; a[1] += unit; a[2] += unit * float(pay or 0)
-                t = play["TOTAL"]; t[0] += 1; t[1] += unit; t[2] += unit * float(pay or 0)
+                # the stake actually placed is unit x stake_weight (2026-10-17: the streak flags halve stakes; at a 1-dollar unit every
+                # PLAY slip has weight 1 - a half weight is below the minimum and is recorded below_min - so earlier ledgers are equal)
+                a = play[d.strftime("%Y-%m")]; ws = unit * float(w)
+                a[0] += 1; a[1] += ws; a[2] += ws * float(pay or 0)
+                t = play["TOTAL"]; t[0] += 1; t[1] += ws; t[2] += ws * float(pay or 0)
             else:
                 a = skip[status]; a[0] += 1; a[1] += unit; a[2] += unit * float(pay or 0)
         print(f"\n== THE PLAY LEDGER at ${unit:.2f} per slip, {d0} .. {d1} (what the screen would have said PLAY for) ==", flush=True)
