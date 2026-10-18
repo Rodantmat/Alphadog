@@ -54,7 +54,7 @@ export function formWindows(games, seasonGames) {
       metric_window: key, games_count: l.length, min: avg(l, "min"), pts: avg(l, "pts"), reb: avg(l, "reb"), ast: avg(l, "ast"), fg3m: avg(l, "fg3m"),
       stl: avg(l, "stl"), blk: avg(l, "blk"), tov: avg(l, "tov"), pra: l.length ? r1(l.reduce((s, g) => s + num(g.pts, 0) + num(g.reb, 0) + num(g.ast, 0), 0) / l.length) : null,
       fg_pct: pct(l, "fgm", "fga"), fg3_pct: pct(l, "fg3m", "fg3a"), ft_pct: pct(l, "ftm", "fta"), plus_minus: avg(l, "plus_minus"),
-      starts: l.filter(g => g.is_starter === 1).length
+      starts: l.filter(g => g.is_starter === 1).length, playoff_games: l.filter(g => g.phase === "Playoffs").length
     };
   };
   const p = played(games);
