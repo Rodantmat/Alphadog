@@ -266,6 +266,13 @@ def api_checks(conn, cfg):
         check("C13 Slips screen (replay): unmatched legs are disclosed, the rest matched", disclosed, f"{len(nolegs)} slips with an unscored leg of {len(sl)}; {nleg} legs")
     else:
         check("C13 Slips screen: every slip leg matched to its board leg", not nolegs, nolegs[:3])
+    # C55 (2026-10-17, owner saw "craigporter ... 0%" and a blank result on a 9.0 line that landed on 9): every leg shows a real
+    # name (the Underdog backtest stores a normalised key), a graded slip marks each leg HIT / MISS / PUSH, and its push count adds up
+    rawname = [l.get("player_name") for s in sl for l in s["legs"] if " " not in str(l.get("player_name") or "")]
+    badres = [(s.get("track_label"), l.get("player_name")) for s in sl if s.get("result") for l in s["legs"] if l.get("result_hit") is None and not l.get("result_push")]
+    badpush = [s.get("track_label") for s in sl if s.get("result") and int(s["result"].get("pushes") or 0) != sum(1 for l in s["legs"] if l.get("result_push"))]
+    check("C55 slip legs: display names, every graded leg HIT / MISS / PUSH, push count consistent", not rawname and not badres and not badpush,
+          f"raw names {rawname[:3]} unresolved {badres[:3]} push mismatch {badpush[:3]}")
     # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
     bp = cfg["backup_pool"]
     sd = (hh.get("slate") or {}).get("date")
