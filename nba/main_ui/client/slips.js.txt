@@ -394,7 +394,7 @@ async function setStakeUnit(){
 }
 async function highHitSlips(){
   const results=$('autoCreateResults');
-  if(results&&!results._stakeUnitBound){results._stakeUnitBound=true;results.addEventListener('click',e=>{if(e.target&&e.target.id==='stakeUnitBtn')setStakeUnit()})}
+  if(results&&!results._stakeUnitBound){results._stakeUnitBound=true;results.addEventListener('click',e=>{if(e.target&&e.target.id==='stakeUnitBtn')setStakeUnit();if(e.target&&e.target.id==='stakeAutoBtn')setStakeAuto()})}
   results.innerHTML='<div class="empty">Loading the engines&#39; slips for the slate...</div>';
   try{
     const j=await (await fetch('/api/slips/high-hit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
