@@ -126,7 +126,7 @@ def main():
             if not save.replace("_", "").isalnum() or not save.islower():
                 raise SystemExit(f"bad AR_SAVE label {save!r}")
             sl = conn.execute("""SELECT game_date, strategy, k, legs_json::text, size, structure, status, hits, payout, profit,
-                                        coalesce(stake_weight, 1), streak_note FROM nba_score.live_slips WHERE status LIKE 'graded%%'""").fetchall()
+                                        coalesce(stake_weight, 1), streak_note, unit_usd FROM nba_score.live_slips WHERE status LIKE 'graded%%'""").fetchall()
             sh = conn.execute("""SELECT game_date, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak,
                                         hurdles::text FROM nba_score.live_state_history""").fetchall()
             with psycopg.connect(os.environ["DATABASE_URL"]) as w:
