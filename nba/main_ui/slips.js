@@ -512,14 +512,15 @@ async function unitAutoStatus(sql, su) {
 // need to be bugging you"). One number, written to classification_config['stake_unit'].unit_usd; the next pick (live engine) and
 // this screen read it. Bounded: never below the apps' minimum entry, never above 1000.
 export async function apiStakeUnit(sql, body, version) {
-  const rows = await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'");
+  // 2026-10-18: read with now() (a volatile function - Hyperdrive never serves it from its query cache) and write with RETURNING;
+  // a second identical SELECT after an UPDATE came back from the cache with the OLD config (UI test C51, run 39123112709)
+  const rows = await q(sql, "SELECT config_json, now() AS read_at FROM nba_config.classification_config WHERE config_key = 'stake_unit'");
   const cur = rows[0] ? (typeof rows[0].config_json === "string" ? JSON.parse(rows[0].config_json) : rows[0].config_json) : {};
   if (body == null) return { ok: true, version, route: "/api/stake-unit", stake_unit: { ...cur, auto_status: await unitAutoStatus(sql, cur) } };
   // 2026-10-18: {auto: true | false} turns earn-the-raise on / off; a hand-set unit turns it off (the owner's number wins until Auto)
   if (body.auto === true || body.auto === false) {
     if (!cur.auto) return { status: 400, body: { ok: false, version, error: "no auto block in stake_unit", stake_unit: cur } };
-    await q(sql, "UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{auto,enabled}', to_jsonb($1::boolean)) WHERE config_key = 'stake_unit'", [body.auto]);
-    const af = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
+    const af = (await q(sql, "UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{auto,enabled}', to_jsonb($1::boolean)) WHERE config_key = 'stake_unit' RETURNING config_json", [body.auto]))[0];
     const nf = typeof af.config_json === "string" ? JSON.parse(af.config_json) : af.config_json;
     return { ok: true, version, route: "/api/stake-unit", stake_unit: { ...nf, auto_status: await unitAutoStatus(sql, nf) } };
   }
