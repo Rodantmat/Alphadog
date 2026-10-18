@@ -66,7 +66,8 @@ def main():
             if status in ("graded", "graded_void", "graded_week2"):   # the statuses the screen says PLAY for
                 # the stake actually placed is unit x stake_weight (2026-10-17: the streak flags halve stakes; at a 1-dollar unit every
                 # PLAY slip has weight 1 - a half weight is below the minimum and is recorded below_min - so earlier ledgers are equal)
-                a = play[d.strftime("%Y-%m")]; ws = unit * float(w)
+                # 2026-10-18: with earn-the-raise on, each slip is priced at the unit in force when it was picked
+                a = play[d.strftime("%Y-%m")]; ws = (float(uu) if (auto_on and uu is not None) else unit) * float(w)
                 a[0] += 1; a[1] += ws; a[2] += ws * float(pay or 0)
                 t = play["TOTAL"]; t[0] += 1; t[1] += ws; t[2] += ws * float(pay or 0)
             else:
