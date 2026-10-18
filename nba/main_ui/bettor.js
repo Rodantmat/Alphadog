@@ -41,7 +41,8 @@ export async function perGameDetail(sql, pidT, beforeDate, limit = 100) {
     ORDER BY g.game_date DESC`, [pidT, beforeDate, limit]);
   if (!rows.length) return null;
   const season = rows[0].season;
-  const wins = [["Last 5", rows.slice(0, 5)], ["Last 10", rows.slice(0, 10)], ["Last 20", rows.slice(0, 20)], [`Season ${season}`, rows.filter(r => r.season === season)]];
+  const sRows = rows.filter(r => r.season === season), nPo = sRows.filter(r => r.phase === "Playoffs").length;
+  const wins = [["Last 5", rows.slice(0, 5)], ["Last 10", rows.slice(0, 10)], ["Last 20", rows.slice(0, 20)], [`Season ${season}` + (nPo ? ` (incl. ${nPo} playoff G)` : ""), sRows]];
   const usage = wins.filter(([, g]) => g.length).map(([w, g]) => ({
     window: w, games: g.length, min: r1(mean(g, "min")), usg: p100(mean(g, "usg")), ts: p100(mean(g, "ts")), efg: p100(mean(g, "efg")),
     astp: p100(mean(g, "astp")), rebp: p100(mean(g, "rebp")), orebp: p100(mean(g, "orebp")), drebp: p100(mean(g, "drebp")), pace: r1(mean(g, "pace")),
