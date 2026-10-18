@@ -198,6 +198,10 @@ export async function availabilityRamp(sql, cfg, { pidT, teamId, beforeDate, env
   if (!teamId || !env.length) return null;
   const season = env[0].season;
   const mine = env.filter(g => g.season === season);
+  // no game for this team in that season (joined in the offseason): the team's games are not his absences (2026-10-17)
+  const withTeam = (await q(sql, `SELECT count(*)::int n FROM nba_stats.player_game_log WHERE player_id = $1 AND team_id = $2 AND season = $3 AND game_date < $4::date`,
+    [pidT, teamId, season, beforeDate]))[0];
+  if (!withTeam || !withTeam.n) return null;
   const rows = await q(sql, `
     -- traded this season: count only his current team's games since he joined; otherwise the team's whole season (a season-long absence shows)
     WITH f AS (SELECT CASE WHEN EXISTS (SELECT 1 FROM nba_stats.player_game_log WHERE player_id = $1 AND season = $3 AND team_id <> $2 AND game_date < $4::date)
