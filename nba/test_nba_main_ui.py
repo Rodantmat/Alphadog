@@ -394,7 +394,7 @@ def api_checks(conn, cfg):
         w = 1.0 if s_.get("stake_weight") is None else float(s_["stake_weight"])
         u_ = float(s_["unit_usd"]) if s_.get("unit_usd") is not None else unit   # 2026-10-18: the unit in force when it was picked
         if (usd is not None) != lab.startswith("PLAY") or (usd is not None and abs(float(usd) - round(u_ * w, 2)) > 0.005) \
-           or not (lab.startswith(("PLAY", "SKIP")) or lab == "backtest replay"):
+           or not (lab.startswith(("PLAY", "SKIP", "replay:")) or lab == "backtest replay"):
             bad50.append((s_.get("strategy"), s_.get("status"), lab, usd))
     # Underdog (2026-10-16, "full force since day one"): with stake_unit.ud_play the P5 portfolio says PLAY $ (unit x stake), P4 /
     # stand-down / an edge-monitor ALARM say SKIP; without it every Underdog slip stays 'paper (Underdog engine)'
