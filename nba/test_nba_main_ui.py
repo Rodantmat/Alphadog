@@ -274,6 +274,12 @@ def api_checks(conn, cfg):
     badpush = [s.get("track_label") for s in sl if s.get("result") and int(s["result"].get("pushes") or 0) != sum(1 for l in s["legs"] if l.get("result_push"))]
     check("C55 slip legs: display names, every graded leg HIT / MISS / PUSH, push count consistent", not rawname and not badres and not badpush,
           f"raw names {rawname[:3]} unresolved {badres[:3]} push mismatch {badpush[:3]}")
+    # C56 (2026-10-17, owner: "anything that is test only, do not show on the slip screen, you can record them but as not played"):
+    # no shown slip is a test-only one (shadow / paper / not-staked strategy); the count of recorded test slips is reported
+    testshown = [(s.get("track_label"), s.get("stake_label")) for s in sl
+                 if re.match(r"^(SKIP - shadow|paper|SKIP - strategy |SKIP - not staked)", str(s.get("stake_label") or ""))]
+    check("C56 Slips screen shows no test-only slip (they are recorded as not played)", not testshown and isinstance(hh.get("test_only_recorded"), int),
+          f"shown test-only {testshown[:3]}; recorded and hidden {hh.get('test_only_recorded')}")
     # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
     bp = cfg["backup_pool"]
     sd = (hh.get("slate") or {}).get("date")
