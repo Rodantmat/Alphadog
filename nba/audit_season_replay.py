@@ -84,6 +84,30 @@ def main():
             if last.get(s) != (state, cap):
                 print(f"  {d}  {s:<20} -> {state:<9} cap {cap}", flush=True)
                 last[s] = (state, cap)
+        # STREAK FLAGS (2026-10-17): every ON spell per strategy, with its first and last flagged day and the day it turned off
+        try:
+            fr = conn.execute("SELECT strategy, game_date, flag_on, acted FROM nba_score.live_streak_flags WHERE game_date BETWEEN %s AND %s ORDER BY 1, 2",
+                              (d0, d1)).fetchall()
+        except Exception:  # noqa: BLE001
+            fr = []
+        if fr:
+            print("\n== STREAK FLAGS (ON spells: first flagged day .. last flagged day -> the day it was off again) ==", flush=True)
+            spells = defaultdict(list)
+            cur = {}
+            for strat, d, on, acted in fr:
+                if on and strat not in cur:
+                    cur[strat] = [d, d, acted]
+                elif on:
+                    cur[strat][1] = d
+                elif strat in cur:
+                    a0, a1, ac = cur.pop(strat); spells[strat].append((a0, a1, d, ac))
+            for strat, (a0, a1, ac) in cur.items():
+                spells[strat].append((a0, a1, None, ac))
+            for strat in sorted(spells):
+                days_on = sum(1 for s_, d, on, _ in fr if s_ == strat and on)
+                print(f"  {strat}: {len(spells[strat])} spells, {days_on} flagged slate days ({'acted' if any(x[3] for x in spells[strat]) else 'recorded only'})", flush=True)
+                for a0, a1, off, ac in spells[strat]:
+                    print(f"    ON {a0} .. {a1} -> off {off or 'still on at the end'}", flush=True)
         save = os.environ.get("AR_SAVE", "")
         if save:
             if not save.replace("_", "").isalnum() or not save.islower():
