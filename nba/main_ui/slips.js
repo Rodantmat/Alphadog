@@ -527,8 +527,11 @@ export async function apiStakeUnit(sql, body, version) {
   const min = Number(cur.min_stake_usd || 1);
   if (!Number.isFinite(v) || v < min || v > 1000) return { status: 400, body: { ok: false, version, error: `unit_usd must be between ${min} and 1000`, stake_unit: cur } };
   await q(sql, "UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{unit_usd}', to_jsonb($1::numeric)) WHERE config_key = 'stake_unit'", [v]);
+  if (cur.auto && cur.auto.enabled === true)
+    await q(sql, "UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{auto,enabled}', 'false'::jsonb) WHERE config_key = 'stake_unit'");
   const after = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
-  return { ok: true, version, route: "/api/stake-unit", previous_unit_usd: cur.unit_usd, stake_unit: typeof after.config_json === "string" ? JSON.parse(after.config_json) : after.config_json };
+  const nc = typeof after.config_json === "string" ? JSON.parse(after.config_json) : after.config_json;
+  return { ok: true, version, route: "/api/stake-unit", previous_unit_usd: cur.unit_usd, stake_unit: { ...nc, auto_status: await unitAutoStatus(sql, nc) } };
 }
 
 // ------------------------------------------------------------------ save / recent
