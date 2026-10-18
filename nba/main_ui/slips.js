@@ -381,7 +381,6 @@ export async function apiHighHit(sql, cfg, url, version) {
   }
   // Replay of a slate the certified backtest does not cover (it is regular season only - a playoff replay slate has none):
   // replay the latest slate it does cover instead, and say so. A live slate never falls back - it shows today's or nothing.
-  let fallbackNote = null;
   if (!eng.pp.length && !eng.ud.length && slate.mode === "replay") {
     const sfx = String(eng.suffix || "").replace(/[^a-z0-9_]/gi, "");
     // the latest slate the live plan STAKES: the final 7 days of the regular season are never played (engine H6), so they are skipped
