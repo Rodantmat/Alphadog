@@ -327,6 +327,12 @@ def api_checks(conn, cfg):
     bad59 = [i for i in range(1, len(k59)) if k59[i] < k59[i - 1]]
     check("C59 Slips screen in placing order (Place by earliest first, PLAY before skips at the same time)", not bad59,
           f"{len(sl)} slips; first times {[s.get('place_by_pt') for s in sl[:5]]}; out of order at {bad59[:3]}")
+    # C60 (2026-10-18, owner reviewing the 04-12 replay): a replayed slate is one the live plan plays - never the final 7 days of
+    # the regular season (engine H6 stakes nothing there)
+    if hh.get("source") == "replay_backtest":
+        sd60 = (hh.get("slate") or {}).get("date")
+        f7 = conn.execute("SELECT count(*) FROM nba_score.slip_engine_slips_wo WHERE game_date=%s AND phase='final7'", (sd60,)).fetchone()[0]
+        check("C60 replay slate is one the plan plays (not the final 7 days)", f7 == 0, f"replayed {sd60}; final7 rows {f7}")
     # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
     bp = cfg["backup_pool"]
     sd = (hh.get("slate") or {}).get("date")
