@@ -349,7 +349,7 @@ function backtestLineHtml(s){
   for(const r of (s.strategy_backtest||[]))parts.push(esc(r.season)+' ROI '+(r.roi_pct>0?'+':'')+esc(r.roi_pct)+'% ('+esc(r.slips)+' slips)');
   return '<div class="small" style="margin:0 0 6px;opacity:0.9"><b>Backtest:</b> '+parts.join(' • ')+'</div>';
 }
-function resultTag(leg){if(leg==null||leg.result_hit==null)return '';return leg.result_hit?'<span style="font-size:10px;font-weight:900;color:#7ee787;margin-left:6px">HIT</span>':'<span style="font-size:10px;font-weight:900;color:#ff8a8a;margin-left:6px">MISS</span>'}
+function resultTag(leg){if(leg&&leg.result_push)return '<span style="font-size:10px;font-weight:900;color:#c9d1d9;margin-left:6px">PUSH</span>';if(leg==null||leg.result_hit==null)return '';return leg.result_hit?'<span style="font-size:10px;font-weight:900;color:#7ee787;margin-left:6px">HIT</span>':'<span style="font-size:10px;font-weight:900;color:#ff8a8a;margin-left:6px">MISS</span>'}
 function legRowHtml(leg,slipIdx,legIdx){
   const un=slipUnchecked.get(slipIdx);
   const checked=(un&&un.has(legIdx))?'':' checked';
