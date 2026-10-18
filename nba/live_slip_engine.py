@@ -1118,6 +1118,7 @@ def pick_postseason(conn, day, legs):
             n += 1
             print(f"    {name:<20} {'STAKE ' if st == 'placed_post' else 'SHADOW'} pool {len(cands):>3} | 1 slip "
                   f"(postseason verdict {verdict.get(name, 'none')})", flush=True)
+    conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
     conn.commit()
     staked = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed_post'", (day,)).fetchone()[0]
     print(f"  {day}: POSTSEASON - {n} slips recorded ({staked} staked)", flush=True)
