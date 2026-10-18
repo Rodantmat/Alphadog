@@ -253,6 +253,72 @@ def star_under_weight(slip):
         if th is not None and l['side'] == 'Under' and l['tier'] == 'R' and float(l['line']) >= th:
             return 0.5
     return 1.0
+
+
+# STREAK FLAGS (2026-10-17, owner: "If they survive 2 seasons ... you can build them in. But be sure you have clear the flags when
+# it start and when it stop"). Of everything tested on the cap-2 live-loop replays of BOTH seasons (nba/research_streak_rotation.py,
+# research_streak_signals.py, research_streak_followup.py - runs 39096428349, 39097173249, 39097534794) two day-flags held in both
+# (flagged days vs a random draw of the same number of days, permutation p 0.037 / 0.090 and 0.016 / 0.054):
+#   A_core_3power     ON when its legs hit < 55% over its last 5 played days this season; OFF the first day that is back to 55%+
+#   A_regular_5power  ON after it lost on each of its last 3 played days this season; OFF the day after its first winning day
+# REJECTED (pointed opposite ways between the seasons, or no leg-level mechanism): game total / spread buckets per cell, same-game
+# legs, "an Under leg in a high-total game" (A_regular same sign both seasons at the slip level but its Under legs hit no worse
+# in high totals and the sign flips within equal-Under-count groups), a CUSUM on the other season's leg rate (always on in 2024-25),
+# and the same two flags on the other strategies. Played = graded / graded_void slips; a losing day = summed unit profit <= 0.
+# Computed at pick time from slips graded before the day - known before anything is placed.
+# ACTION while ON: stake x 0.5 (equal budget, flagged days at half: profit up and drawdown down in both seasons). A half stake below
+# the apps' minimum entry keeps the FULL stake - flagged days are still positive (+24% / +1%, +37% / +29%) and skipping them loses
+# money - so at a 1-dollar unit the flag is shown and recorded but changes no stake. Optional shift (research): while A_core is flagged,
+# another strategy builds extra slips (rule keys shift_to / shift_cap).
+# Config: classification_config['streak_rules'] = {"enabled": bool, "rules": {name: {...}}}; env LS_STREAK_RULES=on|off and
+# LS_STREAK_SHIFT=on (replays / research only). Enabled or not, every pick records each rule's state in nba_score.live_streak_flags
+# (date, strategy, on, since, reason, acted, stake_factor) and on the strategy's slips (live_slips.streak_note).
+STREAK_RULES_DEFAULT = {"enabled": False, "rules": {
+    "A_core_3power": {"flag": "leg_hit_below", "days": 5, "below": 0.55, "stake": 0.5},
+    "A_regular_5power": {"flag": "losing_days", "days": 3, "stake": 0.5}}}
+_STREAK_RULES = None
+
+
+def streak_rules(conn):
+    global _STREAK_RULES
+    if _STREAK_RULES is None:
+        cfg = json.loads(json.dumps(STREAK_RULES_DEFAULT))
+        try:
+            row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='streak_rules'").fetchone()
+            if row and row[0]:
+                cfg.update(row[0] if isinstance(row[0], dict) else json.loads(row[0]))
+        except Exception:  # noqa: BLE001
+            pass
+        env = os.environ.get('LS_STREAK_RULES', '').strip().lower()
+        if env in ('on', 'off'):
+            cfg['enabled'] = env == 'on'
+        if os.environ.get('LS_STREAK_SHIFT', '').strip().lower() == 'on':
+            cfg['rules'].setdefault('A_core_3power', {}).update({'shift_to': 'A_wrebounds_4flex', 'shift_cap': 1})
+        _STREAK_RULES = cfg
+    return _STREAK_RULES
+
+
+def streak_flag(conn, day, s0, name, rule):
+    """(on, reason) for one rule on `day`, from the strategy's played slips graded before `day` in this season."""
+    n = int(rule.get('days', 3))
+    rows = conn.execute("""SELECT game_date, sum(profit),
+                                  sum((SELECT count(*) FROM jsonb_array_elements(legs_json) l WHERE l->>'hit' IS NOT NULL)),
+                                  sum((SELECT count(*) FROM jsonb_array_elements(legs_json) l WHERE l->>'hit' = '1'))
+                           FROM nba_score.live_slips WHERE strategy=%s AND status IN ('graded','graded_void')
+                             AND game_date < %s AND game_date >= %s
+                           GROUP BY 1 ORDER BY 1 DESC LIMIT %s""", (name, day, s0 or dt.date(1900, 1, 1), n)).fetchall()
+    rows = list(reversed(rows))
+    if rule.get('flag') == 'losing_days':
+        on = len(rows) >= n and all(float(r[1] or 0) <= 0 for r in rows)
+        days = ", ".join(f"{r[0]} {float(r[1] or 0):+.2f}" for r in rows)
+        return on, (f"ON: lost on each of its last {n} played days ({days}); OFF the day after a winning day" if on
+                    else f"off: last {len(rows)} played days {days or 'none'}; ON after {n} straight losing days")
+    nl = sum(int(r[2] or 0) for r in rows); nh = sum(int(r[3] or 0) for r in rows)
+    below = float(rule.get('below', 0.55))
+    on = bool(rows) and nl > 0 and nh / nl < below
+    rate = f"{nh}/{nl} = {100 * nh / nl:.0f}%" if nl else "no legs"
+    return on, (f"ON: legs {rate} over its last {len(rows)} played days (< {below:.0%}); OFF once that is back to {below:.0%}+" if on
+                else f"off: legs {rate} over its last {len(rows)} played days; ON below {below:.0%}")
 # pass 45: leg filter - steals Unders only at the 0.5 line (65% vs 51% at 1.5, both seasons; the 1.5 line is a coin flip on a
 # ~1.5-steal player, the 0.5 Under is where the model's skill applies). The cushion finding (§29n) from the other side.
 def leg_allowed(l, trail10=None):
