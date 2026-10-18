@@ -3,8 +3,8 @@
   "source": "https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
   "alt_source": "https://api.sleeper.app/lines/available_alt?include_preseason=true",
   "promos_source": "https://api.sleeper.app/lines/promos?enable_one_sided_lines=true",
-  "started_at": "2026-10-18T11:04:00Z",
-  "fetched_at": "2026-10-18T11:04:07Z",
+  "started_at": "2026-10-18T15:52:16Z",
+  "fetched_at": "2026-10-18T15:52:21Z",
   "sport": "mlb",
   "games_mapped": 0,
   "legs_without_game_date": 0,
@@ -19,5 +19,5 @@
   "by_game_status": {},
   "players": 0,
   "multiplier_values": {},
-  "github_run_id": "39121608039"
+  "github_run_id": "39142309800"
 }
