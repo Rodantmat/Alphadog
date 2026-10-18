@@ -319,6 +319,14 @@ def api_checks(conn, cfg):
         bad57 = [f"{s.get('strategy')}:{s.get('k')}" for s in sl if s.get("source_key") == "prizepicks" and (s.get("streak_note") or None) != nb57.get(f"{s.get('strategy')}:{s.get('k')}")]
         check("C57 streak flags on the Slips screen (every recorded flag noted, every slip's streak note shown)", not miss57 and not bad57,
               f"{len(fl57)} flags ({sum(1 for r in fl57 if r[1])} on), missing {miss57}; slip notes differing {bad57[:3]}")
+    # C59 (2026-10-18, owner: "put in placing order, so the right times ones first"): the slips are listed by Place by, earliest
+    # first (a slip without a Place by only after every timed one); at the same time PLAY before the skips
+    def _k59(s):
+        return (s.get("place_by_utc") is None, str(s.get("place_by_utc") or ""), 0 if s.get("play_usd") is not None else 1)
+    k59 = [_k59(s) for s in sl]
+    bad59 = [i for i in range(1, len(k59)) if k59[i] < k59[i - 1]]
+    check("C59 Slips screen in placing order (Place by earliest first, PLAY before skips at the same time)", not bad59,
+          f"{len(sl)} slips; first times {[s.get('place_by_pt') for s in sl[:5]]}; out of order at {bad59[:3]}")
     # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
     bp = cfg["backup_pool"]
     sd = (hh.get("slate") or {}).get("date")
