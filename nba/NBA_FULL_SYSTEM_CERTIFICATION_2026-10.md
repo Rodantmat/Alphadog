@@ -2198,3 +2198,20 @@ paper are recorded as not played and not shown; the screen says how many were re
 by VERSION - two nba/main_ui changes (the test-only filter, the replay label) sat undeployed until VERSION was bumped. New test
 **C0b**: deployed VERSION == repo, every served client part byte-equal to the repo, no nba/main_ui commit after the last VERSION
 bump. UI end-to-end **101/101** (run 39089117795).
+
+### LOSING STREAKS - IDENTIFY, PREVENT, ADJUST, ROTATE (owner 2026-10-17 21:04 / 21:13 PT: "deeply analyzing the loosing steaks, can it be identified? Preventable? Adjustable?"; "find positive strategies to runs instead during these streaks, but it need to be identified, so we now when to do so, instead of guessing")
+Data: the live-loop replays at caps 2 (s2526_cap2 / s2425_cap2), top three strategies.
+**Chance or regime?** Permutation of each strategy's day order (10,000x): A_regular_5power (wins 10-12% of slips; losing runs of
+21-27 days) and A_wrebounds_4flex streaks are ordinary luck (max drawdown p 0.10-0.65, 0.09-0.32). A_core_3power clusters
+beyond chance in BOTH seasons (max drawdown p 0.02 / 0.04) - a real regime (its legs are steals / turnovers Unders).
+**Signals known before placing** (12 tested on three strategies; kept only those that point the same way in both seasons):
+A_core_3power when its legs hit < 55% over its last 5 days (24 / 39 flagged days): +24% / +1% vs +127% / +66% on other days
+(permutation p 0.03 / 0.08). A_regular_5power after 3 straight losing days (75 / 79 days): +37% / +29% vs +229% / +158% (p 0.02
+/ 0.06). A_wrebounds: none (it rebounds after bad stretches). Flagged days are still positive - skipping them gives up profit.
+**Adjust (equal budget, flagged days at half stake, the rest scaled up):** A_regular profit +249 -> +323 / +172 -> +221, drawdown
+47 -> 38 / 33 -> 29; A_core +268 -> +288 / +123 -> +141, drawdown 24 -> 19 / 38 -> 34. Better in both seasons.
+**Rotate (nba/research_streak_rotation.py, run 39096428349):** on A_core's flagged days the existing A_wrebounds_4flex returned
++82% / +62% vs A_core +58% / +19% (same backtest basis) - better in both seasons; R_stocks_4power (today's drought rotation
+strategy) was negative on these days in both (-10% / -42%). An open search over every slip kind for the flagged days does NOT
+survive cross-season scoring (chosen top-1: +2.8% / +39.8%; lottery 5-picks collapse). On A_regular's flagged days no strategy
+beats staying in both seasons. **Not implemented - an engine change; to be confirmed in the live-loop replay before use.**
