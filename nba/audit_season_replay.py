@@ -124,6 +124,7 @@ def main():
                              state text, live_cap int, days int, slips int, net double precision, roi double precision,
                              ci_lo double precision, leg_hit double precision, drawdown double precision, streak int, hurdles jsonb,
                              saved_at timestamptz DEFAULT now())""")
+                w.execute("ALTER TABLE nba_score.replay_audit_slips ADD COLUMN IF NOT EXISTS streak_note text")
                 w.execute("DELETE FROM nba_score.replay_audit_slips WHERE label=%s", (save,))
                 w.execute("DELETE FROM nba_score.replay_audit_states WHERE label=%s", (save,))
                 with w.cursor() as c:
