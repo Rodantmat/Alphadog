@@ -280,7 +280,7 @@ async function backtestContext(sql, cfg, names) {
   const stateOf = new Map((await q(sql, "SELECT strategy, state FROM nba_score.live_strategy_state")).map(s => [s.strategy, s.state]));
   // THE OWNER'S UNIT (2026-10-15): classification_config['stake_unit'] - what one unit is in dollars, the apps' minimum entry, and
   // whether paper strategies are played from the first night (owner: "I'm going to start from the beginning of the season").
-  const suRow = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
+  const suRow = (await q(sql, "SELECT config_json, now() AS read_at FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];   // now(): never cached (the engine moves the unit)
   const su = suRow ? (typeof suRow.config_json === "string" ? JSON.parse(suRow.config_json) : suRow.config_json) : {};
   const unit = { usd: Number(su.unit_usd || 1), min: Number(su.min_stake_usd || 1), playPaper: su.play_from_day1 !== false,
                  udPlay: su.ud_play === true, auto: await unitAutoStatus(sql, su) };
