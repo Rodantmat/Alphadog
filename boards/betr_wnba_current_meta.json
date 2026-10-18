@@ -2,23 +2,377 @@
   "ok": true,
   "source": "github-runner uc+proxy picks.betr.app",
   "league": "WNBA",
-  "started_at": "2026-10-17T20:23:32Z",
-  "fetched_at": "2026-10-17T20:25:29Z",
-  "legs": 92,
-  "alt_legs": 69,
-  "players": 14,
+  "started_at": "2026-10-18T20:22:59Z",
+  "fetched_at": "2026-10-18T20:24:25Z",
+  "legs": 350,
+  "alt_legs": 280,
+  "players": 13,
   "events": 1,
   "board_op": "getUpcomingEventsV2",
   "partial_lobby": false,
   "tier_samples": {
-    "EDGE_1": {
-      "marketId": "1032610132866764411",
-      "marketStatus": "SUSPENDED",
-      "isLive": true,
-      "type": "EDGE_1",
+    "MINI_BOOSTED": {
+      "marketId": "1032610172867539294",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "MINI_BOOSTED",
       "playerRecentStats": {
         "stats": [],
         "averageValue": 0.0,
+        "__typename": "PlayerRecentStats"
+      },
+      "label": "1Q Points",
+      "name": "1st Quarter Points",
+      "key": "1ST_QUARTER_POINTS",
+      "order": 31,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 2.5,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032610172923063713",
+          "outcome": "MORE",
+          "__typename": "MarketOptionOutput"
+        }
+      ],
+      "currentValue": null,
+      "liveScoringDisabled": true,
+      "__typename": "Projection"
+    },
+    "EDGE_2": {
+      "marketId": "1032610172867539364",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "EDGE_2",
+      "playerRecentStats": {
+        "stats": [
+          {
+            "value": 4.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 4.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 3.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 1.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 0.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 2.4,
+        "__typename": "PlayerRecentStats"
+      },
+      "label": "3PT Made",
+      "name": "3PT Made",
+      "key": "THREE_POINTERS_MADE",
+      "order": 9,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 0.5,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032610172923065818",
+          "outcome": "MORE",
+          "__typename": "MarketOptionOutput"
+        }
+      ],
+      "currentValue": null,
+      "liveScoringDisabled": false,
+      "__typename": "Projection"
+    },
+    "BOOSTED": {
+      "marketId": "1032610172867539365",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "BOOSTED",
+      "playerRecentStats": {
+        "stats": [
+          {
+            "value": 4.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 4.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 3.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 1.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 0.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 2.4,
+        "__typename": "PlayerRecentStats"
+      },
+      "label": "3PT Made",
+      "name": "3PT Made",
+      "key": "THREE_POINTERS_MADE",
+      "order": 9,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 1.5,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032610172923065820",
+          "outcome": "MORE",
+          "__typename": "MarketOptionOutput"
+        }
+      ],
+      "currentValue": null,
+      "liveScoringDisabled": false,
+      "__typename": "Projection"
+    },
+    "BOOSTED_4": {
+      "marketId": "1032610172867539366",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "BOOSTED_4",
+      "playerRecentStats": {
+        "stats": [
+          {
+            "value": 4.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 4.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 3.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 1.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 0.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 2.4,
+        "__typename": "PlayerRecentStats"
+      },
+      "label": "3PT Made",
+      "name": "3PT Made",
+      "key": "THREE_POINTERS_MADE",
+      "order": 9,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 2.5,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032610172923065821",
+          "outcome": "MORE",
+          "__typename": "MarketOptionOutput"
+        }
+      ],
+      "currentValue": null,
+      "liveScoringDisabled": false,
+      "__typename": "Projection"
+    },
+    "EDGE_3": {
+      "marketId": "1032610172867539323",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "EDGE_3",
+      "playerRecentStats": {
+        "stats": [
+          {
+            "value": 11.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 4.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 8.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 11.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 7.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 8.2,
+        "__typename": "PlayerRecentStats"
+      },
+      "label": "Assists",
+      "name": "Assists",
+      "key": "ASSISTS",
+      "order": 4,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 5.5,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032610172923065757",
+          "outcome": "MORE",
+          "__typename": "MarketOptionOutput"
+        }
+      ],
+      "currentValue": null,
+      "liveScoringDisabled": false,
+      "__typename": "Projection"
+    },
+    "EDGE_1": {
+      "marketId": "1032610172867539329",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "EDGE_1",
+      "playerRecentStats": {
+        "stats": [
+          {
+            "value": 11.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 4.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 8.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 11.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 7.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 8.2,
+        "__typename": "PlayerRecentStats"
+      },
+      "label": "Assists",
+      "name": "Assists",
+      "key": "ASSISTS",
+      "order": 4,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 6.5,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032610172923065767",
+          "outcome": "MORE",
+          "__typename": "MarketOptionOutput"
+        }
+      ],
+      "currentValue": null,
+      "liveScoringDisabled": false,
+      "__typename": "Projection"
+    },
+    "SUPER_BOOSTED": {
+      "marketId": "1032610172867540129",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "SUPER_BOOSTED",
+      "playerRecentStats": {
+        "stats": [
+          {
+            "value": 11.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 4.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 8.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 11.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 7.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 8.2,
         "__typename": "PlayerRecentStats"
       },
       "label": "Assists",
@@ -30,208 +384,135 @@
       "nonRegularValue": 10.5,
       "allowedOptions": [
         {
-          "marketOptionId": "1032610132921751456",
+          "marketOptionId": "1032610172923055187",
           "outcome": "MORE",
           "__typename": "MarketOptionOutput"
         }
       ],
-      "currentValue": 7.0,
+      "currentValue": null,
       "liveScoringDisabled": false,
       "__typename": "Projection"
     },
-    "BOOSTED": {
-      "marketId": "1032610172867519414",
+    "EDGE_4": {
+      "marketId": "1032610172867540189",
       "marketStatus": "OPENED",
-      "isLive": true,
-      "type": "BOOSTED",
+      "isLive": false,
+      "type": "EDGE_4",
       "playerRecentStats": {
-        "stats": [],
-        "averageValue": 0.0,
-        "__typename": "PlayerRecentStats"
-      },
-      "label": "Assists",
-      "name": "Assists",
-      "key": "ASSISTS",
-      "order": 4,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 13.5,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032610172923024304",
-          "outcome": "MORE",
-          "__typename": "MarketOptionOutput"
-        }
-      ],
-      "currentValue": 7.0,
-      "liveScoringDisabled": false,
-      "__typename": "Projection"
-    },
-    "REGULAR": {
-      "marketId": "1032610132866765616",
-      "marketStatus": "OPENED",
-      "isLive": true,
-      "type": "REGULAR",
-      "playerRecentStats": {
-        "stats": [],
-        "averageValue": 0.0,
+        "stats": [
+          {
+            "value": 19.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 25.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 23.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 19.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 8.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 18.8,
         "__typename": "PlayerRecentStats"
       },
       "label": "Points",
       "name": "Points",
       "key": "POINTS",
       "order": 2,
-      "value": 9.5,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 7.5,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032610172923057263",
+          "outcome": "MORE",
+          "__typename": "MarketOptionOutput"
+        }
+      ],
+      "currentValue": null,
+      "liveScoringDisabled": false,
+      "__typename": "Projection"
+    },
+    "REGULAR": {
+      "marketId": "1032610172867539422",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "REGULAR",
+      "playerRecentStats": {
+        "stats": [
+          {
+            "value": 19.0,
+            "matchupDescription": "@ WSH",
+            "date": "2026-09-30T23:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 25.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-04T18:00Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 23.0,
+            "matchupDescription": "vs NY",
+            "date": "2026-10-07T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 19.0,
+            "matchupDescription": "@ NY",
+            "date": "2026-10-09T23:30Z",
+            "__typename": "PlayerRecentStat"
+          },
+          {
+            "value": 8.0,
+            "matchupDescription": "@ GSV",
+            "date": "2026-10-17T19:30Z",
+            "__typename": "PlayerRecentStat"
+          }
+        ],
+        "averageValue": 18.8,
+        "__typename": "PlayerRecentStats"
+      },
+      "label": "Points",
+      "name": "Points",
+      "key": "POINTS",
+      "order": 2,
+      "value": 10.5,
       "nonRegularPercentage": 0,
       "nonRegularValue": 0.0,
       "allowedOptions": [
         {
-          "marketOptionId": "1032610132921751718",
+          "marketOptionId": "1032610172923065920",
           "outcome": "MORE",
           "__typename": "MarketOptionOutput"
-        }
-      ],
-      "currentValue": 2.0,
-      "liveScoringDisabled": false,
-      "__typename": "Projection"
-    },
-    "EDGE_2": {
-      "marketId": "1032610132866765871",
-      "marketStatus": "OPENED",
-      "isLive": true,
-      "type": "EDGE_2",
-      "playerRecentStats": {
-        "stats": [],
-        "averageValue": 0.0,
-        "__typename": "PlayerRecentStats"
-      },
-      "label": "Rebounds",
-      "name": "Rebounds",
-      "key": "REBOUNDS",
-      "order": 3,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 2.5,
-      "allowedOptions": [
+        },
         {
-          "marketOptionId": "1032610132921752013",
-          "outcome": "MORE",
+          "marketOptionId": "1032610172923065921",
+          "outcome": "LESS",
           "__typename": "MarketOptionOutput"
         }
       ],
-      "currentValue": 1.0,
-      "liveScoringDisabled": false,
-      "__typename": "Projection"
-    },
-    "MINI_BOOSTED": {
-      "marketId": "1032610132866765872",
-      "marketStatus": "OPENED",
-      "isLive": true,
-      "type": "MINI_BOOSTED",
-      "playerRecentStats": {
-        "stats": [],
-        "averageValue": 0.0,
-        "__typename": "PlayerRecentStats"
-      },
-      "label": "Rebounds",
-      "name": "Rebounds",
-      "key": "REBOUNDS",
-      "order": 3,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 3.5,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032610132921752014",
-          "outcome": "MORE",
-          "__typename": "MarketOptionOutput"
-        }
-      ],
-      "currentValue": 1.0,
-      "liveScoringDisabled": false,
-      "__typename": "Projection"
-    },
-    "EDGE_4": {
-      "marketId": "1032610132866764393",
-      "marketStatus": "OPENED",
-      "isLive": true,
-      "type": "EDGE_4",
-      "playerRecentStats": {
-        "stats": [],
-        "averageValue": 0.0,
-        "__typename": "PlayerRecentStats"
-      },
-      "label": "Assists",
-      "name": "Assists",
-      "key": "ASSISTS",
-      "order": 4,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 1.5,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032610132921751422",
-          "outcome": "MORE",
-          "__typename": "MarketOptionOutput"
-        }
-      ],
-      "currentValue": 1.0,
-      "liveScoringDisabled": false,
-      "__typename": "Projection"
-    },
-    "EDGE_3": {
-      "marketId": "1032610172867529852",
-      "marketStatus": "OPENED",
-      "isLive": true,
-      "type": "EDGE_3",
-      "playerRecentStats": {
-        "stats": [],
-        "averageValue": 0.0,
-        "__typename": "PlayerRecentStats"
-      },
-      "label": "Assists",
-      "name": "Assists",
-      "key": "ASSISTS",
-      "order": 4,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 0.5,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032610172923047809",
-          "outcome": "MORE",
-          "__typename": "MarketOptionOutput"
-        }
-      ],
-      "currentValue": 0.0,
-      "liveScoringDisabled": false,
-      "__typename": "Projection"
-    },
-    "SUPER_BOOSTED": {
-      "marketId": "1032610132866764433",
-      "marketStatus": "SUSPENDED",
-      "isLive": true,
-      "type": "SUPER_BOOSTED",
-      "playerRecentStats": {
-        "stats": [],
-        "averageValue": 0.0,
-        "__typename": "PlayerRecentStats"
-      },
-      "label": "Assists",
-      "name": "Assists",
-      "key": "ASSISTS",
-      "order": 4,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 3.5,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032610132921751503",
-          "outcome": "MORE",
-          "__typename": "MarketOptionOutput"
-        }
-      ],
-      "currentValue": 0.0,
+      "currentValue": null,
       "liveScoringDisabled": false,
       "__typename": "Projection"
     }
