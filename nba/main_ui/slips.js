@@ -232,7 +232,7 @@ async function replaySlips(sql, cfg, slate) {
     if (!s || s.state === "red" || !(Number(s.live_cap) > 0) || /^[WR]_/.test(name)) continue;   // red / retired / all-star-week / rotation-only sit out a normal slate
     const table = `nba_score.slip_engine_slips${suffix}${/^[CDRW]_/.test(name) ? "_nosteals" : ""}`;
     const rows = await q(sql, `SELECT k, legs_json, size, structure, hits, payout FROM ${table}
-                               WHERE game_date = $1::date AND composition = $2 AND size = $3 AND structure = $4 AND k <= $5 ORDER BY k`,
+                               WHERE game_date = $1::date AND composition = $2 AND size = $3 AND structure = $4 AND k <= $5 AND phase <> 'final7' ORDER BY k`,
       [slate.date, spec.composition, spec.size, spec.structure, Number(s.live_cap)]);
     for (const r of rows) pp.push({ ...r, app: "prizepicks", track: name, strategy: name, status: "replay_backtest" });
   }
