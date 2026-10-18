@@ -180,9 +180,9 @@ export async function teamTrends(sql, teamIds, beforeDate) {
   if (!teamIds || !teamIds.length) return [];
   const rows = await q(sql, `
     WITH g AS (
-      SELECT team_id, game_id, game_date, season, pts::float pts, plus_minus::float pm, wl FROM nba_team.team_game_log WHERE team_id = ANY($1::text[]) AND game_date < $2::date
+      SELECT team_id, game_id, game_date, season, pts::float pts, plus_minus::float pm, wl, false post FROM nba_team.team_game_log WHERE team_id = ANY($1::text[]) AND game_date < $2::date
       UNION ALL
-      SELECT team_id, game_id, game_date, season, pts::float, plus_minus::float, wl FROM nba_team.team_game_log_postseason WHERE team_id = ANY($1::text[]) AND game_date < $2::date),
+      SELECT team_id, game_id, game_date, season, pts::float, plus_minus::float, wl, true FROM nba_team.team_game_log_postseason WHERE team_id = ANY($1::text[]) AND game_date < $2::date),
     s AS (SELECT team_id, max(season) season FROM g GROUP BY 1),
     a AS (SELECT team_id, game_id, pace, off_rating, def_rating FROM nba_team.team_game_log_advanced WHERE team_id = ANY($1::text[])
           UNION ALL SELECT team_id, game_id, pace, off_rating, def_rating FROM nba_team.team_game_log_advanced_postseason WHERE team_id = ANY($1::text[])),
