@@ -397,7 +397,7 @@ async function setStakeUnit(){
   try{
     const j=await (await fetch('/api/stake-unit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({unit_usd:v})})).json();
     if(!j.ok){if(msg)msg.textContent=j.error||'not saved';return}
-    if(msg)msg.textContent='saved: '+String.fromCharCode(36)+Number(j.stake_unit.unit_usd).toFixed(2)+' per unit';
+    if(msg)msg.textContent='saved: '+String.fromCharCode(36)+Number(j.stake_unit.unit_usd).toFixed(2)+' per unit'+((j.stake_unit.auto&&!j.stake_unit.auto.enabled)?' (auto is off - press Auto to turn it back on)':'');
     highHitSlips();
   }catch(e){if(msg)msg.textContent='not saved: '+(e.message||e)}
 }
