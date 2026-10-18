@@ -190,7 +190,7 @@ function minutesRoleBlock(games){
   const played=games.filter(g=>Number(g.min)>0);if(!played.length)return '';const season=seasonOf(played);
   const stat=(set,k)=>{const v=set.map(g=>Number(g[k])).filter(Number.isFinite);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
   const sdOf=set=>{const v=set.map(g=>Number(g.min));const m=v.reduce((a,b)=>a+b,0)/v.length;return Math.sqrt(v.reduce((a,b)=>a+(b-m)*(b-m),0)/v.length)};
-  const win=[['Last 5',played.slice(0,5)],['Last 10',played.slice(0,10)],['Last 20',played.slice(0,20)],['Season '+season,played.filter(g=>g.season===season)]].filter(x=>x[1].length);
+  const win=[['Last 5',played.slice(0,5)],['Last 10',played.slice(0,10)],['Last 20',played.slice(0,20)],['Season '+season+poTag(poCount(played.filter(g=>g.season===season))),played.filter(g=>g.season===season)]].filter(x=>x[1].length);
   const rows=win.map(([w,set])=>({'Window':w,'G':set.length,'Starts':set.filter(g=>g.is_starter===1).length,'MIN':nOrDash(stat(set,'min')),'MIN SD':nOrDash(sdOf(set)),
     'MIN Low-High':nOrDash(Math.min(...set.map(g=>Number(g.min))))+'-'+nOrDash(Math.max(...set.map(g=>Number(g.min)))),'FGA':nOrDash(stat(set,'fga')),'3PA':nOrDash(stat(set,'fg3a')),'FTA':nOrDash(stat(set,'fta')),'PF':nOrDash(stat(set,'pf'))}));
   const ss=played.filter(g=>g.season===season);const role=[['Starter',ss.filter(g=>g.is_starter===1)],['Bench',ss.filter(g=>g.is_starter===0)]].filter(x=>x[1].length).map(([r,set])=>({'Role':r,'G':set.length,'MIN':nOrDash(stat(set,'min')),'PTS':nOrDash(stat(set,'pts')),'REB':nOrDash(stat(set,'reb')),'AST':nOrDash(stat(set,'ast')),'3PM':nOrDash(stat(set,'fg3m')),'PRA':nOrDash(set.reduce((a,g)=>a+Number(g.pts||0)+Number(g.reb||0)+Number(g.ast||0),0)/set.length)}));
