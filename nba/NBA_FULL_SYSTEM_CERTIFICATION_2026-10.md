@@ -2168,3 +2168,33 @@ live P3 on 10-20 (11:31 PT; slips ~11:43 PT), then the morning monitor every day
   own backtest.
 - Tests added: C55 (display names, HIT / MISS / PUSH, push count), WebKit option. UI end-to-end **99/99**: Chromium default (run
   39084868910), Chromium 2026-03-10 (39084873975), WebKit before (39085538894) and after the banner change (39086083462).
+
+### CAPS, COMPOSITIONS AND PORTFOLIOS AT EQUAL BUDGET (owner 2026-10-17 18:38-18:42 PT: "Backtest with the same amount in investment, less units on strategies with lots of slips and more units ... on elite strategies with less slips"; "Try different caps with the strategies, and see if different compositions and use caps can give any difference or improvement. Also anything that is test only, do not show on the slip screen, you can record them but as not played.")
+**Rules fixed before results:** chosen on one season, scored on the other (both directions); >= 150 slips; no 2-pick Flex; equal
+budget = the current six's total stake at $1; winners confirmed by the live-loop replay (audit_season_replay, rolled back).
+**1. Open search over every slip kind and cap (nba/research_cap_composition.py, run 39087551401, window-only backtest) - REJECTED.**
+Chosen on 2024-25 it scores +146% on 2025-26 (two 6-pick weighted-rebounds kinds); chosen on 2025-26 it scores +3% to +80% on
+2024-25 with max drawdowns of 1,500-2,200 at equal budget (6-pick demon lottery slips). Not stable.
+**2. Each current strategy's single best cap (selection season) - REJECTED:** +75.1% vs +79.0% current; +31.1% vs +46.0%.
+**3. One stable pattern:** A_core_3power, A_wrebounds_4flex, D_points_3power each beat their current cap 3 at cap 2 in BOTH
+seasons (A_core +29.5 -> +34.4 / +76.6 -> +90.9; A_wrebounds +40.2 -> +42.6 / +72.6 -> +81.8; D_points +47.1 -> +48.1 / +33.8 -> +34.4).
+**Live-loop replays with those caps at 2** (audit_season_replay AR_CAPS, a research-only in-process override; labels s2526_cap2
+run 39089466244, s2425_cap2 run 39093641249; both rollback live_slips 0 -> 0, states unchanged, PASS). Equal budget, ROI / profit /
+max drawdown:
+
+| portfolio | 2025-26 now | 2025-26 caps 2 | 2024-25 now | 2024-25 caps 2 |
+|---|---|---|---|---|
+| all six | +86.4% / 2,029 / 76 | +86.9% / 2,039 / 75 | +38.4% / 777 / 151 | +38.4% / 776 / 154 |
+| five (no C_wstocks) | +90.7% / 2,130 / 78 | +91.9% / 2,156 / 76 | +42.8% / 866 / 147 | +43.4% / 878 / 143 |
+| top 3 (A_regular, A_core, A_wrebounds) | +98.3% / 2,308 / 89 | +103.5% / 2,430 / 119 | +49.0% / 991 / 173 | +51.4% / 1,039 / 192 |
+| top 2 (A_regular, A_core) | +103.9% / 2,439 / 161 | **+110.2% / 2,586 / 220** | +58.7% / 1,187 / 199 | **+62.3% / 1,260 / 223** |
+
+Caps at 2 help every portfolio in both seasons (all six: flat in 2024-25). Fewer, stronger strategies raise ROI and equal-budget
+profit in both seasons, at the cost of deeper drawdowns. D_points rarely reached a 3rd slip in the live loop (68 / 91 slips), so its
+cap changes nothing there. **No production change made - the owner decides the portfolio and caps.**
+**4. Test-only slips off the Slips screen - DONE (UI v1.4.11):** shadow / paper / not-staked strategies and the Underdog engine while
+paper are recorded as not played and not shown; the screen says how many were recorded; betting-rule SKIPs stay visible. Test C56.
+**Deploy gap found:** the deploy ships alphadog-v2-nba-main-ui only when its ENTRY file changes, and the browser caches client parts
+by VERSION - two nba/main_ui changes (the test-only filter, the replay label) sat undeployed until VERSION was bumped. New test
+**C0b**: deployed VERSION == repo, every served client part byte-equal to the repo, no nba/main_ui commit after the last VERSION
+bump. UI end-to-end **101/101** (run 39089117795).
