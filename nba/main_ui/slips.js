@@ -435,6 +435,19 @@ export async function apiHighHit(sql, cfg, url, version) {
     const by = new Map(); for (const x of testOnly) by.set(x.track_label || x.strategy, (by.get(x.track_label || x.strategy) || 0) + 1);
     notes.push(`${testOnly.length} test-only slip(s) recorded as not played and not shown (${[...by].map(([k, n]) => n + " " + k).join(", ")}).`);
   }
+  // PLACING ORDER (2026-10-18, owner: "When ordering the slips on the slip screen put in placing order, so the right times ones
+  // first"): the slips are listed by their Place by time (the first tip among their own legs), earliest first; at the same time
+  // the slips to PLAY come before the skips, PrizePicks before Underdog, then the engine's own order. No Place by -> last.
+  const ord = slips.map((x, i) => [x, i]);
+  ord.sort(([a, i], [b, j]) => {
+    const ta = a.place_by_utc ? Date.parse(a.place_by_utc) : Infinity, tb = b.place_by_utc ? Date.parse(b.place_by_utc) : Infinity;
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    const pa = a.play_usd != null ? 0 : 1, pb2 = b.play_usd != null ? 0 : 1;
+    if (pa !== pb2) return pa - pb2;
+    const sa = a.source_key === "prizepicks" ? 0 : 1, sb = b.source_key === "prizepicks" ? 0 : 1;
+    return sa - sb || i - j;
+  });
+  slips.length = 0; slips.push(...ord.map(([x]) => x));
   const plays = slips.filter(x => x.play_usd != null);
   if (eng.source !== "replay_backtest" && slips.length) {
     const byApp = ["prizepicks", "underdog"].map(a => [a, plays.filter(x => x.source_key === a)]).filter(([, xs]) => xs.length)
