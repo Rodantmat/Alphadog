@@ -1004,6 +1004,7 @@ def pick_postseason(conn, day, legs):
                       regular-season calendar; the postseason is its own phase
     Slips are recorded as 'placed_post' / 'placed_post_shadow' (-> 'graded_post' / 'graded_post_shadow'), OUTSIDE the
     regular-season ledger: the hurdles, the paper gate and P5 never see them."""
+    refresh_auto_unit(conn, day)   # 2026-10-18 earn the raise
     def _cfg(key):
         r = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key=%s", (key,)).fetchone()
         return (r[0] if isinstance(r[0], dict) else json.loads(r[0])) if r else None
