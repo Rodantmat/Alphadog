@@ -390,7 +390,7 @@ export async function apiHighHit(sql, cfg, url, version) {
       if (hit) legs.push(slipLeg(hit, { tier: x.tier, leg_factor: Number(x.factor) || hit.leg_factor, cell: x.cell, result_hit: x.hit == null ? null : Number(x.hit), result_push: push, board_percentile: percentile(s.app, Number(hit.score_0_100)), ...cellFields, ...riskFor(risk, hit.player_name) }));
       else {
         unmatched++;
-        legs.push({ board_row_id: `${slate.date}~${s.app}~${x.player_id || x.player}~${x.prop}~${line}~${sideIn(x.side)}`, player_name: x.player, canonical_prop_key: x.prop, prop_label: propLabel(x.prop),
+        legs.push({ board_row_id: `${slate.date}~${s.app}~${x.player_id || x.player}~${x.prop}~${line}~${sideIn(x.side)}`, player_name: fullName.get(norm(x.player)) || x.player, canonical_prop_key: x.prop, prop_label: propLabel(x.prop),
           line_value: line, selected_side: side, source_key: s.app, tier: x.tier, leg_factor: Number(x.factor) || null, hit_probability_0_100: null, cell: x.cell,
           result_hit: x.hit == null ? null : Number(x.hit), game_pk: x.event_id || null, mlb_player_id: x.player_id || x.player, ...cellFields });
       }
