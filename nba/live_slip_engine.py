@@ -837,6 +837,9 @@ def pick(conn, day, require_fresh=True):
         use_cap = (max(cap, 1) if shadow else (1 if week2 else (min(live_cap, 1) if cap1_today else live_cap)))
         if use_cap == 0:
             continue
+        base_cap = use_cap
+        if not shadow and shift_add.get(name):
+            use_cap += shift_add[name]   # streak shift: extra slips while the source strategy is flagged (research option)
         status = 'placed_shadow' if shadow else 'placed'
         # pool: week 2 and the drought rotation build family A from the steals-excluded pool (29l / 29p)
         fam_pool = pools.get('C', pool) if (week2 or (rotation and name.startswith('A_'))) else pools.get(name[0], pool)
