@@ -51,6 +51,7 @@ jobs:
           UI_URL: https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev
           UI_DATE: ${{ github.event.inputs.date }}
           UI_PLAYER: ${{ github.event.inputs.player }}
+          UI_ENGINE: ${{ github.event.inputs.engine || 'chromium' }}
           OUT_DIR: nba_ui_probe
         run: python nba/test_nba_main_ui.py
       - name: Publish report + screenshots to branch nba-ui-probe
