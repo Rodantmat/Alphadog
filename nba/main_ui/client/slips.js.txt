@@ -1,5 +1,7 @@
 // AlphaDog NBA main interface - client part (served as-is by alphadog-v2-nba-main-ui; split from the MLB client, NBA data).
 let lastAutoCreatedSlips=[];
+// lives here, not in build.js: the Slips screen loads pricing + slips only (2026-10-17: opened cold, it failed "Can't find variable: multiplierLabel")
+function multiplierLabel(m){if(m==null||!isFinite(m))return '—';return (Math.round(m*100)/100)+'x'}
 let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
 const slipUnchecked=new Map(); // slipIdx -> Set(legIdx) - survives the re-render in applySlipSourceFilter
 function isLegSubstitute(slipIdx,leg){
