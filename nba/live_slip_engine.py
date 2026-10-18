@@ -860,6 +860,7 @@ def pick(conn, day, require_fresh=True):
         small_slate = True
     if small_slate:
         print(f"  {day}: small slate ({n_games} games) - every strategy at cap 1 (29n)", flush=True)
+    refresh_auto_unit(conn, day)   # 2026-10-18 earn the raise: the unit for this slate, before any stake is sized
     # STREAK FLAGS (2026-10-17): every rule's state today, recorded whether or not the rules act (start / stop always visible)
     sr = streak_rules(conn)
     flags, shift_add = {}, defaultdict(int)
