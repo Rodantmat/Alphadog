@@ -308,6 +308,9 @@ def streak_flag(conn, day, s0, name, rule):
                              AND game_date < %s AND game_date >= %s
                            GROUP BY 1 ORDER BY 1 DESC LIMIT %s""", (name, day, s0 or dt.date(1900, 1, 1), n)).fetchall()
     rows = list(reversed(rows))
+    if not rows:
+        return False, ("off: no played days yet this season; ON after " + str(n) + " straight losing days" if rule.get('flag') == 'losing_days'
+                       else f"off: no played days yet this season; ON when its legs hit below {float(rule.get('below', 0.55)):.0%} over its last {n} played days")
     if rule.get('flag') == 'losing_days':
         on = len(rows) >= n and all(float(r[1] or 0) <= 0 for r in rows)
         days = ", ".join(f"{r[0]} {float(r[1] or 0):+.2f}" for r in rows)
