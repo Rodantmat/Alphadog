@@ -111,6 +111,16 @@ def main():
                 print(f"  {strat}: {len(spells[strat])} spells, {days_on} flagged slate days ({'acted' if any(x[3] for x in spells[strat]) else 'recorded only'})", flush=True)
                 for a0, a1, off, ac in spells[strat]:
                     print(f"    ON {a0} .. {a1} -> off {off or 'still on at the end'}", flush=True)
+        # EARN THE RAISE (2026-10-18): every unit change of the season
+        try:
+            uh = conn.execute("""SELECT game_date, unit_from, unit_usd, season_profit, season_high, reason FROM nba_score.live_unit_history
+                                 WHERE game_date BETWEEN %s AND %s AND unit_usd <> unit_from ORDER BY 1""", (d0, d1)).fetchall()
+        except Exception:  # noqa: BLE001
+            uh = []
+        if uh:
+            print("\n== UNIT CHANGES (earn the raise) ==", flush=True)
+            for d, a0, a1, prof, hi, why in uh:
+                print(f"  {d}  {a0:g} -> {a1:g}  season profit {prof:+.2f}  high {hi:.2f}  ({why})", flush=True)
         save = os.environ.get("AR_SAVE", "")
         if save:
             if not save.replace("_", "").isalnum() or not save.islower():
