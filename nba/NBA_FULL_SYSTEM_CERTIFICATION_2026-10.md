@@ -2264,3 +2264,41 @@ fixed in both (research_streak_replay_score.py, integration_test_rollback.py); c
 PASS (run 39104633892); sim-slate 2026-10-20 (run 39105068351): both flags recorded off (no played days yet; the reason text now says so plainly), 9 slips
 on the 3-game slate, production untouched; UI end-to-end Chromium 101/101 (run 39107752908) and WebKit 101/101 (run 39108276065),
 deployed v1.4.12. New test C57 (every recorded flag and slip streak note on the Slips screen) runs on engine slates - from 10-20.
+
+### THE OWNER'S PLAN: ALL SIX, CAPS 2, EARN THE RAISE FROM 1 DOLLAR (owner 2026-10-18 01:30 PT: "Let's go all 6 and earn the raise, auto calculated and auto preset on the my unit let's start with 1 dollar and raising by a 1 dollar each time it reaches 25x. Show me the simulation for this strategy only. How long would take to put the slips in?")
+**Decided:** all six live strategies at caps 2 (A_core_3power, A_wrebounds_4flex, D_points_3power 3 -> 2 in `STRATEGIES`,
+`live_strategy_state.live_cap` and the UI mirror `nba_main_ui.pp_strategies`; calibration re-run, P4 calibrate run 39112257019);
+streak flags on (previous section); the unit is EARNED: start 1, +1 when season profit >= 25 x the next unit, -1 when the drop
+from the season high >= 15 x the unit (once a day, only on a day with no raise), max 15, every season restarts at 1.
+**Simulated before the build (nba/research_earn_raise.py, run 39111841167):** 2025-26 +24,854 on 28,023 (ROI +88.7%), 15 reached
+on slate day 22, cash needed 20, worst drop 931; 2024-25 +4,850 on 8,990 (ROI +53.9%), 92 slate days at 1, 15 only on slate day
+126, cash needed 223, worst drop 599, longest drought 67 days. 10,000 mixed seasons: median +14,749 (P5 +3,897), 0.2% losing; every
+payout cut 20%: median +4,144 (P5 -30), 6.4% losing; cut 35%: median -5, 51% losing but the unit stays at 1 (P5 -388).
+**Built (engine):** `stake_unit.auto` = {enabled, start 1, step 1, max 15, up_x 25, down_x 15}; `auto_unit()` after every grade
+(season profit = unit_usd x stake_weight x unit profit of the played PrizePicks slips this season), `refresh_auto_unit()` before
+every pick; `live_slips.unit_usd` (the unit in force at pick); `nba_score.live_unit_history` (date, season start, profit, high,
+unit from -> to, reason); the config's unit_usd is written by the engine (replays never write it: LS_UNIT_NO_PERSIST, set by
+audit_season_replay). **UI v1.4.13 / v1.4.14:** My unit shows the earned unit; the Slips screen states the season profit, the next
+raise and the step-down point; a hand-set unit turns auto off, the Auto button turns it on; each slip's PLAY amount uses its own
+unit_usd. Tests C51 (hand-set turns auto off, Auto back on - restored exactly), C58 (My unit == the engine's earned unit), C50 at
+the slip's own unit.
+**Debug on the way:** (1) the UI re-read the unit with the SAME SELECT right after saving it and Hyperdrive's query cache served
+the OLD config - fixed with now() on reads and UPDATE ... RETURNING on writes (v1.4.14; C51 failed on run 39123112709, then passed);
+(2) the UI config mirror `nba_main_ui.pp_strategies` still had caps 3 (A2 failed) - updated; (3) the first 2025-26 replay was killed
+at 02:01 PT by "terminating connection due to administrator command" - an outside process ended every client connection (the MLB
+runners' preflight `pg_terminate_backend` on all client backends matches; MLB code not touched) - production was untouched
+(rollback), the replay was re-run.
+**Live-loop replays with the production configuration (no overrides; audit_season_replay):** s2526_plan (run 39114300505):
++25,121.75 on 28,417.25 staked, ROI +88.4%, the unit path 1 -> 2 on 2025-10-27, -> 3 on 11-02, -> 4 on 11-04 ... as simulated;
+s2425_plan (run 39117299110): +5,819.31 on 11,336.25, ROI +51.3%. Both rollback live_slips 0 -> 0, states unchanged, PASS.
+Observation: once season profit is far above 25 x 15, a 15 x drop steps the unit to 14 for ONE day and the next grade raises it
+back (seen in both seasons) - the step-down only protects early in a season; the owner's rule, kept as approved.
+**Placing time (measured on the replays):** ~14 slips a day (max 19), ~63 leg entries but only ~14 distinct legs; ~13-15 min a
+day on PrizePicks, ~20 min on a heavy day; by the close capture 30-35% of distinct legs had moved or been pulled (placing at
+posting time avoids most) - 1-3 substitutions a day, +5-10 min; Underdog +5 min; each further app ~15-25 min.
+**Simulation and testing after the build (serial):** certify_slip_system 82 / 0 FAIL (run 39121783210); integration test ALL PASS
+(run 39122545455); audit_release_path PASS (run 39122811583); UI end-to-end Chromium 102/102 (run 39123845766, after the C51 / A2
+fixes) and WebKit passed (run 39124418056), deployed v1.4.14; sim-slate 2026-10-20 (run 39124844416): "unit 1 (earn the raise)",
+both streak flags "off: no played days yet this season", 9 slips on the 3-game slate, production untouched. Config after the
+tests: stake_unit.unit_usd 1, auto.enabled true. One production grade (2026-10-17, no slips, another session) wrote the first
+live_unit_history row: hold at 1.
