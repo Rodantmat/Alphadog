@@ -1236,6 +1236,8 @@ def grade(conn, day):
     conn.commit()
     print(f"  {day}: {graded} slips graded ({voided} with voided legs, reverted per PP's rule)", flush=True)
     evaluate_hurdles(conn, day)
+    auto_unit(conn, day)   # 2026-10-18 earn the raise: the unit for the next slate
+    conn.commit()
 
 
 def boot_lo(day_items, draws=10000, seed=7):
