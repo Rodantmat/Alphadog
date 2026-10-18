@@ -458,6 +458,12 @@ export async function apiHighHit(sql, cfg, url, version) {
       }
     } catch (e) { notes.push("Streak flags could not be read: " + String(e && e.message || e)); }
   }
+  // EARN THE RAISE (2026-10-18): the unit, how it was earned and what moves it next
+  const au = bt.unit.auto;
+  if (au && au.enabled) notes.push(`Unit ${money(bt.unit.usd)} - earn the raise (auto): season profit ${money(au.season_profit)}` +
+    (au.next_raise_at != null ? `, next raise to ${money(au.unit + au.step)} at ${money(au.next_raise_at)}` : ", at the maximum") +
+    (au.step_down_below != null ? `; steps down to ${money(au.unit - au.step)} if the season profit falls to ${money(au.step_down_below)}.` : "."));
+  else if (au) notes.push(`Unit ${money(bt.unit.usd)} - set by hand (earn the raise is off; the Auto button turns it back on).`);
   if (unmatched) notes.push(`${unmatched} slip legs are not on the scored board (shown without a probability).`);
   if (fallbackNote) notes.push(fallbackNote);
   if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${({ _mf: "market-free twin", _wo: "window-only twin - the market term as live sees it" })[eng.suffix] || (eng.suffix ? "twin " + eng.suffix : "certified tables")}), with results.`);
