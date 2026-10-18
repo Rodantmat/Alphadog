@@ -37,7 +37,7 @@ function gameBars(games,propKey,line){const slice=games.filter(g=>propGameValue(
 function propTrendCard(propKey,games,legsForProp){
   let line=null;
   if(legsForProp.length){line=Number(legsForProp[0].line_value)}
-  if(line==null||!Number.isFinite(line)){const vals=games.map(g=>propGameValue(g,propKey)).filter(v=>v!=null).slice(0,20);if(!vals.length)return '';const avg=vals.reduce((a,b)=>a+b,0)/vals.length;line=Math.max(0.5,Math.floor(avg)+0.5)}
+  if(line==null||!Number.isFinite(line)){const st=propStats(games,propKey,null);if(!st)return '';line=st.line} // same estimate as the Line Profile (season average), 2026-10-17
   const side=legsForProp.length?String(legsForProp[0].selected_side||'more').toLowerCase():'more';
   const l5=hitRateForWindow(games,propKey,line,false,5,side),l10=hitRateForWindow(games,propKey,line,false,10,side),l20=hitRateForWindow(games,propKey,line,false,20,side);
   if(l5==null&&l10==null&&l20==null)return '';
