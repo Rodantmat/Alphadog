@@ -55,6 +55,12 @@ export function isoDate(v) {
   if (v instanceof Date) return v.toISOString().slice(0, 10);
   return String(v).slice(0, 10);
 }
+// THE ONE NAME NORMALISER (mirrors nba_ref.norm_name / nba/nba_names.py::norm_name): strip accents, lowercase, drop the suffix
+// words jr / sr / ii / iii / iv / v, letters only. 2026-10-17: the UI's own copies kept the suffix, so every Underdog backtest leg
+// of a suffixed player (stored "craigporter") missed the board row "Craig Porter Jr." and showed a raw key with no probability.
+export function normName(s) {
+  return String(s || "").normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "").replace(/[^a-z]/g, "");
+}
 export function validDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s || "")) ? String(s) : null; }
 
 // ---------------------------------------------------------------- config
