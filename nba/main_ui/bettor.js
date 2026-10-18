@@ -10,7 +10,7 @@ import { q, pgArr, num, r1, normName } from "./common.js";
 const p100 = v => (v == null || !Number.isFinite(Number(v)) ? null : r1(Number(v) <= 1.5 ? Number(v) * 100 : Number(v)));
 function mean(rows, k) { const v = rows.map(r => num(r[k])).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
 function sumOf(rows, k) { return rows.reduce((a, r) => a + (num(r[k]) || 0), 0); }
-export function normName(s) { return String(s || "").normalize("NFKD").toLowerCase().replace(/[^a-z]/g, ""); }
+export { normName };   // the one normaliser lives in common.js (2026-10-17: this copy kept Jr / III)
 function flipName(n) { const p = String(n || "").split(", "); return p.length === 2 ? `${p[1]} ${p[0]}` : String(n || ""); }
 const teamKey = s => normName(s).replace("losangelesclippers", "laclippers");
 
