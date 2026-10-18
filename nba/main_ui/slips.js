@@ -362,7 +362,23 @@ export async function apiHighHit(sql, cfg, url, version) {
   const pricing = pricingFrom(cfg);
   const boardSlate = slate;
   let eng = await engineSlips(sql, cfg, boardSlate);
-  if (!eng.pp.length && !eng.ud.length) eng = await replaySlips(sql, cfg, boardSlate);
+  let fallbackNote = null;
+  if (!eng.pp.length && !eng.ud.length) {
+    // first choice: the live engine's own slips for a past slate (production-configuration season replay)
+    const lbl = await liveReplayLabel(sql, cfg);
+    if (lbl) {
+      const last = (await q(sql, `SELECT max(game_date)::text d FROM nba_score.replay_audit_slips WHERE label = $1 AND game_date <= $2::date
+                                  AND status NOT IN ('dup') AND status NOT LIKE '%shadow%'`, [lbl, slate.date]))[0];
+      if (last && last.d && (slate.mode === "replay" || last.d === slate.date)) {
+        if (last.d !== slate.date) {
+          slate = { ...slate, date: last.d, replay_of: boardSlate.date };
+          fallbackNote = `No live slips yet for ${boardSlate.date}: showing ${last.d}, the latest past slate the live engine played, exactly as it played it (production-configuration season replay '${lbl}': caps, slate-size rule, strategy states, streak flags, the earned unit), with results. Underdog slips are from the certified Underdog backtest.`;
+        }
+        eng = await liveReplaySlips(sql, cfg, slate, lbl);
+      }
+    }
+    if (!eng.pp.length && !eng.ud.length) { slate = boardSlate; fallbackNote = null; eng = await replaySlips(sql, cfg, boardSlate); }
+  }
   // Replay of a slate the certified backtest does not cover (it is regular season only - a playoff replay slate has none):
   // replay the latest slate it does cover instead, and say so. A live slate never falls back - it shows today's or nothing.
   let fallbackNote = null;
