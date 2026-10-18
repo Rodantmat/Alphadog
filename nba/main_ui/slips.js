@@ -340,11 +340,12 @@ export async function apiHighHit(sql, cfg, url, version) {
   let fallbackNote = null;
   if (!eng.pp.length && !eng.ud.length && slate.mode === "replay") {
     const sfx = String(eng.suffix || "").replace(/[^a-z0-9_]/gi, "");
-    const last = (await q(sql, `SELECT max(game_date)::text d FROM nba_score.slip_engine_slips${sfx} WHERE game_date <= $1::date`, [slate.date]))[0];
+    // the latest slate the live plan STAKES: the final 7 days of the regular season are never played (engine H6), so they are skipped
+    const last = (await q(sql, `SELECT max(game_date)::text d FROM nba_score.slip_engine_slips${sfx} WHERE game_date <= $1::date AND phase <> 'final7'`, [slate.date]))[0];
     if (last && last.d && last.d !== slate.date) {
       slate = { ...slate, date: last.d, replay_of: boardSlate.date };
       eng = await replaySlips(sql, cfg, slate);
-      fallbackNote = `The certified backtest covers regular seasons only (latest slate ${last.d}); ${boardSlate.date} is not in it, so this replays ${last.d}.`;
+      fallbackNote = `No live slips yet for ${boardSlate.date}: showing a past slate instead - the certified backtest's latest slate the plan plays, ${last.d} (regular season; the final 7 days are never staked).`;
     }
   }
   lap("slips");
