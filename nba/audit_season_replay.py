@@ -26,6 +26,7 @@ from collections import defaultdict
 import psycopg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+os.environ.setdefault("LS_UNIT_NO_PERSIST", "1")   # 2026-10-18: earn-the-raise never writes the config row from a replay
 import live_slip_engine as L  # noqa: E402
 
 # AR_CAPS (research only, 2026-10-17 owner: "Try different caps with the strategies"): "name:cap,name:cap" replaces those
