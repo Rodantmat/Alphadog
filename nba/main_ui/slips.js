@@ -247,6 +247,26 @@ async function replaySlips(sql, cfg, slate) {
   return { source: "replay_backtest", suffix, pp, ud };
 }
 
+// LIVE-LOOP REPLAY (2026-10-18, owner reviewing the replay screen: "Good now?"). The certified backtest shows every strategy at
+// its cap on every slate; the live engine does not (slate-size cap 1 on <= 4 games, red / week-1 states, streak flags, the earned
+// unit). So before opening night the screen replays the slips the LIVE ENGINE built for a past slate in the production-
+// configuration season replay (nba_score.replay_audit_slips, label = nba_main_ui.replay_live.label, audit_season_replay with no
+// overrides). Shadow slips stay hidden (recorded, never staked). Underdog is not in that replay - its slips come from the
+// certified Underdog backtest and say so.
+async function liveReplayLabel(sql, cfg) {
+  const label = String(((cfg.ui || {}).replay_live || {}).label || "").replace(/[^a-z0-9_]/gi, "");
+  if (!label) return null;
+  const has = (await q(sql, "SELECT to_regclass('nba_score.replay_audit_slips') IS NOT NULL ok"))[0];
+  return has && has.ok ? label : null;
+}
+async function liveReplaySlips(sql, cfg, slate, label) {
+  const rows = await q(sql, `SELECT strategy, k, legs_json, size, structure, status, stake_weight, hits, payout, streak_note, unit_usd
+                             FROM nba_score.replay_audit_slips WHERE label = $1 AND game_date = $2::date AND status NOT IN ('dup')
+                             AND status NOT LIKE '%shadow%' ORDER BY strategy, k`, [label, slate.date]);
+  const bt = await replaySlips(sql, cfg, slate);
+  return { source: "replay_live", label, pp: rows.map(r => ({ ...r, app: "prizepicks", track: r.strategy, replay_live: true })), ud: bt.ud };
+}
+
 // THE BACKTEST BEHIND EACH CERTIFIED SLIP (2026-10-15; owner: "be sure it also reflects the backtest"). The board's hit
 // probability is the market-anchored number for ANY leg; a certified slip's legs come from cells whose hit rate the backtest
 // measured and certified, and the strategy audit (nba/audit_strategy_honest_hp.py) showed that measured cell rate tracks what
