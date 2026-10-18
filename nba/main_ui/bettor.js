@@ -188,7 +188,7 @@ export async function teamTrends(sql, teamIds, beforeDate) {
           UNION ALL SELECT team_id, game_id, pace, off_rating, def_rating FROM nba_team.team_game_log_advanced_postseason WHERE team_id = ANY($1::text[])),
     f AS (SELECT team_id, game_id, efg_pct, fta_rate, tm_tov_pct, oreb_pct, opp_efg_pct, opp_fta_rate, opp_tov_pct, opp_oreb_pct FROM nba_team.team_game_log_four_factors WHERE team_id = ANY($1::text[])
           UNION ALL SELECT team_id, game_id, efg_pct, fta_rate, tm_tov_pct, oreb_pct, opp_efg_pct, opp_fta_rate, opp_tov_pct, opp_oreb_pct FROM nba_team.team_game_log_four_factors_postseason WHERE team_id = ANY($1::text[]))
-    SELECT g.team_id, t.abbreviation, g.game_date::text game_date, g.season, g.wl, g.pts, g.pts - g.pm opp_pts, a.pace::float pace, a.off_rating::float ortg, a.def_rating::float drtg,
+    SELECT g.team_id, t.abbreviation, g.game_date::text game_date, g.season, g.wl, g.post, g.pts, g.pts - g.pm opp_pts, a.pace::float pace, a.off_rating::float ortg, a.def_rating::float drtg,
            f.efg_pct::float efg, f.opp_efg_pct::float opp_efg, f.tm_tov_pct::float tov, f.opp_tov_pct::float opp_tov, f.oreb_pct::float oreb,
            f.opp_oreb_pct::float opp_oreb, f.fta_rate::float ftr, f.opp_fta_rate::float opp_ftr
     FROM g JOIN s ON s.team_id = g.team_id AND s.season = g.season
