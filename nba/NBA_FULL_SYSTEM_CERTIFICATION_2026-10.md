@@ -2119,3 +2119,25 @@ C52 place-by) and **95/95** on the default path (run 39081763273).
 **Verdict 10-17:** nothing to change. Everything that tested as an improvement is on, the recalibration behind the market-term
 switch is confirmed on both seasons, and opening night rehearses to the same three PrizePicks slips. Next real reading: the first
 live P3 on 10-20 (11:31 PT; slips ~11:43 PT), then the morning monitor every day at 05:52 PT.
+
+### WHAT THE OWNER SAW ON THE SCREENS (owner 2026-10-17 17:20 PT: "The legs look super clumped, is that the proper behavior!? ... Slips failed ... Be sure i am seeing is what I suppose to see") - UI v1.4.8
+- **Slips failed "Can't find variable: multiplierLabel" - FIXED.** The Slips screen loads the pricing + slips parts only; the
+  function lived in the builder part, so Slips opened before the builder broke. The UI test always opened the builder first, so
+  it never saw it. Moved into the slips part; new test **D10** opens Slips cold.
+- **Player profile showed movers on their OLD team - FIXED.** LeBron James signed with PHI in the 2026 offseason (roster: PHI);
+  the profile took the team from his last box score (LAL), so it showed the Lakers, LAL's opener vs GSW and GSW's defenders.
+  161 active players' last box score is for another team. The profile now uses the current roster team (nba_ref.players, synced
+  every morning); on live dates the opponent-defender list is the opponent's current roster; an offseason arrival gets no false
+  absence ramp (the new team's games were being counted as his absences). The MODEL was never affected: the ladder builds each
+  game's roster from the same-morning roster file (§31r), and the slip place-by already used the roster for future dates.
+  New test **C53**.
+- **B2B / Rested and Home / Road cards showed season totals as averages - FIXED** (140 PTS / 6 G shown as 140; the table stores
+  totals; only the UI reads it). Served per game; new test **C54** + browser check.
+- **Home / Away (this season) all dashes - FIXED:** two client parts each defined a global `avgOf` with different arguments; the
+  later one replaced the earlier. Renamed; no other cross-part name clash (scanned every part).
+- **Two different estimated lines** (trend card from the last 20 games, Line Profile from the season) - one estimate now.
+- **"Clumped" hit probabilities - correct behaviour, explained:** with no board yet the screen replays the last scored slate
+  (2026-06-13, one Finals game); the number shown is the market-anchored probability (certified 10-15) whose isotonic second stage
+  tops out at the rate the strongest legs actually hit out of sample (77.1% on that fit) - in history legs the raw model put at
+  85-95% hit ~70%. Ties are ordered by Overall score.
+- UI end-to-end **98/98** on both paths (runs 39083107847 default, 39083429397 2026-03-10).
