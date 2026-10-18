@@ -19,6 +19,7 @@ Exit 1 on any failure; the report (OUT_DIR/report.json) lists every check.
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 import time
