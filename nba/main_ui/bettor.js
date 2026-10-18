@@ -5,7 +5,7 @@
 // opponent, his numbers with and without each key / injured teammate, his most-used lineups, both teams' recent form and the
 // arena. Per-game data is strictly BEFORE the slate date; season-level tables (tracking, career, lineups) carry their season
 // or source date so a replayed slate never passes them off as as-of data. No model internals.
-import { q, pgArr, num, r1 } from "./common.js";
+import { q, pgArr, num, r1, normName } from "./common.js";
 
 const p100 = v => (v == null || !Number.isFinite(Number(v)) ? null : r1(Number(v) <= 1.5 ? Number(v) * 100 : Number(v)));
 function mean(rows, k) { const v = rows.map(r => num(r[k])).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
