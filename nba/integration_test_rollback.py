@@ -44,10 +44,12 @@ def main():
         U.pick(nc, prev); U.grade(nc, prev)
         print("\n-- PrizePicks pick", flush=True)
         L.pick(nc, day, require_fresh=False)
-        rows = conn.execute("SELECT status, stake_weight, legs_json FROM nba_score.live_slips WHERE game_date=%s AND k < 100 AND k <> 900", (day,)).fetchall()
+        # 2026-10-17: an acting streak flag halves a flagged strategy's stake (its slip note says "- stake x0.5") - expected weight
+        # = star_under_weight x 0.5 on those slips, so the check holds at any unit
+        rows = conn.execute("SELECT status, stake_weight, legs_json, coalesce(streak_note, '') FROM nba_score.live_slips WHERE game_date=%s AND k < 100 AND k <> 900", (day,)).fetchall()
         check("slips placed", len(rows) > 0, f"({len(rows)})")
-        check("every slip has a stake_weight in {1.0, 0.5}", all(r[1] in (1.0, 0.5) for r in rows))
-        sw_ok = all(r[1] == L.star_under_weight(r[2]) for r in rows)
+        check("every slip has a stake_weight in {1.0, 0.5, 0.25}", all(r[1] in (1.0, 0.5, 0.25) for r in rows))
+        sw_ok = all(r[1] == L.star_under_weight(r[2]) * (0.5 if "- stake x0.5" in r[3] else 1.0) for r in rows)
         check("stake_weight == star_under_weight(legs) on every slip", sw_ok,
               f"(halved: {sum(1 for r in rows if r[1] == 0.5)})")
         check("every leg carries cell/tier/side/factor", all(all(k in j for k in ('cell', 'tier', 'side', 'factor')) for r in rows for j in r[2]))
