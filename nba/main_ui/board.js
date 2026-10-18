@@ -39,8 +39,11 @@ gl AS (SELECT DISTINCT ON (x.player_id) x.player_id, x.team_id FROM (
        ORDER BY x.player_id, x.game_date DESC),
 gc AS (SELECT player_id, count(*) n FROM nba_stats.player_game_log
        WHERE nba_player_id IN (SELECT pid_n FROM pids) AND game_date < $1::date AND game_date >= $1::date - 365 GROUP BY player_id),
+-- live slate (today or later): the CURRENT roster team first - a mover's old team may play the same night (2026-10-17: 161
+-- active players' last box score is for another team); a past slate: the box-score team of that time first
 tm AS (SELECT p.player_id, p.pid_t, pl.position,
-         CASE WHEN gl.team_id IN (SELECT t FROM gteams) THEN gl.team_id
+         CASE WHEN $1::date >= (now() AT TIME ZONE 'America/Los_Angeles')::date AND pl.active = 1 AND pl.team_id IN (SELECT t FROM gteams) THEN pl.team_id
+              WHEN gl.team_id IN (SELECT t FROM gteams) THEN gl.team_id
               WHEN pl.team_id IN (SELECT t FROM gteams) THEN pl.team_id
               ELSE COALESCE(gl.team_id, pl.team_id) END team_id
        FROM pids p LEFT JOIN gl ON gl.player_id = p.pid_t LEFT JOIN nba_ref.players pl ON pl.player_id = p.pid_t),
