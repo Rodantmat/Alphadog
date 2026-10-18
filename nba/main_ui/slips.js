@@ -414,6 +414,7 @@ export async function apiHighHit(sql, cfg, url, version) {
       ...placeBy(lj, pb),
       stake_label: stakeAdvice(s, bt).label,
       streak_note: s.streak_note || null,
+      unit_usd: s.unit_usd != null && s.unit_usd !== "" ? Number(s.unit_usd) : null,
       play_usd: stakeAdvice(s, bt).play_usd,
       backtest_hit_probability_0_100: legs.length && legs.every(l => l.cell_backtest_hit_0_100 != null) ? r1(legs.reduce((a, l) => a + Number(l.cell_backtest_hit_0_100), 0) / legs.length) : null,
       strategy_cert_leg_hit_0_100: s.app === "prizepicks" && bt.certHit.get(s.strategy) != null ? r1(100 * bt.certHit.get(s.strategy)) : null,
