@@ -416,6 +416,19 @@ export async function apiHighHit(sql, cfg, url, version) {
       legs
     });
   }
+  // TEST-ONLY SLIPS ARE NOT SHOWN (owner 2026-10-17: "anything that is test only, do not show on the slip screen, you can
+  // record them but as not played"): shadow strategies / portfolios, strategies whose state is not staked, the Underdog engine
+  // while it is paper, unstaked rows. They stay recorded in live_slips / ud_live_slips with their not-played status; the screen
+  // shows only slips of strategies that are bet (PLAY, or a SKIP by a betting rule: week-1/2, ceiling, below-minimum, stand-down,
+  // ALARM) and says how many test slips were recorded.
+  const TEST_ONLY = /^(SKIP - shadow|paper|SKIP - strategy |SKIP - not staked)/;
+  const testOnly = slips.filter(x => TEST_ONLY.test(String(x.stake_label || "")));
+  if (testOnly.length) {
+    const kept = slips.filter(x => !TEST_ONLY.test(String(x.stake_label || "")));
+    slips.length = 0; slips.push(...kept);
+    const by = new Map(); for (const x of testOnly) by.set(x.track_label || x.strategy, (by.get(x.track_label || x.strategy) || 0) + 1);
+    notes.push(`${testOnly.length} test-only slip(s) recorded as not played and not shown (${[...by].map(([k, n]) => n + " " + k).join(", ")}).`);
+  }
   const plays = slips.filter(x => x.play_usd != null);
   if (eng.source !== "replay_backtest" && slips.length) {
     const byApp = ["prizepicks", "underdog"].map(a => [a, plays.filter(x => x.source_key === a)]).filter(([, xs]) => xs.length)
