@@ -441,8 +441,26 @@ def api_checks(conn, cfg):
     cg, jg, _ = curl("/api/stake-unit")
     cb, jb, _ = curl("/api/stake-unit", body={"unit_usd": 0.25})
     cs, js_, _ = curl("/api/stake-unit", body={"unit_usd": unit})
-    check("C51 unit control: read, refuse below the minimum, save round-trips", cg == 200 and float((jg.get("stake_unit") or {}).get("unit_usd", -1)) == unit
-          and cb == 400 and cs == 200 and float((js_.get("stake_unit") or {}).get("unit_usd", -1)) == unit, f"GET {cg} below-min {cb} save {cs}")
+    # 2026-10-18: a hand-set unit turns earn-the-raise off - put it back exactly as it was
+    auto_was = ((jg.get("stake_unit") or {}).get("auto") or {}).get("enabled")
+    ca, ja, _ = curl("/api/stake-unit", body={"auto": True}) if auto_was else (200, jg, None)
+    check("C51 unit control: read, refuse below the minimum, save round-trips (and a hand-set unit turns auto off, Auto turns it on)",
+          cg == 200 and float((jg.get("stake_unit") or {}).get("unit_usd", -1)) == unit and cb == 400 and cs == 200
+          and float((js_.get("stake_unit") or {}).get("unit_usd", -1)) == unit
+          and (not auto_was or (((js_.get("stake_unit") or {}).get("auto") or {}).get("enabled") is False
+                                and ca == 200 and ((ja.get("stake_unit") or {}).get("auto") or {}).get("enabled") is True)),
+          f"GET {cg} below-min {cb} save {cs} auto before {auto_was} -> after save {((js_.get('stake_unit') or {}).get('auto') or {}).get('enabled')} -> Auto {ca}")
+    # C58 (2026-10-18, owner: "earn the raise, auto calculated and auto preset on the my unit"): with auto on, "My unit" is the
+    # engine's earned unit (the last live_unit_history row, else the auto start) and the screen states how it moves next
+    if auto_was:
+        hu = conn.execute("SELECT unit_usd FROM nba_score.live_unit_history ORDER BY game_date DESC LIMIT 1").fetchone() \
+            if conn.execute("SELECT to_regclass('nba_score.live_unit_history') IS NOT NULL").fetchone()[0] else None
+        want_u = float(hu[0]) if hu else float(((jg.get("stake_unit") or {}).get("auto") or {}).get("start", 1))
+        st58 = (jg.get("stake_unit") or {}).get("auto_status") or {}
+        notes58 = " ".join(hh.get("notes") or [])
+        check("C58 earn the raise: My unit = the engine's earned unit; the screen says the next raise / step-down",
+              abs(unit - want_u) < 1e-9 and abs(float(st58.get("unit", -1)) - want_u) < 1e-9 and "earn the raise (auto)" in notes58,
+              f"config unit {unit} history {want_u} status {st58.get('unit')} next raise {st58.get('next_raise_at')}")
     # C53 (2026-10-17, owner saw LeBron James on the Lakers after his move to PHI): the profile's team is the CURRENT roster team,
     # not the last box score's, for a player whose last box score is for another team; and his next game is that team's
     mover = conn.execute("""WITH last AS (SELECT DISTINCT ON (player_id) player_id, team_id FROM (
