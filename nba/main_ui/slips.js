@@ -481,6 +481,33 @@ export async function apiHighHit(sql, cfg, url, version) {
     pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, stake_unit: bt.unit, timing_ms: (lap("build"), T) };
 }
 
+function money(v) { return String.fromCharCode(36) + Number(v || 0).toFixed(2); }
+
+// EARN THE RAISE STATUS (2026-10-18; owner: "earn the raise, auto calculated and auto preset on the my unit"): the engine moves the
+// unit after every graded slate (live_slip_engine.auto_unit) and records it in nba_score.live_unit_history. null when the config
+// has no auto block.
+async function unitAutoStatus(sql, su) {
+  const a = su && su.auto;
+  if (!a) return null;
+  const st = { enabled: a.enabled === true, start: Number(a.start || 1), step: Number(a.step || 1), max: Number(a.max || 15),
+               up_x: Number(a.up_x || 25), down_x: Number(a.down_x || 15), unit: Number(su.unit_usd || a.start || 1),
+               season_profit: 0, season_high: 0, last_change: null };
+  try {
+    const has = (await q(sql, "SELECT to_regclass('nba_score.live_unit_history') IS NOT NULL ok"))[0];
+    if (has && has.ok) {
+      const h = (await q(sql, `SELECT game_date::text d, season_start::text s0, season_profit p, season_high hi, unit_usd u FROM nba_score.live_unit_history
+                               ORDER BY game_date DESC LIMIT 1`))[0];
+      if (h) { st.season_profit = Number(h.p); st.season_high = Number(h.hi); st.as_of = h.d; st.season_start = h.s0; }
+      const c = (await q(sql, `SELECT game_date::text d, unit_from f, unit_usd u, reason FROM nba_score.live_unit_history
+                               WHERE unit_usd <> unit_from ORDER BY game_date DESC LIMIT 1`))[0];
+      if (c) st.last_change = { date: c.d, from: Number(c.f), to: Number(c.u), reason: c.reason };
+    }
+  } catch (_e) { /* the history table appears with the engine's next run */ }
+  st.next_raise_at = st.unit + st.step <= st.max + 1e-9 ? Math.round(st.up_x * (st.unit + st.step) * 100) / 100 : null;
+  st.step_down_below = st.unit - st.step >= st.start - 1e-9 ? Math.round((st.season_high - st.down_x * st.unit) * 100) / 100 : null;
+  return st;
+}
+
 // THE OWNER SETS HIS OWN UNIT (2026-10-15, owner: "I'm going to start growing gradually. So $1.50, $2, $2.50, $3, $4, $5 ... I don't
 // need to be bugging you"). One number, written to classification_config['stake_unit'].unit_usd; the next pick (live engine) and
 // this screen read it. Bounded: never below the apps' minimum entry, never above 1000.
