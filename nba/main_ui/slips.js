@@ -1,6 +1,6 @@
 // NBA MAIN UI - slips: the builder (/api/slips/generate), the Slips screen (/api/slips/high-hit = today's engine slips, or the
 // certified backtest's slips for a replayed slate), saving (/api/slips/save) and the saved list (/api/slips/recent).
-import { q, pgArr, num, r1, parseLegId, legId, sideIn, sideOut, propLabel, appLabel, resolveSlate } from "./common.js";
+import { q, pgArr, num, r1, parseLegId, legId, sideIn, sideOut, propLabel, appLabel, resolveSlate, normName } from "./common.js";
 import { loadLegs } from "./board.js";
 import { nbaEv, nbaBreakeven, nbaModes, nbaTiers, nbaModeLabel } from "./pricing.js";
 
