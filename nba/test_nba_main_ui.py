@@ -160,7 +160,8 @@ def api_checks(conn, cfg):
         want[f"/js/{part}.js"] = (cdir / f"{part}.js.txt").read_text()
     for part, body in want.items():
         try:
-            served = urllib.request.urlopen(UI + f"{part}?v=check{int(time.time())}", timeout=30).read().decode()
+            req = urllib.request.Request(UI + f"{part}?v=check{int(time.time())}", headers={"User-Agent": "Mozilla/5.0 (alphadog-nba-ui-test)"})   # Cloudflare 403s the bare urllib agent
+            served = urllib.request.urlopen(req, timeout=30).read().decode()
             if served != body:
                 stale.append(part)
         except Exception as e:  # noqa: BLE001
