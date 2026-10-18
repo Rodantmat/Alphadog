@@ -49,7 +49,7 @@ def main():
         rows = conn.execute("SELECT status, stake_weight, legs_json, coalesce(streak_note, '') FROM nba_score.live_slips WHERE game_date=%s AND k < 100 AND k <> 900", (day,)).fetchall()
         check("slips placed", len(rows) > 0, f"({len(rows)})")
         check("every slip has a stake_weight in {1.0, 0.5, 0.25}", all(r[1] in (1.0, 0.5, 0.25) for r in rows))
-        sw_ok = all(r[1] == L.star_under_weight(r[2]) * (0.5 if "- stake x0.5" in r[3] else 1.0) for r in rows)
+        sw_ok = all(r[1] == L.star_under_weight(r[2]) * (0.5 if ("- stake x0.5" in r[3] and "full stake kept" not in r[3]) else 1.0) for r in rows)
         check("stake_weight == star_under_weight(legs) on every slip", sw_ok,
               f"(halved: {sum(1 for r in rows if r[1] == 0.5)})")
         check("every leg carries cell/tier/side/factor", all(all(k in j for k in ('cell', 'tier', 'side', 'factor')) for r in rows for j in r[2]))
