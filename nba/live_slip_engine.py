@@ -193,6 +193,75 @@ def stake_unit(conn):
     return _STAKE_UNIT
 
 
+# EARN THE RAISE (2026-10-18, owner: "Let's go all 6 and earn the raise, auto calculated and auto preset on the my unit; let's
+# start with 1 dollar and raising by 1 dollar each time it reaches 25x"). classification_config['stake_unit'].auto =
+# {enabled, start 1, step 1, max 15, up_x 25, down_x 15}. After every graded slate (grade()):
+#   season profit = the dollars the played PrizePicks slips won / lost this season (unit_usd x stake_weight x unit profit);
+#   while season profit >= up_x x (unit + step) and unit < max -> unit + step;
+#   else if the drop from the season's profit high >= down_x x unit and unit > start -> unit - step (once a day).
+# The new unit is written to stake_unit.unit_usd (the Slips screen's "My unit" shows it) and to nba_score.live_unit_history
+# (date, season start, season profit, season high, unit from -> to, reason). Every season starts again at `start`.
+# Simulated before the build (nba/research_earn_raise.py, run 39111841167): 2025-26 +24,854 (ROI +88.7%, 15 reached on slate day
+# 22, cash needed 20); 2024-25 +4,850 (ROI +53.9%, 15 only on slate day 126, cash needed 223); 10,000 mixed seasons median
+# +14,749, 0.2% losing; with every payout cut 20% median +4,144, 6.4% losing; cut 35% median -5 (the unit stays at 1).
+# A manual unit on the Slips screen turns auto off; its Auto button turns it back on. Replays never write the config row
+# (LS_UNIT_NO_PERSIST=1, set by audit_season_replay) - the unit then lives in this process and the rolled-back history table.
+UNIT_AUTO_DEFAULT = {"enabled": False, "start": 1.0, "step": 1.0, "max": 15.0, "up_x": 25.0, "down_x": 15.0}
+
+
+def unit_auto_cfg(conn):
+    a = dict(UNIT_AUTO_DEFAULT)
+    a.update((stake_unit(conn) or {}).get('auto') or {})
+    return a
+
+
+def unit_season_state(conn, day):
+    """(season start, unit in force for `day`, season high so far) from nba_score.live_unit_history - the last row before `day`
+    in this season, else the auto start."""
+    a = unit_auto_cfg(conn)
+    s0, _ = regular_season_window(conn, day)
+    s0 = s0 or day
+    prev = conn.execute("""SELECT unit_usd, season_high FROM nba_score.live_unit_history WHERE season_start=%s AND game_date < %s
+                           ORDER BY game_date DESC LIMIT 1""", (s0, day)).fetchone()
+    return s0, (float(prev[0]) if prev else float(a['start'])), (float(prev[1]) if prev else 0.0)
+
+
+def refresh_auto_unit(conn, day):
+    """pick(): with auto on (and no LS_UNIT_USD research override) the unit for `day` is the earned one."""
+    a = unit_auto_cfg(conn)
+    if not a.get('enabled') or os.environ.get('LS_UNIT_USD'):
+        return
+    _s0, u, _hi = unit_season_state(conn, day)
+    stake_unit(conn)['unit_usd'] = u
+    print(f"  {day}: unit {u:g} (earn the raise)", flush=True)
+
+
+def auto_unit(conn, day):
+    """grade(): after the slate is graded, earn (or give back) the raise; the result applies from the next slate."""
+    a = unit_auto_cfg(conn)
+    if not a.get('enabled') or os.environ.get('LS_UNIT_USD'):
+        return
+    s0, u, high = unit_season_state(conn, day)
+    prof = float(conn.execute("""SELECT coalesce(sum(coalesce(unit_usd, %s) * coalesce(stake_weight, 1) * profit), 0) FROM nba_score.live_slips
+                                 WHERE status IN ('graded','graded_void','graded_week2','graded_post') AND k < 100
+                                   AND game_date BETWEEN %s AND %s""", (float(a['start']), s0, day)).fetchone()[0])
+    high = max(high, prof)
+    old = u; step = float(a['step']); reason = 'hold'
+    while u + step <= float(a['max']) + 1e-9 and prof >= float(a['up_x']) * (u + step):
+        u += step; reason = f"raise: season profit {prof:.2f} >= {float(a['up_x']):g} x {u:g}"
+    if u == old and u - step >= float(a['start']) - 1e-9 and high - prof >= float(a['down_x']) * u:
+        reason = f"step down: drop {high - prof:.2f} from the season high {high:.2f} >= {float(a['down_x']):g} x {u:g}"; u -= step
+    conn.execute("""INSERT INTO nba_score.live_unit_history (game_date, season_start, season_profit, season_high, unit_from, unit_usd, reason)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date) DO UPDATE SET season_start=EXCLUDED.season_start,
+                    season_profit=EXCLUDED.season_profit, season_high=EXCLUDED.season_high, unit_from=EXCLUDED.unit_from,
+                    unit_usd=EXCLUDED.unit_usd, reason=EXCLUDED.reason, updated_at=now()""", (day, s0, prof, high, old, u, reason))
+    stake_unit(conn)['unit_usd'] = u
+    if os.environ.get('LS_UNIT_NO_PERSIST') != '1':
+        conn.execute("""UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{unit_usd}', to_jsonb(%s::numeric))
+                        WHERE config_key = 'stake_unit'""", (u,))
+    print(f"  {day}: UNIT {old:g} -> {u:g} ({reason}; season profit {prof:+.2f}, high {high:.2f})", flush=True)
+
+
 # H7 MODE (2026-10-15, owner: "is there any way to prevent the February dip? ... understand it and act on it after
 # identification"). H7 (29f) reds ALL of family A when the shared steals anchor's trailing-14-day hit falls 3 sigma. It predates
 # the drought rotation (29p), which answers the same steals drought by rebuilding family A WITHOUT steals - so in a steals
