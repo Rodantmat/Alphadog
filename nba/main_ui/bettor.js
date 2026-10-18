@@ -199,7 +199,9 @@ export async function teamTrends(sql, teamIds, beforeDate) {
   for (const tid of teamIds) {
     const g = rows.filter(r => r.team_id === tid);
     if (!g.length) continue;
-    for (const [w, set] of [["Last 10", g.slice(0, 10)], [`Season ${g[0].season}`, g]]) {
+    // the season row holds the play-in / playoff games too, and says so (Team Profiles shows the regular season only)
+    const np = g.filter(x => x.post).length;
+    for (const [w, set] of [["Last 10", g.slice(0, 10)], [`Season ${g[0].season}` + (np ? ` (incl. ${np} postseason G)` : ""), g]]) {
       out.push({ team_id: tid, team: g[0].abbreviation, window: w, games: set.length, record: `${set.filter(x => x.wl === "W").length}-${set.filter(x => x.wl === "L").length}`,
         ppg: r1(mean(set, "pts")), opp_ppg: r1(mean(set, "opp_pts")), pace: r1(mean(set, "pace")), ortg: r1(mean(set, "ortg")), drtg: r1(mean(set, "drtg")),
         efg: p100(mean(set, "efg")), opp_efg: p100(mean(set, "opp_efg")), tov: p100(mean(set, "tov")), opp_tov: p100(mean(set, "opp_tov")),
