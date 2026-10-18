@@ -283,7 +283,7 @@ async function backtestContext(sql, cfg, names) {
   const suRow = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
   const su = suRow ? (typeof suRow.config_json === "string" ? JSON.parse(suRow.config_json) : suRow.config_json) : {};
   const unit = { usd: Number(su.unit_usd || 1), min: Number(su.min_stake_usd || 1), playPaper: su.play_from_day1 !== false,
-                 udPlay: su.ud_play === true };
+                 udPlay: su.ud_play === true, auto: await unitAutoStatus(sql, su) };
   // UNDERDOG STOP (2026-10-16, owner: "full force since day one ... if things are not going well, then we start changing"): the
   // Underdog P5 portfolio is played when stake_unit.ud_play is true; its edge monitor's ALARM (sticky per season, §31o) stops it.
   let udAlarm = false;
