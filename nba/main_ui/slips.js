@@ -443,6 +443,17 @@ export async function apiHighHit(sql, cfg, url, version) {
     const order = [...by.keys()].sort((u, v) => String((plays.find(x => x.place_by_pt === u) || {}).place_by_utc).localeCompare(String((plays.find(x => x.place_by_pt === v) || {}).place_by_utc)));
     notes.push("Place by (each slip closes when the first game among its legs tips): " + order.map(k => by.get(k) + " by " + k).join(", ") + ".");
   }
+  // STREAK FLAGS (2026-10-17): each rule's state on this slate - when it started, why, and when it stops - from the engine's record
+  if (eng.source === "live") {
+    try {
+      const has = (await q(sql, "SELECT to_regclass('nba_score.live_streak_flags') IS NOT NULL ok"))[0];
+      if (has && has.ok) {
+        const fl = await q(sql, "SELECT strategy, flag_on, since::text since, reason, acted, stake_factor FROM nba_score.live_streak_flags WHERE game_date = $1::date ORDER BY strategy", [slate.date]);
+        for (const f of fl) notes.push(`Streak flag ${f.strategy}: ${f.flag_on ? "ON since " + f.since + " - " : ""}${f.reason}` +
+          (f.flag_on ? (f.acted ? ` - stake x${Number(f.stake_factor)} (kept at full when the half stake is below the minimum entry).` : " - streak rules are off: recorded only, stakes unchanged.") : "."));
+      }
+    } catch (e) { notes.push("Streak flags could not be read: " + String(e && e.message || e)); }
+  }
   if (unmatched) notes.push(`${unmatched} slip legs are not on the scored board (shown without a probability).`);
   if (fallbackNote) notes.push(fallbackNote);
   if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${({ _mf: "market-free twin", _wo: "window-only twin - the market term as live sees it" })[eng.suffix] || (eng.suffix ? "twin " + eng.suffix : "certified tables")}), with results.`);
