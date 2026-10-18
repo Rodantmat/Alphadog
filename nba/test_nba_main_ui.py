@@ -333,6 +333,21 @@ def api_checks(conn, cfg):
         sd60 = (hh.get("slate") or {}).get("date")
         f7 = conn.execute("SELECT count(*) FROM nba_score.slip_engine_slips_wo WHERE game_date=%s AND phase='final7'", (sd60,)).fetchone()[0]
         check("C60 replay slate is one the plan plays (not the final 7 days)", f7 == 0, f"replayed {sd60}; final7 rows {f7}")
+    # C61 (2026-10-18): before opening night the screen shows the LIVE ENGINE's own slips for the past slate - exactly the
+    # production-configuration season replay's staked (non-shadow) slips, per strategy, each with its result
+    if hh.get("source") == "replay_live":
+        sd61 = (hh.get("slate") or {}).get("date")
+        lbl61 = ((cfg.get("replay_live") or {}).get("label")) or ""
+        want61 = dict(conn.execute("""SELECT strategy, count(*) FROM nba_score.replay_audit_slips WHERE label=%s AND game_date=%s
+                                      AND status <> 'dup' AND status NOT LIKE '%%shadow%%' GROUP BY 1""", (lbl61, sd61)).fetchall())
+        got61 = {}
+        for s in sl:
+            if s.get("source_key") == "prizepicks":
+                got61[s.get("strategy")] = got61.get(s.get("strategy"), 0) + 1
+        nores = [s.get("strategy") for s in sl if s.get("source_key") == "prizepicks" and not s.get("result")]
+        f761 = conn.execute("SELECT count(*) FROM nba_score.slip_engine_slips_wo WHERE game_date=%s AND phase='final7'", (sd61,)).fetchone()[0]
+        check("C61 replay = the live engine's own slips for that slate (season replay, per strategy), with results, not a final-7 day",
+              got61 == want61 and not nores and f761 == 0, f"{lbl61} {sd61}: shown {got61} replay {want61}; no result {nores[:3]}")
     # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
     bp = cfg["backup_pool"]
     sd = (hh.get("slate") or {}).get("date")
