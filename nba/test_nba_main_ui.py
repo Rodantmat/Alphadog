@@ -665,7 +665,8 @@ def browser():
     from playwright.sync_api import sync_playwright
     errors = []
     with sync_playwright() as pw:
-        b = pw.chromium.launch()
+        # UI_ENGINE=webkit walks the screens in Safari's engine (the owner uses an iPhone; 2026-10-17)
+        b = getattr(pw, os.environ.get("UI_ENGINE", "chromium")).launch()
         page = b.new_page(viewport={"width": 430, "height": 932})
         page.set_default_timeout(45000)
         page.on("pageerror", lambda e: errors.append("pageerror: " + str(e)))
