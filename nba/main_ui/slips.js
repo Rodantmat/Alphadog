@@ -355,7 +355,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   for (const app of ["prizepicks", "underdog"]) pct.set(app, board.filter(l => l.source_key === app).map(l => Number(l.score_0_100)).sort((a, b) => a - b));
   const percentile = (app, s) => { const arr = pct.get(app) || []; if (!arr.length) return null; let lo = 0; while (lo < arr.length && arr[lo] <= s) lo++; return r1(100 * lo / arr.length); };
   const byKey = new Map();
-  const norm = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z]/g, "");
+  const norm = normName;
   for (const l of board) {
     byKey.set([l.source_key, l.player_id, l.canonical_prop_key, Number(l.line_value), l.selected_side].join("|"), l);
     byKey.set([l.source_key, "n:" + norm(l.player_name), l.canonical_prop_key, Number(l.line_value), l.selected_side].join("|"), l);
