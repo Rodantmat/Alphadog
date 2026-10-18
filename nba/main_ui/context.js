@@ -62,8 +62,11 @@ export function formWindows(games, seasonGames) {
 }
 
 export async function splits(sql, pidT) {
-  return q(sql, `SELECT split_type, group_value, season, gp, min::float, pts::float, reb::float, ast::float, fg3m::float, stl::float, blk::float,
-      tov::float, fg_pct::float, fg3_pct::float, ft_pct::float, plus_minus::float
+  // nba_stats.player_splits stores SEASON TOTALS per split (scrape_nba_splits.py) - the screens show per-game averages
+  // (2026-10-17: the B2B / Home-Road cards showed totals, e.g. 140 PTS over 6 games)
+  const pg = c => `round((${c}::float / nullif(gp, 0))::numeric, 1)::float ${c}`;
+  return q(sql, `SELECT split_type, group_value, season, gp, ${["min", "pts", "reb", "ast", "fg3m", "stl", "blk", "tov"].map(pg).join(", ")},
+      fg_pct::float, fg3_pct::float, ft_pct::float, ${pg("plus_minus")}
     FROM nba_stats.player_splits WHERE player_id = $1 AND season = (SELECT max(season) FROM nba_stats.player_splits WHERE player_id = $1)
     ORDER BY split_type, group_value`, [pidT]);
 }
