@@ -781,6 +781,27 @@ def pick(conn, day, require_fresh=True):
         small_slate = True
     if small_slate:
         print(f"  {day}: small slate ({n_games} games) - every strategy at cap 1 (29n)", flush=True)
+    # STREAK FLAGS (2026-10-17): every rule's state today, recorded whether or not the rules act (start / stop always visible)
+    sr = streak_rules(conn)
+    flags, shift_add = {}, defaultdict(int)
+    for sname, rule in sr.get('rules', {}).items():
+        if sname not in STRATEGIES:
+            continue
+        on, reason = streak_flag(conn, day, s0, sname, rule)
+        prev = conn.execute("SELECT flag_on, since FROM nba_score.live_streak_flags WHERE strategy=%s AND game_date < %s AND game_date >= %s ORDER BY game_date DESC LIMIT 1",
+                            (sname, day, s0 or dt.date(1900, 1, 1))).fetchone()
+        since = ((prev[1] if (prev and prev[0] and prev[1]) else day) if on else None)
+        acted = bool(sr.get('enabled')) and on
+        factor = float(rule.get('stake', 0.5)) if acted else 1.0
+        flags[sname] = {'on': on, 'acted': acted, 'factor': factor, 'since': since, 'reason': reason}
+        if acted and rule.get('shift_to') in STRATEGIES:
+            shift_add[rule['shift_to']] += int(rule.get('shift_cap', 1))
+        conn.execute("""INSERT INTO nba_score.live_streak_flags (game_date, strategy, flag_on, since, reason, acted, stake_factor)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET flag_on=EXCLUDED.flag_on,
+                        since=EXCLUDED.since, reason=EXCLUDED.reason, acted=EXCLUDED.acted, stake_factor=EXCLUDED.stake_factor""",
+                     (day, sname, on, since, reason, acted, factor))
+        print(f"  {day}: STREAK FLAG {sname} {reason}" + (f" (since {since})" if on else "") +
+              (f" -> stake x{factor:g}" if acted else (" -> rules disabled, recorded only" if on else "")), flush=True)
     n = 0
     placed_sigs = set()   # (structure, sorted legs) already placed today by an earlier strategy - a duplicate is staked once
     for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
