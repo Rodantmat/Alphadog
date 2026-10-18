@@ -143,7 +143,7 @@ def main():
                 w.execute("DELETE FROM nba_score.replay_audit_states WHERE label=%s", (save,))
                 with w.cursor() as c:
                     c.executemany("""INSERT INTO nba_score.replay_audit_slips (label, game_date, strategy, k, legs_json, size, structure,
-                                     status, hits, payout, profit, stake_weight, streak_note) VALUES (%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                                     status, hits, payout, profit, stake_weight, streak_note, unit_usd) VALUES (%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                                   [(save,) + tuple(r) for r in sl])
                     c.executemany("""INSERT INTO nba_score.replay_audit_states (label, game_date, strategy, state, live_cap, days, slips,
                                      net, roi, ci_lo, leg_hit, drawdown, streak, hurdles) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)""",
