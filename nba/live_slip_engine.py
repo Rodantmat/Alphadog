@@ -376,6 +376,9 @@ def ensure_tables(conn):
     # §31n: recommended stake per slip (1.0, or 0.5 when it holds a star-line balanced Under). Grading, hurdles and the calibrated
     # envelopes stay at unit stake; the weight is what to actually stake, and weighted P&L = stake_weight x profit.
     conn.execute("ALTER TABLE nba_score.live_slips ADD COLUMN IF NOT EXISTS stake_weight double precision DEFAULT 1.0")
+    conn.execute("ALTER TABLE nba_score.live_slips ADD COLUMN IF NOT EXISTS streak_note text")   # 2026-10-17 streak flags
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_streak_flags (game_date date, strategy text, flag_on boolean, since date,
+        reason text, acted boolean, stake_factor double precision, PRIMARY KEY (game_date, strategy))""")
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_strategy_state (
         strategy text PRIMARY KEY, state text, live_cap int, days int, slips int, net double precision, roi double precision,
         ci_lo double precision, leg_hit double precision, drawdown double precision, streak int, pool_avg double precision,
