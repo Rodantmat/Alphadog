@@ -333,6 +333,14 @@ function udAdvice(s, bt) {
 function stakeAdvice(s, bt) {
   const st = String(s.status || "");
   if (st === "replay_backtest") return { label: "backtest replay", play_usd: null };
+  if (s.replay_live) {
+    // a past slate as the live engine played it: what was staked that day (its unit then x weight), never a PLAY for today
+    const skip = SKIP_REASON.find(([k]) => st.includes(k));
+    if (skip) return { label: `SKIP - ${skip[1]} (replay)`, play_usd: null };
+    if (st.includes("void")) return { label: "replay: void - stake returned", play_usd: null };
+    const u = s.unit_usd != null && s.unit_usd !== "" ? Number(s.unit_usd) : bt.unit.usd;
+    return { label: "replay: staked $" + (Math.round(u * (s.stake_weight == null ? 1 : Number(s.stake_weight)) * 100) / 100).toFixed(2) + " that day", play_usd: null };
+  }
   if (s.app === "underdog") return udAdvice(s, bt);
   if (s.app !== "prizepicks") return { label: "paper", play_usd: null };
   const skip = SKIP_REASON.find(([k]) => st.includes(k));
