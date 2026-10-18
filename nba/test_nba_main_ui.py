@@ -760,6 +760,12 @@ def browser():
             if miss:
                 raise RuntimeError(f"profile depth sections missing: {miss}")
             page.evaluate("[...document.querySelectorAll('#playerProfileBody .sectionLabel')].find(e => e.textContent.startsWith('Player Depth')).scrollIntoView()")
+            # 2026-10-17: Home / Away split showed '—' for every stat (a client function-name clash); split cards showed season totals
+            ha = page.evaluate("""(() => { const s = [...document.querySelectorAll('#playerProfileBody .dSection')].filter(x => /^(Home \\/ Away|Back-To-Back|Home \\/ Road)/.test((x.querySelector('h3') || {}).textContent || ''));
+                return s.map(x => ({ h: x.querySelector('h3').textContent, v: [...x.querySelectorAll('.splitStat')].map(c => [c.querySelector('.k').textContent, c.querySelector('.v').textContent]) })); })()""")
+            bad = [(x["h"], k, v) for x in ha for k, v in x["v"] if (x["h"].startswith("Home / Away") and v == "—") or (k == "PTS" and v != "—" and float(v) > 60) or (k == "MIN" and v != "—" and float(v) > 48)]
+            if bad:
+                raise RuntimeError(f"split cards wrong (dash or totals): {bad[:4]}")
         step("06a_profile_depth", profile_depth)
         step("06a1_profile_sharp", lambda: page.evaluate("[...document.querySelectorAll('#playerProfileBody .sectionLabel')].find(e => e.textContent.startsWith('Sharp Read')).scrollIntoView()"))
         step("06b_profile_low", lambda: page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.6)"))
