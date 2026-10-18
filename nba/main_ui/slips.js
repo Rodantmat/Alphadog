@@ -498,7 +498,7 @@ export async function apiHighHit(sql, cfg, url, version) {
       .map(([a, xs]) => xs.length + (a === "prizepicks" ? " PrizePicks" : " Underdog") + " slip(s) $" + xs.reduce((t, x) => t + x.play_usd, 0).toFixed(2));
     notes.push("To play today: " + (byApp.length ? byApp.join(" + ") : "0 slips") + " (total $" + plays.reduce((a, x) => a + x.play_usd, 0).toFixed(2) + ") at $" + bt.unit.usd.toFixed(2) + " per unit - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).");
   }
-  if (eng.source !== "replay_backtest" && plays.length) {
+  if (eng.source === "live" && plays.length) {
     const by = new Map();
     for (const x of plays) by.set(x.place_by_pt || "unknown", (by.get(x.place_by_pt || "unknown") || 0) + 1);
     const order = [...by.keys()].sort((u, v) => String((plays.find(x => x.place_by_pt === u) || {}).place_by_utc).localeCompare(String((plays.find(x => x.place_by_pt === v) || {}).place_by_utc)));
