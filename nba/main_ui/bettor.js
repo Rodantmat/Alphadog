@@ -140,7 +140,7 @@ export async function withWithout(sql, pidT, teamId, beforeDate, injuredRows) {
     roster AS (SELECT player_id, sum(min::float) mins FROM nba_stats.player_game_log
                WHERE team_id = $2 AND season = $3 AND game_date < $4::date AND min > 0 AND player_id <> $1 GROUP BY 1),
     inj AS (SELECT r.player_id FROM roster r JOIN nba_ref.players p ON p.player_id = r.player_id
-            WHERE lower(regexp_replace(normalize(p.full_name, NFKD), '[^A-Za-z]', '', 'g')) = ANY($5::text[])),
+            WHERE nba_ref.norm_name(p.full_name) = ANY($5::text[])),
     mates AS (SELECT player_id FROM (SELECT player_id FROM roster ORDER BY mins DESC LIMIT 5) a UNION SELECT player_id FROM inj),
     me AS (SELECT game_id, min::float min, pts::float pts, reb::float reb, ast::float ast, fg3m::float fg3m, fga::float fga
            FROM nba_stats.player_game_log WHERE player_id = $1 AND season = $3 AND game_date < $4::date AND min > 0 AND game_id IN (SELECT game_id FROM tg)),
