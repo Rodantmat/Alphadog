@@ -28,6 +28,15 @@ import psycopg
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import live_slip_engine as L  # noqa: E402
 
+# AR_CAPS (research only, 2026-10-17 owner: "Try different caps with the strategies"): "name:cap,name:cap" replaces those
+# strategies' base caps IN THIS PROCESS ONLY before the replay (the replay seeds every state's live_cap from the table, and the
+# whole run is rolled back) - production code and tables are untouched. Portfolio subsets are scored afterwards from the saved label.
+for _kv in filter(None, os.environ.get("AR_CAPS", "").split(",")):
+    _n, _c = _kv.split(":")
+    _t = L.STRATEGIES[_n]
+    L.STRATEGIES[_n] = (_t[0], _t[1], _t[2], int(_c)) + tuple(_t[4:])
+    print(f"AR_CAPS: {_n} cap {_t[3]} -> {int(_c)} (this research run only)", flush=True)
+
 
 class NoCommit:
     def __init__(self, c): self._c = c
