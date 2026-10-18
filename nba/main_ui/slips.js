@@ -403,7 +403,7 @@ export async function apiHighHit(sql, cfg, url, version) {
       status: s.status, stake_weight: s.stake_weight == null ? (s.stake == null ? null : Number(s.stake)) : Number(s.stake_weight),
       estimated_multiplier: tiers[legs.length] || null, estimated_multiplier_flex_tiers: mode === "flex" ? tiers : null,
       estimated_hit_probability_0_100: legs.every(l => l.hit_probability_0_100 != null) ? r1(legs.reduce((a, l) => a + Number(l.hit_probability_0_100), 0) / legs.length) : null,
-      result: s.hits == null ? null : { hits: Number(s.hits), payout: num(s.payout) },
+      result: s.hits == null ? null : { hits: Number(s.hits), payout: num(s.payout), pushes: lj.filter(x => x.hit == null).length },
       // PAPER vs STAKED (2026-10-15 full pass): 'placed' only means the engine built it for a non-shadow strategy; whether money
       // goes on it is the strategy's state (paper = recorded, never staked, §29c; active = staked)
       strategy_state: s.app === "prizepicks" ? (bt.stateOf.get(s.strategy) || null) : null,
