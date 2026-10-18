@@ -2076,3 +2076,46 @@ market-term switch made load-bearing were acted on, the rest verified:
   hurdles in live_strategy_state (all empty), never in the history table.
 - **Disk:** 38 GB (the window-only twin tables are 1.7 GB of it).
 - **Close capture per tip cluster** stays a recorded build item (it feeds line-movement research, never the pick).
+
+### ANOTHER DAY IN — FULL PASS WITH EVERYTHING ON (owner 2026-10-17 13:37 PT: "another full pass, test, simulation, validation, calibration, certification, deep level of scrutiny")
+**Production, 10-17.** P2A 14.3 min, P2B 3.7, P3 6.4 - all green. A second P2A dispatch (16:35Z) was refused by the run-once
+guard ("already claimed") - correct. P3 on a preseason day: refresh / scoring / pick skipped (no regular-season games), the
+sportsbook capture stored 296 rows (3,750 ParlayAPI items for 10-20, 2,426 for 10-21), no soft failures; the new empty-capture
+rule did not misfire. The morning monitor ran 12:53Z, SUCCEEDED in ~30 s.
+**Live configuration read back from the DB (not from notes):** live_backtest_suffix `_wo`, market_feed.refresh_final_hp true,
+stake_unit.ud_play true, unit_usd 1, price_shop_ledger.margin_pp 0.0748.
+**Boards for 10-20:** PrizePicks 31 players / 9,133 rows; Sleeper 28 / 966; Underdog 26 / 1,956 (was 3 the day before; 10-21 already
+83 players); DraftKings 24 / 430; Betr - NBA re-proved today on a renewed session, 892 legs; Fliff still team markets only (owed
+on 10-20 with the Underdog displayed-payout and Sleeper payout checks).
+**Injury report:** the newest stored snapshot is 10-07 (preseason gap). Probe (trigger file `mode: probe`): the CDN answered 200
+directly and the parser read 78 rows from the known-good 2026-04-08 report. On slate days INJURY_EXPECT=1 makes zero snapshots a
+visible soft failure.
+**Rosters:** refreshed 10-17 15:08Z, 752 rostered; week 1 = 52 games.
+**One alignment:** price_shop_ledger.margin_pp 0.0662 -> **0.0748** (the certified break-even distance moved with the window-only
+switch; the ledger's model-p gate must use the same number) - DB and the code default in build_price_shop_ledger.py.
+**Certification:** certify_slip_system **82 checks, 0 FAIL (run 7131ece6)**, including L11b on the `_wo` tables.
+**Calibration - both seasons replayed day by day with the live loop on the `_wo` hurdles and EDGE_DELTA -0.0748**
+(audit_season_replay, rolled back: live_slips 0 -> 0, strategy states unchanged, both RESULT PASS):
+
+| replay | played slips | net | ROI | max drawdown |
+|---|---|---|---|---|
+| 2025-26 before (s2526_final) | 2,373 | +2,044.62 | +86.2% | 72.6 |
+| 2025-26 now (s2526_wo) | 2,371 | **+2,046.62** | **+86.3%** | 72.6 |
+| 2024-25 before (s2425_final) | 2,059 | +759.53 | +36.9% | 143.4 |
+| 2024-25 now (s2425_wo) | 2,072 | **+787.40** | **+38.0%** | 147.4 |
+
+2025-26 differs on one day: 2025-12-15 the recalibrated hurdles held A_core_3power at cap 1 instead of 3 (the two slips not played
+both lost, +2.00). 2024-25 differs on 16 A_core_3power days (24 slips played only now, +20.68; 8 only before, -8.00) plus small
+moves in A_wsteals_5flex (+2.19), A_regular_5power (-2.00), A_wrebounds_4flex (-2.00), C_wstocks_4flex (+1.00): net +27.87, drawdown
++4.0. The recalibration helps in both seasons and changes little - as intended (it moves hurdles, not the pick).
+**Opening-night rehearsal (nba-sim-slate 2026-10-20, run 39077395372, sandboxed):** 1,114 scored PrizePicks legs (yesterday 1,032),
+31 players, 3 games, small slate -> cap 1; 9 slips recorded: **PLAY A_core_3power, A_wrebounds_4flex, C_wstocks_4flex** (unchanged),
+A_regular_5power below minimum (skipped), A_wsteals_5flex week-1 skip, four shadows. Production after: baseline_history /
+final_hp / final_hp_derived / live_slips all 0.
+**Tests, run one at a time after the replays (they share the live_slips lock):** integration test **ALL PASS** (run 39080801169;
+rolled back - PP 0, UD 0, both edge monitors 0 before and after); audit_release_path **PASS** (run 39081069617; live_slips 0 -> 0,
+B_demon_5flex state unchanged); main-UI end-to-end **95/95** on the replay path 2026-03-10 (run 39081245866, incl. C50 PLAY/SKIP,
+C52 place-by) and **95/95** on the default path (run 39081763273).
+**Verdict 10-17:** nothing to change. Everything that tested as an improvement is on, the recalibration behind the market-term
+switch is confirmed on both seasons, and opening night rehearses to the same three PrizePicks slips. Next real reading: the first
+live P3 on 10-20 (11:31 PT; slips ~11:43 PT), then the morning monitor every day at 05:52 PT.
