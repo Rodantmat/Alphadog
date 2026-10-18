@@ -12,7 +12,7 @@ function renderPlayerProfileDream(j){
   let html='<div class="p2Hero"><div class="p2Avatar">'+esc(initials(name))+'</div><div><div class="p2Name">'+esc(name)+' '+availBadge+'</div><div class="p2Meta">'+heroBadges.map(b=>'<span class="p2Badge">'+esc(b)+'</span>').join('')+'</div>'+(nextGameLine?'<div class="p2Next">'+nextGameLine+'</div>':'')+'</div></div>';
   const seasonRow=snapRow(snapshots,'season_to_date'),l5Row=snapRow(snapshots,'last_5_games');
   const trend=seasonRow&&l5Row?trendArrow(l5Row.pts,seasonRow.pts,true):'';
-  html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot'+(j.season?' — '+esc(j.season):'')+' '+trend+'</div>'+(seasonSnapStrip(snapshots)||'<div class="small">No season snapshot available yet.</div>');
+  html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot'+(j.season?' — '+esc(j.season):'')+(seasonRow&&seasonRow.playoff_games?' (incl. '+seasonRow.playoff_games+' playoff G)':'')+' '+trend+'</div>'+(seasonSnapStrip(snapshots)||'<div class="small">No season snapshot available yet.</div>');
   const propKeys=propFamilyKeys();
   const legsByProp={};for(const l of legs){const k=String(l.canonical_prop_key||'');(legsByProp[k]=legsByProp[k]||[]).push(l)}
   const propCards=propKeys.map(k=>propTrendCard(k,games,legsByProp[k]||[])).filter(Boolean);
