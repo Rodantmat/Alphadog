@@ -147,6 +147,31 @@ def pricing_parity(conn, cfg):
 def api_checks(conn, cfg):
     code, h, t = curl("/health")
     check("C0 /health ok", code == 200 and h.get("ok"), f"{t}s {h.get('version')} slate {h.get('slate')}")
+    # C0b (2026-10-17): the deploy only ships the worker when its ENTRY file changes, and the browser caches the client parts by
+    # VERSION - a change under nba/main_ui/ without a VERSION bump never reaches the screen (found live: test-only filter and the
+    # replay label sat undeployed). So: the deployed VERSION is the repo's, every served client part is the repo's file byte for
+    # byte, and no file under nba/main_ui/ was committed after the entry file's last commit.
+    root = Path(__file__).resolve().parent
+    repo_ver = re.search(r'const VERSION = "([^"]+)"', (root / "alphadog-v2-nba-main-ui.js").read_text()).group(1)
+    stale = []
+    cdir = root / "main_ui" / "client"
+    want = {"/app.js": (cdir / "core.js.txt").read_text(), "/js/dossier.js": (cdir / "dossier.js.txt").read_text() + "\n" + (cdir / "sharp.js.txt").read_text()}
+    for part in ("slips", "build", "profile", "admin"):
+        want[f"/js/{part}.js"] = (cdir / f"{part}.js.txt").read_text()
+    for part, body in want.items():
+        try:
+            served = urllib.request.urlopen(UI + f"{part}?v=check{int(time.time())}", timeout=30).read().decode()
+            if served != body:
+                stale.append(part)
+        except Exception as e:  # noqa: BLE001
+            stale.append(f"{part}: {e}")
+    def ct(p):
+        r = subprocess.run(["git", "log", "-1", "--format=%ct", "--", p], cwd=root.parent, capture_output=True, text=True)
+        return int(r.stdout.strip() or 0)
+    ui_t, entry_t = ct("nba/main_ui"), ct("nba/alphadog-v2-nba-main-ui.js")
+    check("C0b the deployed UI is the repo's (VERSION, client parts byte-equal, no main_ui commit after the last VERSION bump)",
+          h.get("version") == repo_ver and not stale and (ui_t == 0 or entry_t >= ui_t),
+          f"deployed {h.get('version')} repo {repo_ver}; stale parts {stale}; main_ui last commit {ui_t} entry {entry_t}")
     slate = h.get("slate") or {}
     d = slate.get("date")
     code, f, t = curl("/api/main-board/filters"); save_sample("filters", f)
