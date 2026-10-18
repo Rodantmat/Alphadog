@@ -389,6 +389,30 @@ def api_checks(conn, cfg):
     cs, js_, _ = curl("/api/stake-unit", body={"unit_usd": unit})
     check("C51 unit control: read, refuse below the minimum, save round-trips", cg == 200 and float((jg.get("stake_unit") or {}).get("unit_usd", -1)) == unit
           and cb == 400 and cs == 200 and float((js_.get("stake_unit") or {}).get("unit_usd", -1)) == unit, f"GET {cg} below-min {cb} save {cs}")
+    # C53 (2026-10-17, owner saw LeBron James on the Lakers after his move to PHI): the profile's team is the CURRENT roster team,
+    # not the last box score's, for a player whose last box score is for another team; and his next game is that team's
+    mover = conn.execute("""WITH last AS (SELECT DISTINCT ON (player_id) player_id, team_id FROM (
+                              SELECT player_id, team_id, game_date FROM nba_stats.player_game_log UNION ALL
+                              SELECT player_id, team_id, game_date FROM nba_stats.player_game_log_postseason) x ORDER BY player_id, game_date DESC)
+                            SELECT p.player_id, p.team_id, l.team_id FROM nba_ref.players p JOIN last l ON l.player_id = p.player_id
+                            WHERE p.active = 1 AND p.team_id IS NOT NULL AND l.team_id <> p.team_id ORDER BY p.player_id LIMIT 1""").fetchone()
+    if mover:
+        cm, pm, _ = curl("/api/player-profile?player_id=" + mover[0])
+        ng = pm.get("next_game") or {}
+        tm = (pm.get("team") or {}).get("team_id")
+        nxt = conn.execute("""SELECT min(game_date)::text FROM nba_calendar.slate_games WHERE game_date >= (now() AT TIME ZONE 'America/Los_Angeles')::date
+                              AND %s IN (home_team_id, away_team_id)""", (mover[1],)).fetchone()[0]
+        check("C53 profile team = current roster team for an offseason / in-season mover (next game is that team's)",
+              cm == 200 and tm == mover[1] and (nxt is None or ng.get("game_date") == nxt), f"{mover[0]} roster {mover[1]} last box {mover[2]} -> profile {tm}, next {ng.get('game_date')} want {nxt}")
+    else:
+        check("C53 profile team = current roster team for a mover", True, "no mover on record")
+    # C54 (2026-10-17): the B2B / Home-Road splits are PER-GAME averages (the table stores season totals)
+    sp54 = [s for s in (pr.get("splits") or []) if s.get("split_type") in ("days_rest", "location") and s.get("gp")]
+    dbs = {(r[0], r[1]): (r[2], r[3]) for r in conn.execute("SELECT split_type, group_value, gp, pts::float FROM nba_stats.player_splits WHERE player_id=%s "
+                                                             "AND season=(SELECT max(season) FROM nba_stats.player_splits WHERE player_id=%s)", (pid, pid)).fetchall()}
+    bad54 = [(s["split_type"], s["group_value"], s.get("pts")) for s in sp54 if (s["split_type"], s["group_value"]) in dbs and dbs[(s["split_type"], s["group_value"])][0]
+             and abs(float(s.get("pts") or 0) - dbs[(s["split_type"], s["group_value"])][1] / dbs[(s["split_type"], s["group_value"])][0]) > 0.051]
+    check("C54 splits are per-game (stored totals / games)", not bad54, f"{len(sp54)} split rows; bad {bad54[:3]}")
     ids = [r["final_board_row_id"] for r in rows if r["source_key"] == "prizepicks"][:6]
     code, g, t = curl("/api/slips/generate", body={"leg_ids": ids}); save_sample("generate", g)
     gs = g.get("generated_slips") or []
