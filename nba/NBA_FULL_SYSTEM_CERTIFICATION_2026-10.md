@@ -2215,3 +2215,52 @@ A_core_3power when its legs hit < 55% over its last 5 days (24 / 39 flagged days
 strategy) was negative on these days in both (-10% / -42%). An open search over every slip kind for the flagged days does NOT
 survive cross-season scoring (chosen top-1: +2.8% / +39.8%; lottery 5-picks collapse). On A_regular's flagged days no strategy
 beats staying in both seasons. **Not implemented - an engine change; to be confirmed in the live-loop replay before use.**
+
+### STREAK FLAGS - DEEPER SIGNALS, BUILT IN, REPLAYED (owner 2026-10-17 21:23 PT: "If they survive 2 seasons of they, they are usable, you can build them in. But be sure you have clear the flags when it start and when it stop. Research online deeper, better strategies and signals and how to identify it, as well as deep data analysis and debug. Once done again heavy simulation and testing")
+**Online research (what practitioners use):** change-point detection on a running record (Page's CUSUM - Lancaster MATH337
+notes; probabilistic CUSUM, Seitz); fractional Kelly - cut the stake, not the play, when the edge is uncertain (Crane: ~25% Kelly,
+drawdowns are informative); pick'em correlation - game pace / blowout scripts are the shared downside of legs from one game
+(Stokastic); NBA prop guides on game totals and spreads (Unabated, TopEndSports).
+**Tested on both cap-2 live-loop replays (nba/research_streak_signals.py run 39097173249; research_streak_followup.py run
+39097534794).** Rule: kept only if it points the same way in BOTH seasons.
+- Leg hit by game total / team spread, per cell and side: no cell keeps its direction across seasons - REJECTED.
+- Two+ legs from one game vs all different games: signs flip by strategy and season (A_core -100% / +334%) - REJECTED.
+- "An Under leg in a high-total game" (A_regular same sign in both seasons with the 'window' line). DEBUG: live never captures a
+  'window' game line - only P2B's 08:00 'morning' line exists live. With the morning line: still the same sign but p 0.03-0.21,
+  the Under legs themselves hit no worse in high totals (66.4 vs 63.8% / 57.8 vs 59.7%), and the sign flips inside equal-Under-
+  count groups - a slip-level coincidence, not a mechanism - REJECTED.
+- CUSUM on the strategy's legs with the other season's hit rate as the target: the 2025-26 rate is higher, so the 2024-25 alarm
+  is on 137 of 143 days - a baseline problem, no information - REJECTED (the self-referencing simple rules below are its working form).
+- The two simple day flags, all six strategies, permutation of flagged days (2,000x): only A_core (legs < 55% over 5 days, p 0.037
+  / 0.090) and A_regular (3 losing days, p 0.016 / 0.054) hold in both seasons; on the other four they flip or are noise.
+**Built (engine, config `classification_config['streak_rules']`, env LS_STREAK_RULES for replays):**
+- A_core_3power ON when its legs hit < 55% over its last 5 played days this season; OFF the first day that is back to 55%+.
+- A_regular_5power ON after it lost on each of its last 3 played days this season; OFF the day after its first winning day.
+- Computed at pick time from slips graded before the day. Every pick writes each rule's state to `nba_score.live_streak_flags`
+  (date, on, since, reason, acted, factor) and the strategy's slips carry `live_slips.streak_note`; the Slips screen (UI v1.4.12)
+  shows both; the replay prints every ON spell (first day .. last day -> off day).
+- Action while ON: stake x0.5. A half stake below the minimum entry keeps the FULL stake (flagged days are still positive) - so at
+  the 1-dollar unit the flag is shown and changes no stake; it acts from a 2-dollar unit. Research option `shift_to` / `shift_cap` (A_core's
+  flag adds A_wrebounds slips) exists but is OFF.
+**Replays with the flags on (audit_season_replay, caps 2, 2-dollar unit, LS_STREAK_SHIFT=on; s2526_streak run 39098062686, s2425_streak
+run 39101039040; both rollback live_slips 0 -> 0, states unchanged, PASS).** Flagged played days: A_core 23 / 43, A_regular 90 / 96.
+Scored by nba/research_streak_replay_score.py (run 39104383368; one replay holds all variants - the stake never changes what is
+built or any state). Equal budget, ROI / max drawdown:
+
+| portfolio | 2025-26 base | 2025-26 half | + shift | 2024-25 base | 2024-25 half | + shift |
+|---|---|---|---|---|---|---|
+| all six | +86.4% / 71.7 | +88.5% / 67.5 | +88.9% / 68.2 | +37.7% / 142.2 | +38.1% / 138.2 | +39.1% / 136.0 |
+| five (no C_wstocks) | +91.3% / 64.7 | +93.9% / 60.6 | +94.3% / 61.2 | +42.7% / 132.6 | +43.6% / 130.8 | +44.5% / 124.7 |
+| top 3 | +101.8% / 37.0 | +110.5% / 29.0 | +110.7% / 30.0 | +51.3% / 69.6 | +54.9% / 60.4 | +56.3% / 64.4 |
+| top 2 | +107.3% / 46.0 | **+122.8% / 35.6** | = | +60.2% / 52.8 | **+68.5% / 47.8** | = |
+
+Half stake on flagged days: ROI up and drawdown down in every portfolio in both seasons - ENABLED (`streak_rules.enabled = true`;
+no stake changes at 1 dollar). The shift adds +0.0..+1.4 pts with mixed drawdown and was measured only at A_wrebounds cap 2 (production
+cap is 3; k4 was the slot that failed in the cap study) - left OFF until the owner's portfolio / cap decision.
+**Debug found on the way:** a scorer and the integration check read "x0.5 would be below the minimum: full stake kept" as halved -
+fixed in both (research_streak_replay_score.py, integration_test_rollback.py); corrected numbers above.
+**Simulation and testing after the build (serial, nothing concurrent with a replay):** certify_slip_system 82 checks / 0 FAIL (run
+39102841962); integration test ALL PASS (run 39104386781; its stake check now expects an acting flag's x0.5); audit_release_path
+PASS (run 39104633892); sim-slate 2026-10-20 (run 39105068351): both flags recorded off (no played days yet; the reason text now says so plainly), 9 slips
+on the 3-game slate, production untouched; UI end-to-end Chromium 101/101 (run 39107752908) and WebKit 101/101 (run 39108276065),
+deployed v1.4.12. New test C57 (every recorded flag and slip streak note on the Slips screen) runs on engine slates - from 10-20.
