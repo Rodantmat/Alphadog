@@ -36,7 +36,7 @@ def main():
             w = float(w); pr = float(pr)
             if note.startswith('streak flag'):
                 flagged[s].add(d)
-            is_half = '- stake x0.5' in note
+            is_half = '- stake x0.5' in note and 'full stake kept' not in note   # "... x0.5 would be below the minimum: full stake kept"
             is_shift = 'streak shift' in note
             halved[s] += is_half; kept[s] += ('full stake kept' in note)
             shifted += is_shift
