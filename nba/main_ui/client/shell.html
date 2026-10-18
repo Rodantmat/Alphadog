@@ -67,8 +67,14 @@
 </head>
 <body>
 <script>
+// Every AlphaDog script is served from this origin, so its errors always arrive with their file and line. A bare "Script error."
+// with no file and line 0 is the browser muting an error from a script of ANOTHER origin (an in-app browser's or extension's
+// injected code) - not ours, and unreadable by design - so it is logged, not bannered (2026-10-17, owner saw it on iPhone).
 window.onerror = function(msg, url, line, col, error) {
-  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#c00;color:#fff;padding:16px;font-size:14px;font-weight:bold;white-space:pre-wrap;position:relative;z-index:99999">ERROR: ' + msg + ' (line ' + line + ')</div>');
+  if (!url && /^Script error\.?$/.test(String(msg))) { try { console.warn('foreign script error (muted by the browser):', msg); } catch (e) {} return false; }
+  var file = String(url || '').split('?')[0].split('/').pop();
+  var safe = String(msg).replace(/[&<>]/g, function (c) { return c === '&' ? '&amp;' : (c === '<' ? '&lt;' : '&gt;'); });
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#c00;color:#fff;padding:16px;font-size:14px;font-weight:bold;white-space:pre-wrap;position:relative;z-index:99999">ERROR: ' + safe + ' (' + (file || 'page') + ':' + line + ')</div>');
   return false;
 };
 window.onunhandledrejection = function(e) {
