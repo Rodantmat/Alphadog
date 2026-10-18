@@ -286,7 +286,7 @@ def api_checks(conn, cfg):
     unpriced = [s["track_label"] for s in sl if not s.get("estimated_multiplier")]
     check("C12 Slips screen: engine slips load and are priced", code == 200 and hh.get("ok") and sl and not unpriced, f"{t}s source {hh.get('source')} slips {len(sl)} pool {len(hh.get('backup_pool', []))} unpriced {unpriced[:3]}")
     nolegs = [s["track_label"] for s in sl if any(l.get("hit_probability_0_100") is None for l in s["legs"])]
-    if hh.get("source") == "replay_backtest":
+    if hh.get("source") in ("replay_backtest", "replay_live"):
         # a backtest slip can hold a leg the historical scored board lacks (e.g. the pre-fix suffix-name gap): it must be
         # shown without a probability AND disclosed in the notes - never silently priced
         nleg = sum(len(s["legs"]) for s in sl)
