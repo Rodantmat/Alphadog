@@ -57,11 +57,12 @@ def main():
     ok = True
     try:
         L.replay(conn, d0, d1)
-        rows = conn.execute("""SELECT game_date, strategy, status, coalesce(stake_weight, 1), payout, size FROM nba_score.live_slips
+        rows = conn.execute("""SELECT game_date, strategy, status, coalesce(stake_weight, 1), payout, size, unit_usd FROM nba_score.live_slips
                                WHERE status LIKE 'graded%%' AND k < 100 ORDER BY game_date""").fetchall()
         play = defaultdict(lambda: [0, 0.0, 0.0])
         skip = defaultdict(lambda: [0, 0.0, 0.0])
-        for d, strat, status, w, pay, size in rows:
+        auto_on = bool(L.unit_auto_cfg(conn).get("enabled")) and not os.environ.get("LS_UNIT_USD")
+        for d, strat, status, w, pay, size, uu in rows:
             if status in ("graded", "graded_void", "graded_week2"):   # the statuses the screen says PLAY for
                 # the stake actually placed is unit x stake_weight (2026-10-17: the streak flags halve stakes; at a 1-dollar unit every
                 # PLAY slip has weight 1 - a half weight is below the minimum and is recorded below_min - so earlier ledgers are equal)
