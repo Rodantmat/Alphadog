@@ -286,13 +286,21 @@ export async function opponentDefenders(sql, cfg, { oppTeamId, beforeDate }) {
   const sh = cfg.ui.sharp;
   if (!oppTeamId) return null;
   const rows = await q(sql, `
+    -- live (today or later): the opponent's CURRENT roster (nba_ref.players, synced every morning) with each man's season numbers
+    -- for whichever team he played; a past date keeps the box-score rotation of that season (2026-10-17: opening week showed last
+    -- season's rotation, offseason departures included and arrivals missing)
     WITH s AS (SELECT max(season) season FROM nba_team.team_game_log WHERE team_id = $1 AND game_date < $2::date),
+    live AS (SELECT $2::date >= (now() AT TIME ZONE 'America/Los_Angeles')::date v),
+    ros AS (SELECT player_id FROM nba_ref.players WHERE active = 1 AND team_id = $1),
     lg AS (SELECT player_id, team_id, game_date, min::float min, stl::float stl, blk::float blk, pf::float pf, dreb::float dreb
            FROM nba_stats.player_game_log WHERE season = (SELECT season FROM s) AND game_date < $2::date AND min > 0
-             AND player_id IN (SELECT DISTINCT player_id FROM nba_stats.player_game_log WHERE team_id = $1 AND season = (SELECT season FROM s) AND game_date < $2::date)),
+             AND (player_id IN (SELECT DISTINCT player_id FROM nba_stats.player_game_log WHERE team_id = $1 AND season = (SELECT season FROM s) AND game_date < $2::date)
+                  OR ((SELECT v FROM live) AND player_id IN (SELECT player_id FROM ros)))),
     cur AS (SELECT DISTINCT ON (player_id) player_id, team_id FROM lg ORDER BY player_id, game_date DESC),
     agg AS (SELECT lg.player_id, count(*)::int gp, avg(min) min, avg(stl) stl, avg(blk) blk, avg(pf) pf, avg(dreb) dreb, sum(min) tot
-            FROM lg JOIN cur ON cur.player_id = lg.player_id AND cur.team_id = $1 WHERE lg.team_id = $1 GROUP BY 1),
+            FROM lg WHERE CASE WHEN (SELECT v FROM live) AND EXISTS (SELECT 1 FROM ros) THEN lg.player_id IN (SELECT player_id FROM ros)
+                               ELSE lg.team_id = $1 AND lg.player_id IN (SELECT player_id FROM cur WHERE team_id = $1) END
+            GROUP BY 1),
     dk AS (SELECT DISTINCT ON (player_id) player_id, d_dpm::float d_dpm, dpm::float dpm, updated_at FROM nba_stats.player_impact_rating ORDER BY player_id, updated_at DESC)
     SELECT agg.*, p.full_name, p.position, p.height_inches, p.weight_lbs, dk.d_dpm, dk.dpm, dk.updated_at, (SELECT season FROM s) season
     FROM agg JOIN nba_ref.players p ON p.player_id = agg.player_id LEFT JOIN dk ON dk.player_id = agg.player_id
