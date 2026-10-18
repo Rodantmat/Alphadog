@@ -320,7 +320,9 @@ function stakeAdvice(s, bt) {
   const state = bt.stateOf.get(s.strategy) || "paper";
   const plays = state === "active" || (bt.unit.playPaper && ["paper", "yellow", "critical", "week2"].includes(state));
   if (!plays) return { label: `SKIP - strategy ${state}`, play_usd: null };
-  const usd = Math.round(bt.unit.usd * (s.stake_weight == null ? 1 : Number(s.stake_weight)) * 100) / 100;
+  // 2026-10-18: a slip is priced at the unit in force when the engine picked it (live_slips.unit_usd; earn the raise moves it)
+  const u = s.unit_usd != null && s.unit_usd !== "" ? Number(s.unit_usd) : bt.unit.usd;
+  const usd = Math.round(u * (s.stake_weight == null ? 1 : Number(s.stake_weight)) * 100) / 100;
   if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
   return { label: "PLAY $" + usd.toFixed(2) + (state === "active" ? "" : " (" + state + ")"), play_usd: usd };
 }
