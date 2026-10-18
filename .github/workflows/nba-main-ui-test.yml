@@ -16,6 +16,10 @@ on:
         description: "player to open in the Player Profile walk"
         default: "Jokic"
         required: false
+      engine:
+        description: "browser engine for the screen walk: chromium or webkit (Safari's engine)"
+        default: "chromium"
+        required: false
 
 permissions:
   contents: write
