@@ -307,6 +307,18 @@ def api_checks(conn, cfg):
                  if re.match(r"^(SKIP - shadow|paper|SKIP - strategy |SKIP - not staked)", str(s.get("stake_label") or ""))]
     check("C56 Slips screen shows no test-only slip (they are recorded as not played)", not testshown and isinstance(hh.get("test_only_recorded"), int),
           f"shown test-only {testshown[:3]}; recorded and hidden {hh.get('test_only_recorded')}")
+    # C57 (2026-10-17, owner: "be sure you have clear the flags when it start and when it stop"): on an engine slate every streak
+    # flag the engine recorded for the date is on the screen (its state and reason), and every shown slip of a flagged strategy
+    # carries the streak note the engine wrote on it
+    if hh.get("source") == "live" and conn.execute("SELECT to_regclass('nba_score.live_streak_flags') IS NOT NULL").fetchone()[0]:
+        sd57 = (hh.get("slate") or {}).get("date")
+        fl57 = conn.execute("SELECT strategy, flag_on, reason FROM nba_score.live_streak_flags WHERE game_date=%s", (sd57,)).fetchall()
+        notes57 = " ".join(hh.get("notes") or [])
+        miss57 = [st for st, on, why in fl57 if f"Streak flag {st}:" not in notes57 or why not in notes57]
+        nb57 = {r[0]: r[1] for r in conn.execute("SELECT strategy || ':' || k, to_jsonb(s) ->> 'streak_note' FROM nba_score.live_slips s WHERE game_date=%s AND status <> 'dup'", (sd57,)).fetchall()}
+        bad57 = [f"{s.get('strategy')}:{s.get('k')}" for s in sl if s.get("source_key") == "prizepicks" and (s.get("streak_note") or None) != nb57.get(f"{s.get('strategy')}:{s.get('k')}")]
+        check("C57 streak flags on the Slips screen (every recorded flag noted, every slip's streak note shown)", not miss57 and not bad57,
+              f"{len(fl57)} flags ({sum(1 for r in fl57 if r[1])} on), missing {miss57}; slip notes differing {bad57[:3]}")
     # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
     bp = cfg["backup_pool"]
     sd = (hh.get("slate") or {}).get("date")
