@@ -2141,3 +2141,30 @@ live P3 on 10-20 (11:31 PT; slips ~11:43 PT), then the morning monitor every day
   tops out at the rate the strongest legs actually hit out of sample (77.1% on that fit) - in history legs the raw model put at
   85-95% hit ~70%. Ties are ordered by Overall score.
 - UI end-to-end **98/98** on both paths (runs 39083107847 default, 39083429397 2026-03-10).
+
+**Deeper pass (owner 17:44 PT: "focus on fix your issues, deeper pass on the issues"; 17:47 PT: header "Script error.", the slips) - UI v1.4.9 / v1.4.10:**
+- **Every lazily loaded client part scanned with a real parser (acorn + eslint-scope):** no other function used from a part that
+  may not be loaded (the multiplierLabel class), no undefined global; the only inline handler (sharpPick) lives in its own part.
+- **Suffixed players on Underdog backtest slips - FIXED.** The Underdog backtest stores the player as a normalised key
+  ("craigporter"); the UI's own normaliser kept Jr / III, so every suffixed player missed his board row (raw key, "0%"). The UI
+  now has ONE normaliser (common.normName = nba_ref.norm_name, checked on every accented / suffixed / apostrophe name) used by the
+  slip matcher, the injury matching (server and client) and the with/without join; unmatched legs show the player's name.
+- **A missing probability showed "0%"** (pct(null) = 0) - now a dash.
+- **A pushed leg** (Kenrich Williams 9 rebounds on a 9.0 line, 2026-04-12) showed no result - now PUSH, and the slip says
+  "3/4 hit (1 push, paid as a 4-pick)".
+- **Board team on a live slate - FIXED:** the board preferred the last box-score team when that team also played; a mover's old
+  team often does. Live slates now take the current roster team first (past slates keep the box-score team of the time).
+- **Season windows holding playoff / play-in games now say so** (Season Snapshot 70 G incl. 10 playoff vs Career 60; GSW Team
+  Form 38-46 incl. 2 postseason vs Team Profiles 37-45).
+- **Filter counts verified** against board_scored for 2026-06-13 (Goblin 298 + Regular 172 + Demon 385 = 855 PrizePicks legs; no
+  PrizePicks blocks / steals / fantasy and no Sleeper board that day).
+- **"ERROR: Script error. (line 0)" - not ours.** Every AlphaDog script is same-origin, so its errors carry their file; a bare
+  "Script error." at line 0 is a browser-muted error from another origin's script (in-app browser / extension). The UI test now
+  also runs in WebKit (Safari's engine; workflow input engine=webkit): **99/99, no script error on any screen.** Such foreign
+  errors are logged, not bannered; our own errors name their file.
+- **Slip concentration (owner: "super clumped") - measured, not changed:** on the 2025-26 live-loop replay the most-used leg sits
+  in 83% of a day's played slips on average (avg 15.6 slips/day; >= 75% on 106 of 152 days) and hit 67.1%. This is how the certified
+  engine builds a day (top-ranked legs per cell), and the replayed ROI includes it; reducing it is a strategy change that needs its
+  own backtest.
+- Tests added: C55 (display names, HIT / MISS / PUSH, push count), WebKit option. UI end-to-end **99/99**: Chromium default (run
+  39084868910), Chromium 2026-03-10 (39084873975), WebKit before (39085538894) and after the banner change (39086083462).
