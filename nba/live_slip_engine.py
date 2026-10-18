@@ -184,6 +184,8 @@ def stake_unit(conn):
                 cfg.update(row[0] if isinstance(row[0], dict) else json.loads(row[0]))
         except Exception:  # noqa: BLE001
             pass
+        if os.environ.get('LS_UNIT_USD'):   # research / replay only (2026-10-17): price the replay at another unit
+            cfg['unit_usd'] = float(os.environ['LS_UNIT_USD'])
         _STAKE_UNIT = cfg
     return _STAKE_UNIT
 
