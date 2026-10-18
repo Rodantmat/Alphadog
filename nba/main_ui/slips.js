@@ -430,7 +430,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   }
   if (unmatched) notes.push(`${unmatched} slip legs are not on the scored board (shown without a probability).`);
   if (fallbackNote) notes.push(fallbackNote);
-  if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${eng.suffix ? "market-free twin" : "certified tables"}), with results.`);
+  if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${({ _mf: "market-free twin", _wo: "window-only twin - the market term as live sees it" })[eng.suffix] || (eng.suffix ? "twin " + eng.suffix : "certified tables")}), with results.`);
   // backup pool: the best board legs not already in a slip, per app, for substitution - ordered by the UNROUNDED hit
   // probability (ties keep the board order: score, then player / prop / line / side), so the pool is reproducible from the DB
   const inSlip = new Set(slips.flatMap(s => s.legs.map(l => l.board_row_id)));
