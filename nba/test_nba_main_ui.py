@@ -780,6 +780,22 @@ def browser():
             page.click("#backBoard"); page.click("#menuOpen"); page.click("#menuCalibration")
             page.wait_for_selector("#calibrationCards .healthCard")
         step("08_calibration", calib)
+
+        # 2026-10-17: the Slips screen opened FIRST (builder never loaded) failed "Can't find variable: multiplierLabel" - the run
+        # above opens the builder before Slips, so a fresh page goes straight to Slips
+        cold = b.new_page(viewport={"width": 430, "height": 932})
+        cold.set_default_timeout(45000)
+        cold_err = []
+        cold.on("pageerror", lambda e: cold_err.append(str(e)))
+        try:
+            cold.goto(UI + "/" + q); cold.wait_for_selector(".card")
+            cold.click("#menuOpen"); cold.click("#menuSlips")
+            cold.wait_for_function("(() => { const e = document.getElementById('autoCreateResults'); return e && (e.querySelector('.slipCard') || (e.querySelector('.empty') && !/Loading/.test(e.textContent))); })()", timeout=90000)
+            txt = cold.inner_text("#autoCreateResults")
+            check("D10 Slips opened cold (no builder first): cards, no failure", "failed" not in txt.lower() and cold.locator("#autoCreateResults .slipCard").count() > 0 and not cold_err,
+                  (txt[:160] if "failed" in txt.lower() else f"{cold.locator('#autoCreateResults .slipCard').count()} cards") + (f" errors {cold_err[:2]}" if cold_err else ""))
+        except Exception as e:  # noqa: BLE001
+            check("D10 Slips opened cold (no builder first): cards, no failure", False, str(e).split("\n")[0])
         b.close()
     errs = [e for e in errors if "favicon" not in e]
     check("D9 no script errors in any screen", not errs, errs[:5])
