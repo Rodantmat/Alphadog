@@ -514,7 +514,15 @@ async function unitAutoStatus(sql, su) {
 export async function apiStakeUnit(sql, body, version) {
   const rows = await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'");
   const cur = rows[0] ? (typeof rows[0].config_json === "string" ? JSON.parse(rows[0].config_json) : rows[0].config_json) : {};
-  if (body == null) return { ok: true, version, route: "/api/stake-unit", stake_unit: cur };
+  if (body == null) return { ok: true, version, route: "/api/stake-unit", stake_unit: { ...cur, auto_status: await unitAutoStatus(sql, cur) } };
+  // 2026-10-18: {auto: true | false} turns earn-the-raise on / off; a hand-set unit turns it off (the owner's number wins until Auto)
+  if (body.auto === true || body.auto === false) {
+    if (!cur.auto) return { status: 400, body: { ok: false, version, error: "no auto block in stake_unit", stake_unit: cur } };
+    await q(sql, "UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{auto,enabled}', to_jsonb($1::boolean)) WHERE config_key = 'stake_unit'", [body.auto]);
+    const af = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];
+    const nf = typeof af.config_json === "string" ? JSON.parse(af.config_json) : af.config_json;
+    return { ok: true, version, route: "/api/stake-unit", stake_unit: { ...nf, auto_status: await unitAutoStatus(sql, nf) } };
+  }
   const v = Math.round(Number(body.unit_usd) * 100) / 100;
   const min = Number(cur.min_stake_usd || 1);
   if (!Number.isFinite(v) || v < min || v > 1000) return { status: 400, body: { ok: false, version, error: `unit_usd must be between ${min} and 1000`, stake_unit: cur } };
