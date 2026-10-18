@@ -454,7 +454,7 @@ export async function apiHighHit(sql, cfg, url, version) {
       .map(l => slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name) })));
   }
   if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - the afternoon run builds them at 1:16 PM PT, or 29 minutes before the first tip when that is earlier; they appear here a few minutes later." : `No slips recorded for ${slate.date}.`);
-  return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, backup_pool: pool,
+  return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, test_only_recorded: testOnly.length, backup_pool: pool,
     pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, stake_unit: bt.unit, timing_ms: (lap("build"), T) };
 }
 
