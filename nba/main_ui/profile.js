@@ -40,8 +40,10 @@ export async function apiPlayerProfile(sql, cfg, url, version) {
             WHERE player_name = $1 ORDER BY snapshot_ts DESC LIMIT 1`, [`${info.last_name || ""}, ${info.first_name || ""}`])]);
   const season = games[0] ? games[0].season : null;
   const seasonGames = games.filter(g => g.season === season);
-  // the player's team: his latest box-score team, else the roster team
-  const teamId = (games[0] && games[0].team_id) || info.team_id;
+  // the player's team: the CURRENT roster team (nba_ref.players, refreshed every morning by P2B's roster sync), else his latest
+  // box-score team (unsigned / inactive). 2026-10-17: box score first showed offseason movers on their old team (LeBron James on
+  // LAL and LAL's opener after signing with PHI; 161 active players' last box score is for another team).
+  const teamId = (Number(info.active) === 1 && info.team_id) || (games[0] && games[0].team_id) || info.team_id;
   const team = (await q(sql, "SELECT team_id, abbreviation, full_name, conference, division FROM nba_ref.teams WHERE team_id = $1", [teamId || ""]))[0] || {};
   const ng = (await q(sql, `SELECT game_date::text game_date FROM nba_calendar.slate_games WHERE game_date >= $1::date AND $2 IN (home_team_id, away_team_id)
                             ORDER BY game_date, game_datetime_utc LIMIT 1`, [today, teamId || ""]))[0];
