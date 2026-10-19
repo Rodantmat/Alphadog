@@ -2332,5 +2332,11 @@ sent): runs 39194852387, 39195748178 and the LESS run, ~400 entries, every answe
 100/2/1.5/1.25, 200/2/1.5/1.25/1; ALL-LESS entries 2.75 / 5.5 / 9 (Flex 1.75, 2.75/1, 5.5/1.25), any MORE restores the table (k of n
 for n 2..6; 9 stats); same-game no adjustment; EDGE tiers lower, boosted tiers raise, per entry. Rule row
 pp_slip_rules['betr_payout_v1'] (verified). Supersedes the flat-table assumption (COMPASS 136, strategy §31u). Open: all-LESS 5+.
+**Underdog (owner 22:48 PT: use the data we have, research, documentation):** settled - the entry pays base(n) x prod payout_multiplier
+(the modifier). Owner's 10-03 screenshots: one constant at 2/3/4 picks (1.040 / 1.039 / 1.039) where a display-based payout would
+drift 1.036 / 1.055 / 1.074; Diaz's decimal-priced pick fitted at 1/2 x 1.82 = 0.91, not display / sqrt 3.5 = 0.973. 10-20 board:
+decimal-priced sides display 2 x m (172, ratio 1.000), fantasy-priced ~sqrt 3.5 x m (2,013, 1.000 at m 1; 7,646 ladder rungs curve
+to -3% at m 1.5, -18% at m 8). Help center: base assumes 1.0x per selection. All 1,029,494 Underdog backtest legs at m 0.6-1.5:
+no change. 1.04 constant still set aside (T36-3). PP_PAYOUT_FINDINGS 0m.
 **Other apps:** Underdog pick'em bundles load only after login (no credential) - mains proven, the portfolio is mains; Sleeper
 unchanged (overround 12.0-14.3%); Fliff sportsbook odds, no NBA props yet (probe_app_slip_pricing.py run 39191932225).
