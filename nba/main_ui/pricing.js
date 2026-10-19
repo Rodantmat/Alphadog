@@ -34,6 +34,18 @@ export function nbaFlexAlt(pricing, n, misses, fprod) {
   return 0;
 }
 
+// PrizePicks' payout grid rounded DOWN: 0.1 steps below 3x, 0.25 at or above (build_slip_engine.grid_down)
+export function nbaGridDown(x) {
+  return x < 3 ? Math.floor(x / 0.1 + 1e-9) * 0.1 : Math.floor(x / 0.25 + 1e-9) * 0.25;
+}
+
+// two or more legs from one game (every leg must carry its game: event_id or game_pk; otherwise unknown -> false)
+export function nbaSameGame(legs) {
+  const ev = (legs || []).map(l => (l && (l.event_id != null ? l.event_id : l.game_pk)));
+  if (!ev.length || ev.some(e => e == null || e === "")) return false;
+  return new Set(ev.map(String)).size < ev.length;
+}
+
 export function nbaLegFactor(leg) {
   const f = Number(leg && (leg.leg_factor != null ? leg.leg_factor : leg.factor));
   return Number.isFinite(f) && f > 0 ? f : null;
