@@ -291,7 +291,7 @@ def main():
         # LESS is offered on few REGULAR projections (10-19: 4 of the first 16 players): top the list up from the whole board, one
         # player each, so all-LESS 5- and 6-pick entries can be priced (open item "all-LESS 5+", 2026-10-19)
         for x in allp:
-            if len(less) >= 8:
+            if len(less) >= 12:     # 12: all-LESS entries up to Betr's 10-pick maximum (open item closed 2026-10-19)
                 break
             if x["tier"] == "REGULAR" and x["outcome"] == "LESS" and x["player"] not in {q["player"] for q in less}:
                 less.append(x)
