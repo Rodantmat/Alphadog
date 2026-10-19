@@ -289,6 +289,16 @@ def rows_sleeper(doc, gd, label):
     return out
 
 
+FLIFF_KEY = {
+    "player_points_and_rebounds": "player_points_rebounds", "player_points_and_assists": "player_points_assists",
+    "player_rebounds_and_assists": "player_rebounds_assists", "player_points_and_rebounds_and_assists": "player_points_rebounds_assists",
+    "player_points_rebounds_and_assists": "player_points_rebounds_assists", "player_three_pointers_made": "player_threes",
+    "player_3_pointers_made": "player_threes", "player_steals_and_blocks": "player_blocks_steals",
+    "player_blocks_and_steals": "player_blocks_steals", "player_1st_quarter_points": "player_points_q1",
+    "player_1st_quarter_rebounds": "player_rebounds_q1", "player_1st_quarter_assists": "player_assists_q1",
+}
+
+
 def rows_fliff(doc, gd, label):
     """Fliff's leg shape differs from the others: the line lives on the proposal as
     t_142_selection_param_1 (the scraper stores it as `line`, but it is a STRING and is empty on team
