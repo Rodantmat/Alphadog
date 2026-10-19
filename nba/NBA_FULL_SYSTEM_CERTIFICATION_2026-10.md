@@ -2458,3 +2458,29 @@ REGULAR tier; a leg Betr does not offer at that line is reported, never approxim
 (11:56 PT check-in). **Still open, with the reason:** Sleeper's NBA ALT STAT rungs (absent from Sleeper's public alt feed AND from
 ParlayAPI's Sleeper rows - all main lines; needs one app capture); Fliff NBA player props (not posted yet - day-of); Underdog's 1.04
 constant (set aside, conservative); all-LESS 7-10 on Betr.
+
+**9. Owner 15:58 PT: "I don't understand what the Betr app is not figured out yet, and I do not understand why the underdog 1.04 issue
+is still open ... do another full sweep just to be sure that all the scraping is good one last time."** (a) **Betr: CLOSED.** All-LESS
+entries measured at every size the app allows (2-10; probe_betr_quote_less with the LESS list topped up from the whole board, run
+39339030831): Perfect 2.75 / 5.5 / 9 / 18 / 31.5 / 45 / 90 / 180 / 270, Flex tops 1.75 / 2.75 / 5.5 / 9 / 18 / 31.5 / 45 / 90 / 180 with
+partial tiers (e.g. 10-pick 9/1.75, 8/1.25, 7/1.25, 6/1) - from 5 picks the all-LESS top is 0.9x the regular table. `betr_payout_v1`
+now carries 2-10 (perfect_all_less, dynamic_all_less, all_less_note) and `open` is empty. (b) **THE SWEEP** (`nba/probe_scrape_sweep.py`:
+every production board scraper run exactly as P3 runs it into a scratch dir, parsed by the archiver's own builders, every market key
+checked against the scorer's MARKET_TO_PROP, every player against the name map; nothing written; runs 39338997299, 39339687673,
+39340192601). PrizePicks 9,377 projections (2,927 rows for 10-20, 52 players, ladder 4.3 lines per player-market); Underdog 1,219 legs
+(2,064 rows, ladder 3.85, max 21); **Sleeper: the NBA ALT STAT ladder is now in the public feed** (3,700 legs; 1,338 rows for 10-20,
+alt rungs alt_0.5 .. alt_49.5; the scraper already requests it - closed); **Fliff posted its first NBA player board** (4,374 legs, 158
+players; 860 rows for 10-20). Two archiver faults found and FIXED in `archive_live_boards.py`: **Fliff** spells props out ("Points and
+Rebounds", "Three Pointers Made", "1st Quarter Points") - 522 of 858 legs carried keys no scorer reads; `FLIFF_KEY` maps them to the
+canonical keys; **Sleeper** now posts first-quarter props ("first_qtr_points / _rebounds / _assists", 78 legs) - mapped to the scorer's
+_q1 keys. After the fixes every app's 10-20 legs map to a scored prop except props the model does not price (triple-double: PP 4,
+UD 4, Sleeper 2, Fliff 12; Fliff first-to-score 60), every player resolves (0 unresolved), every row carries its price / multiplier.
+(c) **Underdog's 1.04 - why it is not closed by data, and what closes it.** Ten owner screenshots (10-03, MLB) fit payout = 1.04 x
+base(n) x product of the pick modifiers, identically at 2, 3 and 4 picks; Underdog's help center says the base assumes 1.0x per pick
+(two 1.00x picks = 3.5x, not 3.64x). Our own archive cannot decide it: the 38 real Underdog entries on file (score.slip_entries,
+2026-08-21 .. 09-11, real multipliers recorded) have no per-pick modifier from the moment they were placed (the MLB Underdog archive
+keeps only the latest batch; archive.underdog_ladder_history holds one slate, 09-10, captured after the entry), and Underdog's entry
+pricing sits behind login (no Underdog credential exists in the store). The engine prices WITHOUT the 1.04 - the conservative side
+(if the 1.04 is real, Underdog slips pay 4% more than the engine assumes; it can never make a slip look better than it is). Two ways
+to close it: the owner opens Underdog, adds two picks showing 1.00x and reads the payout (3.50x = no constant, 3.64x = 1.04 is real),
+or exports an Underdog session once (as for Betr) so a read-only quote probe can price entries the way probe_betr_quote does.
