@@ -196,6 +196,12 @@ def main():
         allp = picks_from_board(state["events"])
         tiers = sorted({p["tier"] for p in allp})
         print(f"picks on the board: {len(allp)}; tiers {tiers}", flush=True)
+        # 0) ENGINE SLIPS (2026-10-19, open item "Betr quotes for the engine's slips on game day"): BQ_ENGINE_DATE=<slate> prices
+        #    every placed slip of nba_score.live_slips for that slate on Betr, leg for leg (same player, stat, line, side, REGULAR
+        #    tier), read-only; a slip with a leg Betr does not offer at that exact line is reported, never approximated.
+        if os.environ.get("BQ_ENGINE_DATE"):
+            engine_slips(sb, hdr, rules, allp, os.environ["BQ_ENGINE_DATE"])
+            return
         # REGULAR MORE picks, one per player, ordered so consecutive picks alternate teams (different teams / games first)
         reg = {}
         for p in allp:
