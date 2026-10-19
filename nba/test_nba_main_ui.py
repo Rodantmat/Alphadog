@@ -123,7 +123,7 @@ def pricing_parity(conn, cfg):
     (OUT / "_pricing_parity.mjs").write_text(
         "import fs from 'node:fs';\nimport * as P from './_pricing.mjs';\n"
         "const inp = JSON.parse(fs.readFileSync(0, 'utf8'));\n"
-        "const out = inp.cases.map(c => P.nbaPayout(inp.pricing, c.app, c.mode, c.legs.map(l => ({ leg_factor: l.factor })), c.legs.map(l => !!l.hit)));\n"
+        "const out = inp.cases.map(c => P.nbaPayout(inp.pricing, c.app, c.mode, c.legs.map(l => ({ leg_factor: l.factor, event_id: l.event_id })), c.legs.map(l => !!l.hit)));\n"
         "process.stdout.write(JSON.stringify(out));\n")
     r = subprocess.run(["node", str(OUT / "_pricing_parity.mjs")], input=json.dumps({"pricing": pricing, "cases": cases}), capture_output=True, text=True)
     if r.returncode != 0:
