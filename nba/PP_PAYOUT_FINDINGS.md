@@ -224,7 +224,9 @@ and figure it out. Same goes for all apps."
   8: 50 / 2 / 1.5 / 1.25 · 9: 100 / 2 / 1.5 / 1.25 · 10: 200 / 2 / 1.5 / 1.25 / 1. (PrizePicks Flex 3/1 · 6/1.5 · 10/2/0.4 · 25/2/0.4.)
 - **🔴 NOT a flat table — ALL-LESS entries are discounted:** an entry whose picks are ALL LESS pays Perfect 2.75 / 5.5 / 9 (2/3/4
   picks; Flex 1.75/0.5 · 2.75/1 · 5.5/1.25). One MORE pick restores the full table (k LESS of n tested for n = 2..6, 1 LESS on 9 different
-  stats: all full). Same-game / same-team pairs: no adjustment. 5+ all-LESS not yet measured.
+  stats: all full). Same-game / same-team pairs: no adjustment. ~~5+ all-LESS not yet measured.~~ **2026-10-19: all-LESS measured
+  2-10 picks - Perfect 2.75 / 5.5 / 9 / 18 / 31.5 / 45 / 90 / 180 / 270 (0.9x the regular table from 5 picks), Flex tops 1.75 / 2.75 /
+  5.5 / 9 / 18 / 31.5 / 45 / 90 / 180; `betr_payout_v1` holds every size.**
 - **Tiers are priced per entry by Betr:** EDGE_1..4 (easier lines) LOWER the payout (3-pick Perfect with one EDGE_1 4.25, EDGE_2 3.75,
   EDGE_3 3.5, EDGE_4 3.25); boosted tiers RAISE it (3-pick with one BOOSTED 10, MINI 7, SUPER 15, BOOSTED_4 25; the same tier on another
   player / line gave the same number). Max picks per tier 3–4; entries need 2+ teams. Exact multipliers for tier mixes are in
