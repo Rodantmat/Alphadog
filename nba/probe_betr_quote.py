@@ -130,7 +130,7 @@ def engine_slips(sb, hdr, rules, allp, day):
     idx = {}
     for p in allp:
         if p["tier"] == "REGULAR":
-            idx.setdefault((_norm(p["who"]), str(p["stat"]).lower(), float(p["line"]), p["outcome"]), p)
+            idx.setdefault((_norm(p["who"]), str(p.get("key") or p["stat"]).lower(), float(p["line"]), p["outcome"]), p)
     priced = 0
     for strat, k, legs in slips:
         legs = legs if isinstance(legs, list) else json.loads(legs)
