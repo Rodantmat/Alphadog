@@ -134,7 +134,22 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   // (2026-01-14: 1,173 of 1,184 "positive" goblins were below their own break-even). 0.56 = build_final_hp.BREAKEVEN.
   const legFactor = r.app === "prizepicks" ? (num(r.pp_factor) ?? (lt === "regular" ? 1 : null)) : num(r.app_mult);
   const beBase = 0.56;
-  const breakeven = legFactor && legFactor > 0 ? Math.min(0.99, beBase / legFactor) : beBase;
+  // SLEEPER (2026-10-18, owner comparing the app): its multiplier is the pick's own PRICE (a slip pays the product), so the leg
+  // breaks even at 1 / m - 0.56 / m (the modifier rule of PrizePicks / Underdog) put a 1.87x Sleeper leg's break-even at 30%.
+  const breakeven = r.app === "sleeper" && legFactor && legFactor > 1 ? Math.min(0.99, 1 / legFactor)
+    : (legFactor && legFactor > 0 ? Math.min(0.99, beBase / legFactor) : beBase);
+  // THE NUMBER THE APP SHOWS (2026-10-18, owner: "scores does not match"): Underdog's pick screen shows a per-pick price
+  // (1.87x on a balanced line, 4.42x / 1.15x on a ladder rung), not the payout modifier (1.00 / 2.36 / 0.62) the slip is priced
+  // on (PP_PAYOUT_FINDINGS 0m). Our scraper archives that shown price (American) beside the modifier; the 2024-26 Odds API feed
+  // carried only sqrt(3) x modifier, so there it is approximated as sqrt(3.5) x modifier (marked approximate). Sleeper shows m itself.
+  let appShown = null, appShownExact = false;
+  if (r.app === "sleeper" && num(r.app_mult) != null) { appShown = num(r.app_mult); appShownExact = true; }
+  else if (r.app === "underdog" && num(r.app_mult) != null) {
+    const m = num(r.app_mult), a = num(r.app_price);
+    const dec = a == null ? null : (a >= 100 ? 1 + a / 100 : (a <= -100 ? 1 + 100 / -a : null));
+    if (dec != null && Math.abs(dec - Math.sqrt(3) * m) > 0.02) { appShown = dec; appShownExact = true; }
+    else appShown = Math.sqrt(3.5) * m;
+  }
   const out = {
     final_board_row_id: legId(r.game_date, r.app, r.player_id, r.prop, r.line, r.side),
     rank_order: i + 1,
