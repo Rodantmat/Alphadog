@@ -236,12 +236,9 @@ def main():
         fp = 1.0
         for f in fs:
             fp *= f
-        base = (POWER[size] if h == size else 0.0) if structure == 'power' else FLEX.get((size, h), 0.0)
-        if base > 0 and structure == 'flex' and any(abs(f - 1.0) > 1e-9 for f in fs):
-            # 2026-10-10: Flex with goblins / demons pays PrizePicks' quote-derived tiers - the SAME function the grader uses
-            import build_slip_engine as _SE
-            return _SE.flex_alt_payout(size, size - h, fp) - 1.0
-        return (compress(base * fp) if base > 0 else 0.0) - 1.0
+        # grader v3 (2026-10-18): the SAME payout function the grader uses (no same-game term in the null draws)
+        import build_slip_engine as _SE
+        return _SE.pp_payout(size, h, structure, fp, any(abs(f - 1.0) > 1e-9 for f in fs)) - 1.0
     null_counts = []
     for it in range(NULLS):
         drawn = {sd: {lid: (1 if rng.random() < tier_rate.get(t, 0.5) else 0) for lid, t in legs.items()} for sd, legs in day_legs.items()}
