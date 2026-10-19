@@ -119,7 +119,7 @@ def fetch(key, cfg=None):
     items, meta = [], {"pages": 0, "truncated": False, "narrowed_pass": False, "has_more_at_cap": False, "narrowed_truncated": False}
     status, remaining = 0, None
 
-    def run(extra):
+    def run(extra, budget_s=300):
         nonlocal status, remaining
         off = 0
         while True:
