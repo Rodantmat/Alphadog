@@ -288,6 +288,13 @@ def main():
                       and x["stat"] == p["stat"]), None)
             if q:
                 less.append(q)
+        # LESS is offered on few REGULAR projections (10-19: 4 of the first 16 players): top the list up from the whole board, one
+        # player each, so all-LESS 5- and 6-pick entries can be priced (open item "all-LESS 5+", 2026-10-19)
+        for x in allp:
+            if len(less) >= 8:
+                break
+            if x["tier"] == "REGULAR" and x["outcome"] == "LESS" and x["player"] not in {q["player"] for q in less}:
+                less.append(x)
         for n in range(2, min(6, len(less)) + 1):
             show("regular_less", less[:n], quote(sb, hdr, rules, less[:n]))
             time.sleep(0.5)
