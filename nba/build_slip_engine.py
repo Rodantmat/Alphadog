@@ -132,6 +132,62 @@ def flex_alt_payout(k, misses, fprod):
     return pts[-1][1]
 
 
+# GRADER v3 (2026-10-18, owner: "Having the boards now, be sure we are using the proper multipliers, prove, analyze and understand
+# each of the available tables"). Proven against PrizePicks' own quote engine on the 10-20 NBA board (pp_payout_map.py
+# PP_MODE=proof, 64/64 quotes) and every earlier multi-pick quote (research_payout_proof.py run 39182727599,
+# research_pp_power_law_fit.py run 39183035664; PP_PAYOUT_FINDINGS §0l). What changed:
+#   all-standard Power = the base EXACTLY (3 / 6 / 10 / 20 / 37.5; compress() had paid 4-pick 9.87, 5-pick 17.87, 6-pick 30.6);
+#   all-standard Flex  = its table exactly (5-Flex 10, 6-Flex 25; were 9.87 / 21.6);
+#   Power WITH goblins / demons, 3-6 picks = grid_down(b_n x fp^a_n), pp_slip_rules['power_alt_v3'] (a conservative law: mean
+#     0.95 of the quote, above it on 1-8% of quotes) - compress(base x fp) had paid 3-picks +7% (+23% max), 4-6 picks -10/-11/-20%;
+#     2-pick keeps compress(3 x fp) (verified);
+#   all-standard 3- / 4-Flex with a same-game pair = pp_slip_rules['flex_same_game_v3'] (3: 3 / 0.75, 4: 5 / 1.25) - PrizePicks
+#     adjusts SOME same-game pairs and we cannot see which (conservative);
+#   Flex WITH goblins / demons: unchanged (flex_alt_payout, quote-derived tiers).
+# DB twins: nba_market.pp_payout_v3 / pp_slip_payout_v3 (nba/sql/pp_payout_v3.sql); UI twin: main_ui/pricing.js nbaPayout.
+_PAYOUT_V3 = None
+
+
+def payout_v3_rules():
+    global _PAYOUT_V3
+    if _PAYOUT_V3 is None:
+        with psycopg.connect(os.environ['DATABASE_URL']) as c:
+            rows = dict(c.execute("SELECT rule_key, rule_json FROM nba_config.pp_slip_rules WHERE rule_key IN ('power_alt_v3', 'flex_same_game_v3')").fetchall())
+        if 'power_alt_v3' not in rows or 'flex_same_game_v3' not in rows:
+            raise RuntimeError("pp_slip_rules power_alt_v3 / flex_same_game_v3 missing - a slip cannot be priced (never guessed)")
+        pa = rows['power_alt_v3'] if isinstance(rows['power_alt_v3'], dict) else json.loads(rows['power_alt_v3'])
+        sg = rows['flex_same_game_v3'] if isinstance(rows['flex_same_game_v3'], dict) else json.loads(rows['flex_same_game_v3'])
+        _PAYOUT_V3 = {'power_alt': {int(n): (float(v['b']), float(v['a'])) for n, v in pa.items() if n.isdigit()},
+                      'flex_sg': {(int(n), int(h)): float(x) for n, t in sg.items() if n.isdigit() for h, x in t.items()}}
+    return _PAYOUT_V3
+
+
+def grid_down(x):
+    """PrizePicks' payout grid, rounded DOWN: 0.1 steps below 3x, 0.25 at or above"""
+    return math.floor(x / 0.1 + 1e-9) * 0.1 if x < 3 else math.floor(x / 0.25 + 1e-9) * 0.25
+
+
+def pp_payout(k, hits, structure, fprod, alt, same_game=False):
+    """PrizePicks' payout for a k-pick lineup with `hits` hits (grader v3, see above). alt = a goblin / demon among the legs."""
+    if structure == 'power':
+        if hits != k:
+            return 0.0
+        if not alt:
+            return POWER[k]
+        if k == 2:
+            return compress(3.0 * fprod)
+        b, a = payout_v3_rules()['power_alt'][k]
+        return grid_down(b * fprod ** a)
+    base = FLEX.get((k, hits), 0.0)
+    if base <= 0:
+        return 0.0
+    if alt:
+        return flex_alt_payout(k, k - hits, fprod)   # quote-derived tiers (see flex_alt_tiers)
+    if same_game and k in (3, 4):
+        return payout_v3_rules()['flex_sg'].get((k, hits), 0.0)
+    return base
+
+
 # certified cells: (prop, tier, side, rank, n_band, edge = certified 2025-26 p.m)
 CELLS = {
     'steals_R_U':    ('steals', 'R', 'Under', 'final_score', 2, 0.691),
