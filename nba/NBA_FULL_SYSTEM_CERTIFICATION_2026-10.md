@@ -2430,3 +2430,31 @@ injury report, crews or morning line), the early partial board.
 **7. Re-certified after the fixes.** Integration test (rolled back) ALL PASS (run 39323436097; ledgers before = after = 0);
 `certify_slip_system` 83 checks, 0 FAIL (run 39323440832). No UI change today (v1.4.21 stays). Two scheduled check-ins set for 10-20
 (08:25 PT: P2A / P2B / morning line / crews; 11:50 PT: P3 boards, ParlayAPI per-book log, picks before the 12:00 PT tip).
+
+**8. Owner 14:16 PT: "Odds API is too expensive, I'm not gonna renew it ... the prop lines, that's the heavyweight for market, we get
+from parlay API. So it should be there. Maybe you're not probing right ... Everything that's open, you need to find out if it can be
+closed."** (a) **Game lines: the free key is now the NORMAL path, not a fallback.** Tunable `nba_config.classification_config
+['game_lines_feed']` = {mode "live", live_key_name odds_api_key, historical_key_name odds_api_key_nba}; `capture_game_lines_morning.py`
+reads the live endpoint directly in mode live (no historical attempt, log note "live odds_api_key", no warning); mode historical
+restores the paid snapshot if a plan is ever bought. Dry run after the change (run 39327153624, nothing written): 144 rows, 3 games,
+9 books, 491 credits left. (b) **ParlayAPI, probed properly** (`probe_parlay_discovery.py` run 39326363943, `probe_parlay_event_odds.py`
+run 39327789736, `probe_parlay_perbook_mlb.py` run 39328339725): its Odds-API-compatible `/sports/basketball_nba/odds` carries NBA GAME
+lines from 14 books (fanduel, pinnacle, fliff, bet365, betmgm, betrivers, bovada, caesars, draftkings, fanatics, hardrock, novig, parx,
+prophetx); its event-level player-prop odds are the same feed as `/props` (no extra books). For NBA player props the day before, every
+registry key was read one by one: DraftKings, FanDuel (one-sided milestones), Bovada, plus Novig / ProphetX (exchanges) and the DFS
+apps - BetMGM, Caesars, BetRivers, Fanatics, bet365 0 rows. **On a live GAME DAY the books do appear**: today's MLB postseason board
+on ParlayAPI carries player props from bet365, betmgm, fanatics, parx, bovada, draftkings, fanduel, novig, prophetx. So the owner is
+right - the sportsbooks post on game day; the per-book reads (item 2) already include betmgm, caesars / williamhill_us, betrivers,
+betonline / betonlineag and fanatics, so they are captured tomorrow the moment they post (verified at the 11:56 PT check-in). The
+history's eight-book set stays the counted set (parity); bet365 / pinnacle / hardrock / parx / exchanges are kept raw, not counted.
+(c) **Open items closed today:** all-LESS 5 and 6 picks measured on Betr's NBA board (probe_betr_quote_less, top-up of LESS
+candidates from the whole board): all-LESS Perfect 5 = 18 (regular 20), 6 = 31.5 (35); Flex 5: 9 / 1.75 / 0.25 (regular 10 / 2 /
+0.4), 6: 18 / 1.25 / 1 (20 / 1.5 / 1); five LESS of six still pays the full table - the discount applies only when every pick is LESS.
+`pp_slip_rules['betr_payout_v1']` updated AND un-double-encoded (it was stored as a JSON string; no string-typed row is left in
+classification_config / pp_slip_rules); open now only all-LESS 7-10. **Betr quotes for the engine's slips:** `probe_betr_quote.py`
+gained `BQ_ENGINE_DATE` (prices every placed slip of the slate on Betr leg for leg - same player, projection key, line, side,
+REGULAR tier; a leg Betr does not offer at that line is reported, never approximated; read-only) and the wrapper
+`probe_betr_quote_engine.py`; booted on today's NBA board (14 events, 6,817 picks, 9 tiers; 0 slips today) - run tomorrow after P3
+(11:56 PT check-in). **Still open, with the reason:** Sleeper's NBA ALT STAT rungs (absent from Sleeper's public alt feed AND from
+ParlayAPI's Sleeper rows - all main lines; needs one app capture); Fliff NBA player props (not posted yet - day-of); Underdog's 1.04
+constant (set aside, conservative); all-LESS 7-10 on Betr.
