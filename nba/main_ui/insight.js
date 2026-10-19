@@ -80,8 +80,10 @@ function variationFragment(r, seed) {
   if (r.is_goblin) return hashPick(seed, ["Goblin line: an easier rung than the main line, priced lower on PrizePicks.", "PrizePicks goblin - the line sits below the main number, so the payout factor is reduced."]);
   if (r.is_demon) return hashPick(seed, ["Demon line: a harder rung above the main number, priced higher on PrizePicks.", "PrizePicks demon - the line sits above the main number, so the payout factor is boosted."]);
   const m = Number(r.app_multiplier);
-  if (r.source_key === "underdog" && Number.isFinite(m) && Math.abs(m - 1) > 1e-9) return `Underdog pays a ${m.toFixed(2)}x multiplier on this pick.`;
-  if (r.source_key === "sleeper" && Number.isFinite(m)) return `Sleeper shows a ${m.toFixed(2)}x multiplier on this pick.`;
+  const shown = Number(r.app_shown_x), approx = Number(r.app_shown_exact) === 1 ? "" : "about ";
+  if (r.source_key === "underdog" && Number.isFinite(m) && Number.isFinite(shown))
+    return `Underdog shows ${approx}${shown.toFixed(2)}x on this pick (payout factor ${m.toFixed(2)}x on its entry table).`;
+  if (r.source_key === "sleeper" && Number.isFinite(m)) return `Sleeper shows ${m.toFixed(2)}x on this pick.`;
   return "";
 }
 
