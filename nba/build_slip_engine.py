@@ -288,6 +288,11 @@ def grade(slip, structure):
     # Flex 2/0.5); ONE survivor -> 1.5x (x its factor) on a hit, a loss on a miss, WHATEVER the original size; none left -> refund.
     # (Until 2026-10-07 a 3+ pick slip left with one survivor was refunded - 70 certified slips, 35 hits refunded instead of 1.5x
     # and 35 misses refunded instead of lost; full-system certification pass F.) With no tied/void leg this is the original grade.
+    # GRADER v3 (2026-10-18): the payout of the live lineup is pp_payout() - see there. same_game = the slip's own same-game flag
+    # over ALL its legs (the backtest tables' same_game column); None -> derived from the legs' event_id when every leg has one.
+    if same_game is None:
+        ev = [l.get('event_id') for l in slip]
+        same_game = (len(ev) - len(set(ev))) > 0 if ev and all(e is not None for e in ev) else False
     live = [l for l in slip if l['hit'] is not None]
     if len(live) < len(slip):
         if not live:
