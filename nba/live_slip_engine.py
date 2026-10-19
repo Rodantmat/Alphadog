@@ -938,7 +938,7 @@ def pick(conn, day, require_fresh=True):
                 conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
                                 VALUES (%s,%s,900,%s,%s,%s,'placed_shadow') ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                              (day, name, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
-                                                      'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'pf20': l.get('pf20')} for l in obs]), size, structure))
+                                                      'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'pf20': l.get('pf20'), 'event_id': l.get('event_id')} for l in obs]), size, structure))
         pool_n = len({l['player'] for l in ENG.candidates_for(comp, fam_pool)})
         conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
                      (day, name, pool_n))
