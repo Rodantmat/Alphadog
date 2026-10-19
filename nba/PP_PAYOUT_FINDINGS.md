@@ -202,6 +202,53 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0l. 🔑 GRADER v3 — EVERY TABLE PROVEN ON THE LIVE NBA BOARD, AND PRIZEPICKS PRICES EVERY REAL SLIP (2026-10-18)
+Owner 17:41 PT: "Having the boards now, be sure we are using the proper multipliers, prove, analyze and understand each of the
+available tables, including PrizePicks with the techniques we already know."
+- **The proof run (`pp_payout_map.py` PP_MODE=proof, run file `pp_payout_map_20261019T004631Z.json`, 64/64 quotes answered,
+  primp transport):** the slip shapes the live strategies place, on the 10-20 NBA board. All-standard Power **3 / 6 / 10 / 20 / 37.5**
+  and Flex **3/1 · 6/1.5 · 10/2/0.4 · 25/2/0.4** — exact, also with half the legs on Less (P_LESS) and with same-game players.
+  **Same-game Flex is adjusted on some pairs:** 3-Flex 3/1 → 3/0.75 on 2 of 4 same-game slips, 4-Flex 6/1.5 → 5/1.25 on 1 of 3;
+  Power never; 5-/6-Flex never; an Over/Under pair and NYK–PHI Bridges/Maxey Overs were not adjusted (PrizePicks' own per-pair
+  correlation, not observable). Alternates: Cunningham 3PM 2.5 demon f 1.25 → 3/4/5/6-pick Power 6.5 / 12.5 / 22 / 42; Embiid PTS
+  23.5 demon f 1.167 → 6.25 / 12 / 21 / **37.5** (= the all-standard base); Towns PTS 14.5 goblin f 0.767 → 3.75 / 7.25 / 13 / 24.5.
+- **What the old grader did (`research_payout_proof.py` run 39182727599, 76 earlier MIXED + the proof quotes):**
+  `compress(base × fp)` compressed ALL-REGULAR slips above 9.1x — 4-pick Power 9.87 (quote 10), 5-pick 17.87 (20), 6-pick 30.6
+  (37.5), 5-Flex 9.87 (10), 6-Flex 21.6 (25): under, conservative. With alternates: 3-pick Power **+7% mean, +23% max OVER the quote**,
+  4/5/6-pick −10 / −11 / −20%. The 09-21 DB law `pp_slip_power` was within ±1% on the old quotes but 6–20% over on the 10-18
+  5-/6-pick ones.
+- **The refit (`research_pp_power_law_fit.py` run 39183035664; 393 quotes 3–6 picks, NBA 277 / WNBA 116):** ln(q) = ln b + a ln fp +
+  NBA term; residual sd 0.033–0.048. Conservative law = fit × k_n, k_n = 10th percentile of quote / law on NBA quotes:
+  **b / a = 5.1492 / 0.9868 (3), 9.5795 / 1.0148 (4), 17.4639 / 1.0348 (5), 32.5230 / 1.0522 (6)**, grid rounded DOWN
+  (`pp_slip_rules['power_alt_v3']`): mean 0.95 of the quote, above it on 1–8% of quotes (max +3 / +5 / +7 / +13%).
+- **GRADER v3 (one rule, four twins):** `build_slip_engine.pp_payout` / `grade(slip, structure, same_game)`;
+  `nba_market.pp_payout_v3` / `pp_slip_payout_v3` (`nba/sql/pp_payout_v3.sql`); `main_ui/pricing.js nbaPayout`; certifier L10/L11/L11b.
+  All-regular = the tables exactly; Power with alternates 3–6 = the law above (2-pick keeps compress(3·fp)); all-regular 3/4-Flex with a
+  same-game pair = `flex_same_game_v3` (conservative, every such slip); Flex with alternates = `flex_alt_tiers` (unchanged).
+  Live legs now carry `event_id` (same-game known at grade time).
+- **Regrade + certification (workflow `nba-grader-v3-regrade.yml` run 39184069623):** every PrizePicks backtest slip on v3
+  (`regrade_pp_payout_v3.py`, old payout kept in `payout_grader_v2`; e.g. _wo 24,286 rows, _wo_nosteals 22,655); **certification
+  83 / 0 FAIL** (new L10.regular_only_slips_pay_the_table_exactly; L10.grader_v3_equals_live_regular_quotes 90 tiers, 0 above the
+  quote; L11 / L11b recompute = v3, 0 mismatches). Python grade == DB on 105,835 sampled slips, 0 mismatches
+  (`research_grader_v3_parity.py` run 39185579133). P5 step 3g keeps the tables on the current grader weekly.
+- **Found on the way:** the live engine's own twin tables (_wo, _wo_nosteals) still carried the PRE-10-10 Flex-with-alternates
+  payouts (FLEX × fp, e.g. 16.94 where PrizePicks' tiers give 16) — the 10-10 regrade had never run on them. v3 corrected them.
+- **Effect (live twin, current caps, final 7 out; ROI 2024-25 / 2025-26 before → after, `research_grader_v3_impact.py` run 39185548514):**
+  A_regular_5power +51.7 / +126.3 → **+67.7 / +153.2**; A_wsteals_5flex +56.2 / +94.5 → +53.3 / +86.9; A_wrebounds_4flex +42.6 / +81.8 →
+  +41.6 / +77.5; A_core_3power +34.4 / +90.9 → +31.0 / +90.9; C_wstocks_4flex +26.1 / +42.7 → +23.5 / +40.3; D_points_3power unchanged
+  (+48.1 / +34.4). Rotation-only: W_core_3power +15.4 / +42.5 → +1.5 / +23.2; W_coredemon_3power −4.4 / +17.5 → −16.8 / −0.8.
+- **PrizePicks prices every real slip (SLIPQ):** `pp_payout_map.py` PP_MODE=slipq — each engine slip of the slate mapped to projection
+  ids (player + stat + line + odds type) and quoted on PrizePicks' engine; `nba_score.live_slip_quotes` keeps every quote. P3 dispatches
+  it right after the pick (soft). The grade pays the quoted tier when a slip has a quote and no void (grader kept as
+  `live_slips.payout_model`); the Slips screen shows PrizePicks' number (UI v1.4.19) and names a leg that moved or left the board.
+  Tested 10-18 on two sample slips: 3-pick quoted 6.75x; a 4-pick correctly UNMAPPED (Fox PRA 24.5 → 23.5, Duren REB 9.5 gone).
+- **Other apps, same evening:** Sleeper 10-20 board — over/under multipliers' overround 12.0–14.3% (as 10-09, 12.4%), plain product /
+  round robin pricing (proven on the owner's entry screens 10-09) unchanged. **Underdog** — main lines: payout modifier × √3.5 matches
+  the displayed fantasy price (median gap 0.012); ALTERNATE longshots diverge (Brown PTS 33.5: modifier 7.98 × √3.5 = 14.9 vs displayed
+  +1120 = 12.2; median gap 0.074 on 1,386 alternates). Our Underdog engine prices with the modifier; its P5 portfolio is mains. Which
+  number an alternate entry pays is the owed owner entry-screen check (one longshot alternate, no submit). **Betr** — the tier multiplier
+  is not on the board (priced at slip time, BETR_BUILD_STATE §8); measurement only. **Fliff** — no NBA player props captured yet.
+
 ## 0k. 🔴 FLEX WITH GOBLINS / DEMONS — THE PARTIAL TIERS ARE FLAT, AND THE GRADER HAD SCALED THEM (2026-10-10)
 - **The law, from PrizePicks' own quotes** (48 MIXED quotes run 38020184454; 40 all-demon 3-/5-Flex quotes probe 38021265189,
   `nba/probe_pp_demon_flex.py`; the 2026-09 WNBA mining — 917 quote tiers in all): with alternates in a Flex slip, the
