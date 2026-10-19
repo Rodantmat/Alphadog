@@ -88,8 +88,13 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
     if (n === 2) base = Number((pp.flex_2pick_base || {})[String(hits)] || 0);
     else base = Number(((pp.flex_all_standard || {})[String(n)] || {})[String(hits)] || 0);
     if (!(base > 0)) return 0;
-    if (allStd) return nbaCompress(pricing, base * fprod);
-    return nbaFlexAlt(pricing, n, misses, fprod);
+    if (alt) return n >= 3 ? nbaFlexAlt(pricing, n, misses, fprod) : 0;
+    if ((n === 3 || n === 4) && nbaSameGame(legs)) {
+      const sg = (pp.flex_same_game_v3 || {})[String(n)];
+      if (!sg) return null;
+      return Number(sg[String(hits)] || 0);
+    }
+    return base;
   }
   if (app === "underdog") {
     const ud = pricing.ud || {};
