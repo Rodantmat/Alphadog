@@ -2350,3 +2350,15 @@ the way, REAL: Underdog now spells combos out ("Points + Rebounds", "Points + As
 Underdog legs would never have scored on 10-20. Mapped to the canonical keys; on the 10-20 board every Underdog (10,177 of 10,189)
 and Sleeper (738 of 740) row now maps to a scored prop (only triple-doubles, no ladder). The already-archived 10-19+ Underdog rows
 were re-keyed in place.
+**Owner 23:19 PT (Underdog / Sleeper app screenshots: "scores does not match ... not seeing the ladder that underdog offers ... Sleeper
+also have ladders"):** (1) UI v1.4.21: every Underdog / Sleeper leg now shows the number the APP shows (Underdog's pick price, e.g.
+Wembanyama PRA 47.5 Higher 3.32x / Lower 1.22x - our archive of the 10-20 board matches the screenshot's 36.5 1.43 / 2.38 and 47.5
+Lower 1.22 exactly, Higher 3.23 vs 3.32 = the board moved), beside the payout factor the slip is priced on; replay rows from the
+Odds-API history are marked approximate (sqrt 3.5 x modifier). Sleeper break-even fixed to 1 / multiplier (0.56 / m had put a 1.87x
+leg at 30%). Test C63; UI test 105/105 (run 39210019931). (2) The Underdog ladder IS captured (Wembanyama PRA 31.5 .. 55.5, 37 rows
+for 10-20; 6,594 ladder rows of 10,189 Underdog rows) and archived as _alternate; the replay slate (06-13, Odds API) had only the
+rungs that feed carried. From 10-20 the scored board carries Underdog's full ladder. (3) Sleeper's NBA ALT STAT rungs: NOT in any
+public feed we can reach - lines/available_alt returns every sport but NBA (also through a California exit), 16 endpoint variants
+tried, the main feed carries one line per market (probe_sleeper_alt.py / _alt2.py / _alt3.py, runs 39209962269, 39210767397,
+39211152600, 39211457768); sleeper.com/picks is a marketing page (the app is mobile-only). The scraper requests the alt feed every run,
+so NBA rungs are captured the moment Sleeper publishes them there; otherwise the app's own call has to be captured once (as 09-27).
