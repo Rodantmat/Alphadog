@@ -202,6 +202,39 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0m. 🔑 BETR PRICES EVERY SLIP ON ITS SERVER — FOUND, EXERCISED, TABLES MEASURED (2026-10-18 evening PT)
+Owner 19:47 PT: "For betr build slips, you have the key, find out how it works, you have the access, the system is there, explore
+and figure it out. Same goes for all apps."
+- **How Betr prices (probe_betr_slip.py, run 39193921294):** the web app's bundle (`betr-app.bundle.js`, read through CDP
+  Page.getResourceContent - an in-page fetch of it fails) holds 36 GraphQL operations. Adding a pick makes the app send the QUERY
+  **`ValidateEntryWithRules(rulesIds, entry)` → `validateEntryOnEntryRules`** to `api.fantasy.betr.app/graphql`; the server answers
+  per entry rule: PERFECT (`perfectRegularMultiplier`, `perfectBoostedMultiplier`, `toWin`), DYNAMIC = Flex (`dynamicMultipliers`
+  [{numberOfPicks, winningPicks, multiplier}], `boostedMultipliers`), MYSTERY (2 picks only), RACE_TO_PLACE; plus validation errors
+  (min 2 teams, max picks per tier, open-entry limits). Rule ids on 10-18: 648a048be70ced3cb8eba3da (PERFECT), 6555e46c1c12427bc8c51c14
+  (DYNAMIC), 687605cccec6b10e272c963a (MYSTERY), 6970aa610a4f430b3e49e841 (RACE_TO_PLACE). A query, not a mutation: nothing is placed.
+  `CreateEntry` / `CancelEntry` exist and are never sent.
+- **We call it ourselves (probe_betr_quote.py):** booted exactly like the cloud harvest (seeded session, geo, NBA chip), the app's own
+  request headers taken from the wire, the query sent in-page for any set of board picks (pick shape copied from the app's own
+  request: eventId, marketId, playerId, teamId, projection {type, value, nonRegularValue, option {marketOptionId, outcome}}).
+  A plain bearer from the stored session gets 401; the app's headers work. **Every answer is kept in `nba_market.betr_quote`**
+  (runs 39194852387, 39195748178 and the LESS run: ~400 entries priced).
+- **Perfect (all must hit), regular lines, any MORE in the entry:** 2 → 3 · 3 → 6 · 4 → 10 · 5 → 20 · **6 → 35** · 7 → 50 · 8 → 100 ·
+  9 → 200 · 10 → 300 (two different player sets, identical). PrizePicks Power: 3 / 6 / 10 / 20 / 37.5.
+- **Dynamic (Flex), regular:** 2: 2 / 0.5 · 3: 3 / 1 · 4: 6 / 1.5 · 5: 10 / 2 / 0.4 · 6: 20 / 1.5 / 1 · 7: 35 / 2 / 1.25 ·
+  8: 50 / 2 / 1.5 / 1.25 · 9: 100 / 2 / 1.5 / 1.25 · 10: 200 / 2 / 1.5 / 1.25 / 1. (PrizePicks Flex 3/1 · 6/1.5 · 10/2/0.4 · 25/2/0.4.)
+- **🔴 NOT a flat table — ALL-LESS entries are discounted:** an entry whose picks are ALL LESS pays Perfect 2.75 / 5.5 / 9 (2/3/4
+  picks; Flex 1.75/0.5 · 2.75/1 · 5.5/1.25). One MORE pick restores the full table (k LESS of n tested for n = 2..6, 1 LESS on 9 different
+  stats: all full). Same-game / same-team pairs: no adjustment. 5+ all-LESS not yet measured.
+- **Tiers are priced per entry by Betr:** EDGE_1..4 (easier lines) LOWER the payout (3-pick Perfect with one EDGE_1 4.25, EDGE_2 3.75,
+  EDGE_3 3.5, EDGE_4 3.25); boosted tiers RAISE it (3-pick with one BOOSTED 10, MINI 7, SUPER 15, BOOSTED_4 25; the same tier on another
+  player / line gave the same number). Max picks per tier 3–4; entries need 2+ teams. Exact multipliers for tier mixes are in
+  `nba_market.betr_quote`; for any real slip the live quote is the number.
+- **Stored rule:** `nba_config.pp_slip_rules['betr_payout_v1']` (status verified). Fact 136 / §31u ("Betr: flat table like PrizePicks")
+  is superseded: for the Under-heavy PrizePicks strategies an all-Under 3-pick slip on Betr pays 5.5, not 6.
+- **Other apps (probe_app_slip_pricing.py, run 39191932225):** Underdog's web app redirects to login before any pick'em bundle loads
+  (no Underdog credential exists; our Underdog portfolio is mains, where modifier × √3.5 is proven). Sleeper (product of per-side
+  multipliers, proven on the owner's screens 10-09). Fliff is a social sportsbook: American odds, parlay = product; no NBA props yet.
+
 ## 0l. 🔑 GRADER v3 — EVERY TABLE PROVEN ON THE LIVE NBA BOARD, AND PRIZEPICKS PRICES EVERY REAL SLIP (2026-10-18)
 Owner 17:41 PT: "Having the boards now, be sure we are using the proper multipliers, prove, analyze and understand each of the
 available tables, including PrizePicks with the techniques we already know."
