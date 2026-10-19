@@ -69,14 +69,21 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
   if (f.some(x => x == null)) return null;
   const hits = hit.filter(Boolean).length, misses = n - hits;
   if (app === "prizepicks") {
+    // GRADER v3 (2026-10-18) - the twin of build_slip_engine.pp_payout (proven on PrizePicks' own quotes, PP_PAYOUT_FINDINGS §0l):
+    // all-standard Power = the base exactly; Power with goblins / demons (3-6 picks) = gridDown(b_n x fp^a_n) (power_alt_v3),
+    // 2-pick compress(3 x fp); all-standard Flex = its table, a same-game 3 / 4-pick = flex_same_game_v3; Flex with alternates =
+    // the quote-derived tiers.
     const pp = pricing.pp || {};
     const fprod = f.reduce((a, b) => a * b, 1);
+    const alt = f.some(x => Math.abs(x - 1) > 1e-9);
     if (mode === "power") {
-      const base = Number((pp.base_power || {})[String(n)]);
-      if (!(base > 0)) return null;
-      return misses === 0 ? nbaCompress(pricing, base * fprod) : 0;
+      if (misses > 0) return 0;
+      if (!alt) { const base = Number((pp.base_power || {})[String(n)]); return base > 0 ? base : null; }
+      if (n === 2) return nbaCompress(pricing, 3 * fprod);
+      const r = (pp.power_alt_v3 || {})[String(n)];
+      if (!r) return null;
+      return nbaGridDown(Number(r.b) * Math.pow(fprod, Number(r.a)));
     }
-    const allStd = f.every(x => Math.abs(x - 1) < 1e-9);
     let base;
     if (n === 2) base = Number((pp.flex_2pick_base || {})[String(hits)] || 0);
     else base = Number(((pp.flex_all_standard || {})[String(n)] || {})[String(hits)] || 0);
