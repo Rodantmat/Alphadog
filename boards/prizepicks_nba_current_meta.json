@@ -3,24 +3,24 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-18T20:20:44Z",
+  "fetched_at": "2026-10-19T20:20:23Z",
   "egress": {
-    "ip": "75.130.155.67",
-    "hostname": "syn-075-130-155-067.res.spectrum.com",
-    "city": "Weaverville",
-    "region": "North Carolina",
+    "ip": "35.129.118.173",
+    "hostname": "syn-035-129-118-173.res.spectrum.com",
+    "city": "Los Angeles",
+    "region": "California",
     "country": "US",
-    "loc": "35.6970,-82.5607",
+    "loc": "34.1121,-118.2594",
     "org": "AS20115 Charter Communications LLC",
-    "postal": "28787",
-    "timezone": "America/New_York",
+    "postal": "90039",
+    "timezone": "America/Los_Angeles",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 974,
-  "row_count": 974,
+  "rows": 8561,
+  "row_count": 8561,
   "total_pages": 1,
-  "future_pickable": 974,
+  "future_pickable": 8561,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
@@ -41,22 +41,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 1093195,
+      "bytes": 9486048,
       "total_pages": 1,
       "ok": true,
-      "rows": 974,
-      "future_pickable": 974
+      "rows": 8561,
+      "future_pickable": 8561
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 1093173,
+      "bytes": 9486026,
       "total_pages": 1,
       "ok": true,
-      "rows": 974,
-      "future_pickable": 974
+      "rows": 8561,
+      "future_pickable": 8561
     }
   ],
-  "github_run_id": "39162588630"
+  "github_run_id": "39317909374"
 }
