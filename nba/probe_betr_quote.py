@@ -13,7 +13,7 @@ Steps: boot exactly like the harvest (probe_betr_slip.boot -> the NBA board), re
 app's own graphql request headers from the wire, tap ONE MORE so the app sends its own ValidateEntryWithRules (its rulesIds +
 headers are reused), then send, from inside the page with those headers, the same query for a ladder of entries built from the
 board: all-REGULAR 2..6 picks, LESS vs MORE, same-game pairs, and 1 / 2 picks of every non-regular tier on the board.
-Env: DATABASE_URL, PROXY_URL, BETR_SESSION_ID, BETR_LEAGUE (NBA), BQ_AMOUNT (1).
+Env: DATABASE_URL, PROXY_URL, BETR_SESSION_ID, BETR_LEAGUE (NBA), BQ_AMOUNT (1), BQ_ENGINE_DATE (price that slate's placed engine slips).
 """
 import itertools
 import json
