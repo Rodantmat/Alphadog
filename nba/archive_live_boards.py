@@ -330,6 +330,10 @@ def rows_fliff(doc, gd, label):
         except (TypeError, ValueError):
             price = None
         mk = "player_" + str(l.get("market") or l.get("stat") or "").lower().replace(" ", "_")
+        # FLIFF'S NBA NAMES (2026-10-19 sweep, the first NBA player board Fliff posted: 858 legs for 10-20): Fliff spells combos
+        # and quarters out ("Points and Rebounds", "Three Pointers Made", "1st Quarter Points") - 522 of 858 legs carried keys no
+        # scorer reads. Mapped to the canonical keys; anything else stays as is and is visible as unmapped.
+        mk = FLIFF_KEY.get(mk, mk)
         # Fliff sends event_start_utc as epoch MILLISECONDS; the column is a timestamp
         _start = l.get("event_start_utc")
         if isinstance(_start, (int, float)):
