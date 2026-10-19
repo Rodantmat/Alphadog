@@ -112,7 +112,8 @@ def pricing_parity(conn, cfg):
     for _ in range(400):
         n = rnd.randint(2, 6)
         alt = rnd.random() < 0.5
-        legs = [{"factor": (round(rnd.choice([0.6, 0.75, 0.85, 1.0, 1.0, 1.2, 1.5, 1.9]), 3) if alt else 1.0), "hit": int(rnd.random() < 0.6)} for _ in range(n)]
+        legs = [{"factor": (round(rnd.choice([0.6, 0.75, 0.85, 1.0, 1.0, 1.2, 1.5, 1.9]), 3) if alt else 1.0), "hit": int(rnd.random() < 0.6),
+                 "event_id": rnd.choice("abcdefgh")} for _ in range(n)]   # grader v3: same-game 3 / 4-Flex (2026-10-18)
         cases.append({"app": "prizepicks", "mode": rnd.choice(["power", "flex"]), "legs": legs})
     for _ in range(400):
         n = rnd.randint(2, 6)
