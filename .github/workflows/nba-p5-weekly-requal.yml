@@ -163,6 +163,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -u nba/regrade_pp_flex_alt.py
 
+      # 2026-10-18 GRADER v3 (PP_PAYOUT_FINDINGS §0l, proven on PrizePicks' own quotes on the live NBA board): all-regular slips pay
+      # the tables exactly, Power with goblins / demons the conservative power_alt_v3 law, same-game 3 / 4-Flex the adjusted table.
+      # Every backtest slip is kept on the current grader before certification (L11 recomputes with nba_market.pp_slip_payout_v3).
+      - name: 3g. Regrade every PrizePicks backtest slip to grader v3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/regrade_pp_payout_v3.py
+
       - name: 4. Certification pass (frozen invariant list; any FAIL stops the loop here)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
