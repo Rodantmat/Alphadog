@@ -195,6 +195,15 @@ def api_checks(conn, cfg):
                 or abs(float(db[1]) * 100 - r["probability_confidence_0_100"]) > 0.051:
             bad.append((r["final_board_row_id"], db))
     check("C3 every board leg's HP / confidence / score == the market-anchored board (board_true_hp over board_scored)", not bad and rows, bad[:3])
+    # C63 (2026-10-18, owner comparing the apps): every Underdog / Sleeper leg carries the number the app SHOWS (Underdog's pick
+    # price, Sleeper's multiplier) beside the payout factor, and a Sleeper leg breaks even at 1 / its multiplier (a price), not 0.56 / m
+    code63, b63, _ = curl("/api/main-board/current?limit=600&min_score=0")
+    r63 = [r for r in (b63.get("rows") or []) if r.get("source_key") in ("underdog", "sleeper") and r.get("app_multiplier") is not None]
+    miss63 = [r["final_board_row_id"] for r in r63 if r.get("app_shown_x") is None]
+    be63 = [(r["final_board_row_id"], r.get("breakeven_0_100"), r.get("app_multiplier")) for r in r63 if r["source_key"] == "sleeper"
+            and float(r["app_multiplier"]) > 1 and abs(float(r["breakeven_0_100"]) - round(100 / float(r["app_multiplier"]), 1)) > 0.11]
+    check("C63 Underdog / Sleeper legs show the app's own number; Sleeper break-even = 1 / multiplier",
+          code63 == 200 and not miss63 and not be63, f"{len(r63)} app legs; missing shown {miss63[:3]}; sleeper break-even off {be63[:3]}")
     miss_game = [r["final_board_row_id"] for r in rows if not r.get("official_game_time_utc") or not r.get("team_abbr")]
     check("C4 every leg resolved to a team and a game", not miss_game, miss_game[:3])
     pp = [r for r in rows if r["source_key"] == "prizepicks"][:40]
