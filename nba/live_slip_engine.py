@@ -1112,7 +1112,7 @@ def pick_postseason(conn, day, legs):
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight)
                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, 1, json.dumps([{'cell': 'playoff_unders', 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'],
-                                                     'tier': l['tier'], 'side': l['side'], 'line': float(l['line']), 'factor': l['factor'],
+                                                     'tier': l['tier'], 'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'event_id': l.get('event_id'),
                                                      'score': l.get(acfg.get('rank', 's_final'))} for l in slip]),
                           int(spec['size']), spec['structure'], st, 1.0))
             n += 1
