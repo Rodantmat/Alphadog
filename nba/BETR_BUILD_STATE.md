@@ -239,6 +239,10 @@ installing.
   in-page, read-only (CreateEntry is never sent); every answer in `nba_market.betr_quote`. Measured: Perfect 3/6/10/20/35/50/100/200/300,
   Dynamic 2/0.5 · 3/1 · 6/1.5 · 10/2/0.4 · 20/1.5/1 …; ALL-LESS entries discounted (2.75 / 5.5 / 9); EDGE tiers lower, boosted tiers
   raise, priced per entry. Rule row `nba_config.pp_slip_rules['betr_payout_v1']`. Bundle read: `nba/probe_betr_slip.py`.
+  **✅ 2026-10-19:** all-LESS 5 / 6 measured on the NBA board - Perfect 18 / 31.5 (regular 20 / 35), Flex 5: 9 / 1.75 / 0.25, 6: 18 /
+  1.25 / 1; five LESS of six pays the full table. `betr_payout_v1` updated (and stored as an object - it had been a double-encoded
+  string). Engine slips priced on Betr leg for leg: `nba/probe_betr_quote_engine.py` (BQ_ENGINE_DATE, read-only), run after P3 on
+  game days. Open: all-LESS 7-10.
 - **Session longevity**: unknown how long the logged-in profile lasts before Betr forces re-auth. If a
   scheduled run finds itself logged out, it writes no board (harmless) until a BETR_LOGIN=1 run. Add a
   freshness check to the certifier's per-app board-liveness (already reads betr meta).
