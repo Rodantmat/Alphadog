@@ -145,14 +145,24 @@ def fetch(key, cfg=None):
     err = run("")
     if err is not None:
         return status, remaining, err, meta
-    if meta["has_more_at_cap"]:
+    # TRUNCATED READ (2026-10-19 readiness): the day before opening night the full board came back as 10,001 items in 2 pages
+    # with x-result-truncated = true (a read cap on ParlayAPI's side that paging cannot recover) - on a game day the rows the
+    # market term needs could be among the ones cut. A truncated read now triggers the same sportsbook-narrowed pass as the
+    # offset cap: a far smaller read (only the history's books), merged in without duplicates.
+    full_truncated = meta["truncated"]
+    if meta["has_more_at_cap"] or full_truncated:
+        meta["truncated"] = False
         books = sorted(set(cfg["books"]) | {k for k, v in cfg.get("book_aliases", {}).items() if v in set(cfg["books"])})
-        seen = {json.dumps(x, sort_keys=True) for x in items}
+        # identity of a prop row without its volatile fields (age_seconds / last_update / prices move between the two reads)
+        ident = lambda x: tuple(str(x.get(k)) for k in ("bookmaker", "event_id", "market_key", "market", "player", "line", "period"))  # noqa: E731
+        seen = {ident(x) for x in items}
         before = list(items); items.clear()
         meta["narrowed_pass"] = True
         err = run("&bookmakers=" + ",".join(books))
-        narrowed = [x for x in items if json.dumps(x, sort_keys=True) not in seen]
+        narrowed = [x for x in items if ident(x) not in seen]
         items[:] = before + narrowed
+        meta["narrowed_added"] = len(narrowed)
+        meta["narrowed_truncated"], meta["truncated"] = meta["truncated"], full_truncated
         if err is not None:
             return status, remaining, err, meta
     return 200, remaining, items, meta
