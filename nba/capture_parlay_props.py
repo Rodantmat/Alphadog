@@ -88,7 +88,7 @@ def api_key(conn, name):
     return r[0].strip()
 
 
-def _page(key, query):
+def _page(key, query, budget_s=300):
     """ONE page through the system retry policy (nba/net_retry.py: 4 attempts, full-jitter backoff, 429 / 5xx - including
     ParlayAPI's 503 props_board_degraded - retried with Retry-After honoured, 5 minutes in all). A final 4xx (bad key, out of
     credits) is returned at once. -> (status, remaining, doc, headers)"""
