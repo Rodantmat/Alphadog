@@ -47,10 +47,10 @@ def exp_payout(legs_p, fprod, k, structure, alt=False):
             nd[h] += q * (1 - p); nd[h + 1] += q * p
         dist = nd
     e = 0.0
+    # grader v3 (2026-10-18): the SAME payout function grade() uses (alt = a goblin / demon in the slip; no same-game term here)
+    alt = alt or abs(fprod - 1.0) > 1e-9
     for h, q in enumerate(dist):
-        base = (ENG.POWER[k] if h == k else 0.0) if structure == 'power' else ENG.FLEX.get((k, h), 0.0)
-        if base > 0:
-            e += q * (ENG.flex_alt_payout(k, k - h, fprod) if (structure != 'power' and alt) else ENG.compress(base * fprod))
+        e += q * ENG.pp_payout(k, h, structure, fprod, alt)
     return e
 
 
