@@ -68,6 +68,15 @@ def boot(sb):
     H.enable_network(sb)
     H.clear_geo(sb)
     H.where(sb, "after root (attached)")
+    for attempt in range(3):
+        if len(sb.get_page_source() or "") > 5000:
+            break
+        print(f"  app did not render (attempt {attempt + 1}/3) - reloading the root", flush=True)
+        H.open_alive(sb, H.URL, "root retry")
+        time.sleep(6)
+        H.enable_network(sb)
+        H.clear_geo(sb)
+        H.where(sb, "root retry")
     if "AllowLocation" in (sb.get_current_url() or ""):
         print("  still on the geo prompt - granting geolocation (San Diego) and retrying", flush=True)
         try:
@@ -94,7 +103,7 @@ def bundles(sb):
     frame = tree["frameTree"]["frame"]["id"]
     res = [r["url"] for r in tree["frameTree"].get("resources", []) if r.get("type") == "Script"]
     print(f"BUNDLES {len(res)}: " + ", ".join(u.rsplit('/', 1)[-1][:50] for u in res), flush=True)
-    ops, hosts = {}, set()
+    ops, hosts, frags = {}, set(), {}
     for u in res:
         try:
             c = sb.driver.execute_cdp_cmd("Page.getResourceContent", {"frameId": frame, "url": u})
@@ -110,6 +119,10 @@ def bundles(sb):
             name = m.group(2)
             if name not in ops:
                 ops[name] = (m.group(1), m.group(3) or "", re.sub(r"\s+", " ", t[m.start():m.start() + 1200].replace("\\n", " ")))
+        for m in re.finditer(r"fragment\s+([A-Za-z0-9_]+)\s+on\s+[A-Za-z0-9_]+\s*\{", t):
+            if re.search(r"entry|rule|multiplier|pick|league|payout|boost|edge|insur|game", m.group(1), re.I) and m.group(1) not in frags:
+                end = t.find("`", m.start())
+                frags[m.group(1)] = re.sub(r"\s+", " ", re.sub(r"\$\{[^}]*\}", " ", t[m.start():end if 0 < end - m.start() < 6000 else m.start() + 1500]))
         for m in re.finditer(r"https://[a-z0-9.\-]*betr\.app[A-Za-z0-9_\-/.]*", t):
             hosts.add(m.group(0))
         for m in re.finditer(r"[\"'`](/api/v[0-9]+/[A-Za-z0-9_\-/{}$.]+)[\"'`]", t):
@@ -122,6 +135,9 @@ def bundles(sb):
             ctx = re.sub(r"\s+", " ", t[max(0, m.start() - 200):m.start() + 300])
             print(f"  CODE {m.group(0)} :: {ctx}", flush=True)
             n += 1
+    print("\nFRAGMENTS (entry / rule / multiplier / pick / league):", flush=True)
+    for name, doc in sorted(frags.items()):
+        print(f"FRAG {name} :: {doc}", flush=True)
     print(f"GRAPHQL OPERATIONS IN THE BUNDLES: {len(ops)}", flush=True)
     print("ALL: " + ", ".join(sorted(f"{v[0][0]}:{k}" for k, v in ops.items())), flush=True)
     for name, (kind, vs, doc) in sorted(ops.items()):
@@ -130,6 +146,53 @@ def bundles(sb):
     print("\nHOSTS / REST:", flush=True)
     for h in sorted(hosts):
         print("  ", h, flush=True)
+    return frags
+
+
+def with_frags(doc, frags):
+    """doc + every fragment it spreads (recursively), as the app's own documents do."""
+    need, out, seen = re.findall(r"\.\.\.([A-Za-z0-9_]+)", doc), [doc], set()
+    while need:
+        n = need.pop()
+        if n in seen or n not in frags:
+            continue
+        seen.add(n)
+        out.append(frags[n])
+        need += re.findall(r"\.\.\.([A-Za-z0-9_]+)", frags[n])
+    return " ".join(out), sorted(seen)
+
+
+def direct_rules(sb, frags):
+    """READ-ONLY queries the app itself sends (GetEntryAndFeedConfigs, getAllLeaguesConfigs), issued IN THE PAGE with the
+    seeded session's bearer token, in case the app did not send them while we watched."""
+    st, _ = H.load_session_state()
+    tok = None
+    try:
+        ls = (json.loads(st).get("localStorage") or {}) if st else {}
+        for v in ls.values():
+            for t in H.JWT_RE.findall(v if isinstance(v, str) else ""):
+                if H._claims(t).get("typ") == "Bearer":
+                    tok = t
+    except Exception:  # noqa: BLE001
+        pass
+    print(f"\n==== DIRECT READ-ONLY QUERIES (bearer {'found' if tok else 'MISSING'}) ====", flush=True)
+    for name, body in (("GetEntryAndFeedConfigs", "query GetEntryAndFeedConfigs { getAllEntryRules { ...EntryRule } }"),
+                       ("getAllLeaguesConfigs", "query getAllLeaguesConfigs { getLeagueConfigs { ...LeagueConfigs } }")):
+        doc, used = with_frags(body, frags)
+        print(f"  {name}: fragments {used}", flush=True)
+        for url in ("https://api.fantasy.betr.app/graphql", "https://fantasy.betr.app/graphql"):
+            try:
+                sb.driver.set_script_timeout(60)
+                r = sb.driver.execute_async_script("""
+                  const done = arguments[arguments.length - 1];
+                  fetch(arguments[0], {method: 'POST', headers: Object.assign({'content-type': 'application/json'}, arguments[3] ? {authorization: 'Bearer ' + arguments[3]} : {}),
+                        body: JSON.stringify({operationName: arguments[1], query: arguments[2], variables: {}})})
+                    .then(r => r.text().then(t => done([r.status, t]))).catch(e => done([0, String(e)]));""", url, name, doc, tok)
+            except Exception as exc:  # noqa: BLE001
+                r = [0, f"{type(exc).__name__}: {str(exc)[:200]}"]
+            print(f"RULES DIRECT {name} {url} http {r[0]} {len(r[1])}b {r[1][:40000]}", flush=True)
+            if r[0] == 200:
+                break
 
 
 def drain(sb, ids, seen):
@@ -163,7 +226,9 @@ def drain(sb, ids, seen):
         try:
             b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
             txt = b.get("body") or ""
-            if KEY.search(txt[:20000]):
+            if re.search(r"getAllEntryRules|getLeagueConfigs|dynamicMultipliers|boostedMultipliers", txt):
+                print(f"RULES RESP {u} {len(txt)}b {txt[:40000]}", flush=True)
+            elif KEY.search(txt[:20000]):
                 print(f"RESP {u} {len(txt)}b {txt[:2500]}", flush=True)
             ids.pop(rid)
         except Exception:  # noqa: BLE001
@@ -245,8 +310,9 @@ def main():
         kw["proxy"] = proxy_arg
     with SB(**kw) as sb:
         boot(sb)
-        bundles(sb)
+        frags = bundles(sb) or {}
         wire(sb)
+        direct_rules(sb, frags)
     if lp:
         lp.terminate()
 
