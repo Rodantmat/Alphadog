@@ -70,8 +70,19 @@ def main():
             r = conn.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key=%s",
                              (name,)).fetchone() if name else None
             return (r[0] or "").strip() if r else ""
-        key = cred(os.environ.get("ODDS_KEY_NAME", "odds_api_key_nba"))
-        fb_name = os.environ.get("ODDS_FALLBACK_KEY_NAME", "odds_api_key").strip()
+        # SOURCE (owner 2026-10-19 14:16 PT: "Odds API is too expensive, I'm not gonna renew it" - game-level odds come from the
+        # cheap key, props from ParlayAPI). Tunable nba_config.classification_config['game_lines_feed']:
+        #   {"mode": "live" | "historical", "live_key_name": "odds_api_key", "historical_key_name": "odds_api_key_nba"}
+        # mode 'live' (default) reads the LIVE endpoint directly with the free key; 'historical' restores the paid 08:00 snapshot
+        # (with the live read as its fallback). ODDS_KEY_NAME / ODDS_FALLBACK_KEY_NAME / GL_MODE env vars override for a one-off run.
+        feed = {}
+        row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='game_lines_feed'").fetchone()
+        if row:
+            import json as _json
+            feed = row[0] if isinstance(row[0], dict) else _json.loads(row[0])
+        gl_mode = (os.environ.get("GL_MODE") or feed.get("mode") or "live").lower()
+        fb_name = (os.environ.get("ODDS_FALLBACK_KEY_NAME") or feed.get("live_key_name") or "odds_api_key").strip()
+        key = cred(os.environ.get("ODDS_KEY_NAME") or feed.get("historical_key_name") or "odds_api_key_nba") if gl_mode == "historical" else ""
         prev = conn.execute("SELECT status, requested_ts FROM nba_market.game_lines_snapshot_log WHERE game_date=%s AND snapshot_label=%s",
                             (d, label)).fetchone()
         if prev and prev[0] == "ok" and prev[1] == iso_z(morning):
