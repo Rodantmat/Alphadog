@@ -290,7 +290,8 @@ available tables, including PrizePicks with the techniques we already know."
   round robin pricing (proven on the owner's entry screens 10-09) unchanged. **Underdog** — main lines: payout modifier × √3.5 matches
   the displayed fantasy price (median gap 0.012); ALTERNATE longshots diverge (Brown PTS 33.5: modifier 7.98 × √3.5 = 14.9 vs displayed
   +1120 = 12.2; median gap 0.074 on 1,386 alternates). Our Underdog engine prices with the modifier; its P5 portfolio is mains. Which
-  number an alternate entry pays is the owed owner entry-screen check (one longshot alternate, no submit). **Betr** — the tier multiplier
+  number an alternate entry pays is the owed owner entry-screen check (one longshot alternate, no submit). **→ Settled the same night
+  from our own data (§0m): the modifier; the display is a per-product representation.** **Betr** — the tier multiplier
   is not on the board (priced at slip time, BETR_BUILD_STATE §8); measurement only. **Fliff** — no NBA player props captured yet.
 
 ## 0k. 🔴 FLEX WITH GOBLINS / DEMONS — THE PARTIAL TIERS ARE FLAT, AND THE GRADER HAD SCALED THEM (2026-10-10)
