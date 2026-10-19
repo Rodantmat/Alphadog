@@ -1203,6 +1203,16 @@ def grade(conn, day):
     # slip of its non-void legs; a slip left with < 2 legs is refunded (profit 0).
     slate_graded = (outcomes.pop('__boxscores__', 0) > 0) if GRADE_SOURCE == 'boxscore' else len(outcomes) > 0
     graded = voided = 0
+    # PRIZEPICKS' OWN QUOTE (2026-10-18, owner: "be sure we are using the proper multipliers"): when PrizePicks priced this exact
+    # slip at the window (pp_payout_map.py PP_MODE=slipq -> nba_score.live_slip_quotes, the latest 200 per slip), a slip with no
+    # voided leg is paid PrizePicks' quoted tier for its hits; the grader v3 payout is kept in payout_model. A void, or no quote,
+    # -> the grader (reversion rules, conservative law).
+    conn.execute("ALTER TABLE nba_score.live_slips ADD COLUMN IF NOT EXISTS payout_model double precision")
+    quotes = {}
+    if conn.execute("SELECT to_regclass('nba_score.live_slip_quotes') IS NOT NULL").fetchone()[0]:
+        for st_, k_, pw_, fx_ in conn.execute("""SELECT DISTINCT ON (strategy, k) strategy, k, power, flex FROM nba_score.live_slip_quotes
+                                                WHERE game_date = %s AND status = 200 ORDER BY strategy, k, quoted_at DESC""", (day,)).fetchall():
+            quotes[(st_, k_)] = (pw_ if isinstance(pw_, dict) else json.loads(pw_ or 'null'), fx_ if isinstance(fx_, dict) else json.loads(fx_ or 'null'))
     for strategy, k, legs, size, structure, status0 in rows:
         legs_l = legs if isinstance(legs, list) else json.loads(legs)
         hs = [outcomes.get((l['player'], l['prop'], l['side'], float(l['line']))) for l in legs_l]
