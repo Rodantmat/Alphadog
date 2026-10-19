@@ -105,8 +105,12 @@ def main():
             if fb_err is None and isinstance(live, list):
                 data, remaining, err = {"timestamp": iso_z(fb_ts), "data": live}, fb_remaining, None
                 ts = fb_ts
-                note = f"fallback live {fb_name} (historical: {primary_err})"
-                print(f"::warning::{d} historical morning line unavailable ({primary_err}) - read the LIVE line with {fb_name} at {iso_z(fb_ts)}")
+                if gl_mode == "historical":
+                    note = f"fallback live {fb_name} (historical: {primary_err})"
+                    print(f"::warning::{d} historical morning line unavailable ({primary_err}) - read the LIVE line with {fb_name} at {iso_z(fb_ts)}")
+                else:
+                    note = f"live {fb_name}"
+                    print(f"{d}: live game line read with {fb_name} at {iso_z(fb_ts)} (game_lines_feed mode live)")
             else:
                 err = f"historical: {primary_err}; live fallback: {str(fb_err)[:120]}"
         if (err or not data) and os.environ.get("GL_DRY_RUN") == "1":
