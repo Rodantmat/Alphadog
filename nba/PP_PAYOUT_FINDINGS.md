@@ -231,8 +231,19 @@ and figure it out. Same goes for all apps."
   `nba_market.betr_quote`; for any real slip the live quote is the number.
 - **Stored rule:** `nba_config.pp_slip_rules['betr_payout_v1']` (status verified). Fact 136 / §31u ("Betr: flat table like PrizePicks")
   is superseded: for the Under-heavy PrizePicks strategies an all-Under 3-pick slip on Betr pays 5.5, not 6.
-- **Other apps (probe_app_slip_pricing.py, run 39191932225):** Underdog's web app redirects to login before any pick'em bundle loads
-  (no Underdog credential exists; our Underdog portfolio is mains, where modifier × √3.5 is proven). Sleeper (product of per-side
+- **Underdog — SETTLED from our own data + Underdog's help center (owner 22:48 PT: "use the data we already have and research
+  online, check documentation"):** the entry pays **base(n) × ∏ payout_multiplier** (the API field `payout_multiplier` = the
+  modifier, ½ ÷ Underdog's probability), not the displayed per-pick number. Evidence: (1) the owner's 10-03 MLB screenshots
+  (strategy §30f) fit base × ∏ m to 0.1% at 2, 3 and 4 picks with ONE constant (1.040 / 1.039 / 1.039) - on today's board the
+  display runs 1.8% above √3.5 × m for m ≈ 0.6–0.75 (the screenshots' favourites), so a display-based payout would have needed
+  1.036 / 1.055 / 1.074 - rejected; (2) the fit needed Díaz's decimal-priced pick at m = ½ × 1.82 = 0.91, whereas display ÷ √3.5
+  gives 0.973; (3) the display is a per-product representation: on the 10-20 board decimal-priced picks show 2 × m (172 sides,
+  ratio 1.000) and fantasy-priced picks show ≈ √3.5 × m (2,013 sides, 1.000 at m = 1, curving to −3% at m 1.5 and −18% at m 8 on
+  7,646 ladder rungs: Brown PTS 33.5 m 7.98 shows 12.2); (4) Underdog's help center: "the base multiplier assumes a standard 1.0x
+  multiplier for every selection"; a 0.7x pick lowers, a 1.5x pick raises the payout; the modifier pick must be correct for its boost.
+  **Our engine already prices with the modifier, and every Underdog engine leg sits at m 0.6–1.5 (1,029,494 backtest legs: F2 mean
+  0.838, R 0.995, B1 1.029–1.074; none above 1.5)** - the longshot divergence never reaches it. Still open, conservative: the 1.04
+  constant (T36-3; priced without it). Underdog's pick'em bundles load only after login (no credential), so no live quote path. Sleeper (product of per-side
   multipliers, proven on the owner's screens 10-09). Fliff is a social sportsbook: American odds, parlay = product; no NBA props yet.
 
 ## 0l. 🔑 GRADER v3 — EVERY TABLE PROVEN ON THE LIVE NBA BOARD, AND PRIZEPICKS PRICES EVERY REAL SLIP (2026-10-18)
