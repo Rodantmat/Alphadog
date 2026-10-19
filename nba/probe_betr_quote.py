@@ -295,7 +295,7 @@ def main():
                 break
             if x["tier"] == "REGULAR" and x["outcome"] == "LESS" and x["player"] not in {q["player"] for q in less}:
                 less.append(x)
-        for n in range(2, min(6, len(less)) + 1):
+        for n in range(2, min(10, len(less)) + 1):
             show("regular_less", less[:n], quote(sb, hdr, rules, less[:n]))
             time.sleep(0.5)
         # 3b) k LESS picks among n (the rest MORE on other players): is LESS priced per pick?
