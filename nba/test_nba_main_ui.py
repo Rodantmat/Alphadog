@@ -131,6 +131,7 @@ def pricing_parity(conn, cfg):
         return
     got = json.loads(r.stdout)
     E._FLEX_ALT = None
+    E._PAYOUT_V3 = None
     bad = []
     for c, g in zip(cases, got):
         if c["app"] == "prizepicks":
