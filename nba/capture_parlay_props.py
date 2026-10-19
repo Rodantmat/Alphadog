@@ -275,13 +275,15 @@ def main():
     status, remaining, doc, meta = fetch(api_key(conn, cfg["key_name"]), cfg)
     items = doc if isinstance(doc, list) else []
     print(f"ParlayAPI {SPORT}/props: http {status}, {len(items)} items in {meta['pages']} page(s), credits remaining {remaining}"
-          f"{' | narrowed sportsbook pass merged (+' + str(meta.get('narrowed_added', 0)) + ' items)' if meta['narrowed_pass'] else ''}", flush=True)
+          f"{' | per-book sportsbook reads merged (+' + str(meta.get('narrowed_added', 0)) + ' items)' if meta['narrowed_pass'] else ''}", flush=True)
     if meta["truncated"] and not meta["narrowed_pass"]:
         print("::warning::ParlayAPI flagged x-result-truncated (a read cap on its side) - the board may be incomplete; paging cannot recover it", flush=True)
     elif meta["truncated"]:
-        print("  the full read was truncated on ParlayAPI's side; the sportsbook-narrowed pass covers the market term's books", flush=True)
+        print("  the full read was truncated on ParlayAPI's side; one read per sportsbook covers the market term's books", flush=True)
+    if meta.get("per_book"):
+        print("  per-book reads (rows read, new rows, truncated): " + ", ".join(f"{b} {v[0]}/{v[1]}{(' ' + v[2]) if isinstance(v[2], str) else (' TRUNCATED' if v[2] else '')}" for b, v in meta["per_book"].items()), flush=True)
     if meta.get("narrowed_truncated"):
-        print("::warning::even the sportsbook-narrowed ParlayAPI read was truncated - the market term's books may be incomplete", flush=True)
+        print("::warning::a per-book ParlayAPI read was truncated or failed - that book's rows for the market term may be incomplete", flush=True)
     if status != 200:
         conn.execute("""INSERT INTO nba_market.parlay_props_captures (capture_date, label, sport, http_status, n_items, credits_remaining, n_written, unmapped, payload)
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (capture_date, label, sport) DO UPDATE SET captured_at=now(),
