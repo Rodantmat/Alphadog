@@ -234,7 +234,7 @@ def normalize(items, cfg, label, slate):
                 price = int(round(float(p)))
             except (TypeError, ValueError):
                 continue
-            rows.append((gd, ev, lab, now, bk, odds_key, it.get("player"), side, float(line), price, None,
+            rows.append((gd, ev, lab, now, bk, odds_key, pl, side, float(line), price, None,
                          it.get("home_team"), it.get("away_team"), ct))
     return rows, unmapped, flat
 
