@@ -606,6 +606,69 @@ def main():
             save("complete (slips)")
             return 0
 
+        if MODE == "slipq":
+            # SLIP QUOTES (2026-10-18, owner: "be sure we are using the proper multipliers"): every PrizePicks slip the live engine
+            # built for the slate is priced by PrizePicks' OWN quote engine on the board it will be placed from - the exact Power /
+            # Flex tiers (and is_adjusted, PrizePicks' same-game flag) PrizePicks will pay, stored per slip in
+            # nba_score.live_slip_quotes (every quote kept). Legs map to projection ids by player name + stat + line + tier (odds
+            # type); a slip with a leg no longer on the board is recorded as unmapped (the leg moved or was pulled - substitute).
+            import unicodedata
+            import psycopg
+            from zoneinfo import ZoneInfo
+            day = os.getenv("PP_SLIP_DATE") or datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
+
+            def nm(s):
+                s = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().lower()
+                s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", s)
+                return re.sub(r"[^a-z]", "", s)
+            prop_stat = {"points": "points", "rebounds": "rebounds", "assists": "assists", "threes_made": "3-pt_made",
+                         "pra": "pts+rebs+asts", "pts_reb": "pts+rebs", "pts_ast": "pts+asts", "reb_ast": "rebs+asts",
+                         "stocks": "blks+stls", "steals": "steals", "blocks": "blocked_shots", "turnovers": "turnovers"}
+            idx = {}
+            for r in rows:
+                key = (nm(r["name"]), str(r["stat"] or "").lower().replace(" ", "_"), float(r["line"]), r["odds"])
+                idx.setdefault(key, r)
+            url = os.environ["DATABASE_URL"]
+            with psycopg.connect(url) as conn:
+                conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_slip_quotes (
+                    game_date date NOT NULL, strategy text NOT NULL, k int NOT NULL, quoted_at timestamptz NOT NULL DEFAULT now(),
+                    status int, mapped int, size int, structure text, power jsonb, flex jsonb, power_adj boolean, flex_adj boolean,
+                    legs jsonb, run_file text, PRIMARY KEY (game_date, strategy, k, quoted_at))""")
+                conn.commit()
+                slips = conn.execute("""SELECT strategy, k, legs_json, size, structure FROM nba_score.live_slips
+                                        WHERE game_date = %s AND status LIKE 'placed%%' AND status NOT LIKE '%%shadow%%' ORDER BY strategy, k""",
+                                     (day,)).fetchall()
+            result["meta"].update({"mode": "slipq", "slate": day, "slips": len(slips)})
+            print(f"SLIPQ|slate {day}|engine slips {len(slips)}|board rows {len(rows)}", flush=True)
+            out = []
+            for strategy, k, legs_json, size, structure in slips:
+                legs_l = legs_json if isinstance(legs_json, list) else json.loads(legs_json)
+                picked, miss = [], []
+                for l in legs_l:
+                    t = str(l.get("tier") or "R")
+                    odds = "standard" if t == "R" else ("goblin" if t.startswith("G") else "demon")
+                    side = "under" if str(l.get("side") or "").lower() in ("under", "less") else "over"
+                    r = idx.get((nm(l.get("player")), prop_stat.get(str(l.get("prop")), str(l.get("prop"))), float(l.get("line")), odds))
+                    if r:
+                        picked.append(leg(r, side))
+                    else:
+                        miss.append(f"{l.get('player')} {l.get('prop')} {l.get('line')} {t}")
+                if miss:
+                    print(f"SLIPQ|{strategy}:{k}|UNMAPPED {len(miss)}: {'; '.join(miss)}", flush=True)
+                    out.append((day, strategy, k, None, len(picked), size, structure, None, None, None, None, json.dumps({"unmapped": miss})))
+                    continue
+                rec = run("SLIPQ", picked, f"{strategy}:{k}")
+                out.append((day, strategy, k, rec.get("status"), len(picked), size, structure, json.dumps(rec.get("power")),
+                            json.dumps(rec.get("flex")), rec.get("power_adj"), rec.get("flex_adj"), json.dumps(picked)))
+            with psycopg.connect(url) as conn:
+                for o in out:
+                    conn.execute("""INSERT INTO nba_score.live_slip_quotes (game_date, strategy, k, status, mapped, size, structure, power, flex,
+                                    power_adj, flex_adj, legs, run_file) VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s::jsonb,%s)""", o + (out_path.name,))
+                conn.commit()
+            print(f"SLIPQ|stored {len(out)} (quoted {sum(1 for o in out if o[3] == 200)}, unmapped {sum(1 for o in out if o[3] is None)})", flush=True)
+            save("complete (slipq)")
+            return 0
+
         if MODE == "proof":
             # PROOF (2026-10-18, owner: "Having the boards now, be sure we are using the proper multipliers, prove, analyze and
             # understand each of the available tables"). The slip shapes the live strategies actually place, quoted on the live
