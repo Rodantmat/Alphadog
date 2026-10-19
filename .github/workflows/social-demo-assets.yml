@@ -1,0 +1,29 @@
+name: Social Demo Assets (fetch + commit)
+
+# Social-account work only (2026-10-19). Downloads headshots / team logos / CC-licensed scene photos for the AlphaDog social
+# demo and commits them under social/demo_assets. Touches nothing in nba/ and no database.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch assets
+        run: python social/fetch_demo_assets.py
+      - name: Commit assets
+        run: |
+          git config user.name "alphadog-social"
+          git config user.email "social@alphadog.local"
+          git add social/demo_assets
+          git commit -m "social: demo assets $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]" || echo "nothing to commit"
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && break || sleep 10; done
