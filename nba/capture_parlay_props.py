@@ -94,7 +94,7 @@ def _page(key, query, budget_s=300):
     credits) is returned at once. -> (status, remaining, doc, headers)"""
     from net_retry import Deadline, RetryError, request
     try:
-        r = request("GET", f"{PARLAY}/sports/{SPORT}/props?{query}", tries=4, budget=Deadline(300), timeout=120, label="parlayapi props",
+        r = request("GET", f"{PARLAY}/sports/{SPORT}/props?{query}", tries=4, budget=Deadline(budget_s), timeout=120, label="parlayapi props",
                     headers={"X-API-Key": key, "accept": "application/json", "User-Agent": "alphadog"})
     except RetryError as exc:
         last = exc.last
