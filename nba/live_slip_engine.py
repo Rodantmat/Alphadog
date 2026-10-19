@@ -1230,6 +1230,12 @@ def grade(conn, day):
         # void was graded as a 2-pick FLEX (2.0x / 0.5x) instead of PrizePicks' 3x Power-style, and any slip left with one
         # survivor was refunded instead of 1.5x on a hit / lost on a miss. The backtest, the certify recompute and this now agree.
         hits, payout = ENG.grade([dict(l, hit=h) for l, h in zip(legs_l, hs)], structure)
+        payout_model = payout
+        q = quotes.get((strategy, k))
+        if q and n_void == 0:
+            tbl = (q[0] if structure == 'power' else q[1]) or {}
+            qp = (tbl.get(str(len(legs_l))) or {}).get(str(hits))
+            payout = float(qp) if qp is not None else 0.0
         new_status = ('graded_week2' if status0 == 'placed_week2' else 'graded_week2_skip' if status0 == 'placed_week2_skip'
                       else 'graded_shadow' if status0 == 'placed_shadow'
                       else 'graded_week1_skip' if status0 == 'placed_week1_skip'
