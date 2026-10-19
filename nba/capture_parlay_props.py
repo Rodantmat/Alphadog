@@ -114,7 +114,7 @@ def fetch(key, cfg=None):
     -> (status, remaining, items, meta)"""
     cfg = cfg or DEFAULT_CFG
     limit = int(cfg.get("page_limit") or 10000)
-    items, meta = [], {"pages": 0, "truncated": False, "narrowed_pass": False, "has_more_at_cap": False}
+    items, meta = [], {"pages": 0, "truncated": False, "narrowed_pass": False, "has_more_at_cap": False, "narrowed_truncated": False}
     status, remaining = 0, None
 
     def run(extra):
