@@ -2340,3 +2340,13 @@ to -3% at m 1.5, -18% at m 8). Help center: base assumes 1.0x per selection. All
 no change. 1.04 constant still set aside (T36-3). PP_PAYOUT_FINDINGS 0m.
 **Other apps:** Underdog pick'em bundles load only after login (no credential) - mains proven, the portfolio is mains; Sleeper
 unchanged (overround 12.0-14.3%); Fliff sportsbook odds, no NBA props yet (probe_app_slip_pricing.py run 39191932225).
+**Owner 22:59 / 23:02 PT (Board: "UNHANDLED REJECTION: Invalid call to runtime.sendMessage(). Tab not found."; "no underdog legs and no
+sleeper legs"):** (1) the rejection is a browser extension's own messaging (AlphaDog never calls the extension runtime) - UI v1.4.20
+logs such rejections instead of bannering them, ours are still bannered (HTML-escaped); test C62; UI test 104/104 (run 39207926078).
+(2) The Board was a pre-season replay of 2026-06-13 (one Finals game): Underdog has 178 scored legs there but its best score is 77.9,
+under the default 80 filter; Sleeper has none because there is no Sleeper NBA archive before this season - by design. (3) Found on
+the way, REAL: Underdog now spells combos out ("Points + Rebounds", "Points + Assists", "Rebounds + Assists") and adds "FG Attempted" /
+"3s Attempted"; archive_live_boards.rows_underdog stored them as player_points_+_rebounds etc., keys no scorer or engine reads, so those
+Underdog legs would never have scored on 10-20. Mapped to the canonical keys; on the 10-20 board every Underdog (10,177 of 10,189)
+and Sleeper (738 of 740) row now maps to a scored prop (only triple-doubles, no ladder). The already-archived 10-19+ Underdog rows
+were re-keyed in place.
