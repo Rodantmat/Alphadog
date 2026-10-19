@@ -71,7 +71,7 @@ export async function loadConfig(sql) {
   for (const r of rows) by[r.config_key] = typeof r.config_json === "string" ? JSON.parse(r.config_json) : r.config_json;
   if (!by.nba_main_ui) throw new Error("REFUSED: nba_config.classification_config['nba_main_ui'] missing - the UI reads every tunable from it");
   const pp = await q(sql, "SELECT rule_key, rule_json FROM nba_config.pp_slip_rules WHERE rule_key = ANY($1::text[])",
-    [pgArr(["base_power", "flex_all_standard", "flex_2pick_base", "compression", "flex_alt_tiers"])]);
+    [pgArr(["base_power", "flex_all_standard", "flex_2pick_base", "compression", "flex_alt_tiers", "power_alt_v3", "flex_same_game_v3"])]);
   const ppRules = {};
   for (const r of pp) ppRules[r.rule_key] = typeof r.rule_json === "string" ? JSON.parse(r.rule_json) : r.rule_json;
   return { ui: by.nba_main_ui, reliability: by.prop_reliability_audit_latest || null, sleeper: by.sleeper_payout || null, pp: ppRules };
