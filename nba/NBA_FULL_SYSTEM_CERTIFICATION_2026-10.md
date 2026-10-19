@@ -2362,3 +2362,71 @@ public feed we can reach - lines/available_alt returns every sport but NBA (also
 tried, the main feed carries one line per market (probe_sleeper_alt.py / _alt2.py / _alt3.py, runs 39209962269, 39210767397,
 39211152600, 39211457768); sleeper.com/picks is a marketing page (the app is mobile-only). The scraper requests the alt feed every run,
 so NBA rungs are captured the moment Sleeper publishes them there; otherwise the app's own call has to be captured once (as 09-27).
+
+## OPENING-DAY READINESS — EVERY SOURCE PROBED THE DAY BEFORE (2026-10-19, owner 13:15 PT: "1 day to the opening day ... Probe everything ... be sure that the probes are reaching what needs to reach. So tomorrow we have the real first run working properly")
+
+**Plan for 10-20 (3 games: BOS@DET 12:00 PT, PHI@NYK 16:00 PT, OKC@SAS 18:30 PT).** Scheduler alive (last tick every minute; v2.4.0);
+P2A 03:30 PT, P2B 08:05 PT (crews waited for until 09:25 PT = P3 - 125 min budget), P3 11:31 PT (min(13:15, first tip - 30) + 1),
+P3 deadline for waiting on P2B 11:30 PT. The engine refuses any post-tip pick on its own (`live_slip_engine.post_tip`, §29z-d).
+Betr's harvest resolves league NBA from 2026-10-20 UTC (`betr-cloud-harvest.yml`, auto-switch). Strategy states as configured (paper /
+red); live_slips 0. P1 weekly static 10-19: all steps green, verify-by-data green, certification 2/2 (the two prior weeks had failed on
+partial static loads, already repaired).
+
+**1. The Odds API paid key is DEACTIVATED - the morning line would have failed tomorrow (FIXED).** `nba/probe_odds_keys.py` (run
+39318333556): `odds_api_key_nba` -> 401 `DEACTIVATED_KEY` ("cancelation or a failed payment"); `odds_api_key` (free, 500/month) -> 200,
+but 401 `HISTORICAL_UNAVAILABLE_ON_FREE_USAGE_PLAN` on the historical endpoint and 200 on the LIVE endpoint (3 credits, 46 events);
+`oddspapi_api_key` is not an Odds API key (401 INVALID_KEY). P2B's `capture_game_lines_morning.py` read only the historical endpoint
+with the paid key, so 10-20 would have scored on the derived spread proxy (r = 0.46). Now: when the historical call fails, the line is
+read from the live endpoint (`/sports/basketball_nba/odds`, regions us, h2h / spreads / totals, the Pacific day's games) with
+`ODDS_FALLBACK_KEY_NAME` (default `odds_api_key`) - same rows, label, unique key and log; requested_ts / snapshot_ts = the true fetch
+time; the log's `error` column reads "fallback live ..." so the substitution is visible; when the paid key is renewed the historical
+call answers again and the fallback is skipped. `GL_DRY_RUN=1` parses without writing. Rehearsal for 10-20 (`probe_game_lines_fallback.py`,
+run 39318869472, nothing written): 144 rows, 3 games, 9 books (betmgm, betonlineag, betrivers, betus, bovada, draftkings, fanduel,
+lowvig, mybookieag), home spreads DET -0.5..+1.5, NYK -4.5/-5.5, SAS -2.5; totals 221.5-222.5 / 231.5-232.5 / 231.5-232.5; 3 credits.
+The baseline's 08:00 snapshot becomes the 08:05 live line on normal days. OWNER DECISION: renew the paid plan or not (it is also the
+source of every props backfill).
+
+**2. ParlayAPI (the live market term) silently dropped up to 40% of the books' rows (FIXED).** The 10-19 P3 read came back 10,001
+items with `x-result-truncated`; ParlayAPI's own hint: "This board hit the internal per-source cap (serving cap 10000 rows). Rows are
+sampled across books and markets ... Paginating ... cannot recover rows the per-source cap dropped ... narrow the query with ?markets= or
+?bookmakers=". Measured the same hour (`probe_parlay_perbook.py`, run 39320267592): the full read held DraftKings 1,772 of the 3,020 rows
+a DraftKings-only read returns, Bovada 1,173 of 1,545; a read narrowed to all eight history books in one call was STILL truncated; a
+read narrowed to ONE book was complete for every book; `date=` / `commenceTimeFrom/To` are ignored. `capture_parlay_props.fetch` now
+follows a truncated (or offset-capped) full read with ONE READ PER BOOK (the history's books + aliases, tunable
+`market_feed.per_book_reads`), merged without duplicates (identity = book, event, market key, market, player, line, period), each
+book's result logged, a book that errors or is itself truncated reported as a warning and never fatal; all per-book reads together are
+held to `market_feed.per_book_budget_s` (default 240 s) and the P3 step to 10 minutes (soft). Verified in probe mode for 10-20
+(`probe_parlay_truncation.py`, run 39321206340, nothing written to board_snapshots): DraftKings 2,690 rows read (+1,083 the full read
+had dropped), Bovada 1,241 (+249), FanDuel 432 (+31), the other eight names 0; no per-book read truncated; ~50 s; 33 credits
+(12,289 left). The market anchor's DraftKings rows (`apply_market_anchor.py`) come from the same capture and gain the same rows.
+
+**3. Every Bovada row failed the player join (FIXED).** ParlayAPI names Bovada's players "Jayson Tatum (BOS)": all 41 Bovada players
+on 10-20 were unresolved in `nba_ref.player_name_map` and missed `build_rung_market`'s exact-name join, so Bovada never counted in the
+market term. `normalize` strips a trailing "(XXX)" tricode; the 1,449 archived Bovada rows (10-20 514, 10-21 935, label routine) were
+re-keyed in place (no collisions); 10-20 now 0 unresolved for every app and book.
+
+**4. What ParlayAPI can give the market term (MEASURED, monitor).** Of the history's eight books ParlayAPI carries three: DraftKings,
+FanDuel, Bovada (betmgm, caesars / williamhill_us, betrivers, betonline / betonlineag, fanatics: 0 rows). FanDuel arrives only as
+one-sided milestone rows ("To Score 20+ Points", line 0); DraftKings' and FanDuel's milestone ladders are Over-only, as the history's
+alternates were, and `build_rung_market` de-vigs only two-sided lines, so they never counted there either. Live books per rung will
+therefore sit below the history's (which counted up to eight) - the gap `market_feed.switch_note` already pairs with the window-only
+`_wo` references and `audit_market_coverage.py`. No change today; first in-season measurement owed.
+
+**5. Every board source, the day before.** PrizePicks 43 players / 29 markets (ladder 3.1 lines per player-market); Underdog 27 / 30
+(ladder 2.5); Sleeper 43 / 12, one line per market - Sleeper's NBA ALT STAT rungs are still absent from `lines/available_alt` (scraper
+requests it every run); Betr 31 players (10-17 probe capture; window harvest switches to NBA tomorrow); Fliff 866 NBA legs, all game
+lines (no player props yet - expected day-of); DraftKings / Bovada / FanDuel via ParlayAPI as above. Every 10-20 player on every app
+resolves in the name map. Injury report: the 10-20 game day's filings exist (6 teams, NOT_YET_SUBMITTED / Out; the -05:00 stamp
+convention is documented and paired with the delta's cutoffs). Referees post ~06:00 PT; P2B polls until 09:25 PT.
+
+**6. Sandboxed dress rehearsal of 10-20 on today's real board (`nba-sim-slate.yml`, run 39319978946, 23 min, production untouched).**
+Full P2B build in scratch tables + the live `pick()` rolled back: 2,187 scored PrizePicks legs, 0 team / event unresolved, 42 players, 3
+games; 506 board legs unscored by design (210 whole-number lines priced in `final_hp_derived`, the rest beyond certified depth or
+alternates at the standard line); small slate -> every strategy at cap 1; unit 1 (earn the raise); streak flags off (no played days);
+9 paper slips across the 12 strategies (shadow strategies recorded as placed_shadow); `live_slips` for 10-20 = 0 after the rollback; the
+guard step confirmed baseline_history / final_hp / final_hp_derived / live_slips all 0. Caveats as printed: as-of today (no game-day
+injury report, crews or morning line), the early partial board.
+
+**7. Re-certified after the fixes.** Integration test (rolled back) ALL PASS (run 39323436097; ledgers before = after = 0);
+`certify_slip_system` 83 checks, 0 FAIL (run 39323440832). No UI change today (v1.4.21 stays). Two scheduled check-ins set for 10-20
+(08:25 PT: P2A / P2B / morning line / crews; 11:50 PT: P3 boards, ParlayAPI per-book log, picks before the 12:00 PT tip).
