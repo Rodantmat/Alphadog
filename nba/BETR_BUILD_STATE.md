@@ -242,7 +242,8 @@ installing.
   **✅ 2026-10-19:** all-LESS 5 / 6 measured on the NBA board - Perfect 18 / 31.5 (regular 20 / 35), Flex 5: 9 / 1.75 / 0.25, 6: 18 /
   1.25 / 1; five LESS of six pays the full table. `betr_payout_v1` updated (and stored as an object - it had been a double-encoded
   string). Engine slips priced on Betr leg for leg: `nba/probe_betr_quote_engine.py` (BQ_ENGINE_DATE, read-only), run after P3 on
-  game days. Open: all-LESS 7-10.
+  game days. **All-LESS 7-10 measured the same evening** (Perfect 45 / 90 / 180 / 270; Flex tops 31.5 / 45 / 90 / 180) - nothing open on
+  Betr pricing.
 - **Session longevity**: unknown how long the logged-in profile lasts before Betr forces re-auth. If a
   scheduled run finds itself logged out, it writes no board (harmless) until a BETR_LOGIN=1 run. Add a
   freshness check to the certifier's per-app board-liveness (already reads betr meta).
