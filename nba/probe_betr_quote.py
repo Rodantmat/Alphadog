@@ -234,6 +234,23 @@ def main():
         for n in range(2, min(6, len(less)) + 1):
             show("regular_less", less[:n], quote(sb, hdr, rules, less[:n]))
             time.sleep(0.5)
+        # 3b) k LESS picks among n (the rest MORE on other players): is LESS priced per pick?
+        if os.environ.get("BQ_ONLY_LESS"):
+            more_pool = [p for p in cross if p["player"] not in {q["player"] for q in less}]
+            for n in range(2, 7):
+                for k in range(1, n + 1):
+                    if k <= len(less) and n - k <= len(more_pool):
+                        legs = less[:k] + more_pool[:n - k]
+                        show(f"less_k{k}_of{n}", legs, quote(sb, hdr, rules, legs))
+                        time.sleep(0.4)
+            # LESS on different stats (is the discount per stat?)
+            for st in sorted({x["stat"] for x in allp if x["tier"] == "REGULAR" and x["outcome"] == "LESS"})[:12]:
+                q = [x for x in allp if x["tier"] == "REGULAR" and x["outcome"] == "LESS" and x["stat"] == st]
+                if q:
+                    legs = [q[0]] + [p for p in cross if p["player"] != q[0]["player"]][:2]
+                    show(f"less_stat_{st}", legs, quote(sb, hdr, rules, legs))
+                    time.sleep(0.4)
+            return
         # 4) same-game: two players of the same event, opposite teams, then same team
         for evid in list(ev_seen)[:2]:
             same = [p for p in mixed if p["event"] == evid]
