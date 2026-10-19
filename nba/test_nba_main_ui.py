@@ -785,6 +785,25 @@ def browser():
                 check(f"D {name}", False, str(e).split("\n")[0])
         q = ("?date=" + DATE) if DATE else ""
         step("01_board", lambda: (page.goto(UI + "/" + q), page.wait_for_selector(".card")))
+        # C62 (2026-10-18, owner saw "UNHANDLED REJECTION: Invalid call to runtime.sendMessage(). Tab not found." on the Board): a
+        # browser extension's rejection is logged, not bannered; AlphaDog's own rejections still are (handler called directly, no
+        # real rejection is raised, so pageerror stays clean)
+        try:
+            r62 = page.evaluate("""() => {
+              const n0 = document.querySelectorAll('.adRejection').length;
+              window.onunhandledrejection({reason: new Error('Invalid call to runtime.sendMessage(). Tab not found.')});
+              const e = new Error('x'); e.stack = 'Error: x\\n    at f (safari-web-extension://ABCD/content.js:1:1)';
+              window.onunhandledrejection({reason: e});
+              const n1 = document.querySelectorAll('.adRejection').length;
+              window.onunhandledrejection({reason: new Error('AlphaDog own test rejection')});
+              const own = [...document.querySelectorAll('.adRejection')].map(d => d.textContent);
+              document.querySelectorAll('.adRejection').forEach(d => d.remove());
+              return [n0, n1, own];
+            }""")
+            check("C62 a browser extension's rejection is not bannered; AlphaDog's own still is",
+                  r62[0] == r62[1] and any("AlphaDog own test rejection" in t for t in r62[2]), f"before {r62[0]}, after extension {r62[1]}, own {r62[2]}")
+        except Exception as e:  # noqa: BLE001
+            check("C62 a browser extension's rejection is not bannered; AlphaDog's own still is", False, str(e).split(chr(10))[0])
         step("02_dossier", lambda: (page.locator(".card").first.click(), page.wait_for_selector("#dossierBody .dossierHero")))
         def dossier_depth():
             heads = page.evaluate("[...document.querySelectorAll('#dossierBody h3, #dossierBody .sectionLabel')].map(e => e.textContent.trim())")
