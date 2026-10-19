@@ -532,7 +532,7 @@ def api_checks(conn, cfg):
             p = 1
             for h_, q in zip(hits, ps_):
                 p *= q if h_ else 1 - q
-            _, pay = E.grade([{"factor": l["leg_factor"], "hit": h_} for l, h_ in zip(legs, hits)], s["entry_mode"])
+            _, pay = E.grade([{"factor": l["leg_factor"], "hit": h_, "event_id": l.get("event_id", l.get("game_pk"))} for l, h_ in zip(legs, hits)], s["entry_mode"])
             mean += p * pay
         if abs((mean - 1) - s["estimated_ev_per_unit_stake"]) > 0.002:
             okev = False
