@@ -202,6 +202,10 @@ def normalize(items, cfg, label, slate):
         # Scoring Quarter Total Points O/U - Detroit Pistons" arrives as player_points with player = "Boston Celtics @ Detroit
         # Pistons". A rung is a full-game line on a named player; anything else is kept raw and skipped.
         pl = str(it.get("player") or "").strip(); mname = str(it.get("market") or "").lower(); per = str(it.get("period") or "FULL").upper()
+        # TEAM SUFFIX (2026-10-19 readiness): Bovada's names arrive as "Jayson Tatum (BOS)" - all 41 of its 10-20 players failed the
+        # name map and rung_market's exact-name join, so Bovada never counted in the market term. The history's Odds API rows carry
+        # the bare name; strip a trailing team tricode in parentheses.
+        pl = TEAM_SUFFIX.sub("", pl).strip()
         if (not pl or "@" in pl or pl in (str(it.get("home_team") or ""), str(it.get("away_team") or "")) or per not in ("FULL", "GAME", "")
                 or any(w in mname for w in ("quarter", "half", "1st", "2nd", "3rd", "4th", "team", "total points o/u -"))):
             unmapped[f"{mk} [{mname[:40]}]"] = unmapped.get(f"{mk} [{mname[:40]}]", 0) + 1
