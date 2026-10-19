@@ -39,6 +39,7 @@ SPORT = os.environ.get("CP_SPORT") or "basketball_nba"
 MODE = (os.environ.get("CP_MODE") or "probe").lower()      # P3 sets capture explicitly; a bare run never writes the board
 LABEL = os.environ.get("CP_LABEL") or "window"
 FORCE = os.environ.get("CP_FORCE") == "1"
+TEAM_SUFFIX = re.compile(r"\s*\([A-Z]{2,4}\)\s*$")     # "Jayson Tatum (BOS)" -> "Jayson Tatum" (Bovada via ParlayAPI)
 
 DEFAULT_CFG = {
     "enabled": True,
