@@ -303,14 +303,8 @@ def grade(slip, structure):
     fprod = 1.0
     for l in slip:
         fprod *= l['factor']
-    if structure == 'power':
-        base = POWER[k] if hits == k else 0.0
-    else:
-        base = FLEX.get((k, hits), 0.0)
-        if base > 0 and any(abs(l['factor'] - 1.0) > 1e-9 for l in slip):
-            return hits, flex_alt_payout(k, k - hits, fprod)   # quote-derived tiers (see flex_alt_tiers)
-    payout = compress(base * fprod) if base > 0 else 0.0
-    return hits, payout
+    alt = any(abs(l['factor'] - 1.0) > 1e-9 for l in slip)
+    return hits, pp_payout(k, hits, structure, fprod, alt, bool(same_game))
 
 
 def candidates_for(comp, pool):
