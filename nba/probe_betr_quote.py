@@ -91,6 +91,7 @@ def picks_from_board(events):
                     for opt in pr.get("allowedOptions") or []:
                         out.append({"tier": tier, "event": ev.get("id"), "team": team.get("id"), "player": p.get("id"),
                                     "who": f"{p.get('firstName', '')} {p.get('lastName', '')}".strip(), "stat": pr.get("name"),
+                                    "key": pr.get("key") or pr.get("name"),
                                     "line": line, "outcome": opt.get("outcome"),
                                     "pick": {"eventId": ev.get("id"), "league": H.LEAGUE, "marketId": pr.get("marketId"),
                                              "outcome": opt.get("outcome"), "playerId": p.get("id"),
