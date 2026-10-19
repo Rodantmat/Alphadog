@@ -104,6 +104,56 @@ def picks_from_board(events):
     return out
 
 
+BETR_STATS = {"points": {"points"}, "rebounds": {"rebounds", "total_rebounds"}, "assists": {"assists"},
+              "threes_made": {"three_pointers_made"}, "steals": {"steals"}, "blocks": {"blocks", "blocked_shots"},
+              "turnovers": {"turnovers"}, "stocks": {"steals_blocks", "blocks_steals"},
+              "pts_reb": {"points_rebounds", "rebounds_points"}, "pts_ast": {"points_assists", "assists_points"},
+              "reb_ast": {"rebounds_assists", "assists_rebounds"}, "pra": {"points_rebounds_assists", "pts_reb_ast"}}
+
+
+def _norm(name):
+    import re
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(name or "")).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"[^a-z ]", "", s)
+    return " ".join(w for w in s.split() if w not in ("jr", "sr", "ii", "iii", "iv"))
+
+
+def engine_slips(sb, hdr, rules, allp, day):
+    """price the engine's placed slips for `day` on Betr (read-only ValidateEntryWithRules), leg for leg."""
+    import psycopg
+    with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+        slips = c.execute("""SELECT strategy, k, legs_json FROM nba_score.live_slips WHERE game_date = %s AND status = 'placed'
+                             ORDER BY strategy, k""", (day,)).fetchall()
+    print(f"ENGINE SLIPS {day}: {len(slips)} placed", flush=True)
+    idx = {}
+    for p in allp:
+        if p["tier"] == "REGULAR":
+            idx.setdefault((_norm(p["who"]), str(p["stat"]).lower(), float(p["line"]), p["outcome"]), p)
+    priced = 0
+    for strat, k, legs in slips:
+        legs = legs if isinstance(legs, list) else json.loads(legs)
+        picks, missing = [], []
+        for l in legs:
+            side = "MORE" if str(l.get("side")).lower().startswith("o") else "LESS"
+            hit = None
+            for st in BETR_STATS.get(str(l.get("prop")), {str(l.get("prop"))}):
+                hit = idx.get((_norm(l.get("player")), st, float(l.get("line")), side))
+                if hit:
+                    break
+            if hit:
+                picks.append(hit)
+            else:
+                missing.append(f"{l.get('player')} {l.get('prop')} {l.get('line')} {side}")
+        if missing:
+            print(f"ENGINE|{strat}|k{k}|NOT ON BETR at the same line: {'; '.join(missing)}", flush=True)
+            continue
+        show(f"engine_{strat}_k{k}", picks, quote(sb, hdr, rules, picks))
+        priced += 1
+        time.sleep(0.5)
+    print(f"ENGINE SLIPS {day}: {priced} of {len(slips)} priced on Betr", flush=True)
+
+
 def quote(sb, headers, rules, picks):
     entry = {"amount": AMOUNT, "appliedPromotionIds": [], "currency": "USD", "picks": [p["pick"] for p in picks]}
     sb.driver.set_script_timeout(60)
