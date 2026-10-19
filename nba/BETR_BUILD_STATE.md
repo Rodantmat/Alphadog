@@ -233,6 +233,12 @@ installing.
 - **alt/boosted MULTIPLIER**: NOT on the board — `nonRegularPercentage` = 0 on all nine tiers and `allowedOptions[]` carries
   only `marketOptionId` + `outcome` (verified 2026-10-13 on the raw projections). Betr prices at slip time: capture it from one
   entry screen or the slip quote call on 10-20.
+  **✅ FOUND 2026-10-18 (PP_PAYOUT_FINDINGS §0m):** the slip price is the server QUERY `ValidateEntryWithRules(rulesIds, entry)`
+  (`validateEntryOnEntryRules`: PERFECT / DYNAMIC / MYSTERY / RACE_TO_PLACE answers). `nba/probe_betr_quote.py` boots like the harvest,
+  takes the app's own request headers from the wire (a plain bearer from the stored session gets 401) and prices any set of board picks
+  in-page, read-only (CreateEntry is never sent); every answer in `nba_market.betr_quote`. Measured: Perfect 3/6/10/20/35/50/100/200/300,
+  Dynamic 2/0.5 · 3/1 · 6/1.5 · 10/2/0.4 · 20/1.5/1 …; ALL-LESS entries discounted (2.75 / 5.5 / 9); EDGE tiers lower, boosted tiers
+  raise, priced per entry. Rule row `nba_config.pp_slip_rules['betr_payout_v1']`. Bundle read: `nba/probe_betr_slip.py`.
 - **Session longevity**: unknown how long the logged-in profile lasts before Betr forces re-auth. If a
   scheduled run finds itself logged out, it writes no board (harmless) until a BETR_LOGIN=1 run. Add a
   freshness check to the certifier's per-app board-liveness (already reads betr meta).
