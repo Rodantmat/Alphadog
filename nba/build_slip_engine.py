@@ -470,8 +470,8 @@ def main():
             for size in SIZES:
                 for structure in ('power', 'flex'):
                     for k, slip in enumerate(build_day_slips(pool, comp, size, structure, CAP, cmap, broad_day), start=1):
-                        hits, payout = grade(slip, structure)
                         games = [l['event_id'] for l in slip]
+                        hits, payout = grade(slip, structure, same_game=(len(games) - len(set(games))) > 0)
                         teams = [l['team_id'] for l in slip]
                         sg = len(games) - len(set(games))
                         st = len(teams) - len(set(teams))
