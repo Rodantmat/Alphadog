@@ -116,6 +116,29 @@ def quote(sb, headers, rules, picks):
     return r
 
 
+_DB = []
+
+
+def store(tag, picks, x):
+    """every answer is kept: nba_market.betr_quote (one row per entry rule answered)."""
+    if not os.environ.get("DATABASE_URL"):
+        return
+    try:
+        import psycopg
+        if not _DB:
+            _DB.append(psycopg.connect(os.environ["DATABASE_URL"], autocommit=True))
+        legs = [{k: p[k] for k in ("tier", "who", "stat", "line", "outcome", "event", "team", "player")} for p in picks]
+        _DB[0].execute("""INSERT INTO nba_market.betr_quote (run_file, section, n_picks, entry_rules_id, game_mode, status, amount,
+                                  perfect_regular, perfect_boosted, to_win, dynamic_multipliers, boosted_multipliers, errors, edge_combos, picks)
+                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb)""",
+                       (os.environ.get("BQ_RUN") or f"probe_betr_quote run {os.environ.get('GITHUB_RUN_ID', 'local')}", tag, len(picks), x.get("entryRulesId"), x.get("gameMode"),
+                        x.get("status"), AMOUNT, x.get("perfectRegularMultiplier"), x.get("perfectBoostedMultiplier"), x.get("toWin"),
+                        json.dumps(x.get("dynamicMultipliers") or []), json.dumps(x.get("boostedMultipliers") or []),
+                        json.dumps(x.get("errors") or []), json.dumps(x.get("edgeCombos") or []), json.dumps(legs)))
+    except Exception as exc:  # noqa: BLE001
+        print(f"  store failed: {type(exc).__name__}: {str(exc)[:150]}", flush=True)
+
+
 def show(tag, picks, r):
     desc = " + ".join(f"{p['who'].split(' ')[-1]} {p['stat']} {p['line']} {p['outcome'][0]} [{p['tier']}]" for p in picks)
     if r[0] != 200:
@@ -127,6 +150,7 @@ def show(tag, picks, r):
         print(f"QUOTE|{tag}|{len(picks)}|unparsed|{r[1][:400]}|{desc}", flush=True)
         return None
     for x in res:
+        store(tag, picks, x)
         dyn = [(d["numberOfPicks"], d["winningPicks"], d["multiplier"]) for d in x.get("dynamicMultipliers") or []]
         bst = [(d["numberOfPicks"], d["numberOfBoostedPicks"], d["multiplier"]) for d in x.get("boostedMultipliers") or []]
         errs = [e["key"] for e in x.get("errors") or []]
@@ -195,10 +219,11 @@ def main():
             return
         show("first_call", cross[:2], r)
         # 2) all-REGULAR ladders, two different player sets
-        for off in (0, 6):
-            for n in range(2, 7):
-                show(f"regular_more_set{off // 6}", cross[off:off + n], quote(sb, hdr, rules, cross[off:off + n]))
-                time.sleep(0.5)
+        for off in (0, 10):
+            for n in range(2, 11):
+                if len(cross) >= off + n:
+                    show(f"regular_more_set{off // 10}", cross[off:off + n], quote(sb, hdr, rules, cross[off:off + n]))
+                    time.sleep(0.4)
         # 3) LESS instead of MORE on the same players
         less = []
         for p in cross[:6]:
@@ -229,18 +254,27 @@ def main():
             bp = [p for p in allp if p["tier"] == tier]
             if not bp:
                 continue
-            b = bp[0]
-            others = [p for p in cross if p["player"] != b["player"]]
-            for n in range(2, 6):
-                legs = [b] + others[:n - 1]
-                show(f"tier_{tier}_x1", legs, quote(sb, hdr, rules, legs))
-                time.sleep(0.5)
-            b2 = next((p for p in bp if p["player"] != b["player"] and p["team"] != b["team"]), None)
-            if b2:
+            boosted, used = [], set()
+            for p in bp:
+                if p["player"] not in used:
+                    boosted.append(p); used.add(p["player"])
+            for k in range(1, min(4, len(boosted)) + 1):
+                others = [p for p in cross if p["player"] not in {b["player"] for b in boosted[:k]}]
+                for n in range(max(2, k + 1), 7):
+                    legs = boosted[:k] + others[:n - k]
+                    show(f"tier_{tier}_x{k}", legs, quote(sb, hdr, rules, legs))
+                    time.sleep(0.4)
+        # 5b) two different non-regular tiers in one entry
+        nonreg = [t for t in tiers if t != "REGULAR"]
+        for t1, t2 in itertools.combinations(nonreg, 2):
+            a = next((p for p in allp if p["tier"] == t1), None)
+            b = next((p for p in allp if p["tier"] == t2 and a and p["player"] != a["player"]), None)
+            if a and b:
+                others = [p for p in cross if p["player"] not in (a["player"], b["player"])]
                 for n in (3, 4):
-                    legs = [b, b2] + [p for p in others if p["player"] != b2["player"]][:n - 2]
-                    show(f"tier_{tier}_x2", legs, quote(sb, hdr, rules, legs))
-                    time.sleep(0.5)
+                    legs = [a, b] + others[:n - 2]
+                    show(f"mix_{t1}+{t2}", legs, quote(sb, hdr, rules, legs))
+                    time.sleep(0.4)
         # 6) same tier, different lines: is the boost multiplier per tier or per line?
         for tier in [t for t in tiers if t != "REGULAR"][:3]:
             bp = [p for p in allp if p["tier"] == tier][:4]
