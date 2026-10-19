@@ -1,0 +1,208 @@
+{
+ "headshots": {
+  "wembanyama": {
+   "player_id": 1641705,
+   "bytes": 168386
+  },
+  "cunningham": {
+   "player_id": 1630595,
+   "bytes": 222241
+  },
+  "brunson": {
+   "player_id": 1628973,
+   "bytes": 208363
+  },
+  "lebron": {
+   "player_id": 2544,
+   "bytes": 198447
+  },
+  "tatum": {
+   "player_id": 1628369,
+   "bytes": 214148
+  },
+  "sga": {
+   "player_id": 1628983,
+   "bytes": 171473
+  },
+  "embiid": {
+   "player_id": 203954,
+   "bytes": 191035
+  },
+  "jaylen_brown": {
+   "player_id": 1627759,
+   "bytes": 177460
+  },
+  "holmgren": {
+   "player_id": 1631096,
+   "bytes": 164805
+  },
+  "castle": {
+   "player_id": 1642264,
+   "bytes": 124256
+  },
+  "duren": {
+   "player_id": 1631105,
+   "bytes": 173721
+  },
+  "kat": {
+   "player_id": 1626157,
+   "bytes": 178765
+  },
+  "paul_george": {
+   "player_id": 202331,
+   "bytes": 199887
+  },
+  "maxey": {
+   "player_id": 1630178,
+   "bytes": 223516
+  },
+  "derrick_white": {
+   "player_id": 1628401,
+   "bytes": 197192
+  },
+  "josh_hart": {
+   "player_id": 1628404,
+   "bytes": 170726
+  },
+  "fox": {
+   "player_id": 1628368,
+   "bytes": 214808
+  },
+  "jalen_williams": {
+   "player_id": 1631114,
+   "bytes": 212443
+  },
+  "bridges": {
+   "player_id": 1628969,
+   "bytes": 184276
+  },
+  "edwards": {
+   "player_id": 1630162,
+   "bytes": 201915
+  },
+  "giannis": {
+   "player_id": 203507,
+   "bytes": 172539
+  },
+  "curry": {
+   "player_id": 201939,
+   "bytes": 175795
+  }
+ },
+ "logos": {
+  "DET": {
+   "team_id": 1610612765,
+   "bytes": 5623
+  },
+  "BOS": {
+   "team_id": 1610612738,
+   "bytes": 31426
+  },
+  "NYK": {
+   "team_id": 1610612752,
+   "bytes": 7473
+  },
+  "PHI": {
+   "team_id": 1610612755,
+   "bytes": 14221
+  },
+  "SAS": {
+   "team_id": 1610612759,
+   "bytes": 7919
+  },
+  "OKC": {
+   "team_id": 1610612760,
+   "bytes": 9837
+  },
+  "LAL": {
+   "team_id": 1610612747,
+   "bytes": 12296
+  },
+  "GSW": {
+   "team_id": 1610612744,
+   "bytes": 8130
+  },
+  "MIA": {
+   "team_id": 1610612748,
+   "bytes": 8228
+  },
+  "MIN": {
+   "team_id": 1610612750,
+   "bytes": 15057
+  }
+ },
+ "scenes": [
+  {
+   "slug": "detroit_skyline",
+   "file": "detroit_skyline.jpg",
+   "title": "File:Detroit Skyline (Nov2021).jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Lrgjr72",
+   "source": "https://commons.wikimedia.org/wiki/File:Detroit_Skyline_(Nov2021).jpg",
+   "bytes": 636692
+  },
+  {
+   "slug": "little_caesars_arena",
+   "file": "little_caesars_arena.jpg",
+   "title": "File:Joe Louis Arena, Downtown Detroit, Michigan from Windsor, Ontario (21584818678).jpg",
+   "license": "CC BY-SA 2.0",
+   "author": "Ken Lund from Reno, Nevada, USA",
+   "source": "https://commons.wikimedia.org/wiki/File:Joe_Louis_Arena,_Downtown_Detroit,_Michigan_from_Windsor,_Ontario_(21584818678).jpg",
+   "bytes": 553952
+  },
+  {
+   "slug": "nyc_skyline",
+   "file": "nyc_skyline.jpg",
+   "title": "File:Manhattan from Weehawken, NJ.jpg",
+   "license": "CC BY-SA 3.0",
+   "author": "Dmitry Avdeev",
+   "source": "https://commons.wikimedia.org/wiki/File:Manhattan_from_Weehawken,_NJ.jpg",
+   "bytes": 276794
+  },
+  {
+   "slug": "san_antonio_skyline",
+   "file": "san_antonio_skyline.jpg",
+   "title": "File:San Antonio Skyline at Night (12216535856).jpg",
+   "license": "CC BY 2.0",
+   "author": "Jonathan Cutrer from San Angelo, United States",
+   "source": "https://commons.wikimedia.org/wiki/File:San_Antonio_Skyline_at_Night_(12216535856).jpg",
+   "bytes": 393204
+  },
+  {
+   "slug": "frost_bank_center",
+   "file": "frost_bank_center.jpg",
+   "title": "File:Los Angeles Lakers vs. San Antonio Spurs.jpg",
+   "license": "CC BY 2.0",
+   "author": "Katie Haugland",
+   "source": "https://commons.wikimedia.org/wiki/File:Los_Angeles_Lakers_vs._San_Antonio_Spurs.jpg",
+   "bytes": 927216
+  },
+  {
+   "slug": "philadelphia_skyline",
+   "file": "philadelphia_skyline.jpg",
+   "title": "File:Philadelphia Night Skyline (14146388982).jpg",
+   "license": "CC BY-SA 2.0",
+   "author": "Chris Hunkeler from Carlsbad, California, USA",
+   "source": "https://commons.wikimedia.org/wiki/File:Philadelphia_Night_Skyline_(14146388982).jpg",
+   "bytes": 419376
+  },
+  {
+   "slug": "oklahoma_city_skyline",
+   "file": "oklahoma_city_skyline.jpg",
+   "title": "File:Oklahoma City Skyline at night, far.jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Spatms",
+   "source": "https://commons.wikimedia.org/wiki/File:Oklahoma_City_Skyline_at_night,_far.jpg",
+   "bytes": 472922
+  },
+  {
+   "slug": "boston_skyline",
+   "file": "boston_skyline.jpg",
+   "title": "File:Boston skyline at night xdgh.jpg",
+   "license": "CC BY-SA 3.0",
+   "author": "Luciof",
+   "source": "https://commons.wikimedia.org/wiki/File:Boston_skyline_at_night_xdgh.jpg",
+   "bytes": 269639
+  }
+ ]
+}
