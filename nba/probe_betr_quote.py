@@ -283,7 +283,7 @@ def main():
                     time.sleep(0.4)
         # 3) LESS instead of MORE on the same players
         less = []
-        for p in cross[:6]:
+        for p in cross[:16]:      # 16 (was 6): enough LESS candidates for all-LESS 5- and 6-pick entries (open item, 2026-10-19)
             q = next((x for x in allp if x["player"] == p["player"] and x["tier"] == "REGULAR" and x["outcome"] == "LESS"
                       and x["stat"] == p["stat"]), None)
             if q:
