@@ -281,7 +281,7 @@ def valid(slip, cmap=None, single_cell=False):
     return True
 
 
-def grade(slip, structure):
+def grade(slip, structure, same_game=None):
     # §31s: TIES / VOIDS (hit None - a whole-number line landed exactly on, or a DNP) are removed and the lineup reverts one level,
     # per PrizePicks' OWN reversion schedules (PP_PAYOUT_FINDINGS "VOID / PUSH REVERSION", 79/79 entries verified 2026-09-22):
     # Power r legs left -> the r-pick base; Flex r >= 3 -> the r-pick Flex schedule, r = 2 -> 3x Power-style (never the 2-pick
