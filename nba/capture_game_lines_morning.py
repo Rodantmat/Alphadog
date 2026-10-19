@@ -91,7 +91,7 @@ def main():
         url = (f"{BASE}/historical/sports/basketball_nba/odds?regions=us&markets=h2h,spreads,totals"
                f"&oddsFormat=american&date={iso_z(ts)}&apiKey={key}")
         sess = requests.Session()
-        data, remaining, err = get(sess, url) if key else (None, None, "no primary key")
+        data, remaining, err = get(sess, url) if key else (None, None, "live mode" if gl_mode != "historical" else "no historical key")
         note = None
         if (err or not data) and fb_name and cred(fb_name):
             # live endpoint: a list of events (no 'timestamp' wrapper); filter to the Pacific game date server-side
