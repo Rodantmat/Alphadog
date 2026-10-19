@@ -160,7 +160,15 @@ def rows_underdog(doc, gd, label):
            "steals": "player_steals", "blocks": "player_blocks", "turnovers": "player_turnovers",
            "pts + rebs + asts": "player_points_rebounds_assists", "pts + rebs": "player_points_rebounds",
            "pts + asts": "player_points_assists", "rebs + asts": "player_rebounds_assists", "blks + stls": "player_blocks_steals",
-           "fantasy points": "player_fantasy_points", "double-double": "player_double_double", "double doubles": "player_double_double"}
+           "fantasy points": "player_fantasy_points", "double-double": "player_double_double", "double doubles": "player_double_double",
+           # 2026-10-18 (owner: no Underdog legs on the board): Underdog now spells the combos out ("Points + Rebounds", "Points +
+           # Assists", "Rebounds + Assists" on the 10-20 board: 339 rows) and adds "FG Attempted" / "3s Attempted" - archived as
+           # player_points_+_rebounds etc., keys no scorer or engine reads, so those legs were never scored.
+           "points + rebounds + assists": "player_points_rebounds_assists", "points + rebounds": "player_points_rebounds",
+           "points + assists": "player_points_assists", "rebounds + assists": "player_rebounds_assists",
+           "fg attempted": "player_fga", "field goals attempted": "player_fga",
+           "3s attempted": "player_threes_attempted", "3-pointers attempted": "player_threes_attempted",
+           "triple doubles": "player_triple_double", "triple-double": "player_triple_double"}
     _unmapped = set()
     # §30f/§30g (2026-10-03): price = the price the app DISPLAYS (fantasy decimal where the option has one, else decimal_price), as
     # American; multiplier = the PAYOUT modifier the slip is priced on (0.5 / Underdog's probability, never snapped to 1.00).
