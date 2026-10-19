@@ -147,26 +147,41 @@ def fetch(key, cfg=None):
     err = run("")
     if err is not None:
         return status, remaining, err, meta
-    # TRUNCATED READ (2026-10-19 readiness): the day before opening night the full board came back as 10,001 items in 2 pages
-    # with x-result-truncated = true (a read cap on ParlayAPI's side that paging cannot recover) - on a game day the rows the
-    # market term needs could be among the ones cut. A truncated read now triggers the same sportsbook-narrowed pass as the
-    # offset cap: a far smaller read (only the history's books), merged in without duplicates.
+    # TRUNCATED READ (2026-10-19 readiness): the day before opening night the full board came back as 10,001 items with
+    # x-result-truncated = true. ParlayAPI's own hint: "This board hit the internal per-source cap (serving cap 10000 rows). Rows are
+    # sampled across books and markets ... Paginating ... cannot recover rows the per-source cap dropped ... narrow the query with
+    # ?markets= or ?bookmakers=". Measured the same hour: the full read held DraftKings 1,772 of the 3,020 rows a DraftKings-only
+    # read returns (Bovada 1,173 of 1,545), and even ONE read narrowed to all the history's books was truncated; a read narrowed to
+    # ONE book was complete (no truncation flag) for every book. date / commenceTime filters are ignored by the endpoint. So a
+    # truncated (or offset-capped) full read is followed by ONE READ PER BOOK of the history's set (tunable market_feed.per_book_reads,
+    # default the history's books + their aliases; ~3 credits each), merged in without duplicates; a per-book read that is itself
+    # truncated is reported loudly.
     full_truncated = meta["truncated"]
     if meta["has_more_at_cap"] or full_truncated:
-        meta["truncated"] = False
-        books = sorted(set(cfg["books"]) | {k for k, v in cfg.get("book_aliases", {}).items() if v in set(cfg["books"])})
-        # identity of a prop row without its volatile fields (age_seconds / last_update / prices move between the two reads)
+        books = cfg.get("per_book_reads") or sorted(set(cfg["books"]) | {k for k, v in cfg.get("book_aliases", {}).items() if v in set(cfg["books"])})
+        # identity of a prop row without its volatile fields (age_seconds / last_update / prices move between the reads)
         ident = lambda x: tuple(str(x.get(k)) for k in ("bookmaker", "event_id", "market_key", "market", "player", "line", "period"))  # noqa: E731
         seen = {ident(x) for x in items}
-        before = list(items); items.clear()
+        merged = list(items)
         meta["narrowed_pass"] = True
-        err = run("&bookmakers=" + ",".join(books))
-        narrowed = [x for x in items if ident(x) not in seen]
-        items[:] = before + narrowed
-        meta["narrowed_added"] = len(narrowed)
-        meta["narrowed_truncated"], meta["truncated"] = meta["truncated"], full_truncated
-        if err is not None:
-            return status, remaining, err, meta
+        meta["narrowed_added"], meta["per_book"], meta["narrowed_truncated"] = 0, {}, False
+        for b in books:
+            items.clear()
+            meta["truncated"] = False
+            err = run("&bookmakers=" + b)
+            if err is not None:      # one book failing never costs the full read or the other books - reported, not fatal
+                meta["per_book"][b] = (0, 0, f"error {str(err)[:80]}")
+                meta["narrowed_truncated"] = True
+                continue
+            new_rows = [x for x in items if ident(x) not in seen]
+            seen.update(ident(x) for x in new_rows)
+            merged.extend(new_rows)
+            meta["per_book"][b] = (len(items), len(new_rows), meta["truncated"])
+            meta["narrowed_added"] += len(new_rows)
+            if meta["truncated"]:
+                meta["narrowed_truncated"] = True
+        items[:] = merged
+        meta["truncated"] = full_truncated
     return 200, remaining, items, meta
 
 
