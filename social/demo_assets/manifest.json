@@ -87,6 +87,26 @@
   "curry": {
    "player_id": 201939,
    "bytes": 175795
+  },
+  "amen": {
+   "player_id": 1641708,
+   "bytes": 200740
+  },
+  "mbeng": {
+   "player_id": 1643016,
+   "bytes": 143399
+  },
+  "durant": {
+   "player_id": 201142,
+   "bytes": 219512
+  },
+  "konchar": {
+   "player_id": 1629723,
+   "bytes": 182495
+  },
+  "fears": {
+   "player_id": 1642847,
+   "bytes": 171481
   }
  },
  "logos": {
@@ -139,7 +159,7 @@
    "license": "CC BY-SA 4.0",
    "author": "Lrgjr72",
    "source": "https://commons.wikimedia.org/wiki/File:Detroit_Skyline_(Nov2021).jpg",
-   "bytes": 636692
+   "bytes": 636744
   },
   {
    "slug": "little_caesars_arena",
