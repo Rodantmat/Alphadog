@@ -155,7 +155,7 @@ def main():
                            DO UPDATE SET status='ok', rows=EXCLUDED.rows, events=EXCLUDED.events, requested_ts=EXCLUDED.requested_ts, error=EXCLUDED.error, done_at=now()""",
                         (d, label, len(rows), len({r[4] for r in rows}), iso_z(ts), note))
         events = len({r[4] for r in rows})
-        as_of = "08:00 PT (the backtest's snapshot)" if ts == morning else f"{ts.astimezone(PT):%H:%M} PT (LIVE fallback)" if note else f"{ts.astimezone(PT):%H:%M} PT (early slate: the line as it stands now)"
+        as_of = "08:00 PT (the backtest's snapshot)" if ts == morning else f"{ts.astimezone(PT):%H:%M} PT (live line)" if note else f"{ts.astimezone(PT):%H:%M} PT (early slate: the line as it stands now)"
         print(f"{d} morning game lines: {len(rows)} rows, {events} games, as of {as_of}; snapshot {snap_ts}; credits remaining {remaining}")
         if not rows:
             print(f"::warning::{d}: the odds feed returned no games for this date at {iso_z(ts)}")
