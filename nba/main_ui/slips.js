@@ -466,6 +466,42 @@ export async function apiHighHit(sql, cfg, url, version) {
       legs
     });
   }
+  // PRIZEPICKS' OWN QUOTE (2026-10-18, owner: "be sure we are using the proper multipliers"): P3 has PrizePicks quote every engine
+  // slip at the window (pp_payout_map.py SLIPQ -> nba_score.live_slip_quotes). When a slip has one, its multiplier and Flex tiers
+  // ARE PrizePicks' (the model's number is kept as model_multiplier and named when it differs); a slip whose leg left the board
+  // or moved says which leg to substitute. The grade pays the same quote.
+  if (eng.source === "live") {
+    try {
+      const hasQ = (await q(sql, "SELECT to_regclass('nba_score.live_slip_quotes') IS NOT NULL ok"))[0];
+      if (hasQ && hasQ.ok) {
+        const qs = await q(sql, `SELECT DISTINCT ON (strategy, k) strategy, k, status, power, flex, power_adj, flex_adj, legs,
+                                        to_char(quoted_at AT TIME ZONE 'America/Los_Angeles', 'FMHH12:MI AM') t
+                                 FROM nba_score.live_slip_quotes WHERE game_date = $1::date ORDER BY strategy, k, quoted_at DESC`, [slate.date]);
+        const byK = new Map(qs.map(r => [r.strategy + ":" + r.k, r]));
+        for (const x of slips) {
+          if (x.source_key !== "prizepicks") continue;
+          const r = byK.get(x.strategy + ":" + x.k);
+          if (!r) continue;
+          const js = v => (typeof v === "string" ? JSON.parse(v) : v);
+          if (Number(r.status) === 200) {
+            const n = x.slip_size, tb = js(x.entry_mode === "flex" ? r.flex : r.power) || {}, tiers = tb[String(n)] || {};
+            const full = Number(tiers[String(n)]);
+            if (full > 0) {
+              x.model_multiplier = x.estimated_multiplier;
+              x.estimated_multiplier = full;
+              if (x.entry_mode === "flex") x.estimated_multiplier_flex_tiers = Object.fromEntries(Object.entries(tiers).filter(([h]) => /^[0-9]+/.test(h)).map(([h, v]) => [h, Number(v)]));
+              const mm = Number(x.model_multiplier);
+              x.quote_note = `PrizePicks quote ${r.t} PT: ${full}x` + (mm > 0 && Math.abs(mm - full) > 0.005 ? ` (our model ${Math.round(mm * 100) / 100}x)` : "") +
+                ((x.entry_mode === "flex" ? r.flex_adj : r.power_adj) && x.legs.every(l => !l.tier || l.tier === "R") ? " - adjusted by PrizePicks (same game)" : "");
+            }
+          } else {
+            const lg = js(r.legs) || {};
+            if (lg.unmapped) x.quote_note = `At ${r.t} PT not on PrizePicks' board as built (moved or pulled - substitute): ${lg.unmapped.join(", ")}`;
+          }
+        }
+      }
+    } catch (e) { notes.push("PrizePicks slip quotes could not be read: " + String(e && e.message || e)); }
+  }
   // TEST-ONLY SLIPS ARE NOT SHOWN (owner 2026-10-17: "anything that is test only, do not show on the slip screen, you can
   // record them but as not played"): shadow strategies / portfolios, strategies whose state is not staked, the Underdog engine
   // while it is paper, unstaked rows. They stay recorded in live_slips / ud_live_slips with their not-played status; the screen
