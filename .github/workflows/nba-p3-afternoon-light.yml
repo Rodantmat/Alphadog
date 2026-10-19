@@ -661,6 +661,29 @@ jobs:
           LS_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/live_slip_engine.py
 
+      # PRIZEPICKS' OWN PRICE FOR EVERY SLIP (2026-10-18, owner: "be sure we are using the proper multipliers"): the payout map
+      # in SLIPQ mode quotes each engine slip on PrizePicks' quote endpoint (nothing is placed) and stores the exact tiers in
+      # nba_score.live_slip_quotes - the Slips screen shows PrizePicks' number and the grade pays it. Dispatched (soft, its own
+      # workflow and concurrency group), so it can never delay or fail this run. Retried 3x on a non-204.
+      - name: Dispatch PrizePicks slip quotes (window)
+        id: soft_slipq
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          code=000
+          for i in 1 2 3; do
+            code=`curl -s -o /tmp/slipq_dispatch.json -w "%{http_code}" --max-time 30 -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nba-pp-payout-map.yml/dispatches" \
+              -d '{"ref":"main","inputs":{"mode":"slipq","max_quotes":"60"}}'` || code=000
+            echo "pp slip quotes dispatch (attempt ${i}): http ${code}"
+            [ "${code}" = "204" ] && exit 0
+            cat /tmp/slipq_dispatch.json 2>/dev/null; sleep `expr ${i} \* 8`
+          done
+          exit 1
+
       # UNDERDOG PAPER PICK (§30z, 2026-10-03): P5 (primary) + P4 (shadow) from Underdog's window board, built by the certified
       # Underdog engine (imported - live = backtest; parity verified on two historical slates, selection and settlement exact).
       # Paper only: continue-on-error, so it can never disturb the PrizePicks pick above. Graded by P2A overnight.
