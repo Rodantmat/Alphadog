@@ -255,6 +255,11 @@ def rows_sleeper(doc, gd, label):
 
     def _norm(wt):
         w = wt.replace("_and_", "_").replace("+", "_").replace("__", "_").strip("_")
+        # FIRST-QUARTER PROPS (2026-10-19 sweep: Sleeper's NBA board now posts "first_qtr_points / _rebounds / _assists",
+        # 78 legs for 10-20 under keys no scorer reads) -> the scorer's _q1 keys, as Underdog's and Fliff's 1Q props
+        for pre in ("first_qtr_", "first_quarter_", "1st_qtr_", "1st_quarter_", "q1_"):
+            if w.startswith(pre):
+                return _norm(w[len(pre):]) + "_q1"
         if w in _wt:
             return _wt[w]
         # order-insensitive combo fallback: build from the component set
