@@ -123,7 +123,7 @@ def fetch(key, cfg=None):
         nonlocal status, remaining
         off = 0
         while True:
-            st, rem, doc, hd = _page(key, f"limit={limit}&offset={off}{extra}")
+            st, rem, doc, hd = _page(key, f"limit={limit}&offset={off}{extra}", budget_s)
             status, remaining = st, (rem or remaining)
             if st != 200:
                 return doc
