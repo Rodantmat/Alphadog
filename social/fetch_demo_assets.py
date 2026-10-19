@@ -25,7 +25,8 @@ manifest = {"headshots": {}, "logos": {}, "scenes": []}
 PLAYERS = {"wembanyama": 1641705, "cunningham": 1630595, "brunson": 1628973, "lebron": 2544, "tatum": 1628369, "sga": 1628983,
            "embiid": 203954, "jaylen_brown": 1627759, "holmgren": 1631096, "castle": 1642264, "duren": 1631105, "kat": 1626157,
            "paul_george": 202331, "maxey": 1630178, "derrick_white": 1628401, "josh_hart": 1628404, "fox": 1628368,
-           "jalen_williams": 1631114, "bridges": 1628969, "edwards": 1630162, "giannis": 203507, "curry": 201939}
+           "jalen_williams": 1631114, "bridges": 1628969, "edwards": 1630162, "giannis": 203507, "curry": 201939, "amen": 1641708, "mbeng": 1643016, "durant": 201142,
+           "konchar": 1629723, "fears": 1642847}
 TEAMS = {"DET": 1610612765, "BOS": 1610612738, "NYK": 1610612752, "PHI": 1610612755, "SAS": 1610612759, "OKC": 1610612760,
          "LAL": 1610612747, "GSW": 1610612744, "MIA": 1610612748, "MIN": 1610612750}
 SCENES = [("detroit_skyline", "Detroit skyline night"), ("little_caesars_arena", "Little Caesars Arena exterior"),
