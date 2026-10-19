@@ -478,6 +478,9 @@ jobs:
         id: soft_props
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         continue-on-error: true
+        # 2026-10-19: a full read + one read per sportsbook (truncation recovery) is ~1-2 min; ParlayAPI retries are budgeted
+        # (300 s full read, 240 s all per-book reads together). The cap keeps an early slate (P3 ~29 min before the first tip) safe.
+        timeout-minutes: 10
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CP_MODE: capture
