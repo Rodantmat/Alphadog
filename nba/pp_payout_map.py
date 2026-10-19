@@ -606,6 +606,109 @@ def main():
             save("complete (slips)")
             return 0
 
+        if MODE == "proof":
+            # PROOF (2026-10-18, owner: "Having the boards now, be sure we are using the proper multipliers, prove, analyze and
+            # understand each of the available tables"). The slip shapes the live strategies actually place, quoted on the live
+            # NBA board, so the grader / UI / DB pricing can be checked tier by tier against PrizePicks' own engine:
+            #  P_BASE  - all-standard More, one player per team, 2..6 picks, two player sets (Power 3/6/10/20/37.5, Flex tables)
+            #  P_LESS  - all-standard with half the legs on Less (the strategies' Unders), 3..6
+            #  P_SG    - all-standard with ONE same-game pair (the engines allow 2 per game), 3..6
+            #  P_D1 / P_D2 / P_G1 / P_GD - one nearest demon, two nearest demons, one nearest goblin, goblin + demon, + standards, 3..6
+            #  LEG     - every alternate used, alone vs a standard from another game (its own factor, same run)
+            def team_key(r):
+                return r.get("team") or ("game:" + str(r["game"]))
+
+            def team_distinct(pool, k, avoid=(), avoid_players=()):
+                out, seen_t, seen_p = [], set(avoid), set(avoid_players)
+                for r in pool:
+                    if team_key(r) in seen_t or r["player"] in seen_p:
+                        continue
+                    out.append(r)
+                    seen_t.add(team_key(r))
+                    seen_p.add(r["player"])
+                    if len(out) >= k:
+                        break
+                return out
+            center = {(r["player"], r["stat"]): r["line"] for r in std}
+
+            def nearest(pool, demon):
+                best = {}
+                for r in pool:
+                    c = center.get((r["player"], r["stat"]))
+                    if c is None:
+                        continue
+                    d = (r["line"] - c) if demon else (c - r["line"])
+                    if d <= 0:
+                        continue
+                    k = (r["player"], r["stat"])
+                    if k not in best or d < best[k][0]:
+                        best[k] = (d, r)
+                return [v[1] for v in best.values()]
+            rng = random.Random(1018)
+            d1, g1 = nearest(dem, True), nearest(gob, False)
+            rng.shuffle(d1)
+            rng.shuffle(g1)
+            result["meta"].update({"mode": "proof", "teams": len({team_key(r) for r in std}), "d1": len(d1), "g1": len(g1)})
+            print(f"PROOF|standards={len(std)}|teams={result['meta']['teams']}|nearest demons={len(d1)}|nearest goblins={len(g1)}", flush=True)
+            priced = set()
+
+            def price_alone(a):
+                if a["id"] in priced:
+                    return
+                p = next((x for x in std if x["game"] != a["game"] and x["player"] != a["player"]), None)
+                if p:
+                    run("LEG", [leg(p), leg(a)])
+                    priced.add(a["id"])
+            for s in range(2):
+                pool = std[:]
+                rng.shuffle(pool)
+                base_set = team_distinct(pool, 6)
+                for k in range(2, len(base_set) + 1):
+                    run("P_BASE", [leg(r) for r in base_set[:k]], f"all-standard set {s} size {k}")
+                for k in range(3, len(base_set) + 1):
+                    run("P_LESS", [leg(r, "under" if i % 2 else "over") for i, r in enumerate(base_set[:k])], f"half Less set {s} size {k}")
+            for s in range(2):
+                pool = std[:]
+                rng.shuffle(pool)
+                pair = None
+                for a in pool:
+                    b = next((x for x in pool if x["game"] == a["game"] and team_key(x) != team_key(a) and x["player"] != a["player"]), None)
+                    if b:
+                        pair = [a, b]
+                        break
+                if pair:
+                    rest = team_distinct(pool, 4, avoid=[team_key(x) for x in pair], avoid_players=[x["player"] for x in pair])
+                    rest = [r for r in rest if r["game"] != pair[0]["game"]] or rest
+                    for k in range(3, 7):
+                        if len(rest) >= k - 2:
+                            run("P_SG", [leg(r) for r in pair + rest[:k - 2]], f"one same-game pair set {s} size {k}")
+            combos = []
+            for i in range(2):
+                if len(d1) > i:
+                    combos.append(("P_D1", [d1[i]]))
+            if len(d1) >= 4:
+                combos.append(("P_D2", [d1[2], d1[3]]))
+            for i in range(2):
+                if len(g1) > i:
+                    combos.append(("P_G1", [g1[i]]))
+            if len(g1) > 2 and len(d1) > 4:
+                combos.append(("P_GD", [g1[2], d1[4]]))
+            for section, alts in combos:
+                if len({team_key(a) for a in alts}) < len(alts):
+                    continue
+                for a in alts:
+                    price_alone(a)
+                pool = std[:]
+                rng.shuffle(pool)
+                mates = team_distinct(pool, 6 - len(alts), avoid=[team_key(a) for a in alts], avoid_players=[a["player"] for a in alts])
+                for k in range(3, 7):
+                    need = k - len(alts)
+                    if len(mates) >= need:
+                        run(section, [leg(r) for r in mates[:need]] + [leg(a) for a in alts],
+                            f"{len(alts)} alt(s) {'+'.join(a['odds'][0] for a in alts)} + {need} standards")
+            save("complete (proof)")
+            return 0
+
         if MODE == "multi":
             # MULTI (2026-09-21): slips with 2 and 3 alternates at 3..6 picks; every alternate is also priced alone (LEG)
             # in this run. Models the multi-alternate haircut (4-6 picks pay ~7% below b * prod(f)^a).
