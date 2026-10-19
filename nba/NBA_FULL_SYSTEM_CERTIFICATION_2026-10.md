@@ -2302,3 +2302,35 @@ fixes) and WebKit passed (run 39124418056), deployed v1.4.14; sim-slate 2026-10-
 both streak flags "off: no played days yet this season", 9 slips on the 3-game slate, production untouched. Config after the
 tests: stake_unit.unit_usd 1, auto.enabled true. One production grade (2026-10-17, no slips, another session) wrote the first
 live_unit_history row: hold at 1.
+
+## GRADER v3 AND THE APPS' OWN PRICES (2026-10-18 evening PT)
+Owner 17:41 PT: "Having the boards now, be sure we are using the proper multipliers, prove, analyze and understand each of the
+available tables, including PrizePicks with the techniques we already know." 19:47 PT: "For betr build slips, you have the key, find
+out how it works, you have the access, the system is there, explore and figure it out. Same goes for all apps."
+**PrizePicks (detail PP_PAYOUT_FINDINGS §0l).** Proof run (pp_payout_map.py PP_MODE=proof, 64/64 quotes): all-standard Power and Flex
+exact, Less and same-game legs included; same-game Flex adjusted on some pairs. Old grader: compressed all-regular slips above 9.1x
+(under), Power with alternates +7% mean / +23% max over the quote at 3 picks, -10..-20% at 4-6. Refit (393 quotes): ln q = ln b + a ln fp,
+conservative k_n = 10th percentile, grid rounded down -> `pp_slip_rules['power_alt_v3']`; same-game 3/4-Flex -> `flex_same_game_v3`.
+Twins: build_slip_engine.pp_payout / grade(same_game), DB nba_market.pp_payout_v3 / pp_slip_payout_v3 (nba/sql/pp_payout_v3.sql),
+main_ui/pricing.js nbaPayout, certifier L10 / L11 / L11b. Live legs carry event_id. Regrade (regrade_pp_payout_v3.py, old value in
+payout_grader_v2) + certification run 39184069623: **83 / 0 FAIL**; parity 105,835 sampled slips, 0 mismatches (run 39185579133);
+integration ALL PASS (39186466864); UI 103/103 (39185894434), v1.4.19 deployed; P4 calibrate done (39185898742); P5 step 3g regrades
+weekly. **Found:** the live twins _wo / _wo_nosteals still carried pre-10-10 Flex-with-alternates payouts - corrected by v3.
+**Debug:** a github_patch_file new_str with a regex ending in a dollar-quote expanded to "rest of file" and duplicated sections of
+certify_slip_system.py - restored with put_file, regex without the anchor, blob verified.
+**Season replays on v3 (audit_season_replay, production configuration):** s2526_v3 (run 39187228558) +24,059.87 on 28,369.25
+staked, ROI +84.8% (s2526_plan +88.4%); s2425_v3 (run 39191156217) +3,998.70 on 7,996.75, ROI +50.0% (s2425_plan +51.3%;
+smaller stake because the earned unit rose later); both rollback live_slips 0 -> 0, states unchanged, PASS.
+**SLIPQ:** pp_payout_map.py PP_MODE=slipq maps each live PrizePicks slip to projection ids and quotes it (nba_score.live_slip_quotes);
+P3 soft step after Slip pick; grade pays the quoted tier (grader kept in live_slips.payout_model); the Slips screen shows it.
+Tested on two sample slips (3-pick 6.75x; a 4-pick correctly unmapped); test rows deleted.
+**Betr (detail PP_PAYOUT_FINDINGS §0m, BETR_BUILD_STATE §8).** probe_betr_slip.py read the app bundle through CDP (36 operations) and
+caught the app's pricing call on the wire: QUERY ValidateEntryWithRules -> validateEntryOnEntryRules (PERFECT / DYNAMIC / MYSTERY /
+RACE_TO_PLACE). probe_betr_quote.py calls it with the app's own request headers (a plain bearer: 401), read-only (CreateEntry never
+sent): runs 39194852387, 39195748178 and the LESS run, ~400 entries, every answer in nba_market.betr_quote. Perfect regular
+3/6/10/20/35/50/100/200/300 (two player sets, identical); Dynamic 2/0.5, 3/1, 6/1.5, 10/2/0.4, 20/1.5/1, 35/2/1.25, 50/2/1.5/1.25,
+100/2/1.5/1.25, 200/2/1.5/1.25/1; ALL-LESS entries 2.75 / 5.5 / 9 (Flex 1.75, 2.75/1, 5.5/1.25), any MORE restores the table (k of n
+for n 2..6; 9 stats); same-game no adjustment; EDGE tiers lower, boosted tiers raise, per entry. Rule row
+pp_slip_rules['betr_payout_v1'] (verified). Supersedes the flat-table assumption (COMPASS 136, strategy §31u). Open: all-LESS 5+.
+**Other apps:** Underdog pick'em bundles load only after login (no credential) - mains proven, the portfolio is mains; Sleeper
+unchanged (overround 12.0-14.3%); Fliff sportsbook odds, no NBA props yet (probe_app_slip_pricing.py run 39191932225).
