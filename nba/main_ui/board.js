@@ -199,6 +199,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     pp_kind: r.pp_kind || null, pp_tier: r.pp_tier == null ? null : Number(r.pp_tier), anchor_line: r.anchor_line,
     leg_factor: legFactor,
     app_multiplier: num(r.app_mult),
+    app_shown_x: appShown == null ? null : Math.round(appShown * 100) / 100, app_shown_exact: appShownExact ? 1 : 0,
     board_tier: lt,
     home_team_name: r.home_name || r.home_team_tricode || null,
     away_team_name: r.away_name || r.away_team_tricode || null,
