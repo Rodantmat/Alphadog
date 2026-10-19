@@ -37,7 +37,23 @@ def summary(j):
 
 
 s = requests.Session(impersonate="chrome")
-for v in V:
+# 2nd pass (2026-10-18): is the NBA alt feed state-gated? The same calls through a California exit (DataImpulse state targeting,
+# billed double - 3 small GETs). Only the username's country tag is extended; nothing is printed of the proxy URL.
+if P and "__cr.us" in P and ";state." not in P:
+    PCA = P.replace("__cr.us", "__cr.us;state.california", 1)
+    for v in ["/lines/available_alt?include_preseason=true&sports%5B%5D=nba", "/lines/available_alt"]:
+        try:
+            r = s.get(BASE + v, headers=H, proxies={"https": PCA, "http": PCA}, timeout=40)
+            try:
+                body = summary(r.json())
+            except Exception:  # noqa: BLE001
+                body = r.text[:160]
+            print(f"CA {r.status_code} {v} -> {body}", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print(f"CA ERR {v} -> {type(exc).__name__}: {str(exc)[:120]}", flush=True)
+else:
+    print("CA pass skipped: proxy URL has no __cr.us tag", flush=True)
+for v in V[:1]:
     try:
         r = s.get(BASE + v, headers=H, proxies=PX, timeout=40)
         try:
