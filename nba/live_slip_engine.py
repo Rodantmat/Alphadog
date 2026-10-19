@@ -1245,9 +1245,9 @@ def grade(conn, day):
                       else 'graded_post_shadow' if status0 == 'placed_post_shadow'
                       else 'graded_post' if status0 == 'placed_post'
                       else ('graded' if n_void == 0 else 'graded_void'))
-        conn.execute("""UPDATE nba_score.live_slips SET status=%s, hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now()
+        conn.execute("""UPDATE nba_score.live_slips SET status=%s, hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now(), payout_model=%s
                         WHERE game_date=%s AND strategy=%s AND k=%s""",
-                     (new_status, hits, payout, payout - 1.0, json.dumps(legs_l), day, strategy, k))
+                     (new_status, hits, payout, payout - 1.0, json.dumps(legs_l), payout_model, day, strategy, k))
         graded += 1; voided += (1 if n_void else 0)
     conn.commit()
     print(f"  {day}: {graded} slips graded ({voided} with voided legs, reverted per PP's rule)", flush=True)
