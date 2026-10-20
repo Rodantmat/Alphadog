@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-19T20:20:25Z",
-  "fetched_at": "2026-10-19T20:21:34Z",
+  "started_at": "2026-10-20T18:36:52Z",
+  "fetched_at": "2026-10-20T18:37:52Z",
   "categories": [
     "1Q Assists",
     "1Q Points",
@@ -21,34 +21,51 @@
     "Rebounds",
     "Rebounds + Assists",
     "Steals",
-    "Triple Doubles",
+    "To Record a Double Double",
+    "To Record a Triple Double",
     "Turnovers  "
   ],
   "calls": [
     [
       "match_grouped_lines[core]",
-      79
+      88
     ],
     [
       "matches",
-      43,
+      52,
       "today",
-      0,
+      3,
       "other",
-      43,
+      49,
       "target",
-      "2026-10-19"
+      "2026-10-20"
     ],
     [
-      "lines[match=211122,other-day]",
+      "lines[match=211122]",
       20
     ],
     [
-      "lines[match=211123,other-day]",
+      "pills[match=211122]",
+      89
+    ],
+    [
+      "lines[match=211123]",
       20
     ],
     [
-      "lines[match=211124,other-day]",
+      "pills[match=211123]",
+      71
+    ],
+    [
+      "lines[match=211124]",
+      20
+    ],
+    [
+      "pills[match=211124]",
+      82
+    ],
+    [
+      "lines[match=211961,other-day]",
       20
     ],
     [
@@ -56,11 +73,7 @@
       20
     ],
     [
-      "lines[match=211961,other-day]",
-      20
-    ],
-    [
-      "lines[match=211964,other-day]",
+      "lines[match=211125,other-day]",
       20
     ],
     [
@@ -68,7 +81,7 @@
       20
     ],
     [
-      "lines[match=211125,other-day]",
+      "lines[match=211964,other-day]",
       20
     ],
     [
@@ -108,7 +121,11 @@
       0
     ],
     [
-      "lines[match=211973,other-day]",
+      "lines[match=211129,other-day]",
+      0
+    ],
+    [
+      "lines[match=211970,other-day]",
       0
     ],
     [
@@ -120,11 +137,7 @@
       0
     ],
     [
-      "lines[match=211970,other-day]",
-      0
-    ],
-    [
-      "lines[match=211129,other-day]",
+      "lines[match=211973,other-day]",
       0
     ],
     [
@@ -132,15 +145,11 @@
       0
     ],
     [
-      "lines[match=211976,other-day]",
-      0
-    ],
-    [
       "lines[match=211130,other-day]",
       0
     ],
     [
-      "lines[match=211979,other-day]",
+      "lines[match=211976,other-day]",
       0
     ],
     [
@@ -149,6 +158,10 @@
     ],
     [
       "lines[match=211978,other-day]",
+      0
+    ],
+    [
+      "lines[match=211979,other-day]",
       0
     ],
     [
@@ -192,15 +205,15 @@
       0
     ],
     [
+      "lines[match=211990,other-day]",
+      0
+    ],
+    [
       "lines[match=211991,other-day]",
       0
     ],
     [
       "lines[match=211992,other-day]",
-      0
-    ],
-    [
-      "lines[match=211990,other-day]",
       0
     ],
     [
@@ -212,16 +225,52 @@
       0
     ],
     [
+      "lines[match=211995,other-day]",
+      0
+    ],
+    [
+      "lines[match=211996,other-day]",
+      0
+    ],
+    [
+      "lines[match=211997,other-day]",
+      0
+    ],
+    [
+      "lines[match=211998,other-day]",
+      0
+    ],
+    [
+      "lines[match=211999,other-day]",
+      0
+    ],
+    [
+      "lines[match=212000,other-day]",
+      0
+    ],
+    [
+      "lines[match=212001,other-day]",
+      0
+    ],
+    [
+      "lines[match=212002,other-day]",
+      0
+    ],
+    [
+      "lines[match=212003,other-day]",
+      0
+    ],
+    [
       "lines_with_stats[players]",
-      883,
-      108
+      357,
+      140
     ],
     [
       "alternate_projections",
-      789,
-      5215,
+      775,
+      2939,
       0,
-      "deduped 12"
+      "deduped 22"
     ],
     [
       "lines[mass=true]",
@@ -232,61 +281,54 @@
       0
     ]
   ],
-  "lines": 1242,
-  "legs": 1242,
-  "ladder_legs": 5215,
-  "ladder_lines_with_alternates": 789,
-  "players": 108,
-  "pregame_legs": 1242,
+  "lines": 967,
+  "legs": 967,
+  "ladder_legs": 2939,
+  "ladder_lines_with_alternates": 775,
+  "players": 140,
+  "pregame_legs": 967,
   "live_legs": 0,
   "by_stat": {
-    "Points": 108,
-    "Rebounds": 106,
-    "3-Pointers Made": 98,
-    "Steals": 94,
-    "Pts + Rebs + Asts": 89,
-    "Rebounds + Assists": 87,
-    "Points + Rebounds": 86,
-    "Assists": 81,
-    "1Q Points": 72,
-    "3s Attempted": 70,
-    "Points + Assists": 68,
-    "1Q Rebounds": 64,
-    "Turnovers  ": 48,
-    "Moneyline": 43,
-    "FG Attempted": 40,
-    "Blocks + Steals": 20,
+    "Points": 145,
+    "Rebounds": 130,
+    "Pts + Rebs + Asts": 129,
+    "3-Pointers Made": 126,
+    "Steals": 120,
+    "Assists": 105,
+    "Moneyline": 52,
+    "To Record a Double Double": 46,
+    "Blocks": 36,
+    "To Record a Triple Double": 21,
+    "Blocks + Steals": 19,
     "Margin of Victory": 18,
     "Total Points": 18,
-    "Blocks": 14,
-    "Triple Doubles": 13,
-    "1Q Assists": 5
+    "Turnovers  ": 2
   },
   "by_line_type": {
-    "balanced": 1242
+    "balanced": 967
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 423,
-    "None": 61,
-    "1.04": 48,
-    "0.91": 46,
-    "1.05": 44,
-    "1.07": 38,
-    "1.09": 33,
-    "1.08": 32,
-    "0.87": 31,
-    "0.9": 31,
-    "1.12": 30,
-    "1.1": 28,
-    "1.11": 23,
-    "0.89": 22,
-    "0.95": 17
+    "1.0": 131,
+    "None": 70,
+    "0.83": 24,
+    "0.77": 22,
+    "0.85": 22,
+    "1.09": 22,
+    "1.14": 22,
+    "1.06": 18,
+    "1.11": 18,
+    "0.86": 18,
+    "0.8": 16,
+    "0.82": 16,
+    "1.07": 14,
+    "0.84": 13,
+    "0.81": 13
   },
-  "github_run_id": "39317909374",
-  "target_date_et": "2026-10-19",
+  "github_run_id": "39475555946",
+  "target_date_et": "2026-10-20",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 68.5
+  "elapsed_s": 59.7
 }

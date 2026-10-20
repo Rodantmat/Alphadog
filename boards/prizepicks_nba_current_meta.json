@@ -3,24 +3,24 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-19T20:20:23Z",
+  "fetched_at": "2026-10-20T18:36:51Z",
   "egress": {
-    "ip": "35.129.118.173",
-    "hostname": "syn-035-129-118-173.res.spectrum.com",
-    "city": "Los Angeles",
-    "region": "California",
+    "ip": "67.187.88.14",
+    "hostname": "c-67-187-88-14.hsd1.tn.comcast.net",
+    "city": "Nashville",
+    "region": "Tennessee",
     "country": "US",
-    "loc": "34.1121,-118.2594",
-    "org": "AS20115 Charter Communications LLC",
-    "postal": "90039",
-    "timezone": "America/Los_Angeles",
+    "loc": "36.1659,-86.7844",
+    "org": "AS7922 Comcast Cable Communications, LLC",
+    "postal": "37201",
+    "timezone": "America/Chicago",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 8561,
-  "row_count": 8561,
+  "rows": 10467,
+  "row_count": 10467,
   "total_pages": 1,
-  "future_pickable": 8561,
+  "future_pickable": 10467,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
@@ -41,22 +41,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 9486048,
+      "bytes": 11825220,
       "total_pages": 1,
       "ok": true,
-      "rows": 8561,
-      "future_pickable": 8561
+      "rows": 10467,
+      "future_pickable": 10467
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 9486026,
+      "bytes": 11825219,
       "total_pages": 1,
       "ok": true,
-      "rows": 8561,
-      "future_pickable": 8561
+      "rows": 10467,
+      "future_pickable": 10467
     }
   ],
-  "github_run_id": "39317909374"
+  "github_run_id": "39475555946"
 }
