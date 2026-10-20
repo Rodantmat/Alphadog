@@ -611,6 +611,22 @@ jobs:
           DELTA_TO: "phase1"
         run: python nba/build_availability_delta.py
 
+      # BETR'S WINDOW BOARD BEFORE THE SCORER (2026-10-19, owner: Fliff and Betr wired like the other apps). The harvest dispatched
+      # above lands and archives a few minutes after P3 started; without this wait the scorer ran first and Betr's decision-moment
+      # legs were never scored. Bounded (tunable classification_config['p3_betr_wait'], and never past first tip - 14 min), stops the
+      # moment the rows land or the harvest run ends without them, soft, reads only.
+      - name: Wait for the Betr window board (bounded, soft)
+        id: soft_betrwait
+        if: ${{ steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' && github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
+        timeout-minutes: 9
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          P3_ASOF: ${{ steps.d.outputs.asof }}
+          BETR_DISPATCHED: ${{ steps.soft_betr.outcome }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -u nba/p3_wait_betr.py
+
       - name: Score the board (all apps, all rungs, both directions)
         if: ${{ steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
         env:
