@@ -84,6 +84,7 @@ function variationFragment(r, seed) {
   if (r.source_key === "underdog" && Number.isFinite(m) && Number.isFinite(shown))
     return `Underdog shows ${approx}${shown.toFixed(2)}x on this pick (payout factor ${m.toFixed(2)}x on its entry table).`;
   if (r.source_key === "sleeper" && Number.isFinite(m)) return `Sleeper shows ${m.toFixed(2)}x on this pick.`;
+  if (r.source_key === "fliff" && Number.isFinite(shown)) return `Fliff prices this side at ${shown.toFixed(2)}x (sportsbook odds).`;
   return "";
 }
 
