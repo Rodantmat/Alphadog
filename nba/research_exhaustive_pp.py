@@ -69,7 +69,7 @@ RK = {"final_score": "n_fs", "final_hp": "n_fh", "baseline_hp": "n_bh"}
 # first lifted to the QUOTE level (our model sits 4.6% / 5.4% below PrizePicks' quotes for goblins / demons, measured on 257
 # quoted legs) - complementing the deliberately low More price would overpay the Less side - then 3% is taken off (conservative
 # mode) unless the floor binds. Selector: the BOTTOM of the More ranking (the rungs the model rates least likely to go over),
-# reverse rank per rank key. Bucket UG = goblin Less (G1/G2), UD = demon Less (D1/D2).
+# reverse rank per rank key. Bucket UG = goblin Less, UD = demon Less.
 ALT_LESS = os.environ.get("EX_ALT_LESS", "1") == "1"
 ALT_LESS_SQL = """
 WITH t AS (
