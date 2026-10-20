@@ -72,7 +72,7 @@ def main():
                         (runs,)).fetchall()
     fac = {}
     for rf, seq, lg, sec, n, ng, note, pw, fx, pa, fa, legs in rows:
-        if sec in ('LEG', 'DRIFT') and n == 2:
+        if sec in ('LEG', 'DRIFT', 'LESS') and n == 2:      # LESS = a goblin / demon taken Less vs a standard More (2026-10-20 grid)
             alt = [l for l in legs if l.get('odds') in ('goblin', 'demon')]
             p = ((pw or {}).get('2') or {}).get('2')
             if len(alt) == 1 and p:
