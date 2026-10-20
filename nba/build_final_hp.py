@@ -92,6 +92,34 @@ def score_and_edge(final_hp, confidence):
     return score, edge
 
 
+def conf_cutpoints(conn, fe_date, seasons):
+    """Equal-mass tier cutpoints (25 / 50 / 75%) of the leg confidence of every final_hp leg OUTSIDE the slice being rebuilt -
+    exactly percentile_cont(ARRAY[0.25,0.50,0.75]) WITHIN GROUP (ORDER BY confidence) over that population, computed from
+    (value, count) pairs: Postgres' float8 rule first + (second - first) x proportion at position p x (N - 1). None if empty.
+    (2026-10-20: the SQL form sorted 7.8M legs, 20-28 s of every P3; audit_conf_cutpoints.py proves the two equal.)"""
+    vc = conn.execute("""SELECT confidence::float8, count(*) FROM nba_score.final_hp
+                         WHERE confidence IS NOT NULL
+                           AND (CASE WHEN %(d)s <> '' THEN game_date <> NULLIF(%(d)s, '')::date
+                                     ELSE NOT (season = ANY(%(s)s)) END)
+                         GROUP BY 1 ORDER BY 1""", {"d": fe_date or "", "s": list(seasons or [])}).fetchall()
+    if not vc:
+        return None
+    vals = [float(v) for v, _ in vc]
+    ends = np.cumsum([int(c) for _, c in vc])
+    n_all = int(ends[-1])
+
+    def at(i):
+        return vals[int(np.searchsorted(ends, i, side="right"))]
+    out = []
+    for p in (0.25, 0.50, 0.75):
+        pos = p * (n_all - 1)
+        f = int(np.floor(pos))
+        fr = pos - f
+        a = at(f)
+        out.append(a + (at(min(f + 1, n_all - 1)) - a) * fr if fr > 0 else a)
+    return out
+
+
 def main():
     # SEASONS (fixed 2026-09-23, same class as T23-2). Was a hardcoded "2025-26" default: once this
     # script is owned by P2 that would have rebuilt last season's final_hp every night and never the
