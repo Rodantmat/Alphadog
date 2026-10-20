@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-10-20T11:54:54Z",
-  "fetched_at": "2026-10-20T11:55:02Z",
+  "started_at": "2026-10-20T17:24:23Z",
+  "fetched_at": "2026-10-20T17:24:29Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -69,13 +69,13 @@
     ],
     [
       "lines_with_stats[players]",
-      124,
+      128,
       20
     ],
     [
       "alternate_projections",
-      96,
-      312,
+      99,
+      318,
       0,
       "deduped 0"
     ],
@@ -88,12 +88,12 @@
       0
     ]
   ],
-  "lines": 150,
-  "legs": 150,
-  "ladder_legs": 312,
-  "ladder_lines_with_alternates": 96,
+  "lines": 154,
+  "legs": 154,
+  "ladder_legs": 318,
+  "ladder_lines_with_alternates": 99,
   "players": 20,
-  "pregame_legs": 150,
+  "pregame_legs": 154,
   "live_legs": 0,
   "by_stat": {
     "Hits + Runs + RBIs": 18,
@@ -101,9 +101,9 @@
     "RBIs": 18,
     "Hits": 17,
     "Runs": 17,
+    "Stolen Bases": 17,
     "Home Runs": 17,
     "Batter Walks": 16,
-    "Stolen Bases": 13,
     "Moneyline": 4,
     "Strikeouts": 2,
     "Pitching Outs Recorded": 2,
@@ -114,30 +114,30 @@
     "Total Runs": 1
   },
   "by_line_type": {
-    "balanced": 150
+    "balanced": 154
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 13,
+    "1.0": 10,
     "None": 5,
-    "0.88": 3,
-    "0.74": 3,
+    "1.51": 4,
+    "1.94": 4,
+    "0.9": 3,
+    "1.14": 3,
+    "0.86": 3,
     "0.95": 3,
-    "0.85": 3,
-    "1.59": 3,
-    "1.79": 3,
-    "0.82": 3,
-    "1.51": 3,
-    "1.35": 3,
-    "1.43": 3,
-    "1.99": 3,
-    "0.87": 2,
-    "1.11": 2
+    "0.81": 3,
+    "1.15": 3,
+    "1.41": 3,
+    "1.64": 3,
+    "0.99": 2,
+    "0.91": 2,
+    "0.85": 2
   },
-  "github_run_id": "39418137139",
+  "github_run_id": "39465514889",
   "target_date_et": "2026-10-20",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 8.3
+  "elapsed_s": 5.1
 }
