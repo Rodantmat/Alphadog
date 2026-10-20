@@ -420,6 +420,12 @@ def main():
         else:
             print("market refresh OFF", flush=True)
         inproc(P, "availability delta", "nba/build_availability_delta.py", env={"DELTA_ASOF": D, "DELTA_FROM": "baseline", "DELTA_TO": "phase1"})
+        # The Betr harvest (separate workflow) archives with the dispatch label 'window' in production. The simulation cannot dispatch it, so the
+        # real probe harvest's Betr rows are relabelled INSIDE the rolled-back transaction, then the real wait step and the real scorer run.
+        with Shared.lock:
+            nb = Shared.real.execute("UPDATE nba_market.board_snapshots SET snapshot_label='window' WHERE bookmaker='betr' AND snapshot_label='probe' AND game_date=%s", (D,)).rowcount
+        print(f"SIM|{nb} Betr probe-harvest rows for {D} relabelled 'window' inside the transaction (stand-in for the P3-dispatched harvest)", flush=True)
+        inproc(P, "Betr wait (real step, rows present)", "nba/p3_wait_betr.py", env={"P3_ASOF": D, "BETR_DISPATCHED": "success"})
         inproc(P, "SCORE THE BOARD (all apps)", "nba/score_board_legs.py", env={"BS_ASOF": D, "BS_SEASON": ""})
         per_app = {}
         with Shared.lock:
