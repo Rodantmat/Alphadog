@@ -99,6 +99,9 @@ def main():
             rc = conn.execute("SELECT payout FROM nba_market.pp_slip_power_conservative(%s::numeric[])", ([round(x, 4) for x in f],)).fetchone()
             db = float(r[0]) if r and r[0] is not None else None
             cons = float(rc[0]) if rc and rc[0] is not None else None
+        n_alt_less = sum(1 for l in legs if l.get('odds') in ('goblin', 'demon') and l.get('side') == 'under')
+        if n_alt_less:
+            sec = f"{sec}+{n_alt_less}AL"                                # alternates taken Less in this slip
         key = f"{sec}{' SG' if sg and sec != 'P_SG' else ''} n{n}"
         line = []
         for (structure, h), v in sorted(t.items()):
