@@ -277,11 +277,21 @@ def main():
     if mode == "daily":
         days = [date.today() - timedelta(days=1), date.today()]
         out = []
-        for d in days:
-            for ts, url, content in scan_day(session, d):
-                txt = extract_text(content); ts2 = header_ts(txt) or ts
-                out += [{**r, "source_url": url} for r in parse_report(txt, ts2)]
-                time.sleep(0.3)
+        # PARALLEL EXTRACTION (2026-10-20, P3 speed-up): the daily step took 86 s on opening night; the fetch is ~12 s a day, the
+        # rest was pdfplumber on ~83 PDFs one at a time plus a 0.3 s sleep after each (25 s of waiting AFTER the download was
+        # already done - removed). Text extraction is CPU-bound -> one process per core; results kept in scan order, so the rows
+        # are identical to the sequential path. INJURY_EXTRACT_PROCS=1 = sequential.
+        snaps = [s for d in days for s in scan_day(session, d)]
+        procs = max(1, int(os.environ.get("INJURY_EXTRACT_PROCS", str(os.cpu_count() or 1))))
+        if procs > 1 and len(snaps) > 1:
+            from concurrent.futures import ProcessPoolExecutor
+            with ProcessPoolExecutor(max_workers=procs) as ex:
+                texts = list(ex.map(extract_text, [c for _, _, c in snaps]))
+        else:
+            texts = [extract_text(c) for _, _, c in snaps]
+        for (ts, url, content), txt in zip(snaps, texts):
+            ts2 = header_ts(txt) or ts
+            out += [{**r, "source_url": url} for r in parse_report(txt, ts2)]
         # ROUND-2 P3#14 (2026-10-08): on a day the league publishes reports (INJURY_EXPECT=1, set by P3 on a slate day) a scan
         # that found ZERO snapshots is a failed scrape, not an empty report - the previous file stays and the step goes red
         # (soft in P3, so the slate continues on the last report with a visible warning), instead of silently loading nothing.
