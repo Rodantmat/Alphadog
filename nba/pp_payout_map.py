@@ -618,6 +618,66 @@ def main():
             save("complete (grid)")
             return 0
 
+        if MODE == "stack":
+            # STACK (2026-10-20): slips made MOSTLY or ONLY of alternates - the large factor products the grid (<= 3 alternates)
+            # never reaches. The research favours 5-6 goblins / demons taken Less (fp up to ~8); their payouts must be PrizePicks'
+            # own numbers before anything is built on them. Same pricing as grid (every alternate alone vs a standard first), then
+            # slips of 3..6 picks cycled over compositions: all goblin-Less, all demon-Less, mixed Less, goblin-Less + goblin-More,
+            # all goblin-More, all demon-More, Less alternates + one standard. Every quote returns Power AND Flex.
+            rng = random.Random(int(os.getenv("PP_GRID_SEED", str(int(time.time()) // 3600))))
+            s_over = [r for r in std if r["allow"] in ("", "over", "under_or_over")]
+            g_less = [r for r in gob if r["allow"] == "under_or_over"]
+            d_less = [r for r in dem if r["allow"] == "under_or_over"]
+            g_over, d_over = gob[:], dem[:]
+            for pool_ in (s_over, g_over, d_over, g_less, d_less):
+                rng.shuffle(pool_)
+            per = max(6, min(24, MAX_Q // 12))
+            pools = {"gl": [(r, "under") for r in g_less[:per]], "dl": [(r, "under") for r in d_less[:per]],
+                     "go": [(r, "over") for r in g_over[:per]], "do": [(r, "over") for r in d_over[:per]]}
+            result["meta"].update({"mode": "stack", "goblin_less_open": len(g_less), "demon_less_open": len(d_less),
+                                   "per_pool": {k_: len(v) for k_, v in pools.items()}})
+            print(f"STACK|goblin less open={len(g_less)}|demon less open={len(d_less)}|per pool={per}|budget={MAX_Q}", flush=True)
+            for key_ in ("gl", "dl", "go", "do"):
+                for r, side in pools[key_]:
+                    p_ = next((x for x in s_over if x["game"] != r["game"] and x["player"] != r["player"]), None)
+                    if p_:
+                        run("LEG" if side == "over" else "LESS", [leg(p_), leg(r, side)])
+            comps = [("gl",), ("dl",), ("gl", "dl"), ("gl", "go"), ("go",), ("do",), ("gl", "dl", "std")]
+            n_slip, fails = 0, 0
+            while getattr(q, "n", 0) < MAX_Q and fails < 500:
+                k = 3 + (n_slip % 4)
+                comp = comps[(n_slip // 4) % len(comps)]
+                cand = [c for key_ in comp if key_ != "std" for c in pools[key_]]
+                rng.shuffle(cand)
+                n_alt = k - 1 if "std" in comp else k
+                chosen, players, games_used = [], set(), {}
+                for r, side in cand:
+                    if len(chosen) >= n_alt:
+                        break
+                    if r["player"] in players or games_used.get(r["game"], 0) >= 2:
+                        continue
+                    chosen.append(leg(r, side))
+                    players.add(r["player"])
+                    games_used[r["game"]] = games_used.get(r["game"], 0) + 1
+                for x in s_over:
+                    if len(chosen) >= k:
+                        break
+                    if x["player"] in players or games_used.get(x["game"], 0) >= 2:
+                        continue
+                    chosen.append(leg(x))
+                    players.add(x["player"])
+                    games_used[x["game"]] = games_used.get(x["game"], 0) + 1
+                n_slip += 1
+                if len(chosen) < k or len({c["game"] for c in chosen}) < 2:
+                    fails += 1
+                    continue
+                before = len(result["quotes"])
+                run("STACK", chosen, f"{k} picks, {'+'.join(comp)}")
+                if len(result["quotes"]) == before:
+                    break
+            save("complete (stack)")
+            return 0
+
         if MODE == "slips":
             # SLIPS (2026-09-21): multi-pick rules, measured without product noise.
             #  BASE  - all-standard slips at 2..6 picks, one player per TEAM (same game allowed, teams distinct), three
