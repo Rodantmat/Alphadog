@@ -1,0 +1,37 @@
+name: NBA Opening-Day Availability Delta Check (rolled back)
+
+# Owner 2026-10-19: leave Betr out, debug/simulate/test it separately. Runs nba/sim_delta_check.py over one shared transaction that is ROLLED BACK
+# (mechanism: nba/sim_p3_full.py). Runs the real availability delta for TODAY inside a rolled-back transaction; the driver verifies nba_score.availability_delta is unchanged.
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        default: "2026-10-20"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-sim-p3
+  cancel-in-progress: false
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PROXY_URL: ${{ secrets.PROXY_URL }}
+      SIM_DATE: ${{ github.event.inputs.date }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber pyyaml
+      - name: Simulate
+        run: python -u nba/sim_delta_check.py
