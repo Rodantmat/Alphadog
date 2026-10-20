@@ -214,6 +214,8 @@ def rows_underdog(doc, gd, label):
             t = g.get("scheduled_at")
         return t
     out = []
+    UD_FLAGS.clear()
+    _ou_of_line, _pm_of_ou = _ud_line_flags(doc)
     for l in (doc.get("legs") or []) + (doc.get("ladder") or []):
         line = l.get("line")
         if line is None or not l.get("player"):
