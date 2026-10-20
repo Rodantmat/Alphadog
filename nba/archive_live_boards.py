@@ -242,6 +242,9 @@ def rows_underdog(doc, gd, label):
             _unmapped.add(_disp)
         if l.get("is_main") is False:
             mk += "_alternate"
+        _ouid = l.get("over_under_id") or _ou_of_line.get(l.get("line_id"))
+        _pm, _prov = _pm_of_ou.get(_ouid, (None, None))
+        UD_FLAGS[(mk, l["player"], float(line))] = (l.get("is_main") is False, _pm, _prov, _ouid, bool(l.get("is_main") is False and _pm))
         for side, pre in (("Over", "higher"), ("Under", "lower")):
             disp = l.get(f"{pre}_display_decimal")
             price = _am(disp) if disp not in (None, "") else (l.get(f"{pre}_american") or l.get("over_american" if side == "Over" else "under_american"))
