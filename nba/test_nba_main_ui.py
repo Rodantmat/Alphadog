@@ -180,7 +180,7 @@ def api_checks(conn, cfg):
     code, f, t = curl("/api/main-board/filters"); save_sample("filters", f)
     tot = conn.execute("SELECT count(*) FROM nba_score.board_scored WHERE game_date=%s AND app = ANY(%s)", (d, cfg["apps"])).fetchone()[0]
     ftot = sum(p["rows"] for g in ("hitter", "pitcher") for p in f.get("prop_groups", {}).get(g, []))
-    stot = sum(x["rows"] for g in ("prizepicks", "underdog", "sleeper") for x in f.get("source_groups", {}).get(g, []))
+    stot = sum(x["rows"] for g in ("prizepicks", "underdog", "sleeper", "fliff", "betr") for x in f.get("source_groups", {}).get(g, []))
     check("C1 filters: prop and app totals == board_scored rows", code == 200 and ftot == tot == stot, f"{t}s props {ftot} apps {stot} db {tot} ({d})")
     code, cur, t = curl("/api/main-board/current?limit=200&min_score=80"); save_sample("current", cur)
     rows = cur.get("rows") or []
