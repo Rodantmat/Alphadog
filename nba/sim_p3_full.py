@@ -390,7 +390,7 @@ def main():
         inproc(P, "as-of calibration", "nba/build_asof_calibration.py")
         inproc(P, "blowout refit", "nba/build_blowout_model.py")
         inproc(P, "confidence refit", "nba/build_confidence_v3.py", env={"C3_SEASONS": ""})
-        inproc(P, "snapshot model params", "nba/snapshot_model_params.py", env={"SNAP_DATE": D, "SNAP_TABLES": "nba_score.blowout_model,nba_score.confidence_model,nba_score"})
+        inproc(P, "snapshot model params", "nba/snapshot_model_params.py", env={"SNAP_DATE": D, "SNAP_TABLES": yaml_env("nba-p2b-slate.yml", "slate", "Snapshot the slate", "SNAP_TABLES")})
         inproc(P, "build final_hp", "nba/build_final_hp.py", env={"FE_DATE": D, "FE_WRITE": "1"})
         inproc(P, "whole-number hp", "nba/build_whole_number_hp.py", env={"WN_DATE": D, "WN_WRITE": "1"})
         inproc(P, "certify P2", "nba/certify_pipeline.py", env={"PIPE": "p2", "CERT_DATE": D})
