@@ -172,12 +172,17 @@ def run_direction(train, test, label):
     for pi, pat in enumerate(pats):
         bp = tuple(BUCKETS[i] for i in pat)
         for st in ("power", "flex"):
-            res[(bp, st)] = {"days": 0, "stake": 0.0, "ret": 0.0, "full": 0, "daily": array("f"), "legs": 0, "leg_hits": 0}
-        for d in sorted(days):
+            res[(bp, st)] = {"days": 0, "stake": 0.0, "ret": 0.0, "full": 0, "daily": array("f"), "didx": array("H"), "legs": 0, "leg_hits": 0}
+        for di, d in enumerate(sorted(days)):
             slip = build(bp, days[d])
             if slip is None:
                 continue
-            for st in ("power", "flex"):   # 2-pick Flex exists (2x / 0.5x) - graded like the rest
+            has_alt = any(abs(x["factor"] - 1.0) > 1e-9 for x in slip)
+            for st in ("power", "flex"):
+                # 2-pick Flex exists (2x / 0.5x) for all-standard slips; a 2-pick Flex WITH a goblin / demon has no quote-derived
+                # tiers (flex_alt_tiers starts at 3 picks) - unpriced, so not graded (it would read as a certain loss)
+                if st == "flex" and len(slip) == 2 and has_alt:
+                    continue
                 hits, pay = SE.grade(slip, st)
                 r = res[(bp, st)]
                 r["days"] += 1
