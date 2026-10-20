@@ -41,6 +41,7 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       ALPHADOG_WORKER_GITHUB_TOKEN: ${{ secrets.ALPHADOG_WORKER_GITHUB_TOKEN }}
+      SOCIAL_GITHUB_TOKEN: ${{ secrets.SOCIAL_GITHUB_TOKEN }}
       GITHUB_OWNER_VALUE: ${{ vars.GITHUB_OWNER_VALUE || 'Rodantmat' }}
       GITHUB_REPO_VALUE: ${{ vars.GITHUB_REPO_VALUE || 'Alphadog' }}
       GITHUB_BRANCH_VALUE: ${{ vars.GITHUB_BRANCH_VALUE || 'main' }}
