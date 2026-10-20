@@ -1182,6 +1182,7 @@ export class AlphadogMcp extends McpAgent {
   server = new McpServer({ name: WORKER_NAME, version: VERSION });
 
   async init() {
+    try { registerSocialTools(this.server, this.env, z); } catch (e) { console.log("social tools not registered: " + String((e && e.message) || e)); }
     this.server.tool(
       "check_bindings",
       "Report which D1 database bindings, secrets, and vars are present on this bridge worker, without exposing any secret values.",
