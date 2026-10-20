@@ -128,7 +128,7 @@ def load_legs(conn, day):
       JOIN nba_score.final_hp f ON f.game_date=%s AND f.player_id=nm.player_id AND f.side=b.side AND f.line=b.line
        AND f.prop = (CASE b.mk """ + " ".join(f"WHEN '{k}' THEN '{v}'" for k, v in MKT.items()) + """ END)
       LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = nm.player_id::text
-      WHERE f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL AND b.m > 0""", (day, day)).fetchall()
+      WHERE f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL AND b.m > 0""", (day, hide, day)).fetchall()
     best = {}
     for ev, pn, pid, mk, mkey, side, line, m, s_f, s_b, s_s, pos, conf, cm in rows:
         prop = MKT.get(mk)
