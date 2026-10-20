@@ -64,7 +64,7 @@ legs AS MATERIALIZED (
 pl AS (SELECT DISTINCT game_date, player_id, prop, mkey FROM legs),
 -- DraftKings main line (both sides priced), the one closest to 50/50 after removing the vig
 dkraw AS (
-  SELECT s.game_date, m.player_id, s.market_key, s.line::float8 line,
+  SELECT s.game_date, m.player_id, s.market_key, s.bookmaker, s.line::float8 line,
          max(s.price) FILTER (WHERE s.side = 'Over')::float8 po, max(s.price) FILTER (WHERE s.side = 'Under')::float8 pu
   FROM nba_market.board_snapshots s JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(s.player)
   WHERE s.game_date BETWEEN %(d0)s::date AND %(d1)s::date AND s.bookmaker = 'draftkings' AND s.snapshot_label = %(lab)s AND s.market_key !~ '_alternate$'
