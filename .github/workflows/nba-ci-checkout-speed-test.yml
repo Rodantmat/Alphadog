@@ -1,0 +1,104 @@
+name: NBA CI - checkout speed test (P3 sparse checkout proof)
+
+# P3 SPEED-UP PROOF (2026-10-20, owner: "P3 speed up ... keep going"). Today's P3 (run 39475555946) spent 108 s on the afternoon
+# job's checkout (fetch-depth 0, full working tree incl. 1.4 GB of historical nba/data JSON) and 53 s on the claim job's checkout
+# for one 100-line script. P3 reads nothing from the historical nba/data files (every input is Postgres or a raw URL; the injury
+# scraper's daily mode writes nba_injury_report_current.json only). This job measures, WITHOUT pushing anything:
+#   A  the current checkout (fetch-depth 0, full tree)
+#   B  the proposed P3 checkout: fetch-depth 0, sparse (non-cone) = everything except the named historical families, which also
+#      makes actions/checkout use a blobless clone (excluded blobs are never downloaded)
+#   C  the proposed claim checkout: sparse = nba/pipeline_claim.py only
+# and proves on B that the commit step still works: a file written to nba/data/ and boards/ is added and committed by
+# nba/git_push_retry.sh's own add + commit lines (git refuses `git add` outside a sparse definition, and the script hides that error).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - run: echo "A_FULL checkout seconds $(( $(date +%s) - T0 ))"; du -sh .git .
+  sparse:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/nba/data/nba_injury_report_20*
+            !/nba/data/nba_matchups*
+            !/nba/data/nba_pairs*
+            !/nba/data/nba_player_game_log*
+            !/nba/data/nba_team_game_log*
+            !/nba/data/nba_starter_status*
+            !/nba/data/nba_game_officials*
+            !/nba/data/nba_baseline_ladder_20*
+            !/nba/data/nba_delta_*
+            !/nba/data/nba_pt_defend*
+            !/nba/data/nba_preseason_logs*
+            !/nba/data/nba_backfill_*
+      - name: Timing and tree
+        run: |
+          echo "B_SPARSE checkout seconds $(( $(date +%s) - T0 ))"; du -sh .git .
+          echo "nba/data files present: $(ls nba/data | wc -l)"; ls nba/data | head -60
+          echo "P3 scripts present:"; for f in pipeline_claim scrape_nba_injury_report load_injury_report scrape_prizepicks_nba_board archive_live_boards build_board_tiers_v2 capture_parlay_props export_market_spreads build_rung_market build_final_hp build_whole_number_hp build_availability_delta p3_wait_betr score_board_legs certify_pipeline live_slip_engine ud_live_slip_engine build_price_shop_ledger apply_market_anchor build_market_anchor maintenance_shrink_board_index nba_names nba_season build_slip_engine; do test -f "nba/$f.py" && echo "  ok $f" || echo "  MISSING $f"; done
+          test -f nba/git_push_retry.sh && echo "  ok git_push_retry.sh"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Python imports of the P3 modules resolve (no DB needed to import)
+        run: |
+          python -m pip install -q "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+          cd nba && python - <<'EOF'
+          import importlib, sys
+          sys.path.insert(0, ".")
+          bad = []
+          for m in ["score_board_legs", "build_final_hp", "live_slip_engine", "ud_live_slip_engine", "build_market_anchor", "apply_market_anchor",
+                    "archive_live_boards", "certify_pipeline", "build_slip_engine", "build_availability_delta", "build_price_shop_ledger"]:
+              try:
+                  importlib.import_module(m)
+              except SystemExit:
+                  pass
+              except Exception as e:
+                  bad.append((m, type(e).__name__, str(e)[:120]))
+          print("import failures:", bad or "none")
+          sys.exit(1 if bad else 0)
+          EOF
+      - name: Commit path (no push) - the files P3 writes are added and committed
+        run: |
+          set -euo pipefail
+          echo '{"meta": {"test": true}, "rows": []}' > nba/data/nba_injury_report_current.json
+          echo '{"test": true}' > boards/zz_checkout_speed_test.json
+          git config user.name "ci"; git config user.email "ci@example.invalid"
+          git add nba/data/*.json boards/*.json
+          git diff --cached --name-only
+          git commit -q -m "speed test (never pushed)"
+          git show --stat --oneline HEAD | head -8
+          n=$(git show --name-only --format= HEAD | grep -cE 'nba/data/nba_injury_report_current.json|boards/zz_checkout_speed_test.json')
+          [ "$n" = "2" ] && echo "COMMIT_PATH_OK both files committed" || { echo "COMMIT_PATH_FAIL"; exit 1; }
+          git ls-files nba/data | wc -l | xargs echo "tracked nba/data files (all, incl. excluded):"
+          git fetch -q origin main && git rebase -q origin/main && echo "REBASE_OK onto origin/main (the push script's conflict path)"
+  claim:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /nba/pipeline_claim.py
+      - run: |
+          echo "C_CLAIM checkout seconds $(( $(date +%s) - T0 ))"; ls -R nba | head; python3 -c "import ast;ast.parse(open('nba/pipeline_claim.py').read());print('claim script present and parses')"
