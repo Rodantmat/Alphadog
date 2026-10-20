@@ -24,7 +24,13 @@ WITH bs AS (
         FROM nba_score.board_scored b0
         LEFT JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
                                             AND th.line = b0.line AND th.side = b0.side
-        WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[])) b
+        WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[])
+          -- UNDERDOG PLACEABILITY (2026-10-20): an alternate rung of a prediction-market line is in the feed but not offered in the app,
+          -- so it is not shown (nba_market.ud_line_flags, written by the archiver; tunable nba_main_ui.ud_alt_policy.hide_prediction_market_alts)
+          AND NOT (b0.app = 'underdog'
+                   AND coalesce((SELECT config_json->'ud_alt_policy'->>'hide_prediction_market_alts' FROM nba_config.classification_config WHERE config_key = 'nba_main_ui'), 'true') <> 'false'
+                   AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf JOIN unnest($3::text[], $4::text[]) um0(market_key, prop) ON um0.market_key = uf.base_market
+                               WHERE uf.game_date = b0.game_date AND uf.hide AND uf.player = b0.player AND uf.line = b0.line AND um0.prop = b0.prop))) b
   WHERE true ${where || ""}
   ORDER BY b.score DESC, b.final_hp DESC, b.player, b.prop, b.line, b.side
   LIMIT ${Number(limit) || 200}),
