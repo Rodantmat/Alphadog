@@ -577,7 +577,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   const inSlip = new Set(slips.flatMap(s => s.legs.map(l => l.board_row_id)));
   const pool = [];
   for (const app of ["prizepicks", "underdog"]) {
-    pool.push(...board.filter(l => l.source_key === app && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore)
+    pool.push(...board.filter(l => l.source_key === app && !l.ud_hidden && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore)
       .sort((a, b) => Number(b.final_hp_raw) - Number(a.final_hp_raw)).slice(0, size)
       .map(l => slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name) })));
   }
