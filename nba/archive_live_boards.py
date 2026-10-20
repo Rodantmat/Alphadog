@@ -148,6 +148,26 @@ def rows_prizepicks(doc, gd, label):
     return out
 
 
+# UNDERDOG PLACEABILITY (2026-10-20, owner: "just one leg matched ... the other ones were completely different"). Underdog's feed lists
+# alternate rungs (`alternate_projections`) for every line flagged has_alternates, but on opening day the pick'em app showed the up/down
+# arrows only on rows whose over_under is NOT a prediction_market line (Collins PRA, Champagnie PRA); George / Pritchard PRA, Collins
+# assists and Champagnie points - prediction_market true, provider kalshi / udx - had alternates in the feed and none in the app (7 of 7
+# rows compared), and the P5 2-pick was built from exactly such rungs. So each archived Underdog row is flagged here, per (market_key,
+# player, line): hide = an ALTERNATE rung of a prediction_market line. Written to nba_market.ud_line_flags beside the board rows;
+# read by ud_live_slip_engine.py and the main UI (tunable nba_main_ui.ud_alt_policy). Nothing about the archived rows themselves changes.
+UD_FLAGS = {}
+
+
+def _ud_line_flags(doc):
+    ou_of_line, pm_of_ou = {}, {}
+    for r in doc.get("raw_lines") or []:
+        ou = r.get("over_under") or {}
+        if ou.get("id"):
+            ou_of_line[r.get("id")] = ou["id"]
+            pm_of_ou[ou["id"]] = (bool(ou.get("prediction_market")), r.get("provider_id"))
+    return ou_of_line, pm_of_ou
+
+
 def rows_underdog(doc, gd, label):
     # §31s G4 (2026-10-05): Underdog display stat -> the canonical key the certified rows use (the 2025-26 Underdog window rows came
     # from the Odds API: player_threes, player_points_rebounds_assists, ...). The old naive "player_" + display-stat key archived
