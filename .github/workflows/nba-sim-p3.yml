@@ -1,0 +1,58 @@
+name: NBA Full Game-Day Simulation (P2B model build + P3 chain, rolled back)
+
+# Owner 2026-10-19: "run, score a full slate, a real simulation and understand timeline if it fits the deadlines". Runs the REAL P2B
+# model build and the REAL P3 chain for a slate that has not run, over one shared transaction that is ROLLED BACK (nba/sim_p3_full.py
+# documents the mechanism, what is and is not simulated). Nothing is claimed, committed to the repo, or left in production; the last
+# step verifies production holds nothing for the slate. Never run it for a slate that has already run (the driver aborts), never
+# concurrently with an audit_season_replay.
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        default: "2026-10-20"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-sim-p3
+  cancel-in-progress: false
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PROXY_URL: ${{ secrets.PROXY_URL }}
+      SIM_DATE: ${{ github.event.inputs.date }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install (timed - the real P3 pays this on every run)
+        run: |
+          T0=$(date +%s)
+          python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber pyyaml
+          echo "SIM_SETUP_S=$(( $(date +%s) - T0 ))" >> "$GITHUB_ENV"
+      - name: Simulate
+        run: python -u nba/sim_p3_full.py
+      - name: Production must be untouched (independent check)
+        if: always()
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          d = os.environ["SIM_DATE"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              r = {t: c.execute(f"SELECT count(*) FROM {t} WHERE game_date=%s", (d,)).fetchone()[0]
+                   for t in ("nba_score.baseline_history", "nba_score.final_hp", "nba_score.board_scored", "nba_score.live_slips", "nba_score.ud_live_slips", "nba_score.paper_picks")}
+              pr = c.execute("SELECT count(*) FROM nba_control.pipeline_runs WHERE run_key=%s AND pipeline IN ('P2B','P3')", (d,)).fetchone()[0]
+              left = c.execute("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND state LIKE 'idle in transaction%%' AND xact_start < now() - interval '5 minutes'").fetchone()[0]
+          print("PRODUCTION AFTER (independent):", r, "pipeline_runs", pr, "stale idle-in-transaction sessions", left)
+          if any(r.values()) or pr:
+              raise SystemExit("PRODUCTION WAS TOUCHED")
+          EOF
