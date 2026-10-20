@@ -327,7 +327,8 @@ export async function apiFilters(sql, cfg, slate, version) {
     prop_group_labels: { hitter: "Single Stat Props", pitcher: "Combo Props" },
     source_groups: {
       prizepicks: ts.filter(t => t.source_key === "prizepicks"), sleeper: ts.filter(t => t.source_key === "sleeper"),
-      underdog: ts.filter(t => t.source_key === "underdog"), other: []
+      underdog: ts.filter(t => t.source_key === "underdog"), fliff: ts.filter(t => t.source_key === "fliff"),
+      betr: ts.filter(t => t.source_key === "betr"), other: []
     },
     probability_bands: [], probability_grades: [], board_tiers: [], writes_performed: 0, timestamp_utc: new Date().toISOString()
   };
