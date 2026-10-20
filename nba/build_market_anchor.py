@@ -41,6 +41,14 @@ import numpy as np
 import psycopg
 from psycopg.rows import dict_row
 
+# SPORTSBOOK ANCHOR BOOKS (2026-10-20): DraftKings alone left legs unanchored whenever DraftKings did not price the prop (SGA points on
+# opening night - Bovada did). MA_BOOKS = the books in priority order; for each player-prop the FIRST book that prices it gives the
+# main line (its own line closest to 50/50 no-vig). Default draftkings = the certified fit, unchanged. A wider list must pass this
+# script's out-of-sample gate before it is used live (nba-market-anchor.yml books input, report first).
+MA_BOOKS = [b.strip() for b in os.environ.get("MA_BOOKS", "draftkings").split(",") if b.strip()]
+assert all(b.replace("_", "").isalnum() for b in MA_BOOKS), "MA_BOOKS: plain book keys only"
+_BOOKS_SQL = "ARRAY[" + ",".join("'" + b + "'" for b in MA_BOOKS) + "]::text[]"
+
 FEATURE_SQL = """WITH mk(prop, mkey) AS (VALUES ('points','player_points'),('rebounds','player_rebounds'),('assists','player_assists'),('threes_made','player_threes'),
    ('pra','player_points_rebounds_assists'),('pts_reb','player_points_rebounds'),('pts_ast','player_points_assists'),('reb_ast','player_rebounds_assists'),
    ('steals','player_steals'),('blocks','player_blocks'),('turnovers','player_turnovers'),('stocks','player_blocks_steals')),
