@@ -144,7 +144,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   const beBase = 0.56;
   // SLEEPER (2026-10-18, owner comparing the app): its multiplier is the pick's own PRICE (a slip pays the product), so the leg
   // breaks even at 1 / m - 0.56 / m (the modifier rule of PrizePicks / Underdog) put a 1.87x Sleeper leg's break-even at 30%.
-  const breakeven = r.app === "sleeper" && legFactor && legFactor > 1 ? Math.min(0.99, 1 / legFactor)
+  const breakeven = (r.app === "sleeper" || r.app === "fliff") && legFactor && legFactor > 1 ? Math.min(0.99, 1 / legFactor)
     : (legFactor && legFactor > 0 ? Math.min(0.99, beBase / legFactor) : beBase);
   // THE NUMBER THE APP SHOWS (2026-10-18, owner: "scores does not match"): Underdog's pick screen shows a per-pick price
   // (1.87x on a balanced line, 4.42x / 1.15x on a ladder rung), not the payout modifier (1.00 / 2.36 / 0.62) the slip is priced
