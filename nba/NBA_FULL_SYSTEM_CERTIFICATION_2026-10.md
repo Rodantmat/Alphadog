@@ -2484,3 +2484,24 @@ pricing sits behind login (no Underdog credential exists in the store). The engi
 (if the 1.04 is real, Underdog slips pay 4% more than the engine assumes; it can never make a slip look better than it is). Two ways
 to close it: the owner opens Underdog, adds two picks showing 1.00x and reads the payout (3.50x = no constant, 3.64x = 1.04 is real),
 or exports an Underdog session once (as for Betr) so a read-only quote probe can price entries the way probe_betr_quote does.
+
+**10. Owner 17:30 PT: "be sure the system is ready for Fliff and for Betr just as the other apps ... all making their way to the final
+board and following every single step on the sequence."** Traced scrape -> archive -> score -> price-shop -> board for both, against
+PrizePicks / Underdog / Sleeper. **Fliff (verified against the owner's screenshot, probe_fliff_nba_lines.py run 39344520965):** Tatum
+26.5 1.80/1.80, Cunningham 24.5 1.90/1.80, Duren 17.5 1.90/1.75, White 15.5 - lines and both prices equal the app; 860 legs / 41 players
+for 10-20, one line per player-market (the feed carries no alternates; the in-app line picker is not in it). P3 scrapes and archives
+Fliff itself before the scorer, so it is scored with the rest. **Two gaps found and fixed.** (a) **Betr never reached the scorer.** Its
+board is harvested by its own workflow (dispatched by P3) and archives itself 'window' minutes AFTER P3 scores; the scorer also drops
+Betr's earlier routine / probe rows once any window row exists. New `nba/p3_wait_betr.py` step ("Wait for the Betr window board",
+before the scorer): polls for the Betr window rows, stops the moment they land or the dispatched harvest run completes without them,
+capped by tunable `classification_config['p3_betr_wait']` (max_wait_s 360, poll_s 15, stop 14 min before the first tip), soft, reads
+only, one verdict line `BETR_WAIT|...` in the log. (b) **The final board showed only PrizePicks / Underdog / Sleeper.** Fliff and Betr
+legs were scored and in the price-shop ledger but not in the interface. UI v1.4.22: `nba_main_ui.apps` + `dfs_books` + documented line
+types now include fliff and betr (config, reversible); Fliff and Betr filter groups on the board; a Fliff leg shows its own decimal price
+(from its American odds), is priced like a Sleeper pick (factor = decimal, breaks even at 1 / decimal: -120 -> 54.5%, +105 -> 48.8%,
+offline check) and Betr rows list as regular legs at the standard break-even. Test: C1 totals count the new groups; main-ui test run
+39349406850 105/105 on the new config. **Not built, on purpose:** the interface's slip BUILDER and the engines still build PrizePicks /
+Underdog / Sleeper slips only; Fliff and Betr stay paper / price-shop boards (COMPASS 136, owner-confirmed 10-08), Betr slips are priced
+on its own server after the pick (`probe_betr_quote_engine.py`, 11:56 PT check). **Unproven until 10-20:** the Fliff / Betr board rows
+on LIVE scored data (today's UI test ran on a past slate) - the 11:50 PT check verifies `BETR_WAIT`, Fliff / Betr rows in board_scored,
+and the board's Fliff / Betr groups.
