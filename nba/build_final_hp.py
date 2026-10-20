@@ -318,26 +318,7 @@ def main():
         # ~270 MB to disk - 20-28 s of every P3 market refresh. confidence has ~1,065 distinct values, so the population is read as
         # (value, count) pairs (hash aggregate) and the SAME percentile_cont is computed exactly here: Postgres' float8 rule
         # first + (second - first) x proportion at position p x (N - 1), each numeric cast to float8 - bit-identical cutpoints.
-        vc = conn.execute("""SELECT confidence::float8, count(*) FROM nba_score.final_hp
-                             WHERE confidence IS NOT NULL
-                               AND (CASE WHEN %(d)s <> '' THEN game_date <> NULLIF(%(d)s, '')::date
-                                         ELSE NOT (season = ANY(%(s)s)) END)
-                             GROUP BY 1 ORDER BY 1""", {"d": FE_DATE, "s": seasons}).fetchall()
-        cand = None
-        if vc:
-            vals = [float(v) for v, _ in vc]
-            ends = list(np.cumsum([int(c) for _, c in vc]))
-            n_all = int(ends[-1])
-
-            def _at(i):
-                return vals[int(np.searchsorted(ends, i, side="right"))]
-            cand = []
-            for p in (0.25, 0.50, 0.75):
-                pos = p * (n_all - 1)
-                f = int(np.floor(pos))
-                fr = pos - f
-                a = _at(f)
-                cand.append(a + (_at(min(f + 1, n_all - 1)) - a) * fr if fr > 0 else a)
+        cand = conf_cutpoints(conn, FE_DATE, seasons)
         if cand is not None:
             if len(set(cand)) == 3:
                 CUTS = sorted(cand)
