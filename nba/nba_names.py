@@ -39,6 +39,9 @@ NAME_OVERRIDES = {
     "jameshuff": "jayhuff",
     "mohamedbamba": "mobamba",
     "vincentwilliams": "vincewilliams",
+    # Confirmed 2026-10-20 (opening-day audit): Underdog lists Miles McBride (NYK, id 1630540) by his nickname; 13 morning
+    # legs carried no player_id and would have been dropped from the scorer on every Underdog board.
+    "deucemcbride": "milesmcbride",
 }
 
 
