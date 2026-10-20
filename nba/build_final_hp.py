@@ -252,7 +252,11 @@ def main():
     # prop / n_books. Resolved through nba_ref.player_name_map, the same map the grader uses.
     nm = pd.read_sql("SELECT norm_name, player_id FROM nba_ref.player_name_map", conn)
     name_to_id = dict(zip(nm["norm_name"], nm["player_id"].astype(str)))
-    rm = pd.read_sql("""SELECT game_date, player, market, line, books FROM nba_market.rung_market""", conn)
+    # SLATE-SCOPED READ (2026-10-20, P3 speed-up): every lookup key carries the leg's game_date, and with FE_DATE set every leg
+    # built is on FE_DATE, so only that date's rows can ever match - the full 1.1M-row read was 11 s of each P3 refresh.
+    # Season rebuilds (no FE_DATE) still read everything. (Only the 'priced rungs' count printed below changes.)
+    rm = pd.read_sql("SELECT game_date, player, market, line, books FROM nba_market.rung_market"
+                     + (" WHERE game_date = %s::date" if FE_DATE else ""), conn, params=((FE_DATE,) if FE_DATE else None))
     mkt_rung = {}
     if not rm.empty:
         rm["game_date"] = pd.to_datetime(rm["game_date"]).dt.date
