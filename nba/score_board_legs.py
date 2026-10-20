@@ -182,6 +182,17 @@ def main():
         board = board[~board["snapshot_label"].str.lower().isin(["routine", "morning", "probe"])].copy()
         print(f"  window board present: {n0 - len(board):,} routine/morning legs dropped, {len(board):,} kept "
               f"(labels {sorted(_present)})", flush=True)
+    # BETR PARKED (owner 2026-10-19 22:55 PT: "leave betr out for now"). classification_config['p3_betr_wait'].enabled = false drops
+    # Betr's rows (betr, betr_us_dfs) from the scored board - they would otherwise count in f_books and add a book to every leg they
+    # share with the other apps. true (or no row) restores scoring.
+    _bp = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='p3_betr_wait'").fetchone()
+    _bpj = (_bp[0] if _bp else None) or {}
+    if isinstance(_bpj, str):
+        _bpj = __import__("json").loads(_bpj)
+    if _bpj.get("enabled", True) is False:
+        n0 = len(board)
+        board = board[~board["app"].str.lower().isin(["betr", "betr_us_dfs"])].copy()
+        print(f"  Betr PARKED (p3_betr_wait.enabled=false): {n0 - len(board):,} Betr legs not scored", flush=True)
     # BS_APPS (documented in the header since the first version, never read until 2026-09-26). Blank =
     # every app, which is the production default; a comma list restricts a replay or a test.
     _apps = [a.strip().lower() for a in os.environ.get("BS_APPS", "").split(",") if a.strip()]
