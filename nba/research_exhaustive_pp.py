@@ -239,6 +239,41 @@ def main():
     by2 = {s: [r for r in rows2 if r["season"] == s] for s in SEASONS}
     B = run_direction(by2["2025-26"], by2["2024-25"], "train 25-26 -> test 24-25")
 
+    # NESTED (honest) SELECTION: choose patterns on the TRAIN season alone (in-sample: legs ranked by that season's own cells,
+    # graded on that season), then read the chosen patterns' results on the OTHER season. This is the number to plan on -
+    # the both-direction leaderboard below picks patterns with both test seasons in view.
+    if os.environ.get("EX_NESTED", "1") == "1":
+        rows3 = [dict(r) for r in rows]
+        by3 = {s: [r for r in rows3 if r["season"] == s] for s in SEASONS}
+        IS_A = run_direction(by3["2024-25"], by3["2024-25"], "in-sample 24-25")
+        rows4 = [dict(r) for r in rows]
+        by4 = {s: [r for r in rows4 if r["season"] == s] for s in SEASONS}
+        IS_B = run_direction(by4["2025-26"], by4["2025-26"], "in-sample 25-26")
+        print("\n=== NESTED SELECTION: top-K patterns chosen on ONE season (in-sample), results on the OTHER (out of sample) ===")
+        for isr, oos, lab in ((IS_A, A, "choose on 24-25 -> play 25-26"), (IS_B, B, "choose on 25-26 -> play 24-25")):
+            for st in ("power", "flex"):
+                for size_f in (None, 2, 3, 4, 5, 6):
+                    cand = [(k, v) for k, v in isr.items() if k[1] == st and v["days"] >= MIN_DAYS and (size_f is None or len(k[0]) == size_f)]
+                    cand.sort(key=lambda kv: -(kv[1]["ret"] / kv[1]["stake"]))
+                    for K in (1, 5, 20, 100):
+                        sel = [k for k, _ in cand[:K] if oos.get(k) and oos[k]["stake"] > 0]
+                        if not sel:
+                            continue
+                        is_roi = sum(isr[k]["ret"] for k in sel) / sum(isr[k]["stake"] for k in sel) - 1
+                        stake = sum(oos[k]["stake"] for k in sel)
+                        roi = sum(oos[k]["ret"] for k in sel) / stake - 1
+                        nd = 1 + max(max(oos[k]["didx"]) for k in sel if len(oos[k]["didx"]))
+                        prof, stk = np.zeros(nd), np.zeros(nd)
+                        for k in sel:
+                            ii = np.array(oos[k]["didx"], int)
+                            np.add.at(prof, ii, np.array(oos[k]["daily"], float))
+                            np.add.at(stk, ii, 1.0)
+                        keep = stk > 0
+                        lb = boot_lb(list(prof[keep]), list(stk[keep])) if keep.sum() >= 5 else None
+                        top = "+".join(sel[0][0])
+                        print(f"{lab} | {st:5s} size {size_f or 'any'} top-{K:<3d} | in-sample {100 * is_roi:+6.1f}% | OUT-OF-SAMPLE {100 * roi:+6.1f}% "
+                              f"(LB5 {100 * lb:+.1f}%) | #1 {top}" if lb is not None else f"{lab} | {st} size {size_f} top-{K} | OOS {100 * roi:+.1f}%", flush=True)
+
     out = []
     for key in A:
         a, b = A[key], B.get(key)
