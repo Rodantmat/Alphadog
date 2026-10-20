@@ -266,9 +266,10 @@ def run_direction(train, test, label):
                 continue
             has_alt = any(abs(x["factor"] - 1.0) > 1e-9 for x in slip)
             for st in ("power", "flex"):
-                # 2-pick Flex exists (2x / 0.5x) for all-standard slips; a 2-pick Flex WITH a goblin / demon has no quote-derived
-                # tiers (flex_alt_tiers starts at 3 picks) - unpriced, so not graded (it would read as a certain loss)
-                if st == "flex" and len(slip) == 2 and has_alt:
+                # 2-pick Flex exists (2x / 0.5x) for all-standard slips; a 2-pick Flex WITH a goblin / demon has no production
+                # tier (flex_alt_tiers starts at 3 picks): graded from PrizePicks' own 2-pick Flex quotes when EX_FLEX2_ALT=1
+                # (install_flex2_alt), else left unpriced and not graded (it would read as a certain loss)
+                if st == "flex" and len(slip) == 2 and has_alt and not FLEX2_ON:
                     continue
                 hits, pay = SE.grade(slip, st)
                 r = res[(bp, st)]
