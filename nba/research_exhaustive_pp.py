@@ -247,9 +247,11 @@ def run_direction(train, test, label):
 def mix_key(bp):
     g = sum(1 for b in bp if b.startswith("G"))
     dm = sum(1 for b in bp if b.startswith("D"))
+    ug = sum(1 for b in bp if b == "UG")
+    ud = sum(1 for b in bp if b == "UD")
     u = sum(1 for b in bp if b.endswith("_U"))
     o = sum(1 for b in bp if b.endswith("_O"))
-    return f"{len(bp)}p R{o}O/{u}U G{g} D{dm}"
+    return f"{len(bp)}p R{o}O/{u}U G{g} D{dm}" + (f" gL{ug} dL{ud}" if ALT_LESS else "")
 
 
 def main():
