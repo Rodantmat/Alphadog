@@ -58,8 +58,8 @@ pf AS (SELECT DISTINCT ON (p.player, mk.prop, p.side, p.line) p.player, mk.prop,
        ORDER BY p.player, mk.prop, p.side, p.line, array_position($5::text[], p.snapshot_label) NULLS LAST),
 um AS (SELECT DISTINCT ON (s.bookmaker, s.player, mk.prop, s.side, s.line) s.bookmaker, s.player, mk.prop, s.side, s.line, s.multiplier, s.price
        FROM nba_market.board_snapshots s JOIN mk ON mk.market_key = regexp_replace(s.market_key, '_(alternate|promo)$', '')
-       WHERE s.game_date = $1::date AND s.bookmaker IN ('underdog', 'sleeper')
-         AND s.player IN (SELECT DISTINCT player FROM bs WHERE app IN ('underdog', 'sleeper'))
+       WHERE s.game_date = $1::date AND s.bookmaker IN ('underdog', 'sleeper', 'fliff')
+         AND s.player IN (SELECT DISTINCT player FROM bs WHERE app IN ('underdog', 'sleeper', 'fliff'))
        ORDER BY s.bookmaker, s.player, mk.prop, s.side, s.line, array_position($5::text[], s.snapshot_label) NULLS LAST, s.fetched_at DESC)
 SELECT bs.game_date::text game_date, bs.app, bs.player_id, bs.player, bs.prop, bs.line::float line, bs.side, bs.final_hp::float final_hp,
        bs.model_hp::float model_hp, bs.model_score::float model_score, bs.market_hp::float market_hp, bs.hp_anchor, bs.dk_line::float dk_line,
