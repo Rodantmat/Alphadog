@@ -284,7 +284,8 @@ def main():
             r["factor"] = less_price(r.pop("f_over"), r["tier"])
             st_ = r.pop("stat_actual")
             r["hit"] = None if st_ is None or st_ == r["line"] else int(st_ < r["line"])
-        print(f"goblin / demon Less legs SIMULATED: {len(alt):,} (bottom-10 of the More ranking under any key; tiers 1-2; "
+        print(f"goblin / demon Less legs SIMULATED: {len(alt):,} (bottom-10 of the More ranking under any key; rungs PrizePicks opens: "
+              f"quote-level More p {LESS_PMIN}-{LESS_PMAX}; "
               f"points / pra / rebounds / assists)", flush=True)
         rows += alt
     # the final 7 days of each regular season are never staked (engine H6, measured -40%): left out of train and test
