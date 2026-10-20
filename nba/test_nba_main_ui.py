@@ -232,7 +232,7 @@ def api_checks(conn, cfg):
     leg = rows[0]
     code, dos, t = curl("/api/main-board/dossier?final_board_row_id=" + leg["final_board_row_id"]); save_sample("dossier", dos)
     ctx = dos.get("dossier_context") or {}
-    nlines = conn.execute("SELECT count(*) FROM nba_score.board_scored WHERE game_date=%s AND app = ANY(%s) AND player_id=%s", (leg["official_date"], cfg["apps"], leg["player_id"])).fetchone()[0]
+    nlines = conn.execute("SELECT count(*) FROM nba_score.board_scored b0 WHERE b0.game_date=%s AND b0.app = ANY(%s) AND b0.player_id=%s AND NOT " + ud_hide_sql(cfg, "b0"), (leg["official_date"], cfg["apps"], leg["player_id"])).fetchone()[0]
     check("C7 dossier: selected leg + every line of the player", code == 200 and dos.get("selected", {}).get("final_board_row_id") == leg["final_board_row_id"] and len(ctx.get("hp_lines", [])) == nlines,
           f"{t}s lines {len(ctx.get('hp_lines', []))} db {nlines}")
     last = conn.execute("""SELECT max(game_date)::text FROM (SELECT game_date FROM nba_stats.player_game_log WHERE player_id=%s AND game_date < %s
