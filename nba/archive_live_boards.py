@@ -139,8 +139,18 @@ def rows_prizepicks(doc, gd, label):
         # standard line is the ANCHOR every goblin / demon of that prop is priced from, and line_score is the real standard
         # line (the flash line is a separate promo offer, not archived). Whether an adjusted-odds standard pays 1.0x is
         # unquoted - open item: one standard quote per payout-map run.
-        for side, price in (("Over", -137 if odds_type != "demon" else 100),
-                            ("Under", -137 if odds_type == "standard" else None)):
+        # SIDES OFFERED (2026-10-20): PrizePicks now states per projection which sides are open - allowed_wager_types 'over'
+        # (More only: 165 standards on the opening board, the taco promo among them) or 'under_or_over'. Goblins and demons
+        # carry 'under_or_over' on ~39% of tier-1 rungs (Points / PRA / Rebounds / Assists) - a goblin or demon taken LESS,
+        # quoted by PrizePicks at 3.25x (goblin Less + standard) and the 1.7x floor (demon Less + standard). Rows follow the
+        # flag exactly: no Less row where Less is closed, a Less row on an alternate where it is open (build_board_tiers_v2's
+        # four-way rule labels it: below the anchor + Less = the harder side, above + Less = the easier side). A projection
+        # without the field (older payloads) keeps the previous rule: standards both sides, alternates More only.
+        allowed = str(a.get("allowed_wager_types") or "").lower()
+        less_open = (allowed == "under_or_over") if allowed else (odds_type == "standard")
+        more_open = allowed != "under"
+        for side, price in (("Over", (-137 if odds_type != "demon" else 100) if more_open else None),
+                            ("Under", (-137 if odds_type == "standard" else 100) if less_open else None)):
             if price is None:
                 continue
             out.append((gd, ev("prizepicks", gd, a, "game_id", "start_time"), label, a.get("board_time") or a.get("start_time"), "prizepicks", mk,
