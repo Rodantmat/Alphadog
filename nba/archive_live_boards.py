@@ -146,6 +146,13 @@ def rows_prizepicks(doc, gd, label):
         # flag exactly: no Less row where Less is closed, a Less row on an alternate where it is open (build_board_tiers_v2's
         # four-way rule labels it: below the anchor + Less = the harder side, above + Less = the easier side). A projection
         # without the field (older payloads) keeps the previous rule: standards both sides, alternates More only.
+        # PROMO / TACO LINES (2026-10-20, owner screenshots: Jaylen Brown PRA taco 23.5 from 30.5, SGA points 22.5 from 29.5):
+        # a discounted line PrizePicks posts on a standard projection (is_promo, flash_sale_line_score, discount_name 'taco',
+        # More only). Archived under its own bookmaker 'prizepicks_promo' so it can never be read as a PrizePicks goblin
+        # (its payout rule is not quoted yet) - research and the board's promo view read it from there.
+        if a.get("is_promo") and a.get("flash_sale_line_score") is not None:
+            out.append((gd, ev("prizepicks", gd, a, "game_id", "start_time"), label, a.get("board_time") or a.get("start_time"),
+                        "prizepicks_promo", mk, who, "Over", float(a["flash_sale_line_score"]), -137, None, None, None, a.get("start_time")))
         allowed = str(a.get("allowed_wager_types") or "").lower()
         less_open = (allowed == "under_or_over") if allowed else (odds_type == "standard")
         more_open = allowed != "under"
