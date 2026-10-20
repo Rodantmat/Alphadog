@@ -145,18 +145,42 @@ def main():
             print(f"  {MAIN_PROP[key]:<12} {s:<8} {len(e):>7,} {err.mean():>+6.2f} {np.mean(np.abs(err) <= 0.5):>10.3f} {np.mean(np.abs(err) <= 1.0):>6.3f} "
                   f"{o_r.mean():>9.3f} {o_d.mean():>12.3f} {np.mean(o_r == o_d):>11.3f}", flush=True)
 
+    # STEP 1b - SEASON-START CORRECTION (2026-10-20 first run: the one-board r is biased LOW on the high-volume props - points
+    # -1.2, PRA -1.9 - because opening-night lines sit lower against the base than mid-season lines; Over inflated 5-9 points).
+    # r_hist = the median of (real historical line / as-of base) per main prop; s = r_hist / r_live. A derived prop borrows the s of
+    # its nearest main prop (FAMILY), so r_corrected = r_live x s. Reported next to the raw rate - neither is a certified edge.
+    FAMILY = {"player_fantasy_points": "player_points_rebounds_assists", "player_fga": "player_points", "player_fgm": "player_points",
+              "player_fta": "player_points", "player_ftm": "player_points", "player_two_pointers_attempted": "player_points",
+              "player_two_pointers_made": "player_points", "player_threes_attempted": "player_threes", "player_oreb": "player_rebounds",
+              "player_dreb": "player_rebounds", "player_personal_fouls": "player_turnovers"}
+    s_corr = {}
+    print("\nSTEP 1b - season-start correction s = r_hist / r_live per main prop (history: both seasons, as-of base):", flush=True)
+    for key, col in MAIN.items():
+        if key not in ratios:
+            continue
+        d = real[real.prop == MAIN_PROP[key]].merge(gl[["pid", "game_date", f"b_{col}"]], on=["pid", "game_date"], how="inner")
+        d = d[np.isfinite(d[f"b_{col}"]) & (d[f"b_{col}"] > 0.2)]
+        if len(d) < 200:
+            continue
+        r_hist = float(np.median(d.line / d[f"b_{col}"]))
+        s_corr[key] = r_hist / ratios[key]
+        print(f"  {MAIN_PROP[key]:<12} r_live {ratios[key]:.3f}  r_hist {r_hist:.3f}  s {s_corr[key]:.3f}", flush=True)
+
     # STEP 2 - the unmapped props at their derived lines
-    print("\nSTEP 2 - UNMAPPED PROPS at the derived line (as-of base, r from the live board): Over rate per season, legs with a prior season", flush=True)
-    print(f"  {'market':<34} {'r':>6} {'season':<8} {'n':>7} {'mean line':>9} {'over':>6} {'under':>6}", flush=True)
+    print("\nSTEP 2 - UNMAPPED PROPS at the derived line (as-of base): Over rate per season - RAW (r from the live board) and CORRECTED "
+          "(r x s of the family's main prop); legs of players averaging 15+ minutes before the game", flush=True)
+    print(f"  {'market':<34} {'family s':>8} {'season':<8} {'n':>7} {'line raw':>8} {'over raw':>8} {'line corr':>9} {'over corr':>9} {'under corr':>10}", flush=True)
     for key, col in DERIVED.items():
         if key not in ratios:
             continue
         gl[f"b_{col}"] = base_series(gl, col)
+        sc = s_corr.get(FAMILY.get(key), 1.0)
         for s in ("2024-25", "2025-26"):
             e = gl[(gl.season == s) & np.isfinite(gl[f"b_{col}"]) & (gl[f"b_{col}"] > 0.2) & (gl["min_asof"] >= 15)]
             dl = np.floor(ratios[key] * e[f"b_{col}"]) + 0.5
-            ov = (e[col] > dl).mean()
-            print(f"  {key:<34} {ratios[key]:>6.3f} {s:<8} {len(e):>7,} {dl.mean():>9.2f} {ov:>6.3f} {1 - ov:>6.3f}", flush=True)
+            dc = np.floor(ratios[key] * sc * e[f"b_{col}"]) + 0.5
+            ov, oc = (e[col] > dl).mean(), (e[col] > dc).mean()
+            print(f"  {key:<34} {sc:>8.3f} {s:<8} {len(e):>7,} {dl.mean():>8.2f} {ov:>8.3f} {dc.mean():>9.2f} {oc:>9.3f} {1 - oc:>10.3f}", flush=True)
     print("\nNOT DERIVED: " + "; ".join(f"{k} ({v})" for k, v in NOT_DERIVABLE.items()), flush=True)
     print("\nReading: STEP 1 says how far a one-board calibration can be trusted (same result = the share of legs graded identically at the "
           "derived and the real line). STEP 2's Over rates hold only as far as STEP 1 holds; legs restricted to players averaging 15+ minutes "
