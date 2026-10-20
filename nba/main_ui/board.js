@@ -8,8 +8,16 @@ import { composeLegInsight } from "./insight.js";
 
 const STATS_COLS = "min, pts, reb, ast, fg3m, fg3a, stl, blk, tov, fgm, fga, ftm, fta, oreb, dreb, pf, plus_minus";
 
-// Builds the enriched-leg query. `where` is extra SQL on board_scored alias b (its params start at $6).
-export function legsSql(where, limit) {
+// UNDERDOG PLACEABILITY (2026-10-20): an alternate rung of a prediction-market line is in the feed but was not offered in the app
+// (nba_market.ud_line_flags, written by the archiver; tunable nba_main_ui.ud_alt_policy.hide_prediction_market_alts, default on).
+// The board screens those legs out; the Slips screen loads them unscreened (a slip already built must still resolve its legs) and drops them from its pool.
+const UD_HIDE = a => `(${a}.app = 'underdog'
+          AND coalesce((SELECT config_json->'ud_alt_policy'->>'hide_prediction_market_alts' FROM nba_config.classification_config WHERE config_key = 'nba_main_ui'), 'true') <> 'false'
+          AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf JOIN unnest($3::text[], $4::text[]) um0(market_key, prop) ON um0.market_key = uf.base_market
+                      WHERE uf.game_date = ${a}.game_date AND uf.hide AND uf.player = ${a}.player AND uf.line = ${a}.line AND um0.prop = ${a}.prop))`;
+
+// Builds the enriched-leg query. `where` is extra SQL on board_scored alias b (its params start at $6). `screen` false keeps the unplaceable Underdog legs (flagged ud_hide).
+export function legsSql(where, limit, screen = true) {
   return `
 WITH bs AS (
   -- HONEST PROBABILITY (2026-10-14): final_hp / score / edge are the market-anchored values (nba_score.board_true_hp, written by
