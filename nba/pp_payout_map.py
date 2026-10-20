@@ -556,6 +556,68 @@ def main():
             save("complete (less)")
             return 0
 
+        if MODE == "grid":
+            # GRID (2026-10-20, owner: "test a huge amount of data ... always structures 2, 3, 4, 5 and 6, Flex and Power"): a seeded
+            # random program over EVERY leg type PrizePicks offers today - standard More / Less, goblin / demon More, and the new
+            # goblin / demon LESS (rungs whose allowed_wager_types is under_or_over). A fixed pool of alternates is priced alone
+            # first (section LEG for More, LESS for Less; each with a standard More partner from another game) so every slip's
+            # factors are known; then slips of 2..6 picks (cycled evenly) with 0..3 alternates mixed from the pool + standards,
+            # distinct players, spread over games (section GRID). Every quote returns PrizePicks' Power AND Flex tiers.
+            rng = random.Random(int(os.getenv("PP_GRID_SEED", str(int(time.time()) // 3600))))
+            s_over = [r for r in std if r["allow"] in ("", "over", "under_or_over")]
+            s_under = [r for r in std if r["allow"] in ("", "under_or_over")]
+            g_over, d_over = gob[:], dem[:]
+            g_less = [r for r in gob if r["allow"] == "under_or_over"]
+            d_less = [r for r in dem if r["allow"] == "under_or_over"]
+            for pool_ in (s_over, s_under, g_over, d_over, g_less, d_less):
+                rng.shuffle(pool_)
+            per = max(4, min(15, MAX_Q // 25))
+            alts = ([(r, "over", "go") for r in g_over[:per]] + [(r, "over", "do") for r in d_over[:per]] +
+                    [(r, "under", "gl") for r in g_less[:per]] + [(r, "under", "dl") for r in d_less[:per]])
+            result["meta"].update({"mode": "grid", "alt_pool": len(alts), "std_over": len(s_over), "std_under": len(s_under),
+                                   "goblin_less_open": len(g_less), "demon_less_open": len(d_less)})
+            print(f"GRID|alt pool={len(alts)}|std over={len(s_over)} under={len(s_under)}|goblin less open={len(g_less)}|"
+                  f"demon less open={len(d_less)}|budget={MAX_Q}", flush=True)
+            for r, side, _t in alts:
+                p_ = next((x for x in s_over if x["game"] != r["game"] and x["player"] != r["player"]), None)
+                if p_:
+                    run("LEG" if side == "over" else "LESS", [leg(p_), leg(r, side)])
+            n_slip = 0
+            while True:
+                k = 2 + (n_slip % 5)
+                n_alt = min(k, [0, 1, 1, 2, 2, 3][rng.randrange(6)])
+                chosen, players, games_used = [], set(), {}
+                for r, side, _t in rng.sample(alts, len(alts)):
+                    if len(chosen) >= n_alt:
+                        break
+                    if r["player"] in players or games_used.get(r["game"], 0) >= 2:
+                        continue
+                    chosen.append(leg(r, side))
+                    players.add(r["player"])
+                    games_used[r["game"]] = games_used.get(r["game"], 0) + 1
+                std_pool = [(x, "over") for x in s_over] + [(x, "under") for x in s_under]
+                rng.shuffle(std_pool)
+                for x, side in std_pool:
+                    if len(chosen) >= k:
+                        break
+                    if x["player"] in players or games_used.get(x["game"], 0) >= 2:
+                        continue
+                    chosen.append(leg(x, side))
+                    players.add(x["player"])
+                    games_used[x["game"]] = games_used.get(x["game"], 0) + 1
+                if len(chosen) < k or len({c["game"] for c in chosen}) < 2:
+                    n_slip += 1
+                    if n_slip > 50 * max(1, MAX_Q):
+                        break
+                    continue
+                before = len(result["quotes"])
+                run("GRID", chosen, f"{k} picks, {n_alt} alternates")
+                n_slip += 1
+                if len(result["quotes"]) == before or getattr(q, "n", 0) >= MAX_Q:
+                    break
+            save("complete (grid)")
+            return 0
+
         if MODE == "slips":
             # SLIPS (2026-09-21): multi-pick rules, measured without product noise.
             #  BASE  - all-standard slips at 2..6 picks, one player per TEAM (same game allowed, teams distinct), three
