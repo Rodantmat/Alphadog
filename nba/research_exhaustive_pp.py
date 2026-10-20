@@ -260,6 +260,19 @@ def main():
         cols = [c.name for c in cur.description]
         rows = [dict(zip(cols, r)) for r in cur.fetchall()]
     print(f"legs loaded: {len(rows):,} (top-10 under any rank key, real PrizePicks window board, graded)", flush=True)
+    if ALT_LESS:
+        with psycopg.connect(url) as conn:
+            conn.execute("SET statement_timeout = 0")
+            cur = conn.execute(ALT_LESS_SQL)
+            cols = [c.name for c in cur.description]
+            alt = [dict(zip(cols, r)) for r in cur.fetchall()]
+        for r in alt:
+            r["factor"] = less_price(r.pop("f_over"), r["tier"])
+            st_ = r.pop("stat_actual")
+            r["hit"] = None if st_ is None or st_ == r["line"] else int(st_ < r["line"])
+        print(f"goblin / demon Less legs SIMULATED: {len(alt):,} (bottom-10 of the More ranking under any key; tiers 1-2; "
+              f"points / pra / rebounds / assists)", flush=True)
+        rows += alt
     # the final 7 days of each regular season are never staked (engine H6, measured -40%): left out of train and test
     last = {s: max(r["game_date"] for r in rows if r["season"] == s) for s in SEASONS}
     rows = [r for r in rows if (last[r["season"]] - r["game_date"]).days > 7]
