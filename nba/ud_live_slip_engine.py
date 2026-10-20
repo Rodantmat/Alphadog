@@ -97,7 +97,22 @@ def market_free_score(conn, score, hp, conf, cm):
     return round(min(100.0, max(0.0, float(score) + formula(c_mf) - formula(conf))), 2)
 
 
+def ud_alt_policy_hide(conn):
+    """nba_main_ui.ud_alt_policy.hide_prediction_market_alts (default TRUE): alternate rungs of prediction-market lines are listed in the
+    feed but were not offered in the pick'em app on opening day (2026-10-20, owner: P5 2-pick legs did not exist in the app; 7 of 7 rows
+    compared) - they are kept out of the pool. Flags: nba_market.ud_line_flags (archive_live_boards.py), per archived row."""
+    r = conn.execute("SELECT config_json->'ud_alt_policy'->>'hide_prediction_market_alts' FROM nba_config.classification_config WHERE config_key='nba_main_ui'").fetchone()
+    return not (r and r[0] is not None and str(r[0]).lower() in ('false', 'f', '0'))
+
+
 def load_legs(conn, day):
+    hide = ud_alt_policy_hide(conn)
+    n_flags, n_hide = conn.execute("SELECT count(*), count(*) FILTER (WHERE hide) FROM nba_market.ud_line_flags WHERE game_date=%s AND snapshot_label='window'", (day,)).fetchone()
+    if hide and not n_flags:
+        print(f"  {day}: WARNING - no Underdog line flags for the window board (nba_market.ud_line_flags empty): alternates are NOT screened this run", flush=True)
+    else:
+        print(f"  {day}: Underdog placeability - policy {'HIDE' if hide else 'off'}: {n_hide} of {n_flags} flagged window rows are alternate rungs of prediction-market lines "
+              f"({'left out of the pool' if hide else 'kept in the pool'})", flush=True)
     rows = conn.execute("""
       WITH b AS (
         SELECT b.event_id, nba_ref.norm_name(b.player) pn, b.player, b.market_key, b.side, b.line,
