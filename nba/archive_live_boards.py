@@ -382,7 +382,12 @@ def rows_betr(doc, gd, label):
           "double_double": "player_double_double", "free_throws_made": "player_ftm",
           "field_goals_made": "player_fgm", "three_pointers_attempted": "player_threes_attempted",
           "offensive_rebounds": "player_oreb", "defensive_rebounds": "player_dreb",
-          "personal_fouls": "player_personal_fouls"}
+          "personal_fouls": "player_personal_fouls",
+          # 2026-10-19 Betr debug (real NBA board, 7,730 rows): these four Betr stat names were filed under keys the scorer has no
+          # home for (1,165 rows unscored, 15%). FIELD_GOALS_ATTEMPTED 252, 1ST_QUARTER_REB 196 (prefix strips to REB), FOULS 175,
+          # FREE_THROWS_ATTEMPTED 131. Not mappable (no baseline prop): TWO_POINTERS_MADE / _ATTEMPTS, 1ST_HALF_PRA, TRIPLE_DOUBLE.
+          "field_goals_attempted": "player_fga", "free_throws_attempted": "player_fta", "fouls": "player_personal_fouls",
+          "reb": "player_rebounds"}
     _period = {"1st_quarter_": "_q1", "2nd_quarter_": "_q2", "3rd_quarter_": "_q3", "4th_quarter_": "_q4",
                "1st_half_": "_h1", "2nd_half_": "_h2"}
     _unmapped = set()
