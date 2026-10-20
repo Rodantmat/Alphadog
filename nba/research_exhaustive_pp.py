@@ -90,6 +90,17 @@ HAVING least(min(t.nrev) FILTER (WHERE t.rank_key = 'final_score'), min(t.nrev) 
              min(t.nrev) FILTER (WHERE t.rank_key = 'baseline_hp')) <= 10
 """
 QUOTE_LIFT = {"G": 1 / 0.954, "D": 1 / 0.946}
+# WHICH RUNGS OPEN LESS (measured on the 10-20 board, 500 priced goblin / demon rungs of the four stats): PrizePicks opens Less
+# when the rung's More probability (its price) sits between ~0.30 and ~0.70 - goblins 32/33 open at p 0.55, 0/50 at 0.80;
+# demons 32/33 open at p 0.45, 0/88 at 0.05 - i.e. the near-standard rungs, both payouts inside ~1.4x / 0.7x per leg. Only
+# those rungs are simulated (quote-level p, EX_LESS_PMIN / EX_LESS_PMAX).
+LESS_PMIN = float(os.environ.get("EX_LESS_PMIN", "0.30"))
+LESS_PMAX = float(os.environ.get("EX_LESS_PMAX", "0.70"))
+
+
+def less_open(f_over, tier):
+    p = 0.5 / (f_over * QUOTE_LIFT[tier[1]])
+    return LESS_PMIN <= p <= LESS_PMAX
 LESS_FLOOR = 0.5667
 
 
