@@ -150,7 +150,8 @@ def parse_board(doc):
                      "stat": a.get("stat_type"), "line": float(a["line_score"]),
                      "odds": (a.get("odds_type") or "standard").lower(),
                      "game": str(a.get("game_id") or a.get("start_time")),
-                     "start": a.get("start_time"), "adjusted_odds": a.get("adjusted_odds")})
+                     "start": a.get("start_time"), "adjusted_odds": a.get("adjusted_odds"),
+                     "allow": str(a.get("allowed_wager_types") or "")})
     return rows
 
 
