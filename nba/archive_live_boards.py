@@ -473,6 +473,36 @@ def rows_generic(doc, app, gd, label):
     return out
 
 
+
+def _write_ud_flags(conn, rows):
+    """nba_market.ud_line_flags for exactly the Underdog rows just archived (same date / label as the board rows)."""
+    recs, seen = [], set()
+    for r in rows:
+        f = UD_FLAGS.get((r[5], r[6], float(r[8])))
+        key = (r[0], r[2], r[5], r[6], float(r[8]))
+        if not f or key in seen:
+            continue
+        seen.add(key)
+        base = r[5][:-len("_alternate")] if str(r[5]).endswith("_alternate") else r[5]
+        recs.append((r[0], r[2], r[5], base, r[6], float(r[8]), f[0], f[1], f[2], f[3], f[4]))
+    if not recs:
+        return 0
+    with conn.cursor() as cur:
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_market.ud_line_flags (
+          game_date date NOT NULL, snapshot_label text NOT NULL, market_key text NOT NULL, base_market text NOT NULL, player text NOT NULL,
+          line numeric NOT NULL, is_alt boolean NOT NULL, prediction_market boolean, provider_id text, over_under_id text,
+          hide boolean NOT NULL DEFAULT false, fetched_at timestamptz NOT NULL DEFAULT now(),
+          PRIMARY KEY (game_date, snapshot_label, market_key, player, line))""")
+        cur.executemany("""INSERT INTO nba_market.ud_line_flags
+            (game_date, snapshot_label, market_key, base_market, player, line, is_alt, prediction_market, provider_id, over_under_id, hide)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT (game_date, snapshot_label, market_key, player, line) DO UPDATE SET
+              base_market=EXCLUDED.base_market, is_alt=EXCLUDED.is_alt, prediction_market=EXCLUDED.prediction_market,
+              provider_id=EXCLUDED.provider_id, over_under_id=EXCLUDED.over_under_id, hide=EXCLUDED.hide, fetched_at=now()""", recs)
+    conn.commit()
+    return len(recs)
+
+
 def main():
     label = os.environ.get("ARCHIVE_LABEL", "routine")
     sport = os.environ.get("ARCHIVE_SPORT", "nba")
