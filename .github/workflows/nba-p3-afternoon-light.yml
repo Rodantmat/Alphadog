@@ -106,11 +106,32 @@ jobs:
     outputs:
       soft_failed: ${{ steps.soft.outputs.list }}
     steps:
+      # SPARSE + BLOBLESS CHECKOUT (2026-10-20, P3 speed-up): the full checkout took 108 s on opening night (run 39475555946) for
+      # 1.4 GB of historical nba/data JSON that no P3 step reads (inputs are Postgres or raw URLs; the injury scraper's daily mode
+      # writes nba_injury_report_current.json only). Proven by nba-ci-checkout-speed-test.yml run 39515903959: 7 s vs 88 s,
+      # tree 238 MB vs 1.5 GB, every P3 module imports, a file written to nba/data/ and boards/ is added + committed, rebase OK.
+      # The excluded families are historical only; nba/data/*.json that P3 writes stay inside the pattern (git refuses to add a
+      # path outside a sparse definition and git_push_retry.sh hides that error - keep new P3 outputs out of these names).
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
           persist-credentials: true
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/nba/data/nba_injury_report_20*
+            !/nba/data/nba_matchups*
+            !/nba/data/nba_pairs*
+            !/nba/data/nba_player_game_log*
+            !/nba/data/nba_team_game_log*
+            !/nba/data/nba_starter_status*
+            !/nba/data/nba_game_officials*
+            !/nba/data/nba_baseline_ladder_20*
+            !/nba/data/nba_delta_*
+            !/nba/data/nba_pt_defend*
+            !/nba/data/nba_preseason_logs*
+            !/nba/data/nba_backfill_*
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
