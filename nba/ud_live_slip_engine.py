@@ -119,7 +119,9 @@ def load_legs(conn, day):
                coalesce(b.multiplier, round(((CASE WHEN b.price < 0 THEN 1 + 100.0/(-b.price) ELSE 1 + b.price/100.0 END)/sqrt(3))::numeric, 2))::float m,
                replace(replace(b.market_key,'_alternate',''),'player_','') mk
         FROM nba_market.board_snapshots b
-        WHERE b.bookmaker='underdog' AND b.snapshot_label='window' AND b.game_date=%s)
+        WHERE b.bookmaker='underdog' AND b.snapshot_label='window' AND b.game_date=%s
+          AND NOT (%s::boolean AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf WHERE uf.game_date=b.game_date AND uf.snapshot_label='window'
+                                           AND uf.market_key=b.market_key AND uf.player=b.player AND uf.line=b.line AND uf.hide)))
       SELECT b.event_id, b.pn, nm.player_id, b.mk, b.market_key, b.side, b.line, b.m,
              f.final_hp::float, f.baseline_hp::float, f.score::float, left(pl.position,1), f.confidence::float, f.c_market::float
       FROM b JOIN nba_ref.player_name_map nm ON nm.norm_name = b.pn
