@@ -235,8 +235,8 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   return out;
 }
 
-export async function loadLegs(sql, cfg, slate, { where = "", extra = [], limit = 200, withInsight = true } = {}) {
-  const rows = await q(sql, legsSql(where, limit), legParams(cfg, slate.date, extra), 20000);
+export async function loadLegs(sql, cfg, slate, { where = "", extra = [], limit = 200, withInsight = true, screen = true } = {}) {
+  const rows = await q(sql, legsSql(where, limit, screen), legParams(cfg, slate.date, extra), 20000);
   let games = new Map();
   if (withInsight && rows.length) {
     const pids = [...new Set(rows.map(r => String(r.player_id)).filter(p => /^\d+$/.test(p)))];
