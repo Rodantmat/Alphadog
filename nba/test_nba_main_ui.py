@@ -41,6 +41,14 @@ HB = """(SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line,
                 coalesce(th.true_hp::numeric, b0.final_hp) final_hp, coalesce(th.true_score::numeric, b0.score) score
          FROM nba_score.board_scored b0 LEFT JOIN nba_score.board_true_hp th
            ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop AND th.line = b0.line AND th.side = b0.side) hb"""
+def ud_hide_sql(cfg, a):
+    """SQL for 'this leg is an Underdog alternate rung of a prediction-market line the app does not offer' (2026-10-20), independent of the UI's own query."""
+    pairs = ",".join("('%s','%s')" % (str(k).replace("'", ""), str(v).replace("'", "")) for k, v in cfg["market_to_prop"].items())
+    return (f"({a}.app = 'underdog' AND coalesce((SELECT config_json->'ud_alt_policy'->>'hide_prediction_market_alts' FROM nba_config.classification_config "
+            f"WHERE config_key = 'nba_main_ui'), 'true') <> 'false' AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf JOIN (VALUES {pairs}) um0(market_key, prop) "
+            f"ON um0.market_key = uf.base_market WHERE uf.game_date = {a}.game_date AND uf.hide AND uf.player = {a}.player AND uf.line = {a}.line AND um0.prop = {a}.prop))")
+
+
 REPORT = {"ui": UI, "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "checks": []}
 
 
