@@ -425,6 +425,14 @@ export async function apiHighHit(sql, cfg, url, version) {
   const fullName = new Map(nameKeys.length ? (await q(sql, `SELECT DISTINCT ON (m.norm_name) m.norm_name, p.full_name FROM nba_ref.player_name_map m
       JOIN nba_ref.players p ON p.nba_player_id::text = m.player_id::text WHERE m.norm_name = ANY($1::text[]) ORDER BY m.norm_name, p.active DESC NULLS LAST`,
       [pgArr(nameKeys)])).map(r => [r.norm_name, r.full_name]) : []);
+  // WHOLE-NUMBER LEGS (2026-10-20: KAT PRA 35 on a 5-pick Power showed no probability): the board keeps only half-point lines
+  // (board_scored); whole-number lines are priced in nba_score.final_hp_derived (derivation whole_number / wn_neighbor / ..._nb).
+  // A slip leg with no board row takes its probability and score from there, so the slip still shows a number and an average.
+  const wnPids = [...new Set([...eng.pp, ...eng.ud].flatMap(s => ljOf(s).filter(x => x.player_id).map(x => String(x.player_id))))];
+  const wnMap = new Map(wnPids.length ? (await q(sql, `SELECT player_id, prop, line::float line, side, final_hp::float hp, score::float score, derivation
+      FROM nba_score.final_hp_derived WHERE game_date = $1::date AND player_id = ANY($2::text[])`, [slate.date, pgArr(wnPids)]))
+    .map(r => [[r.player_id, r.prop, Number(r.line), sideIn(r.side)].join("|"), r]) : []);
+  lap("whole_number_hp");
   for (const s of [...eng.pp, ...eng.ud]) {
     const lj = typeof s.legs_json === "string" ? JSON.parse(s.legs_json) : s.legs_json || [];
     const legs = [];
