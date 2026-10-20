@@ -314,14 +314,31 @@ def main():
     # a live slate's cutpoints come only from legs already on record. (conf_tier feeds diagnostics only - no selection reads it.)
     CUTS = None
     try:
-        q = pd.read_sql("""SELECT percentile_cont(ARRAY[0.25,0.50,0.75]) WITHIN GROUP (ORDER BY confidence) AS c
-                           FROM nba_score.final_hp
-                           WHERE confidence IS NOT NULL
-                             AND (CASE WHEN %(d)s <> '' THEN game_date <> NULLIF(%(d)s, '')::date
-                                       ELSE NOT (season = ANY(%(s)s)) END)""",
-                        conn, params={"d": FE_DATE, "s": seasons})
-        if not q.empty and q.iloc[0, 0] is not None:
-            cand = [float(x) for x in q.iloc[0, 0]]
+        # SAME NUMBERS, NO GLOBAL SORT (2026-10-20, P3 speed-up): percentile_cont over 7.8M legs sorted them all and spilled
+        # ~270 MB to disk - 20-28 s of every P3 market refresh. confidence has ~1,065 distinct values, so the population is read as
+        # (value, count) pairs (hash aggregate) and the SAME percentile_cont is computed exactly here: Postgres' float8 rule
+        # first + (second - first) x proportion at position p x (N - 1), each numeric cast to float8 - bit-identical cutpoints.
+        vc = conn.execute("""SELECT confidence::float8, count(*) FROM nba_score.final_hp
+                             WHERE confidence IS NOT NULL
+                               AND (CASE WHEN %(d)s <> '' THEN game_date <> NULLIF(%(d)s, '')::date
+                                         ELSE NOT (season = ANY(%(s)s)) END)
+                             GROUP BY 1 ORDER BY 1""", {"d": FE_DATE, "s": seasons}).fetchall()
+        cand = None
+        if vc:
+            vals = [float(v) for v, _ in vc]
+            ends = list(np.cumsum([int(c) for _, c in vc]))
+            n_all = int(ends[-1])
+
+            def _at(i):
+                return vals[int(np.searchsorted(ends, i, side="right"))]
+            cand = []
+            for p in (0.25, 0.50, 0.75):
+                pos = p * (n_all - 1)
+                f = int(np.floor(pos))
+                fr = pos - f
+                a = _at(f)
+                cand.append(a + (_at(min(f + 1, n_all - 1)) - a) * fr if fr > 0 else a)
+        if cand is not None:
             if len(set(cand)) == 3:
                 CUTS = sorted(cand)
                 print(f"tier cutpoints from the LIVE LEG distribution: {[round(c,4) for c in CUTS]}", flush=True)
