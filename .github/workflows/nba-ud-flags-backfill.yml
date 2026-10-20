@@ -1,0 +1,40 @@
+name: NBA Underdog line flags backfill
+
+# One-off / on-demand: writes nba_market.ud_line_flags (alternate rung of a prediction-market line = hide) from the current
+# Underdog board file for a date already archived. Writes no board rows. Same dating as the archiver.
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "snapshot label the flags belong to"
+        default: "window"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-board-archive
+  cancel-in-progress: false
+
+jobs:
+  flags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Write Underdog line flags
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ARCHIVE_FLAGS_ONLY: "1"
+          ARCHIVE_LABEL: ${{ github.event.inputs.label || 'window' }}
+          ARCHIVE_SPORT: nba
+          ARCHIVE_APPS: underdog
+        run: python nba/archive_live_boards.py
