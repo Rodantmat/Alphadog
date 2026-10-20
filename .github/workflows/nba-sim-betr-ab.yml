@@ -1,0 +1,52 @@
+name: NBA Betr A/B Simulation (Betr on vs parked, rolled back)
+
+# Owner 2026-10-19: leave Betr out, debug/simulate/test it separately. Runs nba/sim_betr_ab.py over one shared transaction that is ROLLED BACK
+# (mechanism: nba/sim_p3_full.py). Scores the slate with Betr ON and PARKED and reports the difference. Nothing is left in production; the last
+# step verifies it. Never for a slate that has already run, never concurrently with an audit_season_replay.
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        default: "2026-10-20"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-sim-p3
+  cancel-in-progress: false
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PROXY_URL: ${{ secrets.PROXY_URL }}
+      SIM_DATE: ${{ github.event.inputs.date }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber pyyaml
+      - name: Simulate
+        run: python -u nba/sim_betr_ab.py
+      - name: Production must be untouched (independent check)
+        if: always()
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          d = os.environ["SIM_DATE"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              r = {t: c.execute(f"SELECT count(*) FROM {t} WHERE game_date=%s", (d,)).fetchone()[0]
+                   for t in ("nba_score.baseline_history", "nba_score.final_hp", "nba_score.board_scored", "nba_score.live_slips", "nba_score.paper_picks")}
+              en = c.execute("SELECT config_json->>'enabled' FROM nba_config.classification_config WHERE config_key='p3_betr_wait'").fetchone()[0]
+          print("PRODUCTION AFTER (independent):", r, "p3_betr_wait.enabled", en)
+          if any(r.values()) or en != "false":
+              raise SystemExit("PRODUCTION WAS TOUCHED")
+          EOF
