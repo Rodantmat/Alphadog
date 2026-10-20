@@ -182,6 +182,9 @@ def main():
     label = os.environ.get('PSL_LABEL', 'window')
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
+    # JIT OFF FOR THIS SESSION (2026-10-20, P3 speed-up): cell_rates()' DISTINCT over 1.8M backtest legs ran 48-87 s with JIT
+    # and 4.0 s without - same plan, same rows (EXPLAIN ANALYZE, slip_engine_legs_mf). Session-scoped, so nothing else changes.
+    conn.execute("SET jit = off")
     for stmt in DDL.split(";\n"):
         conn.execute(stmt)
     conn.commit()
