@@ -24,7 +24,7 @@ WITH bs AS (
   -- nba/apply_market_anchor.py) wherever they exist; the model's own number travels beside them as model_hp / model_score.
   SELECT b.game_date, b.app, b.player_id, b.player, b.prop, b.line, b.side, b.final_hp, b.baseline_hp, b.cal_shift,
          b.confidence, b.score, b.edge, b.interpolated, b.built_at, b.model_hp, b.model_score, b.market_hp, b.hp_anchor,
-         b.dk_line, b.dk_p, b.pp_line, b.true_fit
+         b.dk_line, b.dk_p, b.pp_line, b.true_fit, b.ud_hide
   FROM (SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.baseline_hp, b0.cal_shift, b0.confidence,
                b0.interpolated, b0.built_at, coalesce(th.true_hp::numeric, b0.final_hp) final_hp, coalesce(th.true_score::numeric, b0.score) score,
                coalesce(th.true_edge::numeric, b0.edge) edge, b0.final_hp model_hp, b0.score model_score, th.market_hp, th.anchor hp_anchor,
