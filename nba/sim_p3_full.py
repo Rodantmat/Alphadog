@@ -291,6 +291,14 @@ def yaml_step(wf, job, prefix):
     raise KeyError(f"{wf}:{job}:{prefix}")
 
 
+def yaml_env(wf, job, prefix, key):
+    y = yaml.safe_load((ROOT / ".github/workflows" / wf).read_text())
+    for s in y["jobs"][job]["steps"]:
+        if str(s.get("name") or "").startswith(prefix):
+            return str(s["env"][key])
+    raise KeyError(f"{wf}:{job}:{prefix}:{key}")
+
+
 def heredoc(run):
     m = re.search(r"<<'EOF'\n(.*?)\n\s*EOF\s*$", run, re.S | re.M)
     if not m:
