@@ -190,6 +190,7 @@ def run_direction(train, test, label):
                 r["ret"] += pay
                 r["full"] += int(hits == len(slip))
                 r["daily"].append(pay - 1.0)
+                r["didx"].append(di)
                 r["legs"] += sum(1 for x in slip if x["hit"] is not None)
                 r["leg_hits"] += sum(int(x["hit"]) for x in slip if x["hit"] is not None)
         if pi % 2000 == 0:
