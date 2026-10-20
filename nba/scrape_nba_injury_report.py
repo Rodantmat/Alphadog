@@ -179,7 +179,10 @@ def scan_day(session, d, slots=SLOTS):
     # mode) were fetched one at a time - 86 s of P3 on opening night. INJURY_WORKERS threads (default 8), each with ITS OWN session
     # on the same proxy (a curl_cffi session is not shared across threads). Results are consumed in the original order, so the
     # de-duplication and the output are identical to the sequential scan. INJURY_WORKERS=1 = the old sequential path.
-    workers = max(1, int(os.environ.get("INJURY_WORKERS", "8")))
+    # DEFAULT SEQUENTIAL (audit_injury_scan_speed.py run 39516066685, live archive): identical snapshots both ways, but the fetch is
+    # only ~11-12 s a day sequentially and 8 threads were 2.4 s one day and 31.5 s the next (proxy throttling) - not worth it.
+    # The P3 time was the PDF extraction and a per-snapshot sleep (see the daily loop). INJURY_WORKERS > 1 stays available.
+    workers = max(1, int(os.environ.get("INJURY_WORKERS", "1")))
     jobs = [(h, m) for h, m in slots] + [(h, None) for h in range(0, 24)]
     if workers == 1:
         res_list = [fetch_snapshot(session, d, h, m) if m is not None else fetch_snapshot_hourly(session, d, h) for h, m in jobs]
