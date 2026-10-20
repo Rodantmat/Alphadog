@@ -71,9 +71,14 @@ jobs:
     outputs:
       proceed: ${{ steps.c.outputs.proceed }}
     steps:
+      # ONE-FILE CHECKOUT (2026-10-20, P3 speed-up): the claim needs nba/pipeline_claim.py only (stdlib + psycopg); the full tree
+      # took 53 s on opening night, this takes 2 s (nba-ci-checkout-speed-test.yml run 39515903959).
       - uses: actions/checkout@v4
         with:
           ref: main
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /nba/pipeline_claim.py
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
