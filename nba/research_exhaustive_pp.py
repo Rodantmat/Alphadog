@@ -118,7 +118,8 @@ def bucket(l):
     return f"R_{fam}_{'O' if l['side'] == 'Over' else 'U'}"
 
 
-BUCKETS = ["R_DEF_O", "R_DEF_U", "R_PTS_O", "R_PTS_U", "R_REB_O", "R_REB_U", "R_OTH_O", "R_OTH_U", "G1", "G2", "G3", "D1", "D2", "D3"]
+BUCKETS = (["R_DEF_O", "R_DEF_U", "R_PTS_O", "R_PTS_U", "R_REB_O", "R_REB_U", "R_OTH_O", "R_OTH_U", "G", "D", "UG", "UD"] if ALT_LESS else
+           ["R_DEF_O", "R_DEF_U", "R_PTS_O", "R_PTS_U", "R_REB_O", "R_REB_U", "R_OTH_O", "R_OTH_U", "G1", "G2", "G3", "D1", "D2", "D3"])
 
 
 def cell_values(legs):
