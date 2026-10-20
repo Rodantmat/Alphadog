@@ -481,7 +481,11 @@ BOARD_SQL = """
               WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
               WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END prop
           FROM nba_market.pp_leg_price p
-          WHERE p.snapshot_label=%s AND p.game_date=%s AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)),
+          WHERE p.snapshot_label=%s AND p.game_date=%s AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)
+            -- ALTERNATE LESS (2026-10-20): the archive now keeps the Less side PrizePicks opened on goblin / demon rungs. The certified
+            -- cells were measured on a history with NO alternate Less (alternates were More-only), so those legs stay out of the
+            -- certified engine until research_exhaustive_pp.py + certification admit them; standards keep both sides.
+            AND NOT (p.kind <> 'standard' AND lower(p.side) LIKE 'u%%')),
         pid AS MATERIALIZED (
           SELECT DISTINCT pr.cn, nm.player_id, nm.player_id::bigint pid_n
           FROM (SELECT DISTINCT cn FROM pr) pr JOIN nba_ref.player_name_map nm ON nm.norm_name = pr.cn),
