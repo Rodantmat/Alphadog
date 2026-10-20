@@ -303,6 +303,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         # label=window: the harvest archives the board it captures as THIS slate's decision snapshot (it lands minutes
         # after P3's own archive step). Retried: 3 tries with backoff on any non-204 / network error.
         run: |
