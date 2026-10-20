@@ -167,6 +167,37 @@ def score_legs(legs, cv):
         l["ev"] = best
 
 
+FLEX2_ON = False
+
+
+def install_flex2_alt(conn):
+    """2-PICK FLEX WITH AN ALTERNATE, from PrizePicks' quotes (nba_market.pp_mined_leg: every mined leg was quoted as a 2-pick with a
+    standard partner - Power AND Flex tiers; 2,660 NBA quotes on 2026-10-20). Tier = f(the slip's Power payout P = compress(3 x fp)),
+    the CONSERVATIVE monotone lower envelope: all-hit = min of quoted Flex full over every quote with Power >= P; one miss likewise
+    (0.25 below P 2.5, 0.5 above). Research-only (production flex_alt_tiers is unchanged)."""
+    global FLEX2_ON
+    rows = conn.execute("""SELECT two_pick_power::float, min(flex_full)::float, min(flex_partial)::float FROM nba_market.pp_mined_leg
+                           WHERE two_pick_power IS NOT NULL AND flex_full IS NOT NULL GROUP BY 1 ORDER BY 1""").fetchall()
+    if len(rows) < 20:
+        print("  2-pick Flex with alternates: too few quotes - left unpriced", flush=True)
+        return
+    P = [r[0] for r in rows]
+    full = [min(r[1] for r in rows[i:]) for i in range(len(rows))]
+    part = [min(r[2] for r in rows[i:]) for i in range(len(rows))]
+    orig = SE.flex_alt_payout
+
+    def patched(k, misses, fprod):
+        if k != 2:
+            return orig(k, misses, fprod)
+        pw = SE.compress(3.0 * fprod)
+        i = max(0, min(len(P) - 1, sum(1 for x in P if x <= pw + 1e-3) - 1))
+        return full[i] if misses == 0 else (part[i] if misses == 1 else 0.0)
+    SE.flex_alt_payout = patched
+    FLEX2_ON = True
+    print(f"  2-pick Flex with alternates priced from {len(rows)} quoted Power levels (conservative envelope; e.g. P 3.0x -> "
+          f"{patched(2, 0, 1.0):.2f} / {patched(2, 1, 1.0):.2f}, P 1.9x -> {patched(2, 0, 0.6333):.2f} / {patched(2, 1, 0.6333):.2f})", flush=True)
+
+
 def all_patterns():
     for k in SIZES:
         for combo in itertools.combinations_with_replacement(range(len(BUCKETS)), k):
