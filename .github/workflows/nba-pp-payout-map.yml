@@ -22,6 +22,10 @@ on:
         description: "blank = the trigger file's mode; 'delta' = monitoring run (the NBA scheduler's game-day slots send this)"
         required: false
         default: ""
+      budget_override:
+        description: "research programs only: a quote budget that wins over the trigger file's max_quotes (blank = the file's)"
+        required: false
+        default: ""
   push:
     paths:
       - 'nba/TRIGGER_NBA_PP_MAP.txt'
