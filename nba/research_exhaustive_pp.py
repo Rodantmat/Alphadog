@@ -110,8 +110,10 @@ REB = {"rebounds", "reb_ast"}
 
 def bucket(l):
     t = l["tier"]
+    if t.startswith("U"):
+        return "UG" if t[1] == "G" else "UD"       # goblin / demon Less
     if t != "R":
-        return t                                   # G1..G3 / D1..D3 (More only)
+        return t[0] if ALT_LESS else t             # G1..G3 / D1..D3 More (one bucket each when Less buckets are on)
     fam = "DEF" if l["prop"] in DEF else "PTS" if l["prop"] in PTS else "REB" if l["prop"] in REB else "OTH"
     return f"R_{fam}_{'O' if l['side'] == 'Over' else 'U'}"
 
