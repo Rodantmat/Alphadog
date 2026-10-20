@@ -279,6 +279,7 @@ def main():
             cur = conn.execute(ALT_LESS_SQL)
             cols = [c.name for c in cur.description]
             alt = [dict(zip(cols, r)) for r in cur.fetchall()]
+        alt = [r for r in alt if less_open(r["f_over"], r["tier"])]
         for r in alt:
             r["factor"] = less_price(r.pop("f_over"), r["tier"])
             st_ = r.pop("stat_actual")
