@@ -305,6 +305,9 @@ def main():
         cols = [c.name for c in cur.description]
         rows = [dict(zip(cols, r)) for r in cur.fetchall()]
     print(f"legs loaded: {len(rows):,} (top-10 under any rank key, real PrizePicks window board, graded)", flush=True)
+    if os.environ.get("EX_FLEX2_ALT", "1") == "1":
+        with psycopg.connect(url) as conn:
+            install_flex2_alt(conn)
     if ALT_LESS:
         with psycopg.connect(url) as conn:
             conn.execute("SET statement_timeout = 0")
