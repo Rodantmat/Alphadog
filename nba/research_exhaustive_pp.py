@@ -61,6 +61,48 @@ HAVING least(min(l.n_rank) FILTER (WHERE l.rank_key = 'final_score'), min(l.n_ra
 """
 RK = {"final_score": "n_fs", "final_hp": "n_fh", "baseline_hp": "n_bh"}
 
+# GOBLIN / DEMON LESS (2026-10-20: the PrizePicks board now carries allowed_wager_types = under_or_over on ~39% of tier-1 goblin
+# and demon rungs, a few tier-2, only Points / PRA / Rebounds / Assists; PrizePicks' quote engine paid a goblin Less 3.25x and a
+# demon Less the 1.7x floor as 2-picks with a standard). History never offered them, so they are SIMULATED: the real outcome
+# at the rung (stat_actual < line; a whole-number tie is a void) and PrizePicks' documented Less price - Less is the complement
+# of More (P(More) + P(Less) median 0.978-0.986, PP_PAYOUT_FINDINGS) with its own floor 1.7x (factor 0.5667). The More price is
+# first lifted to the QUOTE level (our model sits 4.6% / 5.4% below PrizePicks' quotes for goblins / demons, measured on 257
+# quoted legs) - complementing the deliberately low More price would overpay the Less side - then 3% is taken off (conservative
+# mode) unless the floor binds. Selector: the BOTTOM of the More ranking (the rungs the model rates least likely to go over),
+# reverse rank per rank key. Bucket UG = goblin Less (G1/G2), UD = demon Less (D1/D2).
+ALT_LESS = os.environ.get("EX_ALT_LESS", "1") == "1"
+ALT_LESS_SQL = """
+WITH t AS (
+  SELECT l.season, l.game_date, l.player, l.prop, l.tier, l.line, l.factor, l.score, l.rank_key,
+         row_number() OVER (PARTITION BY l.game_date, l.prop, l.tier, l.rank_key ORDER BY l.n_rank DESC) nrev
+  FROM nba_score.tier_map_legs l
+  WHERE l.tier IN ('G1', 'G2', 'D1', 'D2') AND l.prop IN ('points', 'pra', 'rebounds', 'assists') AND l.side = 'Over')
+SELECT t.season, t.game_date, t.player, t.prop, 'U' || t.tier tier, 'Under' side, t.line::float8,
+       max(t.factor)::float8 f_over, max(t.score)::float8 score,
+       min(t.nrev) FILTER (WHERE t.rank_key = 'final_score') n_fs,
+       min(t.nrev) FILTER (WHERE t.rank_key = 'final_hp') n_fh,
+       min(t.nrev) FILTER (WHERE t.rank_key = 'baseline_hp') n_bh,
+       max(pu.team_id) team_id, max(pu.event_id) event_id, max(pu.stat_actual)::float8 stat_actual
+FROM t JOIN nba_market.prop_universe pu ON pu.game_date = t.game_date AND pu.player = t.player AND pu.prop = t.prop AND pu.side = 'Over'
+ AND pu.line = t.line AND pu.line_source = 'real'
+GROUP BY 1, 2, 3, 4, 5, 6, 7
+HAVING least(min(t.nrev) FILTER (WHERE t.rank_key = 'final_score'), min(t.nrev) FILTER (WHERE t.rank_key = 'final_hp'),
+             min(t.nrev) FILTER (WHERE t.rank_key = 'baseline_hp')) <= 10
+"""
+QUOTE_LIFT = {"G": 1 / 0.954, "D": 1 / 0.946}
+LESS_FLOOR = 0.5667
+
+
+def less_price(f_over, tier):
+    """PrizePicks' Less factor for an alternate rung from its More factor (complement + floor + conservative 3%)"""
+    fq = f_over * QUOTE_LIFT[tier[1]]
+    p_over = min(0.97, max(0.072, 0.5 / fq))
+    p_under = max(0.072, 0.98 - p_over)
+    raw = 0.5 / p_under
+    if raw <= LESS_FLOOR:
+        return LESS_FLOOR
+    return min(6.94, max(LESS_FLOOR, raw * 0.97))
+
 DEF = {"steals", "blocks", "stocks", "turnovers"}
 PTS = {"points", "pts_ast", "pts_reb", "pra"}
 REB = {"rebounds", "reb_ast"}
