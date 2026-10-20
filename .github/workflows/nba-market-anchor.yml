@@ -25,6 +25,10 @@ on:
         description: "max |shown - hit| for any sub-group of 1,000+ legs at shown >= 0.60 (default 0.05)"
         default: "0.05"
         required: false
+      books:
+        description: "anchor books in priority order (default draftkings = the certified fit)"
+        default: "draftkings"
+        required: false
 
 permissions:
   contents: read
