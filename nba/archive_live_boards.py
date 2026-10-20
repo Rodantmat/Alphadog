@@ -626,6 +626,12 @@ def main():
         conn.commit()
         total += len(rows)
         print(f"{app}: archived {len(rows):,} legs as '{label}'", flush=True)
+        if app == "underdog" and UD_FLAGS:
+            try:
+                print(f"underdog: {_write_ud_flags(conn, rows):,} line flags written - alternate rungs of prediction-market lines are flagged hide", flush=True)
+            except Exception as e:
+                conn.rollback()
+                print(f"::warning::underdog line flags NOT written ({type(e).__name__})", flush=True)
     print(f"TOTAL {total:,} legs archived for {gd} ({label})", flush=True)
     conn.close()
     if failures:
