@@ -108,7 +108,8 @@ def less_price(f_over, tier):
     """PrizePicks' Less factor for an alternate rung from its More factor (complement + floor + conservative 3%)"""
     fq = f_over * QUOTE_LIFT[tier[1]]
     p_over = min(0.97, max(0.072, 0.5 / fq))
-    p_under = max(0.072, 0.98 - p_over)
+    # P(More) + P(Less) = 0.991 median on 75 fresh More / Less quote pairs (2026-10-20 run, range 0.949-1.005, 9 at the floor)
+    p_under = max(0.072, 0.99 - p_over)
     raw = 0.5 / p_under
     if raw <= LESS_FLOOR:
         return LESS_FLOOR
