@@ -202,6 +202,40 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0n. 🔑 GOBLIN / DEMON LESS, 2-6 PICKS POWER + FLEX — PRICED BY PRIZEPICKS ITSELF (2026-10-20 PT, opening night)
+
+**The new market.** The 10-20 board carries `allowed_wager_types` per projection: 'over' or 'under_or_over'. Less opened on 671 goblin
+and 636 demon rungs (165 standards More-only), only Points / PRA / Rebounds / Assists, only near-standard rungs: Less is open when the
+rung's quote-level More probability sits between ~0.30 and ~0.70 (500 priced rungs). `archive_live_boards.py` now files the Less side
+only where it is allowed (alternate Less rows carry price 100); the certified live cells keep alternate Less out (live_slip_engine
+BOARD_SQL) until a strategy is certified.
+
+**The Less price law (75 fresh More / Less pairs, PP_MODE=less run 20261020T223712Z).** P(More) + P(Less) = S, median 0.991 (range
+0.949-1.005); floor factor 0.5667 (1.7x), 9 of 75 at the floor. Verified: Harper PRA 23.5 goblin-Less model 1.089 vs quote 1.083;
+demon-Less floor 1.7x matched. Research price: fq = model More factor x quote lift (goblins 1/0.954, demons 1/0.946, 257 quoted legs);
+p_over = 0.5 / fq; p_less = 0.99 - p_over; factor = 0.97 x 0.5 / p_less unless at the floor.
+
+**Is the price fair? (~186k Less-open rungs, both seasons).** Goblins: priced More 0.65, realized 0.65 - a blind goblin Less has no
+edge. Demons: realized More 0.31-0.39 vs priced 0.34-0.42 - a blind demon Less beats its price by ~3 points. **Does PrizePicks price
+our model's view?** 215 legs quoted today: PrizePicks' quoted p vs our per-line price model corr 0.91-0.97; the residual moves only
+0.02-0.03 per unit of our model's disagreement (10 points of disagreement -> ~0.3 points of price). The historical per-line factor is a
+faithful stand-in for PrizePicks' price, and the price does NOT absorb what our selection sees.
+
+**Multi-pick payouts - 544 PrizePicks quotes, every size 2-6, Power and Flex** (pp_payout_map.py new modes `grid` run 20261020T225421Z,
+340 slips, 0-3 alternates incl. Less, standard More / Less mixed; `stack` run 20261020T231233Z, 204 slips of 3-6 picks made mostly or
+only of alternates; every alternate priced alone vs a standard More in the same run; research_payout_proof.py now reads LESS factors
+and splits by alternate-Less count). Grader v3 / quote:
+- Power 3-6, any mix incl. 3-6 alternate Less: mean 0.91-0.97; 6-of-6 Less (23 quotes) mean 0.951, max 1.038; 5 Less 0.92-0.95, max
+  1.038; 4 Less 0.87-0.97, max 1.075. One all-standard 3-pick grid slip at 1.162 (single outlier). **Conservative - stacked Less is
+  paid at least as the grader assumes.**
+- Flex 3-6 with alternates (flex_alt_tiers): 0.84-1.00 of the quote, never above 1.012.
+- **2-pick Power with an alternate - the one overpay.** compress(3 fp) vs quote, 56 quotes: one alternate + standard More exact
+  (1.000, by construction); one alternate + standard LESS mean 0.989 of the law, p10 0.944; two alternates mean 0.983, p10 0.931, max
+  overpay 11% (Shamet goblin-Less + Barnes demon 5.25 quoted, 5.83 graded). Research applies x 0.93; production grader unchanged
+  (42 quotes - more needed before the certified grader moves).
+- Near-1.0 factor products are paid the plain base (fp 1.047-1.05 -> exactly 10x on a 4-pick, "adj False").
+- 2-pick Flex with an alternate exists (no production tier): research prices it from the pp_mined_leg quote envelope.
+
 ## 0m. 🔑 BETR PRICES EVERY SLIP ON ITS SERVER — FOUND, EXERCISED, TABLES MEASURED (2026-10-18 evening PT)
 Owner 19:47 PT: "For betr build slips, you have the key, find out how it works, you have the access, the system is there, explore
 and figure it out. Same goes for all apps."
