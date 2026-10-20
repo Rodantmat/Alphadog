@@ -132,7 +132,15 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   // EDGE AGAINST THE LEG'S OWN BREAK-EVEN (2026-10-15 full pass). A leg paying factor f (PrizePicks goblin < 1 < demon; the
   // Underdog / Sleeper payout modifier) breaks even at about 0.56 / f - a flat 0.56 showed every goblin as a strong edge
   // (2026-01-14: 1,173 of 1,184 "positive" goblins were below their own break-even). 0.56 = build_final_hp.BREAKEVEN.
-  const legFactor = r.app === "prizepicks" ? (num(r.pp_factor) ?? (lt === "regular" ? 1 : null)) : num(r.app_mult);
+  // FLIFF (2026-10-19, owner: Fliff and Betr wired like the other apps): a sportsbook price - American odds PER SIDE in board_snapshots.price,
+  // no payout multiplier. A Fliff slip pays the product of the decimal prices, so the leg is priced like a Sleeper pick: its factor is the
+  // decimal price and it breaks even at 1 / decimal (vig included). BETR pays a flat entry table (betr_payout_v1), no per-leg price.
+  let fliffDec = null;
+  if (r.app === "fliff") {
+    const a = num(r.app_price);
+    fliffDec = a == null ? null : (a >= 100 ? 1 + a / 100 : (a <= -100 ? 1 + 100 / -a : null));
+  }
+  const legFactor = r.app === "prizepicks" ? (num(r.pp_factor) ?? (lt === "regular" ? 1 : null)) : r.app === "fliff" ? fliffDec : num(r.app_mult);
   const beBase = 0.56;
   // SLEEPER (2026-10-18, owner comparing the app): its multiplier is the pick's own PRICE (a slip pays the product), so the leg
   // breaks even at 1 / m - 0.56 / m (the modifier rule of PrizePicks / Underdog) put a 1.87x Sleeper leg's break-even at 30%.
