@@ -172,9 +172,33 @@ def header_ts(text):
 def scan_day(session, d, slots=SLOTS):
     """All snapshots for a day across BOTH filename patterns; consecutive identical documents are dropped."""
     import hashlib
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
     found, seen = [], set()
-    cands = [(h, m, fetch_snapshot(session, d, h, m)) for h, m in slots]
-    cands += [(h, None, fetch_snapshot_hourly(session, d, h)) for h in range(0, 24)]
+    # PARALLEL FETCH (2026-10-20, P3 speed-up): ~240 URLs a day (every 15-minute slot + the legacy hourly name, two days in daily
+    # mode) were fetched one at a time - 86 s of P3 on opening night. INJURY_WORKERS threads (default 8), each with ITS OWN session
+    # on the same proxy (a curl_cffi session is not shared across threads). Results are consumed in the original order, so the
+    # de-duplication and the output are identical to the sequential scan. INJURY_WORKERS=1 = the old sequential path.
+    workers = max(1, int(os.environ.get("INJURY_WORKERS", "8")))
+    jobs = [(h, m) for h, m in slots] + [(h, None) for h in range(0, 24)]
+    if workers == 1:
+        res_list = [fetch_snapshot(session, d, h, m) if m is not None else fetch_snapshot_hourly(session, d, h) for h, m in jobs]
+    else:
+        tl = threading.local()
+        proxies = getattr(session, "proxies", None)
+        mod = type(session)
+
+        def one(job):
+            if not hasattr(tl, "s"):
+                try:
+                    tl.s = mod(proxies=proxies) if proxies else mod()
+                except Exception:  # noqa: BLE001 - an unknown session type: fall back to the shared one
+                    tl.s = session
+            h, m = job
+            return fetch_snapshot(tl.s, d, h, m) if m is not None else fetch_snapshot_hourly(tl.s, d, h)
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            res_list = list(ex.map(one, jobs))
+    cands = [(h, m, res) for (h, m), res in zip(jobs, res_list)]
     for h, m, res in cands:
         if not res: continue
         url, content = res
