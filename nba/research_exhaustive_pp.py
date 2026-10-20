@@ -76,7 +76,7 @@ WITH t AS (
   SELECT l.season, l.game_date, l.player, l.prop, l.tier, l.line, l.factor, l.score, l.rank_key,
          row_number() OVER (PARTITION BY l.game_date, l.prop, l.tier, l.rank_key ORDER BY l.n_rank DESC) nrev
   FROM nba_score.tier_map_legs l
-  WHERE l.tier IN ('G1', 'G2', 'D1', 'D2') AND l.prop IN ('points', 'pra', 'rebounds', 'assists') AND l.side = 'Over')
+  WHERE l.tier IN ('G1', 'G2', 'G3', 'D1', 'D2', 'D3') AND l.prop IN ('points', 'pra', 'rebounds', 'assists') AND l.side = 'Over')
 SELECT t.season, t.game_date, t.player, t.prop, 'U' || t.tier tier, 'Under' side, t.line::float8,
        max(t.factor)::float8 f_over, max(t.score)::float8 score,
        min(t.nrev) FILTER (WHERE t.rank_key = 'final_score') n_fs,
