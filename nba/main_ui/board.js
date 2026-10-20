@@ -152,6 +152,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   // carried only sqrt(3) x modifier, so there it is approximated as sqrt(3.5) x modifier (marked approximate). Sleeper shows m itself.
   let appShown = null, appShownExact = false;
   if (r.app === "sleeper" && num(r.app_mult) != null) { appShown = num(r.app_mult); appShownExact = true; }
+  else if (r.app === "fliff" && fliffDec != null) { appShown = fliffDec; appShownExact = true; }
   else if (r.app === "underdog" && num(r.app_mult) != null) {
     const m = num(r.app_mult), a = num(r.app_price);
     const dec = a == null ? null : (a >= 100 ? 1 + a / 100 : (a <= -100 ? 1 + 100 / -a : null));
