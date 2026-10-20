@@ -607,6 +607,11 @@ def main():
             if not rows:
                 print(f"{app}: nothing NBA left to write", flush=True)
                 continue
+        if os.environ.get("ARCHIVE_FLAGS_ONLY") == "1":
+            # backfill of nba_market.ud_line_flags for a board already archived (same dating / relabelling as above, no board rows written)
+            if app == "underdog" and UD_FLAGS:
+                print(f"{app}: ARCHIVE_FLAGS_ONLY - {_write_ud_flags(conn, rows):,} line flags written as '{label}'", flush=True)
+            continue
         with conn.cursor() as cur:
             cur.executemany("""INSERT INTO nba_market.board_snapshots
                 (game_date, event_id, snapshot_label, snapshot_ts, bookmaker, market_key, player, side,
