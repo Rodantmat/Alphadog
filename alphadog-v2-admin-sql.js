@@ -1043,6 +1043,141 @@ async function toolGithubGetWorkflowRunLog(env, args) {
 
 // ---- The actual MCP server, built on Cloudflare's official SDK ----------
 
+// ---- Social repo tools (Rodantmat/Alphadog-Social). Additive only: separate helpers, never touches the AlphaDog repo tools. ----
+async function socialGh(env, method, path, body) {
+  const token = env.SOCIAL_GITHUB_TOKEN || env.GITHUB_TOKEN;
+  const owner = env.SOCIAL_GITHUB_OWNER || env.GITHUB_OWNER || "Rodantmat";
+  const repo = env.SOCIAL_GITHUB_REPO || "Alphadog-Social";
+  if (!token) return { ok: false, status: 0, data: { error: "No GitHub token on this worker." } };
+  const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}${path}`, {
+    method,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/vnd.github+json",
+      "User-Agent": "Alphadog-MCP-Bridge-Social",
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(body ? { "Content-Type": "application/json" } : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let data = null;
+  try { data = await resp.json(); } catch (e) { data = null; }
+  return { ok: resp.ok, status: resp.status, data, repo: `${owner}/${repo}` };
+}
+
+function socialUtf8ToB64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function socialB64ToUtf8(b64) {
+  const bin = atob(String(b64 || "").replace(/\n/g, ""));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function registerSocialTools(server, env, z) {
+  const wrap = (fn) => async (args) => {
+    let result;
+    try { result = await fn(args || {}); } catch (e) { result = { ok: false, error: String((e && e.message) || e) }; }
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }], isError: result.ok === false };
+  };
+
+  server.tool("social_get_file", "Read a file from the SOCIAL repo (Rodantmat/Alphadog-Social), not the AlphaDog repo.",
+    { path: z.string().describe("File path in the social repo.") },
+    wrap(async ({ path }) => {
+      const r = await socialGh(env, "GET", `/contents/${path.split("/").map(encodeURIComponent).join("/")}`);
+      if (!r.ok) return { ok: false, status: r.status, error: r.data };
+      const d = r.data;
+      if (Array.isArray(d)) return { ok: true, type: "dir", entries: d.map((x) => ({ name: x.name, path: x.path, type: x.type, size: x.size })) };
+      return { ok: true, path: d.path, sha: d.sha, size: d.size, content: d.encoding === "base64" ? socialB64ToUtf8(d.content) : d.content };
+    }));
+
+  server.tool("social_list_dir", "List a directory of the SOCIAL repo (Rodantmat/Alphadog-Social). Omit path for the root.",
+    { path: z.string().optional() },
+    wrap(async ({ path }) => {
+      const p = path ? "/" + path.split("/").map(encodeURIComponent).join("/") : "";
+      const r = await socialGh(env, "GET", `/contents${p}`);
+      if (!r.ok) return { ok: false, status: r.status, error: r.data };
+      const list = Array.isArray(r.data) ? r.data : [r.data];
+      return { ok: true, path: path || "", entries: list.map((x) => ({ name: x.name, path: x.path, type: x.type, size: x.size })) };
+    }));
+
+  server.tool("social_put_file", "Create or update a file in the SOCIAL repo (Rodantmat/Alphadog-Social) and commit it to the default branch. Pass text in content, or binary as content_base64.",
+    {
+      path: z.string(),
+      content: z.string().optional(),
+      content_base64: z.string().optional(),
+      message: z.string().optional(),
+      sha: z.string().optional()
+    },
+    wrap(async ({ path, content, content_base64, message, sha }) => {
+      if (content === undefined && content_base64 === undefined) return { ok: false, error: "Provide content or content_base64." };
+      const enc = "/contents/" + path.split("/").map(encodeURIComponent).join("/");
+      let useSha = sha;
+      if (!useSha) {
+        const ex = await socialGh(env, "GET", enc);
+        if (ex.ok && ex.data && ex.data.sha) useSha = ex.data.sha;
+      }
+      const body = { message: message || `Update ${path}`, content: content_base64 !== undefined ? content_base64 : socialUtf8ToB64(content) };
+      if (useSha) body.sha = useSha;
+      const r = await socialGh(env, "PUT", enc, body);
+      if (!r.ok) return { ok: false, status: r.status, error: r.data };
+      return { ok: true, status: r.status, path, commit: r.data && r.data.commit && r.data.commit.sha, repo: r.repo };
+    }));
+
+  server.tool("social_trigger_workflow", "Run a workflow_dispatch workflow in the SOCIAL repo (Rodantmat/Alphadog-Social).",
+    { workflow_file: z.string(), ref: z.string().optional(), inputs: z.record(z.any()).optional() },
+    wrap(async ({ workflow_file, ref, inputs }) => {
+      let branch = ref;
+      if (!branch) {
+        const rr = await socialGh(env, "GET", "");
+        branch = (rr.ok && rr.data && rr.data.default_branch) || "main";
+      }
+      const body = { ref: branch };
+      if (inputs && typeof inputs === "object") body.inputs = inputs;
+      const r = await socialGh(env, "POST", `/actions/workflows/${encodeURIComponent(workflow_file)}/dispatches`, body);
+      if (!r.ok) return { ok: false, status: r.status, error: r.data };
+      return { ok: true, status: r.status, workflow_file, ref: branch, note: "Dispatch accepted; check social_list_workflow_runs in a few seconds." };
+    }));
+
+  server.tool("social_list_workflow_runs", "List recent workflow runs in the SOCIAL repo (Rodantmat/Alphadog-Social).",
+    { per_page: z.number().optional() },
+    wrap(async ({ per_page }) => {
+      const r = await socialGh(env, "GET", `/actions/runs?per_page=${Math.min(Number(per_page) || 5, 30)}`);
+      if (!r.ok) return { ok: false, status: r.status, error: r.data };
+      return { ok: true, runs: (r.data.workflow_runs || []).map((x) => ({ id: x.id, name: x.name, status: x.status, conclusion: x.conclusion, created_at: x.created_at, head_sha: x.head_sha })) };
+    }));
+
+  server.tool("social_run_log", "Fetch the log text of a workflow run in the SOCIAL repo (Rodantmat/Alphadog-Social), tail or regex-filtered.",
+    { run_id: z.number(), job_index: z.number().optional(), tail_lines: z.number().optional(), grep: z.string().optional() },
+    wrap(async ({ run_id, job_index, tail_lines, grep }) => {
+      const jr = await socialGh(env, "GET", `/actions/runs/${run_id}/jobs`);
+      if (!jr.ok) return { ok: false, status: jr.status, error: jr.data };
+      const job = (jr.data.jobs || [])[job_index || 0];
+      if (!job) return { ok: false, error: "No such job index.", jobs: (jr.data.jobs || []).length };
+      const token = env.SOCIAL_GITHUB_TOKEN || env.GITHUB_TOKEN;
+      const owner = env.SOCIAL_GITHUB_OWNER || env.GITHUB_OWNER || "Rodantmat";
+      const repo = env.SOCIAL_GITHUB_REPO || "Alphadog-Social";
+      const lr = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/jobs/${job.id}/logs`, {
+        headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github+json", "User-Agent": "Alphadog-MCP-Bridge-Social" }
+      });
+      if (!lr.ok) return { ok: false, status: lr.status, error: "log fetch failed" };
+      const lines = (await lr.text()).split("\n");
+      const n = Math.min(Number(tail_lines) || 200, 1000);
+      let out;
+      if (grep) {
+        const re = new RegExp(grep, "i"); const keep = new Set();
+        lines.forEach((l, i) => { if (re.test(l)) { for (let k = Math.max(0, i - 3); k <= Math.min(lines.length - 1, i + 3); k++) keep.add(k); } });
+        out = [...keep].sort((a, b) => a - b).map((i) => lines[i]).slice(-n);
+      } else out = lines.slice(-n);
+      return { ok: true, job: job.name, status: job.status, conclusion: job.conclusion, steps: (job.steps || []).map((s) => ({ name: s.name, conclusion: s.conclusion })), log: out.join("\n") };
+    }));
+}
+
 export class AlphadogMcp extends McpAgent {
   server = new McpServer({ name: WORKER_NAME, version: VERSION });
 
