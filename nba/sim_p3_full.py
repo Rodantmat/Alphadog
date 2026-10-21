@@ -498,7 +498,8 @@ def main():
         with REAL_CONNECT(URL, autocommit=True) as v:
             after = {}
             for t in ("nba_score.baseline_history", "nba_score.final_hp", "nba_score.final_hp_derived", "nba_score.board_scored", "nba_score.live_slips",
-                      "nba_score.ud_live_slips", "nba_score.paper_picks", "nba_score.board_true_hp", "nba_market.rung_market", "nba_market.board_tiers_v2"):
+                      "nba_score.ud_live_slips", "nba_score.paper_picks", "nba_score.board_true_hp", "nba_market.rung_market", "nba_market.board_tiers_v2",
+                      "nba_score.paper_altless_slips"):
                 col = "game_date"
                 extra = " AND snapshot_label='window'" if t == "nba_market.rung_market" else ""
                 after[t] = v.execute(f"SELECT count(*) FROM {t} WHERE {col}=%s{extra}", (D,)).fetchone()[0]
