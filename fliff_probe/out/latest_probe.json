@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-10-21T05:23:59Z",
+ "generated_utc": "2026-10-21T05:31:57Z",
  "window_hours": 48.0,
  "fliff_events_in_window": 150,
  "fliff_events_by_sport": {
@@ -37,90 +37,90 @@
   {
    "sport": "americanfootball_ncaaf",
    "status": 200,
-   "remaining": "11683",
+   "remaining": "11557",
    "cost": "9"
   },
   {
    "sport": "americanfootball_nfl",
    "status": 200,
-   "remaining": "11674",
+   "remaining": "11548",
    "cost": "9"
   },
   {
    "sport": "basketball_nba",
    "status": 200,
-   "remaining": "11665",
+   "remaining": "11539",
    "cost": "9"
   },
   {
    "sport": "boxing_boxing",
    "status": 200,
-   "remaining": "11656",
+   "remaining": "11530",
    "cost": "9"
   },
   {
    "sport": "icehockey_nhl",
    "status": 200,
-   "remaining": "11647",
+   "remaining": "11521",
    "cost": "9"
   },
   {
    "sport": "soccer_england_league1",
    "status": 200,
-   "remaining": "11638",
+   "remaining": "11512",
    "cost": "9"
   },
   {
    "sport": "soccer_mexico_ligamx",
    "status": 200,
-   "remaining": "11629",
+   "remaining": "11503",
    "cost": "9"
   },
   {
    "sport": "soccer_spain_la_liga",
    "status": 200,
-   "remaining": "11620",
+   "remaining": "11494",
    "cost": "9"
   },
   {
    "sport": "soccer_uefa_champs_league",
    "status": 200,
-   "remaining": "11611",
+   "remaining": "11485",
    "cost": "9"
   },
   {
    "sport": "soccer_uefa_conference_league",
    "status": 200,
-   "remaining": "11602",
+   "remaining": "11476",
    "cost": "9"
   },
   {
    "sport": "soccer_uefa_europa_league",
    "status": 200,
-   "remaining": "11593",
+   "remaining": "11467",
    "cost": "9"
   },
   {
    "sport": "soccer_usa_mls",
    "status": 200,
-   "remaining": "11584",
+   "remaining": "11458",
    "cost": "9"
   },
   {
    "sport": "tennis_atp",
    "status": 200,
-   "remaining": "11575",
+   "remaining": "11449",
    "cost": "9"
   },
   {
    "sport": "tennis_wta",
    "status": 200,
-   "remaining": "11566",
+   "remaining": "11440",
    "cost": "9"
   }
  ],
  "fliff_boards_pulled": 95,
- "graded_legs": 332,
+ "graded_legs": 324,
  "unmatched_events_by_sport": {
   "tennis_atp": 5,
   "soccer_england_league1": 1,
@@ -213,7 +213,7 @@
    ],
    [
     "2nd Set Total Score",
-    8
+    9
    ]
   ],
   "soccer_uefa_champs_league": [
@@ -1801,8 +1801,8 @@
   ]
  },
  "legs_by_source": {
-  "scrape/pinnacle": 302,
-  "scrape/consensus": 28,
+  "scrape/pinnacle": 290,
+  "scrape/consensus": 32,
   "parlayapi/pinnacle": 2
  },
  "top_ev_legs": [],
@@ -2114,6 +2114,24 @@
    "clear_cost": 0.5266
   },
   {
+   "sport": "soccer_uefa_europa_league",
+   "event": "Leverkusen @ OFI Crete",
+   "event_key": "419550_c_p_499_prematch",
+   "start_utc": "2026-10-22T16:45:00+00:00",
+   "start_pt": "Thu 10-22 09:45 AM PT",
+   "market": "h2h",
+   "selection": "Bayer Leverkusen",
+   "point": null,
+   "fliff_dec": 1.15,
+   "fair_p": 0.7784,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "3-WAY MONEYLINE",
+   "boosted": false,
+   "ev": -0.1048,
+   "clear_cost": 0.8976
+  },
+  {
    "sport": "soccer_uefa_conference_league",
    "event": "FC Twente @ Lincoln Red Imps FC",
    "event_key": "419451_c_p_499_prematch",
@@ -2132,6 +2150,42 @@
    "clear_cost": 0.9863
   },
   {
+   "sport": "soccer_uefa_europa_league",
+   "event": "Torreense @ Ferencv\u00e1ros",
+   "event_key": "419565_c_p_499_prematch",
+   "start_utc": "2026-10-22T16:45:00+00:00",
+   "start_pt": "Thu 10-22 09:45 AM PT",
+   "market": "h2h",
+   "selection": "Ferencvaros",
+   "point": null,
+   "fliff_dec": 1.25,
+   "fair_p": 0.7075,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "3-WAY MONEYLINE",
+   "boosted": false,
+   "ev": -0.1156,
+   "clear_cost": 0.6534
+  },
+  {
+   "sport": "soccer_uefa_champs_league",
+   "event": "LASK Linz @ Sporting CP",
+   "event_key": "419406_c_p_499_prematch",
+   "start_utc": "2026-10-21T19:00:00+00:00",
+   "start_pt": "Wed 10-21 12:00 PM PT",
+   "market": "h2h",
+   "selection": "Sporting CP",
+   "point": null,
+   "fliff_dec": 1.1,
+   "fair_p": 0.7992,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "3-WAY MONEYLINE",
+   "boosted": false,
+   "ev": -0.1209,
+   "clear_cost": 1.5128
+  },
+  {
    "sport": "soccer_uefa_conference_league",
    "event": "Brighton @ FK Jablonec",
    "event_key": "419218_c_p_499_prematch",
@@ -2148,78 +2202,6 @@
    "boosted": false,
    "ev": -0.133,
    "clear_cost": 0.9207
-  },
-  {
-   "sport": "soccer_uefa_champs_league",
-   "event": "LASK Linz @ Sporting CP",
-   "event_key": "419406_c_p_499_prematch",
-   "start_utc": "2026-10-21T19:00:00+00:00",
-   "start_pt": "Wed 10-21 12:00 PM PT",
-   "market": "h2h",
-   "selection": "Sporting CP",
-   "point": null,
-   "fliff_dec": 1.04,
-   "fair_p": 0.7966,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.1715,
-   "clear_cost": 5.3835
-  },
-  {
-   "sport": "soccer_uefa_europa_league",
-   "event": "Leverkusen @ OFI Crete",
-   "event_key": "419550_c_p_499_prematch",
-   "start_utc": "2026-10-22T16:45:00+00:00",
-   "start_pt": "Thu 10-22 09:45 AM PT",
-   "market": "h2h",
-   "selection": "Bayer Leverkusen",
-   "point": null,
-   "fliff_dec": 1.05,
-   "fair_p": 0.7784,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.1827,
-   "clear_cost": 4.6928
-  },
-  {
-   "sport": "soccer_mexico_ligamx",
-   "event": "Tijuana @ Toluca",
-   "event_key": "419398_c_p_210_prematch",
-   "start_utc": "2026-10-22T01:00:00+00:00",
-   "start_pt": "Wed 10-21 06:00 PM PT",
-   "market": "h2h",
-   "selection": "Deportivo Toluca",
-   "point": null,
-   "fliff_dec": 1.1,
-   "fair_p": 0.7006,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.2293,
-   "clear_cost": 3.2736
-  },
-  {
-   "sport": "soccer_uefa_europa_league",
-   "event": "Torreense @ Ferencv\u00e1ros",
-   "event_key": "419565_c_p_499_prematch",
-   "start_utc": "2026-10-22T16:45:00+00:00",
-   "start_pt": "Thu 10-22 09:45 AM PT",
-   "market": "h2h",
-   "selection": "Ferencvaros",
-   "point": null,
-   "fliff_dec": 1.05,
-   "fair_p": 0.7074,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.2572,
-   "clear_cost": 7.2711
   }
  ],
  "cheapest_bonus_clearing": [
@@ -2233,13 +2215,13 @@
    "selection": "Charlotte Hornets",
    "point": null,
    "fliff_dec": 2.05,
-   "fair_p": 0.4763,
+   "fair_p": 0.4807,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
    "fliff_market_name": "MONEYLINE",
    "boosted": false,
-   "ev": -0.0237,
-   "clear_cost": 0.0474
+   "ev": -0.0145,
+   "clear_cost": 0.0288
   },
   {
    "sport": "tennis_atp",
@@ -2582,6 +2564,24 @@
    "clear_cost": 0.1015
   },
   {
+   "sport": "tennis_wta",
+   "event": "Viktorija Golubic @ Katie Boulter",
+   "event_key": "420487_c_p_206_prematch",
+   "start_utc": "2026-10-21T05:40:00+00:00",
+   "start_pt": "Tue 10-20 10:40 PM PT",
+   "market": "h2h",
+   "selection": "Viktorija Golubic",
+   "point": null,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "consensus",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
    "sport": "basketball_nba",
    "event": "MIN Timberwolves @ MIA Heat",
    "event_key": "407815_c_p_204_prematch",
@@ -2643,24 +2643,6 @@
    "start_pt": "Wed 10-21 04:30 PM PT",
    "market": "h2h",
    "selection": "Ottawa Senators",
-   "point": null,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.05,
-   "clear_cost": 0.1111
-  },
-  {
-   "sport": "icehockey_nhl",
-   "event": "FLA Panthers @ OTT Senators",
-   "event_key": "420371_c_p_207_prematch",
-   "start_utc": "2026-10-21T23:30:00+00:00",
-   "start_pt": "Wed 10-21 04:30 PM PT",
-   "market": "h2h",
-   "selection": "Florida Panthers",
    "point": null,
    "fliff_dec": 1.9,
    "fair_p": 0.5,

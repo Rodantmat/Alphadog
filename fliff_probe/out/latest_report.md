@@ -1,6 +1,6 @@
-# Fliff probe — Tue Oct 20 2026, 10:23 PM PT
+# Fliff probe — Tue Oct 20 2026, 10:31 PM PT
 
-Window: next 48 h · Fliff events in window: 150 · boards pulled: 95 · graded legs: 332 · +EV legs: 0
+Window: next 48 h · Fliff events in window: 150 · boards pulled: 95 · graded legs: 324 · +EV legs: 0
 
 **How to read it.** *Fair p* = Pinnacle's no-vig probability (or a ≥3-book consensus when Pinnacle has no line). *EV* = expected profit per $1 at Fliff's price. *Clear cost* = expected loss per $1 of play-through cleared when only winnings count (negative = expected profit while clearing). Only same-line comparisons are graded.
 
@@ -28,17 +28,16 @@ Window: next 48 h · Fliff events in window: 150 · boards pulled: 95 · graded 
 | Wed 10-21 07:30 AM PT | atp | Mikhail Kukushkin @ Stefanos Tsitsipas | Spread Stefanos Tsitsipas -1.5 | 1.200 | 75.9% | -8.9% | +58.4% | pinnacle |
 | Thu 10-22 12:00 PM PT | uefa_europa_league | Benfica @ Omonia Nicosia | ML Benfica | 1.300 | 70.1% | -8.9% | +42.4% | pinnacle |
 | Thu 10-22 09:45 AM PT | uefa_europa_league | Hapoel Be'er Sheva @ Royale Union SG | ML Union Saint-Gilloise | 1.250 | 72.4% | -9.5% | +52.7% | pinnacle |
+| Thu 10-22 09:45 AM PT | uefa_europa_league | Leverkusen @ OFI Crete | ML Bayer Leverkusen | 1.150 | 77.8% | -10.5% | +89.8% | pinnacle |
 | Thu 10-22 12:00 PM PT | uefa_conference_league | FC Twente @ Lincoln Red Imps FC | ML FC Twente | 1.150 | 77.0% | -11.4% | +98.6% | pinnacle |
+| Thu 10-22 09:45 AM PT | uefa_europa_league | Torreense @ Ferencváros | ML Ferencvaros | 1.250 | 70.8% | -11.6% | +65.3% | pinnacle |
+| Wed 10-21 12:00 PM PT | uefa_champs_league | LASK Linz @ Sporting CP | ML Sporting CP | 1.100 | 79.9% | -12.1% | +151.3% | pinnacle |
 | Thu 10-22 09:45 AM PT | uefa_conference_league | Brighton @ FK Jablonec | ML Brighton | 1.200 | 72.2% | -13.3% | +92.1% | pinnacle |
-| Wed 10-21 12:00 PM PT | uefa_champs_league | LASK Linz @ Sporting CP | ML Sporting CP | 1.040 | 79.7% | -17.2% | +538.4% | pinnacle |
-| Thu 10-22 09:45 AM PT | uefa_europa_league | Leverkusen @ OFI Crete | ML Bayer Leverkusen | 1.050 | 77.8% | -18.3% | +469.3% | pinnacle |
-| Wed 10-21 06:00 PM PT | mexico_ligamx | Tijuana @ Toluca | ML Deportivo Toluca | 1.100 | 70.1% | -22.9% | +327.4% | pinnacle |
-| Thu 10-22 09:45 AM PT | uefa_europa_league | Torreense @ Ferencváros | ML Ferencvaros | 1.050 | 70.7% | -25.7% | +727.1% | pinnacle |
 
 ## 3. Cheapest way to clear the bonus (fair p ≥ 45%)
 | Start | Sport | Event | Pick | Fliff | Fair p | EV | Clear cost | Fair src |
 |---|---|---|---|---|---|---|---|---|
-| Wed 10-21 04:30 PM PT | nba | CHA Hornets @ BKN Nets | ML Charlotte Hornets | 2.050 | 47.6% | -2.4% | +4.7% | pinnacle |
+| Wed 10-21 04:30 PM PT | nba | CHA Hornets @ BKN Nets | ML Charlotte Hornets | 2.050 | 48.1% | -1.5% | +2.9% | pinnacle |
 | Wed 10-21 02:30 AM PT | atp | Francisco Cerundolo @ Martin Damm Jr. | Spread Martin Damm +1.5 | 1.550 | 63.0% | -2.4% | +6.9% | pinnacle |
 | Wed 10-21 04:00 PM PT | nba | ATL Hawks @ ORL Magic | Spread Atlanta Hawks +3.5 | 1.900 | 50.9% | -3.3% | +7.1% | pinnacle |
 | Wed 10-21 07:00 PM PT | nba | PHX Suns @ POR Trail Blazers | Total Over 232.5 | 1.950 | 49.6% | -3.4% | +7.1% | pinnacle |
@@ -100,7 +99,7 @@ Window: next 48 h · Fliff events in window: 150 · boards pulled: 95 · graded 
 ## Data checks
 - Fliff events by sport: {'tennis_atp': 23, 'soccer_uefa_conference_league': 18, 'soccer_uefa_europa_league': 18, 'basketball_nba': 13, 'tennis_wta': 12, 'unmapped:43037': 10, 'soccer_uefa_champs_league': 9, 'soccer_mexico_ligamx': 5, 'americanfootball_ncaaf': 4, 'unmapped:10557': 4, 'unmapped:10559': 4, 'icehockey_nhl': 3, 'unmapped:43022': 3, 'unmapped:10555': 3, 'unmapped:4752': 2, 'unmapped:4387': 2, 'unmapped:4320': 2, 'unmapped:488': 2, 'boxing_boxing': 2, 'unmapped:43039': 2, 'americanfootball_nfl': 1, 'soccer_spain_la_liga': 1, 'unmapped:4751': 1, 'soccer_england_league1': 1, 'soccer_usa_mls': 1, 'unmapped:43020': 1, 'unmapped:43029': 1, 'unmapped:4208': 1, 'unmapped:14028': 1}
 - Not matched to a sharp-market event: {'tennis_atp': 5, 'soccer_england_league1': 1, 'boxing_boxing': 2, 'icehockey_nhl': 1, 'soccer_mexico_ligamx': 3, 'soccer_uefa_conference_league': 3, 'soccer_uefa_europa_league': 1}
-- Graded legs by source (fliff price, fair price): {'scrape/pinnacle': 302, 'scrape/consensus': 28, 'parlayapi/pinnacle': 2}
-- ParlayAPI calls (sport, http, credits, remaining): [('americanfootball_ncaaf', 200, '9', '11683'), ('americanfootball_nfl', 200, '9', '11674'), ('basketball_nba', 200, '9', '11665'), ('boxing_boxing', 200, '9', '11656'), ('icehockey_nhl', 200, '9', '11647'), ('soccer_england_league1', 200, '9', '11638'), ('soccer_mexico_ligamx', 200, '9', '11629'), ('soccer_spain_la_liga', 200, '9', '11620'), ('soccer_uefa_champs_league', 200, '9', '11611'), ('soccer_uefa_conference_league', 200, '9', '11602'), ('soccer_uefa_europa_league', 200, '9', '11593'), ('soccer_usa_mls', 200, '9', '11584'), ('tennis_atp', 200, '9', '11575'), ('tennis_wta', 200, '9', '11566')]
+- Graded legs by source (fliff price, fair price): {'scrape/pinnacle': 290, 'scrape/consensus': 32, 'parlayapi/pinnacle': 2}
+- ParlayAPI calls (sport, http, credits, remaining): [('americanfootball_ncaaf', 200, '9', '11557'), ('americanfootball_nfl', 200, '9', '11548'), ('basketball_nba', 200, '9', '11539'), ('boxing_boxing', 200, '9', '11530'), ('icehockey_nhl', 200, '9', '11521'), ('soccer_england_league1', 200, '9', '11512'), ('soccer_mexico_ligamx', 200, '9', '11503'), ('soccer_spain_la_liga', 200, '9', '11494'), ('soccer_uefa_champs_league', 200, '9', '11485'), ('soccer_uefa_conference_league', 200, '9', '11476'), ('soccer_uefa_europa_league', 200, '9', '11467'), ('soccer_usa_mls', 200, '9', '11458'), ('tennis_atp', 200, '9', '11449'), ('tennis_wta', 200, '9', '11440')]
 - Scrape vs ParlayAPI Fliff price cross-check: {"pairs": 143, "within_0.02": 100, "median_abs_diff": 0.009}
 - Fliff 2-pick price assumed = product of the legs' decimals; confirm on the slip screen before staking.
