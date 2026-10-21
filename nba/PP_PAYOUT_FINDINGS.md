@@ -325,7 +325,7 @@ Owner 15:36-15:37 PT: "go in the app ... add legs and understand the multiplier 
 - **Fantasy picks - proven (runs 39689206312, 39689832099; 110 entries):** Standard = STD[n] x prod(payout_multiplier), 51 of 54
   within 0.5% (the 3 = a line moved between scrape and quote); Flex all-hit = FLEX[n|0] x prod(m) to 0.05%; Underdog floors to 2
   decimals. **The Flex partial shown is the BEST case**: FLEX[n|k] x the largest product of the hit picks' m (the k lowest-m picks
-  miss) - 1 loss median 0.996-0.999 per size, 2 losses 0.995 (n 72). Our screen showed the MEAN over miss sets, so the owner's typed
+  miss) - run 39689832099: 1 loss median 0.996-0.999 per size (n 48), 2 losses 0.995 (n 12); one 5-pick at 0.869 unexplained. Our screen showed the MEAN over miss sets, so the owner's typed
   1.67x / 0.31x could never match it. What is actually paid on a loss is the product of the picks that hit.
 - **One prediction pick + fantasy picks (run 39689836043, 29 entries):** Standard ≈ STD[n-1] x prod(fantasy m) x the prediction
   pick's decimal price x 0.94-0.96 (a smaller factor on longer prices); no Flex offered. Our model (m for every pick) was off by
