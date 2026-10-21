@@ -673,8 +673,8 @@ export async function apiSave(sql, cfg, body, version) {
        s.strategy || null, s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.real_multiplier == null ? null : Number(s.real_multiplier),
        s.real_multiplier_flex_tiers ? JSON.stringify(s.real_multiplier_flex_tiers) : null,
        s.estimated_hit_probability_0_100 == null ? null : Number(s.estimated_hit_probability_0_100), JSON.stringify(legs), fp, body.saved_by || "nba_main_ui"]);
-    if (ins.length) saved.push({ slip_id: Number(ins[0].slip_id), leg_count: legs.length });
-    else skipped.push({ source_key: s.source_key, slip_size: legs.length, reason: "identical_slip_already_saved_today" });
+    if (ins.length) saved.push({ slip_id: Number(ins[0].slip_id), leg_count: legs.length, replaced_earlier_save: ins[0].replaced === true });
+    else skipped.push({ source_key: s.source_key, slip_size: legs.length, reason: "identical_slip_already_graded" });
   }
   return { ok: true, data_ok: true, version, route: "/api/slips/save", saved_count: saved.length, saved_slips: saved, skipped_duplicates: skipped.filter(x => x.reason === "identical_slip_already_saved_today"), skipped };
 }
