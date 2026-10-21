@@ -39,26 +39,55 @@ def _need(mod, pkg):
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", pkg])
 
 
-_need("requests", "requests")
-import requests  # noqa: E402
+_need("curl_cffi", "curl_cffi")
+from curl_cffi import requests  # noqa: E402  the production route: Chrome impersonation through the proxy (scrape_nba_daily_delta)
+
+STATS_HEADERS = {"Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9", "Referer": "https://stats.nba.com/",
+                 "x-nba-stats-origin": "stats", "x-nba-stats-token": "true",
+                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"}
 
 
-def fetch_box(gid, proxy):
-    url = f"https://cdn.nba.com/static/json/liveData/boxscore/boxscore_{gid}.json"
-    hdr = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-           "Referer": "https://www.nba.com/", "Origin": "https://www.nba.com"}
+def _get(url, proxy, headers):
     last = None
-    for px in ([None, proxy] if proxy else [None]):
+    for px in ([proxy, None] if proxy else [None]):
         for _ in range(3):
             try:
-                r = requests.get(url, headers=hdr, timeout=30, proxies={"https": px, "http": px} if px else None)
+                r = requests.get(url, headers=headers, timeout=45, impersonate="chrome124", proxies={"https": px, "http": px} if px else None)
                 if r.status_code == 200:
-                    return r.json()["game"]
+                    return r.json(), None
                 last = f"HTTP {r.status_code}"
             except Exception as e:  # noqa: BLE001
                 last = type(e).__name__          # never the exception text (a proxy URL could be in it)
             time.sleep(2)
-    raise SystemExit(f"box score {gid} unreachable ({last})")
+    return None, last
+
+
+def fetch_box(gid, proxy):
+    """NBA's live box score (cdn.nba.com liveData); fallback stats.nba.com boxscoretraditionalv3 - both carry the same player stats"""
+    j, err = _get(f"https://cdn.nba.com/static/json/liveData/boxscore/boxscore_{gid}.json", proxy,
+                  {"User-Agent": STATS_HEADERS["User-Agent"], "Referer": "https://www.nba.com/", "Origin": "https://www.nba.com"})
+    if j:
+        return j["game"]
+    j, err2 = _get(f"https://stats.nba.com/stats/boxscoretraditionalv3?GameID={gid}&LeagueID=00&endPeriod=0&endRange=28800&rangeType=0"
+                   f"&startPeriod=0&startRange=0", proxy, STATS_HEADERS)
+    if not j:
+        raise SystemExit(f"box score {gid} unreachable (cdn {err}, stats {err2})")
+    b = j["boxScoreTraditional"]
+    def team(t, score):
+        return {"teamId": t["teamId"], "score": score,
+                "players": [{"personId": p["personId"], "name": f"{p.get('firstName', '')} {p.get('familyName', '')}".strip(),
+                             "statistics": dict(p.get("statistics") or {}, minutes=_v3min((p.get("statistics") or {}).get("minutes")))}
+                            for p in t.get("players", [])]}
+    hs = sum(int((p.get("statistics") or {}).get("points") or 0) for p in b["homeTeam"].get("players", []))
+    as_ = sum(int((p.get("statistics") or {}).get("points") or 0) for p in b["awayTeam"].get("players", []))
+    return {"gameStatus": 3 if os.environ.get("LG_ASSUME_FINAL") == "1" else 0, "gameStatusText": "stats.nba.com v3",
+            "homeTeam": team(b["homeTeam"], hs), "awayTeam": team(b["awayTeam"], as_)}
+
+
+def _v3min(m):
+    """'34:12' -> 'PT34M12.00S'"""
+    mm = re.match(r"(\d+):(\d+)", str(m or ""))
+    return f"PT{int(mm.group(1))}M{int(mm.group(2))}.00S" if mm else "PT0M0.00S"
 
 
 def minutes(s):
