@@ -226,8 +226,10 @@ async function saveSelectedSlips(){
     if(!j.ok){alert('Save failed: '+(j.error||'unknown'));return}
     const savedCount=(j.saved_slips||[]).length;
     const dupCount=(j.skipped_duplicates||[]).length;
+    const repCount=(j.saved_slips||[]).filter(s=>s.replaced_earlier_save).length;
     let msg='✅ Saved '+savedCount+' slip(s) with real multipliers recorded.';
-    if(dupCount)msg+=' ('+dupCount+' skipped - identical slip already saved today.)';
+    if(repCount)msg+=' ('+repCount+' of them replaced the same slip saved earlier today - the new multipliers are the ones kept.)';
+    if(dupCount)msg+=' ('+dupCount+' not changed - already graded.)';
     alert(msg);
   }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
 }
