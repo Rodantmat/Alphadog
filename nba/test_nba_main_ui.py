@@ -560,9 +560,13 @@ def api_checks(conn, cfg):
         test_slip = dict(gs[0]); test_slip["track_label"] = "nba_ui_test"
         c1, s1, _ = curl("/api/slips/save", body={"slips": [test_slip], "saved_by": "nba_ui_test"})
         c2, s2, _ = curl("/api/slips/save", body={"slips": [test_slip], "saved_by": "nba_ui_test"})
-        check("C16 save writes nba_score.ui_saved_slips and refuses the identical slip the same day",
-              c1 == 200 and c2 == 200 and (s1.get("saved_count") == 1 or s1.get("skipped_duplicates")) and s2.get("saved_count") == 0 and s2.get("skipped_duplicates"),
-              f"first {s1.get('saved_count')} second {s2.get('saved_count')} dup {len(s2.get('skipped_duplicates') or [])}")
+        # 2026-10-21: saving the same slip again the same day REPLACES it (newer multipliers kept) - same slip_id, flagged replaced
+        id1 = [x.get("slip_id") for x in (s1.get("saved_slips") or [])]
+        id2 = [x.get("slip_id") for x in (s2.get("saved_slips") or [])]
+        check("C16 save writes nba_score.ui_saved_slips; the identical slip saved again the same day replaces the first (one row)",
+              c1 == 200 and c2 == 200 and s2.get("saved_count") == 1 and id2 and (not id1 or id1 == id2)
+              and (s2.get("saved_slips") or [{}])[0].get("replaced_earlier_save") is True,
+              f"first {id1} second {id2} replaced {[(x.get('replaced_earlier_save')) for x in (s2.get('saved_slips') or [])]}")
     code, rc, t = curl("/api/slips/recent?limit=5"); check("C17 saved slips list", code == 200 and rc.get("ok"), f"{len(rc.get('slips', []))}")
     code, he, t = curl("/api/main-board/health"); save_sample("health", he)
     check("C18 health: every layer reported", code == 200 and len(he.get("layers", [])) >= 7, f"{t}s overall {he.get('overall_status')} layers {[l['key'] + ':' + l['status'] for l in he.get('layers', [])]}")
