@@ -152,10 +152,20 @@ def main():
                     chosen.append(o)
                     used_players.add(o["player"])
             gl = gl[1:]
+        mix = os.environ.get("RX_KIND", "fantasy") == "mix"
+        if mix:
+            # MIX: exactly one prediction-market pick (Underdog prices one without a user), the rest fantasy-priced
+            g0 = next((g for g in gl if any(o["game"] == g and o["kind"] == "prediction" for o in opts)), None)
+            if g0 is None:
+                return None
+            o = rng.choice([o for o in opts if o["game"] == g0 and o["kind"] == "prediction"])
+            chosen.append(o)
+            used_players.add(o["player"])
+            gl = [g for g in gl if g != g0]
         for g in gl:
             if len(chosen) >= n:
                 break
-            pool = [o for o in opts if o["game"] == g and o["player"] not in used_players]
+            pool = [o for o in opts if o["game"] == g and o["player"] not in used_players and (not mix or o["kind"] == "fantasy")]
             if pool:
                 o = rng.choice(pool)
                 chosen.append(o)
