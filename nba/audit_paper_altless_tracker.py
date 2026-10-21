@@ -52,6 +52,22 @@ def main():
                 for x in g:
                     x["rmin"] = min(x["r_score"], x["r_fh"], x["r_bh"])
                     legs[(x["nm"], x["prop"], float(x["line"]))] = x
+            # the research's leg universe is GRADED rungs only (tier_map_legs needs a box-score hit); live, a DNP cannot be known,
+            # so the tracker ranks over every priced rung. METHOD parity = the tracker's ranking over the research's universe.
+            graded = {(n_, pr_, float(li_)) for n_, pr_, li_ in conn.execute(
+                """SELECT DISTINCT nba_ref.norm_name(player), prop, line::float8 FROM nba_score.tier_map_legs
+                   WHERE game_date = %s AND side = 'Over' AND tier IN ('G1','G2','G3','D1','D2','D3')
+                     AND prop IN ('points','pra','rebounds','assists')""", (d,)).fetchall()}
+            gm = {}
+            for g in groups.values():
+                gg = [x for x in g if (x["nm"], x["prop"], float(x["line"])) in graded]
+                rk = {}
+                for key in ("score", "fh", "bh"):
+                    for i, x in enumerate(sorted(gg, key=lambda x: (x[key], x["pid"], x["line"])), 1):
+                        rk.setdefault(id(x), []).append(i)
+                for x in gg:
+                    gm[(x["nm"], x["prop"], float(x["line"]))] = min(rk[id(x)])
+            extra = sum(1 for kk in legs if kk not in graded)
             rr = [r for r in res if r["game_date"] == d]
             rmins = [r for r in rr if min(v for v in (r["n_fs"], r["n_fh"], r["n_bh"]) if v is not None) <= 2]
             found = same = 0
