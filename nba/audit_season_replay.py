@@ -39,6 +39,14 @@ for _kv in filter(None, os.environ.get("AR_CAPS", "").split(",")):
     print(f"AR_CAPS: {_n} cap {_t[3]} -> {int(_c)} (this research run only)", flush=True)
 
 
+# AR_OVER_MIN (research only, 2026-10-21): the Over minutes floor (live_slip_engine.over_minutes_filter) ON at this many minutes for
+# this replay only (the runner's env pairs cannot carry JSON). Production reads its DB row; nothing is written.
+if os.environ.get("AR_OVER_MIN"):
+    import json as _json
+    os.environ["LS_OVER_MIN"] = _json.dumps({"enabled": True, "min_avg": float(os.environ["AR_OVER_MIN"]), "games": 10})
+    print(f"AR_OVER_MIN: Over minutes floor {os.environ['AR_OVER_MIN']} min ON (this research run only)", flush=True)
+
+
 class NoCommit:
     def __init__(self, c): self._c = c
     def commit(self): pass
