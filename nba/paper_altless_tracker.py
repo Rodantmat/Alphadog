@@ -18,7 +18,7 @@ PICK (P3, after the board is archived and scored - MODE=pick, PAT_DATE = the sla
   price  = PrizePicks' Less law (research_exhaustive_pp.less_price: complement S 0.99 of the quote-level More price, floor 1.7x,
            3% conservative) - recorded per leg; the slip is graded with the certified grader (2-pick alternate Power x 0.93)
   rules  = depth rmin <= 2, sizes 2..6, Power and Flex (owner rule: always 2-6, both structures): one slip per rule per slate,
-           legs in (rmin, higher factor) order, one leg per player, at most 2 legs per game, at least 2 games; only games that have
+           legs in (rmin, higher factor) order, one leg per player, at most 2 legs per game, at least 2 games (build()); only games that have
            NOT tipped at pick time. One set per day: a slate already picked is never re-picked.
 GRADE (P2A, next morning - MODE=grade): every ungraded slip of a finished slate: leg hit = stat < line from
   nba_stats.player_game_log (no row = DNP = void; a whole-number tie = void), payout by build_slip_engine.grade.
