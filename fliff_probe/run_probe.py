@@ -332,6 +332,10 @@ def resolve_scraped(pr, teams):
 def match_event(fe, pevs):
     best, bs = None, 0
     for e in pevs:
+        # derivative pseudo-events ("Viking (Bookings)", "(Corners)") price cards/corners, not the match: never a match
+        # (run 2026-10-20 23:24 PT graded Viking ML 10.70 at +486% against a bookings market)
+        if "(" in str(e.get("home_team")) or "(" in str(e.get("away_team")):
+            continue
         try:
             st = datetime.fromisoformat(str(e.get("commence_time")).replace("Z", "+00:00"))
         except ValueError:
