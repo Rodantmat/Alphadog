@@ -2640,3 +2640,31 @@ anything that's proved positive, we will try".
       latest past slate.
     - **The test's own fix:** the 18/45 run 39535631994 was the browser walk needing a card on a board that is now correctly empty.
       Earlier today's D01 failure after the last tip was the same.
+16. **10-20 outcome, graded by hand from live box scores** (owner 20:37 PT: "grade it manually with live results and understand what
+    went wrong"). audit_live_grade_today.py (run 39544749657) inserted the box scores and ran the real graders inside one transaction,
+    then rolled back (ROLLBACK_VERIFIED). Finals: BOS 113 @ DET 121, PHI 106 @ NYK 100, OKC 116 @ SAS 104.
+    - **PrizePicks (all paper in the opening weeks, nothing staked):** 8 slips, 1 paid 1.5x (A_wrebounds_4flex 3/4) and 1 paid 0.4
+      (A_core_5flex shadow 3/5); the rest lost. Distinct legs 9/16 (56%): Unders 8/10, Overs 1/6.
+    - **Underdog (paper):** 4 slips, all lost; Jaylen Brown rebounds Under 5.5 (8) was in all 4.
+    - **What lost it:** (1) concentration - Pritchard turnovers Over 1.5 (0) sat in 5 of 8 PrizePicks slips, so one miss sank most of
+      the day; (2) Overs 1/6, including two Daniss Jenkins lines on 15.3 minutes and a pulled VJ Edgecombe threes demon; (3) Wembanyama
+      stocks Under 4.5 (7) in 3 slips, model 0.956 vs market-anchored 0.673. 16 legs is one day: 56% is inside the noise of the certified
+      ~61-65% leg rate.
+    - **Model vs market, two seasons (research_model_market_gap.py, run 39545237163):** on ALL graded PrizePicks legs the realized
+      rate follows the market-anchored number, not the model. Model >= 0.80, gap >= 0.20: 2024-25 hit 0.545 (model 0.844, anchored
+      0.606); 2025-26 hit 0.601 (0.838 / 0.592). Gap < 0: hit about 0.70 in both seasons.
+    - **But on the legs the certified cells actually pick (replay v3, unique legs):** gap >= 0.15 hit 0.522 vs 0.527 below it
+      (2024-25) and 0.554 vs 0.577 (2025-26). The cells' own selection already removes most of the problem, so a blanket gap cap is
+      NOT supported. The pattern is consistent in both seasons only for: threes Over big gap 0.319 / 0.412 vs 0.450 / 0.521 (worse);
+      stocks Under big gap 0.561 / 0.602 vs 0.584 / 0.616 (slightly worse); turnovers Under and points Under big gap BETTER in both.
+      Slip-weighted counts mislead here: 115 replay slip-legs of steals Under were only 11 distinct legs.
+    - **Next, through the slip engine with real payouts, sizes 2-6, Flex and Power:** (a) a leg-exposure cap across a day's slips;
+      (b) gap filter on threes Over only; (c) a minutes floor for Overs / demons. Nothing changes in production before those pass.
+17. 🔴→✅ **Tomorrow's simulation (run 39533793393) - one real bug, one timing artifact.**
+    - **Real bug:** the blowout refit died on KeyError 'GAME_DATE'. ensure_season_files writes an empty 2026-27 stub (records []) and
+      the refit built a DataFrame with no columns from it. Fixed: an empty season is skipped (build_blowout_model.py, blob 40aa10da).
+      The step is continue-on-error with no production reader, but a failing step is a failure.
+    - **Artifact, not production:** the sim started 20:56 PT 10-20 = 23:56 ET, still 10-20 in Eastern time. The archive labels
+      'window' for today's ET games only, so every 10-21 PrizePicks / Underdog row became 'routine'. No window rows, no tiers, and the
+      pick refused, correctly. The real P3 runs on 10-21 ET. Production untouched (both checks 0; no pipeline_runs row).
+    - **Rerun:** run 39545353258, started 21:40 PT = 00:40 ET 10-21.
