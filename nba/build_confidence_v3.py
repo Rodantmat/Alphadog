@@ -280,6 +280,7 @@ def main():
         cur.execute("ANALYZE tmp_graded")
         cur.execute("SELECT count(*) FROM tmp_graded")
         print(f"  graded legs materialised: {cur.fetchone()[0]:,}", flush=True)
+    materialise_market(conn)
 
     # LOOP PER PROP. EXPLAIN settled where the cost actually is: for ONE prop the plan is healthy -
     # Index Scan on final_hp, Index Only Scan on baseline_history_lookup_idx, cost 1.18M with an
