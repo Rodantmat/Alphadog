@@ -2623,3 +2623,20 @@ anything that's proved positive, we will try".
     - **C48:** empty on opening night (no anchored graded legs in the 30 days before the first slate). The window now falls back to
       the latest graded anchored stretch. Window ending 2026-04-13: shown / hit 0.543 / 0.544 (n 39,000), 0.652 / 0.665 (17,461),
       0.735 / 0.751 (8,524), all within 5 points.
+15. 🔴→✅ **Board after every tip + Underdog counts: main UI v1.4.25** (owner 19:44 PT screenshot: "Showing 0 of 148 qualified
+    legs", Points (871) etc., "it should not show started legs/games", "the bad underdog legs from earlier still there").
+    - **Causes:**
+      - Started games were hidden only by the browser, so the server's "148 qualified" and every filter count still held them.
+      - The filter-count endpoint (`apiFilters`) never applied the unplaceable-Underdog screen the board uses: 569 of 1,307 Underdog
+        legs on 10-20 were counted but never shown.
+      - The one bad Underdog leg in today's paper slips (John Collins Assists 3.5, an alternate rung of a prediction-market line)
+        predates the flags (slips 11:42 PT, flags 12:35 PT). Underdog paper slips are already hidden on the Slips screen.
+    - **Fix (board.js):** on a LIVE slate a leg whose game has tipped (final_hp.game_id -> slate_games tip time) is left out of the
+      board AND the counts; the counts apply the same Underdog screen as the board. The browser's started check stays as a second
+      guard. When every game has started the board says so and names the next slate and when it is scored.
+    - **Queries proven first:** 10-20 live = 0 legs (all tipped); 2026-04-10 replay = 51,003 / 51,003 kept.
+    - **UI test:** 104/104 on a full past slate (run 39536702216), then 105/105 default (run 39537616398). The new D00 checks that
+      after every tip the board has 0 rows, the counts 0 rows and the next slate named (10-21, 11 games), then the suite walks the
+      latest past slate.
+    - **The test's own fix:** the 18/45 run 39535631994 was the browser walk needing a card on a board that is now correctly empty.
+      Earlier today's D01 failure after the last tip was the same.
