@@ -334,6 +334,15 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
      in both seasons.
    - **Trailing selectors** pass 2025-26 and fail 2024-25 at every size.
    - **A standard 2-pick Power quoted 2.9x, not 3x** (PP_PAYOUT_FINDINGS 0o). This is an open quote item; the grader is unchanged.
+175. 🔑 **SAME LEG IN MANY SLIPS IS VARIANCE, NOT LOST EDGE; OVERS NEED MINUTES (2026-10-21 03:25 PT; owner 10-20 21:48 PT: "We
+   clearly have a correlation issue in many players on many slips ... prove successful before deploying"; ledger OPENING NIGHT 16-18).**
+   - **Exposure caps rejected** on both seasons through the production pick (`research_slip_exposure.py`): every cap (per strategy,
+     per day per leg, per player) cost 9-28 ROI points - the replacement slips use weaker legs. Code stays OFF (`slip_exposure`, no row).
+   - **Over minutes floor ON:** `classification_config['over_minutes_floor'] = {enabled, min_avg 22, games 10}` - an Over leg is left
+     out when the player's last-10 minutes average < 22. Full production replays: 2025-26 ROI 85.3 -> 88.4%, max DD 73.0 -> 49.7;
+     2024-25 ROI 33.5 -> 36.8%, max DD 134.3 -> 127.0. Off = set enabled false.
+   - **Threes-Over model-vs-market gap filter rejected** (flips between seasons). On the legs the cells pick, the model-market gap barely
+     moves the hit rate (research_model_market_gap.py + replay legs).
 
 ---
 
