@@ -261,7 +261,7 @@ def main():
                 f = lambda v: f"n {len(v)} median {median(v):.4f} min {min(v):.4f} max {max(v):.4f}" if v else "n 0"
                 print(f"  {n}-pick {lab:<8}: different games {f(xs)} | same game {f(sg)}")
     for k in ("1", "2"):
-        for cand in ("all", "meanhit", "table"):
+        for cand in ("best", "all", "meanhit", "table"):
             xs = [r["fallbacks"][k] / r[f"fb{k}_cand_{cand}"] for r in cmp if k in r["fallbacks"] and r.get(f"fb{k}_cand_{cand}")]
             if xs:
                 print(f"  flex {k}-loss vs candidate '{cand}': n {len(xs)} median {median(xs):.4f} min {min(xs):.4f} max {max(xs):.4f}")
