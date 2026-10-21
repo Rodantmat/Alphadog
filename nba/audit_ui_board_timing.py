@@ -2,7 +2,7 @@
 """
 AUDIT - how long the main board's first load takes, Overview vs the whole board (2026-10-21). READ-ONLY (HTTP GETs only).
 The browser gives the board load 15 s. Each endpoint is called AT_N times; time, status, row count, and the Overview's settings.
-Env: UI_URL (default the deployed NBA main UI), AT_N (default 3).
+Env: UI_URL (default the deployed NBA main UI), AT_N (default 3). "baseline" = a one-row endpoint: the fixed cost of a request (worker + database connection).
 """
 import json
 import os
@@ -27,13 +27,14 @@ def get(path):
 
 def main():
     worst = 0.0
-    for label, path in (("overview", "/api/main-board/current?view=overview"), ("whole board", "/api/main-board/current?limit=200&min_score=80"),
+    for label, path in (("baseline", "/api/slips/recent?limit=1"), ("overview", "/api/main-board/current?view=overview"), ("whole board", "/api/main-board/current?limit=200&min_score=80"),
                         ("filters", "/api/main-board/filters")):
         for i in range(N):
             t, code, d = get(path + ("&" if "?" in path else "?") + "t=" + str(int(time.time() * 1000)))
             rows = len(d.get("rows") or []) if isinstance(d, dict) else None
             ov = d.get("overview") if isinstance(d, dict) else None
             print(f"{label:<12} #{i + 1}: {t:6.2f}s HTTP {code} rows {rows} ok {d.get('ok') if isinstance(d, dict) else None}"
+                  + (f" | server query_ms {d.get('query_ms')}" if isinstance(d, dict) and d.get('query_ms') is not None else "")
                   + (f" | candidates {ov.get('candidates')}" if ov else "") + ("" if d.get("ok", True) else f" | error {str(d.get('error'))[:200]}"), flush=True)
             if label == "overview":
                 worst = max(worst, t)
