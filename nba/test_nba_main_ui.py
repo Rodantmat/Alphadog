@@ -766,6 +766,17 @@ def honest_checks(conn, cfg, d0):
                                     ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop AND th.line = b0.line AND th.side = b0.side
                                   WHERE b0.game_date = %s AND b0.app = ANY(%s)""", (d0, cfg["apps"])).fetchone()
     check("C47 every board leg carries the market-anchored probability (board_true_hp)", n_all and n_th / n_all >= 0.99, f"{n_th:,} of {n_all:,} legs ({d0})")
+    # OPENING NIGHT (2026-10-20): the 30 days before the first slate of a season hold no anchored graded legs (offseason). Then the
+    # window ends at the LAST date with anchored legs that have box scores (the latest graded stretch), stated in the detail.
+    d_end = d0
+    have = conn.execute("""SELECT count(*) FROM nba_score.board_true_hp th WHERE th.game_date BETWEEN %s::date - 30 AND %s::date - 1
+                           AND EXISTS (SELECT 1 FROM nba_stats.player_game_log g WHERE g.game_date = th.game_date)""", (d0, d0)).fetchone()[0]
+    if not have:
+        last = conn.execute("""SELECT max(th.game_date) FROM nba_score.board_true_hp th WHERE th.game_date < %s
+                               AND EXISTS (SELECT 1 FROM nba_stats.player_game_log g WHERE g.game_date = th.game_date)""", (d0,)).fetchone()[0]
+        if last:
+            d_end = last + __import__("datetime").timedelta(days=1)
+    d0 = d_end
     rows = conn.execute("""
         WITH t AS (SELECT th.game_date, th.player_id, th.prop, th.line::float8 line, th.side, th.true_hp::float8 p, th.model_hp::float8 m FROM nba_score.board_true_hp th
                    WHERE th.game_date BETWEEN %s::date - 30 AND %s::date - 1),
