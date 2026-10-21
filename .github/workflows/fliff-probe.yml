@@ -68,7 +68,12 @@ jobs:
           PROBE_MAX_EVENTS: ${{ github.event.inputs.max_events || '250' }}
         run: |
           STEP="${{ github.event.inputs.step || 'run' }}"
-          if [ "$STEP" = "discover" ]; then python fliff_probe/discover.py; else python fliff_probe/run_probe.py; fi
+          case "$STEP" in
+            discover) python fliff_probe/discover.py ;;
+            discover_props) python fliff_probe/discover_props.py ;;
+            pairs) python fliff_probe/pairings.py ;;
+            *) python fliff_probe/run_probe.py ;;
+          esac
       - name: Commit probe output (fliff_probe/out only)
         if: always()
         run: bash nba/git_push_retry.sh "Fliff probe output [skip ci]" fliff_probe/out
