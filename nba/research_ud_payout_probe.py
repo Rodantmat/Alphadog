@@ -14,7 +14,11 @@ returns only the base tables: Flex 3 3.25/1.09, 4 7.2/1.4, 5 10/2.5, 6 25/2.6/0.
 Each round: a fresh Underdog NBA board (our scraper, same headers / proxy), N random pre-game entries of 2-6 picks (one pick per game,
 a share same-game), Underdog's quote for each, and OUR prediction beside it:
   standard = STD[n] x prod(payout_multiplier)        flex full = FLEX[n|0] x prod(m)
-  flex k losses: candidates (a) FLEX[n|k] x prod(all m), (b) FLEX[n|k] x mean over the k-miss sets of prod(hit m), (c) table only.
+  flex k losses: candidates (best) FLEX[n|k] x the largest prod(hit m) over the k-miss sets (= the k lowest-m picks miss),
+  (all) FLEX[n|k] x prod(all m), (meanhit) FLEX[n|k] x mean over the k-miss sets of prod(hit m), (table) table only.
+ROUND 2 (run 39689206312, 50 fantasy entries): Standard = STD[n] x prod(m) and Flex full = FLEX[n|0] x prod(m) to 0.05% (Underdog
+floors to 2 decimals; standard is `odds.multiplier`). Partials fit none of all / meanhit / table -> (best) added.
+RX_KIND=mix: one prediction-market pick + fantasy picks, to learn how a prediction pick is priced.
 Every quote is stored (nba_market.ud_payout_quotes, retained). The summary says which prediction matches and by how much.
 Env: RX_N (entries, default 60), RX_SEED, RX_SAME_GAME_SHARE (default 0.2), RX_SIZES (default 2,3,4,5,6), RX_KIND (fantasy | prediction).
 """
