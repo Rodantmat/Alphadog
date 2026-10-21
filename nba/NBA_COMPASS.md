@@ -324,6 +324,17 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 
 173. 🔑 **BETR IS PARKED AND WAS A/B-SIMULATED ON ITS OWN (2026-10-19 22:51-00:12 PT; owner: "Leave betr out for now ... debug, simulate and test it separated and deeply"; ledger item 12).** Park = `classification_config['p3_betr_wait'].enabled = false` (the P3 Betr dispatch step exits with a notice, `score_board_legs.py` drops betr / betr_us_dfs) plus "betr" removed from `nba_main_ui.apps`; restore = set it true and add "betr" back. `nba/sim_betr_ab.py` (run 39377656365, rolled back, production verified empty): scoring with Betr on gave 8,920 legs, parked 7,036 (2,320 Betr legs dropped, proving the switch). Betr's presence moves 29% of the OTHER apps' legs (confidence and score only, final_hp untouched; mean score shift 0.4-0.7, max 2.9) because it is one of the books in `f_books`; on legs both Betr and PrizePicks list the final_hp is identical, so Betr adds lines and corroboration, not price. `rows_betr` mapping fixed for FGA, FTA, fouls, REB (94.7% of the committed board is now scorable); tiers and alt rungs are still lumped into `<market>_alternate` with multiplier NULL, so Betr's payout is not capturable yet - that is the improvement to build and re-test before un-parking.
 
+174. 🔑 **OPENING NIGHT: GOBLIN / DEMON LESS AND STANDARD FLEX GO TO FORWARD PAPER, AND REGULAR 2-PICK FLEX IS NOT POSITIVE (2026-10-20 evening PT; owner: "anything that's proved positive, we will try"; ledger "OPENING NIGHT" items 8-10).**
+   - **Paper tracker live.** `nba/paper_altless_tracker.py` → `nba_score.paper_altless_slips` (paper, never placed, off the slip screen).
+     P3 picks (soft step `soft_paper_al`); P2A grades and prints the report.
+     - **AL_* rules** use only rungs PrizePicks actually opened to Less.
+     - **SR_* rules** are the 9 standard 5/6-pick Flex rules whose LB5 > 0 in both seasons.
+     - **Certified** by `audit_paper_altless_tracker.py`: rank parity up to ties, grade parity, standard legs 908/908 and 772/772.
+   - **Regular-line 2-pick Flex** needs a leg rate of 0.618 (Power 0.577). No cell holds that in both seasons, and every 2F rule lost
+     in both seasons.
+   - **Trailing selectors** pass 2025-26 and fail 2024-25 at every size.
+   - **A standard 2-pick Power quoted 2.9x, not 3x** (PP_PAYOUT_FINDINGS 0o). This is an open quote item; the grader is unchanged.
+
 ---
 
 ## 4. Where everything lives
