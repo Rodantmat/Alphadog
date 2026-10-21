@@ -17,9 +17,20 @@ const UD_HIDE = a => `(${a}.app = 'underdog'
                       WHERE uf.game_date = ${a}.game_date AND uf.hide AND uf.player = ${a}.player AND uf.line = ${a}.line AND um0.prop = ${a}.prop))`;
 
 // Builds the enriched-leg query. `where` is extra SQL on board_scored alias b (its params start at $6). `screen` false keeps the unplaceable Underdog legs (flagged ud_hide).
+// STARTED GAMES (owner 2026-10-20 19:44 PT: "it should not show started legs/games"): on a LIVE slate (today or later, Pacific) a leg
+// whose game has tipped is no longer playable - the server leaves it out of the board AND of the filter counts (the browser's own
+// started check stays as a second guard). The leg's game is its own scored game (nba_score.final_hp.game_id -> slate_games tip time).
+// A past slate (replay) keeps every leg.
+const STARTED_CTE = `stp AS (SELECT DISTINCT fx.player_id FROM nba_score.final_hp fx
+                JOIN nba_calendar.slate_games sx ON sx.game_id = fx.game_id AND sx.game_date = fx.game_date
+                WHERE fx.game_date = $1::date AND $1::date >= (now() AT TIME ZONE 'America/Los_Angeles')::date
+                  AND sx.game_datetime_utc <= now())`;
+const NOT_STARTED = a => `AND ${a}.player_id NOT IN (SELECT player_id FROM stp)`;
+
 export function legsSql(where, limit, screen = true) {
   return `
-WITH bs AS (
+WITH ${STARTED_CTE},
+bs AS (
   -- HONEST PROBABILITY (2026-10-14): final_hp / score / edge are the market-anchored values (nba_score.board_true_hp, written by
   -- nba/apply_market_anchor.py) wherever they exist; the model's own number travels beside them as model_hp / model_score.
   SELECT b.game_date, b.app, b.player_id, b.player, b.prop, b.line, b.side, b.final_hp, b.baseline_hp, b.cal_shift,
