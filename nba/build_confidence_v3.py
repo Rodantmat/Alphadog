@@ -304,36 +304,7 @@ def main():
     conn.commit()
     frames = []
     for prop in props:
-        part = pd.read_sql("""
-            WITH rm AS (
-                SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line,
-                       max(books) AS books, avg(p_over_book) AS p_over_book
-                FROM nba_market.rung_market GROUP BY 1,2,3
-            ),
-            bt AS (
-                SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line, side,
-                       min(kind) AS kind, min(tier) AS tier
-                FROM nba_market.board_tiers_v2 WHERE snapshot_label='window' AND bookmaker='prizepicks' GROUP BY 1,2,3,4
-            )
-            SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.final_hp, f.anchor,
-                   f.n_uncertain, f.ladder_offset, f.player_id,
-                   b.proj_min, b.rate36, b.used_emp, b.role_tier,
-                   rm.books, rm.p_over_book, bt.kind, bt.tier, g.won
-            FROM tmp_graded g
-            JOIN nba_score.final_hp f
-              ON f.game_date=g.game_date AND f.player_id=g.player_id AND f.prop=g.prop
-             AND f.line=g.line AND f.side=g.side
-            LEFT JOIN nba_score.baseline_history b
-              ON b.game_date=g.game_date AND b.player_id=g.player_id AND b.prop=g.prop AND b.line=g.line
-            LEFT JOIN rm ON rm.game_date=g.game_date AND rm.nm=g.nm AND rm.line=g.line
-            LEFT JOIN bt ON bt.game_date=g.game_date AND bt.nm=g.nm AND bt.line=g.line AND bt.side=g.side
-            WHERE f.season = ANY(%s) AND f.prop = %s AND g.prop = %s
-              -- §31w (2026-10-09): the deduction model is fitted on REGULAR-SEASON legs only. Postseason rows (game ids
-              -- 004/005) now share final_hp / board_outcomes; letting them into this fit would change every certified
-              -- regular-season confidence (and the market-free twin's deductions) without a recertification. The postseason
-              -- uses the regular-season deductions as its prior, like every other regular-season fit.
-              AND NOT (coalesce(f.game_id, '') LIKE '004%%' OR coalesce(f.game_id, '') LIKE '005%%')
-            """, conn, params=(seasons, prop, prop))
+        part = pd.read_sql(PROP_SQL, conn, params=(seasons, prop, prop))
         if not part.empty:
             frames.append(part)
             # score THIS prop now and persist it, so the run is never all-or-nothing
