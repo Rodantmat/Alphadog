@@ -10,15 +10,19 @@ on:
     inputs:
       step:
         description: "discover | run"
-        default: "discover"
+        default: "run"
         required: false
       sports:
-        description: "run: comma list of ParlayAPI sport keys, or 'auto' (every sport Fliff and Pinnacle both price)"
+        description: "run: comma list of ParlayAPI sport keys, or 'auto' (every mapped sport with Fliff events in the window)"
         default: "auto"
         required: false
       hours:
         description: "run: look-ahead window in hours"
         default: "48"
+        required: false
+      max_events:
+        description: "run: cap on Fliff event boards pulled (sample runs: 20-40)"
+        default: "250"
         required: false
 
 permissions:
@@ -61,9 +65,10 @@ jobs:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           PROBE_SPORTS: ${{ github.event.inputs.sports || 'auto' }}
           PROBE_HOURS: ${{ github.event.inputs.hours || '48' }}
+          PROBE_MAX_EVENTS: ${{ github.event.inputs.max_events || '250' }}
         run: |
-          STEP="${{ github.event.inputs.step || 'discover' }}"
-          if [ "$STEP" = "run" ]; then python fliff_probe/run_probe.py; else python fliff_probe/discover.py; fi
+          STEP="${{ github.event.inputs.step || 'run' }}"
+          if [ "$STEP" = "discover" ]; then python fliff_probe/discover.py; else python fliff_probe/run_probe.py; fi
       - name: Commit probe output (fliff_probe/out only)
         if: always()
         run: bash nba/git_push_retry.sh "Fliff probe output [skip ci]" fliff_probe/out
