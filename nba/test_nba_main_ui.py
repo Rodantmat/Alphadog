@@ -919,6 +919,18 @@ def browser():
                 raise RuntimeError(f"swapped slip prices the wrong legs: {card}")
             if card["single"] not in (None, "") and abs(float(card["single"]) - float(card["badge"].rstrip("x") or 0)) > 0.011:
                 raise RuntimeError(f"badge and real-multiplier field disagree after the swap: {card}")
+            # 2026-10-21: the substitute is the SAME line type as the removed leg whenever the pool holds a legal one for that slip
+            # (a goblin replacing a regular leg cut the payout)
+            st = page.evaluate("""(() => { for (const [si, m] of slipSubs) for (const [li, sb] of m) { const rm = lastRawSlips[si].legs[li];
+                const un = slipUnchecked.get(si) || new Set(); const kept = lastRawSlips[si].legs.filter((x, i) => !un.has(i) && x !== sb);
+                const left = backupPool.filter(l => poolLegIsLegalForSlip(l, kept, lastRawSlips[si]) && String(l.line_type || 'regular') === String(rm.line_type || 'regular')).length;
+                return { removed: rm.line_type || 'regular', sub: sb.line_type || 'regular', sub_edge: sb.edge_0_100, same_type_left: left }; } return null; })()""")
+            if not st:
+                raise RuntimeError("no substitute recorded")
+            if st["sub"] != st["removed"] and st["same_type_left"] > 0:
+                raise RuntimeError(f"substitute is a different line type while the pool holds the same type: {st}")
+            if st["sub_edge"] is None or float(st["sub_edge"]) <= 0:
+                raise RuntimeError(f"substitute has no positive edge: {st}")
         step("05_slips_substitution", sub)
 
         def profile():
