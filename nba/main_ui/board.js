@@ -27,6 +27,38 @@ const STARTED_CTE = `stp AS (SELECT DISTINCT fx.player_id FROM nba_score.final_h
                   AND sx.game_datetime_utc <= now())`;
 const NOT_STARTED = a => `AND ${a}.player_id NOT IN (SELECT player_id FROM stp)`;
 
+// PRICE LOOKUPS (2026-10-21 speed fix). The PrizePicks variation (board_tiers_v2), model factor (pp_leg_price) and the
+// Underdog / Sleeper / Fliff multiplier (board_snapshots) of the legs in CTE `src`. Each source row's market key is normalised
+// ONCE (MATERIALIZED) and then hash-joined to the market map - joining on regexp_replace(...) = mk.market_key made the planner
+// re-run the regexp for every (row x 38 markets) pair: 1.2M regexp calls per lookup, ~3-5 s each on a full slate (EXPLAIN 10-21).
+// Same rows, same DISTINCT ON order as before. Each lookup carries `k` = player|prop|side|line for a single-key join.
+// the market-key normaliser (kept out of the literal text so no tool reads its $ + quote as a replacement token)
+const NORM_RE = "'_(alternate|promo)" + "$" + "'";
+const LKEY = a => `concat_ws('|', ${a}.player, mk.prop, ${a}.side, (${a}.line::float8)::text)`;
+function lookupCtes(src, udBooks) {
+  return `pk0 AS MATERIALIZED (SELECT t.player, t.side, t.line, t.kind, t.tier, t.anchor_line, t.snapshot_label, t.built_at,
+              regexp_replace(t.base_market, ${NORM_RE}, '') bm
+       FROM nba_market.board_tiers_v2 t
+       WHERE t.game_date = $1::date AND t.bookmaker = 'prizepicks' AND t.player IN (SELECT DISTINCT player FROM ${src} WHERE app = 'prizepicks')),
+pk AS (SELECT DISTINCT ON (t.player, mk.prop, t.side, t.line) t.player, mk.prop, t.side, t.line, t.kind, t.tier, t.anchor_line, ${LKEY("t")} k
+       FROM pk0 t JOIN mk ON mk.market_key = t.bm
+       ORDER BY t.player, mk.prop, t.side, t.line, array_position($5::text[], t.snapshot_label) NULLS LAST, t.built_at DESC),
+pf0 AS MATERIALIZED (SELECT p.player, p.side, p.line, p.factor, p.implied_p, p.snapshot_label, regexp_replace(p.base_market, ${NORM_RE}, '') bm
+       FROM nba_market.pp_leg_price p
+       WHERE p.game_date = $1::date AND p.factor IS NOT NULL AND p.player IN (SELECT DISTINCT player FROM ${src} WHERE app = 'prizepicks')),
+pf AS (SELECT DISTINCT ON (p.player, mk.prop, p.side, p.line) p.player, mk.prop, p.side, p.line, p.factor, p.implied_p, ${LKEY("p")} k
+       FROM pf0 p JOIN mk ON mk.market_key = p.bm
+       ORDER BY p.player, mk.prop, p.side, p.line, array_position($5::text[], p.snapshot_label) NULLS LAST),
+um0 AS MATERIALIZED (SELECT s.bookmaker, s.player, s.side, s.line, s.multiplier, s.price, s.snapshot_label, s.fetched_at,
+              regexp_replace(s.market_key, ${NORM_RE}, '') bm
+       FROM nba_market.board_snapshots s
+       WHERE s.game_date = $1::date AND s.bookmaker IN (${udBooks})
+         AND s.player IN (SELECT DISTINCT player FROM ${src} WHERE app IN (${udBooks}))),
+um AS (SELECT DISTINCT ON (s.bookmaker, s.player, mk.prop, s.side, s.line) s.bookmaker, s.player, mk.prop, s.side, s.line, s.multiplier, s.price, ${LKEY("s")} k
+       FROM um0 s JOIN mk ON mk.market_key = s.bm
+       ORDER BY s.bookmaker, s.player, mk.prop, s.side, s.line, array_position($5::text[], s.snapshot_label) NULLS LAST, s.fetched_at DESC)`;
+}
+
 export function legsSql(where, limit, screen = true) {
   return `
 WITH ${STARTED_CTE},
@@ -67,19 +99,7 @@ tm AS (SELECT p.player_id, p.pid_t, pl.position,
               ELSE COALESCE(gl.team_id, pl.team_id) END team_id
        FROM pids p LEFT JOIN gl ON gl.player_id = p.pid_t LEFT JOIN nba_ref.players pl ON pl.player_id = p.pid_t),
 mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop)),
-pk AS (SELECT DISTINCT ON (t.player, mk.prop, t.side, t.line) t.player, mk.prop, t.side, t.line, t.kind, t.tier, t.anchor_line
-       FROM nba_market.board_tiers_v2 t JOIN mk ON mk.market_key = regexp_replace(t.base_market, '_(alternate|promo)$', '')
-       WHERE t.game_date = $1::date AND t.bookmaker = 'prizepicks' AND t.player IN (SELECT DISTINCT player FROM bs WHERE app = 'prizepicks')
-       ORDER BY t.player, mk.prop, t.side, t.line, array_position($5::text[], t.snapshot_label) NULLS LAST, t.built_at DESC),
-pf AS (SELECT DISTINCT ON (p.player, mk.prop, p.side, p.line) p.player, mk.prop, p.side, p.line, p.factor, p.implied_p
-       FROM nba_market.pp_leg_price p JOIN mk ON mk.market_key = regexp_replace(p.base_market, '_(alternate|promo)$', '')
-       WHERE p.game_date = $1::date AND p.factor IS NOT NULL AND p.player IN (SELECT DISTINCT player FROM bs WHERE app = 'prizepicks')
-       ORDER BY p.player, mk.prop, p.side, p.line, array_position($5::text[], p.snapshot_label) NULLS LAST),
-um AS (SELECT DISTINCT ON (s.bookmaker, s.player, mk.prop, s.side, s.line) s.bookmaker, s.player, mk.prop, s.side, s.line, s.multiplier, s.price
-       FROM nba_market.board_snapshots s JOIN mk ON mk.market_key = regexp_replace(s.market_key, '_(alternate|promo)$', '')
-       WHERE s.game_date = $1::date AND s.bookmaker IN ('underdog', 'sleeper', 'fliff')
-         AND s.player IN (SELECT DISTINCT player FROM bs WHERE app IN ('underdog', 'sleeper', 'fliff'))
-       ORDER BY s.bookmaker, s.player, mk.prop, s.side, s.line, array_position($5::text[], s.snapshot_label) NULLS LAST, s.fetched_at DESC)
+${lookupCtes("bs", "'underdog', 'sleeper', 'fliff'")}
 SELECT bs.game_date::text game_date, bs.app, bs.player_id, bs.player, bs.prop, bs.line::float line, bs.side, bs.final_hp::float final_hp,
        bs.model_hp::float model_hp, bs.model_score::float model_score, bs.market_hp::float market_hp, bs.hp_anchor, bs.dk_line::float dk_line,
        bs.dk_p::float dk_p, bs.pp_line::float pp_line, bs.true_fit, bs.ud_hide,
@@ -142,12 +162,8 @@ export function lineType(r) {
   return "regular";
 }
 
-export function rowToApi(r, i, slate, games, insightCtx) {
-  const lt = lineType(r);
-  const hp = r1(num(r.final_hp) * 100), conf = r1(num(r.confidence) * 100), score = r1(r.score);
-  const isHome = r.team_id && r.team_id === r.home_team_id;
-  const oppAbbr = r.team_id ? (isHome ? r.away_team_tricode : r.home_team_tricode) : null;
-  const gamePk = r.game_id || (r.team_id ? `${slate.date}-${r.team_id}` : `${slate.date}-${r.player_id}`);
+// The leg's payout factor and its OWN break-even - the one definition the card and the Overview ranking both use.
+export function legPricing(r, lt = lineType(r)) {
   // EDGE AGAINST THE LEG'S OWN BREAK-EVEN (2026-10-15 full pass). A leg paying factor f (PrizePicks goblin < 1 < demon; the
   // Underdog / Sleeper payout modifier) breaks even at about 0.56 / f - a flat 0.56 showed every goblin as a strong edge
   // (2026-01-14: 1,173 of 1,184 "positive" goblins were below their own break-even). 0.56 = build_final_hp.BREAKEVEN.
@@ -165,6 +181,16 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   // breaks even at 1 / m - 0.56 / m (the modifier rule of PrizePicks / Underdog) put a 1.87x Sleeper leg's break-even at 30%.
   const breakeven = (r.app === "sleeper" || r.app === "fliff") && legFactor && legFactor > 1 ? Math.min(0.99, 1 / legFactor)
     : (legFactor && legFactor > 0 ? Math.min(0.99, beBase / legFactor) : beBase);
+  return { fliffDec, legFactor, breakeven };
+}
+
+export function rowToApi(r, i, slate, games, insightCtx) {
+  const lt = lineType(r);
+  const hp = r1(num(r.final_hp) * 100), conf = r1(num(r.confidence) * 100), score = r1(r.score);
+  const isHome = r.team_id && r.team_id === r.home_team_id;
+  const oppAbbr = r.team_id ? (isHome ? r.away_team_tricode : r.home_team_tricode) : null;
+  const gamePk = r.game_id || (r.team_id ? `${slate.date}-${r.team_id}` : `${slate.date}-${r.player_id}`);
+  const { fliffDec, legFactor, breakeven } = legPricing(r, lt);
   // THE NUMBER THE APP SHOWS (2026-10-18, owner: "scores does not match"): Underdog's pick screen shows a per-pick price
   // (1.87x on a balanced line, 4.42x / 1.15x on a ladder rung), not the payout modifier (1.00 / 2.36 / 0.62) the slip is priced
   // on (PP_PAYOUT_FINDINGS 0m). Our scraper archives that shown price (American) beside the modifier; the 2024-26 Odds API feed
@@ -269,16 +295,47 @@ export function clampLimit(cfg, v) {
 // filled the screen. Overview = legs a player can actually use: the slip apps (PrizePicks, Underdog, Sleeper), the market-anchored
 // probability present (honest number), the main props only, and a real edge against the leg's OWN break-even (goblin / demon
 // factor, app multiplier) - best edge first, one line per player-prop-app, capped. Tunable nba_main_ui.overview.
-const OVERVIEW_DEFAULT = { apps: ["prizepicks", "underdog", "sleeper"], min_edge: 3, max_hp: 0.97, size: 60, pool: 6000,
+const OVERVIEW_DEFAULT = { apps: ["prizepicks", "underdog", "sleeper"], min_edge: 3, max_hp: 0.97, size: 60,
   exclude_props: ["double_double", "fantasy_score", "dreb", "oreb", "fg3a", "fga", "fgm", "fta", "ftm", "personal_fouls"] };
+// Phase 1 is a LEAN query (2026-10-21: the full leg loader over the slate took 21 s and timed out): only the fields the ranking
+// needs - the anchored probability and the price lookups - for every candidate, then the edge in JS with legPricing (the card's own
+// rule). Phase 2 loads the full cards for the chosen few. A leg whose break-even is unknown (a PrizePicks goblin / demon with no
+// model factor) is left out: its edge would be measured against the flat 0.56 and overstated.
+function overviewSql() {
+  return `
+WITH ${STARTED_CTE},
+mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop)),
+c AS MATERIALIZED (SELECT b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, th.true_hp final_hp,
+             concat_ws('|', b0.player, b0.prop, b0.side, (b0.line::float8)::text) k
+      FROM nba_score.board_scored b0
+      JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
+                                     AND th.line = b0.line AND th.side = b0.side
+      WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[]) AND b0.app = ANY($6::text[]) AND NOT (b0.prop = ANY($7::text[]))
+        AND th.fit_set IS NOT NULL AND th.true_hp * 100 >= $8 AND th.true_hp < $9
+        AND NOT ${UD_HIDE("b0")} ${NOT_STARTED("b0")}),
+${lookupCtes("c", "'underdog', 'sleeper'")}
+SELECT c.app, c.player_id, c.player, c.prop, c.line::float line, c.side, c.final_hp::float final_hp,
+       pk.kind pp_kind, pf.factor::float pp_factor, um.multiplier::float app_mult, um.price app_price
+FROM c
+LEFT JOIN pk ON c.app = 'prizepicks' AND pk.k = c.k
+LEFT JOIN pf ON c.app = 'prizepicks' AND pf.k = c.k
+LEFT JOIN um ON um.bookmaker = c.app AND um.k = c.k`;
+}
 async function overviewRows(sql, cfg, slate, minHp) {
   const ov = { ...OVERVIEW_DEFAULT, ...((cfg.ui || {}).overview || {}) };
-  const cand = await loadLegs(sql, cfg, slate, {
-    where: "AND b.app = ANY($6::text[]) AND NOT (b.prop = ANY($7::text[])) AND b.true_fit IS NOT NULL AND b.final_hp * 100 >= $8 AND b.final_hp < $9",
-    extra: [pgArr(ov.apps), pgArr(ov.exclude_props), minHp, Number(ov.max_hp)], limit: Number(ov.pool), withInsight: false });
+  const raw = await q(sql, overviewSql(), legParams(cfg, slate.date, [pgArr(ov.apps), pgArr(ov.exclude_props), minHp, Number(ov.max_hp)]), 20000);
+  const cand = [];
+  for (const r of raw) {
+    const { legFactor, breakeven } = legPricing(r);
+    if (legFactor == null || !(legFactor > 0)) continue;
+    const hp = r1(num(r.final_hp) * 100);
+    cand.push({ source_key: r.app, player_id: r.player_id, canonical_prop_key: r.prop, line_value: r.line, side_db: r.side,
+                hit_probability_0_100: hp, edge_0_100: r1(hp - 100 * breakeven),
+                final_board_row_id: legId(slate.date, r.app, r.player_id, r.prop, r.line, r.side) });
+  }
   const best = new Map();
   for (const r of cand) {
-    if (r.ud_hidden || r.edge_0_100 == null || Number(r.edge_0_100) < Number(ov.min_edge)) continue;
+    if (r.edge_0_100 == null || Number(r.edge_0_100) < Number(ov.min_edge)) continue;
     const k = [r.source_key, r.player_id, r.canonical_prop_key].join("|");
     const cur = best.get(k);
     if (!cur || Number(r.edge_0_100) > Number(cur.edge_0_100)) best.set(k, r);
@@ -286,11 +343,10 @@ async function overviewRows(sql, cfg, slate, minHp) {
   const pick = [...best.values()].sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100) || Number(b.hit_probability_0_100) - Number(a.hit_probability_0_100))
     .slice(0, Number(ov.size));
   if (!pick.length) return { rows: [], candidates: cand.length };
-  const DB_SIDE = s => (String(s || "").toLowerCase() === "more" || String(s || "").toLowerCase() === "over" || String(s || "").toLowerCase() === "higher") ? "Over" : "Under";
   const full = await loadLegs(sql, cfg, slate, {
     where: "AND (b.app, b.player_id, b.prop, b.line, b.side) IN (SELECT * FROM unnest($6::text[], $7::text[], $8::text[], $9::numeric[], $10::text[]))",
     extra: [pgArr(pick.map(r => r.source_key)), pgArr(pick.map(r => String(r.player_id))), pgArr(pick.map(r => r.canonical_prop_key)),
-            pgArr(pick.map(r => String(r.line_value))), pgArr(pick.map(r => DB_SIDE(r.selected_side)))], limit: pick.length + 10 });
+            pgArr(pick.map(r => String(r.line_value))), pgArr(pick.map(r => r.side_db))], limit: pick.length + 10 });
   const rank = new Map(pick.map((r, i) => [r.final_board_row_id, i]));
   full.sort((a, b) => (rank.get(a.final_board_row_id) ?? 999) - (rank.get(b.final_board_row_id) ?? 999));
   full.forEach((r, i) => { r.rank_order = i + 1; });   // the card order is the overview's (best edge first), not the score order
