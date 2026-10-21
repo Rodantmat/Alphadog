@@ -200,7 +200,7 @@ def build(pool, k):
 
 
 def pick(conn, d, write):
-    if conn.execute("SELECT 1 FROM nba_score.paper_altless_slips WHERE game_date = %s LIMIT 1", (d,)).fetchone():
+    if conn.execute("SELECT 1 FROM nba_score.paper_altless_slips WHERE game_date = %s AND rule LIKE 'AL\\_%%' LIMIT 1", (d,)).fetchone():
         print(f"PAPER_ALTLESS|{d}|already picked - one set per day, nothing re-picked")
         return
     rows = conn.execute(LEG_SQL, {"d": d, "mk": list(PROPS)}).fetchall()
