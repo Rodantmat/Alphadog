@@ -186,7 +186,9 @@ def api_checks(conn, cfg):
     slate = h.get("slate") or {}
     d = slate.get("date")
     code, f, t = curl("/api/main-board/filters"); save_sample("filters", f)
-    tot = conn.execute("SELECT count(*) FROM nba_score.board_scored WHERE game_date=%s AND app = ANY(%s)", (d, cfg["apps"])).fetchone()[0]
+    # the filter counts leave out unplaceable Underdog rungs since v1.4.25 (the board never shows them); the expectation does too (2026-10-21)
+    tot = conn.execute("SELECT count(*) FROM nba_score.board_scored b0 WHERE b0.game_date=%s AND b0.app = ANY(%s) AND NOT " + ud_hide_sql(cfg, "b0"),
+                       (d, cfg["apps"])).fetchone()[0]
     ftot = sum(p["rows"] for g in ("hitter", "pitcher") for p in f.get("prop_groups", {}).get(g, []))
     stot = sum(x["rows"] for g in ("prizepicks", "underdog", "sleeper", "fliff", "betr") for x in f.get("source_groups", {}).get(g, []))
     check("C1 filters: prop and app totals == board_scored rows", code == 200 and ftot == tot == stot, f"{t}s props {ftot} apps {stot} db {tot} ({d})")
