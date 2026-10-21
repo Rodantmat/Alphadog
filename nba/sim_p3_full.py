@@ -441,6 +441,43 @@ def main():
         inproc(P, "price-shop ledger", "nba/build_price_shop_ledger.py", env={"PSL_DATE": D})
         inproc(P, "market anchor (UI hit probability)", "nba/apply_market_anchor.py", env={"MA_DATE": D, "MA_WORKERS": "1"})
         inproc(P, "market anchor coverage", code=heredoc(yaml_step("nba-p3-afternoon-light.yml", "afternoon", "Market-anchored hit probability - coverage")), env={"SLATE": D})
+        # ---- 2026-10-20 VERIFY: the alternate-Less filing and everything downstream of it, on the real board of the slate
+        with Shared.lock:
+            r = Shared.real
+            v = {}
+            v["pp_window_less_alt_rows"] = r.execute("""SELECT count(*) FROM nba_market.board_snapshots WHERE game_date = %s AND bookmaker = 'prizepicks'
+                                                        AND snapshot_label = 'window' AND side = 'Under' AND market_key LIKE '%%\\_alternate'""", (D,)).fetchone()[0]
+            v["tiers_by_side_kind"] = {f"{a}/{b}": n for a, b, n in r.execute("""SELECT side, kind, count(*) FROM nba_market.board_tiers_v2
+                                         WHERE game_date = %s AND bookmaker = 'prizepicks' AND snapshot_label = 'window' GROUP BY 1, 2 ORDER BY 1, 2""", (D,)).fetchall()}
+            v["less_alt_fourway_violations"] = r.execute("""SELECT count(*) FROM nba_market.board_tiers_v2 t JOIN nba_market.board_snapshots s
+                                         ON s.game_date = t.game_date AND s.snapshot_label = t.snapshot_label AND s.bookmaker = t.bookmaker AND s.player = t.player
+                                        AND s.side = t.side AND s.line = t.line AND s.market_key = t.base_market || '_alternate'
+                                         WHERE t.game_date = %s AND t.bookmaker = 'prizepicks' AND t.snapshot_label = 'window' AND t.side = 'Under'
+                                           AND t.anchor_line IS NOT NULL AND t.kind <> CASE WHEN t.line < t.anchor_line THEN 'demon' ELSE 'goblin' END""", (D,)).fetchone()[0]
+            v["more_alt_kind_vs_position_mismatch"] = r.execute("""SELECT count(*) FROM nba_market.board_tiers_v2 WHERE game_date = %s AND bookmaker = 'prizepicks'
+                                         AND snapshot_label = 'window' AND side = 'Over' AND kind IN ('goblin', 'demon') AND anchor_line IS NOT NULL
+                                         AND kind <> CASE WHEN line < anchor_line THEN 'goblin' ELSE 'demon' END""", (D,)).fetchone()[0]
+            v["pp_leg_price_window"] = {f"{a}/{b}": [n, p_] for a, b, n, p_ in r.execute("""SELECT side, kind, count(*), count(factor) FROM nba_market.pp_leg_price
+                                         WHERE game_date = %s AND snapshot_label = 'window' GROUP BY 1, 2 ORDER BY 1, 2""", (D,)).fetchall()}
+            v["pp_no_price_key_yet"] = r.execute("""SELECT count(*) FROM nba_market.pp_leg_price WHERE game_date = %s AND snapshot_label = 'window'
+                                                    AND price_reason = 'no_price_key_yet'""", (D,)).fetchone()[0]
+            v["live_slip_legs_alt_less"] = r.execute("""SELECT count(*) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) l
+                                         WHERE s.game_date = %s AND lower(l->>'side') LIKE 'u%%' AND coalesce(l->>'tier', 'R') <> 'R'""", (D,)).fetchone()[0]
+            v["live_slips_total_legs"] = r.execute("SELECT count(*) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) l WHERE s.game_date = %s", (D,)).fetchone()[0]
+            v["paper_tracker_rows"] = {rule_: n for rule_, n in r.execute("""SELECT left(rule, 2), count(*) FROM nba_score.paper_altless_slips
+                                         WHERE game_date = %s GROUP BY 1""", (D,)).fetchall()}
+        print("SIM_VERIFY_ALT_LESS", json.dumps(v, default=str), flush=True)
+        problems = []
+        if v["pp_window_less_alt_rows"] == 0:
+            problems.append("no alternate Less rows on the window archive")
+        if v["less_alt_fourway_violations"]:
+            problems.append("Less rows violate the four-way rule")
+        if v["live_slip_legs_alt_less"]:
+            problems.append("an alternate Less leg reached the certified live pick")
+        if "AL" not in v["paper_tracker_rows"] or "SR" not in v["paper_tracker_rows"]:
+            problems.append("the paper tracker did not record both rule families")
+        print("SIM_VERIFY_ALT_LESS_RESULT", "PASS" if not problems else "FAIL " + "; ".join(problems), flush=True)
+
         picks = {}
         with Shared.lock:
             for t, q in (("live_slips", "SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s"),
