@@ -21,9 +21,9 @@ WHAT IT DOES
 
 ENV: DATABASE_URL, PROXY_URL (optional), PROBE_HOURS (48), PROBE_SPORTS ('auto' or comma list of ParlayAPI keys),
      PROBE_MAX_EVENTS (250 = cap on per-event Fliff board pulls), PROBE_SKIP_SCRAPE=1 (ParlayAPI-only run).
+Tested locally 2026-10-20 (no-vig vs hand calc, event matching incl. a false-match check, market-name filters, side mapping).
 """
 import json
-import math
 import os
 import re
 import statistics
@@ -41,7 +41,6 @@ sys.path.insert(0, str(HERE))
 from fliff_client import FliffClient, conflicts_of, lists_under  # noqa: E402
 
 OUT = HERE / "out"
-OUT.mkdir(parents=True, exist_ok=True)
 PT = ZoneInfo("America/Los_Angeles")
 NOW = datetime.now(timezone.utc)
 HOURS = float(os.environ.get("PROBE_HOURS", "48") or 48)
@@ -60,9 +59,10 @@ CHANNEL_SPORT = {
     10491: "tennis_atp", 10556: "tennis_atp", 10558: "tennis_atp", 10554: "tennis_wta", 10451: "tennis_wta",
     4950: "mma_mixed_martial_arts", 4951: "boxing_boxing",
 }
-PERIOD_WORDS = ("1st", "2nd", "3rd", "4th", "half", "quarter", "period", "inning", "set ", "set)", "first", "1h", "2h",
-                "1q", "corner", "card", "booking", "team total", "player", "race to", "alternate", "alt ", "exact",
-                "margin", "both teams", "double chance", "draw no bet", "odd/even", "next", "parlay")
+EXCLUDE_WORDS = ("1st", "2nd", "3rd", "4th", "half", "quarter", "period", "inning", "set", "first", "1h", "2h", "1q",
+                 "corner", "corners", "card", "cards", "booking", "bookings", "team total", "player", "race", "alternate",
+                 "alt", "exact", "margin", "both teams", "double chance", "draw no bet", "odd", "even", "next", "parlay",
+                 "method", "round", "rounds", "distance", "minute", "shots", "tackles", "games")
 
 
 # ------------------------------------------------------------------ helpers
@@ -71,7 +71,8 @@ def norm(s):
     return re.sub(r"[^a-z0-9 ]+", " ", s)
 
 
-STOP = {"fc", "cf", "sc", "afc", "club", "de", "the", "cd", "ac", "fk", "sk", "if", "bk", "vs", "and", "of", "st", "sv", "cs"}
+STOP = {"fc", "cf", "sc", "afc", "club", "de", "the", "cd", "ac", "fk", "sk", "if", "bk", "vs", "and", "of", "st", "sv",
+        "cs", "over", "under", "draw"}
 
 
 def toks(s):
@@ -83,7 +84,7 @@ def name_score(a, b):
 
 
 def fair_from(prices):
-    """prices: list of decimal odds of mutually exclusive outcomes -> list of no-vig probabilities."""
+    """decimal odds of mutually exclusive outcomes -> no-vig probabilities (multiplicative)."""
     inv = [1.0 / p for p in prices if p and p > 1.0]
     if len(inv) != len(prices) or not inv:
         return None
@@ -103,6 +104,19 @@ def am_to_dec(a):
 
 def pt(ts):
     return ts.astimezone(PT).strftime("%a %m-%d %I:%M %p PT") if ts else ""
+
+
+def pct(x, signed=True):
+    if x is None:
+        return ""
+    return f"{x * 100:+.1f}%" if signed else f"{x * 100:.1f}%"
+
+
+def fpoint(x):
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
 
 
 # ------------------------------------------------------------------ 1) Fliff catalog
@@ -145,7 +159,9 @@ class Parlay:
                 r = self.S.get(f"{self.BASE}/sports/{sport}/odds", headers=self.H, timeout=120,
                                params={"regions": "us,us2,eu", "markets": "h2h,spreads,totals", "oddsFormat": "decimal"})
             except Exception as exc:  # noqa: BLE001
-                self.log.append({"sport": sport, "error": type(exc).__name__}); time.sleep(3 * (attempt + 1)); continue
+                self.log.append({"sport": sport, "error": type(exc).__name__})
+                time.sleep(3 * (attempt + 1))
+                continue
             self.log.append({"sport": sport, "status": r.status_code, "remaining": r.headers.get("x-requests-remaining"),
                              "cost": r.headers.get("x-requests-last")})
             if r.status_code == 200:
@@ -161,7 +177,8 @@ class Parlay:
 
 
 def market_lines(ev):
-    """ParlayAPI event -> {(mkt, point_key): {book: {outcome_name: (price, point)}}} for h2h/spreads/totals."""
+    """ParlayAPI event -> {(mkt, line_key): {book: {outcome_name: (price, point)}}}.
+    line_key: 'ml' for h2h; the total for totals; |spread| for spreads (both sides of one line pair up)."""
     out = defaultdict(lambda: defaultdict(dict))
     for b in ev.get("bookmakers") or []:
         bk = b.get("key")
@@ -170,53 +187,55 @@ def market_lines(ev):
             if mk not in ("h2h", "spreads", "totals"):
                 continue
             for o in m.get("outcomes") or []:
-                price, point = o.get("price"), o.get("point")
+                price, point = fpoint(o.get("price")), fpoint(o.get("point"))
                 if not price:
                     continue
                 if mk == "h2h":
-                    pk = "ml"
+                    lk, point = "ml", None
+                elif point is None:
+                    continue
                 elif mk == "totals":
-                    pk = f"{float(point):g}"
-                else:  # spreads: key by |point| so both sides of the same line pair up
-                    pk = f"{abs(float(point)):g}"
-                out[(mk, pk)][bk][o.get("name")] = (float(price), point)
+                    lk = f"{point:g}"
+                else:
+                    lk = f"{abs(point):g}"
+                out[(mk, lk)][bk][o.get("name")] = (price, point)
     return out
 
 
-def fair_table(lines, home, away):
-    """-> {(mkt, pk, outcome_key): (fair_p, src, n_books)}; outcome_key = team name / Over / Under / Draw, with point for spreads."""
+def _valid_group(mk, g):
+    if not g:
+        return None
+    if mk == "spreads":
+        items = list(g.values())
+        if len(items) != 2 or items[0][1] != -items[1][1]:
+            return None
+    if mk == "totals" and set(g) != {"Over", "Under"}:
+        return None
+    if mk == "h2h" and len(g) < 2:
+        return None
+    return g
+
+
+def fair_table(lines):
+    """-> {(mkt, line_key, outcome_name, point): (fair_p, src, n_books)}."""
     res = {}
-    for (mk, pk), books in lines.items():
-        def groups(book):
-            g = books.get(book) or {}
-            if mk == "spreads":
-                # valid pair: two teams with opposite points
-                items = list(g.items())
-                if len(items) != 2 or (items[0][1][1] or 0) != -(items[1][1][1] or 0):
-                    return None
-            if mk == "totals" and not {"Over", "Under"} <= set(g):
-                return None
-            if mk == "h2h" and len(g) < 2:
-                return None
-            return g
-        pin = groups("pinnacle")
+    for (mk, lk), books in lines.items():
+        pin = _valid_group(mk, books.get("pinnacle"))
         if pin:
-            names = list(pin.keys())
+            names = list(pin)
             fp = fair_from([pin[n][0] for n in names])
             if fp:
                 for n, p in zip(names, fp):
-                    res[(mk, pk, n, pin[n][1])] = (p, "pinnacle", 1)
+                    res[(mk, lk, n, pin[n][1])] = (p, "pinnacle", 1)
                 continue
-        # consensus of other books (exclude fliff), need >= 3 books with the same outcome set
-        per_out = defaultdict(list)
-        n_b = 0
-        for bk in books:
+        per_out, n_b = defaultdict(list), 0
+        for bk, g0 in books.items():
             if bk in ("fliff", "pinnacle"):
                 continue
-            g = groups(bk)
+            g = _valid_group(mk, g0)
             if not g:
                 continue
-            names = list(g.keys())
+            names = list(g)
             fp = fair_from([g[n][0] for n in names])
             if not fp:
                 continue
@@ -226,26 +245,27 @@ def fair_table(lines, home, away):
         if n_b >= 3:
             for (n, point), ps in per_out.items():
                 if len(ps) >= 3:
-                    res[(mk, pk, n, point)] = (statistics.median(ps), "consensus", len(ps))
+                    res[(mk, lk, n, point)] = (statistics.median(ps), "consensus", len(ps))
     return res
 
 
 # ------------------------------------------------------------------ 3) Fliff board parse (our scrape)
 def classify_market(name):
     n = " " + norm(name) + " "
-    if any(w.strip() in n for w in PERIOD_WORDS):
+    if any(f" {w} " in n for w in EXCLUDE_WORDS):
         return None
-    if any(k in n for k in (" moneyline ", " money line ", " winner ", " to win ", " match result ", " 1x2 ", " fight winner ", " match winner ", " game winner ")):
+    if any(f" {k} " in n for k in ("moneyline", "money line", "winner", "to win", "match result", "1x2", "result",
+                                   "fight winner", "match winner", "game winner", "game lines moneyline")):
         return "h2h"
-    if any(k in n for k in (" spread ", " handicap ", " puck line ", " run line ", " point spread ")):
+    if any(f" {k} " in n for k in ("spread", "handicap", "puck line", "run line", "point spread")):
         return "spreads"
-    if " total " in n or n.strip() in ("total", "totals", "total goals", "total points", "total runs"):
+    if any(f" {k} " in n for k in ("total", "totals", "total goals", "total points", "total runs", "over under")):
         return "totals"
     return None
 
 
 def parse_fliff_board(j, fkey):
-    """-> list of dicts {mk, sel, point, dec, market_name} for full-game moneyline/spread/total proposals (no players)."""
+    """-> (list of {mk, sel, point, dec, market_name, boosted}, Counter of market names) for full-game game lines."""
     out, census = [], Counter()
     for lst in lists_under(j.get("x_slots") or {}, "market_updates"):
         for m in lst:
@@ -260,13 +280,9 @@ def parse_fliff_board(j, fkey):
                 if g.get("player_fkey"):
                     continue
                 for p in g.get("proposals") or []:
-                    if p.get("player_fkey") or (p.get("status") not in (None, 733)):
+                    if p.get("player_fkey") or p.get("status") not in (None, 733):
                         continue
-                    dec = p.get("eu_coeff")
-                    try:
-                        dec = float(dec)
-                    except (TypeError, ValueError):
-                        dec = None
+                    dec = fpoint(p.get("eu_coeff"))
                     if not dec or dec <= 1.0:
                         dec = am_to_dec(p.get("coeff"))
                     if not dec or dec <= 1.0:
@@ -284,6 +300,30 @@ def parse_fliff_board(j, fkey):
     return out, census
 
 
+def resolve_scraped(pr, teams):
+    """Fliff scraped proposal -> fair-table key (mkt, line_key, outcome_name, point) or None."""
+    mk, sel_n = pr["mk"], norm(pr["sel"])
+    words = sel_n.split()
+    if mk == "totals":
+        side = "Over" if ("over" in words or words[:1] == ["o"]) else ("Under" if ("under" in words or words[:1] == ["u"]) else None)
+        if not side or pr["point"] is None:
+            return None
+        p = abs(pr["point"])
+        return (mk, f"{p:g}", side, p)
+    if "draw" in words or sel_n.strip() in ("x", "tie"):
+        team = "Draw"
+    else:
+        sc = sorted(((name_score(pr["sel"], t), t) for t in teams if t), reverse=True)
+        if not sc or sc[0][0] == 0 or (len(sc) > 1 and sc[0][0] == sc[1][0]):
+            return None
+        team = sc[0][1]
+    if mk == "h2h":
+        return (mk, "ml", team, None)
+    if pr["point"] is None or team == "Draw":
+        return None
+    return (mk, f"{abs(pr['point']):g}", team, pr["point"])
+
+
 # ------------------------------------------------------------------ 4) matching + grading
 def match_event(fe, pevs):
     best, bs = None, 0
@@ -294,11 +334,9 @@ def match_event(fe, pevs):
             continue
         if abs((st - fe["start"]).total_seconds()) > 4 * 3600:
             continue
-        s1 = name_score(fe["away"], e.get("away_team")) + name_score(fe["home"], e.get("home_team"))
-        s2 = name_score(fe["away"], e.get("home_team")) + name_score(fe["home"], e.get("away_team"))
-        ok1 = name_score(fe["away"], e.get("away_team")) >= 1 and name_score(fe["home"], e.get("home_team")) >= 1
-        ok2 = name_score(fe["away"], e.get("home_team")) >= 1 and name_score(fe["home"], e.get("away_team")) >= 1
-        s = max(s1 if ok1 else 0, s2 if ok2 else 0)
+        aa, hh = name_score(fe["away"], e.get("away_team")), name_score(fe["home"], e.get("home_team"))
+        ah, ha = name_score(fe["away"], e.get("home_team")), name_score(fe["home"], e.get("away_team"))
+        s = max(aa + hh if (aa >= 1 and hh >= 1) else 0, ah + ha if (ah >= 1 and ha >= 1) else 0)
         if s > bs:
             best, bs = e, s
     return best
@@ -310,10 +348,66 @@ def grade(p, d):
     return ev, clear_cost
 
 
+def leg_label(l):
+    mk = {"h2h": "ML", "spreads": "Spread", "totals": "Total"}[l["market"]]
+    if l["market"] == "spreads" and l["point"] is not None:
+        return f"{mk} {l['selection']} {l['point']:+g}"
+    if l["market"] == "totals" and l["point"] is not None:
+        return f"{mk} {l['selection']} {l['point']:g}"
+    return f"{mk} {l['selection']}"
+
+
+def build_strategy(legs):
+    pos = sorted([l for l in legs if l["ev"] > 0], key=lambda l: -l["ev"])
+    safe = sorted([l for l in legs if l["fair_p"] >= 0.70], key=lambda l: (-l["ev"], -l["fair_p"]))
+    clear = sorted([l for l in legs if l["clear_cost"] is not None and l["fair_p"] >= 0.45], key=lambda l: l["clear_cost"])
+    pool = sorted([l for l in legs if l["fair_p"] >= 0.55 and l["ev"] >= -0.03], key=lambda l: -l["ev"])[:120]
+    combos = []
+    for a, b in combinations(pool, 2):
+        if a["event_key"] == b["event_key"]:
+            continue
+        p, d = a["fair_p"] * b["fair_p"], a["fliff_dec"] * b["fliff_dec"]
+        ev, cc = grade(p, d)
+        combos.append({"legs": [a, b], "p": round(p, 4), "dec": round(d, 3), "ev": round(ev, 4),
+                       "clear_cost": None if cc is None else round(cc, 4)})
+    best_combo = sorted(combos, key=lambda c: -c["ev"])[:15]
+    safe_combo = sorted([c for c in combos if c["p"] >= 0.60], key=lambda c: -c["ev"])[:15]
+    return pos, safe, clear, best_combo, safe_combo, len(combos)
+
+
+def render_md(meta, legs, pos, safe, clear, best_combo, safe_combo):
+    H = "| Start | Sport | Event | Pick | Fliff | Fair p | EV | Clear cost | Fair src |\n|---|---|---|---|---|---|---|---|---|"
+
+    def row(l):
+        return (f"| {l['start_pt']} | {l['sport'].split('_', 1)[-1]} | {l['event']} | {leg_label(l)} | {l['fliff_dec']:.3f} | "
+                f"{pct(l['fair_p'], False)} | {pct(l['ev'])} | {pct(l['clear_cost'])} | {l['fair_src']}{' BOOST' if l.get('boosted') else ''} |")
+
+    def crow(c):
+        a, b = c["legs"]
+        return (f"| {a['start_pt']} {a['event']}: {leg_label(a)} + {b['start_pt']} {b['event']}: {leg_label(b)} | "
+                f"{c['dec']:.3f} | {pct(c['p'], False)} | {pct(c['ev'])} | {pct(c['clear_cost'])} |")
+
+    CH = "| Legs | Parlay dec | Fair p | EV | Clear cost |\n|---|---|---|---|---|"
+    md = [f"# Fliff probe — {meta['when_pt']}", "",
+          f"Window: next {meta['hours']:g} h · Fliff events in window: {meta['n_events']} · boards pulled: {meta['pulls']} · "
+          f"graded legs: {len(legs)} · +EV legs: {len(pos)}", "",
+          "**How to read it.** *Fair p* = Pinnacle's no-vig probability (or a ≥3-book consensus when Pinnacle has no line). "
+          "*EV* = expected profit per $1 at Fliff's price. *Clear cost* = expected loss per $1 of play-through cleared when only "
+          "winnings count (negative = expected profit while clearing). Only same-line comparisons are graded.", "",
+          "## 1. Best value legs (+EV at Fliff's price)", H] + [row(l) for l in pos[:25]]
+    md += ["", "## 2. Safest legs (fair p ≥ 70%), best price first", H] + [row(l) for l in safe[:25]]
+    md += ["", "## 3. Cheapest way to clear the bonus (fair p ≥ 45%)", H] + [row(l) for l in clear[:20]]
+    md += ["", "## 4. Best 2-pick parlays (different games)", CH] + [crow(c) for c in best_combo]
+    md += ["", "## 5. Safest 2-pick parlays (fair p ≥ 60%)", CH] + [crow(c) for c in safe_combo]
+    md += ["", "## Data checks"] + [f"- {x}" for x in meta["checks"]]
+    md += ["- Fliff 2-pick price assumed = product of the legs' decimals; confirm on the slip screen before staking."]
+    return "\n".join(md)
+
+
 def main():
+    OUT.mkdir(parents=True, exist_ok=True)
     report = {"generated_utc": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "window_hours": HOURS}
-    proxy = os.environ.get("PROXY_URL", "").strip() or None
-    fc = FliffClient(proxy=proxy)
+    fc = FliffClient(proxy=os.environ.get("PROXY_URL", "").strip() or None)
     fc.ping()
     fevs = fliff_catalog(fc)
     by_sport = Counter(e["sport_key"] or f"unmapped:{e['channel']}" for e in fevs)
@@ -331,13 +425,8 @@ def main():
         time.sleep(0.5)
     report["parlay_calls"] = pa.log
 
-    legs = []          # graded comparisons
-    scrape_census = defaultdict(Counter)
-    unmatched = Counter()
-    pulls = 0
-    xcheck = []        # our scrape vs parlay 'fliff' book, same outcome
+    legs, scrape_census, unmatched, xcheck, pulls = [], defaultdict(Counter), Counter(), [], 0
     skip_scrape = os.environ.get("PROBE_SKIP_SCRAPE") == "1"
-    # order: mapped sports first, soonest first (the probe cap keeps the nearest games)
     fevs.sort(key=lambda e: (e["sport_key"] is None, e["start"]))
     for fe in fevs:
         if not fe["sport_key"]:
@@ -347,22 +436,23 @@ def main():
             unmatched[fe["sport_key"]] += 1
             continue
         lines = market_lines(pe)
-        fair = fair_table(lines, pe.get("home_team"), pe.get("away_team"))
+        fair = fair_table(lines)
         ev_label = f"{fe['away']} @ {fe['home']}"
-        base = {"sport": fe["sport_key"], "event": ev_label, "event_key": fe["fkey"], "start_utc": fe["start"].isoformat(), "start_pt": pt(fe["start"])}
+        base = {"sport": fe["sport_key"], "event": ev_label, "event_key": fe["fkey"], "start_utc": fe["start"].isoformat(),
+                "start_pt": pt(fe["start"])}
 
-        # (a) ParlayAPI 'fliff' book
         pa_fliff = {}
-        for (mk, pk), books in lines.items():
+        for (mk, lk), books in lines.items():
             for name, (price, point) in (books.get("fliff") or {}).items():
-                pa_fliff[(mk, pk, name, point)] = price
-                f = fair.get((mk, pk, name, point))
+                k = (mk, lk, name, point)
+                pa_fliff[k] = price
+                f = fair.get(k)
                 if f:
                     ev, cc = grade(f[0], price)
-                    legs.append({**base, "market": mk, "selection": name, "point": point, "fliff_dec": price, "fair_p": round(f[0], 4),
-                                 "fair_src": f[1], "fliff_src": "parlayapi", "ev": round(ev, 4), "clear_cost": None if cc is None else round(cc, 4)})
+                    legs.append({**base, "market": mk, "selection": name, "point": point, "fliff_dec": price,
+                                 "fair_p": round(f[0], 4), "fair_src": f[1], "fliff_src": "parlayapi", "ev": round(ev, 4),
+                                 "clear_cost": None if cc is None else round(cc, 4)})
 
-        # (b) our own scrape of the event board
         if skip_scrape or pulls >= MAX_EVENTS:
             continue
         try:
@@ -375,116 +465,52 @@ def main():
         scrape_census[fe["sport_key"]].update(census)
         teams = [pe.get("home_team"), pe.get("away_team")]
         for pr in props:
-            mk = pr["mk"]
-            sel_n = norm(pr["sel"])
-            if mk == "totals":
-                side = "Over" if "over" in sel_n.split() or sel_n.startswith("o ") else ("Under" if "under" in sel_n.split() or sel_n.startswith("u ") else None)
-                if not side or pr["point"] is None:
-                    continue
-                key = (mk, f"{abs(pr['point']):g}", side, abs(pr["point"]))
-                fkey_alt = [(mk, f"{abs(pr['point']):g}", side, abs(pr["point"])), (mk, f"{abs(pr['point']):g}", side, pr["point"])]
-            else:
-                if "draw" in sel_n.split() or sel_n.strip() in ("x", "tie"):
-                    team = "Draw"
-                else:
-                    sc = [(name_score(pr["sel"], t), t) for t in teams if t]
-                    sc.sort(reverse=True)
-                    if not sc or sc[0][0] == 0 or (len(sc) > 1 and sc[0][0] == sc[1][0]):
-                        continue
-                    team = sc[0][1]
-                if mk == "h2h":
-                    fkey_alt = [(mk, "ml", team, None)]
-                else:
-                    if pr["point"] is None:
-                        continue
-                    fkey_alt = [(mk, f"{abs(pr['point']):g}", team, pr["point"])]
-            f = next((fair[k] for k in fkey_alt if k in fair), None)
-            k_used = next((k for k in fkey_alt if k in fair), fkey_alt[0])
-            if (k_used in pa_fliff):
-                xcheck.append({"event": ev_label, "market": mk, "sel": k_used[2], "point": k_used[3], "scrape": pr["dec"], "parlayapi": pa_fliff[k_used]})
+            k = resolve_scraped(pr, teams)
+            if not k:
+                continue
+            if k in pa_fliff:
+                xcheck.append({"event": ev_label, "key": list(k), "scrape": pr["dec"], "parlayapi": pa_fliff[k]})
+            f = fair.get(k)
             if not f:
                 continue
             ev, cc = grade(f[0], pr["dec"])
-            legs.append({**base, "market": mk, "selection": k_used[2], "point": k_used[3], "fliff_dec": round(pr["dec"], 4),
+            legs.append({**base, "market": k[0], "selection": k[2], "point": k[3], "fliff_dec": round(pr["dec"], 4),
                          "fair_p": round(f[0], 4), "fair_src": f[1], "fliff_src": "scrape", "fliff_market_name": pr["market_name"],
                          "boosted": pr["boosted"], "ev": round(ev, 4), "clear_cost": None if cc is None else round(cc, 4)})
         time.sleep(0.35)
 
-    # prefer the scrape (fresher, all sports) over the ParlayAPI copy for the same outcome
     dedup = {}
-    for l in legs:
+    for l in legs:   # prefer the scrape (fresh, every sport) over ParlayAPI's copy of the same outcome
         k = (l["event_key"], l["market"], l["selection"], l["point"])
         if k not in dedup or (l["fliff_src"] == "scrape" and dedup[k]["fliff_src"] != "scrape"):
             dedup[k] = l
     legs = list(dedup.values())
 
-    report.update({"fliff_boards_pulled": pulls, "graded_legs": len(legs), "unmatched_events_by_sport": dict(unmatched),
-                   "fliff_calls": fc.calls, "scrape_market_name_census": {k: v.most_common(40) for k, v in scrape_census.items()}})
+    xc = {}
     if xcheck:
         diffs = [abs(x["scrape"] - x["parlayapi"]) for x in xcheck]
-        report["xcheck_scrape_vs_parlayapi_fliff"] = {"pairs": len(xcheck), "exact_or_within_0.02": sum(d <= 0.02 for d in diffs),
-                                                     "median_abs_diff": round(statistics.median(diffs), 4), "worst": sorted(xcheck, key=lambda x: -abs(x["scrape"] - x["parlayapi"]))[:8]}
-
-    # ------------------------------------------------------------------ 5) strategy
-    pos = sorted([l for l in legs if l["ev"] > 0], key=lambda l: -l["ev"])
-    safe = sorted([l for l in legs if l["fair_p"] >= 0.70], key=lambda l: (-l["ev"], -l["fair_p"]))
-    clear = sorted([l for l in legs if l["clear_cost"] is not None and l["fair_p"] >= 0.45], key=lambda l: l["clear_cost"])
-    # 2-pick parlays across different events, from legs with fair p >= 0.55 and EV >= -3%
-    pool = sorted([l for l in legs if l["fair_p"] >= 0.55 and l["ev"] >= -0.03], key=lambda l: -l["ev"])[:120]
-    combos = []
-    for a, b in combinations(pool, 2):
-        if a["event_key"] == b["event_key"]:
-            continue
-        p, d = a["fair_p"] * b["fair_p"], a["fliff_dec"] * b["fliff_dec"]
-        ev, cc = grade(p, d)
-        combos.append({"legs": [a, b], "p": round(p, 4), "dec": round(d, 3), "ev": round(ev, 4), "clear_cost": None if cc is None else round(cc, 4)})
-    best_combo_ev = sorted(combos, key=lambda c: -c["ev"])[:15]
-    safe_combo = sorted([c for c in combos if c["p"] >= 0.60], key=lambda c: -c["ev"])[:15]
-
-    report["top_ev_legs"] = pos[:40]
-    report["safest_legs"] = safe[:40]
-    report["cheapest_bonus_clearing"] = clear[:25]
-    report["best_2pick_by_ev"] = best_combo_ev
-    report["safest_2pick"] = safe_combo
-    stamp = NOW.astimezone(PT).strftime("%Y%m%d_%H%M")
+        xc = {"pairs": len(xcheck), "within_0.02": sum(d <= 0.02 for d in diffs), "median_abs_diff": round(statistics.median(diffs), 4),
+              "worst": sorted(xcheck, key=lambda x: -abs(x["scrape"] - x["parlayapi"]))[:8]}
+    pos, safe, clear, best_combo, safe_combo, n_combos = build_strategy(legs)
+    report.update({"fliff_boards_pulled": pulls, "graded_legs": len(legs), "unmatched_events_by_sport": dict(unmatched),
+                   "fliff_calls": fc.calls, "scrape_market_name_census": {k: v.most_common(40) for k, v in scrape_census.items()},
+                   "xcheck_scrape_vs_parlayapi_fliff": xc, "legs_by_source": dict(Counter((l["fliff_src"], l["fair_src"]) for l in legs).most_common()),
+                   "top_ev_legs": pos[:40], "safest_legs": safe[:40], "cheapest_bonus_clearing": clear[:25],
+                   "best_2pick_by_ev": best_combo, "safest_2pick": safe_combo})
+    meta = {"when_pt": NOW.astimezone(PT).strftime("%a %b %d %Y, %I:%M %p PT"), "hours": HOURS, "n_events": len(fevs), "pulls": pulls,
+            "checks": [f"Fliff events by sport: {dict(by_sport.most_common())}",
+                       f"Not matched to a sharp-market event: {dict(unmatched)}",
+                       f"Graded legs by source (fliff price, fair price): {report['legs_by_source']}",
+                       f"ParlayAPI calls (sport, http, credits, remaining): {[(x.get('sport'), x.get('status'), x.get('cost'), x.get('remaining')) for x in pa.log]}",
+                       f"Scrape vs ParlayAPI Fliff price cross-check: {json.dumps({k: v for k, v in xc.items() if k != 'worst'})}"]}
+    md = render_md(meta, legs, pos, safe, clear, best_combo, safe_combo)
     (OUT / "latest_probe.json").write_text(json.dumps(report, indent=1, default=str))
     (OUT / "latest_legs.json").write_text(json.dumps(legs, default=str))
-
-    # ------------------------------------------------------------------ markdown report
-    def leg_line(l):
-        pnt = "" if l["point"] in (None, "") or l["market"] == "h2h" else f" {l['point']:+g}" if l["market"] == "spreads" else f" {l['point']:g}"
-        mk = {"h2h": "ML", "spreads": "Spread", "totals": "Total"}[l["market"]]
-        return (f"| {l['start_pt']} | {l['sport'].split('_', 1)[-1]} | {l['event']} | {mk} {l['selection']}{pnt} | {l['fliff_dec']:.3f} | "
-                f"{l['fair_p']*100:.1f}% | {l['ev']*100:+.1f}% | {'' if l['clear_cost'] is None else f'{l[chr(99)+chr(108)+chr(101)+chr(97)+chr(114)+chr(95)+chr(99)+chr(111)+chr(115)+chr(116)]*100:+.1f}%'} | {l['fair_src']}{' BOOST' if l.get('boosted') else ''} |")
-    H = "| Start | Sport | Event | Pick | Fliff dec | Fair p | EV | Clear cost | Fair src |\n|---|---|---|---|---|---|---|---|---|"
-    md = [f"# Fliff probe — {NOW.astimezone(PT).strftime('%a %b %d %Y, %I:%M %p PT')}", "",
-          f"Window: next {HOURS:g} h · Fliff events in window: {len(fevs)} · boards pulled: {pulls} · graded legs: {len(legs)} · "
-          f"+EV legs: {len(pos)}", "",
-          "**How to read it.** *Fair p* = Pinnacle's no-vig probability (or a ≥3-book consensus when Pinnacle has no line). "
-          "*EV* = expected profit per $1 at Fliff's price. *Clear cost* = expected loss per $1 of play-through cleared when only "
-          "winnings count (negative = you expect to profit while clearing). Only same-line comparisons are graded.", ""]
-    md += ["## 1. Best value legs (+EV at Fliff's price)", H] + [leg_line(l) for l in pos[:25]] + [""]
-    md += ["## 2. Safest legs (fair p ≥ 70%), best price first", H] + [leg_line(l) for l in safe[:25]] + [""]
-    md += ["## 3. Cheapest way to clear the bonus (fair p ≥ 45%)", H] + [leg_line(l) for l in clear[:20]] + [""]
-    md += ["## 4. Best 2-pick parlays (different games)", "| Legs | Parlay dec | Fair p | EV | Clear cost |", "|---|---|---|---|---|"]
-    for c in best_combo_ev:
-        a, b = c["legs"]
-        md.append(f"| {a['event']}: {a['market']} {a['selection']} {'' if a['point'] is None else a['point']} + {b['event']}: {b['market']} {b['selection']} {'' if b['point'] is None else b['point']} | {c['dec']:.3f} | {c['p']*100:.1f}% | {c['ev']*100:+.1f}% | {'' if c['clear_cost'] is None else f'{c[chr(99)+chr(108)+chr(101)+chr(97)+chr(114)+chr(95)+chr(99)+chr(111)+chr(115)+chr(116)]*100:+.1f}%'} |")
-    md += ["", "## 5. Safest 2-pick parlays (fair p ≥ 60%)", "| Legs | Parlay dec | Fair p | EV | Clear cost |", "|---|---|---|---|---|"]
-    for c in safe_combo:
-        a, b = c["legs"]
-        md.append(f"| {a['event']}: {a['market']} {a['selection']} {'' if a['point'] is None else a['point']} + {b['event']}: {b['market']} {b['selection']} {'' if b['point'] is None else b['point']} | {c['dec']:.3f} | {c['p']*100:.1f}% | {c['ev']*100:+.1f}% | {'' if c['clear_cost'] is None else f'{c[chr(99)+chr(108)+chr(101)+chr(97)+chr(114)+chr(95)+chr(99)+chr(111)+chr(115)+chr(116)]*100:+.1f}%'} |")
-    md += ["", "## Data checks", f"- Fliff events by sport: {dict(by_sport.most_common())}",
-           f"- Unmatched to the sharp market: {dict(unmatched)}",
-           f"- ParlayAPI calls: {[(x.get('sport'), x.get('status'), x.get('cost'), x.get('remaining')) for x in pa.log]}",
-           f"- Scrape vs ParlayAPI Fliff cross-check: {json.dumps(report.get('xcheck_scrape_vs_parlayapi_fliff', {}), default=str)[:600]}",
-           "- Fliff 2-pick price assumed = product of the legs' decimals; confirm on the slip screen before staking."]
-    (OUT / "latest_report.md").write_text("\n".join(md))
-    hist = OUT / "history"
-    hist.mkdir(exist_ok=True)
-    (hist / f"report_{stamp}.md").write_text("\n".join(md))
-    print(f"graded legs {len(legs)} | +EV {len(pos)} | safest {len(safe)} | combos {len(combos)} | pulls {pulls}", flush=True)
-    print("\n".join(md[:60]), flush=True)
+    (OUT / "latest_report.md").write_text(md)
+    (OUT / "history").mkdir(exist_ok=True)
+    (OUT / "history" / f"report_{NOW.astimezone(PT).strftime('%Y%m%d_%H%M')}.md").write_text(md)
+    print(f"graded legs {len(legs)} | +EV {len(pos)} | safest {len(safe)} | combos {n_combos} | pulls {pulls}", flush=True)
+    print(md[:6000], flush=True)
 
 
 if __name__ == "__main__":
