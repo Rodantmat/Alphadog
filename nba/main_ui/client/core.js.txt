@@ -25,6 +25,7 @@ async function refetchWithFilters(){
   $('status').textContent='Reloading board...';
   try{
     const params=new URLSearchParams({limit:'200',t:String(Date.now())});
+    if(filters.overview)params.set('view','overview');
     if(filters.score>0)params.set('min_score',String(filters.score));
     if(filters.hp>0)params.set('min_hit_probability',String(filters.hp));
     const j=await (await fetchWithTimeout('/api/main-board/current?'+params.toString(),{cache:'no-store'},15000)).json();
