@@ -2702,3 +2702,50 @@ anything that's proved positive, we will try".
       removes 1 Over (Miles McBride PRA-assists Over 7.5). **It would NOT have removed Daniss Jenkins on 10-20** - his last 10 games
       (end of 2025-26) averaged 29.3 minutes; the floor is a proven average improvement, not a fix for that one night.
     - **Exposure caps:** code in live_slip_engine (`slip_exposure`, no DB row = OFF). Kept for research only.
+
+## DAY TWO (2026-10-21 PT) - P2B REFIT, SLIPS TIMEOUT, OVERVIEW, SAVE, THE MISSING LEG, THE GOBLIN SUBSTITUTE
+
+19. 🔴→🟡 **P2B confidence refit ran past its budget.** Each prop's market CTEs (rung_market 1.14M rows, board_tiers_v2
+    window/prizepicks 1.19M, a regexp per row) were re-planned per prop, about 30 min each; the step was stopped at 13:03 PT. P3 rebuilt
+    final_hp itself (25,208 legs) on the previous confidence model; the model_params snapshot for 10-21 was saved by hand.
+    Change committed (build_confidence_v3.py 7403ca04: the market aggregates as indexed temp tables built once, session jit off).
+    **Parity NOT yet proven** - audit_confidence_refit_speed.py (old vs new on the same tmp_graded, 1e-9) runs after the games;
+    no parity = revert before the 08:05 PT P2B.
+20. ✅ **Slips screen "Build failed: HARD_QUERY_TIMEOUT_12000MS".** The place-by team lookup compared player ids as text, so the
+    game-log index was not used (one scan per leg). Compared as bigint: 0.8 s on the real keys. v1.4.26's commit was broken by a
+    server-side find/replace whose new text held a dollar-quote sequence (the tool read it as "text after the match" and duplicated the
+    file tail); the build failed, production was never broken; slips.js restored whole and redeployed as v1.4.27. Rule kept: never
+    a dollar sign followed by a quote, backtick, ampersand or dollar in a patch's new text.
+21. 🟡 **Overview (owner 13:56 PT: pre-selected, "real good legs", "less heavy to load").** v1.4.28 shipped it pre-selected: its
+    first pass loaded every candidate through the full leg loader and hit the 20 s limit, so v1.4.29 took the tick off. Found: the
+    leg loader's PrizePicks tier / factor / multiplier lookups joined on regexp_replace(...) = market key, so the regexp ran for every
+    row x 38 markets (1.2M calls per lookup). v1.4.30 normalises the key once per row (MATERIALIZED) and hash-joins - **old vs new
+    leg query md5-identical on 3,000 legs of 10-21**; the lean Overview first pass went 15.7 s -> 4.8 s in a direct EXPLAIN. Index
+    `nba_market.ud_line_flags_hide_lookup (game_date, player, line) WHERE hide`: the per-row Underdog-hide check 2.6 s -> 0.5 s.
+    Live timing (audit_ui_board_timing.py): whole board 10-15 s -> 4-8 s; **Overview still timed out**, and the exact Overview query
+    ran over 4 minutes in the database (cancelled) while the literal variant took 4.8 s - not yet explained. v1.4.32: Overview served
+    only when `nba_main_ui.overview.enabled` is true (false). Open: find the slow plan with the database quiet.
+22. ✅ **Saving a slip again was silently dropped (owner 15:03 PT).** The owner saved the Underdog slips, then saved them again with
+    the app's multipliers; the second save hit ON CONFLICT DO NOTHING on (day, app, mode, legs) and was skipped. v1.4.31: a same-day
+    re-save REPLACES the earlier one (newer multipliers win; a graded slip is left alone) and the message says how many were
+    replaced; test C16 updated. Data: the first-batch 6-pick Flex (Ty Jerome) deleted on the owner's instruction - the Traore version
+    he re-saved stands (app 15.22x / 1.67x / 0.31x vs our 14.55x / 2.48x / 0.24x estimate); the 2-, 4- and 2-pick were kept (their
+    second save never landed) until the app's numbers are re-saved.
+23. 🔴 **All 17 PrizePicks slips carried a leg PrizePicks no longer offered.** Keyonte George Turnovers 2.5 was a regular line with
+    both sides in our 13:19 PT window capture; in PrizePicks' board at the 13:30 quote it was a **demon, More only**, with no regular
+    turnovers line (nba/data/pp_payouts/pp_payout_map_20261021T202951Z.json). Every slip had it as a regular Less, so every quote was
+    recorded as unmapped and the screen showed the model's estimate, with the reason only in each card's small print. v1.4.34: a slip
+    with a leg not on PrizePicks' board at the quote (or not quoted) is in red on its card and leads the day's note (which leg, how
+    many slips). Open: re-check every slip leg against PrizePicks' live board right before the slips are published, and substitute
+    automatically or refuse the slip.
+24. 🔴→✅ **Substitutes were goblins (owner 15:22 PT: "When I removed the leg ... it put a goblin instead").** The backup pool was
+    ranked by hit probability alone, so the first legal leg was nearly always a goblin (factor < 1): it cut a regular slip's payout.
+    v1.4.33: the pool is +EV legs ranked by edge over each leg's own break-even, every line type kept; unchecking a leg brings a
+    substitute of the SAME line type, best edge first (another type only when the pool has none legal). Tests: C24 rewritten
+    (properties), the browser substitution step checks the substitute's type and edge. UI test after the games.
+25. 🟡 **Multipliers the owner typed vs ours (PrizePicks).** Al Horford 3-PT Made 1.5 More is a demon (factor 1.373) in most
+    PrizePicks slips - why our estimates were above table pay (5-Flex 13.84x vs 10x, 4-Flex 8x vs 6x). The owner's 4-Flex 6x / 1.5x
+    is the plain table; his 5-Flex 11x / 2x / 0.4x sits between. The placed entries differ from the saved legs (George Turnovers
+    replaced), so the comparison waits for screenshots of the placed entries.
+26. **Sleeper / Fliff / Betr give no slips - by design** (fact 136): paper boards under the engine's state machine until certified;
+    Betr parked.
