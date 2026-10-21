@@ -269,7 +269,9 @@ def leg_hit(conn, d, l):
     r = conn.execute(f"SELECT ({col})::float8 FROM nba_stats.player_game_log WHERE nba_player_id::text = %s AND game_date = %s AND min > 0",
                      (str(l["player_id"]), d)).fetchone()
     a = r[0] if r else None
-    return None if a is None or a == float(l["line"]) else int(a < float(l["line"]))
+    if a is None or a == float(l["line"]):
+        return None
+    return int(a > float(l["line"])) if l.get("side") == "Over" else int(a < float(l["line"]))   # alt-Less legs carry no side: Less
 
 
 def grade_legs(conn, d, legs, st):
