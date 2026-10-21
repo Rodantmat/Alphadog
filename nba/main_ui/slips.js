@@ -657,7 +657,18 @@ export async function apiSave(sql, cfg, body, version) {
     const ins = await q(sql, `INSERT INTO nba_score.ui_saved_slips (slate_date, source_key, entry_mode, slip_size, structure_label, track_label, strategy,
         estimated_multiplier, real_multiplier, real_multiplier_flex_tiers, estimated_hit_probability_0_100, legs_json, fingerprint, saved_by)
       VALUES ($1::date, $2, $3, $4, $5, $6, $7, $8, $9, $10::text::jsonb, $11, $12::text::jsonb, $13, $14)
-      ON CONFLICT (saved_on, source_key, entry_mode, fingerprint) DO NOTHING RETURNING slip_id`,
+      ON CONFLICT (saved_on, source_key, entry_mode, fingerprint) DO UPDATE SET
+        -- RE-SAVE REPLACES (owner 2026-10-21 15:03 PT: saved the Underdog slips again with the app's multipliers; the second save was
+        -- silently dropped as a duplicate). Same legs saved again the same day = the newer numbers win; a slip already graded is left alone.
+        estimated_multiplier = COALESCE(EXCLUDED.estimated_multiplier, nba_score.ui_saved_slips.estimated_multiplier),
+        real_multiplier = COALESCE(EXCLUDED.real_multiplier, nba_score.ui_saved_slips.real_multiplier),
+        real_multiplier_flex_tiers = COALESCE(EXCLUDED.real_multiplier_flex_tiers, nba_score.ui_saved_slips.real_multiplier_flex_tiers),
+        estimated_hit_probability_0_100 = COALESCE(EXCLUDED.estimated_hit_probability_0_100, nba_score.ui_saved_slips.estimated_hit_probability_0_100),
+        legs_json = EXCLUDED.legs_json, strategy = COALESCE(EXCLUDED.strategy, nba_score.ui_saved_slips.strategy),
+        structure_label = COALESCE(EXCLUDED.structure_label, nba_score.ui_saved_slips.structure_label),
+        track_label = COALESCE(EXCLUDED.track_label, nba_score.ui_saved_slips.track_label), saved_at = now()
+      WHERE nba_score.ui_saved_slips.status = 'saved_pending'
+      RETURNING slip_id, (xmax <> 0) AS replaced`,
       [slate && /^\d{4}-\d{2}-\d{2}$/.test(slate) ? slate : null, s.source_key || null, s.entry_mode || null, legs.length, s.structure_label || null, s.track_label || null,
        s.strategy || null, s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.real_multiplier == null ? null : Number(s.real_multiplier),
        s.real_multiplier_flex_tiers ? JSON.stringify(s.real_multiplier_flex_tiers) : null,
