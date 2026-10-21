@@ -436,6 +436,8 @@ def main():
         inproc(P, "certify P3", "nba/certify_pipeline.py", env={"PIPE": "p3", "CERT_DATE": D, "ARCHIVE_APPS": "prizepicks,underdog,sleeper,fliff"})
         inproc(P, "PRIZEPICKS SLIP PICK (live slip engine)", "nba/live_slip_engine.py", env={"LS_MODE": "pick", "LS_DATE": D})
         inproc(P, "Underdog pick (P5 + P4 shadow)", "nba/ud_live_slip_engine.py", env={"UDL_MODE": "pick", "UDL_DATE": D})
+        # 2026-10-20: the P3 soft step 'Paper tracker - goblin / demon Less + standard Flex rules' (soft_paper_al)
+        inproc(P, "PAPER TRACKER (goblin / demon Less + standard Flex)", "nba/paper_altless_tracker.py", env={"MODE": "pick", "PAT_DATE": D})
         inproc(P, "price-shop ledger", "nba/build_price_shop_ledger.py", env={"PSL_DATE": D})
         inproc(P, "market anchor (UI hit probability)", "nba/apply_market_anchor.py", env={"MA_DATE": D, "MA_WORKERS": "1"})
         inproc(P, "market anchor coverage", code=heredoc(yaml_step("nba-p3-afternoon-light.yml", "afternoon", "Market-anchored hit probability - coverage")), env={"SLATE": D})
