@@ -43,7 +43,7 @@ bs AS (
         FROM nba_score.board_scored b0
         LEFT JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
                                             AND th.line = b0.line AND th.side = b0.side
-        WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[]) ${screen ? "AND NOT " + UD_HIDE("b0") : ""}) b
+        WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[]) ${screen ? "AND NOT " + UD_HIDE("b0") : ""} ${screen ? NOT_STARTED("b0") : ""}) b
   WHERE true ${where || ""}
   ORDER BY b.score DESC, b.final_hp DESC, b.player, b.prop, b.line, b.side
   LIMIT ${Number(limit) || 200}),
