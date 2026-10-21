@@ -214,8 +214,19 @@ the calibration ever had. The name-map defect is repaired in the calibration its
   `adjusted_odds` flag (8 of 152 standards carry it on the 10-20 board), or star-vs-star / same-stat correlation pricing.
 - **Flex 2-pick 2x / 0.5x matched the table in both.** That needs a 0.618 leg rate to break even, against 0.577 for Power 3x
   (research_standard_depth.py prints every size's breakeven exactly).
-- **Open:** quote standard-only 2-picks (same game vs different games, fantasy vs single stat, adjusted_odds true vs false) through
-  the payout map, and archive `adjusted_odds` per projection. The production grader is unchanged until then.
+- **Answered from our own archive (same evening):** 104 standard-only quotes are stored in nba/data/pp_payouts (sizes 2-6), every
+  record with PrizePicks' lineup flag `power_adj`.
+  - 2-pick, two games: 20/20 paid 3x.
+  - 2-pick, same game: 12 paid 3x with power_adj false. 5 paid 2.9x / 2.8x, and all 5 carried power_adj TRUE (Assists + PRA,
+    Points + PRA, correlated stats).
+  - Sizes 3-6: same game included, all 82 paid the table Power. The one Flex difference is a same-game 4-pick with power_adj true,
+    which the grader's flex_same_game_v3 rule already covers.
+  - **Rule:** PrizePicks discounts a correlated same-game standard 2-pick Power by 0.1-0.2x and flags it adjusted; nothing else
+    standard-only deviates.
+  - **Exposure:** the paper tracker's 2-picks require two games, the SR_* rules are 5/6-Flex, and the owner's SGA + Wemby pair is
+    exactly this case (same game, fantasy, correlated).
+  - **Grader:** unchanged, because the flag is per lineup and not predictable from one leg. Any future same-game standard 2-pick
+    Power strategy must use 2.8x (the worst quoted), not 3x.
 
 ## 0n. 🔑 GOBLIN / DEMON LESS, 2-6 PICKS POWER + FLEX — PRICED BY PRIZEPICKS ITSELF (2026-10-20 PT, opening night)
 
