@@ -300,7 +300,7 @@ def parse_fliff_board(j, fkey):
                     if mnum:
                         point = float(mnum.group(1))
                     out.append({"mk": mk, "sel": sel, "point": point, "dec": dec, "market_name": vn,
-                                "boosted": bool(p.get("sk_boosted_offer"))})
+                                "boosted": bool(p.get("sk_boosted_offer")), "has_draw": has_draw})
     return out, census
 
 
