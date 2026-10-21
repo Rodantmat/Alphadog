@@ -231,6 +231,7 @@ def main():
             rec[f"fb{k}_cand_all"] = round(base * prod, 4)
             rec[f"fb{k}_cand_meanhit"] = round(base * sum(hit_prods) / len(hit_prods), 4)
             rec[f"fb{k}_cand_table"] = base
+            rec[f"fb{k}_cand_best"] = round(base * max(hit_prods), 4)
         cmp.append(rec)
         rows.append((RUN_ID, n, json.dumps(ps), prod, same, s_mult, f_mult, json.dumps(fb), json.dumps(rec["std_err"]), json.dumps(rec["flex_err"]),
                      json.dumps({k: j.get(k) for k in ("odds", "true_odds", "flex", "errors", "status", "promo", "resolved_selections")})))
