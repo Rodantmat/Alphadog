@@ -285,8 +285,10 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
 }
 
 export async function apiFilters(sql, cfg, slate, version) {
+  // the counts are of the legs the board can show (2026-10-20): unplaceable Underdog rungs and started games are left out, as on the board
   const rows = await q(sql, `
-    WITH bs AS (SELECT b0.app, b0.player, b0.prop, b0.line, b0.side, coalesce(th.true_hp::numeric, b0.final_hp) final_hp,
+    WITH ${STARTED_CTE},
+    bs AS (SELECT b0.app, b0.player, b0.prop, b0.line, b0.side, coalesce(th.true_hp::numeric, b0.final_hp) final_hp,
                        coalesce(th.true_score::numeric, b0.score) score, b0.confidence
                 FROM nba_score.board_scored b0
                 LEFT JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
