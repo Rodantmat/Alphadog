@@ -4,16 +4,19 @@ RESEARCH - Underdog's OWN entry payout, probed, predicted and checked (owner 202
 add legs and understand the multiplier logic ... find a way to do the same with Underdog to get the proper multipliers"; "probe ...
 make guesses, then go and check, and if it's wrong, keep trying until you get it right").
 
-ACCESS (found 2026-10-21 in Underdog's web bundle, chunk 7151): GET api.underdogfantasy.com/v4/entry_slips/payout_outcome
-?options[i][id]=<option id>&options[i][type]=OverUnderOption&fee_source=cash - NO login. It answers the entry builder's own numbers:
-`standard` (all-or-nothing) and `insurance` (Flex: payout + fallbacks per loss count), and the base tables (other_payouts).
+ACCESS (found 2026-10-21 in Underdog's web bundle, chunk 699): GET api.underdogfantasy.com/v4/entry_slips/estimate
+?options[i][id]=<option id>&options[i][type]=OverUnderOption&fee=10&fee_source=cash (brackets URL-encoded) - NO login for picks priced
+as FANTASY (odds.fantasy); an entry with 2+ PREDICTION-market picks (odds.prediction, UDX contracts - most of the CA board) answers
+"User is required for entries that contain multiple prediction markets". It returns the entry builder's own prices: `odds`
+(the Standard entry, decimal) and `flex.offerings[].pricing[losses].odds` (Flex, decimal per loss count). (payout_outcome, chunk 7151,
+returns only the base tables: Flex 3 3.25/1.09, 4 7.2/1.4, 5 10/2.5, 6 25/2.6/0.25, 7 40/2.75/0.5, 8 80/3/1.)
 
 Each round: a fresh Underdog NBA board (our scraper, same headers / proxy), N random pre-game entries of 2-6 picks (one pick per game,
 a share same-game), Underdog's quote for each, and OUR prediction beside it:
   standard = STD[n] x prod(payout_multiplier)        flex full = FLEX[n|0] x prod(m)
   flex k losses: candidates (a) FLEX[n|k] x prod(all m), (b) FLEX[n|k] x mean over the k-miss sets of prod(hit m), (c) table only.
 Every quote is stored (nba_market.ud_payout_quotes, retained). The summary says which prediction matches and by how much.
-Env: RX_N (entries, default 60), RX_SEED, RX_SAME_GAME_SHARE (default 0.2), RX_SIZES (default 2,3,4,5,6).
+Env: RX_N (entries, default 60), RX_SEED, RX_SAME_GAME_SHARE (default 0.2), RX_SIZES (default 2,3,4,5,6), RX_KIND (fantasy | prediction).
 """
 import itertools
 import json
@@ -34,9 +37,10 @@ SAME = float(os.environ.get("RX_SAME_GAME_SHARE", "0.2"))
 SIZES = [int(x) for x in os.environ.get("RX_SIZES", "2,3,4,5,6").split(",") if x.strip()]
 RUN_ID = os.environ.get("GITHUB_RUN_ID", "local") + "-" + str(SEED)
 
-# our tables today (nba_main_ui.ud_payout / build_ud_slip_engine.STD / FLEX) - the prediction under test
+# our tables (nba_main_ui.ud_payout / build_ud_slip_engine.STD / FLEX) - the prediction under test; 4|0 = 7.2 from Underdog's own
+# payout_outcome table 2026-10-21 (ours said 6.0)
 STD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0, 7: 65.0, 8: 120.0}
-FLEX = {"3|0": 3.25, "3|1": 1.09, "4|0": 6.0, "4|1": 1.4, "5|0": 10.0, "5|1": 2.5, "6|0": 25.0, "6|1": 2.6, "6|2": 0.25,
+FLEX = {"3|0": 3.25, "3|1": 1.09, "4|0": 7.2, "4|1": 1.4, "5|0": 10.0, "5|1": 2.5, "6|0": 25.0, "6|1": 2.6, "6|2": 0.25,
         "7|0": 40.0, "7|1": 2.75, "7|2": 0.5, "8|0": 80.0, "8|1": 3.0, "8|2": 1.0}
 
 
@@ -81,7 +85,12 @@ def main():
         for o in rl.get("options") or []:
             if o.get("status") != "active" or o.get("type") != "OverUnderOption" or o.get("payout_multiplier") in (None, ""):
                 continue
-            opts.append({"id": o["id"], "lookup_id": o.get("lookup_id"), "m": float(o["payout_multiplier"]), "choice": o.get("choice"),
+            od = o.get("odds") or {}
+            kind = "fantasy" if od.get("fantasy") else ("prediction" if od.get("prediction") else ("sportsbook" if od.get("sportsbook") else "none"))
+            if kind != os.environ.get("RX_KIND", "fantasy"):
+                continue
+            opts.append({"id": o["id"], "lookup_id": o.get("lookup_id"), "m": float(o["payout_multiplier"]), "choice": o.get("choice"), "kind": kind,
+                         "price": float((od.get(kind) or {}).get("decimal") or 0) or None,
                          "player": lg.get("player"), "player_id": lg.get("player_id"), "team": lg.get("team"), "stat": lg.get("stat"),
                          "line": lg.get("line"), "line_type": rl.get("line_type"), "game": lg.get("game_id"), "start": gs})
     games = sorted({o["game"] for o in opts})
@@ -98,18 +107,24 @@ def main():
     sess = cr.Session(impersonate="chrome")
 
     def call(qs):
-        u = "https://api.underdogfantasy.com/v4/entry_slips/payout_outcome?" + common + "&fee_source=cash&" + qs
+        u = "https://api.underdogfantasy.com/v4/entry_slips/estimate?" + common + "&fee=10&fee_source=cash&" + qs
         for px in ([None, proxy] if proxy else [None]):
             try:
                 rr = sess.get(u, headers=H, timeout=30, proxies=({"https": px, "http": px} if px else None))
                 if rr.status_code == 200:
-                    return rr.json()
+                    jj = rr.json()
+                    if str(jj.get("status") or "").lower() in ("pending", "processing", "queued") and not jj.get("odds"):
+                        time.sleep(2.0)
+                        rr = sess.get(u, headers=H, timeout=30, proxies=({"https": px, "http": px} if px else None))
+                        jj = rr.json() if rr.status_code == 200 else jj
+                    return jj
             except Exception:  # noqa: BLE001 - next route
                 continue
         return None
 
     # 2. find the parameter shape the API accepts (the bundle sends options[i][id] / [type], arrayFormat indices)
     shapes = {
+        "id+type (encoded)": lambda ps: "&".join(f"options%5B{i}%5D%5Bid%5D={p['id']}&options%5B{i}%5D%5Btype%5D=OverUnderOption" for i, p in enumerate(ps)),
         "id+type": lambda ps: "&".join(f"options[{i}][id]={p['id']}&options[{i}][type]=OverUnderOption" for i, p in enumerate(ps)),
         "id+type+lookup": lambda ps: "&".join(f"options[{i}][id]={p['id']}&options[{i}][lookup_id]={p['lookup_id']}&options[{i}][type]=OverUnderOption" for i, p in enumerate(ps)),
         "id only": lambda ps: "&".join(f"options[{i}][id]={p['id']}" for i, p in enumerate(ps)),
@@ -145,9 +160,9 @@ def main():
     for name, fn in shapes.items():
         j = call(fn(probe))
         errs = (j or {}).get("errors") or []
-        sc = (j or {}).get("selection_count")
-        print(f"shape {name}: {'no response' if j is None else ('selection_count ' + str(sc) + ' errors ' + str([e.get('entry_error_code') for e in errs]))}", flush=True)
-        if j is not None and sc and not any(e.get("entry_error_code") == "options_not_found" for e in errs):
+        sc = len((j or {}).get("resolved_selections") or [])
+        print(f"shape {name}: {'no response' if j is None else ('resolved ' + str(sc) + ' errors ' + str([e.get('error_key') for e in errs]))}", flush=True)
+        if j is not None and len(j.get("resolved_selections") or []) == len(probe):
             shape = fn
             print(f"ACCEPTED shape: {name}", flush=True)
             break
@@ -166,18 +181,23 @@ def main():
         if not j:
             print(f"#{i} n={n} no response", flush=True)
             continue
-        st, ins = j.get("standard") or {}, j.get("insurance") or {}
         prod = 1.0
         for p in ps:
             prod *= p["m"]
-        s_mult = float(st.get("payout_multiplier") or 0) or None
-        f_mult = float(ins.get("payout_multiplier") or 0) or None
-        fb = {str(x.get("loss_count")): float(x.get("payout_multiplier")) for x in (ins.get("fallbacks") or [])}
+        od = j.get("odds") or {}
+        s_mult = float(od.get("decimal") or 0) or None
+        offs = ((j.get("flex") or {}).get("offerings") or [])
+        pr = (offs[0].get("pricing") or {}) if offs else {}
+        f_mult = float(((pr.get("0") or {}).get("odds") or {}).get("decimal") or 0) or None
+        fb = {k: float(((v or {}).get("odds") or {}).get("decimal") or 0) for k, v in pr.items() if k != "0"}
+        st = {"errors": [e for e in (j.get("errors") or [])]}
+        ins = {"errors": [((j.get("flex") or {}).get("error"))] if (j.get("flex") or {}).get("error") else []}
         pred_s = STD.get(n, 0) * prod
         pred_f = FLEX.get(f"{n}|0", 0) * prod
         rec = {"n": n, "same_game": same, "prod": round(prod, 6), "m": [p["m"] for p in ps], "std": s_mult, "pred_std": round(pred_s, 4),
                "flex": f_mult, "pred_flex": round(pred_f, 4), "fallbacks": fb,
-               "std_err": [e.get("entry_error_code") for e in (st.get("errors") or [])], "flex_err": [e.get("entry_error_code") for e in (ins.get("errors") or [])]}
+               "std_err": [e.get("error_key") or e.get("validation_status") for e in (st.get("errors") or []) if isinstance(e, dict)],
+               "flex_err": [(e.get("validation_status") or e.get("error_key")) if isinstance(e, dict) else str(e) for e in (ins.get("errors") or [])]}
         # flex partial candidates
         for k, v in fb.items():
             kk = int(k)
@@ -196,7 +216,7 @@ def main():
             rec[f"fb{k}_cand_table"] = base
         cmp.append(rec)
         rows.append((RUN_ID, n, json.dumps(ps), prod, same, s_mult, f_mult, json.dumps(fb), json.dumps(rec["std_err"]), json.dumps(rec["flex_err"]),
-                     json.dumps({k: j.get(k) for k in ("standard", "insurance", "selection_count", "discounted_option")})))
+                     json.dumps({k: j.get(k) for k in ("odds", "true_odds", "flex", "errors", "status", "promo", "resolved_selections")})))
         print(f"#{i} n={n}{' SG' if same else ''} prod m {prod:.4f} | std {s_mult} vs ours {pred_s:.3f} | flex {f_mult} vs ours {pred_f:.3f} | fallbacks {fb}"
               + (f" | std errors {rec['std_err']}" if rec["std_err"] else "") + (f" | flex errors {rec['flex_err']}" if rec["flex_err"] else ""), flush=True)
         time.sleep(0.6)
