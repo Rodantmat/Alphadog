@@ -337,6 +337,7 @@ def main():
         EX.install_flex2_alt(conn)
         if mode == "pick":
             pick(conn, d, write)
+            pick_standard(conn, d, write)
         elif mode == "grade":
             grade(conn, write)
         else:
