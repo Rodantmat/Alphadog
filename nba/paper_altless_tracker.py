@@ -149,8 +149,8 @@ def pick(conn, d, write):
           f"games already tipped: {len(gone)}", flush=True)
     made, out = 0, []
     for k in SIZES:
-        sl = AS.build(pool, k)
-        if not sl or len({l["game_id"] for l in sl}) < 2:
+        sl = build(pool, k)
+        if not sl:
             print(f"  {k}-pick: not enough legs across games")
             continue
         fp = 1.0
