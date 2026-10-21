@@ -672,7 +672,7 @@
       "game_phase_sr": "",
       "game_state": 0,
       "home_team_score": "0",
-      "obj_version": 1792528266382,
+      "obj_version": 1792554440523,
       "skipper_area_key": "game_progress|fobj__conflict_event__409527"
      },
      "weight": 17926236000000097
@@ -755,7 +755,7 @@
       "game_phase_sr": "",
       "game_state": 0,
       "home_team_score": "0",
-      "obj_version": 1792528266383,
+      "obj_version": 1792554440523,
       "skipper_area_key": "game_progress|fobj__conflict_event__409529"
      },
      "weight": 17926236000000109
@@ -833,12 +833,12 @@
       "game_clock_type_sr": 45601,
       "game_clock_vendor_time_millis": -1,
       "game_id": "fobj__conflict_event__409516",
-      "game_outcome": 4233,
+      "game_outcome": 4234,
       "game_phase": "",
       "game_phase_sr": "",
       "game_state": 0,
       "home_team_score": "0",
-      "obj_version": 1792528629299,
+      "obj_version": 1792554440523,
       "skipper_area_key": "game_progress|fobj__conflict_event__409516"
      },
      "weight": 17926254000000099
@@ -921,7 +921,7 @@
       "game_phase_sr": "",
       "game_state": 0,
       "home_team_score": "0",
-      "obj_version": 1792528266383,
+      "obj_version": 1792554440523,
       "skipper_area_key": "game_progress|fobj__conflict_event__417866"
      },
      "weight": 17926254000000099
@@ -1325,7 +1325,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792528261538,
+       "obj_version": 1792532709105,
        "skipper_area_key": "game_progress|fobj__conflict_event__409527"
       },
       "inplay_game_prop_progress": null,
@@ -1573,7 +1573,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792528261538,
+       "obj_version": 1792532709105,
        "skipper_area_key": "game_progress|fobj__conflict_event__409527"
       },
       "inplay_game_prop_progress": null,
@@ -1821,7 +1821,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792528261538,
+       "obj_version": 1792532709105,
        "skipper_area_key": "game_progress|fobj__conflict_event__409527"
       },
       "inplay_game_prop_progress": null,
@@ -2069,7 +2069,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792528261538,
+       "obj_version": 1792532709105,
        "skipper_area_key": "game_progress|fobj__conflict_event__409527"
       },
       "inplay_game_prop_progress": null,
@@ -2823,7 +2823,7 @@
    ]
   ]
  },
- "cards_raw_sample": "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"alt_modal_name\": \"\", \"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 2.2, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028378705, \"option_type\": 3, \"proposal_fkey\": \"4229841_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#3\", \"status\": 0, \"ticket_image\": null}, {\"column_type\": null, \"eu_odds\": 1.65, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028383284, \"option_type\": 2, \"proposal_fkey\": \"4229840_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#2\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"total_amount\": 2}, \"card_name\": \"Full Game\", \"footer\": \"\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": false, \"home_team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__409527\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 13, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1792623600000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__409527\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1792528261538, \"skipper_area_key\": \"game_progress|fobj__conflict_event__409527\"}, \"inplay_game_prop_progress\": null, \"modal_name\": \"H2H Fantasy Points\", \"prop_category\": {\"card_name\": \"Full Game\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__1001\", \"modal_name\": \"H2H Fantasy Points\", \"name\": \"H2H Combo\", \"ticket_name\": \"H2H Fantasy Points \\u2022 Combo\", \"weight\": 200}, \"sgp_mode\": 101, \"skin\": 1, \"skipper_area_key\": \"cards|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"star_packs_render_data\": {\"away_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__29623\", \"jersey_number\": \"1\", \"name\": \"Jalen Johnson\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37206\", \"jersey_number\": \"17\", \"name\": \"Onyeka Okongwu\", \"primary_position\": \"F-C\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__32562\", \"jersey_number\": \"5\", \"name\": \"Dyson Daniels\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37218\", \"jersey_number\": \"7\", \"name\": \"Nickeil Alexander-Walker\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37762\", \"jersey_number\": \"3\", \"name\": \"CJ McCollum\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/starpack-team-21995.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"id\": \"fobj__sb_nomenclature_participant__30648\", \"jersey_number\": \"0\", \"name\": \"Luguentz Dort\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/wide_hs_starpack-team-21995.png\"}], \"home_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37431\", \"jersey_number\": \"5\", \"name\": \"Paolo Banchero\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37429\", \"jersey_number\": \"22\", \"name\": \"Franz Wagner\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37614\", \"jersey_number\": \"3\", \"name\": \"Desmond Bane\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__28791\", \"jersey_number\": \"4\", \"name\": \"Jalen Suggs\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37426\", \"jersey_number\": \"34\", \"name\": \"Wendell Carter Jr.\", \"primary_position\": \"C-F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__41885\", \"jersey_number\": \"23\", \"name\": \"Tristan da Silva\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/wide_hs_starpack.png\"}]}, \"vendor\": 62, \"weight\": 17926236020000097}, {\"alt_modal_name\": \"\", \"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 2.2, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028378705, \"option_type\": 3, \"proposal_fkey\": \"4229841_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#3\", \"status\": 0, \"ticket_image\": null}, {\"column_type\": null, \"eu_odds\": 1.65, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028383284, \"option_type\": 2, \"proposal_fkey\": \"4229840_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#2\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"total_amount\": 2}, \"card_name\": \"Full Game\", \"footer\": \"\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": false, \"home_team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__409527\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 13, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1792623600000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__409527\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1792528261538, \"skipper_area_key\": \"game_progress|fobj__conflict_event__409527\"}, \"inplay_game_prop_progress\": null, \"modal_name\": \"H2H Fantasy Points\", \"prop_category\": {\"card_name\": \"Full Game\", \"footer\"",
+ "cards_raw_sample": "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"alt_modal_name\": \"\", \"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 2.2, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028378705, \"option_type\": 3, \"proposal_fkey\": \"4229841_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#3\", \"status\": 0, \"ticket_image\": null}, {\"column_type\": null, \"eu_odds\": 1.65, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028383284, \"option_type\": 2, \"proposal_fkey\": \"4229840_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#2\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"total_amount\": 2}, \"card_name\": \"Full Game\", \"footer\": \"\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": false, \"home_team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__409527\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 13, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1792623600000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__409527\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1792532709105, \"skipper_area_key\": \"game_progress|fobj__conflict_event__409527\"}, \"inplay_game_prop_progress\": null, \"modal_name\": \"H2H Fantasy Points\", \"prop_category\": {\"card_name\": \"Full Game\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__1001\", \"modal_name\": \"H2H Fantasy Points\", \"name\": \"H2H Combo\", \"ticket_name\": \"H2H Fantasy Points \\u2022 Combo\", \"weight\": 200}, \"sgp_mode\": 101, \"skin\": 1, \"skipper_area_key\": \"cards|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"star_packs_render_data\": {\"away_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__29623\", \"jersey_number\": \"1\", \"name\": \"Jalen Johnson\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37206\", \"jersey_number\": \"17\", \"name\": \"Onyeka Okongwu\", \"primary_position\": \"F-C\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__32562\", \"jersey_number\": \"5\", \"name\": \"Dyson Daniels\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37218\", \"jersey_number\": \"7\", \"name\": \"Nickeil Alexander-Walker\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37762\", \"jersey_number\": \"3\", \"name\": \"CJ McCollum\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/starpack-team-21995.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"id\": \"fobj__sb_nomenclature_participant__30648\", \"jersey_number\": \"0\", \"name\": \"Luguentz Dort\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/wide_hs_starpack-team-21995.png\"}], \"home_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37431\", \"jersey_number\": \"5\", \"name\": \"Paolo Banchero\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37429\", \"jersey_number\": \"22\", \"name\": \"Franz Wagner\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37614\", \"jersey_number\": \"3\", \"name\": \"Desmond Bane\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__28791\", \"jersey_number\": \"4\", \"name\": \"Jalen Suggs\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37426\", \"jersey_number\": \"34\", \"name\": \"Wendell Carter Jr.\", \"primary_position\": \"C-F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__41885\", \"jersey_number\": \"23\", \"name\": \"Tristan da Silva\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/wide_hs_starpack.png\"}]}, \"vendor\": 62, \"weight\": 17926236020000097}, {\"alt_modal_name\": \"\", \"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 2.2, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028378705, \"option_type\": 3, \"proposal_fkey\": \"4229841_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#3\", \"status\": 0, \"ticket_image\": null}, {\"column_type\": null, \"eu_odds\": 1.65, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028383284, \"option_type\": 2, \"proposal_fkey\": \"4229840_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#2\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"total_amount\": 2}, \"card_name\": \"Full Game\", \"footer\": \"\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": false, \"home_team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__409527\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 13, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1792623600000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__409527\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1792532709105, \"skipper_area_key\": \"game_progress|fobj__conflict_event__409527\"}, \"inplay_game_prop_progress\": null, \"modal_name\": \"H2H Fantasy Points\", \"prop_category\": {\"card_name\": \"Full Game\", \"footer\"",
  "area_key_used": "game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#3",
  "alt_cards": {
   "__object_class_name": "FCM__Skipper_GetAltCards__Response",
@@ -2836,7 +2836,7 @@
       "eu_odds": 2.2,
       "is_main_line": true,
       "line": 0.0,
-      "obj_version": 28378705,
+      "obj_version": 89000028378705,
       "option_type": 3,
       "proposal_fkey": "4229841_p_603_universal",
       "selection_image": null,
@@ -2850,7 +2850,7 @@
       "eu_odds": 1.65,
       "is_main_line": true,
       "line": 0.0,
-      "obj_version": 28383284,
+      "obj_version": 89000028383284,
       "option_type": 2,
       "proposal_fkey": "4229840_p_603_universal",
       "selection_image": null,
@@ -2942,7 +2942,7 @@
     "game_phase_sr": "",
     "game_state": 0,
     "home_team_score": "0",
-    "obj_version": 1792561449962,
+    "obj_version": 1792532348820,
     "skipper_area_key": "game_progress|fobj__conflict_event__409527"
    },
    "inplay_game_prop_progress": null,
@@ -3149,7 +3149,7 @@
   },
   "schema_version": 1
  },
- "alt_raw_sample": "{\"__object_class_name\": \"FCM__Skipper_GetAltCards__Response\", \"card\": {\"alt_modal_name\": \"\", \"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 2.2, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 28378705, \"option_type\": 3, \"proposal_fkey\": \"4229841_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#3\", \"status\": 0, \"ticket_image\": null}, {\"column_type\": null, \"eu_odds\": 1.65, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 28383284, \"option_type\": 2, \"proposal_fkey\": \"4229840_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#2\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"total_amount\": 2}, \"card_name\": \"Full Game\", \"footer\": \"\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": false, \"home_team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__409527\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 13, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1792623600000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__409527\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1792561449962, \"skipper_area_key\": \"game_progress|fobj__conflict_event__409527\"}, \"inplay_game_prop_progress\": null, \"modal_name\": \"H2H Fantasy Points\", \"prop_category\": {\"card_name\": \"Full Game\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__1001\", \"modal_name\": \"H2H Fantasy Points\", \"name\": \"H2H Combo\", \"ticket_name\": \"H2H Fantasy Points \\u2022 Combo\", \"weight\": 200}, \"sgp_mode\": 101, \"skin\": 1, \"skipper_area_key\": \"cards|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"star_packs_render_data\": {\"away_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__29623\", \"jersey_number\": \"1\", \"name\": \"Jalen Johnson\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37206\", \"jersey_number\": \"17\", \"name\": \"Onyeka Okongwu\", \"primary_position\": \"F-C\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__32562\", \"jersey_number\": \"5\", \"name\": \"Dyson Daniels\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37218\", \"jersey_number\": \"7\", \"name\": \"Nickeil Alexander-Walker\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37762\", \"jersey_number\": \"3\", \"name\": \"CJ McCollum\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/starpack-team-21995.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"id\": \"fobj__sb_nomenclature_participant__30648\", \"jersey_number\": \"0\", \"name\": \"Luguentz Dort\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/wide_hs_starpack-team-21995.png\"}], \"home_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37431\", \"jersey_number\": \"5\", \"name\": \"Paolo Banchero\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37429\", \"jersey_number\": \"22\", \"name\": \"Franz Wagner\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37614\", \"jersey_number\": \"3\", \"name\": \"Desmond Bane\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__28791\", \"jersey_number\": \"4\", \"name\": \"Jalen Suggs\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37426\", \"jersey_number\": \"34\", \"name\": \"Wendell Carter Jr.\", \"primary_position\": \"C-F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__41885\", \"jersey_number\": \"23\", \"name\": \"Tristan da Silva\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/wide_hs_starpack.png\"}]}, \"vendor\": 62, \"weight\": 17926236020000097}, \"schema_version\": 1}",
+ "alt_raw_sample": "{\"__object_class_name\": \"FCM__Skipper_GetAltCards__Response\", \"card\": {\"alt_modal_name\": \"\", \"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 2.2, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028378705, \"option_type\": 3, \"proposal_fkey\": \"4229841_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#3\", \"status\": 0, \"ticket_image\": null}, {\"column_type\": null, \"eu_odds\": 1.65, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 89000028383284, \"option_type\": 2, \"proposal_fkey\": \"4229840_p_603_universal\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461|0.0#2\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"game_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"total_amount\": 2}, \"card_name\": \"Full Game\", \"footer\": \"\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": false, \"home_team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__409527\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 13, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1792623600000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__409527\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1792532348820, \"skipper_area_key\": \"game_progress|fobj__conflict_event__409527\"}, \"inplay_game_prop_progress\": null, \"modal_name\": \"H2H Fantasy Points\", \"prop_category\": {\"card_name\": \"Full Game\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__1001\", \"modal_name\": \"H2H Fantasy Points\", \"name\": \"H2H Combo\", \"ticket_name\": \"H2H Fantasy Points \\u2022 Combo\", \"weight\": 200}, \"sgp_mode\": 101, \"skin\": 1, \"skipper_area_key\": \"cards|fobj__conflict_event__409527|fkey__sk_prop_category__1001|fkey__sk_league__461\", \"star_packs_render_data\": {\"away_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__29623\", \"jersey_number\": \"1\", \"name\": \"Jalen Johnson\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/29623/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37206\", \"jersey_number\": \"17\", \"name\": \"Onyeka Okongwu\", \"primary_position\": \"F-C\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37206/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__32562\", \"jersey_number\": \"5\", \"name\": \"Dyson Daniels\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/32562/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37218\", \"jersey_number\": \"7\", \"name\": \"Nickeil Alexander-Walker\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37218/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37762\", \"jersey_number\": \"3\", \"name\": \"CJ McCollum\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/raw_hs.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37762/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/starpack-team-21995.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"id\": \"fobj__sb_nomenclature_participant__30648\", \"jersey_number\": \"0\", \"name\": \"Luguentz Dort\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/raw_hs-team-21995.png\", \"team\": {\"abbreviation\": \"ATL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21995/jersey_starpack.png\", \"full_name\": \"ATL Hawks\", \"id\": \"fobj__sb_nomenclature_team__21995\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21995/raw.png\", \"name\": \"ATL Hawks\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/21995/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/30648/wide_hs_starpack-team-21995.png\"}], \"home_players_render_data\": [{\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37431\", \"jersey_number\": \"5\", \"name\": \"Paolo Banchero\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37431/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37429\", \"jersey_number\": \"22\", \"name\": \"Franz Wagner\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37429/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37614\", \"jersey_number\": \"3\", \"name\": \"Desmond Bane\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37614/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__28791\", \"jersey_number\": \"4\", \"name\": \"Jalen Suggs\", \"primary_position\": \"G\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/28791/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__37426\", \"jersey_number\": \"34\", \"name\": \"Wendell Carter Jr.\", \"primary_position\": \"C-F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/37426/wide_hs_starpack.png\"}, {\"boxed_gradient_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/starpack.png\", \"headshot_medium_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"headshot_mini_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"id\": \"fobj__sb_nomenclature_participant__41885\", \"jersey_number\": \"23\", \"name\": \"Tristan da Silva\", \"primary_position\": \"F\", \"raw_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/raw_hs.png\", \"team\": {\"abbreviation\": \"ORL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22007/jersey_starpack.png\", \"full_name\": \"ORL Magic\", \"id\": \"fobj__sb_nomenclature_team__22007\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22007/raw.png\", \"name\": \"ORL Magic\", \"starpack_lettering_disabled\": false}, \"wide_boxed_image_url\": \"https://image-store.getfliff.com/sb/team/22007/wide_starpack.png\", \"wide_headshot_boxed_image_url\": \"https://image-store.getfliff.com/sb/participant/41885/wide_hs_starpack.png\"}]}, \"vendor\": 62, \"weight\": 17926236020000097}, \"schema_version\": 1}",
  "chef_choices": {
   "__object_class_name": "FCM__Skipper_GetChefChoices__Response",
   "cards_packs": [
@@ -3256,7 +3256,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792558191020,
+       "obj_version": 1792528287167,
        "skipper_area_key": "game_progress|fobj__conflict_event__419998"
       },
       "inplay_game_prop_progress": null,
@@ -3410,7 +3410,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792558191019,
+       "obj_version": 1792528287164,
        "skipper_area_key": "game_progress|fobj__conflict_event__419406"
       },
       "inplay_game_prop_progress": null,
@@ -3590,7 +3590,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792558191019,
+       "obj_version": 1792528287164,
        "skipper_area_key": "game_progress|fobj__conflict_event__419409"
       },
       "inplay_game_prop_progress": null,
@@ -3726,7 +3726,7 @@
         "starpack_lettering_disabled": false
        },
        "id": "fobj__conflict_event__420509",
-       "is_popular": true,
+       "is_popular": false,
        "league": {
         "abbreviation": "ATP Alm",
         "available_games": 8,
@@ -3770,7 +3770,7 @@
        "game_phase_sr": "",
        "game_state": 0,
        "home_team_score": "0",
-       "obj_version": 1792558191020,
+       "obj_version": 1792528287167,
        "skipper_area_key": "game_progress|fobj__conflict_event__420509"
       },
       "inplay_game_prop_progress": null,
@@ -3829,5 +3829,985 @@
    }
   ],
   "schema_version": 1
+ },
+ "points_category": "fkey__sk_prop_category__1060",
+ "points_cards_n": 15,
+ "points_cards_lean": [
+  {
+   "card_keys": [
+    "betting_options",
+    "game_render_data",
+    "inplay_game_progress",
+    "inplay_player_prop_progress",
+    "player_history_stats",
+    "player_history_stats_expected",
+    "player_prop_render_data",
+    "prop_category",
+    "sgp_mode",
+    "skin",
+    "skipper_area_key",
+    "vendor",
+    "weight"
+   ],
+   "card_area": "cards|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431",
+   "card_name": null,
+   "player": "{}",
+   "bo_area": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431",
+   "bo_total": 18,
+   "options": [
+    {
+     "line": 22.5,
+     "eu_odds": 1.9,
+     "is_main_line": true,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "4229594_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.75,
+     "is_main_line": true,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "4229595_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#1",
+     "status": 0,
+     "column_type": null
+    }
+   ]
+  },
+  {
+   "card_keys": [
+    "betting_options",
+    "game_render_data",
+    "inplay_game_progress",
+    "inplay_player_prop_progress",
+    "player_history_stats",
+    "player_history_stats_expected",
+    "player_prop_render_data",
+    "prop_category",
+    "sgp_mode",
+    "skin",
+    "skipper_area_key",
+    "vendor",
+    "weight"
+   ],
+   "card_area": "cards|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37429",
+   "card_name": null,
+   "player": "{}",
+   "bo_area": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37429",
+   "bo_total": 16,
+   "options": [
+    {
+     "line": 21.5,
+     "eu_odds": 1.85,
+     "is_main_line": true,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "4229586_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37429|21.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 21.5,
+     "eu_odds": 1.8,
+     "is_main_line": true,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "4229587_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37429|21.5#1",
+     "status": 0,
+     "column_type": null
+    }
+   ]
+  },
+  {
+   "card_keys": [
+    "betting_options",
+    "game_render_data",
+    "inplay_game_progress",
+    "inplay_player_prop_progress",
+    "player_history_stats",
+    "player_history_stats_expected",
+    "player_prop_render_data",
+    "prop_category",
+    "sgp_mode",
+    "skin",
+    "skipper_area_key",
+    "vendor",
+    "weight"
+   ],
+   "card_area": "cards|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__29623",
+   "card_name": null,
+   "player": "{}",
+   "bo_area": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__29623",
+   "bo_total": 18,
+   "options": [
+    {
+     "line": 20.5,
+     "eu_odds": 1.75,
+     "is_main_line": true,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "4229584_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__29623|20.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 20.5,
+     "eu_odds": 1.9,
+     "is_main_line": true,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "4229585_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__29623|20.5#1",
+     "status": 0,
+     "column_type": null
+    }
+   ]
+  }
+ ],
+ "ladder_tries": {
+  "bo_area": {
+   "key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431",
+   "n_options": 18,
+   "options": [
+    {
+     "line": 11.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914663_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 11.5,
+     "eu_odds": 9.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914673_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914664_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 4.8,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914674_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 1.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914665_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 3.05,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914675_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914666_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 2.35,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914676_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.9,
+     "is_main_line": true,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "4229594_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.75,
+     "is_main_line": true,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "4229595_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#1",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 2.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914667_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914677_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 4.15,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914668_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914678_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 8.9,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914669_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914679_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 28.55,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914670_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 1.0,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914680_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#1",
+     "status": 1,
+     "column_type": null
+    }
+   ],
+   "resp_keys": [
+    "__object_class_name",
+    "card",
+    "schema_version"
+   ]
+  },
+  "card_area": {
+   "key": "cards|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431",
+   "n_options": 18,
+   "options": [
+    {
+     "line": 11.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914663_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 11.5,
+     "eu_odds": 9.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914673_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914664_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 4.8,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914674_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 1.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914665_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 3.05,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914675_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914666_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 2.35,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914676_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.9,
+     "is_main_line": true,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "4229594_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.75,
+     "is_main_line": true,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "4229595_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#1",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 2.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914667_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914677_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 4.15,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914668_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914678_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 8.9,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914669_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914679_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 28.55,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914670_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 1.0,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914680_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#1",
+     "status": 1,
+     "column_type": null
+    }
+   ],
+   "resp_keys": [
+    "__object_class_name",
+    "card",
+    "schema_version"
+   ]
+  },
+  "option0_area": {
+   "key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#0",
+   "n_options": 18,
+   "options": [
+    {
+     "line": 11.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914663_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 11.5,
+     "eu_odds": 9.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914673_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914664_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 4.8,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914674_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 1.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914665_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 3.05,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914675_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914666_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 2.35,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914676_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.9,
+     "is_main_line": true,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "4229594_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.75,
+     "is_main_line": true,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "4229595_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#1",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 2.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914667_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914677_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 4.15,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914668_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914678_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 8.9,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914669_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914679_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 28.55,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914670_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 1.0,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914680_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#1",
+     "status": 1,
+     "column_type": null
+    }
+   ],
+   "resp_keys": [
+    "__object_class_name",
+    "card",
+    "schema_version"
+   ]
+  },
+  "option1_area": {
+   "key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#1",
+   "n_options": 18,
+   "options": [
+    {
+     "line": 11.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914663_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 11.5,
+     "eu_odds": 9.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914673_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|11.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914664_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 14.5,
+     "eu_odds": 4.8,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914674_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|14.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 1.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914665_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 17.5,
+     "eu_odds": 3.05,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914675_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|17.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914666_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 19.5,
+     "eu_odds": 2.35,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914676_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|19.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.9,
+     "is_main_line": true,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "4229594_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 22.5,
+     "eu_odds": 1.75,
+     "is_main_line": true,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "4229595_p_603_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|22.5#1",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 2.25,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914667_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 24.5,
+     "eu_odds": 1.45,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914677_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|24.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 4.15,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914668_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 29.5,
+     "eu_odds": 1.1,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914678_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|29.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 8.9,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914669_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 34.5,
+     "eu_odds": 1.03,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914679_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|34.5#1",
+     "status": 1,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 28.55,
+     "is_main_line": false,
+     "option_type": 0,
+     "selection_name": null,
+     "proposal_fkey": "2914670_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#0",
+     "status": 0,
+     "column_type": null
+    },
+    {
+     "line": 39.5,
+     "eu_odds": 1.0,
+     "is_main_line": false,
+     "option_type": 1,
+     "selection_name": null,
+     "proposal_fkey": "2914680_p_623_universal",
+     "skipper_area_key": "prop_odds|fobj__conflict_event__409527|fkey__sk_prop_category__1060|fkey__sk_league__461|fobj__sb_nomenclature_participant__37431|39.5#1",
+     "status": 1,
+     "column_type": null
+    }
+   ],
+   "resp_keys": [
+    "__object_class_name",
+    "card",
+    "schema_version"
+   ]
+  }
  }
 }
