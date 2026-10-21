@@ -369,25 +369,25 @@ def api_checks(conn, cfg):
         f761 = conn.execute("SELECT count(*) FROM nba_score.slip_engine_slips_wo WHERE game_date=%s AND phase='final7'", (sd61,)).fetchone()[0]
         check("C61 replay = the live engine's own slips for that slate (season replay, per strategy), with results, not a final-7 day",
               got61 == want61 and not nores and f761 == 0, f"{lbl61} {sd61}: shown {got61} replay {want61}; no result {nores[:3]}")
-    # C24: the backup pool equals the pool picked from the WHOLE slate (top HP per app, score >= min, no leg already in a slip)
+    # C24 (2026-10-21): the backup pool is +EV legs only, ranked by EDGE over each leg's own break-even per app, at most `size` per
+    # app per line type (so a removed regular leg has a regular substitute), score >= min, no leg already in a slip, no hidden UD rung
     bp = cfg["backup_pool"]
-    sd = (hh.get("slate") or {}).get("date")
     in_slip = {l["board_row_id"] for s in sl for l in s["legs"]}
-    want_pool = []
-    for app in ("prizepicks", "underdog"):
-        rows_ = conn.execute(f"""SELECT app, player_id, prop, line::float8, side FROM {HB} WHERE game_date=%s AND app=%s AND NOT {ud_hide_sql(cfg, 'hb')} AND round(score::numeric, 1) >= %s
-                                ORDER BY final_hp DESC, score DESC, player, prop, line, side""", (sd, app, bp["min_score"])).fetchall()
-        picked = []
-        for a, pid, prop, line, side in rows_:
-            key = (a, str(pid), prop, float(line), side)
-            if any(_k(x) == key for x in in_slip):
-                continue
-            picked.append(key)
-            if len(picked) >= int(bp["size"]):
-                break
-        want_pool += picked
-    got_pool = [_k(l["board_row_id"]) for l in hh.get("backup_pool", [])]
-    check("C24 backup pool == the pool picked from the whole slate (light load is exact)", got_pool == want_pool, f"got {len(got_pool)} want {len(want_pool)}; first diff {next(((a, b) for a, b in zip(got_pool, want_pool) if a != b), None)}")
+    pool24 = hh.get("backup_pool", [])
+    bad24 = []
+    per_type = {}
+    last_edge = {}
+    for l in pool24:
+        app, lt, e = l.get("source_key"), l.get("line_type") or "regular", l.get("edge_0_100")
+        per_type[(app, lt)] = per_type.get((app, lt), 0) + 1
+        if e is None or float(e) <= 0: bad24.append(("edge<=0", l["board_row_id"], e))
+        if l["board_row_id"] in in_slip: bad24.append(("in a slip", l["board_row_id"]))
+        if float(l.get("score_0_100") or 0) < float(bp["min_score"]): bad24.append(("score<min", l["board_row_id"]))
+        if app in last_edge and e is not None and float(e) > last_edge[app] + 1e-9: bad24.append(("not edge-ordered", l["board_row_id"]))
+        if e is not None: last_edge[app] = float(e)
+    over = {k: v for k, v in per_type.items() if v > int(bp["size"])}
+    check("C24 backup pool: +EV legs ranked by edge over their own break-even, each line type kept (<= size per app per type)",
+          not bad24 and not over and pool24, f"{len(pool24)} legs by type {per_type}; problems {bad24[:3]} over {over}")
     if hh.get("source") == "replay_backtest" and sl:
         res = [s for s in sl if s.get("result")]
         check("C14 replay slips carry the backtest result", len(res) == len(sl), f"{len(res)}/{len(sl)}")
