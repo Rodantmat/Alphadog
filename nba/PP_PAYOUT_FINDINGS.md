@@ -308,6 +308,31 @@ and figure it out. Same goes for all apps."
   constant (T36-3; priced without it). Underdog's pick'em bundles load only after login (no credential), so no live quote path. Sleeper (product of per-side
   multipliers, proven on the owner's screens 10-09). Fliff is a social sportsbook: American odds, parlay = product; no NBA props yet.
 
+## 0n. 🔑 UNDERDOG PRICES ITS OWN ENTRIES FOR US — NO LOGIN FOR FANTASY PICKS (2026-10-21)
+Owner 15:36-15:37 PT: "go in the app ... add legs and understand the multiplier logic ... find a way to do the same with Underdog
+... probe, make guesses, then go and check, and if it's wrong keep trying until you get it right".
+- **Access:** Underdog's web bundle (scan_webpack_chunks on app.underdogfantasy.com runtime) names the entry builder's calls.
+  `GET api.underdogfantasy.com/v4/entry_slips/estimate?options[i][id]=<option id>&options[i][type]=OverUnderOption&fee=10&fee_source=cash`
+  (brackets URL-encoded, the board's product / product_experience_id / state_config_id, the scraper's headers) answers WITHOUT a
+  login. `/v4/entry_slips/payout_outcome` returns only the base tables. Standard price = `odds.multiplier`; Flex =
+  `flex.offerings[0].pricing[losses].odds.decimal`. Probe: `nba/research_ud_payout_probe.py`; every quote kept in
+  `nba_market.ud_payout_quotes`.
+- **Two kinds of pick on the CA board** (10-21 window board): 640 options priced as FANTASY (`odds.fantasy`), 1,770 as
+  PREDICTION-market contracts (`odds.prediction`, UDX). An entry with 2+ prediction picks needs a user ("User is required for entries
+  that contain multiple prediction markets").
+- **Base tables (Underdog's own):** Flex 3 3.25/1.09, **4 7.2/1.4 (ours said 6.0)**, 5 10/2.5, 6 25/2.6/0.25, 7 40/2.75/0.5,
+  8 80/3/1. Standard 2-6 = 3.5 / 6.5 / 12 / 20 / 35 (unchanged).
+- **Fantasy picks - proven (runs 39689206312, 39689832099; 110 entries):** Standard = STD[n] x prod(payout_multiplier), 51 of 54
+  within 0.5% (the 3 = a line moved between scrape and quote); Flex all-hit = FLEX[n|0] x prod(m) to 0.05%; Underdog floors to 2
+  decimals. **The Flex partial shown is the BEST case**: FLEX[n|k] x the largest product of the hit picks' m (the k lowest-m picks
+  miss) - 1 loss median 0.996-0.999 per size, 2 losses 0.995 (n 72). Our screen showed the MEAN over miss sets, so the owner's typed
+  1.67x / 0.31x could never match it. What is actually paid on a loss is the product of the picks that hit.
+- **One prediction pick + fantasy picks (run 39689836043, 29 entries):** Standard ≈ STD[n-1] x prod(fantasy m) x the prediction
+  pick's decimal price x 0.94-0.96 (a smaller factor on longer prices); no Flex offered. Our model (m for every pick) was off by
+  1-17%.
+- **Open:** entries with 2+ prediction picks (most of our live Underdog slips) need a session - owner asked for the `estimate`
+  cURL (only that read-only call, token in nba_config.external_credentials, never the password).
+
 ## 0l. 🔑 GRADER v3 — EVERY TABLE PROVEN ON THE LIVE NBA BOARD, AND PRIZEPICKS PRICES EVERY REAL SLIP (2026-10-18)
 Owner 17:41 PT: "Having the boards now, be sure we are using the proper multipliers, prove, analyze and understand each of the
 available tables, including PrizePicks with the techniques we already know."
