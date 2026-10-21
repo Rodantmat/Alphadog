@@ -944,6 +944,10 @@ def pick(conn, day, require_fresh=True):
               (f" -> stake x{factor:g}" if acted else (" -> rules disabled, recorded only" if on else "")), flush=True)
     n = 0
     placed_sigs = set()   # (structure, sorted legs) already placed today by an earlier strategy - a duplicate is staked once
+    xcfg = exposure_cfg(conn)
+    xglob, xpglob = defaultdict(int), defaultdict(int)   # staked slips per leg / per player today (slip_exposure)
+    if xcfg.get('enabled'):
+        print(f"  {day}: SLIP EXPOSURE caps ON - share {xcfg.get('share')}, leg cap {xcfg.get('leg_cap')}, player cap {xcfg.get('player_cap')}", flush=True)
     for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
         state, live_cap = states.get(name, ('paper', cap))
         if state == 'off':
