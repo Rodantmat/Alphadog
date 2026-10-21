@@ -9,7 +9,9 @@ write is the tracker's own CREATE TABLE IF NOT EXISTS of the empty nba_score.pap
    rmin <= 2 (the tracker's depth). PASS = 100% of those found with identical tier and rmin.
 2  PLUMBING on those slates: pick (open set = the research's assumed band, PAT_TEST_BAND - the real flag starts 10-21) and grade the
    slips from the box scores; every leg's hit must equal the research's stat_actual < line.
-3  TONIGHT (PAT_DATE default today): pick in dry run on the REAL Less flag (expected: no Less-open rows before the 10-21 archive).
+3  STANDARD RULES (SR_*): the live standard-leg build vs the research's universe (tier_map_legs R): every leg found, the same three
+   scores, the same rank within (prop, side) up to ties, the same hit from the box score; then the rules picked and graded (dry run).
+4  TONIGHT (PAT_DATE default today): pick in dry run on the REAL Less flag (expected: no Less-open rows before the 10-21 archive).
 Env: DATABASE_URL, AUDIT_DATES (default 2025-01-15,2025-03-10,2026-01-20,2026-03-15).
 """
 import os
