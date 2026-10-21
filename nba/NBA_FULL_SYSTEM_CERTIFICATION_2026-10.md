@@ -2668,3 +2668,37 @@ anything that's proved positive, we will try".
       'window' for today's ET games only, so every 10-21 PrizePicks / Underdog row became 'routine'. No window rows, no tiers, and the
       pick refused, correctly. The real P3 runs on 10-21 ET. Production untouched (both checks 0; no pipeline_runs row).
     - **Rerun:** run 39545353258, started 21:40 PT = 00:40 ET 10-21.
+    - ✅ **Rerun PASS.** P2B certify 7/7 (blowout refit 2.4 s ok; P2B 107 min, 08:05 -> 09:53 PT), P3 certify 9/9, P3 11 min (13:16 ->
+      13:27, 152 min before the 16:00 tip). 21 PrizePicks + 6 Underdog paper slips. Alternate Less: 1,217 window rows, 0 four-way
+      violations, 0 in live slips; paper tracker AL 10 + SR 9. Scored: PrizePicks 9,170, Sleeper 4,185, Underdog 3,968, Fliff 2,356,
+      Bovada 1,274, DraftKings 8; board_true_hp 11,620 / 11,620. Production after rollback: all 0, no pipeline_runs, no stale sessions.
+18. ✅ **SAME LEG IN MANY SLIPS, AND THE OVER MINUTES FLOOR** (owner 21:48 PT: "Research online and ground your proposed fixes, simulate
+    and test them ... they need to prove successful before deploying. We clearly have a correlation issue in many players on many slips").
+    - **Grounding (online):** every slip holding a leg is one more bet on it (simultaneous Kelly: MacLean-Thorp-Ziemba; Thorp / DataGolf
+      size correlated bets down); DFS optimizers cap player exposure with no universal number (Stokastic, FanGraphs, Footballguys) -
+      concentration costs little EV only when the next-best legs are close in edge; minutes risk for Overs (RotoGrinders, Action
+      Network); market-vs-model blending (Kaunitz et al.; Hubacek & Sir).
+    - **Harness:** `nba/research_slip_exposure.py` - the production pick on every slate of both seasons (live loader, certified pool,
+      family pools, correlation map, build_day_slips), production grader; each variant changes only which slips are taken from the same
+      ranking or which legs enter the pool. Rule written before the run: in BOTH seasons ROI >= base - 2 pts, max drawdown <= base,
+      net / drawdown >= base, bootstrap LB > 0. Sanity: 2025-26 base +84.5% vs the production replay +84.8%. (First 2024-25 run had every
+      day as a small slate - slate_games does not cover 2024-25; fixed to the production count, rerun.)
+    - **Exposure caps REJECTED.** 2025-26 runs 39546448259, 2024-25 run 39548587026: a leg in <= half / a third of a strategy's slips,
+      a leg in <= 3-6 slips a day, a player in <= 4 / 6 slips a day, combined - ROI -13 to -28 pts (2025-26), -9 pts (2024-25 G4). The
+      replacement slips use clearly weaker legs; the concentration raises day-to-day swings but is not negative EV. Core / regular cap 5,
+      sizes 2-6, Flex and Power, base vs "each leg in <= 2 of 5": lower ROI at most sizes in both seasons.
+    - **Threes-Over gap filter REJECTED:** T15 -6.7 pts (2025-26) / +22.3 (2024-25) - flips; T20 fails both.
+    - **Over minutes floor:** sensitivity runs 39549909644 / 39549914093 (18-28 min): M22 is the only threshold passing both seasons
+      (2025-26 ROI +4.2 pts, DD 67.5 -> 56.2; 2024-25 +2.4 pts, DD -8.5); 20-26 all lift ROI in at least one season with no collapse.
+      **Full production replays (audit_season_replay, AR_OVER_MIN=22, rolled back, RESULT PASS each):**
+      | season | baseline today's code | floor 22 |
+      |---|---|---|
+      | 2025-26 | s2526_base1021: +1,776.5 on 2,082.0, ROI +85.3%, max DD 73.0 | s2526_m22: +1,831.2 on 2,071.0, ROI +88.4%, max DD 49.7 |
+      | 2024-25 | s2425_base1021: +536.2 on 1,598.5, ROI +33.5%, max DD 134.3 | s2425_m22: +637.2 on 1,730.0, ROI +36.8%, max DD 127.0 |
+      Better on net, ROI and drawdown in both seasons.
+    - **Deployed 2026-10-21 03:25 PT:** `nba_config.classification_config['over_minutes_floor'] = {"enabled": true, "min_avg": 22,
+      "games": 10}` (live_slip_engine.over_minutes_filter: an Over leg is left out when the player's last-10-game minutes average is
+      under 22; no history -> kept). Audit `audit_over_minutes_floor.py` (run 39584182510) AUDIT_PASS: reads the row, on the 10-20 board
+      removes 1 Over (Miles McBride PRA-assists Over 7.5). **It would NOT have removed Daniss Jenkins on 10-20** - his last 10 games
+      (end of 2025-26) averaged 29.3 minutes; the floor is a proven average improvement, not a fix for that one night.
+    - **Exposure caps:** code in live_slip_engine (`slip_exposure`, no DB row = OFF). Kept for research only.
