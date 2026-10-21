@@ -64,8 +64,12 @@ anch AS (
          max(line) FILTER (WHERE NOT is_alt AND side='Over') AS explicit_anchor,
          -- the invisible switch point: between the deepest alternate below and the shallowest above.
          -- Computed from the ALTERNATE rungs only, and only used when no standard line exists.
-         max(line) FILTER (WHERE is_alt AND price < 0)  AS top_shorter,   -- priced as the easier side
-         min(line) FILTER (WHERE is_alt AND price > 0)  AS low_longer     -- priced as the harder side
+         -- MORE rungs only (2026-10-20): the archive now files an alternate LESS row (price 100) wherever PrizePicks opens Less
+         -- (allowed_wager_types). A goblin's Less row sits below the anchor at a positive price, so without the side filter it was
+         -- read as the lowest demon and pulled the switch point down - 185 of 248 no-standard ladders with Less on the 10-21 board
+         -- would have been re-anchored (and re-tiered, re-priced). History has no alternate Less rows: identical there.
+         max(line) FILTER (WHERE is_alt AND price < 0 AND side = 'Over')  AS top_shorter,   -- priced as the easier side
+         min(line) FILTER (WHERE is_alt AND price > 0 AND side = 'Over')  AS low_longer     -- priced as the harder side
   FROM pp GROUP BY 1,2,3,4,5
 )
 INSERT INTO nba_market.board_tiers_v2
