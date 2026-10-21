@@ -133,6 +133,55 @@ def main():
         if alt:
             rep["alt_raw_sample"] = json.dumps(alt)[:20000]
     call({"__object_class_name": "FCM__Skipper_GetChefChoices__Request"}, "chef_choices")
+
+    # ROUND 2 (00:15 PT): the 20k sample held only H2H cards. Points cards for the same game, then the ladder for the first
+    # player via each kind of key the card carries; record per option: line, eu_odds, is_main_line, option_type, selection.
+    def lean_card(cd):
+        bo = cd.get("betting_options") or {}
+        return {"card_keys": sorted(cd.keys()), "card_area": cd.get("skipper_area_key"), "card_name": cd.get("card_name"),
+                "player": json.dumps(cd.get("player") or cd.get("player_render_data") or cd.get("participant") or {}, default=str)[:400],
+                "bo_area": bo.get("skipper_area_key"), "bo_total": bo.get("total_amount"),
+                "options": [{k: o.get(k) for k in ("line", "eu_odds", "is_main_line", "option_type", "selection_name", "proposal_fkey",
+                                                     "skipper_area_key", "status", "column_type")} for o in (bo.get("options") or [])]}
+    pts_cat = None
+    for c in ((cats or {}).get("prop_categories") or {}).get("page") or []:
+        if c.get("name") == "Points":
+            pts_cat = c.get("id")
+    rep["points_category"] = pts_cat
+    pc = None
+    try:
+        j = fc._post(host, {"__object_class_name": "FCM__Skipper_GetCards__Request",
+                            "variables": {"filter": {"league": nba_id, "games": [game_id], "prop_categories": [pts_cat]}}})
+        pc = ((j.get("result") or {}).get("response")) or {}
+    except Exception as exc:  # noqa: BLE001
+        rep["points_cards_error"] = str(exc)[:300]
+    cards_list = [cd for pk in (pc or {}).get("cards_packs") or [] for cd in pk.get("cards") or []]
+    rep["points_cards_n"] = len(cards_list)
+    rep["points_cards_lean"] = [lean_card(cd) for cd in cards_list[:3]]
+    print("points cards:", len(cards_list), json.dumps(rep["points_cards_lean"][:1], default=str)[:1500], flush=True)
+    if cards_list:
+        cd = cards_list[0]
+        bo = cd.get("betting_options") or {}
+        keys = {"bo_area": bo.get("skipper_area_key"), "card_area": cd.get("skipper_area_key")}
+        for i, o in enumerate((bo.get("options") or [])[:2]):
+            keys[f"option{i}_area"] = o.get("skipper_area_key")
+        rep["ladder_tries"] = {}
+        for name, k in keys.items():
+            if not k:
+                continue
+            try:
+                j = fc._post(host, {"__object_class_name": "FCM__Skipper_GetAltCards__Request", "variables": {"skipper_area_key": k}})
+                resp = ((j.get("result") or {}).get("response")) or {}
+                card = resp.get("card") or {}
+                lc = lean_card(card) if card else {}
+                rep["ladder_tries"][name] = {"key": k, "n_options": len(lc.get("options") or []), "options": (lc.get("options") or [])[:60],
+                                             "resp_keys": sorted(resp.keys())}
+            except Exception as exc:  # noqa: BLE001
+                rep["ladder_tries"][name] = {"key": k, "error": str(exc)[:300]}
+            t = rep["ladder_tries"][name]
+            print("ladder via", name, "->", t.get("error") or f"{t['n_options']} options: " +
+                  ", ".join(f"{o['line']}@{o['eu_odds']}{'*' if o['is_main_line'] else ''}(t{o['option_type']})" for o in t["options"][:40]), flush=True)
+            time.sleep(0.4)
     (OUT / "discovery_skipper.json").write_text(json.dumps(rep, indent=1, default=str))
     print("wrote discovery_skipper.json", flush=True)
 
