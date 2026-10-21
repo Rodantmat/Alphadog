@@ -41,7 +41,9 @@ import research_exhaustive_pp as EX            # noqa: E402  less_price, QUOTE_L
 import research_altless_strategies as AS       # noqa: E402  imported for its 2-pick alternate Power x 0.93 rule
 
 PROPS = {"player_points": "points", "player_points_rebounds_assists": "pra", "player_rebounds": "rebounds", "player_assists": "assists"}
-STAT = {"points": "pts", "pra": "pts + reb + ast", "rebounds": "reb", "assists": "ast"}
+STAT = {"points": "pts", "pra": "pts + reb + ast", "rebounds": "reb", "assists": "ast", "pts_reb": "pts + reb", "pts_ast": "pts + ast",
+        "reb_ast": "reb + ast", "steals": "stl", "blocks": "blk", "stocks": "stl + blk", "threes_made": "fg3m", "turnovers": "tov"}
+# (verified 2026-10-20: prop_universe.stat_actual = these box-score expressions on 4,113 of 4,113 graded legs, all 12 props)
 DEPTH = 2
 SIZES = (2, 3, 4, 5, 6)
 MAX_SG = 2
