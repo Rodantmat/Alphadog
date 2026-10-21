@@ -161,8 +161,8 @@ def main():
                     m, a = fh.get((l["player_id"], l["prop"], l["side"], float(l["line"]))), th.get(k)
                     return m is None or a is None or (m - a) < g
                 return {c: [l for l in ls if keep(l)] for c, ls in pool.items()}
-            if v in ("M20", "M24"):
-                mm = 20.0 if v == "M20" else 24.0
+            if v.startswith("M") and v[1:].isdigit():
+                mm = float(v[1:])
                 return {c: [l for l in ls if not (l["side"] == "Over" and mins.get(str(l["player_id"]), 99.0) < mm)] for c, ls in pool.items()}
             return pool
 
