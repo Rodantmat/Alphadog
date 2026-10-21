@@ -289,7 +289,11 @@ def grade(conn, write):
         return
     done = 0
     for d, rule, size, st, legs in todo:
-        final = conn.execute("""SELECT count(*) FILTER (WHERE game_status <> 3) FROM nba_calendar.slate_games WHERE game_date = %s""",
+        # FINAL = the schedule says so (game_status 3, refreshed by the morning schedule scrape) OR both teams' box scores are loaded
+        # (2026-10-20: never depend on one source - the regular season's first finals are 10-20's)
+        final = conn.execute("""SELECT count(*) FROM nba_calendar.slate_games s WHERE s.game_date = %s AND s.game_status <> 3
+                                  AND NOT (EXISTS (SELECT 1 FROM nba_stats.player_game_log g WHERE g.game_date = s.game_date AND g.team_id = s.home_team_id)
+                                       AND EXISTS (SELECT 1 FROM nba_stats.player_game_log g WHERE g.game_date = s.game_date AND g.team_id = s.away_team_id))""",
                              (d,)).fetchone()[0]
         if final:
             print(f"  {d} {rule}: {final} game(s) not final - later")
