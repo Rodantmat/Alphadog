@@ -109,6 +109,7 @@ export function slipLeg(l, extra = {}) {
     team_id: l.team_id, team_abbr: l.team_abbr, opponent_abbr: l.opponent_abbr, game_pk: l.game_pk, official_game_time_utc: l.official_game_time_utc,
     source_key: l.source_key, canonical_prop_key: l.canonical_prop_key, prop_label: l.prop_label, line_value: l.line_value, selected_side: l.selected_side,
     line_type: l.line_type, is_goblin: l.is_goblin, is_demon: l.is_demon, leg_factor: l.leg_factor, app_multiplier: l.app_multiplier,
+    edge_0_100: l.edge_0_100, breakeven_0_100: l.breakeven_0_100,
     hit_probability_0_100: l.estimated_hit_probability_0_100, estimated_hit_probability_0_100: l.estimated_hit_probability_0_100,
     certainty_0_100: l.probability_confidence_0_100, overall_score_0_100: l.score_0_100, score_0_100: l.score_0_100, replay_mode: l.replay_mode, ...extra
   };
