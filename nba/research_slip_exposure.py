@@ -49,6 +49,9 @@ BOOT = int(os.environ.get("RX_BOOT", "2000"))
 RANGES = {"2024-25": ("2024-10-22", "2025-04-13"), "2025-26": ("2025-10-21", "2026-04-12")}
 DAILY = ["A_wsteals_5flex", "A_regular_5power", "A_wrebounds_4flex", "A_core_3power", "C_wstocks_4flex", "D_points_3power"]
 VARIANTS = ["base", "S50", "S34", "G3", "G4", "G5", "G6", "P4", "P6", "S50+G4", "T15", "T20", "M20", "M24"]
+# RX_VARIANTS (sensitivity runs): a comma list replacing the set above; "base" is always first. M<n> = Over minutes floor n.
+if os.environ.get("RX_VARIANTS"):
+    VARIANTS = ["base"] + [v.strip() for v in os.environ["RX_VARIANTS"].split(",") if v.strip() and v.strip() != "base"]
 MATRIX_SIZES = [2, 3, 4, 5, 6]
 
 
