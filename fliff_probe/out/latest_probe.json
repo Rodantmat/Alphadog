@@ -1,0 +1,907 @@
+{
+ "generated_utc": "2026-10-21T05:20:09Z",
+ "window_hours": 24.0,
+ "fliff_events_in_window": 94,
+ "fliff_events_by_sport": {
+  "tennis_atp": 16,
+  "tennis_wta": 12,
+  "basketball_nba": 11,
+  "unmapped:43037": 10,
+  "soccer_uefa_champs_league": 9,
+  "soccer_mexico_ligamx": 5,
+  "icehockey_nhl": 3,
+  "unmapped:43022": 3,
+  "unmapped:10557": 3,
+  "unmapped:10555": 3,
+  "unmapped:4752": 2,
+  "unmapped:4320": 2,
+  "unmapped:10559": 2,
+  "boxing_boxing": 2,
+  "unmapped:43039": 2,
+  "soccer_spain_la_liga": 1,
+  "unmapped:4751": 1,
+  "soccer_england_league1": 1,
+  "unmapped:4387": 1,
+  "soccer_usa_mls": 1,
+  "unmapped:43020": 1,
+  "americanfootball_ncaaf": 1,
+  "unmapped:43029": 1,
+  "unmapped:4208": 1
+ },
+ "parlay_calls": [
+  {
+   "sport": "basketball_nba",
+   "status": 200,
+   "remaining": "11710",
+   "cost": "9"
+  },
+  {
+   "sport": "americanfootball_nfl",
+   "status": 200,
+   "remaining": "11701",
+   "cost": "9"
+  },
+  {
+   "sport": "icehockey_nhl",
+   "status": 200,
+   "remaining": "11692",
+   "cost": "9"
+  }
+ ],
+ "fliff_boards_pulled": 13,
+ "graded_legs": 62,
+ "unmatched_events_by_sport": {
+  "tennis_wta": 12,
+  "tennis_atp": 16,
+  "soccer_uefa_champs_league": 9,
+  "soccer_spain_la_liga": 1,
+  "soccer_england_league1": 1,
+  "boxing_boxing": 2,
+  "soccer_usa_mls": 1,
+  "icehockey_nhl": 1,
+  "americanfootball_ncaaf": 1,
+  "soccer_mexico_ligamx": 5
+ },
+ "fliff_calls": 15,
+ "scrape_market_name_census": {
+  "basketball_nba": [
+   [
+    "Points",
+    11
+   ],
+   [
+    "Assists",
+    11
+   ],
+   [
+    "1st Quarter Points",
+    11
+   ],
+   [
+    "Points And Assists",
+    11
+   ],
+   [
+    "Steals",
+    11
+   ],
+   [
+    "Three Pointers Made",
+    11
+   ],
+   [
+    "Double Double",
+    11
+   ],
+   [
+    "Points And Rebounds",
+    11
+   ],
+   [
+    "Rebounds",
+    11
+   ],
+   [
+    "Rebounds And Assists",
+    11
+   ],
+   [
+    "Points And Rebounds And Assists",
+    11
+   ],
+   [
+    "Alternative POINT SPREAD",
+    11
+   ],
+   [
+    "Player First To Score",
+    11
+   ],
+   [
+    "Alternative TOTAL SCORE",
+    11
+   ],
+   [
+    "MONEYLINE",
+    11
+   ],
+   [
+    "Away Team Total Score",
+    11
+   ],
+   [
+    "Home Team Total Score",
+    11
+   ],
+   [
+    "POINT SPREAD",
+    11
+   ],
+   [
+    "TOTAL SCORE",
+    11
+   ],
+   [
+    "Blocks",
+    11
+   ],
+   [
+    "1st Half Total Score",
+    11
+   ],
+   [
+    "1st Quarter Point Spread",
+    11
+   ],
+   [
+    "1st Quarter Moneyline",
+    11
+   ],
+   [
+    "1st Quarter Total Score",
+    11
+   ],
+   [
+    "1st Half Moneyline",
+    11
+   ],
+   [
+    "1st Half Point Spread",
+    11
+   ],
+   [
+    "Home Screen - Show Case",
+    11
+   ],
+   [
+    "Triple Double",
+    8
+   ],
+   [
+    "Steals And Blocks",
+    6
+   ],
+   [
+    "1st Quarter Rebounds",
+    5
+   ],
+   [
+    "",
+    3
+   ],
+   [
+    "1st Quarter Assists",
+    1
+   ]
+  ],
+  "icehockey_nhl": [
+   [
+    "MONEYLINE",
+    2
+   ],
+   [
+    "Alternative TOTAL SCORE",
+    2
+   ],
+   [
+    "TOTAL SCORE",
+    2
+   ],
+   [
+    "Alternative PUCK LINE",
+    2
+   ],
+   [
+    "PUCK LINE",
+    2
+   ],
+   [
+    "1st Period PUCK LINE",
+    2
+   ],
+   [
+    "2nd Period Away Team Score",
+    2
+   ],
+   [
+    "1st Period Away Team Score",
+    2
+   ],
+   [
+    "Home Team Total Score",
+    2
+   ],
+   [
+    "3rd Period Away Team Score",
+    2
+   ],
+   [
+    "3rd Period PUCK LINE",
+    2
+   ],
+   [
+    "3rd Period Home Team Score",
+    2
+   ],
+   [
+    "2nd Period PUCK LINE",
+    2
+   ],
+   [
+    "1st Period Home Team Score",
+    2
+   ],
+   [
+    "Away Team Total Score",
+    2
+   ],
+   [
+    "2nd Period Total Score",
+    2
+   ],
+   [
+    "3rd Period Total Score",
+    2
+   ],
+   [
+    "2nd Period Home Team Score",
+    2
+   ],
+   [
+    "1st Period Total Score",
+    2
+   ],
+   [
+    "Goals",
+    2
+   ],
+   [
+    "Shots On Goal",
+    2
+   ],
+   [
+    "Points",
+    2
+   ],
+   [
+    "Assists",
+    2
+   ],
+   [
+    "Powerplay Points",
+    2
+   ],
+   [
+    "Home Screen - Show Case",
+    2
+   ]
+  ]
+ },
+ "xcheck_scrape_vs_parlayapi_fliff": {
+  "pairs": 113,
+  "within_0.02": 76,
+  "median_abs_diff": 0.009,
+  "worst": [
+   {
+    "event": "GS Warriors @ LA Lakers",
+    "key": [
+     "h2h",
+     "ml",
+     "Los Angeles Lakers",
+     null
+    ],
+    "scrape": 1.4,
+    "parlayapi": 1.444
+   },
+   {
+    "event": "CHA Hornets @ BKN Nets",
+    "key": [
+     "h2h",
+     "ml",
+     "Brooklyn Nets",
+     null
+    ],
+    "scrape": 1.7,
+    "parlayapi": 1.741
+   },
+   {
+    "event": "ATL Hawks @ ORL Magic",
+    "key": [
+     "totals",
+     "235.5",
+     "Under",
+     235.5
+    ],
+    "scrape": 1.95,
+    "parlayapi": 1.909
+   },
+   {
+    "event": "ATL Hawks @ ORL Magic",
+    "key": [
+     "totals",
+     "235.5",
+     "Under",
+     235.5
+    ],
+    "scrape": 1.95,
+    "parlayapi": 1.909
+   },
+   {
+    "event": "CHI Bulls @ TOR Raptors",
+    "key": [
+     "totals",
+     "236.5",
+     "Over",
+     236.5
+    ],
+    "scrape": 1.95,
+    "parlayapi": 1.909
+   },
+   {
+    "event": "CHI Bulls @ TOR Raptors",
+    "key": [
+     "totals",
+     "236.5",
+     "Over",
+     236.5
+    ],
+    "scrape": 1.95,
+    "parlayapi": 1.909
+   },
+   {
+    "event": "UTA Jazz @ MEM Grizzlies",
+    "key": [
+     "h2h",
+     "ml",
+     "Utah Jazz",
+     null
+    ],
+    "scrape": 1.95,
+    "parlayapi": 1.909
+   },
+   {
+    "event": "ATL Hawks @ ORL Magic",
+    "key": [
+     "h2h",
+     "ml",
+     "Orlando Magic",
+     null
+    ],
+    "scrape": 1.65,
+    "parlayapi": 1.69
+   }
+  ]
+ },
+ "legs_by_source": {
+  "scrape/pinnacle": 56,
+  "scrape/consensus": 4,
+  "parlayapi/pinnacle": 2
+ },
+ "top_ev_legs": [],
+ "safest_legs": [
+  {
+   "sport": "icehockey_nhl",
+   "event": "FLA Panthers @ OTT Senators",
+   "event_key": "420371_c_p_207_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "spreads",
+   "selection": "Florida Panthers",
+   "point": 1.5,
+   "fliff_dec": 1.35,
+   "fair_p": 0.7108,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative PUCK LINE",
+   "boosted": false,
+   "ev": -0.0404,
+   "clear_cost": 0.1626
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "DAL Mavericks @ HOU Rockets",
+   "event_key": "409513_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:30:00+00:00",
+   "start_pt": "Wed 10-21 05:30 PM PT",
+   "market": "h2h",
+   "selection": "Houston Rockets",
+   "point": null,
+   "fliff_dec": 1.25,
+   "fair_p": 0.752,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.06,
+   "clear_cost": 0.3193
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "CHI Bulls @ TOR Raptors",
+   "event_key": "417866_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "h2h",
+   "selection": "Toronto Raptors",
+   "point": null,
+   "fliff_dec": 1.2,
+   "fair_p": 0.7795,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0646,
+   "clear_cost": 0.4142
+  }
+ ],
+ "cheapest_bonus_clearing": [
+  {
+   "sport": "basketball_nba",
+   "event": "CHA Hornets @ BKN Nets",
+   "event_key": "409516_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "h2h",
+   "selection": "Charlotte Hornets",
+   "point": null,
+   "fliff_dec": 2.05,
+   "fair_p": 0.4763,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0237,
+   "clear_cost": 0.0474
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "ATL Hawks @ ORL Magic",
+   "event_key": "409527_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:00:00+00:00",
+   "start_pt": "Wed 10-21 04:00 PM PT",
+   "market": "spreads",
+   "selection": "Atlanta Hawks",
+   "point": 3.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5091,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0327,
+   "clear_cost": 0.0713
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "PHX Suns @ POR Trail Blazers",
+   "event_key": "409528_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:00:00+00:00",
+   "start_pt": "Wed 10-21 07:00 PM PT",
+   "market": "totals",
+   "selection": "Over",
+   "point": 232.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.4956,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.0336,
+   "clear_cost": 0.0714
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "MIN Timberwolves @ MIA Heat",
+   "event_key": "407815_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "h2h",
+   "selection": "Miami Heat",
+   "point": null,
+   "fliff_dec": 1.85,
+   "fair_p": 0.5216,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0351,
+   "clear_cost": 0.0791
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "SAC Kings @ LA Clippers",
+   "event_key": "417867_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:30:00+00:00",
+   "start_pt": "Wed 10-21 07:30 PM PT",
+   "market": "h2h",
+   "selection": "LA Clippers",
+   "point": null,
+   "fliff_dec": 1.513,
+   "fair_p": 0.6432,
+   "fair_src": "pinnacle",
+   "fliff_src": "parlayapi",
+   "ev": -0.0269,
+   "clear_cost": 0.0815
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "GS Warriors @ LA Lakers",
+   "event_key": "407819_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:00:00+00:00",
+   "start_pt": "Wed 10-21 07:00 PM PT",
+   "market": "spreads",
+   "selection": "Los Angeles Lakers",
+   "point": -6.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.4932,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0383,
+   "clear_cost": 0.0819
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "SAC Kings @ LA Clippers",
+   "event_key": "417867_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:30:00+00:00",
+   "start_pt": "Wed 10-21 07:30 PM PT",
+   "market": "spreads",
+   "selection": "Sacramento Kings",
+   "point": 5.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5045,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0414,
+   "clear_cost": 0.0912
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "DAL Mavericks @ HOU Rockets",
+   "event_key": "409513_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:30:00+00:00",
+   "start_pt": "Wed 10-21 05:30 PM PT",
+   "market": "spreads",
+   "selection": "Dallas Mavericks",
+   "point": 8.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.491,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0426,
+   "clear_cost": 0.0914
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "MIL Bucks @ WAS Wizards",
+   "event_key": "409529_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:00:00+00:00",
+   "start_pt": "Wed 10-21 04:00 PM PT",
+   "market": "spreads",
+   "selection": "Milwaukee Bucks",
+   "point": 4.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.4909,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0428,
+   "clear_cost": 0.0918
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "CHI Bulls @ TOR Raptors",
+   "event_key": "417866_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "spreads",
+   "selection": "Chicago Bulls",
+   "point": 9.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.4909,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0428,
+   "clear_cost": 0.0918
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "PHX Suns @ POR Trail Blazers",
+   "event_key": "409528_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:00:00+00:00",
+   "start_pt": "Wed 10-21 07:00 PM PT",
+   "market": "spreads",
+   "selection": "Phoenix Suns",
+   "point": 2.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.4909,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0428,
+   "clear_cost": 0.0918
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "SAC Kings @ LA Clippers",
+   "event_key": "417867_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:30:00+00:00",
+   "start_pt": "Wed 10-21 07:30 PM PT",
+   "market": "totals",
+   "selection": "Over",
+   "point": 228.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5022,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.0458,
+   "clear_cost": 0.1014
+  },
+  {
+   "sport": "icehockey_nhl",
+   "event": "PHI Flyers @ BUF Sabres",
+   "event_key": "420370_c_p_207_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "spreads",
+   "selection": "Philadelphia Flyers",
+   "point": 1.5,
+   "fliff_dec": 1.6,
+   "fair_p": 0.6021,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative PUCK LINE",
+   "boosted": false,
+   "ev": -0.0367,
+   "clear_cost": 0.1015
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "MIN Timberwolves @ MIA Heat",
+   "event_key": "407815_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "totals",
+   "selection": "Over",
+   "point": 242.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "consensus",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "MIN Timberwolves @ MIA Heat",
+   "event_key": "407815_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "totals",
+   "selection": "Under",
+   "point": 242.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "consensus",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "MIN Timberwolves @ MIA Heat",
+   "event_key": "407815_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "spreads",
+   "selection": "Miami Heat",
+   "point": -1.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
+   "sport": "icehockey_nhl",
+   "event": "FLA Panthers @ OTT Senators",
+   "event_key": "420371_c_p_207_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "h2h",
+   "selection": "Ottawa Senators",
+   "point": null,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
+   "sport": "icehockey_nhl",
+   "event": "FLA Panthers @ OTT Senators",
+   "event_key": "420371_c_p_207_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "h2h",
+   "selection": "Florida Panthers",
+   "point": null,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "UTA Jazz @ MEM Grizzlies",
+   "event_key": "409514_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "totals",
+   "selection": "Over",
+   "point": 240.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "consensus",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "UTA Jazz @ MEM Grizzlies",
+   "event_key": "409514_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "totals",
+   "selection": "Under",
+   "point": 240.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5,
+   "fair_src": "consensus",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.05,
+   "clear_cost": 0.1111
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "UTA Jazz @ MEM Grizzlies",
+   "event_key": "409514_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "h2h",
+   "selection": "Utah Jazz",
+   "point": null,
+   "fliff_dec": 1.95,
+   "fair_p": 0.4863,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0518,
+   "clear_cost": 0.1121
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "UTA Jazz @ MEM Grizzlies",
+   "event_key": "409514_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "h2h",
+   "selection": "Memphis Grizzlies",
+   "point": null,
+   "fliff_dec": 1.85,
+   "fair_p": 0.5137,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0496,
+   "clear_cost": 0.1135
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "SAC Kings @ LA Clippers",
+   "event_key": "417867_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:30:00+00:00",
+   "start_pt": "Wed 10-21 07:30 PM PT",
+   "market": "spreads",
+   "selection": "LA Clippers",
+   "point": -5.5,
+   "fliff_dec": 1.909,
+   "fair_p": 0.4955,
+   "fair_src": "pinnacle",
+   "fliff_src": "parlayapi",
+   "ev": -0.0541,
+   "clear_cost": 0.1202
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "IND Pacers @ NO Pelicans",
+   "event_key": "409515_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "spreads",
+   "selection": "New Orleans Pelicans",
+   "point": 3.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.4978,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0542,
+   "clear_cost": 0.1209
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "IND Pacers @ NO Pelicans",
+   "event_key": "409515_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "totals",
+   "selection": "Under",
+   "point": 239.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.4978,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.0542,
+   "clear_cost": 0.1209
+  }
+ ],
+ "best_2pick_by_ev": [],
+ "safest_2pick": []
+}
