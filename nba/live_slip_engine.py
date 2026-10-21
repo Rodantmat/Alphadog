@@ -894,6 +894,7 @@ def pick(conn, day, require_fresh=True):
     pool = ENG.eligible_legs(legs)
     t10 = trailing10(conn, day, {l['player_id'] for v in pool.values() for l in v if l['prop'] == 'steals' and l.get('player_id')})
     pool = {c: [l for l in v if leg_allowed(l, t10)] for c, v in pool.items()}   # pass 45 leg filter
+    pool = over_minutes_filter(conn, day, pool)   # 2026-10-21 Over minutes floor (DB tunable; off = unchanged)
     # BROAD BOARD (§29k, certified build_slip_engine.main): >= 5 cell families with >= 2 players -> 5+-pick slips prefer >= 4
     # distinct families (the `div` tie-break). The live pick never passed this flag (default False), so on every normal slate
     # the live top-k ranking differed from the certified one for the 5-pick strategies. Found 2026-10-08, certification round 2.
