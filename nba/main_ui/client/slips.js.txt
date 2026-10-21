@@ -77,13 +77,23 @@ function poolLegIsLegalForSlip(leg,keptLegs,slip){
   const gameCap=(String(slip&&slip.source_key||'')==='parlay_underdog')?1:2;
   return sameGame<gameCap;
 }
-function takeBestPoolLeg(keptLegs,slip){
+// SUBSTITUTE = THE SAME KIND OF LINE (owner 2026-10-21 15:22 PT: "When I removed the leg from few slips, it put a goblin instead").
+// The pool used to be ranked by hit probability alone, so the first legal leg was nearly always a goblin - it pays less (factor < 1),
+// so a regular slip lost payout and could stop being +EV. Now: a leg of the SAME line type as the one removed (regular for regular,
+// goblin for goblin, demon for demon, Underdog higher / lower payout alike), best EDGE over its own break-even first; only when the
+// pool has none of that type, the best-edge legal leg of any type (the card's multiplier is recomputed from the legs either way).
+function poolEdge(l){const e=Number(l&&l.edge_0_100);return Number.isFinite(e)?e:-999}
+function takeBestPoolLeg(keptLegs,slip,removed){
+  const want=removed&&removed.line_type?String(removed.line_type):null;
+  let best=-1,bestAny=-1;
   for(let i=0;i<backupPool.length;i++){
-    if(poolLegIsLegalForSlip(backupPool[i],keptLegs,slip)){
-      return backupPool.splice(i,1)[0];
-    }
+    const l=backupPool[i];
+    if(!poolLegIsLegalForSlip(l,keptLegs,slip))continue;
+    if(bestAny<0||poolEdge(l)>poolEdge(backupPool[bestAny]))bestAny=i;
+    if(want&&String(l.line_type||'regular')===want&&(best<0||poolEdge(l)>poolEdge(backupPool[best])))best=i;
   }
-  return null;
+  const pick=best>=0?best:bestAny;
+  return pick>=0?backupPool.splice(pick,1)[0]:null;
 }
 function returnLegToPool(leg){
   if(!leg)return;
