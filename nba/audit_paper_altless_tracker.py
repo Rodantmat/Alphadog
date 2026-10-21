@@ -123,6 +123,58 @@ def main():
             p2 = tot > 0 and agree == tot
             ok = ok and p2
             print(f"GRADE PARITY {d}: legs compared {tot} | same hit / void {agree} | {'PASS' if p2 else 'FAIL'}", flush=True)
+        # STANDARD RULES: the tracker's live standard legs vs the research's universe (tier_map_legs tier R, both sides, graded):
+        # every research leg found, same tie-aware rank on each key within (prop, side), and the same hit from the box score.
+        for d in dates:
+            legs = T.std_legs(conn, d)
+            mine = {(l["nm"], l["prop"], l["side"], float(l["line"])): l for l in legs}
+            res = conn.execute("""SELECT nba_ref.norm_name(player), prop, side, line::float8, max(hit),
+                                         max(score) FILTER (WHERE rank_key = 'final_hp'), max(score) FILTER (WHERE rank_key = 'baseline_hp'),
+                                         max(score) FILTER (WHERE rank_key = 'final_score')
+                                  FROM nba_score.tier_map_legs WHERE game_date = %s AND tier = 'R' GROUP BY 1, 2, 3, 4""", (d,)).fetchall()
+            grp = {}
+            for nm, prop, side, line, hit, fh, bh, fs in res:
+                grp.setdefault((prop, side), []).append({"k": (nm, prop, side, line), "hit": hit, "final_hp": fh, "baseline_hp": bh,
+                                                         "final_score": fs})
+            found = rank_ok = hit_ok = n_hit = score_ok = 0
+            bad = []
+            for g in grp.values():
+                for x in g:
+                    m = mine.get(x["k"])
+                    if m is None:
+                        bad.append(("missing", x["k"]))
+                        continue
+                    found += 1
+                    score_ok += int(abs(m["fh"] - x["final_hp"]) < 1e-9 and abs(m["bh"] - x["baseline_hp"]) < 1e-9
+                                    and abs(m["score"] - x["final_score"]) < 1e-9)
+                    ok_k = True
+                    for key in ("final_hp", "baseline_hp", "final_score"):
+                        lo = 1 + sum(1 for y in g if y[key] > x[key])
+                        hi = sum(1 for y in g if y[key] >= x[key])
+                        # the tracker ranks over ITS universe (may hold ungraded rungs): compare within the research universe
+                        mr = 1 + sum(1 for y in g if y["k"] in mine and (-mine[y["k"]][T.SR_KEY[key]], mine[y["k"]]["player_id"],
+                                     mine[y["k"]]["line"]) < (-m[T.SR_KEY[key]], m["player_id"], m["line"]))
+                        ok_k = ok_k and lo <= mr <= hi
+                    rank_ok += int(ok_k)
+                    if not ok_k:
+                        bad.append(("rank", x["k"]))
+                    if x["hit"] is not None:
+                        n_hit += 1
+                        h = T.leg_hit(conn, d, {"prop": m["prop"], "player_id": m["player_id"], "line": m["line"], "side": m["side"]})
+                        hit_ok += int(h == x["hit"])
+                        if h != x["hit"]:
+                            bad.append(("hit", x["k"], h, x["hit"]))
+            n = sum(len(g) for g in grp.values())
+            p = n > 0 and found == n and rank_ok == n and hit_ok == n_hit and score_ok == n
+            ok = ok and p
+            print(f"STANDARD PARITY {d}: research legs {n} | found {found} | same three scores {score_ok} | rank in tie interval "
+                  f"{rank_ok} | hit {hit_ok}/{n_hit} | tracker legs {len(legs)} | {'PASS' if p else 'FAIL'}", flush=True)
+            for b in bad[:10]:
+                print("   ", b)
+            T.started_games = lambda conn, d: set()
+            for rule, k, st, lj in T.pick_standard(conn, d, False):
+                hits, live, pay = T.grade_legs(conn, d, lj, st)
+                print(f"    {rule}: hits {hits}/{live} payout {pay:.3f}", flush=True)
         T.TEST_BAND = False
         import importlib
         importlib.reload(T)
