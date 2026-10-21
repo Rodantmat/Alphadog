@@ -344,6 +344,20 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    - **Threes-Over model-vs-market gap filter rejected** (flips between seasons). On the legs the cells pick, the model-market gap barely
      moves the hit rate (research_model_market_gap.py + replay legs).
 
+176. 🔑 **SLIPS SCREEN RULES CHANGED ON DAY TWO (2026-10-21 PT; ledger "DAY TWO" 19-26).**
+   - **Substitutes keep the line type:** the backup pool is +EV legs ranked by edge over each leg's own break-even, every line type
+     kept; unchecking a leg brings a substitute of the same type (regular for regular), best edge first (v1.4.33). By hit probability it
+     was nearly always a goblin, which pays less.
+   - **Re-saving replaces:** the same slip saved again the same day overwrites the earlier save with the newer multipliers; a graded
+     slip is left alone (v1.4.31).
+   - **A PrizePicks slip PrizePicks did not quote is flagged in red** with the missing leg and leads the day's note (v1.4.34). 10-21:
+     Keyonte George Turnovers 2.5 was demon-only at the 13:30 quote, in all 17 slips. Open: re-check legs against the live board right
+     before publishing.
+   - **Overview is off on the server** (`nba_main_ui.overview.enabled` false, v1.4.32) until its query is proven under the time limit.
+   - **Leg lookups normalise the market key once per row** (v1.4.30; md5-identical output on 3,000 legs); index
+     `nba_market.ud_line_flags_hide_lookup`.
+   - **Sleeper / Fliff / Betr:** no slips by design (fact 136; Betr parked).
+
 ---
 
 ## 4. Where everything lives
