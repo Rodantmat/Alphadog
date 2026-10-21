@@ -513,9 +513,22 @@ export async function apiHighHit(sql, cfg, url, version) {
             }
           } else {
             const lg = js(r.legs) || {};
-            if (lg.unmapped) x.quote_note = `At ${r.t} PT not on PrizePicks' board as built (moved or pulled - substitute): ${lg.unmapped.join(", ")}`;
+            x.quote_failed = true;
+            if (lg.unmapped) {
+              x.leg_missing = lg.unmapped;
+              x.quote_note = `⚠ At ${r.t} PT not on PrizePicks' board as built (moved or pulled) - substitute before placing: ${lg.unmapped.join(", ")}. The multiplier shown is our model's, not PrizePicks'.`;
+            } else x.quote_note = `⚠ PrizePicks did not quote this slip at ${r.t} PT - the multiplier shown is our model's, not PrizePicks'.`;
           }
         }
+        // LOUD, NOT A FOOTNOTE (2026-10-21: Keyonte George Turnovers 2.5 was a demon-only line at the 1:30 PM quote - all 17
+        // PrizePicks slips carried it as a regular Less, the quote recorded it as unmapped, and the screen showed it only in each
+        // card's small print). The day's note leads with it, naming every missing leg and how many slips carry it.
+        const miss = new Map();
+        for (const x of slips) for (const m of (x.leg_missing || [])) miss.set(m, (miss.get(m) || 0) + 1);
+        const failed = slips.filter(x => x.quote_failed).length;
+        if (miss.size) notes.unshift(`⚠ ${failed} PrizePicks slip(s) have a leg that was NOT on PrizePicks' board when PrizePicks quoted them: ` +
+          [...miss].map(([m, n]) => `${m} (in ${n} slip${n > 1 ? "s" : ""})`).join("; ") + ". Substitute that leg before placing - those slips show our model's multipliers, not PrizePicks'.");
+        else if (failed) notes.unshift(`⚠ ${failed} PrizePicks slip(s) were not quoted by PrizePicks - their multipliers are our model's.`);
       }
     } catch (e) { notes.push("PrizePicks slip quotes could not be read: " + String(e && e.message || e)); }
   }
