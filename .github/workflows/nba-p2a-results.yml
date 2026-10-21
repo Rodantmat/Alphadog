@@ -419,6 +419,7 @@ jobs:
           [ "${{ steps.soft_wn.outcome }}" = "failure" ] && L="$L whole-number-reprice"
           [ "${{ steps.soft_edge.outcome }}" = "failure" ] && L="$L pp-edge-monitor"
           [ "${{ steps.soft_udgrade.outcome }}" = "failure" ] && L="$L underdog-grade"
+          [ "${{ steps.soft_paper_al.outcome }}" = "failure" ] && L="$L paper-tracker-grade"
           [ "${{ steps.soft_udedge.outcome }}" = "failure" ] && L="$L underdog-edge-monitor"
           L="${L# }"
           echo "list=$L" >> "$GITHUB_OUTPUT"
