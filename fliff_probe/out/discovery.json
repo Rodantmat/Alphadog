@@ -1,0 +1,5236 @@
+{
+ "generated_utc": "2026-10-21T05:07:28Z",
+ "fliff_ping_data_keys": [
+  "aurora_public_feed_endpoint",
+  "core_server_private_endpoint",
+  "core_server_public_endpoint",
+  "core_sever_private_endpoint",
+  "core_sever_public_endpoint",
+  "device_location_vendor",
+  "device_location_vendor_id",
+  "device_location_vendor_method",
+  "is_alt_prop_button_enabled",
+  "is_optimove_sdk_enabled",
+  "is_recaptcha_sdk_enabled",
+  "min_app_build",
+  "proposals_feed_endpoint",
+  "real_time_parlay_plus_offers_endpoint",
+  "schema_version",
+  "server_build",
+  "server_instance_info",
+  "server_timestamp",
+  "skipper_flex_play_modes_enabled",
+  "skipper_public_feed_endpoint",
+  "skipper_real_time_parlay_plus_offers_endpoint",
+  "stamp_to_wait_radar_in_ms",
+  "usa_state_restrictions"
+ ],
+ "fliff_feed_host": "https://herald-2.app.getfliff.com/",
+ "sync3054_x_slots_keys": {
+  "active_inplay_conflicts": 5,
+  "active_prematch_conflicts": 689,
+  "inplay_subfeeds_updates": 6,
+  "prematch_subfeeds_updates": 144
+ },
+ "channel_name_candidates": {},
+ "conflict_sample_fields": {
+  "away_score": -1,
+  "away_team_id": "fobj__sb_nomenclature_team__20031",
+  "away_team_logo": "https://image-store.getfliff.com/sb/team/20031/raw.png",
+  "away_team_name": "PIT Steelers",
+  "channel_id": 451,
+  "conflict_class_code": 62905,
+  "conflict_fkey": "391741_c_p_202_prematch",
+  "conflict_id": 391741,
+  "estimated_markets_count": 143,
+  "event_note": "",
+  "event_start_timestamp_utc": 1792935000000,
+  "filter_ids": [
+   451,
+   -333,
+   -334
+  ],
+  "game_clock_server_time_millis_utc": -1,
+  "game_clock_type": 45601,
+  "game_clock_type_sr": 45601,
+  "game_clock_vendor_time_millis": -1,
+  "home_score": -1,
+  "home_team_id": "fobj__sb_nomenclature_team__18232",
+  "home_team_logo": "https://image-store.getfliff.com/sb/team/18232/raw.png",
+  "home_team_name": "NO Saints",
+  "hs_away_team_logo": "https://image-store.getfliff.com/sb/team/20031/left.png",
+  "hs_home_team_logo": "https://image-store.getfliff.com/sb/team/18232/right.png",
+  "id": 391741,
+  "live_away_score": 0,
+  "live_home_score": 0,
+  "live_state_desc": "",
+  "live_state_desc_sr": "",
+  "live_status": 733,
+  "live_x_score_away": "-_-_-",
+  "live_x_score_home": "-_-_-",
+  "metrics": {
+   "chat_messages_count": 0,
+   "chat_unique_users_count": 0
+  },
+  "offer_type": -1,
+  "pcats": [
+   10
+  ],
+  "skipper_event_note": "",
+  "subfilter_ids": [],
+  "weight": 1
+ },
+ "sync3054_by_channel": {
+  "452": {
+   "n": 53,
+   "examples": [
+    "Iowa @ Minnesota",
+    "Pittsburgh @ Miami",
+    "BYU @ UCF"
+   ]
+  },
+  "43007": {
+   "n": 30,
+   "examples": [
+    "Independiente Rivadavia @ Argentinos Juniors",
+    "Belgrano @ Aldosivi",
+    "Huracan @ Rosario Central"
+   ]
+  },
+  "4951": {
+   "n": 29,
+   "examples": [
+    "Alberto Puello @ Dalton Smith",
+    "Christian Mbilli @ Canelo Alvarez",
+    "Maxi Hughes @ Giorgio Visioli"
+   ]
+  },
+  "4395": {
+   "n": 21,
+   "examples": [
+    "Malaga @ Alav\u00e9s",
+    "Elche @ Rayo Vallecano",
+    "Espanyol @ Racing Santander"
+   ]
+  },
+  "488": {
+   "n": 21,
+   "examples": [
+    "Boston University Terriers @ UConn",
+    "North Dakota @ Minnesota",
+    "Merrimack @ Notre Dame"
+   ]
+  },
+  "4385": {
+   "n": 20,
+   "examples": [
+    "Nottingham Forest @ Ipswich Town",
+    "Brentford @ Hull City",
+    "Manchester City @ Aston Villa"
+   ]
+  },
+  "4388": {
+   "n": 20,
+   "examples": [
+    "Monza @ Torino",
+    "Sassuolo @ Como",
+    "Bologna @ Cagliari"
+   ]
+  },
+  "4303": {
+   "n": 20,
+   "examples": [
+    "S\u00e3o Paulo @ Mirassol",
+    "Botafogo @ Internacional",
+    "Club Do Remo @ Cruzeiro"
+   ]
+  },
+  "4384": {
+   "n": 18,
+   "examples": [
+    "Nice @ Brest",
+    "Troyes AC @ Toulouse",
+    "Paris FC @ Lens"
+   ]
+  },
+  "4382": {
+   "n": 18,
+   "examples": [
+    "Gladbach @ VfB Stuttgart",
+    "Schalke @ K\u00f6ln",
+    "Hamburger SV @ SC Paderborn 07"
+   ]
+  },
+  "43025": {
+   "n": 18,
+   "examples": [
+    "Ajax @ Sparta Rotterdam",
+    "SC Telstar @ Go Ahead Eagles",
+    "FC Twente @ AZ Alkmaar"
+   ]
+  },
+  "43008": {
+   "n": 18,
+   "examples": [
+    "Brighton @ FK Jablonec",
+    "CS U Craiova @ Inter Club d'Escaldes",
+    "Riga FC @ Pafos"
+   ]
+  },
+  "4397": {
+   "n": 18,
+   "examples": [
+    "Leverkusen @ OFI Crete",
+    "AC Sparta Praha @ Olympiacos",
+    "Salzburg @ NK CM Celje"
+   ]
+  },
+  "4230": {
+   "n": 18,
+   "examples": [
+    "Agropecuario @ Patronato",
+    "Tristan Suarez @ Almagro",
+    "Acassuso @ Central Norte"
+   ]
+  },
+  "43045": {
+   "n": 17,
+   "examples": [
+    "Leyton Orient @ Reading",
+    "Bradford City @ Oxford United",
+    "Wycombe @ AFC Wimbledon"
+   ]
+  },
+  "43021": {
+   "n": 16,
+   "examples": [
+    "Union Berlin @ K\u00f6ln",
+    "Nurnberg @ Leverkusen",
+    "1. FC Magdeburg @ Bayern Munich"
+   ]
+  },
+  "4950": {
+   "n": 15,
+   "examples": [
+    "Merab Dvalishvili @ Petr Yan",
+    "Movsar Evloev @ Alexander Volkanovski",
+    "Abdul Rakhman Yakhyaev @ Nikita Krylov"
+   ]
+  },
+  "4200": {
+   "n": 15,
+   "examples": [
+    "DC United @ FC Cincinnati",
+    "Inter Miami @ NY Red Bulls",
+    "Nashville SC @ CF Montr\u00e9al"
+   ]
+  },
+  "4389": {
+   "n": 15,
+   "examples": [
+    "Pumas @ Santos Laguna",
+    "Club Am\u00e9rica @ Atlas",
+    "Monterrey @ Puebla"
+   ]
+  },
+  "451": {
+   "n": 14,
+   "examples": [
+    "PIT Steelers @ NO Saints",
+    "NE Patriots @ CHI Bears",
+    "NY Giants @ HOU Texans"
+   ]
+  },
+  "4320": {
+   "n": 14,
+   "examples": [
+    "Louisville City @ Sporting Jax",
+    "Birmingham Legion @ Brooklyn FC",
+    "Brooklyn FC @ Loudoun United"
+   ]
+  },
+  "461": {
+   "n": 13,
+   "examples": [
+    "MIN Timberwolves @ MIA Heat",
+    "DEN Nuggets @ OKC Thunder",
+    "CLE Cavaliers @ PHI 76ers"
+   ]
+  },
+  "4386": {
+   "n": 13,
+   "examples": [
+    "Halmstad @ V\u00e4ster\u00e5s SK FK",
+    "Malm\u00f6 @ IF Elfsborg",
+    "AIK @ Sirius"
+   ]
+  },
+  "43023": {
+   "n": 12,
+   "examples": [
+    "Perth Glory @ Brisbane Roar",
+    "Melbourne City @ Melbourne Victory",
+    "Auckland FC @ Western Sydney Wanderers"
+   ]
+  },
+  "43032": {
+   "n": 12,
+   "examples": [
+    "Grazer AK @ WSG Tirol",
+    "Wolfsberger AC @ TSV Hartberg",
+    "FK Austria Wien @ SCR Altach"
+   ]
+  },
+  "4383": {
+   "n": 12,
+   "examples": [
+    "Middlesbrough @ Bolton Wanderers",
+    "Derby County @ Sheffield United",
+    "Wrexham @ Blackburn"
+   ]
+  },
+  "43037": {
+   "n": 10,
+   "examples": [
+    "Tokyo Verdy @ Yokohama F. Marinos",
+    "Sanfrecce Hiroshima @ V-Varen Nagasaki",
+    "Kashima Antlers @ Kyoto Sanga FC"
+   ]
+  },
+  "43031": {
+   "n": 9,
+   "examples": [
+    "Porto @ Gil Vicente F.C.",
+    "Casa Pia @ Estrela Amadora",
+    "FC Arouca @ Alverca"
+   ]
+  },
+  "43002": {
+   "n": 9,
+   "examples": [
+    "RB Leipzig @ Real Madrid",
+    "Arsenal @ Bayern Munich",
+    "LASK Linz @ Sporting CP"
+   ]
+  },
+  "43038": {
+   "n": 9,
+   "examples": [
+    "ADT @ Atletico Grau",
+    "Melgar @ UTC",
+    "Alianza Atl\u00e9tico @ Sport Huancayo"
+   ]
+  },
+  "43046": {
+   "n": 9,
+   "examples": [
+    "KV Mechelen @ KV Kortrijk",
+    "Sporting Charleroi @ Royal Antwerp F.C.",
+    "Waasland-Beveren @ KVC Westerlo"
+   ]
+  },
+  "43024": {
+   "n": 9,
+   "examples": [
+    "Kocaelispor @ Alanyaspor",
+    "Kasimpasa @ Ey\u00fcpspor",
+    "BB Erzurumspor @ Gazisehir Gaziantep"
+   ]
+  },
+  "43049": {
+   "n": 9,
+   "examples": [
+    "St. Pauli @ Darmstadt",
+    "Wolfsburg @ VfL Bochum",
+    "DSC Arminia Bielefeld @ Hertha BSC"
+   ]
+  },
+  "43009": {
+   "n": 8,
+   "examples": [
+    "Newcastle @ Everton",
+    "Crystal Palace @ Fulham",
+    "Aston Villa @ Bournemouth"
+   ]
+  },
+  "43028": {
+   "n": 8,
+   "examples": [
+    "Cobresal @ O'Higgins",
+    "Universidad Catolica Santiago @ Union La Calera",
+    "Deportes Concepci\u00f3n @ Deportes La Serena"
+   ]
+  },
+  "43041": {
+   "n": 8,
+   "examples": [
+    "Rosenborg @ HamKam",
+    "Valerenga @ Bod\u00f8/Glimt",
+    "Brann @ Lillestr\u00f8m"
+   ]
+  },
+  "43030": {
+   "n": 8,
+   "examples": [
+    "Shanghai Port @ Tianjin Jinmen Tiger",
+    "Shanghai Shenhua @ Peng City",
+    "Beijing Guoan @ Henan FC"
+   ]
+  },
+  "10556": {
+   "n": 8,
+   "examples": [
+    "Tomas Machac @ Zangar Nurlanuly",
+    "Tomas Martin Etcheverry @ Mattia Bellucci",
+    "Luciano Darderi @ James Duckworth"
+   ]
+  },
+  "10491": {
+   "n": 8,
+   "examples": [
+    "Martin Landaluce @ Stan Wawrinka",
+    "Lorenzo Musetti @ Moise Kouame",
+    "Taylor Fritz @ Pierre-Hugues Herbert"
+   ]
+  },
+  "43036": {
+   "n": 8,
+   "examples": [
+    "Macara @ LDU Quito",
+    "Guayaquil City @ Emelec",
+    "Barcelona SC @ Aucas"
+   ]
+  },
+  "43033": {
+   "n": 8,
+   "examples": [
+    "Bay FC @ Angel City FC",
+    "Racing Louisville @ Denver Summit",
+    "Gotham FC @ Orlando Pride"
+   ]
+  },
+  "10554": {
+   "n": 8,
+   "examples": [
+    "Aliaksandra Sasnovich @ Leylah Fernandez",
+    "Diana Shnaider @ Alexandra Eala",
+    "Sara Bejlek @ Sorana Cirstea"
+   ]
+  },
+  "10558": {
+   "n": 7,
+   "examples": [
+    "Damir Dzumhur @ Dino Prizmic",
+    "Remy Bertola @ David Goffin",
+    "Francisco Cerundolo @ Martin Damm Jr."
+   ]
+  },
+  "753": {
+   "n": 7,
+   "examples": [
+    "[boosted][ignored] no away_team_name for boosted: UCL - Como vs. Manchester United @ [boosted][ignored] no home_team_name for boosted: Como to Win 1-0, 2-0 OR 3-0",
+    "[boosted][ignored] no away_team_name for boosted: UCL - Como vs. Manchester United @ [boosted][ignored] no home_team_name for boosted: Man United to Win 2-1, 3-1 OR 4-1",
+    "[boosted][ignored] no away_team_name for boosted: UCL - Como vs. Manchester United @ [boosted][ignored] no home_team_name for boosted: Draw 0-0 OR 1-1"
+   ]
+  },
+  "4396": {
+   "n": 6,
+   "examples": [
+    "Brondby @ Randers FC",
+    "FC Nordsj\u00e6lland @ Silkeborg IF",
+    "Sonderjyske @ AC Horsens"
+   ]
+  },
+  "10451": {
+   "n": 6,
+   "examples": [
+    "Viktorija Golubic @ Katie Boulter",
+    "Moyuka Uchijima @ Mary Stoiana",
+    "Kayla Day @ Antonia Ruzic"
+   ]
+  },
+  "4502": {
+   "n": 4,
+   "examples": [
+    "Ottawa Redblacks @ Hamilton Tiger-Cats",
+    "Edmonton Elks @ Saskatchewan Roughriders",
+    "Montreal Alouettes @ Toronto Argonauts"
+   ]
+  },
+  "4208": {
+   "n": 4,
+   "examples": [
+    "Inter Turku @ VPS",
+    "Oulu @ Gnistan",
+    "KuPS @ HJK"
+   ]
+  },
+  "10557": {
+   "n": 4,
+   "examples": [
+    "Jakob Schnaitter / Mark Wallner @ Nathaniel Lammons / Jackson Withrow",
+    "Omarkhanov Amir / Zhukayev Beibit @ Lucas Miedler / Neil Oberleitner",
+    "Anirudh Chandrasekar / Ray Ho @ Sriram Balaji Narayanaswamy / Evan King"
+   ]
+  },
+  "10555": {
+   "n": 4,
+   "examples": [
+    "Erin Routliffe / Aldila Sutjiadi @ Qianhui Tang / Yifan Xu",
+    "Anna Danilina / Xinyu Jiang @ Desirae Krawczyk / Fanny Stollar",
+    "Ellen Perez / Demi Schuurs @ Hanyu Guo / Kristina Mladenovic"
+   ]
+  },
+  "10559": {
+   "n": 4,
+   "examples": [
+    "Michael Geerts / Joran Vliegen @ Guido Andreozzi / Manuel Guinard",
+    "Tallon Griekspoor / Botic Van De Zandschulp @ Sadio Doumbia / Bart Stevens",
+    "Raphael Collignon / David Goffin @ Constantin Frantzen / Robert Galloway"
+   ]
+  },
+  "43047": {
+   "n": 4,
+   "examples": [
+    "Forge FC @ Pacific FC",
+    "Vancouver FC @ Cavalry FC",
+    "Supra Du Quebec @ Halifax Wanderers"
+   ]
+  },
+  "43022": {
+   "n": 3,
+   "examples": [
+    "Al Ittihad @ Ghazl El Mahallah",
+    "Olympic El Qanal @ Al Ahly",
+    "Petrojet @ Ceramika Cleopatra"
+   ]
+  },
+  "481": {
+   "n": 3,
+   "examples": [
+    "PHI Flyers @ BUF Sabres",
+    "FLA Panthers @ OTT Senators",
+    "TB Lightning @ VGK Golden Knights"
+   ]
+  },
+  "4752": {
+   "n": 2,
+   "examples": [
+    "Shandong Hi-Speed Kirin @ Zhejiang Golden Bulls",
+    "Liaoning Flying Leopards @ Qingdao DoubleStar Eagles"
+   ]
+  },
+  "4387": {
+   "n": 2,
+   "examples": [
+    "Fluminense @ Palmeiras",
+    "Estudiantes @ Flamengo"
+   ]
+  },
+  "43039": {
+   "n": 2,
+   "examples": [
+    "Fc Naples @ Sarasota Paradise",
+    "Spokane Velocity Fc @ New York Cosmos"
+   ]
+  },
+  "467": {
+   "n": 1,
+   "examples": [
+    "GS Valkyries @ ATL Dream"
+   ]
+  },
+  "4751": {
+   "n": 1,
+   "examples": [
+    "KCC Egis @ Samsung Thunders"
+   ]
+  },
+  "43020": {
+   "n": 1,
+   "examples": [
+    "Saint Louis City SC @ Columbus Crew"
+   ]
+  },
+  "43029": {
+   "n": 1,
+   "examples": [
+    "Isidro Metap\u00e1n @ Deportivo FAS"
+   ]
+  },
+  "14028": {
+   "n": 1,
+   "examples": [
+    "Golf Away Team Placeholder @ Golf Home Team Placeholder"
+   ]
+  },
+  "441": {
+   "n": 1,
+   "examples": [
+    "TB Rays @ MIL Brewers"
+   ]
+  }
+ },
+ "channels": {
+  "441": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 1,
+   "examples": []
+  },
+  "451": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 14,
+   "examples": []
+  },
+  "452": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 53,
+   "examples": []
+  },
+  "461": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 13,
+   "examples": []
+  },
+  "467": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 1,
+   "examples": []
+  },
+  "481": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 3,
+   "examples": []
+  },
+  "488": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 21,
+   "examples": []
+  },
+  "753": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 7,
+   "examples": []
+  },
+  "4200": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 15,
+   "examples": []
+  },
+  "4208": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 4,
+   "examples": []
+  },
+  "4230": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 18,
+   "examples": []
+  },
+  "4303": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 20,
+   "examples": []
+  },
+  "4320": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 14,
+   "examples": []
+  },
+  "4382": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 18,
+   "examples": []
+  },
+  "4383": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 12,
+   "examples": []
+  },
+  "4384": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 18,
+   "examples": []
+  },
+  "4385": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 20,
+   "examples": []
+  },
+  "4386": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 13,
+   "examples": []
+  },
+  "4387": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 2,
+   "examples": []
+  },
+  "4388": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 20,
+   "examples": []
+  },
+  "4389": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 14,
+   "examples": []
+  },
+  "4395": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 21,
+   "examples": []
+  },
+  "4396": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 6,
+   "examples": []
+  },
+  "4397": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 18,
+   "examples": []
+  },
+  "4502": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 4,
+   "examples": []
+  },
+  "4751": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 1,
+   "examples": []
+  },
+  "4752": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 2,
+   "examples": []
+  },
+  "4950": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 15,
+   "examples": []
+  },
+  "4951": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 29,
+   "examples": []
+  },
+  "10451": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 6,
+   "examples": []
+  },
+  "10491": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "10554": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "10555": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 4,
+   "examples": []
+  },
+  "10556": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "10557": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 4,
+   "examples": []
+  },
+  "10558": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 7,
+   "examples": []
+  },
+  "10559": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 4,
+   "examples": []
+  },
+  "14028": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 1,
+   "examples": []
+  },
+  "43002": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 9,
+   "examples": []
+  },
+  "43007": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 30,
+   "examples": []
+  },
+  "43008": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 18,
+   "examples": []
+  },
+  "43009": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "43020": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 1,
+   "examples": []
+  },
+  "43021": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 16,
+   "examples": []
+  },
+  "43022": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 3,
+   "examples": []
+  },
+  "43023": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 12,
+   "examples": []
+  },
+  "43024": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 9,
+   "examples": []
+  },
+  "43025": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 18,
+   "examples": []
+  },
+  "43028": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "43029": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 1,
+   "examples": []
+  },
+  "43030": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "43031": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 9,
+   "examples": []
+  },
+  "43032": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 12,
+   "examples": []
+  },
+  "43033": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "43036": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "43037": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 10,
+   "examples": []
+  },
+  "43038": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 9,
+   "examples": []
+  },
+  "43039": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 2,
+   "examples": []
+  },
+  "43041": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 8,
+   "examples": []
+  },
+  "43045": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 17,
+   "examples": []
+  },
+  "43046": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 9,
+   "examples": []
+  },
+  "43047": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 4,
+   "examples": []
+  },
+  "43049": {
+   "name": null,
+   "prematch": 0,
+   "inplay": 0,
+   "own_channel_events": 0,
+   "market_updates": 9,
+   "examples": []
+  }
+ },
+ "event_boards": {},
+ "fliff_calls": 65,
+ "parlay_sports": [
+  {
+   "key": "baseball_mlb",
+   "group": "Baseball",
+   "title": "MLB",
+   "active": true
+  },
+  {
+   "key": "americanfootball_nfl",
+   "group": "American Football",
+   "title": "NFL",
+   "active": true
+  },
+  {
+   "key": "americanfootball_ncaaf",
+   "group": "American Football",
+   "title": "NCAAF",
+   "active": true
+  },
+  {
+   "key": "basketball_nba",
+   "group": "Basketball",
+   "title": "NBA",
+   "active": true
+  },
+  {
+   "key": "basketball_wnba",
+   "group": "Basketball",
+   "title": "WNBA",
+   "active": true
+  },
+  {
+   "key": "basketball_ncaab",
+   "group": "Basketball",
+   "title": "NCAAB",
+   "active": true
+  },
+  {
+   "key": "basketball_euroleague",
+   "group": "Basketball",
+   "title": "Euroleague",
+   "active": true
+  },
+  {
+   "key": "icehockey_nhl",
+   "group": "Ice Hockey",
+   "title": "NHL",
+   "active": true
+  },
+  {
+   "key": "hockey_usa___american_hockey_league",
+   "group": "Ice Hockey",
+   "title": "AHL",
+   "active": true
+  },
+  {
+   "key": "mma_mixed_martial_arts",
+   "group": "MMA",
+   "title": "MMA",
+   "active": true
+  },
+  {
+   "key": "boxing_boxing",
+   "group": "Boxing",
+   "title": "Boxing",
+   "active": true
+  },
+  {
+   "key": "tennis",
+   "group": "Tennis",
+   "title": "Tennis",
+   "active": true
+  },
+  {
+   "key": "tennis_atp",
+   "group": "Tennis",
+   "title": "ATP",
+   "active": true
+  },
+  {
+   "key": "tennis_wta",
+   "group": "Tennis",
+   "title": "WTA",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_french_open",
+   "group": "Tennis",
+   "title": "ATP French Open",
+   "active": true
+  },
+  {
+   "key": "tennis_wta_french_open",
+   "group": "Tennis",
+   "title": "WTA French Open",
+   "active": true
+  },
+  {
+   "key": "golf_pga_championship",
+   "group": "Golf",
+   "title": "PGA Championship",
+   "active": true
+  },
+  {
+   "key": "motorsports_nascar",
+   "group": "Motorsports",
+   "title": "NASCAR",
+   "active": true
+  },
+  {
+   "key": "cricket_ipl",
+   "group": "Cricket",
+   "title": "IPL",
+   "active": true
+  },
+  {
+   "key": "cricket_test_match",
+   "group": "Cricket",
+   "title": "Test Matches",
+   "active": true
+  },
+  {
+   "key": "rugbyleague_nrl",
+   "group": "Rugby League",
+   "title": "NRL",
+   "active": true
+  },
+  {
+   "key": "esports",
+   "group": "Esports",
+   "title": "Esports",
+   "active": true
+  },
+  {
+   "key": "esports_csgo",
+   "group": "Esports",
+   "title": "CS:GO",
+   "active": true
+  },
+  {
+   "key": "esports_cs2",
+   "group": "Esports",
+   "title": "CS2",
+   "active": true
+  },
+  {
+   "key": "esports_lol",
+   "group": "Esports",
+   "title": "League of Legends",
+   "active": true
+  },
+  {
+   "key": "esports_dota_2",
+   "group": "Esports",
+   "title": "Dota 2",
+   "active": true
+  },
+  {
+   "key": "esports_valorant",
+   "group": "Esports",
+   "title": "Valorant",
+   "active": true
+  },
+  {
+   "key": "esports_cod",
+   "group": "Esports",
+   "title": "Call of Duty",
+   "active": true
+  },
+  {
+   "key": "volleyball",
+   "group": "Volleyball",
+   "title": "Volleyball",
+   "active": true
+  },
+  {
+   "key": "soccer_fifa_world_cup",
+   "group": "Soccer",
+   "title": "FIFA World Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_argentina_primera_division",
+   "group": "Soccer",
+   "title": "Argentina Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_australia_aleague",
+   "group": "Soccer",
+   "title": "Australia A-League",
+   "active": true
+  },
+  {
+   "key": "soccer_austria_bundesliga",
+   "group": "Soccer",
+   "title": "Austria Bundesliga",
+   "active": true
+  },
+  {
+   "key": "soccer_austria_2_liga",
+   "group": "Soccer",
+   "title": "Austria 2. Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_belgium_first_div",
+   "group": "Soccer",
+   "title": "Belgium Pro League",
+   "active": true
+  },
+  {
+   "key": "soccer_brazil_campeonato",
+   "group": "Soccer",
+   "title": "Brazil Serie A",
+   "active": true
+  },
+  {
+   "key": "soccer_brazil_serie_b",
+   "group": "Soccer",
+   "title": "Brazil Serie B",
+   "active": true
+  },
+  {
+   "key": "soccer_bulgaria_first_league",
+   "group": "Soccer",
+   "title": "Bulgaria Parva Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_chile_campeonato",
+   "group": "Soccer",
+   "title": "Chile Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_china_superleague",
+   "group": "Soccer",
+   "title": "China Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_colombia_primera_a",
+   "group": "Soccer",
+   "title": "Colombia Primera A",
+   "active": true
+  },
+  {
+   "key": "soccer_costa_rica_primera_division",
+   "group": "Soccer",
+   "title": "Costa Rica Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_croatia_prva_liga",
+   "group": "Soccer",
+   "title": "Croatia Prva Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_czech_football_league",
+   "group": "Soccer",
+   "title": "Czech First League",
+   "active": true
+  },
+  {
+   "key": "soccer_denmark_superliga",
+   "group": "Soccer",
+   "title": "Denmark Superliga",
+   "active": true
+  },
+  {
+   "key": "soccer_ecuador_liga_pro",
+   "group": "Soccer",
+   "title": "Ecuador Liga Pro",
+   "active": true
+  },
+  {
+   "key": "soccer_england_championship",
+   "group": "Soccer",
+   "title": "Championship",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league2",
+   "group": "Soccer",
+   "title": "League Two",
+   "active": true
+  },
+  {
+   "key": "soccer_epl",
+   "group": "Soccer",
+   "title": "EPL",
+   "active": true
+  },
+  {
+   "key": "soccer_usa_mls",
+   "group": "Soccer",
+   "title": "MLS",
+   "active": true
+  },
+  {
+   "key": "soccer_uefa_champs_league",
+   "group": "Soccer",
+   "title": "UEFA Champions League",
+   "active": true
+  },
+  {
+   "key": "soccer_finland_veikkausliiga",
+   "group": "Soccer",
+   "title": "Finland Veikkausliiga",
+   "active": true
+  },
+  {
+   "key": "soccer_france_ligue_one",
+   "group": "Soccer",
+   "title": "Ligue 1",
+   "active": true
+  },
+  {
+   "key": "soccer_france_ligue_two",
+   "group": "Soccer",
+   "title": "Ligue 2",
+   "active": true
+  },
+  {
+   "key": "soccer_germany_bundesliga",
+   "group": "Soccer",
+   "title": "Bundesliga",
+   "active": true
+  },
+  {
+   "key": "soccer_germany_bundesliga2",
+   "group": "Soccer",
+   "title": "Bundesliga 2",
+   "active": true
+  },
+  {
+   "key": "soccer_greece_super_league",
+   "group": "Soccer",
+   "title": "Greece Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_hungary_nb1",
+   "group": "Soccer",
+   "title": "Hungary NB I",
+   "active": true
+  },
+  {
+   "key": "soccer_ireland_premier_division",
+   "group": "Soccer",
+   "title": "Ireland Premier Division",
+   "active": true
+  },
+  {
+   "key": "soccer_italy_serie_a",
+   "group": "Soccer",
+   "title": "Serie A",
+   "active": true
+  },
+  {
+   "key": "soccer_italy_serie_b",
+   "group": "Soccer",
+   "title": "Serie B",
+   "active": true
+  },
+  {
+   "key": "soccer_japan_j_league",
+   "group": "Soccer",
+   "title": "J-League",
+   "active": true
+  },
+  {
+   "key": "soccer_japan_j2_league",
+   "group": "Soccer",
+   "title": "J2 League",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league1",
+   "group": "Soccer",
+   "title": "League One",
+   "active": true
+  },
+  {
+   "key": "soccer_mexico_ligamx",
+   "group": "Soccer",
+   "title": "Liga MX",
+   "active": true
+  },
+  {
+   "key": "soccer_netherlands_eredivisie",
+   "group": "Soccer",
+   "title": "Eredivisie",
+   "active": true
+  },
+  {
+   "key": "soccer_netherlands_eerste_divisie",
+   "group": "Soccer",
+   "title": "Eerste Divisie",
+   "active": true
+  },
+  {
+   "key": "soccer_norway_eliteserien",
+   "group": "Soccer",
+   "title": "Eliteserien",
+   "active": true
+  },
+  {
+   "key": "soccer_paraguay_primera_division",
+   "group": "Soccer",
+   "title": "Paraguay Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_poland_ekstraklasa",
+   "group": "Soccer",
+   "title": "Ekstraklasa",
+   "active": true
+  },
+  {
+   "key": "soccer_portugal_primeira_liga",
+   "group": "Soccer",
+   "title": "Liga Portugal",
+   "active": true
+  },
+  {
+   "key": "soccer_romania_superliga",
+   "group": "Soccer",
+   "title": "Romania Superliga",
+   "active": true
+  },
+  {
+   "key": "soccer_saudi_professional_league",
+   "group": "Soccer",
+   "title": "Saudi Pro League",
+   "active": true
+  },
+  {
+   "key": "soccer_scotland_championship",
+   "group": "Soccer",
+   "title": "Scotland Championship",
+   "active": true
+  },
+  {
+   "key": "soccer_scotland_premiership",
+   "group": "Soccer",
+   "title": "Scottish Premiership",
+   "active": true
+  },
+  {
+   "key": "soccer_serbia_super_liga",
+   "group": "Soccer",
+   "title": "Serbia Super Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_south_korea_kleague1",
+   "group": "Soccer",
+   "title": "K League 1",
+   "active": true
+  },
+  {
+   "key": "soccer_spain_la_liga",
+   "group": "Soccer",
+   "title": "La Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_spain_segunda_division",
+   "group": "Soccer",
+   "title": "La Liga 2",
+   "active": true
+  },
+  {
+   "key": "soccer_sweden_allsvenskan",
+   "group": "Soccer",
+   "title": "Allsvenskan",
+   "active": true
+  },
+  {
+   "key": "soccer_switzerland_superleague",
+   "group": "Soccer",
+   "title": "Swiss Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_turkey_super_league",
+   "group": "Soccer",
+   "title": "Super Lig",
+   "active": true
+  },
+  {
+   "key": "soccer_ukraine_premier_league",
+   "group": "Soccer",
+   "title": "Ukraine Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_other",
+   "group": "Soccer",
+   "title": "Other Soccer",
+   "active": true
+  },
+  {
+   "key": "table_tennis",
+   "group": "Table Tennis",
+   "title": "Table Tennis",
+   "active": true
+  },
+  {
+   "key": "table_tennis_czech_liga_pro",
+   "group": "Table Tennis",
+   "title": "Czech Liga Pro",
+   "active": true
+  },
+  {
+   "key": "table_tennis_tt_elite_series",
+   "group": "Table Tennis",
+   "title": "TT Elite Series",
+   "active": true
+  },
+  {
+   "key": "table_tennis_tt_cup",
+   "group": "Table Tennis",
+   "title": "TT Cup",
+   "active": true
+  },
+  {
+   "key": "table_tennis_tt_cup_women",
+   "group": "Table Tennis",
+   "title": "TT Cup Women",
+   "active": true
+  },
+  {
+   "key": "table_tennis_setka_cup",
+   "group": "Table Tennis",
+   "title": "Setka Cup",
+   "active": true
+  },
+  {
+   "key": "horse_racing",
+   "group": "Racing",
+   "title": "Horse Racing",
+   "active": true
+  },
+  {
+   "key": "disc_golf",
+   "group": "Disc Golf",
+   "title": "Disc Golf",
+   "active": true
+  },
+  {
+   "key": "americanfootball_other",
+   "group": "American Football",
+   "title": "American Football (other competitions)",
+   "active": true
+  },
+  {
+   "key": "baseball_kbo",
+   "group": "Baseball",
+   "title": "KBO",
+   "active": true
+  },
+  {
+   "key": "baseball_korea_professional_baseball",
+   "group": "Baseball",
+   "title": "Korea Professional Baseball",
+   "active": true
+  },
+  {
+   "key": "baseball_other",
+   "group": "Baseball",
+   "title": "Baseball (other competitions)",
+   "active": true
+  },
+  {
+   "key": "basketball_aba_adriatic_league",
+   "group": "Basketball",
+   "title": "Aba Adriatic League",
+   "active": true
+  },
+  {
+   "key": "basketball_aba_liga_2",
+   "group": "Basketball",
+   "title": "Aba Liga 2",
+   "active": true
+  },
+  {
+   "key": "basketball_argentina_la_liga",
+   "group": "Basketball",
+   "title": "Argentina La Liga",
+   "active": true
+  },
+  {
+   "key": "basketball_argentina_la_liga_proximo",
+   "group": "Basketball",
+   "title": "Argentina La Liga Proximo",
+   "active": true
+  },
+  {
+   "key": "basketball_argentina_liga_nacional",
+   "group": "Basketball",
+   "title": "Argentina Liga Nacional",
+   "active": true
+  },
+  {
+   "key": "basketball_argentina_llf_women",
+   "group": "Basketball",
+   "title": "Argentina Llf Women",
+   "active": true
+  },
+  {
+   "key": "basketball_australia_wnbl",
+   "group": "Basketball",
+   "title": "Australia Wnbl",
+   "active": true
+  },
+  {
+   "key": "basketball_bahrain_premier_league",
+   "group": "Basketball",
+   "title": "Bahrain Premier League",
+   "active": true
+  },
+  {
+   "key": "basketball_bosnia_and_herzegovina_prvenstvo_bih",
+   "group": "Basketball",
+   "title": "Bosnia and Herzegovina Prvenstvo Bih",
+   "active": true
+  },
+  {
+   "key": "basketball_brazil_novo_basquete_brasil",
+   "group": "Basketball",
+   "title": "Brazil Novo Basquete Brasil",
+   "active": true
+  },
+  {
+   "key": "basketball_chile_lnb",
+   "group": "Basketball",
+   "title": "Chile Lnb",
+   "active": true
+  },
+  {
+   "key": "basketball_china_cba",
+   "group": "Basketball",
+   "title": "China Cba",
+   "active": true
+  },
+  {
+   "key": "basketball_denmark_basketligaen",
+   "group": "Basketball",
+   "title": "Denmark Basketligaen",
+   "active": true
+  },
+  {
+   "key": "basketball_estonian_latvian_basketball_league",
+   "group": "Basketball",
+   "title": "Estonian Latvian Basketball League",
+   "active": true
+  },
+  {
+   "key": "basketball_europe_champions_league",
+   "group": "Basketball",
+   "title": "Europe Champions League",
+   "active": true
+  },
+  {
+   "key": "basketball_europe_eurocup",
+   "group": "Basketball",
+   "title": "Europe Eurocup",
+   "active": true
+  },
+  {
+   "key": "basketball_europe_vtb_united_league",
+   "group": "Basketball",
+   "title": "Europe Vtb United League",
+   "active": true
+  },
+  {
+   "key": "basketball_finland_korisliiga",
+   "group": "Basketball",
+   "title": "Finland Korisliiga",
+   "active": true
+  },
+  {
+   "key": "basketball_france_championnat_pro_b",
+   "group": "Basketball",
+   "title": "France Championnat Pro B",
+   "active": true
+  },
+  {
+   "key": "basketball_france_nationale_1",
+   "group": "Basketball",
+   "title": "France Nationale 1",
+   "active": true
+  },
+  {
+   "key": "basketball_georgia_super_league",
+   "group": "Basketball",
+   "title": "Georgia Super League",
+   "active": true
+  },
+  {
+   "key": "basketball_germany_bbl_pokal",
+   "group": "Basketball",
+   "title": "Germany BBL Pokal",
+   "active": true
+  },
+  {
+   "key": "basketball_greece_elite_league",
+   "group": "Basketball",
+   "title": "Greece Elite League",
+   "active": true
+  },
+  {
+   "key": "basketball_hong_kong_bl",
+   "group": "Basketball",
+   "title": "Hong Kong Bl",
+   "active": true
+  },
+  {
+   "key": "basketball_hong_kong_silver_shield_cup_women",
+   "group": "Basketball",
+   "title": "Hong Kong Silver Shield Cup Women",
+   "active": true
+  },
+  {
+   "key": "basketball_hungary_nemzeti_bajnoksag_i_a",
+   "group": "Basketball",
+   "title": "Hungary Nemzeti Bajnoksag I A",
+   "active": true
+  },
+  {
+   "key": "basketball_iceland_premier_league_women",
+   "group": "Basketball",
+   "title": "Iceland Premier League Women",
+   "active": true
+  },
+  {
+   "key": "basketball_international_arab_cup_championship",
+   "group": "Basketball",
+   "title": "International Arab Cup Championship",
+   "active": true
+  },
+  {
+   "key": "basketball_israel_national_league",
+   "group": "Basketball",
+   "title": "Israel National League",
+   "active": true
+  },
+  {
+   "key": "basketball_israel_premier_league",
+   "group": "Basketball",
+   "title": "Israel Premier League",
+   "active": true
+  },
+  {
+   "key": "basketball_israel_premier_league_women",
+   "group": "Basketball",
+   "title": "Israel Premier League Women",
+   "active": true
+  },
+  {
+   "key": "basketball_japan_b_league_premier",
+   "group": "Basketball",
+   "title": "Japan B League Premier",
+   "active": true
+  },
+  {
+   "key": "basketball_lithuania_cup",
+   "group": "Basketball",
+   "title": "Lithuania Cup",
+   "active": true
+  },
+  {
+   "key": "basketball_lithuania_national_basketball_league",
+   "group": "Basketball",
+   "title": "Lithuania National Basketball League",
+   "active": true
+  },
+  {
+   "key": "basketball_mexico_liga_nacional_de_baloncesto_profesional",
+   "group": "Basketball",
+   "title": "Mexico Liga Nacional de Baloncesto Profesional",
+   "active": true
+  },
+  {
+   "key": "basketball_other",
+   "group": "Basketball",
+   "title": "Basketball (other competitions)",
+   "active": true
+  },
+  {
+   "key": "basketball_philippines_pba_governors_cup",
+   "group": "Basketball",
+   "title": "Philippines Pba Governors Cup",
+   "active": true
+  },
+  {
+   "key": "basketball_philippines_uaap",
+   "group": "Basketball",
+   "title": "Philippines Uaap",
+   "active": true
+  },
+  {
+   "key": "basketball_poland_basket_liga",
+   "group": "Basketball",
+   "title": "Poland Basket Liga",
+   "active": true
+  },
+  {
+   "key": "basketball_portugal_nacional_1_division",
+   "group": "Basketball",
+   "title": "Portugal Nacional 1 Division",
+   "active": true
+  },
+  {
+   "key": "basketball_puerto_rico_superior_nacional_women",
+   "group": "Basketball",
+   "title": "Puerto Rico Superior Nacional Women",
+   "active": true
+  },
+  {
+   "key": "basketball_romania_division_a",
+   "group": "Basketball",
+   "title": "Romania Division A",
+   "active": true
+  },
+  {
+   "key": "basketball_serbia_1_zls_women",
+   "group": "Basketball",
+   "title": "Serbia 1 Zls Women",
+   "active": true
+  },
+  {
+   "key": "basketball_serbia_nasa_liga",
+   "group": "Basketball",
+   "title": "Serbia Nasa Liga",
+   "active": true
+  },
+  {
+   "key": "basketball_slovenia_1_skl",
+   "group": "Basketball",
+   "title": "Slovenia 1 Skl",
+   "active": true
+  },
+  {
+   "key": "basketball_sweden_basketligan",
+   "group": "Basketball",
+   "title": "Sweden Basketligan",
+   "active": true
+  },
+  {
+   "key": "basketball_sweden_basketligan_women",
+   "group": "Basketball",
+   "title": "Sweden Basketligan Women",
+   "active": true
+  },
+  {
+   "key": "basketball_turkey_super_league",
+   "group": "Basketball",
+   "title": "Turkey Super League",
+   "active": true
+  },
+  {
+   "key": "basketball_turkey_tkbl_women",
+   "group": "Basketball",
+   "title": "Turkey Tkbl Women",
+   "active": true
+  },
+  {
+   "key": "basketball_uruguay_liga",
+   "group": "Basketball",
+   "title": "Uruguay Liga",
+   "active": true
+  },
+  {
+   "key": "cricket_one_day_internationals",
+   "group": "Cricket",
+   "title": "One Day Internationals",
+   "active": true
+  },
+  {
+   "key": "esports_cs2_cct_europe_challengers",
+   "group": "Esports",
+   "title": "CS2 CCT Europe Challengers",
+   "active": true
+  },
+  {
+   "key": "esports_cs2_pgl_bucharest_qualifier",
+   "group": "Esports",
+   "title": "CS2 Pgl Bucharest Qualifier",
+   "active": true
+  },
+  {
+   "key": "esports_cs2_private_club",
+   "group": "Esports",
+   "title": "CS2 Private Club",
+   "active": true
+  },
+  {
+   "key": "esports_cs2_stk_ranked_qualifier",
+   "group": "Esports",
+   "title": "CS2 Stk Ranked Qualifier",
+   "active": true
+  },
+  {
+   "key": "esports_dota_2_epl_masters",
+   "group": "Esports",
+   "title": "Dota 2 EPL Masters",
+   "active": true
+  },
+  {
+   "key": "esports_league_of_legends_emea_masters",
+   "group": "Esports",
+   "title": "League of Legends Emea Masters",
+   "active": true
+  },
+  {
+   "key": "esports_league_of_legends_world_championship",
+   "group": "Esports",
+   "title": "League of Legends World Championship",
+   "active": true
+  },
+  {
+   "key": "esports_mobile_legends_mpl_philippines",
+   "group": "Esports",
+   "title": "Mobile Legends Mpl Philippines",
+   "active": true
+  },
+  {
+   "key": "esports_valorant_champions_tour_game_changers_championship",
+   "group": "Esports",
+   "title": "Valorant Champions Tour Game Changers Championship",
+   "active": true
+  },
+  {
+   "key": "hockey_austria_ehl",
+   "group": "Ice Hockey",
+   "title": "Austria Ehl",
+   "active": true
+  },
+  {
+   "key": "hockey_belarus_extraleague",
+   "group": "Ice Hockey",
+   "title": "Belarus Extraleague",
+   "active": true
+  },
+  {
+   "key": "hockey_canada_ontario_hockey_league",
+   "group": "Ice Hockey",
+   "title": "Canada Ontario Hockey League",
+   "active": true
+  },
+  {
+   "key": "hockey_canada_western_hockey_league",
+   "group": "Ice Hockey",
+   "title": "Canada Western Hockey League",
+   "active": true
+  },
+  {
+   "key": "hockey_czech_republic_1_liga",
+   "group": "Ice Hockey",
+   "title": "Czech Republic 1 Liga",
+   "active": true
+  },
+  {
+   "key": "hockey_europe_alps_hockey_league",
+   "group": "Ice Hockey",
+   "title": "Europe Alps Hockey League",
+   "active": true
+  },
+  {
+   "key": "hockey_finland_sm_liiga",
+   "group": "Ice Hockey",
+   "title": "Finland Sm Liiga",
+   "active": true
+  },
+  {
+   "key": "hockey_finland_suomi_sarja_u20",
+   "group": "Ice Hockey",
+   "title": "Finland Suomi Sarja U20",
+   "active": true
+  },
+  {
+   "key": "hockey_latvia_latvian_hockey_league",
+   "group": "Ice Hockey",
+   "title": "Latvia Latvian Hockey League",
+   "active": true
+  },
+  {
+   "key": "hockey_russia_junior_hockey_league_mhl",
+   "group": "Ice Hockey",
+   "title": "Russia Junior Hockey League Mhl",
+   "active": true
+  },
+  {
+   "key": "hockey_russia_kontinental_hockey_league",
+   "group": "Ice Hockey",
+   "title": "Russia Kontinental Hockey League",
+   "active": true
+  },
+  {
+   "key": "hockey_russia_vysshaya_hokkeinaya_liga",
+   "group": "Ice Hockey",
+   "title": "Russia Vysshaya Hokkeinaya Liga",
+   "active": true
+  },
+  {
+   "key": "hockey_slovakia_1_liga",
+   "group": "Ice Hockey",
+   "title": "Slovakia 1 Liga",
+   "active": true
+  },
+  {
+   "key": "hockey_sweden_hockey_allsvenskan",
+   "group": "Ice Hockey",
+   "title": "Sweden Hockey Allsvenskan",
+   "active": true
+  },
+  {
+   "key": "hockey_sweden_hockeyettan",
+   "group": "Ice Hockey",
+   "title": "Sweden Hockeyettan",
+   "active": true
+  },
+  {
+   "key": "hockey_switzerland_nationalliga_a",
+   "group": "Ice Hockey",
+   "title": "Switzerland Nationalliga A",
+   "active": true
+  },
+  {
+   "key": "hockey_switzerland_swiss_league",
+   "group": "Ice Hockey",
+   "title": "Switzerland Swiss League",
+   "active": true
+  },
+  {
+   "key": "hockey_usa_american_hockey_league",
+   "group": "Ice Hockey",
+   "title": "USA American Hockey League",
+   "active": true
+  },
+  {
+   "key": "mma_ufc",
+   "group": "Mixed Martial Arts",
+   "title": "UFC",
+   "active": true
+  },
+  {
+   "key": "other_unknown",
+   "group": "Other",
+   "title": "Other (unclassified)",
+   "active": true
+  },
+  {
+   "key": "soccer_1st_division",
+   "group": "Soccer",
+   "title": "1st Division",
+   "active": true
+  },
+  {
+   "key": "soccer_afc_challenge_league",
+   "group": "Soccer",
+   "title": "AFC Challenge League",
+   "active": true
+  },
+  {
+   "key": "soccer_algeria_2nd_division",
+   "group": "Soccer",
+   "title": "Algeria 2nd Division",
+   "active": true
+  },
+  {
+   "key": "soccer_algeria_ligue_2",
+   "group": "Soccer",
+   "title": "Algeria Ligue 2",
+   "active": true
+  },
+  {
+   "key": "soccer_argentina_liga_pro",
+   "group": "Soccer",
+   "title": "Argentina Liga Pro",
+   "active": true
+  },
+  {
+   "key": "soccer_argentina_primera_c_metropolitana",
+   "group": "Soccer",
+   "title": "Argentina Primera C Metropolitana",
+   "active": true
+  },
+  {
+   "key": "soccer_argentina_primera_nacional",
+   "group": "Soccer",
+   "title": "Argentina Primera Nacional",
+   "active": true
+  },
+  {
+   "key": "soccer_argentina_youth_league_u20",
+   "group": "Soccer",
+   "title": "Argentina Youth League U20",
+   "active": true
+  },
+  {
+   "key": "soccer_australia_a_league",
+   "group": "Soccer",
+   "title": "Australia A League",
+   "active": true
+  },
+  {
+   "key": "soccer_australia_a_league_women",
+   "group": "Soccer",
+   "title": "Australia A League Women",
+   "active": true
+  },
+  {
+   "key": "soccer_bahrain_2nd_division",
+   "group": "Soccer",
+   "title": "Bahrain 2nd Division",
+   "active": true
+  },
+  {
+   "key": "soccer_belarus_premier_league",
+   "group": "Soccer",
+   "title": "Belarus Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_belgium_challenger_pro_league",
+   "group": "Soccer",
+   "title": "Belgium Challenger Pro League",
+   "active": true
+  },
+  {
+   "key": "soccer_belgium_pro_league",
+   "group": "Soccer",
+   "title": "Belgium Pro League",
+   "active": true
+  },
+  {
+   "key": "soccer_bolivia_liga_nacional_u19",
+   "group": "Soccer",
+   "title": "Bolivia Liga Nacional U19",
+   "active": true
+  },
+  {
+   "key": "soccer_brazil_alagoano_u20",
+   "group": "Soccer",
+   "title": "Brazil Alagoano U20",
+   "active": true
+  },
+  {
+   "key": "soccer_brazil_copa_do_brasil",
+   "group": "Soccer",
+   "title": "Brazil Copa Do Brasil",
+   "active": true
+  },
+  {
+   "key": "soccer_brazil_mineiro_u20",
+   "group": "Soccer",
+   "title": "Brazil Mineiro U20",
+   "active": true
+  },
+  {
+   "key": "soccer_brazil_serie_a",
+   "group": "Soccer",
+   "title": "Brazil Serie A",
+   "active": true
+  },
+  {
+   "key": "soccer_brazil_serie_a_bookings",
+   "group": "Soccer",
+   "title": "Brazil Serie A Bookings",
+   "active": true
+  },
+  {
+   "key": "soccer_bulgaria_cup",
+   "group": "Soccer",
+   "title": "Bulgaria Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_bundesliga",
+   "group": "Soccer",
+   "title": "Bundesliga",
+   "active": true
+  },
+  {
+   "key": "soccer_bundesliga_2",
+   "group": "Soccer",
+   "title": "Bundesliga 2",
+   "active": true
+  },
+  {
+   "key": "soccer_caf_africa_cup_of_nations_u20_qualifiers",
+   "group": "Soccer",
+   "title": "Caf Africa Cup of Nations U20 Qualifiers",
+   "active": true
+  },
+  {
+   "key": "soccer_chile_cup",
+   "group": "Soccer",
+   "title": "Chile Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_chile_primera_b",
+   "group": "Soccer",
+   "title": "Chile Primera B",
+   "active": true
+  },
+  {
+   "key": "soccer_chile_primera_division",
+   "group": "Soccer",
+   "title": "Chile Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_china_super_league",
+   "group": "Soccer",
+   "title": "China Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_colombia_primera_a_corners",
+   "group": "Soccer",
+   "title": "Colombia Primera A Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_colombia_primera_b",
+   "group": "Soccer",
+   "title": "Colombia Primera B",
+   "active": true
+  },
+  {
+   "key": "soccer_colombia_primera_b_corners",
+   "group": "Soccer",
+   "title": "Colombia Primera B Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_colombia_u19_championship",
+   "group": "Soccer",
+   "title": "Colombia U19 Championship",
+   "active": true
+  },
+  {
+   "key": "soccer_conmebol_copa_libertadores",
+   "group": "Soccer",
+   "title": "CONMEBOL Copa Libertadores",
+   "active": true
+  },
+  {
+   "key": "soccer_conmebol_copa_libertadores_femenina",
+   "group": "Soccer",
+   "title": "CONMEBOL Copa Libertadores Femenina",
+   "active": true
+  },
+  {
+   "key": "soccer_conmebol_copa_sudamericana",
+   "group": "Soccer",
+   "title": "CONMEBOL Copa Sudamericana",
+   "active": true
+  },
+  {
+   "key": "soccer_copa_libertadores_femenina",
+   "group": "Soccer",
+   "title": "Copa Libertadores Femenina",
+   "active": true
+  },
+  {
+   "key": "soccer_costa_rica_ascenso",
+   "group": "Soccer",
+   "title": "Costa Rica Ascenso",
+   "active": true
+  },
+  {
+   "key": "soccer_croatia_croatia_cup",
+   "group": "Soccer",
+   "title": "Croatia Croatia Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_croatia_cup",
+   "group": "Soccer",
+   "title": "Croatia Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_croatia_hnl",
+   "group": "Soccer",
+   "title": "Croatia Hnl",
+   "active": true
+  },
+  {
+   "key": "soccer_cyprus_1st_division",
+   "group": "Soccer",
+   "title": "Cyprus 1st Division",
+   "active": true
+  },
+  {
+   "key": "soccer_cyprus_division_1",
+   "group": "Soccer",
+   "title": "Cyprus Division 1",
+   "active": true
+  },
+  {
+   "key": "soccer_czech_republic_first_liga",
+   "group": "Soccer",
+   "title": "Czech Republic First Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_denmark_1st_division",
+   "group": "Soccer",
+   "title": "Denmark 1st Division",
+   "active": true
+  },
+  {
+   "key": "soccer_denmark_division_1",
+   "group": "Soccer",
+   "title": "Denmark Division 1",
+   "active": true
+  },
+  {
+   "key": "soccer_denmark_womens_cup",
+   "group": "Soccer",
+   "title": "Denmark Womens Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_dfb_pokal",
+   "group": "Soccer",
+   "title": "DFB Pokal",
+   "active": true
+  },
+  {
+   "key": "soccer_ecuador_serie_a",
+   "group": "Soccer",
+   "title": "Ecuador Serie A",
+   "active": true
+  },
+  {
+   "key": "soccer_egypt_premier_league",
+   "group": "Soccer",
+   "title": "Egypt Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_egypt_premier_league_corners",
+   "group": "Soccer",
+   "title": "Egypt Premier League Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_england_development_league",
+   "group": "Soccer",
+   "title": "England Development League",
+   "active": true
+  },
+  {
+   "key": "soccer_england_efl_cup",
+   "group": "Soccer",
+   "title": "England EFL Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_england_fa_cup_qualification",
+   "group": "Soccer",
+   "title": "England FA Cup Qualification",
+   "active": true
+  },
+  {
+   "key": "soccer_england_fa_cup_qualifiers",
+   "group": "Soccer",
+   "title": "England FA Cup Qualifiers",
+   "active": true
+  },
+  {
+   "key": "soccer_england_fa_super_league",
+   "group": "Soccer",
+   "title": "England FA Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_england_isthmian_premier_league",
+   "group": "Soccer",
+   "title": "England Isthmian Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league_1",
+   "group": "Soccer",
+   "title": "England League 1",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league_1_corners",
+   "group": "Soccer",
+   "title": "England League 1 Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league_2",
+   "group": "Soccer",
+   "title": "England League 2",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league_2_corners",
+   "group": "Soccer",
+   "title": "England League 2 Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league_one",
+   "group": "Soccer",
+   "title": "England League One",
+   "active": true
+  },
+  {
+   "key": "soccer_england_league_two",
+   "group": "Soccer",
+   "title": "England League Two",
+   "active": true
+  },
+  {
+   "key": "soccer_england_national_league",
+   "group": "Soccer",
+   "title": "England National League",
+   "active": true
+  },
+  {
+   "key": "soccer_england_national_league_cup",
+   "group": "Soccer",
+   "title": "England National League Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_england_national_league_south",
+   "group": "Soccer",
+   "title": "England National League South",
+   "active": true
+  },
+  {
+   "key": "soccer_england_northern_league_division_1",
+   "group": "Soccer",
+   "title": "England Northern League Division 1",
+   "active": true
+  },
+  {
+   "key": "soccer_england_premier_league_2",
+   "group": "Soccer",
+   "title": "England Premier League 2",
+   "active": true
+  },
+  {
+   "key": "soccer_england_premier_league_2_u21",
+   "group": "Soccer",
+   "title": "England Premier League 2 U21",
+   "active": true
+  },
+  {
+   "key": "soccer_england_premier_league_cup_u21",
+   "group": "Soccer",
+   "title": "England Premier League Cup U21",
+   "active": true
+  },
+  {
+   "key": "soccer_england_professional_development_league_u21",
+   "group": "Soccer",
+   "title": "England Professional Development League U21",
+   "active": true
+  },
+  {
+   "key": "soccer_england_southern_league_division_1",
+   "group": "Soccer",
+   "title": "England Southern League Division 1",
+   "active": true
+  },
+  {
+   "key": "soccer_england_southern_premier_league_central",
+   "group": "Soccer",
+   "title": "England Southern Premier League Central",
+   "active": true
+  },
+  {
+   "key": "soccer_england_women_super_league",
+   "group": "Soccer",
+   "title": "England Women Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_english_league_a_2025_26",
+   "group": "Soccer",
+   "title": "English League A 2025 26",
+   "active": true
+  },
+  {
+   "key": "soccer_estonia_esiliiga_a",
+   "group": "Soccer",
+   "title": "Estonia Esiliiga A",
+   "active": true
+  },
+  {
+   "key": "soccer_estonia_esiliiga_b",
+   "group": "Soccer",
+   "title": "Estonia Esiliiga B",
+   "active": true
+  },
+  {
+   "key": "soccer_ethiopia_premier_league",
+   "group": "Soccer",
+   "title": "Ethiopia Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_euro_league_2026",
+   "group": "Soccer",
+   "title": "Euro League 2026",
+   "active": true
+  },
+  {
+   "key": "soccer_france_ligue_2",
+   "group": "Soccer",
+   "title": "France Ligue 2",
+   "active": true
+  },
+  {
+   "key": "soccer_georgia_erovnuli_liga",
+   "group": "Soccer",
+   "title": "Georgia Erovnuli Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_germany_3_liga",
+   "group": "Soccer",
+   "title": "Germany 3 Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_germany_bundesliga_2",
+   "group": "Soccer",
+   "title": "Germany Bundesliga 2",
+   "active": true
+  },
+  {
+   "key": "soccer_germany_bundesliga_women",
+   "group": "Soccer",
+   "title": "Germany Bundesliga Women",
+   "active": true
+  },
+  {
+   "key": "soccer_germany_cup",
+   "group": "Soccer",
+   "title": "Germany Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_global_cup_2026",
+   "group": "Soccer",
+   "title": "Global Cup 2026",
+   "active": true
+  },
+  {
+   "key": "soccer_greece_super_league_2",
+   "group": "Soccer",
+   "title": "Greece Super League 2",
+   "active": true
+  },
+  {
+   "key": "soccer_guatemala_liga_nacional",
+   "group": "Soccer",
+   "title": "Guatemala Liga Nacional",
+   "active": true
+  },
+  {
+   "key": "soccer_hungary_nb_1",
+   "group": "Soccer",
+   "title": "Hungary Nb 1",
+   "active": true
+  },
+  {
+   "key": "soccer_hungary_nb_2",
+   "group": "Soccer",
+   "title": "Hungary Nb 2",
+   "active": true
+  },
+  {
+   "key": "soccer_iceland_1_deild",
+   "group": "Soccer",
+   "title": "Iceland 1 Deild",
+   "active": true
+  },
+  {
+   "key": "soccer_iceland_besta_deild_women",
+   "group": "Soccer",
+   "title": "Iceland Besta Deild Women",
+   "active": true
+  },
+  {
+   "key": "soccer_iceland_premier_league",
+   "group": "Soccer",
+   "title": "Iceland Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_india_super_league",
+   "group": "Soccer",
+   "title": "India Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_indonesia_super_league",
+   "group": "Soccer",
+   "title": "Indonesia Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_iran_pro_league",
+   "group": "Soccer",
+   "title": "Iran Pro League",
+   "active": true
+  },
+  {
+   "key": "soccer_ireland_division_1",
+   "group": "Soccer",
+   "title": "Ireland Division 1",
+   "active": true
+  },
+  {
+   "key": "soccer_israel_league_cup_women",
+   "group": "Soccer",
+   "title": "Israel League Cup Women",
+   "active": true
+  },
+  {
+   "key": "soccer_israel_liga_alef",
+   "group": "Soccer",
+   "title": "Israel Liga Alef",
+   "active": true
+  },
+  {
+   "key": "soccer_israel_liga_leumit",
+   "group": "Soccer",
+   "title": "Israel Liga Leumit",
+   "active": true
+  },
+  {
+   "key": "soccer_israel_ligat_leumit",
+   "group": "Soccer",
+   "title": "Israel Ligat Leumit",
+   "active": true
+  },
+  {
+   "key": "soccer_israel_premier_league",
+   "group": "Soccer",
+   "title": "Israel Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_italy_serie_a_bookings",
+   "group": "Soccer",
+   "title": "Italy Serie A Bookings",
+   "active": true
+  },
+  {
+   "key": "soccer_italy_serie_c_group_a",
+   "group": "Soccer",
+   "title": "Italy Serie C Group A",
+   "active": true
+  },
+  {
+   "key": "soccer_italy_serie_c_group_c",
+   "group": "Soccer",
+   "title": "Italy Serie C Group C",
+   "active": true
+  },
+  {
+   "key": "soccer_ivory_coast_ligue_1",
+   "group": "Soccer",
+   "title": "Ivory Coast Ligue 1",
+   "active": true
+  },
+  {
+   "key": "soccer_jamaica_premier_league",
+   "group": "Soccer",
+   "title": "Jamaica Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_japan_j_league_2",
+   "group": "Soccer",
+   "title": "Japan J League 2",
+   "active": true
+  },
+  {
+   "key": "soccer_jordan_u20_league",
+   "group": "Soccer",
+   "title": "Jordan U20 League",
+   "active": true
+  },
+  {
+   "key": "soccer_kenya_premier_league",
+   "group": "Soccer",
+   "title": "Kenya Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_korea_kleague1",
+   "group": "Soccer",
+   "title": "Korea Kleague1",
+   "active": true
+  },
+  {
+   "key": "soccer_korea_republic_k_league_1",
+   "group": "Soccer",
+   "title": "Korea Republic K League 1",
+   "active": true
+  },
+  {
+   "key": "soccer_korea_republic_k_league_2",
+   "group": "Soccer",
+   "title": "Korea Republic K League 2",
+   "active": true
+  },
+  {
+   "key": "soccer_kosovo_superliga",
+   "group": "Soccer",
+   "title": "Kosovo Superliga",
+   "active": true
+  },
+  {
+   "key": "soccer_kuwait_premier_league",
+   "group": "Soccer",
+   "title": "Kuwait Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_latvia_virsliga",
+   "group": "Soccer",
+   "title": "Latvia Virsliga",
+   "active": true
+  },
+  {
+   "key": "soccer_ligue_1",
+   "group": "Soccer",
+   "title": "Ligue 1",
+   "active": true
+  },
+  {
+   "key": "soccer_ligue_2",
+   "group": "Soccer",
+   "title": "Ligue 2",
+   "active": true
+  },
+  {
+   "key": "soccer_lithuania_a_lyga",
+   "group": "Soccer",
+   "title": "Lithuania A Lyga",
+   "active": true
+  },
+  {
+   "key": "soccer_mauritania_ligue_1",
+   "group": "Soccer",
+   "title": "Mauritania Ligue 1",
+   "active": true
+  },
+  {
+   "key": "soccer_mauritania_premier_league",
+   "group": "Soccer",
+   "title": "Mauritania Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_mexico_liga_de_expansi_n_mx",
+   "group": "Soccer",
+   "title": "Mexico Liga de Expansi N Mx",
+   "active": true
+  },
+  {
+   "key": "soccer_mexico_liga_de_expansion_mx",
+   "group": "Soccer",
+   "title": "Mexico Liga de Expansion Mx",
+   "active": true
+  },
+  {
+   "key": "soccer_mexico_liga_mx_femenil",
+   "group": "Soccer",
+   "title": "Mexico Liga Mx Femenil",
+   "active": true
+  },
+  {
+   "key": "soccer_mexico_liga_mx_women",
+   "group": "Soccer",
+   "title": "Mexico Liga Mx Women",
+   "active": true
+  },
+  {
+   "key": "soccer_mexico_liga_premier",
+   "group": "Soccer",
+   "title": "Mexico Liga Premier",
+   "active": true
+  },
+  {
+   "key": "soccer_mexico_segunda_division",
+   "group": "Soccer",
+   "title": "Mexico Segunda Division",
+   "active": true
+  },
+  {
+   "key": "soccer_montenegro_prva_liga",
+   "group": "Soccer",
+   "title": "Montenegro Prva Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_mozambique_mocambola",
+   "group": "Soccer",
+   "title": "Mozambique Mocambola",
+   "active": true
+  },
+  {
+   "key": "soccer_north_macedonia_1st_league",
+   "group": "Soccer",
+   "title": "North Macedonia 1st League",
+   "active": true
+  },
+  {
+   "key": "soccer_northern_ireland_premiership",
+   "group": "Soccer",
+   "title": "Northern Ireland Premiership",
+   "active": true
+  },
+  {
+   "key": "soccer_northern_ireland_reserve_league",
+   "group": "Soccer",
+   "title": "Northern Ireland Reserve League",
+   "active": true
+  },
+  {
+   "key": "soccer_norway_1st_division",
+   "group": "Soccer",
+   "title": "Norway 1st Division",
+   "active": true
+  },
+  {
+   "key": "soccer_norway_3rd_division",
+   "group": "Soccer",
+   "title": "Norway 3rd Division",
+   "active": true
+  },
+  {
+   "key": "soccer_norway_division_3",
+   "group": "Soccer",
+   "title": "Norway Division 3",
+   "active": true
+  },
+  {
+   "key": "soccer_oman_pro_league",
+   "group": "Soccer",
+   "title": "Oman Pro League",
+   "active": true
+  },
+  {
+   "key": "soccer_panama_liga_panamena",
+   "group": "Soccer",
+   "title": "Panama Liga Panamena",
+   "active": true
+  },
+  {
+   "key": "soccer_panama_primera_division",
+   "group": "Soccer",
+   "title": "Panama Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_paraguay_division_intermedia",
+   "group": "Soccer",
+   "title": "Paraguay Division Intermedia",
+   "active": true
+  },
+  {
+   "key": "soccer_paraguay_reserve_league",
+   "group": "Soccer",
+   "title": "Paraguay Reserve League",
+   "active": true
+  },
+  {
+   "key": "soccer_peru_liga_1",
+   "group": "Soccer",
+   "title": "Peru Liga 1",
+   "active": true
+  },
+  {
+   "key": "soccer_peru_primera_division",
+   "group": "Soccer",
+   "title": "Peru Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_poland_1st_liga",
+   "group": "Soccer",
+   "title": "Poland 1st Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_portugal_championship_u23",
+   "group": "Soccer",
+   "title": "Portugal Championship U23",
+   "active": true
+  },
+  {
+   "key": "soccer_portugal_liga_2",
+   "group": "Soccer",
+   "title": "Portugal Liga 2",
+   "active": true
+  },
+  {
+   "key": "soccer_portugal_u23_championship",
+   "group": "Soccer",
+   "title": "Portugal U23 Championship",
+   "active": true
+  },
+  {
+   "key": "soccer_premier_division",
+   "group": "Soccer",
+   "title": "Premier Division",
+   "active": true
+  },
+  {
+   "key": "soccer_qatar_stars_league",
+   "group": "Soccer",
+   "title": "Qatar Stars League",
+   "active": true
+  },
+  {
+   "key": "soccer_romania_liga_1",
+   "group": "Soccer",
+   "title": "Romania Liga 1",
+   "active": true
+  },
+  {
+   "key": "soccer_romania_liga_1_corners",
+   "group": "Soccer",
+   "title": "Romania Liga 1 Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_romania_liga_2",
+   "group": "Soccer",
+   "title": "Romania Liga 2",
+   "active": true
+  },
+  {
+   "key": "soccer_russia_first_league",
+   "group": "Soccer",
+   "title": "Russia First League",
+   "active": true
+  },
+  {
+   "key": "soccer_russia_premier_league",
+   "group": "Soccer",
+   "title": "Russia Premier League",
+   "active": true
+  },
+  {
+   "key": "soccer_saudi_arabia_division_1",
+   "group": "Soccer",
+   "title": "Saudi Arabia Division 1",
+   "active": true
+  },
+  {
+   "key": "soccer_saudi_arabia_elite_league_u21",
+   "group": "Soccer",
+   "title": "Saudi Arabia Elite League U21",
+   "active": true
+  },
+  {
+   "key": "soccer_saudi_arabia_pro_league",
+   "group": "Soccer",
+   "title": "Saudi Arabia Pro League",
+   "active": true
+  },
+  {
+   "key": "soccer_saudi_arabia_pro_league_corners",
+   "group": "Soccer",
+   "title": "Saudi Arabia Pro League Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_saudi_arabia_professional_league",
+   "group": "Soccer",
+   "title": "Saudi Arabia Professional League",
+   "active": true
+  },
+  {
+   "key": "soccer_segunda",
+   "group": "Soccer",
+   "title": "Segunda",
+   "active": true
+  },
+  {
+   "key": "soccer_senegal_ligue_2",
+   "group": "Soccer",
+   "title": "Senegal Ligue 2",
+   "active": true
+  },
+  {
+   "key": "soccer_serbia_prva_liga",
+   "group": "Soccer",
+   "title": "Serbia Prva Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_serbia_super_liga_women",
+   "group": "Soccer",
+   "title": "Serbia Super Liga Women",
+   "active": true
+  },
+  {
+   "key": "soccer_serie_b",
+   "group": "Soccer",
+   "title": "Serie B",
+   "active": true
+  },
+  {
+   "key": "soccer_serie_c",
+   "group": "Soccer",
+   "title": "Serie C",
+   "active": true
+  },
+  {
+   "key": "soccer_slovakia_2_liga",
+   "group": "Soccer",
+   "title": "Slovakia 2 Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_slovakia_super_liga",
+   "group": "Soccer",
+   "title": "Slovakia Super Liga",
+   "active": true
+  },
+  {
+   "key": "soccer_slovenia_u19_league",
+   "group": "Soccer",
+   "title": "Slovenia U19 League",
+   "active": true
+  },
+  {
+   "key": "soccer_south_korea_k_league_1",
+   "group": "Soccer",
+   "title": "South Korea K League 1",
+   "active": true
+  },
+  {
+   "key": "soccer_sweden_superettan",
+   "group": "Soccer",
+   "title": "Sweden Superettan",
+   "active": true
+  },
+  {
+   "key": "soccer_switzerland_challenge_league",
+   "group": "Soccer",
+   "title": "Switzerland Challenge League",
+   "active": true
+  },
+  {
+   "key": "soccer_switzerland_super_league",
+   "group": "Soccer",
+   "title": "Switzerland Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_thailand_fa_cup",
+   "group": "Soccer",
+   "title": "Thailand FA Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_tunisia_2nd_league",
+   "group": "Soccer",
+   "title": "Tunisia 2nd League",
+   "active": true
+  },
+  {
+   "key": "soccer_tunisia_league_2",
+   "group": "Soccer",
+   "title": "Tunisia League 2",
+   "active": true
+  },
+  {
+   "key": "soccer_turkey_1st_league",
+   "group": "Soccer",
+   "title": "Turkey 1st League",
+   "active": true
+  },
+  {
+   "key": "soccer_turkey_1st_league_corners",
+   "group": "Soccer",
+   "title": "Turkey 1st League Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_turkey_tff_first_league",
+   "group": "Soccer",
+   "title": "Turkey Tff First League",
+   "active": true
+  },
+  {
+   "key": "soccer_u20_leagues",
+   "group": "Soccer",
+   "title": "U20 Leagues",
+   "active": true
+  },
+  {
+   "key": "soccer_uae_reserve_league",
+   "group": "Soccer",
+   "title": "UAE Reserve League",
+   "active": true
+  },
+  {
+   "key": "soccer_uae_reserve_league_u23",
+   "group": "Soccer",
+   "title": "UAE Reserve League U23",
+   "active": true
+  },
+  {
+   "key": "soccer_uefa_champions_league_bookings",
+   "group": "Soccer",
+   "title": "UEFA Champions League Bookings",
+   "active": true
+  },
+  {
+   "key": "soccer_uefa_champions_league_corners",
+   "group": "Soccer",
+   "title": "UEFA Champions League Corners",
+   "active": true
+  },
+  {
+   "key": "soccer_uefa_conference_league",
+   "group": "Soccer",
+   "title": "UEFA Conference League",
+   "active": true
+  },
+  {
+   "key": "soccer_uefa_europa_league",
+   "group": "Soccer",
+   "title": "UEFA Europa League",
+   "active": true
+  },
+  {
+   "key": "soccer_uefa_youth_league",
+   "group": "Soccer",
+   "title": "UEFA Youth League",
+   "active": true
+  },
+  {
+   "key": "soccer_uefa_youth_league_u19",
+   "group": "Soccer",
+   "title": "UEFA Youth League U19",
+   "active": true
+  },
+  {
+   "key": "soccer_uruguay_primera_division",
+   "group": "Soccer",
+   "title": "Uruguay Primera Division",
+   "active": true
+  },
+  {
+   "key": "soccer_uruguay_primera_division_amateur",
+   "group": "Soccer",
+   "title": "Uruguay Primera Division Amateur",
+   "active": true
+  },
+  {
+   "key": "soccer_uruguay_reserve_league",
+   "group": "Soccer",
+   "title": "Uruguay Reserve League",
+   "active": true
+  },
+  {
+   "key": "soccer_usa_national_womens_soccer_league",
+   "group": "Soccer",
+   "title": "USA National Womens Soccer League",
+   "active": true
+  },
+  {
+   "key": "soccer_usa_open_cup",
+   "group": "Soccer",
+   "title": "USA Open Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_usa_us_open_cup",
+   "group": "Soccer",
+   "title": "USA US Open Cup",
+   "active": true
+  },
+  {
+   "key": "soccer_usa_usl_championship",
+   "group": "Soccer",
+   "title": "USA USL Championship",
+   "active": true
+  },
+  {
+   "key": "soccer_uzbekistan_super_league",
+   "group": "Soccer",
+   "title": "Uzbekistan Super League",
+   "active": true
+  },
+  {
+   "key": "soccer_zanzibar_premier_league",
+   "group": "Soccer",
+   "title": "Zanzibar Premier League",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_cali",
+   "group": "Tennis",
+   "title": "ATP Challenger Cali",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_cali_qualifiers",
+   "group": "Tennis",
+   "title": "ATP Challenger Cali Qualifiers",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_florence",
+   "group": "Tennis",
+   "title": "ATP Challenger Florence",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_florence_2026",
+   "group": "Tennis",
+   "title": "ATP Challenger Florence 2026",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_florence_qualifiers",
+   "group": "Tennis",
+   "title": "ATP Challenger Florence Qualifiers",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_fort_worth",
+   "group": "Tennis",
+   "title": "ATP Challenger Fort Worth",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_fort_worth_qualifiers",
+   "group": "Tennis",
+   "title": "ATP Challenger Fort Worth Qualifiers",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_fort_worth_tx_2026",
+   "group": "Tennis",
+   "title": "ATP Challenger Fort Worth Tx 2026",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_guangzhou",
+   "group": "Tennis",
+   "title": "ATP Challenger Guangzhou",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_lisbon",
+   "group": "Tennis",
+   "title": "ATP Challenger Lisbon",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_lisbon_2026",
+   "group": "Tennis",
+   "title": "ATP Challenger Lisbon 2026",
+   "active": true
+  },
+  {
+   "key": "tennis_atp_challenger_lisbon_qualifiers",
+   "group": "Tennis",
+   "title": "ATP Challenger Lisbon Qualifiers",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_m15_macei_bra_q",
+   "group": "Tennis",
+   "title": "ITF M15 Macei BRA Q",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_m25_redbridge_gbr_q",
+   "group": "Tennis",
+   "title": "ITF M25 Redbridge Gbr Q",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_m25_santa_margherita_di_pula_ita",
+   "group": "Tennis",
+   "title": "ITF M25 Santa Margherita Di Pula ITA",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_men_santa_margherita_di_pula",
+   "group": "Tennis",
+   "title": "ITF Men Santa Margherita Di Pula",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_men_shenzhen",
+   "group": "Tennis",
+   "title": "ITF Men Shenzhen",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_men_singapore",
+   "group": "Tennis",
+   "title": "ITF Men Singapore",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_men_tanagura",
+   "group": "Tennis",
+   "title": "ITF Men Tanagura",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_w100_wrexham_gbr_q",
+   "group": "Tennis",
+   "title": "ITF W100 Wrexham Gbr Q",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_w50_austin_usa_q",
+   "group": "Tennis",
+   "title": "ITF W50 Austin USA Q",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_w50_cherbourg_en_cotentin_fra_q",
+   "group": "Tennis",
+   "title": "ITF W50 Cherbourg En Cotentin FRA Q",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_w75_saguenay_can",
+   "group": "Tennis",
+   "title": "ITF W75 Saguenay CAN",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_w75_saguenay_can_q",
+   "group": "Tennis",
+   "title": "ITF W75 Saguenay CAN Q",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_women_austin",
+   "group": "Tennis",
+   "title": "ITF Women Austin",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_women_karlovy_vary",
+   "group": "Tennis",
+   "title": "ITF Women Karlovy Vary",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_women_saguenay",
+   "group": "Tennis",
+   "title": "ITF Women Saguenay",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_women_singapore",
+   "group": "Tennis",
+   "title": "ITF Women Singapore",
+   "active": true
+  },
+  {
+   "key": "tennis_itf_women_villena",
+   "group": "Tennis",
+   "title": "ITF Women Villena",
+   "active": true
+  },
+  {
+   "key": "tennis_other",
+   "group": "Tennis",
+   "title": "Tennis (other competitions)",
+   "active": true
+  },
+  {
+   "key": "tennis_utr",
+   "group": "Tennis",
+   "title": "UTR",
+   "active": true
+  },
+  {
+   "key": "volleyball_brazil_superliga_women",
+   "group": "Volleyball",
+   "title": "Brazil Superliga Women",
+   "active": true
+  },
+  {
+   "key": "volleyball_europe_cev_challenge_cup",
+   "group": "Volleyball",
+   "title": "Europe Cev Challenge Cup",
+   "active": true
+  },
+  {
+   "key": "volleyball_poland_liga_1",
+   "group": "Volleyball",
+   "title": "Poland Liga 1",
+   "active": true
+  },
+  {
+   "key": "volleyball_poland_liga_siatkowski_women",
+   "group": "Volleyball",
+   "title": "Poland Liga Siatkowski Women",
+   "active": true
+  },
+  {
+   "key": "volleyball_poland_plus_liga",
+   "group": "Volleyball",
+   "title": "Poland Plus Liga",
+   "active": true
+  },
+  {
+   "key": "volleyball_russia_super_league",
+   "group": "Volleyball",
+   "title": "Russia Super League",
+   "active": true
+  },
+  {
+   "key": "volleyball_south_korea_kovo_cup",
+   "group": "Volleyball",
+   "title": "South Korea Kovo Cup",
+   "active": true
+  },
+  {
+   "key": "volleyball_sweden_division_1_women",
+   "group": "Volleyball",
+   "title": "Sweden Division 1 Women",
+   "active": true
+  }
+ ],
+ "parlay_bookmakers": [
+  {
+   "key": "betway_mz",
+   "title": "Betway Mozambique",
+   "region": "global",
+   "status": "active",
+   "note": "Mozambique regional feed: TT Cup pre-match full-match point handicaps only.",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "global"
+   ],
+   "endpoints": [
+    "game_lines"
+   ],
+   "game_line_markets": [
+    "spreads"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/table_tennis_tt_cup/odds?regions=global&markets=spreads&bookmakers=betway_mz"
+   },
+   "freshness_path": "/v1/bookmakers/betway_mz/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "betway_mz_open",
+     "betway_mz_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "pinnacle",
+   "title": "Pinnacle",
+   "region": "eu",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "asia",
+    "au",
+    "br",
+    "ca",
+    "eu",
+    "fr",
+    "latam",
+    "mx",
+    "uk",
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "period_markets",
+    "historical_period",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=pinnacle",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=pinnacle&live=true",
+    "props": "/v1/sports/icehockey_nhl/props?bookmakers=pinnacle",
+    "period_markets": "/v1/sports/americanfootball_nfl/live/period_markets?source=pinnacle&period=1H",
+    "historical_period": "/v1/historical/sports/americanfootball_nfl/period_markets?source=pinnacle&period=Q3&dateFrom=YYYY-MM-DD",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=pinnacle&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/pinnacle/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "pinnacle_open",
+     "pinnacle_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "superbet",
+   "title": "Superbet",
+   "region": "eu",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "eu"
+   ],
+   "freshness_path": "/v1/bookmakers/superbet/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "superbet_open",
+     "superbet_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "bookmaker_eu",
+   "title": "Bookmaker.eu",
+   "region": "global",
+   "status": "active",
+   "note": "NFL and MLB moneylines. Source boards are checked every 60 seconds.",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "global"
+   ],
+   "endpoints": [
+    "game_lines"
+   ],
+   "game_line_markets": [
+    "h2h"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=global&markets=h2h&bookmakers=bookmaker_eu"
+   },
+   "freshness_path": "/v1/bookmakers/bookmaker_eu/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "bookmaker_eu_open",
+     "bookmaker_eu_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "betonline",
+   "title": "BetOnline",
+   "region": "global",
+   "status": "active",
+   "note": "NFL, college football and MLB prematch moneylines, spreads and totals from the public BetOnline feed.",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "global",
+    "us"
+   ],
+   "endpoints": [
+    "game_lines"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=global&markets=h2h&bookmakers=betonline"
+   },
+   "freshness_path": "/v1/bookmakers/betonline/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "betonline_open",
+     "betonline_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "draftkings",
+   "title": "DraftKings",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "period_markets",
+    "historical_period",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=draftkings",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=draftkings&live=true",
+    "props": "/v1/sports/americanfootball_ncaaf/props?bookmakers=draftkings",
+    "period_markets": "/v1/sports/americanfootball_nfl/live/period_markets?source=draftkings&period=1H",
+    "historical_period": "/v1/historical/sports/americanfootball_nfl/period_markets?source=draftkings&period=Q3&dateFrom=YYYY-MM-DD",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=draftkings&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/draftkings/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "draftkings_open",
+     "draftkings_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "fanduel",
+   "title": "FanDuel",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "period_markets",
+    "historical_period",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=fanduel",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=fanduel&live=true",
+    "props": "/v1/sports/americanfootball_ncaaf/props?bookmakers=fanduel",
+    "period_markets": "/v1/sports/americanfootball_nfl/live/period_markets?source=fanduel&period=1H",
+    "historical_period": "/v1/historical/sports/americanfootball_nfl/period_markets?source=fanduel&period=Q3&dateFrom=YYYY-MM-DD",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=fanduel&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/fanduel/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "fanduel_open",
+     "fanduel_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "betmgm",
+   "title": "BetMGM",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "period_markets",
+    "historical_period",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=betmgm",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=betmgm&live=true",
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=betmgm",
+    "period_markets": "/v1/sports/americanfootball_nfl/live/period_markets?source=betmgm&period=1H",
+    "historical_period": "/v1/historical/sports/americanfootball_nfl/period_markets?source=betmgm&period=Q3&dateFrom=YYYY-MM-DD",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=betmgm&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/betmgm/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "betmgm_open",
+     "betmgm_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "caesars",
+   "title": "Caesars",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "period_markets",
+    "historical_period",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=caesars",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=caesars&live=true",
+    "props": "/v1/sports/americanfootball_ncaaf/props?bookmakers=caesars",
+    "period_markets": "/v1/sports/americanfootball_nfl/live/period_markets?source=caesars&period=1H",
+    "historical_period": "/v1/historical/sports/americanfootball_nfl/period_markets?source=caesars&period=Q3&dateFrom=YYYY-MM-DD",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=caesars&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/caesars/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "caesars_open",
+     "caesars_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "fanatics",
+   "title": "Fanatics Sportsbook",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "period_markets",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=fanatics",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=fanatics&live=true",
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=fanatics",
+    "period_markets": "/v1/sports/americanfootball_nfl/live/period_markets?source=fanatics&period=1H",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=fanatics&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/fanatics/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "fanatics_open",
+     "fanatics_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "bet365",
+   "title": "bet365",
+   "region": "uk",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "au",
+    "eu",
+    "uk",
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "period_markets",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=bet365",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=bet365&live=true",
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=bet365",
+    "period_markets": "/v1/sports/americanfootball_nfl/live/period_markets?source=bet365&period=1H",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=bet365&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/bet365/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "bet365_open",
+     "bet365_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "betrivers",
+   "title": "BetRivers",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "historical"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=betrivers",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=betrivers&live=true",
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=betrivers",
+    "historical": "/v1/historical/sports/americanfootball_nfl/odds?bookmakers=betrivers&date=YYYY-MM-DD"
+   },
+   "freshness_path": "/v1/bookmakers/betrivers/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "betrivers_open",
+     "betrivers_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "bovada",
+   "title": "Bovada",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=bovada",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=bovada&live=true",
+    "props": "/v1/sports/basketball_nba/props?bookmakers=bovada"
+   },
+   "freshness_path": "/v1/bookmakers/bovada/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "bovada_open",
+     "bovada_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "novig",
+   "title": "Novig",
+   "region": "us",
+   "status": "active",
+   "operational_status": "public_rest_mixed_coverage",
+   "coverage_scope": "validated row-scoped public game lines and MLB, NFL, NBA, and NHL player props; featured game-moneyline failure fallback",
+   "note": "Novig's public pages provide validated full-game lines for configured leagues and executable player props for MLB, NFL, NBA, and NHL. Each streaming row reports whether its league's terminal rail matc...",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props",
+    "prediction",
+    "event_markets"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=novig",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=novig&live=true",
+    "props": "/v1/sports/basketball_nba/props?bookmakers=novig",
+    "prediction": "/v1/prediction-markets/americanfootball_nfl?sources=novig",
+    "event_markets": "/v1/event-markets/search?q=<your+query>&sources=novig"
+   },
+   "freshness_path": "/v1/bookmakers/novig/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "novig_open",
+     "novig_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "prophetx",
+   "title": "ProphetX",
+   "region": "us",
+   "status": "active",
+   "note": "Peer-to-peer fixed-odds exchange. Some asks may be no-volume 'shill' orders; verify exchange volume before stake-allocating. See is_exchange flag on /v1/sports/{key}/arbitrage.",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "freshness_path": "/v1/bookmakers/prophetx/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "prophetx_open",
+     "prophetx_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "polymarket",
+   "title": "Polymarket",
+   "region": "global",
+   "status": "active",
+   "coverage_scope": "prediction_markets_futures_and_event_contracts",
+   "note": "Prediction markets, futures, season awards and event contracts. The props compatibility path can return those contracts, but this source does not claim conventional per-game sportsbook moneylines, spr...",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "global",
+    "us"
+   ],
+   "endpoints": [
+    "prediction",
+    "event_markets",
+    "props"
+   ],
+   "example_paths": {
+    "prediction": "/v1/prediction-markets/basketball_nba?sources=polymarket",
+    "event_markets": "/v1/event-markets/search?q=<your+query>&sources=polymarket",
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=polymarket"
+   },
+   "freshness_path": "/v1/bookmakers/polymarket/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "polymarket_open",
+     "polymarket_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "kalshi",
+   "title": "Kalshi",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "prediction",
+    "event_markets"
+   ],
+   "example_paths": {
+    "prediction": "/v1/prediction-markets/baseball_mlb?sources=kalshi",
+    "event_markets": "/v1/event-markets/search?q=<your+query>&sources=kalshi"
+   },
+   "freshness_path": "/v1/bookmakers/kalshi/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "kalshi_open",
+     "kalshi_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "robinhood",
+   "title": "Robinhood Event Contracts",
+   "region": "us",
+   "status": "active",
+   "aliases_to": "kalshi",
+   "note": "Robinhood Event Contracts is a Kalshi white-label: same exchange, same prices. Query ?bookmakers=robinhood to filter to this surface (data is stored under source=kalshi).",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [],
+   "freshness_path": "/v1/bookmakers/robinhood/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "robinhood_open",
+     "robinhood_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "prizepicks",
+   "title": "PrizePicks",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/basketball_nba/props?bookmakers=prizepicks"
+   },
+   "freshness_path": "/v1/bookmakers/prizepicks/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "prizepicks_open",
+     "prizepicks_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "underdog",
+   "title": "Underdog",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=underdog"
+   },
+   "freshness_path": "/v1/bookmakers/underdog/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "underdog_open",
+     "underdog_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "sleeper",
+   "title": "Sleeper",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/basketball_nba/props?bookmakers=sleeper"
+   },
+   "freshness_path": "/v1/bookmakers/sleeper/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "sleeper_open",
+     "sleeper_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "fliff",
+   "title": "Fliff",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/mma_mixed_martial_arts/props?bookmakers=fliff"
+   },
+   "freshness_path": "/v1/bookmakers/fliff/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "fliff_open",
+     "fliff_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "parlayplay",
+   "title": "ParlayPlay",
+   "region": "us",
+   "status": "active",
+   "note": "Registered props integration. status=active and endpoints describe configuration, not current availability. The freshness_path diagnostic reports stored observations; its top-level live_props flag mea...",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/basketball_nba/props?bookmakers=parlayplay"
+   },
+   "freshness_path": "/v1/bookmakers/parlayplay/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "parlayplay_open",
+     "parlayplay_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "betr",
+   "title": "Betr",
+   "region": "us",
+   "status": "active",
+   "note": "Registered props integration. status=active and endpoints describe configuration, not current availability. The freshness_path diagnostic reports stored observations; its top-level live_props flag mea...",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/basketball_nba/props?bookmakers=betr"
+   },
+   "freshness_path": "/v1/bookmakers/betr/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "betr_open",
+     "betr_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "hardrock",
+   "title": "Hard Rock",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=hardrock",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=hardrock&live=true",
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=hardrock"
+   },
+   "freshness_path": "/v1/bookmakers/hardrock/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "hardrock_open",
+     "hardrock_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "parx",
+   "title": "Parx",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us",
+    "us2"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live",
+    "props"
+   ],
+   "game_line_markets": [
+    "h2h",
+    "spreads",
+    "totals"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=parx",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=us&markets=h2h&bookmakers=parx&live=true",
+    "props": "/v1/sports/americanfootball_nfl/props?bookmakers=parx"
+   },
+   "freshness_path": "/v1/bookmakers/parx/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "parx_open",
+     "parx_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "pick6",
+   "title": "Pick6 (DraftKings)",
+   "region": "us",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "us"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/basketball_nba/props?bookmakers=pick6"
+   },
+   "freshness_path": "/v1/bookmakers/pick6/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "pick6_open",
+     "pick6_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "unibet",
+   "title": "Unibet",
+   "region": "eu",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "au",
+    "eu",
+    "uk"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live"
+   ],
+   "game_line_markets": [
+    "h2h"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=unibet",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=unibet&live=true"
+   },
+   "freshness_path": "/v1/bookmakers/unibet/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "unibet_open",
+     "unibet_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "unibet_be",
+   "title": "Unibet (BE)",
+   "region": "eu",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "eu"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live"
+   ],
+   "game_line_markets": [
+    "h2h"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=unibet_be",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=unibet_be&live=true"
+   },
+   "freshness_path": "/v1/bookmakers/unibet_be/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "unibet_be_open",
+     "unibet_be_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "unibet_nl",
+   "title": "Unibet (NL)",
+   "region": "eu",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "eu"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live"
+   ],
+   "game_line_markets": [
+    "h2h"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=unibet_nl",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=eu&markets=h2h&bookmakers=unibet_nl&live=true"
+   },
+   "freshness_path": "/v1/bookmakers/unibet_nl/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "unibet_nl_open",
+     "unibet_nl_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "pmu",
+   "title": "PMU",
+   "region": "fr",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "eu",
+    "fr"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live"
+   ],
+   "game_line_markets": [
+    "h2h"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/soccer_france_ligue_one/odds?regions=eu&markets=h2h&bookmakers=pmu",
+    "live": "/v1/sports/soccer_france_ligue_one/odds?regions=eu&markets=h2h&bookmakers=pmu&live=true"
+   },
+   "freshness_path": "/v1/bookmakers/pmu/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "pmu_open",
+     "pmu_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "betrivers_ca",
+   "title": "BetRivers (CA)",
+   "region": "ca",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "ca"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live"
+   ],
+   "game_line_markets": [
+    "h2h"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=ca&markets=h2h&bookmakers=betrivers_ca",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=ca&markets=h2h&bookmakers=betrivers_ca&live=true"
+   },
+   "freshness_path": "/v1/bookmakers/betrivers_ca/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "betrivers_ca_open",
+     "betrivers_ca_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "rushbet",
+   "title": "RushBet",
+   "region": "latam",
+   "status": "active",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "latam",
+    "mx"
+   ],
+   "endpoints": [
+    "game_lines",
+    "live"
+   ],
+   "game_line_markets": [
+    "h2h"
+   ],
+   "example_paths": {
+    "game_lines": "/v1/sports/americanfootball_nfl/odds?regions=latam&markets=h2h&bookmakers=rushbet",
+    "live": "/v1/sports/americanfootball_nfl/odds?regions=latam&markets=h2h&bookmakers=rushbet&live=true"
+   },
+   "freshness_path": "/v1/bookmakers/rushbet/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "rushbet_open",
+     "rushbet_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "betway",
+   "title": "Betway",
+   "region": "uk",
+   "status": "active",
+   "note": "UK product (UKGC), captured over the node mesh. What it carries, measured on production over one hour on 2026-08-02: soccer only, filed under soccer_other, and game-line rather than player markets (Ha...",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "uk"
+   ],
+   "freshness_path": "/v1/bookmakers/betway/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "betway_open",
+     "betway_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "tenbet",
+   "title": "10bet",
+   "region": "uk",
+   "status": "active",
+   "note": "10bet GB (sportswidget.10bet.co.uk), captured from the London node because the book geo-fences to the UK. Measured on production over one hour on 2026-08-02: 2,500 servable player-prop rows across fou...",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "uk"
+   ],
+   "endpoints": [
+    "props"
+   ],
+   "example_paths": {
+    "props": "/v1/sports/soccer_uefa_champs_league/props?bookmakers=tenbet"
+   },
+   "freshness_path": "/v1/bookmakers/tenbet/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "tenbet_open",
+     "tenbet_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  },
+  {
+   "key": "sportsbet_au",
+   "title": "Sportsbet (AU)",
+   "region": "au",
+   "status": "active",
+   "note": "Flutter Entertainment's Australian market leader. Peer to FanDuel US under Flutter group. What ships today is Australian thoroughbred racing via the Sydney node chain: win, head-to-head, top-N finish,...",
+   "stream_filter_accepted": true,
+   "stream_filter_behavior": "accepted",
+   "regions": [
+    "au"
+   ],
+   "freshness_path": "/v1/bookmakers/sportsbet_au/freshness",
+   "historical_variants": {
+    "opening_line_suffix": "_open",
+    "archive_normalized_suffix": "_an",
+    "examples": [
+     "sportsbet_au_open",
+     "sportsbet_au_an"
+    ],
+    "note": "Historical closing-odds rows from this book may use `<key>_open` (opening line) or `<key>_an` (archive-normalized snapshot). Both resolve back to this book."
+   }
+  }
+ ],
+ "parlay_pinnacle_vs_fliff": {
+  "basketball_nba": {
+   "events": 18,
+   "books": {
+    "novig": 18,
+    "fanduel": 13,
+    "fliff": 13,
+    "bovada": 13,
+    "pinnacle": 11,
+    "prophetx": 11
+   },
+   "events_with_pinnacle_and_fliff": 11,
+   "example": {
+    "event": "Charlotte Hornets @ Brooklyn Nets 2026-10-21T23:30:00Z",
+    "pinnacle": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Brooklyn Nets",
+        "price": 1.855
+       },
+       {
+        "name": "Charlotte Hornets",
+        "price": 2.04
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 1.813,
+        "point": 217.5
+       },
+       {
+        "name": "Under",
+        "price": 2.06,
+        "point": 217.5
+       }
+      ]
+     },
+     {
+      "m": "spreads",
+      "o": [
+       {
+        "name": "Brooklyn Nets",
+        "price": 1.926,
+        "point": -1.5
+       },
+       {
+        "name": "Charlotte Hornets",
+        "price": 1.962,
+        "point": 1.5
+       }
+      ]
+     }
+    ],
+    "fliff": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Brooklyn Nets",
+        "price": 1.741
+       },
+       {
+        "name": "Charlotte Hornets",
+        "price": 2.05
+       }
+      ]
+     },
+     {
+      "m": "spreads",
+      "o": [
+       {
+        "name": "Brooklyn Nets",
+        "price": 1.952,
+        "point": -2.5
+       },
+       {
+        "name": "Charlotte Hornets",
+        "price": 1.87,
+        "point": 2.5
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 1.87,
+        "point": 218.5
+       },
+       {
+        "name": "Under",
+        "price": 1.909,
+        "point": 218.5
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "icehockey_nhl": {
+   "events": 2,
+   "books": {
+    "fanduel": 2,
+    "pinnacle": 2,
+    "bovada": 2,
+    "novig": 2,
+    "prophetx": 2,
+    "fliff": 1
+   },
+   "events_with_pinnacle_and_fliff": 1,
+   "example": {
+    "event": "Florida Panthers @ Ottawa Senators 2026-10-21T23:30:00Z",
+    "pinnacle": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Ottawa Senators",
+        "price": 1.952
+       },
+       {
+        "name": "Florida Panthers",
+        "price": 1.935
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 2.05,
+        "point": 6.0
+       },
+       {
+        "name": "Under",
+        "price": 1.833,
+        "point": 6.0
+       }
+      ]
+     },
+     {
+      "m": "spreads",
+      "o": [
+       {
+        "name": "Ottawa Senators",
+        "price": 1.355,
+        "point": 1.5
+       },
+       {
+        "name": "Florida Panthers",
+        "price": 3.33,
+        "point": -1.5
+       }
+      ]
+     }
+    ],
+    "fliff": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Ottawa Senators",
+        "price": 1.909
+       },
+       {
+        "name": "Florida Panthers",
+        "price": 1.909
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 1.8,
+        "point": 5.5
+       },
+       {
+        "name": "Under",
+        "price": 2.0,
+        "point": 5.5
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "americanfootball_nfl": {
+   "events": 28,
+   "books": {
+    "fanduel": 28,
+    "novig": 28,
+    "pinnacle": 14,
+    "bet365": 14,
+    "betmgm": 14,
+    "betonline": 14,
+    "betrivers": 14,
+    "bovada": 14,
+    "caesars": 14,
+    "draftkings": 14,
+    "fanatics": 14,
+    "hardrock": 14,
+    "parx": 14,
+    "prophetx": 14,
+    "fliff": 14
+   },
+   "events_with_pinnacle_and_fliff": 14,
+   "example": {
+    "event": "New England Patriots @ Chicago Bears 2026-10-23T00:15:00Z",
+    "pinnacle": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Chicago Bears",
+        "price": 1.61
+       },
+       {
+        "name": "New England Patriots",
+        "price": 2.44
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 1.935,
+        "point": 51.0
+       },
+       {
+        "name": "Under",
+        "price": 1.901,
+        "point": 51.0
+       }
+      ]
+     },
+     {
+      "m": "spreads",
+      "o": [
+       {
+        "name": "Chicago Bears",
+        "price": 1.926,
+        "point": -3.0
+       },
+       {
+        "name": "New England Patriots",
+        "price": 1.962,
+        "point": 3.0
+       }
+      ]
+     }
+    ],
+    "fliff": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Chicago Bears",
+        "price": 1.588
+       },
+       {
+        "name": "New England Patriots",
+        "price": 2.3
+       }
+      ]
+     },
+     {
+      "m": "spreads",
+      "o": [
+       {
+        "name": "Chicago Bears",
+        "price": 1.769,
+        "point": -2.5
+       },
+       {
+        "name": "New England Patriots",
+        "price": 2.05,
+        "point": 2.5
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 1.909,
+        "point": 50.5
+       },
+       {
+        "name": "Under",
+        "price": 1.909,
+        "point": 50.5
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "americanfootball_ncaaf": {
+   "events": 72,
+   "books": {
+    "fanduel": 62,
+    "betmgm": 53,
+    "betrivers": 53,
+    "caesars": 53,
+    "draftkings": 53,
+    "fanatics": 53,
+    "pinnacle": 53,
+    "novig": 53,
+    "prophetx": 53,
+    "bet365": 52,
+    "parx": 52,
+    "hardrock": 51,
+    "betonline": 40
+   },
+   "events_with_pinnacle_and_fliff": 0,
+   "example": null
+  },
+  "baseball_mlb": {
+   "events": 1,
+   "books": {
+    "fanduel": 1,
+    "pinnacle": 1,
+    "bet365": 1,
+    "betmgm": 1,
+    "betrivers": 1,
+    "bovada": 1,
+    "caesars": 1,
+    "draftkings": 1,
+    "fanatics": 1,
+    "novig": 1,
+    "parx": 1,
+    "prophetx": 1,
+    "fliff": 1,
+    "kalshi": 1
+   },
+   "events_with_pinnacle_and_fliff": 1,
+   "example": {
+    "event": "Tampa Bay Rays @ Milwaukee Brewers 2026-10-24T00:00:00Z",
+    "pinnacle": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Milwaukee Brewers",
+        "price": 1.633
+       },
+       {
+        "name": "Tampa Bay Rays",
+        "price": 2.42
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 1.885,
+        "point": 6.0
+       },
+       {
+        "name": "Under",
+        "price": 1.99,
+        "point": 6.0
+       }
+      ]
+     },
+     {
+      "m": "spreads",
+      "o": [
+       {
+        "name": "Milwaukee Brewers",
+        "price": 1.98,
+        "point": -1.0
+       },
+       {
+        "name": "Tampa Bay Rays",
+        "price": 1.893,
+        "point": 1.0
+       }
+      ]
+     }
+    ],
+    "fliff": [
+     {
+      "m": "h2h",
+      "o": [
+       {
+        "name": "Milwaukee Brewers",
+        "price": 1.571
+       },
+       {
+        "name": "Tampa Bay Rays",
+        "price": 2.4
+       }
+      ]
+     },
+     {
+      "m": "spreads",
+      "o": [
+       {
+        "name": "Milwaukee Brewers",
+        "price": 2.4,
+        "point": -1.5
+       },
+       {
+        "name": "Tampa Bay Rays",
+        "price": 1.541,
+        "point": 1.5
+       }
+      ]
+     },
+     {
+      "m": "totals",
+      "o": [
+       {
+        "name": "Over",
+        "price": 2.0,
+        "point": 6.5
+       },
+       {
+        "name": "Under",
+        "price": 1.741,
+        "point": 6.5
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "soccer_epl": {
+   "events": 27,
+   "books": {
+    "pinnacle": 27,
+    "prophetx": 10,
+    "draftkings": 2,
+    "betmgm": 1,
+    "betrivers": 1,
+    "fanduel": 1,
+    "parx": 1,
+    "bet365": 1,
+    "caesars": 1
+   },
+   "events_with_pinnacle_and_fliff": 0,
+   "example": null
+  }
+ },
+ "parlay_credits_log": [
+  {
+   "call": "sports",
+   "status": 200,
+   "remaining": null,
+   "last": null
+  },
+  {
+   "call": "bookmakers",
+   "status": 200,
+   "remaining": null,
+   "last": null
+  },
+  {
+   "call": "odds basketball_nba",
+   "status": 200,
+   "remaining": "11791",
+   "last": "9"
+  },
+  {
+   "call": "odds icehockey_nhl",
+   "status": 200,
+   "remaining": "11782",
+   "last": "9"
+  },
+  {
+   "call": "odds americanfootball_nfl",
+   "status": 200,
+   "remaining": "11773",
+   "last": "9"
+  },
+  {
+   "call": "odds americanfootball_ncaaf",
+   "status": 200,
+   "remaining": "11764",
+   "last": "9"
+  },
+  {
+   "call": "odds baseball_mlb",
+   "status": 200,
+   "remaining": "11755",
+   "last": "9"
+  },
+  {
+   "call": "odds soccer_epl",
+   "status": 200,
+   "remaining": "11746",
+   "last": "9"
+  }
+ ]
+}
