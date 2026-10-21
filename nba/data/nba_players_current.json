@@ -4330,6 +4330,19 @@
       "team_abbreviation": "UTA"
     },
     {
+      "id": 1631250,
+      "full_name": "Pete Nance",
+      "last_comma_first": "Nance, Pete",
+      "roster_status": 1,
+      "from_year": "2023",
+      "to_year": "2026",
+      "player_code": "pete_nance",
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
+    },
+    {
       "id": 1626204,
       "full_name": "Larry Nance Jr.",
       "last_comma_first": "Nance Jr., Larry",
