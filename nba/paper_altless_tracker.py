@@ -84,6 +84,93 @@ FROM legs l LEFT JOIN less_open lo ON lo.nm = l.nm AND lo.base_market = l.base_m
 """
 
 
+# STANDARD (REGULAR) LINE RULES (2026-10-20, research_standard_depth.py run 39519383293, owner: "pick flex on regular lines ...
+# anything that's proved positive, we will try"). 585 fixed pooled rules were run on both seasons (244,670 graded standard legs);
+# these are the 9 whose bootstrap 5th percentile is ABOVE ZERO IN BOTH SEASONS (all 5- and 6-pick Flex; every 2-pick Flex rule
+# lost in both seasons - breakeven leg rate 0.618). Rule = (rank key, side, depth N, size, structure): rank the slate's PrizePicks
+# window standard legs within (prop, side) by that key's score (1 = most confident), keep rank <= N, order by score, build.
+#   key          side   N  size        2024-25                     2025-26
+SR_RULES = [("baseline_hp", "both",  2, 6, "flex"),   # +90.8% LB5 +20.2  full 9  | +78.8% LB5 +12.0 full 8
+            ("baseline_hp", "Over",  3, 5, "flex"),   # +39.0% LB5 +5.2   full 12 | +36.0% LB5 +5.5  full 11
+            ("baseline_hp", "Over",  2, 5, "flex"),   # +49.4% LB5 +13.2  full 14 | +36.5% LB5 +4.5  full 12
+            ("baseline_hp", "Over",  5, 5, "flex"),   # +37.4% LB5 +3.6   full 12 | +35.5% LB5 +4.5  full 11
+            ("baseline_hp", "Over", 10, 5, "flex"),   # +37.1% LB5 +3.4   full 12 | +35.5% LB5 +4.5  full 11
+            ("baseline_hp", "both",  2, 5, "flex"),   # +32.7% LB5 +2.8   full 10 | +70.1% LB5 +33.7 full 15
+            ("baseline_hp", "Under", 3, 6, "flex"),   # +69.4% LB5 +2.6   full 8  | +70.2% LB5 +8.0  full 7
+            ("final_hp",    "Under", 2, 5, "flex"),   # +31.9% LB5 +2.1   full 10 | +30.8% LB5 +4.5  full 7
+            ("final_score", "Under", 1, 5, "flex")]   # +35.0% LB5 +1.8   full 12 | +59.5% LB5 +27.5 full 13
+SR_KEY = {"final_hp": "fh", "baseline_hp": "bh", "final_score": "score"}
+PROP_OF = """CASE replace(p.base_market, 'player_', '') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made'
+               WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
+               WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market, 'player_', '') END"""
+STD_SQL = """
+WITH pr AS (            -- the certified tier-map recipe for tier R (kind standard), both sides, the 12 graded props, this slate only
+  SELECT p.nm, """ + PROP_OF + """ prop, p.side, p.line::float8 line, p.factor::float8 price
+  FROM nba_market.pp_leg_price p
+  WHERE p.game_date = %(d)s AND p.snapshot_label = 'window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch, false)
+    AND p.kind = 'standard')
+SELECT DISTINCT ON (m.player_id, pr.prop, pr.side, pr.line) m.player_id, pr.nm, pr.prop, pr.side, pr.line, f.game_id,
+       f.score::float8, f.final_hp::float8, f.baseline_hp::float8
+FROM pr JOIN nba_ref.player_name_map m ON m.norm_name = pr.nm
+JOIN nba_score.final_hp f ON f.game_date = %(d)s AND f.player_id = m.player_id AND f.prop = pr.prop AND f.side = pr.side AND f.line = pr.line
+WHERE pr.prop = ANY(%(props)s) AND f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL
+ORDER BY m.player_id, pr.prop, pr.side, pr.line, pr.price
+"""
+
+
+def std_legs(conn, d):
+    rows = conn.execute(STD_SQL, {"d": d, "props": list(STAT)}).fetchall()
+    legs = [{"player_id": pid, "nm": nm, "prop": prop, "side": side, "line": line, "game_id": str(gid), "score": sc, "fh": fh, "bh": bh,
+             "factor": 1.0} for pid, nm, prop, side, line, gid, sc, fh, bh in rows]
+    grp = defaultdict(list)
+    for l in legs:
+        grp[(l["prop"], l["side"])].append(l)
+    for g in grp.values():
+        for key, sk in SR_KEY.items():
+            # the research: rank 1 = highest score of that side (ties broken by player, line - deterministic)
+            for i, x in enumerate(sorted(g, key=lambda x: (-x[sk], x["player_id"], x["line"])), 1):
+                x["r_" + key] = i
+    return legs
+
+
+def sr_rule_name(key, side, n, k, st):
+    return f"SR_{ {'baseline_hp': 'BH', 'final_hp': 'FH', 'final_score': 'FS'}[key] }_{side[0]}{n}_{k}{st}"
+
+
+def pick_standard(conn, d, write):
+    if conn.execute("SELECT 1 FROM nba_score.paper_altless_slips WHERE game_date = %s AND rule LIKE 'SR\\_%%' LIMIT 1", (d,)).fetchone():
+        print(f"PAPER_STANDARD|{d}|already picked - one set per day, nothing re-picked")
+        return []
+    legs = std_legs(conn, d)
+    if not legs:
+        print(f"PAPER_STANDARD|{d}|no priced standard leg with scores - nothing picked")
+        return []
+    gone = started_games(conn, d)
+    print(f"PAPER_STANDARD|{d}|priced standard legs {len(legs)}|games already tipped: {len(gone)}", flush=True)
+    out = []
+    for key, side, n, k, st in SR_RULES:
+        sk = SR_KEY[key]
+        pool = sorted([l for l in legs if l["r_" + key] <= n and (side == "both" or l["side"] == side) and l["game_id"] not in gone],
+                      key=lambda l: (-l[sk], l["player_id"]))
+        sl = build(pool, k)
+        rule = sr_rule_name(key, side, n, k, st)
+        if not sl:
+            print(f"  {rule}: not enough legs across games ({len(pool)} in the pool)")
+            continue
+        keep = ["nm", "player_id", "prop", "side", "line", "factor", "game_id", "score", "fh", "bh", "r_" + key]
+        lj = [{kk: l[kk] for kk in keep} for l in sl]
+        out.append((rule, k, st, lj))
+        print(f"  {rule}: " + " + ".join(f"{l['nm']} {l['prop']} {l['side'][0]} {l['line']}" for l in sl), flush=True)
+        if write:
+            conn.execute("""INSERT INTO nba_score.paper_altless_slips (game_date, rule, size, structure, legs_json, fprod)
+                            VALUES (%s, %s, %s, %s, %s::jsonb, 1.0) ON CONFLICT (game_date, rule) DO NOTHING""",
+                         (d, rule, k, st, json.dumps(lj)))
+    if write:
+        conn.commit()
+    print(f"PAPER_STANDARD|{d}|{len(out)} paper slips {'recorded (status paper - never placed)' if write else '(dry run - nothing written)'}")
+    return out
+
+
 def today_pt():
     return datetime.now(ZoneInfo("America/Los_Angeles")).date()
 
