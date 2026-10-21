@@ -116,7 +116,7 @@ function poolStatusHtml(){
   const label={prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'};
   const parts=Object.keys(bySrc).sort().map(k=>{
     const legs=bySrc[k];
-    const top=legs.slice(0,2).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(', ');
+    const top=legs.slice(0,2).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' '+esc(String(l.line_type||''))+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%, edge '+(poolEdge(l)>-999?(poolEdge(l)>=0?'+':'')+poolEdge(l).toFixed(1):'?')+')').join(', ');
     return '<b>'+esc(label[k]||k)+': '+legs.length+'</b> ('+top+')';
   });
   return '<div class="poolStatus" style="opacity:0.85;font-size:12px;margin:6px 0">Backup pool by app &mdash; '+parts.join(' &nbsp;|&nbsp; ')+'</div>';
