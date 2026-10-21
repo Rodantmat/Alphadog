@@ -85,8 +85,16 @@ def main():
                     same += 1
                 else:
                     bad.append(("differs", r["player"], r["prop"], r["line"], r["tier"], rm, x["tier"], x["rmin"], x["f_over"], r["f_over"]))
-            msame = sum(1 for r in rmins if gm.get((NORM[r["player"]], r["prop"], float(r["line"]))) ==
-                        min(v for v in (r["n_fs"], r["n_fh"], r["n_bh"]) if v is not None))
+            msame = ties = 0
+            for r in rmins:
+                iv = gm.get((NORM[r["player"]], r["prop"], float(r["line"])))
+                rm = min(v for v in (r["n_fs"], r["n_fh"], r["n_bh"]) if v is not None)
+                if iv and iv[0] <= rm <= iv[1]:
+                    msame += 1
+                    ties += int(iv[0] != iv[1])
+                else:
+                    print("    METHOD MISMATCH", r["player"], r["prop"], r["line"], r["tier"], rm, iv)
+            print(f"    method parity: {msame}/{len(rmins)} inside the tie interval ({ties} of them tied - order arbitrary in the research)")
             p = msame == len(rmins) and found == len(rmins) and len(rmins) > 0
             ok = ok and p
             print(f"RANK PARITY {d}: research rmin<=2 rungs {len(rmins)} | found {found} | METHOD (research universe) identical rmin "
