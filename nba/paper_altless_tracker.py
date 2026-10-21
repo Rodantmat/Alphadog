@@ -144,7 +144,6 @@ def pick(conn, d, write):
     pool = [l for l in legs if l["less_open"] and l["rmin"] <= DEPTH and l["game_id"] not in gone and l["tier"][1:] in ("1", "2", "3")]
     for l in pool:
         l["factor"] = EX.less_price(l["f_over"], "U" + l["tier"])
-        l["team_id"] = l["game_id"]            # build() needs >= 2 'teams'; 2 distinct games is stricter and sufficient
     pool.sort(key=lambda l: (l["rmin"], -l["factor"], l["player_id"]))
     print(f"PAPER_ALTLESS|{d}|priced rungs {len(legs)}|Less-open {n_open}|depth<={DEPTH} open, not tipped: {len(pool)}|"
           f"games already tipped: {len(gone)}", flush=True)
