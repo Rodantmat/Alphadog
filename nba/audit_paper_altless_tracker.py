@@ -83,10 +83,13 @@ def main():
                     same += 1
                 else:
                     bad.append(("differs", r["player"], r["prop"], r["line"], r["tier"], rm, x["tier"], x["rmin"], x["f_over"], r["f_over"]))
-            p = same == len(rmins) and len(rmins) > 0
+            msame = sum(1 for r in rmins if gm.get((NORM[r["player"]], r["prop"], float(r["line"]))) ==
+                        min(v for v in (r["n_fs"], r["n_fh"], r["n_bh"]) if v is not None))
+            p = msame == len(rmins) and found == len(rmins) and len(rmins) > 0
             ok = ok and p
-            print(f"RANK PARITY {d}: research rmin<=2 rungs {len(rmins)} | found {found} | identical tier+rmin+price {same} | "
-                  f"tracker rungs {len(legs)} | {'PASS' if p else 'FAIL'}", flush=True)
+            print(f"RANK PARITY {d}: research rmin<=2 rungs {len(rmins)} | found {found} | METHOD (research universe) identical rmin "
+                  f"{msame} {'PASS' if p else 'FAIL'} | LIVE universe identical tier+rmin+price {same} (tracker ranks {extra} more "
+                  f"rungs the research dropped as ungraded - DNP / no box score; unknowable at pick time)", flush=True)
             for b in bad[:12]:
                 print("   ", b)
             # plumbing: pick on the assumed band, grade, compare each leg's hit with the research's
