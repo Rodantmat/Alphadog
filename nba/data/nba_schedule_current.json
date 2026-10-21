@@ -22016,8 +22016,8 @@
       "away_team_tricode": "BOS",
       "arena_name": "Little Caesars Arena",
       "arena_city": "Detroit",
-      "game_status": 1,
-      "game_status_text": "3:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22031,8 +22031,8 @@
       "away_team_tricode": "PHI",
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22046,8 +22046,8 @@
       "away_team_tricode": "OKC",
       "arena_name": "Frost Bank Center",
       "arena_city": "San Antonio",
-      "game_status": 1,
-      "game_status_text": "9:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {

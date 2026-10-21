@@ -1,22 +1,22 @@
 {
   "seasons": [
-    "2025-26"
+    "2026-27"
   ],
   "summary": {
-    "2025-26_Q1": {
-      "rows": 22522,
+    "2026-27_Q1": {
+      "rows": 55,
       "sample_max_min_first2000": 12.0
     },
-    "2025-26_Q2": {
-      "rows": 23126,
+    "2026-27_Q2": {
+      "rows": 57,
+      "sample_max_min_first2000": 10.816666666666666
+    },
+    "2026-27_Q3": {
+      "rows": 58,
       "sample_max_min_first2000": 12.0
     },
-    "2025-26_Q3": {
-      "rows": 22247,
-      "sample_max_min_first2000": 12.0
-    },
-    "2025-26_Q4": {
-      "rows": 22806,
+    "2026-27_Q4": {
+      "rows": 62,
       "sample_max_min_first2000": 12.0
     }
   }
