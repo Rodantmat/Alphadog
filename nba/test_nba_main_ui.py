@@ -792,7 +792,7 @@ def honest_checks(conn, cfg, d0):
     bands = [(int(b), int(n), round(float(p), 3), round(float(m), 3), round(float(h), 3)) for b, n, p, m, h in rows]
     bad = [x for x in bands if x[1] >= 300 and abs(x[2] - x[4]) > 0.05]
     check("C48 the probability the board shows matches reality (30 days before the slate: |shown - hit| <= 5 pts in every band with 300+ legs)",
-          bands and not bad, f"band(0.5-1.0 in fifths) n / shown / model-would-show / hit: {bands}")
+          bands and not bad, f"window ends {d0} (exclusive) | band(0.5-1.0 in fifths) n / shown / model-would-show / hit: {bands}")
 
 
 # ------------------------------------------------------------------ D. browser
