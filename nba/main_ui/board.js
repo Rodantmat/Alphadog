@@ -263,12 +263,48 @@ export function clampLimit(cfg, v) {
   return Number.isFinite(n) && n > 0 ? Math.min(n, mx) : d;
 }
 
+// OVERVIEW (owner 2026-10-21 13:56 PT: "on the main screen, create one option called overview that comes also pre-selected ...
+// the top legs for reality ... real good legs, because as now it's just showing the double double ... less heavy to load").
+// The default board sorted the whole slate by score, so near-certain, near-free lines (Fliff Double-Double Less 0.5 at 1.01x)
+// filled the screen. Overview = legs a player can actually use: the slip apps (PrizePicks, Underdog, Sleeper), the market-anchored
+// probability present (honest number), the main props only, and a real edge against the leg's OWN break-even (goblin / demon
+// factor, app multiplier) - best edge first, one line per player-prop-app, capped. Tunable nba_main_ui.overview.
+const OVERVIEW_DEFAULT = { apps: ["prizepicks", "underdog", "sleeper"], min_edge: 3, max_hp: 0.97, size: 60, pool: 6000,
+  exclude_props: ["double_double", "fantasy_score", "dreb", "oreb", "fg3a", "fga", "fgm", "fta", "ftm", "personal_fouls"] };
+async function overviewRows(sql, cfg, slate, minHp) {
+  const ov = { ...OVERVIEW_DEFAULT, ...((cfg.ui || {}).overview || {}) };
+  const cand = await loadLegs(sql, cfg, slate, {
+    where: "AND b.app = ANY($6::text[]) AND NOT (b.prop = ANY($7::text[])) AND b.true_fit IS NOT NULL AND b.final_hp * 100 >= $8 AND b.final_hp < $9",
+    extra: [pgArr(ov.apps), pgArr(ov.exclude_props), minHp, Number(ov.max_hp)], limit: Number(ov.pool), withInsight: false });
+  const best = new Map();
+  for (const r of cand) {
+    if (r.ud_hidden || r.edge_0_100 == null || Number(r.edge_0_100) < Number(ov.min_edge)) continue;
+    const k = [r.source_key, r.player_id, r.canonical_prop_key].join("|");
+    const cur = best.get(k);
+    if (!cur || Number(r.edge_0_100) > Number(cur.edge_0_100)) best.set(k, r);
+  }
+  const pick = [...best.values()].sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100) || Number(b.hit_probability_0_100) - Number(a.hit_probability_0_100))
+    .slice(0, Number(ov.size));
+  if (!pick.length) return { rows: [], candidates: cand.length };
+  const DB_SIDE = s => (String(s || "").toLowerCase() === "more" || String(s || "").toLowerCase() === "over" || String(s || "").toLowerCase() === "higher") ? "Over" : "Under";
+  const full = await loadLegs(sql, cfg, slate, {
+    where: "AND (b.app, b.player_id, b.prop, b.line, b.side) IN (SELECT * FROM unnest($6::text[], $7::text[], $8::text[], $9::numeric[], $10::text[]))",
+    extra: [pgArr(pick.map(r => r.source_key)), pgArr(pick.map(r => String(r.player_id))), pgArr(pick.map(r => r.canonical_prop_key)),
+            pgArr(pick.map(r => String(r.line_value))), pgArr(pick.map(r => DB_SIDE(r.selected_side)))], limit: pick.length + 10 });
+  const rank = new Map(pick.map((r, i) => [r.final_board_row_id, i]));
+  full.sort((a, b) => (rank.get(a.final_board_row_id) ?? 999) - (rank.get(b.final_board_row_id) ?? 999));
+  full.forEach((r, i) => { r.rank_order = i + 1; });   // the card order is the overview's (best edge first), not the score order
+  return { rows: full, candidates: cand.length, settings: ov };
+}
+
 export async function apiCurrent(sql, cfg, slate, url, version) {
   const limit = clampLimit(cfg, url.searchParams.get("limit"));
   const minScore = num(url.searchParams.get("min_score"), 0) || 0;
   const minHp = num(url.searchParams.get("min_hit_probability"), 0) || 0;
   const t0 = Date.now();
-  const rows = await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
+  const overview = url.searchParams.get("view") === "overview";
+  const ovr = overview ? await overviewRows(sql, cfg, slate, minHp) : null;
+  const rows = overview ? ovr.rows : await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
   // a leg without its market-anchored row falls back to the raw model number - said on the board, never silent (2026-10-15)
   const honestMissing = rows.filter(r => !r.hp_is_market_anchored).length;
   // the slate's games, how many have tipped, and the next slate - so an empty live board says WHY (all games started) and what is next
