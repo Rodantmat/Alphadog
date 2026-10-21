@@ -470,6 +470,8 @@ def main():
         scrape_census[fe["sport_key"]].update(census)
         teams = [pe.get("home_team"), pe.get("away_team")]
         for pr in props:
+            if pr["mk"] == "h2h" and fe["sport_key"].startswith("soccer") and not pr.get("has_draw"):
+                continue
             k = resolve_scraped(pr, teams)
             if not k:
                 continue
