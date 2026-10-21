@@ -58,15 +58,17 @@ def main():
                 """SELECT DISTINCT nba_ref.norm_name(player), prop, line::float8 FROM nba_score.tier_map_legs
                    WHERE game_date = %s AND side = 'Over' AND tier IN ('G1','G2','G3','D1','D2','D3')
                      AND prop IN ('points','pra','rebounds','assists')""", (d,)).fetchall()}
+            # TIES: the research ranks with row_number(), which orders EQUAL scores arbitrarily (2026-01-20 assists D2: Cody Williams,
+            # Ochai Agbaji and Quinten Post carry identical score / final_hp / baseline_hp). Per key the reverse rank of a tied rung is
+            # any value in [1 + #lower, #lower-or-equal]; rmin is then any value in [min of the lows, min of the highs]. METHOD parity =
+            # the research's rmin lies in that interval (exact whenever there is no tie).
             gm = {}
             for g in groups.values():
                 gg = [x for x in g if (x["nm"], x["prop"], float(x["line"])) in graded]
-                rk = {}
-                for key in ("score", "fh", "bh"):
-                    for i, x in enumerate(sorted(gg, key=lambda x: (x[key], x["pid"], x["line"])), 1):
-                        rk.setdefault(id(x), []).append(i)
                 for x in gg:
-                    gm[(x["nm"], x["prop"], float(x["line"]))] = min(rk[id(x)])
+                    lo = min(1 + sum(1 for y in gg if y[key] < x[key]) for key in ("score", "fh", "bh"))
+                    hi = min(sum(1 for y in gg if y[key] <= x[key]) for key in ("score", "fh", "bh"))
+                    gm[(x["nm"], x["prop"], float(x["line"]))] = (lo, hi)
             extra = sum(1 for kk in legs if kk not in graded)
             rr = [r for r in res if r["game_date"] == d]
             rmins = [r for r in rr if min(v for v in (r["n_fs"], r["n_fh"], r["n_bh"]) if v is not None) <= 2]
