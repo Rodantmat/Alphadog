@@ -272,7 +272,7 @@ def main():
     for name in DAILY:
         print(f"  {name:<20} " + " | ".join(f"{v} {per_strat[v][name][0]} {per_strat[v][name][1]:+.0f} "
                                               f"{(100*per_strat[v][name][1]/per_strat[v][name][0]) if per_strat[v][name][0] else 0:+.0f}%"
-                                              for v in ("base", "S50", "G4", "S50+G4", "T15", "M20")), flush=True)
+                                              for v in VARIANTS), flush=True)
     print("\n=== MATRIX: core / regular, cap 5, sizes 2-6, Flex and Power - base vs S40 (each leg in <= 2 of the 5 slips) ===", flush=True)
     for comp in ("core", "regular"):
         for size in MATRIX_SIZES:
