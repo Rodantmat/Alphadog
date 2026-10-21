@@ -93,6 +93,9 @@ def main():
     print(f"seasons {seasons} | props {props} | old-query timeout {tmo} min", flush=True)
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         conn.execute("SET statement_timeout = 0")
+        jit = os.environ.get("AC_JIT", "off")   # per-session only (MLB shares the DB); the refit itself runs with jit off since 2026-10-21
+        conn.execute("SET jit = on" if jit == "on" else "SET jit = off")
+        print(f"jit {jit}", flush=True)
         t0 = time.time()
         with conn.cursor() as cur:
             cur.execute("DROP TABLE IF EXISTS tmp_graded")
