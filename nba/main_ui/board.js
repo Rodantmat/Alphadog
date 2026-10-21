@@ -316,6 +316,7 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
     ok: true, data_ok: true, version, route: "/api/main-board/current",
     slate: { ...slate, honest_missing: honestMissing, games_total: gi.games || 0, games_started: slate.mode === "live" ? (gi.started || 0) : 0,
              next_slate_date: gi.next_date || null, next_slate_games: gi.next_games || 0 }, row_count: rows.length, limit, min_score: minScore, min_hit_probability: minHp, rows,
+    view: overview ? "overview" : "all", overview: overview ? { candidates: ovr.candidates, settings: ovr.settings || null } : null,
     semantics: {
       main_number: "hit_probability_0_100 = nba_score.board_true_hp.true_hp (market-anchored hit probability of this exact leg; falls back to board_scored.final_hp when the slate has no anchored row) - model_hp_0_100 = the model's own number",
       secondary_number: "probability_confidence_0_100 = board_scored.confidence",
