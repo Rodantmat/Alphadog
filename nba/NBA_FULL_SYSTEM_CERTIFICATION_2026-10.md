@@ -2616,3 +2616,10 @@ anything that's proved positive, we will try".
     BOARD_SQL, the scorer's board load, the paper tracker's two leg queries, final_hp and board_scored slate reads. 1.4 s on vs 1.3 s
     off in total, identical results. JIT only hurt the price ledger's large aggregation (48-87 s vs 4 s), which already sets jit off
     in its own session. No PGOPTIONS change; nothing database-wide.
+14. **NBA main UI end to end: 104/104** (nba-main-ui-test run 39523372087; run 39522494004 before the fixes: 102/104). D01 passes. Both
+    failures were the TEST, not the UI:
+    - **C44:** the UI moved to the live roster rule on 10-17 (today or later = current roster, season minutes on any team). The test
+      still used last season's box-score rotation. It now checks the live rule for live dates and the box-score rule for past dates.
+    - **C48:** empty on opening night (no anchored graded legs in the 30 days before the first slate). The window now falls back to
+      the latest graded anchored stretch. Window ending 2026-04-13: shown / hit 0.543 / 0.544 (n 39,000), 0.652 / 0.665 (17,461),
+      0.735 / 0.751 (8,524), all within 5 points.
