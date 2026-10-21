@@ -1,211 +1,143 @@
 {
- "generated_utc": "2026-10-21T05:31:57Z",
- "window_hours": 48.0,
- "fliff_events_in_window": 150,
+ "generated_utc": "2026-10-21T06:24:26Z",
+ "window_hours": 24.0,
+ "fliff_events_in_window": 94,
  "fliff_events_by_sport": {
-  "tennis_atp": 23,
-  "soccer_uefa_conference_league": 18,
-  "soccer_uefa_europa_league": 18,
-  "basketball_nba": 13,
-  "tennis_wta": 12,
+  "tennis_atp": 16,
+  "basketball_nba": 11,
+  "tennis_wta": 11,
   "unmapped:43037": 10,
   "soccer_uefa_champs_league": 9,
   "soccer_mexico_ligamx": 5,
-  "americanfootball_ncaaf": 4,
   "unmapped:10557": 4,
-  "unmapped:10559": 4,
   "icehockey_nhl": 3,
   "unmapped:43022": 3,
   "unmapped:10555": 3,
   "unmapped:4752": 2,
-  "unmapped:4387": 2,
   "unmapped:4320": 2,
-  "unmapped:488": 2,
+  "unmapped:10559": 2,
   "boxing_boxing": 2,
   "unmapped:43039": 2,
-  "americanfootball_nfl": 1,
   "soccer_spain_la_liga": 1,
   "unmapped:4751": 1,
   "soccer_england_league1": 1,
+  "unmapped:4387": 1,
   "soccer_usa_mls": 1,
   "unmapped:43020": 1,
+  "americanfootball_ncaaf": 1,
   "unmapped:43029": 1,
-  "unmapped:4208": 1,
-  "unmapped:14028": 1
+  "unmapped:4208": 1
  },
  "parlay_calls": [
   {
    "sport": "americanfootball_ncaaf",
    "status": 200,
-   "remaining": "11557",
-   "cost": "9"
-  },
-  {
-   "sport": "americanfootball_nfl",
-   "status": 200,
-   "remaining": "11548",
+   "remaining": "11431",
    "cost": "9"
   },
   {
    "sport": "basketball_nba",
    "status": 200,
-   "remaining": "11539",
+   "remaining": "11422",
    "cost": "9"
   },
   {
    "sport": "boxing_boxing",
    "status": 200,
-   "remaining": "11530",
+   "remaining": "11413",
    "cost": "9"
   },
   {
    "sport": "icehockey_nhl",
    "status": 200,
-   "remaining": "11521",
+   "remaining": "11404",
    "cost": "9"
   },
   {
    "sport": "soccer_england_league1",
    "status": 200,
-   "remaining": "11512",
+   "remaining": "11395",
    "cost": "9"
   },
   {
    "sport": "soccer_mexico_ligamx",
    "status": 200,
-   "remaining": "11503",
+   "remaining": "11386",
    "cost": "9"
   },
   {
    "sport": "soccer_spain_la_liga",
    "status": 200,
-   "remaining": "11494",
+   "remaining": "11377",
    "cost": "9"
   },
   {
    "sport": "soccer_uefa_champs_league",
    "status": 200,
-   "remaining": "11485",
-   "cost": "9"
-  },
-  {
-   "sport": "soccer_uefa_conference_league",
-   "status": 200,
-   "remaining": "11476",
-   "cost": "9"
-  },
-  {
-   "sport": "soccer_uefa_europa_league",
-   "status": 200,
-   "remaining": "11467",
+   "remaining": "11368",
    "cost": "9"
   },
   {
    "sport": "soccer_usa_mls",
    "status": 200,
-   "remaining": "11458",
+   "remaining": "11359",
    "cost": "9"
   },
   {
    "sport": "tennis_atp",
    "status": 200,
-   "remaining": "11449",
+   "remaining": "11350",
    "cost": "9"
   },
   {
    "sport": "tennis_wta",
    "status": 200,
-   "remaining": "11440",
+   "remaining": "11341",
    "cost": "9"
   }
  ],
- "fliff_boards_pulled": 95,
- "graded_legs": 324,
+ "fliff_boards_pulled": 56,
+ "graded_legs": 220,
  "unmatched_events_by_sport": {
-  "tennis_atp": 5,
+  "tennis_atp": 1,
   "soccer_england_league1": 1,
   "boxing_boxing": 2,
-  "icehockey_nhl": 1,
-  "soccer_mexico_ligamx": 3,
-  "soccer_uefa_conference_league": 3,
-  "soccer_uefa_europa_league": 1
+  "icehockey_nhl": 1
  },
- "fliff_calls": 97,
+ "fliff_calls": 58,
  "scrape_market_name_census": {
-  "tennis_wta": [
-   [
-    "MONEYLINE",
-    12
-   ],
-   [
-    "Games - Point Spread",
-    12
-   ],
-   [
-    "1st Set Moneyline",
-    12
-   ],
-   [
-    "Sets",
-    12
-   ],
-   [
-    "Sets - Point Spread",
-    12
-   ],
-   [
-    "1st Set Total Games",
-    12
-   ],
-   [
-    "Number Of Sets",
-    12
-   ],
-   [
-    "Home Screen - Show Case",
-    12
-   ],
-   [
-    "1st Set POINT SPREAD",
-    10
-   ],
-   [
-    "2nd Set Total Score",
-    4
-   ]
-  ],
   "tennis_atp": [
    [
     "1st Set Total Games",
-    18
+    15
    ],
    [
     "Games - Point Spread",
-    18
+    15
    ],
    [
     "MONEYLINE",
-    18
+    15
    ],
    [
     "1st Set Moneyline",
-    18
-   ],
-   [
-    "Home Screen - Show Case",
-    18
-   ],
-   [
-    "Sets - Point Spread",
-    17
-   ],
-   [
-    "Number Of Sets",
-    17
+    15
    ],
    [
     "Sets",
-    17
+    15
+   ],
+   [
+    "Home Screen - Show Case",
+    15
+   ],
+   [
+    "Sets - Point Spread",
+    14
+   ],
+   [
+    "Number Of Sets",
+    14
    ],
    [
     "1st Set POINT SPREAD",
@@ -214,6 +146,48 @@
    [
     "2nd Set Total Score",
     9
+   ]
+  ],
+  "tennis_wta": [
+   [
+    "MONEYLINE",
+    11
+   ],
+   [
+    "Games - Point Spread",
+    11
+   ],
+   [
+    "Sets - Point Spread",
+    11
+   ],
+   [
+    "Sets",
+    11
+   ],
+   [
+    "Number Of Sets",
+    11
+   ],
+   [
+    "1st Set Total Games",
+    11
+   ],
+   [
+    "1st Set Moneyline",
+    11
+   ],
+   [
+    "Home Screen - Show Case",
+    11
+   ],
+   [
+    "1st Set POINT SPREAD",
+    10
+   ],
+   [
+    "2nd Set Total Score",
+    3
    ]
   ],
   "soccer_uefa_champs_league": [
@@ -542,56 +516,12 @@
   ],
   "basketball_nba": [
    [
-    "Alternative POINT SPREAD",
-    13
-   ],
-   [
-    "Alternative TOTAL SCORE",
-    13
-   ],
-   [
-    "MONEYLINE",
-    13
-   ],
-   [
-    "POINT SPREAD",
-    13
-   ],
-   [
-    "TOTAL SCORE",
-    13
-   ],
-   [
-    "Home Screen - Show Case",
-    13
-   ],
-   [
     "Points",
-    12
+    11
    ],
    [
     "Assists",
-    12
-   ],
-   [
-    "Steals",
-    12
-   ],
-   [
-    "Three Pointers Made",
-    12
-   ],
-   [
-    "Rebounds",
-    12
-   ],
-   [
-    "Player First To Score",
-    12
-   ],
-   [
-    "Blocks",
-    12
+    11
    ],
    [
     "1st Quarter Points",
@@ -599,6 +529,14 @@
    ],
    [
     "Points And Assists",
+    11
+   ],
+   [
+    "Steals",
+    11
+   ],
+   [
+    "Three Pointers Made",
     11
    ],
    [
@@ -610,6 +548,10 @@
     11
    ],
    [
+    "Rebounds",
+    11
+   ],
+   [
     "Rebounds And Assists",
     11
    ],
@@ -618,11 +560,39 @@
     11
    ],
    [
+    "Alternative POINT SPREAD",
+    11
+   ],
+   [
+    "Player First To Score",
+    11
+   ],
+   [
+    "Alternative TOTAL SCORE",
+    11
+   ],
+   [
+    "MONEYLINE",
+    11
+   ],
+   [
     "Away Team Total Score",
     11
    ],
    [
     "Home Team Total Score",
+    11
+   ],
+   [
+    "POINT SPREAD",
+    11
+   ],
+   [
+    "TOTAL SCORE",
+    11
+   ],
+   [
+    "Blocks",
     11
    ],
    [
@@ -647,6 +617,10 @@
    ],
    [
     "1st Half Point Spread",
+    11
+   ],
+   [
+    "Home Screen - Show Case",
     11
    ],
    [
@@ -916,691 +890,151 @@
    [
     "Home Screen - Show Case",
     2
+   ],
+   [
+    "First Goal Scorer",
+    1
    ]
   ],
   "americanfootball_ncaaf": [
    [
     "",
-    50
+    7
    ],
    [
     "Away Team Total Score",
-    4
+    1
    ],
    [
     "Alternative Total Score",
-    4
+    1
    ],
    [
     "Home Team To Score In Both Halves",
-    4
+    1
    ],
    [
     "Race To",
-    4
+    1
    ],
    [
     "1st Half Total Score",
-    4
+    1
    ],
    [
     "Alternative POINT SPREAD",
-    4
+    1
    ],
    [
     "1st Quarter POINT SPREAD",
-    4
+    1
    ],
    [
     "Highest Scoring Quarter",
-    4
+    1
    ],
    [
     "MONEYLINE",
-    4
+    1
    ],
    [
     "1st Half POINT SPREAD",
-    4
+    1
    ],
    [
     "Home Team Total Score",
-    4
+    1
    ],
    [
     "Highest Scoring Half",
-    4
+    1
    ],
    [
     "1st Quarter Moneyline",
-    4
+    1
    ],
    [
     "1st Half Moneyline",
-    4
+    1
    ],
    [
     "1st Quarter Total Score",
-    4
+    1
    ],
    [
     "Will The Game Go To Overtime?",
-    4
+    1
    ],
    [
     "POINT SPREAD",
-    4
+    1
    ],
    [
     "TOTAL SCORE",
-    4
-   ],
-   [
-    "Receiving Touchdowns",
-    4
-   ],
-   [
-    "Rushing Yards",
-    4
-   ],
-   [
-    "Receiving Yards",
-    4
-   ],
-   [
-    "Passing Yards",
-    4
-   ],
-   [
-    "Anytime Touchdowns",
-    4
-   ],
-   [
-    "Rushing Touchdowns",
-    4
-   ],
-   [
-    "Passing Touchdowns",
-    4
-   ],
-   [
-    "Home Screen - Show Case",
-    4
+    1
    ],
    [
     "Longest Reception",
-    3
+    1
    ],
    [
     "Longest Passing Completion",
-    3
+    1
+   ],
+   [
+    "Receiving Touchdowns",
+    1
    ],
    [
     "Rushing + Receiving Yards",
-    3
+    1
+   ],
+   [
+    "Rushing Yards",
+    1
    ],
    [
     "Passing + Rushing Yards",
-    3
-   ],
-   [
-    "Longest Rush",
-    3
-   ],
-   [
-    "Passing Completions",
-    3
-   ],
-   [
-    "Passing Interceptions",
-    3
-   ],
-   [
-    "1st Quarter 3-Way Moneyline",
-    3
+    1
    ],
    [
     "Rushing Attempts",
-    2
+    1
+   ],
+   [
+    "Receiving Yards",
+    1
+   ],
+   [
+    "Passing Yards",
+    1
    ],
    [
     "Receptions",
-    2
+    1
+   ],
+   [
+    "Longest Rush",
+    1
    ],
    [
     "Passing Attempts",
-    2
+    1
+   ],
+   [
+    "Passing Completions",
+    1
+   ],
+   [
+    "Anytime Touchdowns",
+    1
    ],
    [
     "Extra Point Made",
     1
    ],
    [
-    "Field Goal Made",
-    1
-   ]
-  ],
-  "soccer_mexico_ligamx": [
-   [
-    "Player To Score 2 Or More Goals",
-    2
-   ],
-   [
-    "Anytime Score",
-    2
-   ],
-   [
-    "Player To Score 3 Or More Goals",
-    2
-   ],
-   [
-    "Highest Scoring Half",
-    2
-   ],
-   [
-    "Total Corners",
-    2
-   ],
-   [
-    "Number Of Goals",
-    2
-   ],
-   [
-    "Home Team Score",
-    2
-   ],
-   [
-    "Home Team To Keep A Clean Sheet",
-    2
-   ],
-   [
-    "Alternative Total Score",
-    2
-   ],
-   [
-    "Away Team Score",
-    2
-   ],
-   [
-    "2nd Half Away Team Score",
-    2
-   ],
-   [
-    "1st Half Away Team Score",
-    2
-   ],
-   [
-    "1st Half Total Score",
-    2
-   ],
-   [
-    "MONEYLINE",
-    2
-   ],
-   [
-    "3-WAY MONEYLINE",
-    2
-   ],
-   [
-    "Double Chance",
-    2
-   ],
-   [
-    "Alternative GOAL SPREAD",
-    2
-   ],
-   [
-    "1st Half 3-Way Moneyline",
-    2
-   ],
-   [
-    "Number Of Goals 2nd Half",
-    2
-   ],
-   [
-    "2nd Half Total Score",
-    2
-   ],
-   [
-    "2nd Half 3-Way Moneyline",
-    2
-   ],
-   [
-    "1st Half Home Team Score",
-    2
-   ],
-   [
-    "Both Teams To Score In Both Halves",
-    2
-   ],
-   [
-    "Half Time / Full Time",
-    2
-   ],
-   [
-    "1st Half GOAL SPREAD",
-    2
-   ],
-   [
-    "2nd Half Home Team Score",
-    2
-   ],
-   [
-    "Both Teams To Score",
-    2
-   ],
-   [
-    "Away Team To Score",
-    2
-   ],
-   [
-    "Corners - 3-Way",
-    2
-   ],
-   [
-    "Corners - 1st Half",
-    2
-   ],
-   [
-    "Corners 1st Half - 3-Way",
-    2
-   ],
-   [
-    "1st Half Moneyline",
-    2
-   ],
-   [
-    "Home Team To Score",
-    2
-   ],
-   [
-    "Away Team To Keep A Clean Sheet",
-    2
-   ],
-   [
-    "GOAL SPREAD",
-    2
-   ],
-   [
-    "TOTAL SCORE",
-    2
-   ],
-   [
-    "Home Screen - Show Case",
-    2
-   ]
-  ],
-  "soccer_uefa_conference_league": [
-   [
-    "Anytime Score",
-    15
-   ],
-   [
-    "1st Half GOAL SPREAD",
-    15
-   ],
-   [
-    "2nd Half Home Team Score",
-    15
-   ],
-   [
-    "Alternative GOAL SPREAD",
-    15
-   ],
-   [
-    "Player To Score 2 Or More Goals",
-    15
-   ],
-   [
-    "Player To Score 3 Or More Goals",
-    15
-   ],
-   [
-    "1st Half Away Team Score",
-    15
-   ],
-   [
-    "1st Half Total Score",
-    15
-   ],
-   [
-    "Home Team Score",
-    15
-   ],
-   [
-    "Corners - 3-Way",
-    15
-   ],
-   [
-    "MONEYLINE",
-    15
-   ],
-   [
-    "Corners 1st Half - 3-Way",
-    15
-   ],
-   [
-    "Alternative Total Score",
-    15
-   ],
-   [
-    "2nd Half Total Score",
-    15
-   ],
-   [
-    "Away Team Score",
-    15
-   ],
-   [
-    "Half Time / Full Time",
-    15
-   ],
-   [
-    "1st Half Home Team Score",
-    15
-   ],
-   [
-    "Total Corners",
-    15
-   ],
-   [
-    "Home Team To Score",
-    15
-   ],
-   [
-    "2nd Half Away Team Score",
-    15
-   ],
-   [
-    "Both Teams To Score In Both Halves",
-    15
-   ],
-   [
-    "Corners - 1st Half",
-    15
-   ],
-   [
-    "Number Of Goals",
-    15
-   ],
-   [
-    "3-WAY MONEYLINE",
-    15
-   ],
-   [
-    "Corners 2nd Half",
-    15
-   ],
-   [
-    "2nd Half 3-Way Moneyline",
-    15
-   ],
-   [
-    "Number Of Goals 2nd Half",
-    15
-   ],
-   [
-    "Highest Scoring Half",
-    15
-   ],
-   [
-    "1st Half Moneyline",
-    15
-   ],
-   [
-    "Both Teams To Score",
-    15
-   ],
-   [
-    "1st Half 3-Way Moneyline",
-    15
-   ],
-   [
-    "GOAL SPREAD",
-    15
-   ],
-   [
-    "TOTAL SCORE",
-    15
-   ],
-   [
-    "Home Screen - Show Case",
-    15
-   ],
-   [
-    "Double Chance",
-    14
-   ],
-   [
-    "Away Team To Score",
-    14
-   ],
-   [
-    "",
-    2
-   ]
-  ],
-  "soccer_uefa_europa_league": [
-   [
-    "Anytime Score",
-    17
-   ],
-   [
-    "Number Of Goals",
-    17
-   ],
-   [
-    "Player To Score 3 Or More Goals",
-    17
-   ],
-   [
-    "Highest Scoring Half",
-    17
-   ],
-   [
-    "Alternative Total Score",
-    17
-   ],
-   [
-    "2nd Half Home Team Score",
-    17
-   ],
-   [
-    "1st Half GOAL SPREAD",
-    17
-   ],
-   [
-    "2nd Half Total Score",
-    17
-   ],
-   [
-    "Away Team Score",
-    17
-   ],
-   [
-    "2nd Half Away Team Score",
-    17
-   ],
-   [
-    "Player To Score 2 Or More Goals",
-    17
-   ],
-   [
-    "2nd Half 3-Way Moneyline",
-    17
-   ],
-   [
-    "Both Teams To Score",
-    17
-   ],
-   [
-    "1st Half Home Team Score",
-    17
-   ],
-   [
-    "Home Team Score",
-    17
-   ],
-   [
-    "Alternative GOAL SPREAD",
-    17
-   ],
-   [
-    "Both Teams To Score In Both Halves",
-    17
-   ],
-   [
-    "1st Half Away Team Score",
-    17
-   ],
-   [
-    "1st Half Total Score",
-    17
-   ],
-   [
-    "1st Half Moneyline",
-    17
-   ],
-   [
-    "Half Time / Full Time",
-    17
-   ],
-   [
-    "Will A Red Card Be Shown?",
-    17
-   ],
-   [
-    "1st Half 3-Way Moneyline",
-    17
-   ],
-   [
-    "Total Corners",
-    17
-   ],
-   [
-    "Corners 1st Half - Away Team",
-    17
-   ],
-   [
-    "Corners 2nd Half",
-    17
-   ],
-   [
-    "Corners - 1st Half",
-    17
-   ],
-   [
-    "Corners - 3-Way",
-    17
-   ],
-   [
-    "Total Cards",
-    17
-   ],
-   [
-    "Corners 1st Half - 3-Way",
-    17
-   ],
-   [
-    "MONEYLINE",
-    17
-   ],
-   [
-    "Home Team To Score",
-    17
-   ],
-   [
-    "Number Of Goals 2nd Half",
-    17
-   ],
-   [
-    "3-WAY MONEYLINE",
-    17
-   ],
-   [
-    "GOAL SPREAD",
-    17
-   ],
-   [
-    "TOTAL SCORE",
-    17
-   ],
-   [
-    "Home Screen - Show Case",
-    17
-   ],
-   [
-    "Double Chance",
-    16
-   ],
-   [
-    "Away Team To Score",
-    16
-   ],
-   [
-    "",
-    1
-   ]
-  ],
-  "americanfootball_nfl": [
-   [
-    "Alternative POINT SPREAD",
-    1
-   ],
-   [
-    "Passing + Rushing Yards",
-    1
-   ],
-   [
-    "Rushing Attempts",
-    1
-   ],
-   [
-    "Alternative TOTAL SCORE",
-    1
-   ],
-   [
-    "Passing Yards",
-    1
-   ],
-   [
-    "Receiving Yards",
-    1
-   ],
-   [
-    "Receptions",
-    1
-   ],
-   [
-    "Longest Rush",
-    1
-   ],
-   [
-    "Anytime Touchdowns",
-    1
-   ],
-   [
-    "Last Touchdown",
-    1
-   ],
-   [
-    "Rushing Yards",
-    1
-   ],
-   [
-    "First Touchdown",
-    1
-   ],
-   [
-    "Passing Completions",
-    1
-   ],
-   [
-    "Longest Reception",
-    1
-   ],
-   [
-    "Passing Touchdowns",
+    "Rushing Touchdowns",
     1
    ],
    [
@@ -1608,51 +1042,11 @@
     1
    ],
    [
-    "Passing Attempts",
+    "Passing Touchdowns",
     1
    ],
    [
-    "MONEYLINE",
-    1
-   ],
-   [
-    "1st Quarter Total Score",
-    1
-   ],
-   [
-    "1st Half Moneyline",
-    1
-   ],
-   [
-    "Rushing + Receiving Yards",
-    1
-   ],
-   [
-    "Home Team: Points",
-    1
-   ],
-   [
-    "1st Half: Home Team Points",
-    1
-   ],
-   [
-    "1st Quarter Moneyline",
-    1
-   ],
-   [
-    "1st Half: Away Team Points",
-    1
-   ],
-   [
-    "1st Half Point Spread",
-    1
-   ],
-   [
-    "1st Half Total Score",
-    1
-   ],
-   [
-    "1st Quarter Point Spread",
+    "Field Goal Made",
     1
    ],
    [
@@ -1660,66 +1054,176 @@
     1
    ],
    [
-    "Extra Points Made",
+    "Home Screen - Show Case",
     1
+   ]
+  ],
+  "soccer_mexico_ligamx": [
+   [
+    "Player To Score 2 Or More Goals",
+    5
    ],
    [
-    "Field Goals Made",
-    1
+    "Anytime Score",
+    5
    ],
    [
-    "Longest Passing Completion",
-    1
+    "1st Half Total Score",
+    5
    ],
    [
-    "Away Team: Points",
-    1
+    "Player To Score 3 Or More Goals",
+    5
    ],
    [
-    "POINT SPREAD",
-    1
+    "Highest Scoring Half",
+    5
+   ],
+   [
+    "2nd Half Total Score",
+    5
+   ],
+   [
+    "2nd Half 3-Way Moneyline",
+    5
+   ],
+   [
+    "Double Chance",
+    5
+   ],
+   [
+    "Away Team Score",
+    5
+   ],
+   [
+    "Alternative Total Score",
+    5
+   ],
+   [
+    "1st Half Home Team Score",
+    5
+   ],
+   [
+    "3-WAY MONEYLINE",
+    5
+   ],
+   [
+    "2nd Half Home Team Score",
+    5
+   ],
+   [
+    "Half Time / Full Time",
+    5
+   ],
+   [
+    "Number Of Goals",
+    5
+   ],
+   [
+    "Alternative GOAL SPREAD",
+    5
+   ],
+   [
+    "Home Team Score",
+    5
+   ],
+   [
+    "2nd Half Away Team Score",
+    5
+   ],
+   [
+    "Home Team To Score",
+    5
+   ],
+   [
+    "1st Half Away Team Score",
+    5
+   ],
+   [
+    "Corners - 3-Way",
+    5
+   ],
+   [
+    "Total Corners",
+    5
+   ],
+   [
+    "Both Teams To Score",
+    5
+   ],
+   [
+    "Away Team To Score",
+    5
+   ],
+   [
+    "MONEYLINE",
+    5
+   ],
+   [
+    "Away Team To Keep A Clean Sheet",
+    5
+   ],
+   [
+    "Both Teams To Score In Both Halves",
+    5
+   ],
+   [
+    "1st Half 3-Way Moneyline",
+    5
+   ],
+   [
+    "1st Half Moneyline",
+    5
+   ],
+   [
+    "Home Team To Keep A Clean Sheet",
+    5
+   ],
+   [
+    "GOAL SPREAD",
+    5
    ],
    [
     "TOTAL SCORE",
-    1
+    5
    ],
    [
-    "First Drive: Player To Catch 2+ Passes",
-    1
+    "Home Screen - Show Case",
+    5
    ],
    [
-    "Next Drive: Player To Catch 3+ Passes",
-    1
+    "Number Of Goals 2nd Half",
+    4
    ],
    [
-    "Team Next Drive Outcome",
-    1
+    "Corners - 1st Half",
+    4
    ],
    [
-    "First Drive: 40+ YD Rushing Play",
-    1
+    "Corners 1st Half - 3-Way",
+    4
    ],
    [
-    "Next Drive: Player To Score Touchdown",
-    1
+    "1st Half GOAL SPREAD",
+    4
    ]
   ]
  },
  "xcheck_scrape_vs_parlayapi_fliff": {
-  "pairs": 143,
-  "within_0.02": 100,
+  "pairs": 113,
+  "within_0.02": 73,
   "median_abs_diff": 0.009,
   "worst": [
    {
-    "event": "CHI Bulls @ TOR Raptors",
+    "event": "SAC Kings @ LA Clippers",
     "key": [
      "h2h",
      "ml",
-     "Chicago Bulls",
+     "Sacramento Kings",
      null
     ],
-    "scrape": 4.3,
-    "parlayapi": 4.25
+    "scrape": 2.6,
+    "parlayapi": 2.55
    },
    {
     "event": "GS Warriors @ LA Lakers",
@@ -1801,29 +1305,84 @@
   ]
  },
  "legs_by_source": {
-  "scrape/pinnacle": 290,
-  "scrape/consensus": 32,
+  "scrape/pinnacle": 210,
+  "scrape/consensus": 8,
   "parlayapi/pinnacle": 2
  },
- "top_ev_legs": [],
- "safest_legs": [
+ "top_ev_legs": [
   {
-   "sport": "icehockey_nhl",
-   "event": "FLA Panthers @ OTT Senators",
-   "event_key": "420371_c_p_207_prematch",
-   "start_utc": "2026-10-21T23:30:00+00:00",
-   "start_pt": "Wed 10-21 04:30 PM PT",
-   "market": "spreads",
-   "selection": "Florida Panthers",
-   "point": 1.5,
-   "fliff_dec": 1.35,
-   "fair_p": 0.7108,
+   "sport": "soccer_uefa_champs_league",
+   "event": "Viking @ Aston Villa",
+   "event_key": "419412_c_p_499_prematch",
+   "start_utc": "2026-10-21T19:00:00+00:00",
+   "start_pt": "Wed 10-21 12:00 PM PT",
+   "market": "h2h",
+   "selection": "Viking (Bookings)",
+   "point": null,
+   "fliff_dec": 10.7,
+   "fair_p": 0.5482,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
-   "fliff_market_name": "Alternative PUCK LINE",
+   "fliff_market_name": "3-WAY MONEYLINE",
    "boosted": false,
-   "ev": -0.0404,
-   "clear_cost": 0.1626
+   "ev": 4.8653,
+   "clear_cost": -0.915
+  },
+  {
+   "sport": "soccer_uefa_champs_league",
+   "event": "Viking @ Aston Villa",
+   "event_key": "419412_c_p_499_prematch",
+   "start_utc": "2026-10-21T19:00:00+00:00",
+   "start_pt": "Wed 10-21 12:00 PM PT",
+   "market": "h2h",
+   "selection": "Draw",
+   "point": null,
+   "fliff_dec": 6.45,
+   "fair_p": 0.2326,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "3-WAY MONEYLINE",
+   "boosted": false,
+   "ev": 0.5002,
+   "clear_cost": -0.3946
+  },
+  {
+   "sport": "soccer_uefa_champs_league",
+   "event": "Viking @ Aston Villa",
+   "event_key": "419412_c_p_499_prematch",
+   "start_utc": "2026-10-21T19:00:00+00:00",
+   "start_pt": "Wed 10-21 12:00 PM PT",
+   "market": "totals",
+   "selection": "Under",
+   "point": 3.5,
+   "fliff_dec": 2.05,
+   "fair_p": 0.5292,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative Total Score",
+   "boosted": false,
+   "ev": 0.0849,
+   "clear_cost": -0.1527
+  }
+ ],
+ "safest_legs": [
+  {
+   "sport": "tennis_wta",
+   "event": "Belinda Bencic @ Katarzyna Kawa",
+   "event_key": "420544_c_p_206_prematch",
+   "start_utc": "2026-10-22T05:00:00+00:00",
+   "start_pt": "Wed 10-21 10:00 PM PT",
+   "market": "spreads",
+   "selection": "Belinda Bencic",
+   "point": -1.5,
+   "fliff_dec": 1.35,
+   "fair_p": 0.7103,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Sets - Point Spread",
+   "boosted": false,
+   "ev": -0.041,
+   "clear_cost": 0.1651
   },
   {
    "sport": "tennis_atp",
@@ -1841,7 +1400,7 @@
    "fliff_market_name": "MONEYLINE",
    "boosted": false,
    "ev": -0.0427,
-   "clear_cost": 1.5324
+   "clear_cost": 1.5323
   },
   {
    "sport": "tennis_atp",
@@ -1863,60 +1422,6 @@
   },
   {
    "sport": "tennis_atp",
-   "event": "Taylor Fritz @ Pierre-Hugues Herbert",
-   "event_key": "420518_c_p_206_prematch",
-   "start_utc": "2026-10-22T10:00:00+00:00",
-   "start_pt": "Thu 10-22 03:00 AM PT",
-   "market": "h2h",
-   "selection": "Taylor Fritz",
-   "point": null,
-   "fliff_dec": 1.15,
-   "fair_p": 0.8268,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.0492,
-   "clear_cost": 0.3965
-  },
-  {
-   "sport": "tennis_atp",
-   "event": "Sho Shimabukuro @ Daniil Medvedev",
-   "event_key": "420506_c_p_206_prematch",
-   "start_utc": "2026-10-22T06:30:00+00:00",
-   "start_pt": "Wed 10-21 11:30 PM PT",
-   "market": "h2h",
-   "selection": "Daniil Medvedev",
-   "point": null,
-   "fliff_dec": 1.05,
-   "fair_p": 0.9049,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.0499,
-   "clear_cost": 1.1031
-  },
-  {
-   "sport": "tennis_atp",
-   "event": "Felix Balshaw @ Corentin Moutet",
-   "event_key": "420573_c_p_206_prematch",
-   "start_utc": "2026-10-21T13:10:00+00:00",
-   "start_pt": "Wed 10-21 06:10 AM PT",
-   "market": "spreads",
-   "selection": "Corentin Moutet",
-   "point": 1.5,
-   "fliff_dec": 1.35,
-   "fair_p": 0.7019,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Sets - Point Spread",
-   "boosted": false,
-   "ev": -0.0525,
-   "clear_cost": 0.2136
-  },
-  {
-   "sport": "tennis_atp",
    "event": "Andrey Rublev @ Adrian Mannarino",
    "event_key": "420400_c_p_206_prematch",
    "start_utc": "2026-10-21T08:50:00+00:00",
@@ -1925,13 +1430,13 @@
    "selection": "Andrey Rublev",
    "point": null,
    "fliff_dec": 1.25,
-   "fair_p": 0.7577,
+   "fair_p": 0.7595,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
    "fliff_market_name": "MONEYLINE",
    "boosted": false,
-   "ev": -0.0528,
-   "clear_cost": 0.2788
+   "ev": -0.0506,
+   "clear_cost": 0.2663
   },
   {
    "sport": "basketball_nba",
@@ -1953,24 +1458,6 @@
   },
   {
    "sport": "basketball_nba",
-   "event": "DEN Nuggets @ OKC Thunder",
-   "event_key": "407817_c_p_204_prematch",
-   "start_utc": "2026-10-23T01:30:00+00:00",
-   "start_pt": "Thu 10-22 06:30 PM PT",
-   "market": "h2h",
-   "selection": "Oklahoma City Thunder",
-   "point": null,
-   "fliff_dec": 1.3,
-   "fair_p": 0.7227,
-   "fair_src": "consensus",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.0605,
-   "clear_cost": 0.2792
-  },
-  {
-   "sport": "basketball_nba",
    "event": "CHI Bulls @ TOR Raptors",
    "event_key": "417866_c_p_204_prematch",
    "start_utc": "2026-10-21T23:30:00+00:00",
@@ -1986,24 +1473,6 @@
    "boosted": false,
    "ev": -0.0646,
    "clear_cost": 0.4142
-  },
-  {
-   "sport": "tennis_atp",
-   "event": "Sho Shimabukuro @ Daniil Medvedev",
-   "event_key": "420506_c_p_206_prematch",
-   "start_utc": "2026-10-22T06:30:00+00:00",
-   "start_pt": "Wed 10-21 11:30 PM PT",
-   "market": "spreads",
-   "selection": "Daniil Medvedev",
-   "point": -1.5,
-   "fliff_dec": 1.3,
-   "fair_p": 0.716,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Sets - Point Spread",
-   "boosted": false,
-   "ev": -0.0693,
-   "clear_cost": 0.3225
   },
   {
    "sport": "tennis_atp",
@@ -2024,24 +1493,6 @@
    "clear_cost": 0.3804
   },
   {
-   "sport": "tennis_atp",
-   "event": "Fabian Marozsan @ Alexander Bublik",
-   "event_key": "420521_c_p_206_prematch",
-   "start_utc": "2026-10-22T06:30:00+00:00",
-   "start_pt": "Wed 10-21 11:30 PM PT",
-   "market": "h2h",
-   "selection": "Alexander Bublik",
-   "point": null,
-   "fliff_dec": 1.3,
-   "fair_p": 0.714,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.0718,
-   "clear_cost": 0.3353
-  },
-  {
    "sport": "tennis_wta",
    "event": "Belinda Bencic @ Katarzyna Kawa",
    "event_key": "420544_c_p_206_prematch",
@@ -2060,6 +1511,60 @@
    "clear_cost": 1.6897
   },
   {
+   "sport": "soccer_uefa_champs_league",
+   "event": "LASK Linz @ Sporting CP",
+   "event_key": "419406_c_p_499_prematch",
+   "start_utc": "2026-10-21T19:00:00+00:00",
+   "start_pt": "Wed 10-21 12:00 PM PT",
+   "market": "h2h",
+   "selection": "Sporting CP",
+   "point": null,
+   "fliff_dec": 1.15,
+   "fair_p": 0.8031,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "3-WAY MONEYLINE",
+   "boosted": false,
+   "ev": -0.0764,
+   "clear_cost": 0.6341
+  },
+  {
+   "sport": "icehockey_nhl",
+   "event": "FLA Panthers @ OTT Senators",
+   "event_key": "420371_c_p_207_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "spreads",
+   "selection": "Ottawa Senators",
+   "point": 1.5,
+   "fliff_dec": 1.3,
+   "fair_p": 0.7082,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative PUCK LINE",
+   "boosted": false,
+   "ev": -0.0794,
+   "clear_cost": 0.3737
+  },
+  {
+   "sport": "tennis_wta",
+   "event": "Polina Kudermetova @ Elena Rybakina",
+   "event_key": "420496_c_p_206_prematch",
+   "start_utc": "2026-10-22T05:00:00+00:00",
+   "start_pt": "Wed 10-21 10:00 PM PT",
+   "market": "h2h",
+   "selection": "Elena Rybakina",
+   "point": null,
+   "fliff_dec": 1.05,
+   "fair_p": 0.8765,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0797,
+   "clear_cost": 1.8184
+  },
+  {
    "sport": "tennis_atp",
    "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
    "event_key": "420509_c_p_206_prematch",
@@ -2075,136 +1580,46 @@
    "fliff_market_name": "Sets - Point Spread",
    "boosted": false,
    "ev": -0.0887,
-   "clear_cost": 0.584
-  },
-  {
-   "sport": "soccer_uefa_europa_league",
-   "event": "Benfica @ Omonia Nicosia",
-   "event_key": "419557_c_p_499_prematch",
-   "start_utc": "2026-10-22T19:00:00+00:00",
-   "start_pt": "Thu 10-22 12:00 PM PT",
-   "market": "h2h",
-   "selection": "Benfica",
-   "point": null,
-   "fliff_dec": 1.3,
-   "fair_p": 0.7007,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "3-WAY MONEYLINE",
-   "boosted": false,
-   "ev": -0.0891,
-   "clear_cost": 0.4241
-  },
-  {
-   "sport": "soccer_uefa_europa_league",
-   "event": "Hapoel Be'er Sheva @ Royale Union SG",
-   "event_key": "419564_c_p_499_prematch",
-   "start_utc": "2026-10-22T16:45:00+00:00",
-   "start_pt": "Thu 10-22 09:45 AM PT",
-   "market": "h2h",
-   "selection": "Union Saint-Gilloise",
-   "point": null,
-   "fliff_dec": 1.25,
-   "fair_p": 0.7238,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "3-WAY MONEYLINE",
-   "boosted": false,
-   "ev": -0.0953,
-   "clear_cost": 0.5266
-  },
-  {
-   "sport": "soccer_uefa_europa_league",
-   "event": "Leverkusen @ OFI Crete",
-   "event_key": "419550_c_p_499_prematch",
-   "start_utc": "2026-10-22T16:45:00+00:00",
-   "start_pt": "Thu 10-22 09:45 AM PT",
-   "market": "h2h",
-   "selection": "Bayer Leverkusen",
-   "point": null,
-   "fliff_dec": 1.15,
-   "fair_p": 0.7784,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "3-WAY MONEYLINE",
-   "boosted": false,
-   "ev": -0.1048,
-   "clear_cost": 0.8976
-  },
-  {
-   "sport": "soccer_uefa_conference_league",
-   "event": "FC Twente @ Lincoln Red Imps FC",
-   "event_key": "419451_c_p_499_prematch",
-   "start_utc": "2026-10-22T19:00:00+00:00",
-   "start_pt": "Thu 10-22 12:00 PM PT",
-   "market": "h2h",
-   "selection": "FC Twente",
-   "point": null,
-   "fliff_dec": 1.15,
-   "fair_p": 0.7704,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "3-WAY MONEYLINE",
-   "boosted": false,
-   "ev": -0.114,
-   "clear_cost": 0.9863
-  },
-  {
-   "sport": "soccer_uefa_europa_league",
-   "event": "Torreense @ Ferencv\u00e1ros",
-   "event_key": "419565_c_p_499_prematch",
-   "start_utc": "2026-10-22T16:45:00+00:00",
-   "start_pt": "Thu 10-22 09:45 AM PT",
-   "market": "h2h",
-   "selection": "Ferencvaros",
-   "point": null,
-   "fliff_dec": 1.25,
-   "fair_p": 0.7075,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "3-WAY MONEYLINE",
-   "boosted": false,
-   "ev": -0.1156,
-   "clear_cost": 0.6534
-  },
-  {
-   "sport": "soccer_uefa_champs_league",
-   "event": "LASK Linz @ Sporting CP",
-   "event_key": "419406_c_p_499_prematch",
-   "start_utc": "2026-10-21T19:00:00+00:00",
-   "start_pt": "Wed 10-21 12:00 PM PT",
-   "market": "h2h",
-   "selection": "Sporting CP",
-   "point": null,
-   "fliff_dec": 1.1,
-   "fair_p": 0.7992,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "3-WAY MONEYLINE",
-   "boosted": false,
-   "ev": -0.1209,
-   "clear_cost": 1.5128
-  },
-  {
-   "sport": "soccer_uefa_conference_league",
-   "event": "Brighton @ FK Jablonec",
-   "event_key": "419218_c_p_499_prematch",
-   "start_utc": "2026-10-22T16:45:00+00:00",
-   "start_pt": "Thu 10-22 09:45 AM PT",
-   "market": "h2h",
-   "selection": "Brighton",
-   "point": null,
-   "fliff_dec": 1.2,
-   "fair_p": 0.7225,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "3-WAY MONEYLINE",
-   "boosted": false,
-   "ev": -0.133,
-   "clear_cost": 0.9207
+   "clear_cost": 0.5838
   }
  ],
  "cheapest_bonus_clearing": [
+  {
+   "sport": "soccer_uefa_champs_league",
+   "event": "Viking @ Aston Villa",
+   "event_key": "419412_c_p_499_prematch",
+   "start_utc": "2026-10-21T19:00:00+00:00",
+   "start_pt": "Wed 10-21 12:00 PM PT",
+   "market": "h2h",
+   "selection": "Viking (Bookings)",
+   "point": null,
+   "fliff_dec": 10.7,
+   "fair_p": 0.5482,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "3-WAY MONEYLINE",
+   "boosted": false,
+   "ev": 4.8653,
+   "clear_cost": -0.915
+  },
+  {
+   "sport": "soccer_uefa_champs_league",
+   "event": "Viking @ Aston Villa",
+   "event_key": "419412_c_p_499_prematch",
+   "start_utc": "2026-10-21T19:00:00+00:00",
+   "start_pt": "Wed 10-21 12:00 PM PT",
+   "market": "totals",
+   "selection": "Under",
+   "point": 3.5,
+   "fliff_dec": 2.05,
+   "fair_p": 0.5292,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative Total Score",
+   "boosted": false,
+   "ev": 0.0849,
+   "clear_cost": -0.1527
+  },
   {
    "sport": "basketball_nba",
    "event": "CHA Hornets @ BKN Nets",
@@ -2215,13 +1630,101 @@
    "selection": "Charlotte Hornets",
    "point": null,
    "fliff_dec": 2.05,
-   "fair_p": 0.4807,
+   "fair_p": 0.4817,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
    "fliff_market_name": "MONEYLINE",
    "boosted": false,
-   "ev": -0.0145,
-   "clear_cost": 0.0288
+   "ev": -0.0126,
+   "clear_cost": 0.0249
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "MIN Timberwolves @ MIA Heat",
+   "event_key": "407815_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "h2h",
+   "selection": "Miami Heat",
+   "point": null,
+   "fliff_dec": 1.85,
+   "fair_p": 0.5292,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0211,
+   "clear_cost": 0.0468
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "UTA Jazz @ MEM Grizzlies",
+   "event_key": "409514_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "h2h",
+   "selection": "Memphis Grizzlies",
+   "point": null,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5137,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "MONEYLINE",
+   "boosted": false,
+   "ev": -0.0239,
+   "clear_cost": 0.0517
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "ATL Hawks @ ORL Magic",
+   "event_key": "409527_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:00:00+00:00",
+   "start_pt": "Wed 10-21 04:00 PM PT",
+   "market": "totals",
+   "selection": "Under",
+   "point": 235.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.5,
+   "fair_src": "consensus",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.025,
+   "clear_cost": 0.0526
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "DAL Mavericks @ HOU Rockets",
+   "event_key": "409513_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:30:00+00:00",
+   "start_pt": "Wed 10-21 05:30 PM PT",
+   "market": "totals",
+   "selection": "Over",
+   "point": 231.5,
+   "fliff_dec": 2.0,
+   "fair_p": 0.4854,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative TOTAL SCORE",
+   "boosted": false,
+   "ev": -0.0292,
+   "clear_cost": 0.0602
+  },
+  {
+   "sport": "basketball_nba",
+   "event": "SAC Kings @ LA Clippers",
+   "event_key": "417867_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:30:00+00:00",
+   "start_pt": "Wed 10-21 07:30 PM PT",
+   "market": "h2h",
+   "selection": "LA Clippers",
+   "point": null,
+   "fliff_dec": 1.513,
+   "fair_p": 0.6465,
+   "fair_src": "pinnacle",
+   "fliff_src": "parlayapi",
+   "ev": -0.0219,
+   "clear_cost": 0.0661
   },
   {
    "sport": "tennis_atp",
@@ -2261,55 +1764,39 @@
   },
   {
    "sport": "basketball_nba",
-   "event": "PHX Suns @ POR Trail Blazers",
-   "event_key": "409528_c_p_204_prematch",
-   "start_utc": "2026-10-22T02:00:00+00:00",
-   "start_pt": "Wed 10-21 07:00 PM PT",
-   "market": "totals",
-   "selection": "Over",
-   "point": 232.5,
-   "fliff_dec": 1.95,
-   "fair_p": 0.4956,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Alternative TOTAL SCORE",
-   "boosted": false,
-   "ev": -0.0336,
-   "clear_cost": 0.0714
-  },
-  {
-   "sport": "basketball_nba",
    "event": "MIN Timberwolves @ MIA Heat",
    "event_key": "407815_c_p_204_prematch",
    "start_utc": "2026-10-21T23:30:00+00:00",
    "start_pt": "Wed 10-21 04:30 PM PT",
-   "market": "h2h",
+   "market": "spreads",
    "selection": "Miami Heat",
+   "point": -1.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5069,
+   "fair_src": "pinnacle",
+   "fliff_src": "scrape",
+   "fliff_market_name": "Alternative POINT SPREAD",
+   "boosted": false,
+   "ev": -0.0368,
+   "clear_cost": 0.0807
+  },
+  {
+   "sport": "icehockey_nhl",
+   "event": "FLA Panthers @ OTT Senators",
+   "event_key": "420371_c_p_207_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "h2h",
+   "selection": "Florida Panthers",
    "point": null,
-   "fliff_dec": 1.85,
-   "fair_p": 0.5216,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5069,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
    "fliff_market_name": "MONEYLINE",
    "boosted": false,
-   "ev": -0.0351,
-   "clear_cost": 0.0791
-  },
-  {
-   "sport": "basketball_nba",
-   "event": "SAC Kings @ LA Clippers",
-   "event_key": "417867_c_p_204_prematch",
-   "start_utc": "2026-10-22T02:30:00+00:00",
-   "start_pt": "Wed 10-21 07:30 PM PT",
-   "market": "h2h",
-   "selection": "LA Clippers",
-   "point": null,
-   "fliff_dec": 1.513,
-   "fair_p": 0.6432,
-   "fair_src": "pinnacle",
-   "fliff_src": "parlayapi",
-   "ev": -0.0269,
-   "clear_cost": 0.0815
+   "ev": -0.0368,
+   "clear_cost": 0.0807
   },
   {
    "sport": "basketball_nba",
@@ -2331,21 +1818,21 @@
   },
   {
    "sport": "basketball_nba",
-   "event": "SAC Kings @ LA Clippers",
-   "event_key": "417867_c_p_204_prematch",
-   "start_utc": "2026-10-22T02:30:00+00:00",
-   "start_pt": "Wed 10-21 07:30 PM PT",
+   "event": "MIL Bucks @ WAS Wizards",
+   "event_key": "409529_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:00:00+00:00",
+   "start_pt": "Wed 10-21 04:00 PM PT",
    "market": "spreads",
-   "selection": "Sacramento Kings",
-   "point": 5.5,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5045,
+   "selection": "Milwaukee Bucks",
+   "point": 4.5,
+   "fliff_dec": 1.95,
+   "fair_p": 0.492,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
    "fliff_market_name": "Alternative POINT SPREAD",
    "boosted": false,
-   "ev": -0.0414,
-   "clear_cost": 0.0912
+   "ev": -0.0406,
+   "clear_cost": 0.0868
   },
   {
    "sport": "basketball_nba",
@@ -2366,40 +1853,40 @@
    "clear_cost": 0.0914
   },
   {
-   "sport": "tennis_atp",
-   "event": "Fabian Marozsan @ Alexander Bublik",
-   "event_key": "420521_c_p_206_prematch",
-   "start_utc": "2026-10-22T06:30:00+00:00",
-   "start_pt": "Wed 10-21 11:30 PM PT",
-   "market": "spreads",
-   "selection": "Alexander Bublik",
-   "point": -1.5,
+   "sport": "basketball_nba",
+   "event": "MIN Timberwolves @ MIA Heat",
+   "event_key": "407815_c_p_204_prematch",
+   "start_utc": "2026-10-21T23:30:00+00:00",
+   "start_pt": "Wed 10-21 04:30 PM PT",
+   "market": "totals",
+   "selection": "Over",
+   "point": 242.5,
    "fliff_dec": 1.9,
    "fair_p": 0.5044,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
-   "fliff_market_name": "Sets - Point Spread",
+   "fliff_market_name": "Alternative TOTAL SCORE",
    "boosted": false,
    "ev": -0.0416,
-   "clear_cost": 0.0916
+   "clear_cost": 0.0917
   },
   {
    "sport": "basketball_nba",
-   "event": "MIL Bucks @ WAS Wizards",
-   "event_key": "409529_c_p_204_prematch",
-   "start_utc": "2026-10-21T23:00:00+00:00",
-   "start_pt": "Wed 10-21 04:00 PM PT",
-   "market": "spreads",
-   "selection": "Milwaukee Bucks",
-   "point": 4.5,
-   "fliff_dec": 1.95,
-   "fair_p": 0.4909,
+   "event": "UTA Jazz @ MEM Grizzlies",
+   "event_key": "409514_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "totals",
+   "selection": "Over",
+   "point": 240.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5044,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
-   "fliff_market_name": "Alternative POINT SPREAD",
+   "fliff_market_name": "Alternative TOTAL SCORE",
    "boosted": false,
-   "ev": -0.0428,
-   "clear_cost": 0.0918
+   "ev": -0.0416,
+   "clear_cost": 0.0917
   },
   {
    "sport": "basketball_nba",
@@ -2438,42 +1925,6 @@
    "clear_cost": 0.0918
   },
   {
-   "sport": "basketball_nba",
-   "event": "CLE Cavaliers @ PHI 76ers",
-   "event_key": "407818_c_p_204_prematch",
-   "start_utc": "2026-10-22T23:00:00+00:00",
-   "start_pt": "Thu 10-22 04:00 PM PT",
-   "market": "spreads",
-   "selection": "Cleveland Cavaliers",
-   "point": 2.5,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5043,
-   "fair_src": "consensus",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Alternative POINT SPREAD",
-   "boosted": false,
-   "ev": -0.0418,
-   "clear_cost": 0.0921
-  },
-  {
-   "sport": "americanfootball_nfl",
-   "event": "NE Patriots @ CHI Bears",
-   "event_key": "407873_c_p_202_prematch",
-   "start_utc": "2026-10-23T00:15:00+00:00",
-   "start_pt": "Thu 10-22 05:15 PM PT",
-   "market": "totals",
-   "selection": "Over",
-   "point": 50.5,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5033,
-   "fair_src": "consensus",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Alternative TOTAL SCORE",
-   "boosted": false,
-   "ev": -0.0438,
-   "clear_cost": 0.0967
-  },
-  {
    "sport": "americanfootball_ncaaf",
    "event": "New Mexico State @ Sam Houston",
    "event_key": "419544_c_p_209_prematch",
@@ -2493,39 +1944,37 @@
   },
   {
    "sport": "basketball_nba",
-   "event": "DEN Nuggets @ OKC Thunder",
-   "event_key": "407817_c_p_204_prematch",
-   "start_utc": "2026-10-23T01:30:00+00:00",
-   "start_pt": "Thu 10-22 06:30 PM PT",
+   "event": "SAC Kings @ LA Clippers",
+   "event_key": "417867_c_p_204_prematch",
+   "start_utc": "2026-10-22T02:30:00+00:00",
+   "start_pt": "Wed 10-21 07:30 PM PT",
    "market": "spreads",
-   "selection": "Oklahoma City Thunder",
-   "point": -8.5,
-   "fliff_dec": 1.95,
-   "fair_p": 0.4893,
-   "fair_src": "consensus",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Alternative POINT SPREAD",
-   "boosted": false,
-   "ev": -0.0459,
-   "clear_cost": 0.0988
+   "selection": "LA Clippers",
+   "point": -5.5,
+   "fliff_dec": 1.909,
+   "fair_p": 0.5,
+   "fair_src": "pinnacle",
+   "fliff_src": "parlayapi",
+   "ev": -0.0455,
+   "clear_cost": 0.1001
   },
   {
-   "sport": "americanfootball_nfl",
-   "event": "NE Patriots @ CHI Bears",
-   "event_key": "407873_c_p_202_prematch",
-   "start_utc": "2026-10-23T00:15:00+00:00",
-   "start_pt": "Thu 10-22 05:15 PM PT",
-   "market": "h2h",
-   "selection": "Chicago Bears",
-   "point": null,
-   "fliff_dec": 1.6,
-   "fair_p": 0.6025,
+   "sport": "basketball_nba",
+   "event": "IND Pacers @ NO Pelicans",
+   "event_key": "409515_c_p_204_prematch",
+   "start_utc": "2026-10-22T00:00:00+00:00",
+   "start_pt": "Wed 10-21 05:00 PM PT",
+   "market": "totals",
+   "selection": "Under",
+   "point": 239.5,
+   "fliff_dec": 1.9,
+   "fair_p": 0.5022,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
+   "fliff_market_name": "Alternative TOTAL SCORE",
    "boosted": false,
-   "ev": -0.036,
-   "clear_cost": 0.0997
+   "ev": -0.0458,
+   "clear_cost": 0.1014
   },
   {
    "sport": "basketball_nba",
@@ -2555,100 +2004,28 @@
    "selection": "Philadelphia Flyers",
    "point": 1.5,
    "fliff_dec": 1.6,
-   "fair_p": 0.6021,
+   "fair_p": 0.6005,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
    "fliff_market_name": "Alternative PUCK LINE",
    "boosted": false,
-   "ev": -0.0367,
-   "clear_cost": 0.1015
-  },
-  {
-   "sport": "tennis_wta",
-   "event": "Viktorija Golubic @ Katie Boulter",
-   "event_key": "420487_c_p_206_prematch",
-   "start_utc": "2026-10-21T05:40:00+00:00",
-   "start_pt": "Tue 10-20 10:40 PM PT",
-   "market": "h2h",
-   "selection": "Viktorija Golubic",
-   "point": null,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5,
-   "fair_src": "consensus",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
-   "boosted": false,
-   "ev": -0.05,
-   "clear_cost": 0.1111
+   "ev": -0.0392,
+   "clear_cost": 0.1088
   },
   {
    "sport": "basketball_nba",
-   "event": "MIN Timberwolves @ MIA Heat",
-   "event_key": "407815_c_p_204_prematch",
-   "start_utc": "2026-10-21T23:30:00+00:00",
-   "start_pt": "Wed 10-21 04:30 PM PT",
-   "market": "totals",
-   "selection": "Over",
-   "point": 242.5,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5,
-   "fair_src": "consensus",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Alternative TOTAL SCORE",
-   "boosted": false,
-   "ev": -0.05,
-   "clear_cost": 0.1111
-  },
-  {
-   "sport": "basketball_nba",
-   "event": "MIN Timberwolves @ MIA Heat",
-   "event_key": "407815_c_p_204_prematch",
-   "start_utc": "2026-10-21T23:30:00+00:00",
-   "start_pt": "Wed 10-21 04:30 PM PT",
-   "market": "totals",
-   "selection": "Under",
-   "point": 242.5,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5,
-   "fair_src": "consensus",
-   "fliff_src": "scrape",
-   "fliff_market_name": "Alternative TOTAL SCORE",
-   "boosted": false,
-   "ev": -0.05,
-   "clear_cost": 0.1111
-  },
-  {
-   "sport": "basketball_nba",
-   "event": "MIN Timberwolves @ MIA Heat",
-   "event_key": "407815_c_p_204_prematch",
+   "event": "CHA Hornets @ BKN Nets",
+   "event_key": "409516_c_p_204_prematch",
    "start_utc": "2026-10-21T23:30:00+00:00",
    "start_pt": "Wed 10-21 04:30 PM PT",
    "market": "spreads",
-   "selection": "Miami Heat",
-   "point": -1.5,
+   "selection": "Charlotte Hornets",
+   "point": 1.5,
    "fliff_dec": 1.9,
    "fair_p": 0.5,
    "fair_src": "pinnacle",
    "fliff_src": "scrape",
    "fliff_market_name": "Alternative POINT SPREAD",
-   "boosted": false,
-   "ev": -0.05,
-   "clear_cost": 0.1111
-  },
-  {
-   "sport": "icehockey_nhl",
-   "event": "FLA Panthers @ OTT Senators",
-   "event_key": "420371_c_p_207_prematch",
-   "start_utc": "2026-10-21T23:30:00+00:00",
-   "start_pt": "Wed 10-21 04:30 PM PT",
-   "market": "h2h",
-   "selection": "Ottawa Senators",
-   "point": null,
-   "fliff_dec": 1.9,
-   "fair_p": 0.5,
-   "fair_src": "pinnacle",
-   "fliff_src": "scrape",
-   "fliff_market_name": "MONEYLINE",
    "boosted": false,
    "ev": -0.05,
    "clear_cost": 0.1111
@@ -2658,22 +2035,66 @@
   {
    "legs": [
     {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
+     "fliff_market_name": "3-WAY MONEYLINE",
      "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
+    {
+     "sport": "basketball_nba",
+     "event": "MIN Timberwolves @ MIA Heat",
+     "event_key": "407815_c_p_204_prematch",
+     "start_utc": "2026-10-21T23:30:00+00:00",
+     "start_pt": "Wed 10-21 04:30 PM PT",
+     "market": "h2h",
+     "selection": "Miami Heat",
+     "point": null,
+     "fliff_dec": 1.85,
+     "fair_p": 0.5292,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0211,
+     "clear_cost": 0.0468
+    }
+   ],
+   "p": 0.2901,
+   "dec": 19.795,
+   "ev": 4.7427,
+   "clear_cost": -0.8698
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
     },
     {
      "sport": "basketball_nba",
@@ -2685,20 +2106,38 @@
      "selection": "LA Clippers",
      "point": null,
      "fliff_dec": 1.513,
-     "fair_p": 0.6432,
+     "fair_p": 0.6465,
      "fair_src": "pinnacle",
      "fliff_src": "parlayapi",
-     "ev": -0.0269,
-     "clear_cost": 0.0815
+     "ev": -0.0219,
+     "clear_cost": 0.0661
     }
    ],
-   "p": 0.405,
-   "dec": 2.345,
-   "ev": -0.0502,
-   "clear_cost": 0.0921
+   "p": 0.3544,
+   "dec": 16.189,
+   "ev": 4.7376,
+   "clear_cost": -0.8801
   },
   {
    "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
     {
      "sport": "tennis_atp",
      "event": "Francisco Cerundolo @ Martin Damm Jr.",
@@ -2716,6 +2155,120 @@
      "boosted": false,
      "ev": -0.024,
      "clear_cost": 0.0692
+    }
+   ],
+   "p": 0.3452,
+   "dec": 16.585,
+   "ev": 4.7252,
+   "clear_cost": -0.8783
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
+    {
+     "sport": "basketball_nba",
+     "event": "UTA Jazz @ MEM Grizzlies",
+     "event_key": "409514_c_p_204_prematch",
+     "start_utc": "2026-10-22T00:00:00+00:00",
+     "start_pt": "Wed 10-21 05:00 PM PT",
+     "market": "h2h",
+     "selection": "Memphis Grizzlies",
+     "point": null,
+     "fliff_dec": 1.9,
+     "fair_p": 0.5137,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0239,
+     "clear_cost": 0.0517
+    }
+   ],
+   "p": 0.2816,
+   "dec": 20.33,
+   "ev": 4.7251,
+   "clear_cost": -0.868
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
+    {
+     "sport": "basketball_nba",
+     "event": "ATL Hawks @ ORL Magic",
+     "event_key": "409527_c_p_204_prematch",
+     "start_utc": "2026-10-21T23:00:00+00:00",
+     "start_pt": "Wed 10-21 04:00 PM PT",
+     "market": "totals",
+     "selection": "Under",
+     "point": 235.5,
+     "fliff_dec": 1.95,
+     "fair_p": 0.5,
+     "fair_src": "consensus",
+     "fliff_src": "scrape",
+     "fliff_market_name": "Alternative TOTAL SCORE",
+     "boosted": false,
+     "ev": -0.025,
+     "clear_cost": 0.0526
+    }
+   ],
+   "p": 0.2741,
+   "dec": 20.865,
+   "ev": 4.7191,
+   "clear_cost": -0.8667
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
     },
     {
      "sport": "basketball_nba",
@@ -2736,30 +2289,30 @@
      "clear_cost": 0.0713
     }
    ],
-   "p": 0.3206,
-   "dec": 2.945,
-   "ev": -0.0559,
-   "clear_cost": 0.0896
+   "p": 0.2791,
+   "dec": 20.33,
+   "ev": 4.6739,
+   "clear_cost": -0.8664
   },
   {
    "legs": [
     {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
+     "fliff_market_name": "3-WAY MONEYLINE",
      "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
+     "ev": 4.8653,
+     "clear_cost": -0.915
     },
     {
      "sport": "basketball_nba",
@@ -2767,299 +2320,43 @@
      "event_key": "407815_c_p_204_prematch",
      "start_utc": "2026-10-21T23:30:00+00:00",
      "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "h2h",
-     "selection": "Miami Heat",
-     "point": null,
-     "fliff_dec": 1.85,
-     "fair_p": 0.5216,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0351,
-     "clear_cost": 0.0791
-    }
-   ],
-   "p": 0.3285,
-   "dec": 2.868,
-   "ev": -0.0582,
-   "clear_cost": 0.0948
-  },
-  {
-   "legs": [
-    {
-     "sport": "basketball_nba",
-     "event": "SAC Kings @ LA Clippers",
-     "event_key": "417867_c_p_204_prematch",
-     "start_utc": "2026-10-22T02:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 PM PT",
-     "market": "h2h",
-     "selection": "LA Clippers",
-     "point": null,
-     "fliff_dec": 1.513,
-     "fair_p": 0.6432,
-     "fair_src": "pinnacle",
-     "fliff_src": "parlayapi",
-     "ev": -0.0269,
-     "clear_cost": 0.0815
-    },
-    {
-     "sport": "basketball_nba",
-     "event": "ATL Hawks @ ORL Magic",
-     "event_key": "409527_c_p_204_prematch",
-     "start_utc": "2026-10-21T23:00:00+00:00",
-     "start_pt": "Wed 10-21 04:00 PM PT",
      "market": "spreads",
-     "selection": "Atlanta Hawks",
-     "point": 3.5,
+     "selection": "Miami Heat",
+     "point": -1.5,
      "fliff_dec": 1.9,
-     "fair_p": 0.5091,
+     "fair_p": 0.5069,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
      "fliff_market_name": "Alternative POINT SPREAD",
      "boosted": false,
-     "ev": -0.0327,
-     "clear_cost": 0.0713
+     "ev": -0.0368,
+     "clear_cost": 0.0807
     }
    ],
-   "p": 0.3275,
-   "dec": 2.875,
-   "ev": -0.0587,
-   "clear_cost": 0.0956
+   "p": 0.2779,
+   "dec": 20.33,
+   "ev": 4.6494,
+   "clear_cost": -0.8656
   },
   {
    "legs": [
     {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
-     "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
-    },
-    {
-     "sport": "americanfootball_nfl",
-     "event": "NE Patriots @ CHI Bears",
-     "event_key": "407873_c_p_202_prematch",
-     "start_utc": "2026-10-23T00:15:00+00:00",
-     "start_pt": "Thu 10-22 05:15 PM PT",
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
      "market": "h2h",
-     "selection": "Chicago Bears",
+     "selection": "Viking (Bookings)",
      "point": null,
-     "fliff_dec": 1.6,
-     "fair_p": 0.6025,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
+     "fliff_market_name": "3-WAY MONEYLINE",
      "boosted": false,
-     "ev": -0.036,
-     "clear_cost": 0.0997
-    }
-   ],
-   "p": 0.3794,
-   "dec": 2.48,
-   "ev": -0.0591,
-   "clear_cost": 0.1053
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
-     "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
-    },
-    {
-     "sport": "icehockey_nhl",
-     "event": "PHI Flyers @ BUF Sabres",
-     "event_key": "420370_c_p_207_prematch",
-     "start_utc": "2026-10-21T23:30:00+00:00",
-     "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "spreads",
-     "selection": "Philadelphia Flyers",
-     "point": 1.5,
-     "fliff_dec": 1.6,
-     "fair_p": 0.6021,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Alternative PUCK LINE",
-     "boosted": false,
-     "ev": -0.0367,
-     "clear_cost": 0.1015
-    }
-   ],
-   "p": 0.3791,
-   "dec": 2.48,
-   "ev": -0.0597,
-   "clear_cost": 0.1064
-  },
-  {
-   "legs": [
-    {
-     "sport": "basketball_nba",
-     "event": "SAC Kings @ LA Clippers",
-     "event_key": "417867_c_p_204_prematch",
-     "start_utc": "2026-10-22T02:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 PM PT",
-     "market": "h2h",
-     "selection": "LA Clippers",
-     "point": null,
-     "fliff_dec": 1.513,
-     "fair_p": 0.6432,
-     "fair_src": "pinnacle",
-     "fliff_src": "parlayapi",
-     "ev": -0.0269,
-     "clear_cost": 0.0815
-    },
-    {
-     "sport": "basketball_nba",
-     "event": "MIN Timberwolves @ MIA Heat",
-     "event_key": "407815_c_p_204_prematch",
-     "start_utc": "2026-10-21T23:30:00+00:00",
-     "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "h2h",
-     "selection": "Miami Heat",
-     "point": null,
-     "fliff_dec": 1.85,
-     "fair_p": 0.5216,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0351,
-     "clear_cost": 0.0791
-    }
-   ],
-   "p": 0.3355,
-   "dec": 2.799,
-   "ev": -0.0609,
-   "clear_cost": 0.101
-  },
-  {
-   "legs": [
-    {
-     "sport": "basketball_nba",
-     "event": "SAC Kings @ LA Clippers",
-     "event_key": "417867_c_p_204_prematch",
-     "start_utc": "2026-10-22T02:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 PM PT",
-     "market": "h2h",
-     "selection": "LA Clippers",
-     "point": null,
-     "fliff_dec": 1.513,
-     "fair_p": 0.6432,
-     "fair_src": "pinnacle",
-     "fliff_src": "parlayapi",
-     "ev": -0.0269,
-     "clear_cost": 0.0815
-    },
-    {
-     "sport": "americanfootball_nfl",
-     "event": "NE Patriots @ CHI Bears",
-     "event_key": "407873_c_p_202_prematch",
-     "start_utc": "2026-10-23T00:15:00+00:00",
-     "start_pt": "Thu 10-22 05:15 PM PT",
-     "market": "h2h",
-     "selection": "Chicago Bears",
-     "point": null,
-     "fliff_dec": 1.6,
-     "fair_p": 0.6025,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.036,
-     "clear_cost": 0.0997
-    }
-   ],
-   "p": 0.3875,
-   "dec": 2.421,
-   "ev": -0.0619,
-   "clear_cost": 0.1124
-  },
-  {
-   "legs": [
-    {
-     "sport": "basketball_nba",
-     "event": "SAC Kings @ LA Clippers",
-     "event_key": "417867_c_p_204_prematch",
-     "start_utc": "2026-10-22T02:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 PM PT",
-     "market": "h2h",
-     "selection": "LA Clippers",
-     "point": null,
-     "fliff_dec": 1.513,
-     "fair_p": 0.6432,
-     "fair_src": "pinnacle",
-     "fliff_src": "parlayapi",
-     "ev": -0.0269,
-     "clear_cost": 0.0815
-    },
-    {
-     "sport": "icehockey_nhl",
-     "event": "PHI Flyers @ BUF Sabres",
-     "event_key": "420370_c_p_207_prematch",
-     "start_utc": "2026-10-21T23:30:00+00:00",
-     "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "spreads",
-     "selection": "Philadelphia Flyers",
-     "point": 1.5,
-     "fliff_dec": 1.6,
-     "fair_p": 0.6021,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Alternative PUCK LINE",
-     "boosted": false,
-     "ev": -0.0367,
-     "clear_cost": 0.1015
-    }
-   ],
-   "p": 0.3873,
-   "dec": 2.421,
-   "ev": -0.0625,
-   "clear_cost": 0.1136
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
-     "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
+     "ev": 4.8653,
+     "clear_cost": -0.915
     },
     {
      "sport": "icehockey_nhl",
@@ -3067,175 +2364,307 @@
      "event_key": "420371_c_p_207_prematch",
      "start_utc": "2026-10-21T23:30:00+00:00",
      "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "spreads",
+     "market": "h2h",
      "selection": "Florida Panthers",
+     "point": null,
+     "fliff_dec": 1.9,
+     "fair_p": 0.5069,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0368,
+     "clear_cost": 0.0807
+    }
+   ],
+   "p": 0.2779,
+   "dec": 20.33,
+   "ev": 4.6494,
+   "clear_cost": -0.8656
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
+    {
+     "sport": "icehockey_nhl",
+     "event": "PHI Flyers @ BUF Sabres",
+     "event_key": "420370_c_p_207_prematch",
+     "start_utc": "2026-10-21T23:30:00+00:00",
+     "start_pt": "Wed 10-21 04:30 PM PT",
+     "market": "spreads",
+     "selection": "Philadelphia Flyers",
      "point": 1.5,
-     "fliff_dec": 1.35,
-     "fair_p": 0.7108,
+     "fliff_dec": 1.6,
+     "fair_p": 0.6005,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
      "fliff_market_name": "Alternative PUCK LINE",
      "boosted": false,
-     "ev": -0.0404,
-     "clear_cost": 0.1626
+     "ev": -0.0392,
+     "clear_cost": 0.1088
     }
    ],
-   "p": 0.4476,
-   "dec": 2.093,
-   "ev": -0.0634,
-   "clear_cost": 0.1297
+   "p": 0.3292,
+   "dec": 17.12,
+   "ev": 4.6358,
+   "clear_cost": -0.8736
   },
   {
    "legs": [
     {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
+    {
+     "sport": "tennis_wta",
+     "event": "Marta Kostyuk @ Ekaterina Alexandrova",
+     "event_key": "420523_c_p_206_prematch",
+     "start_utc": "2026-10-21T11:00:00+00:00",
+     "start_pt": "Wed 10-21 04:00 AM PT",
      "market": "spreads",
-     "selection": "Martin Damm",
+     "selection": "Ekaterina Alexandrova",
      "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
+     "fliff_dec": 1.5,
+     "fair_p": 0.6405,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
      "fliff_market_name": "Sets - Point Spread",
      "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
+     "ev": -0.0393,
+     "clear_cost": 0.1227
+    }
+   ],
+   "p": 0.3511,
+   "dec": 16.05,
+   "ev": 4.6355,
+   "clear_cost": -0.8772
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
+    {
+     "sport": "tennis_wta",
+     "event": "Diana Shnaider @ Alexandra Eala",
+     "event_key": "420491_c_p_206_prematch",
+     "start_utc": "2026-10-22T02:00:00+00:00",
+     "start_pt": "Wed 10-21 07:00 PM PT",
+     "market": "spreads",
+     "selection": "Alexandra Eala",
+     "point": 1.5,
+     "fliff_dec": 1.55,
+     "fair_p": 0.6188,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "Sets - Point Spread",
+     "boosted": false,
+     "ev": -0.0409,
+     "clear_cost": 0.1203
+    }
+   ],
+   "p": 0.3392,
+   "dec": 16.585,
+   "ev": 4.6261,
+   "clear_cost": -0.875
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
+    },
+    {
+     "sport": "tennis_wta",
+     "event": "Belinda Bencic @ Katarzyna Kawa",
+     "event_key": "420544_c_p_206_prematch",
+     "start_utc": "2026-10-22T05:00:00+00:00",
+     "start_pt": "Wed 10-21 10:00 PM PT",
+     "market": "spreads",
+     "selection": "Belinda Bencic",
+     "point": -1.5,
+     "fliff_dec": 1.35,
+     "fair_p": 0.7103,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "Sets - Point Spread",
+     "boosted": false,
+     "ev": -0.041,
+     "clear_cost": 0.1651
+    }
+   ],
+   "p": 0.3894,
+   "dec": 14.445,
+   "ev": 4.6247,
+   "clear_cost": -0.8834
+  },
+  {
+   "legs": [
+    {
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "3-WAY MONEYLINE",
+     "boosted": false,
+     "ev": 4.8653,
+     "clear_cost": -0.915
     },
     {
      "sport": "basketball_nba",
-     "event": "SAC Kings @ LA Clippers",
-     "event_key": "417867_c_p_204_prematch",
-     "start_utc": "2026-10-22T02:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 PM PT",
-     "market": "spreads",
-     "selection": "Sacramento Kings",
-     "point": 5.5,
-     "fliff_dec": 1.9,
-     "fair_p": 0.5045,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Alternative POINT SPREAD",
-     "boosted": false,
-     "ev": -0.0414,
-     "clear_cost": 0.0912
-    }
-   ],
-   "p": 0.3177,
-   "dec": 2.945,
-   "ev": -0.0644,
-   "clear_cost": 0.1043
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
-     "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Fabian Marozsan @ Alexander Bublik",
-     "event_key": "420521_c_p_206_prematch",
-     "start_utc": "2026-10-22T06:30:00+00:00",
-     "start_pt": "Wed 10-21 11:30 PM PT",
-     "market": "spreads",
-     "selection": "Alexander Bublik",
-     "point": -1.5,
+     "event": "MIN Timberwolves @ MIA Heat",
+     "event_key": "407815_c_p_204_prematch",
+     "start_utc": "2026-10-21T23:30:00+00:00",
+     "start_pt": "Wed 10-21 04:30 PM PT",
+     "market": "totals",
+     "selection": "Over",
+     "point": 242.5,
      "fliff_dec": 1.9,
      "fair_p": 0.5044,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
+     "fliff_market_name": "Alternative TOTAL SCORE",
      "boosted": false,
      "ev": -0.0416,
-     "clear_cost": 0.0916
+     "clear_cost": 0.0917
     }
    ],
-   "p": 0.3176,
-   "dec": 2.945,
-   "ev": -0.0646,
-   "clear_cost": 0.1046
+   "p": 0.2765,
+   "dec": 20.33,
+   "ev": 4.6215,
+   "clear_cost": -0.8646
   },
   {
    "legs": [
     {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
+     "fliff_market_name": "3-WAY MONEYLINE",
      "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
+     "ev": 4.8653,
+     "clear_cost": -0.915
     },
     {
      "sport": "basketball_nba",
-     "event": "CLE Cavaliers @ PHI 76ers",
-     "event_key": "407818_c_p_204_prematch",
-     "start_utc": "2026-10-22T23:00:00+00:00",
-     "start_pt": "Thu 10-22 04:00 PM PT",
-     "market": "spreads",
-     "selection": "Cleveland Cavaliers",
-     "point": 2.5,
+     "event": "UTA Jazz @ MEM Grizzlies",
+     "event_key": "409514_c_p_204_prematch",
+     "start_utc": "2026-10-22T00:00:00+00:00",
+     "start_pt": "Wed 10-21 05:00 PM PT",
+     "market": "totals",
+     "selection": "Over",
+     "point": 240.5,
      "fliff_dec": 1.9,
-     "fair_p": 0.5043,
-     "fair_src": "consensus",
+     "fair_p": 0.5044,
+     "fair_src": "pinnacle",
      "fliff_src": "scrape",
-     "fliff_market_name": "Alternative POINT SPREAD",
+     "fliff_market_name": "Alternative TOTAL SCORE",
      "boosted": false,
-     "ev": -0.0418,
-     "clear_cost": 0.0921
+     "ev": -0.0416,
+     "clear_cost": 0.0917
     }
    ],
-   "p": 0.3176,
-   "dec": 2.945,
-   "ev": -0.0648,
-   "clear_cost": 0.1049
+   "p": 0.2765,
+   "dec": 20.33,
+   "ev": 4.6215,
+   "clear_cost": -0.8646
   },
   {
    "legs": [
     {
-     "sport": "tennis_atp",
-     "event": "Francisco Cerundolo @ Martin Damm Jr.",
-     "event_key": "420422_c_p_206_prematch",
-     "start_utc": "2026-10-21T09:30:00+00:00",
-     "start_pt": "Wed 10-21 02:30 AM PT",
-     "market": "spreads",
-     "selection": "Martin Damm",
-     "point": 1.5,
-     "fliff_dec": 1.55,
-     "fair_p": 0.6297,
+     "sport": "soccer_uefa_champs_league",
+     "event": "Viking @ Aston Villa",
+     "event_key": "419412_c_p_499_prematch",
+     "start_utc": "2026-10-21T19:00:00+00:00",
+     "start_pt": "Wed 10-21 12:00 PM PT",
+     "market": "h2h",
+     "selection": "Viking (Bookings)",
+     "point": null,
+     "fliff_dec": 10.7,
+     "fair_p": 0.5482,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
+     "fliff_market_name": "3-WAY MONEYLINE",
      "boosted": false,
-     "ev": -0.024,
-     "clear_cost": 0.0692
+     "ev": 4.8653,
+     "clear_cost": -0.915
     },
     {
      "sport": "tennis_atp",
@@ -3253,77 +2682,33 @@
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
      "ev": -0.0427,
-     "clear_cost": 1.5324
+     "clear_cost": 1.5323
     }
    ],
-   "p": 0.5852,
-   "dec": 1.597,
-   "ev": -0.0657,
-   "clear_cost": 0.1881
-  },
-  {
-   "legs": [
-    {
-     "sport": "basketball_nba",
-     "event": "SAC Kings @ LA Clippers",
-     "event_key": "417867_c_p_204_prematch",
-     "start_utc": "2026-10-22T02:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 PM PT",
-     "market": "h2h",
-     "selection": "LA Clippers",
-     "point": null,
-     "fliff_dec": 1.513,
-     "fair_p": 0.6432,
-     "fair_src": "pinnacle",
-     "fliff_src": "parlayapi",
-     "ev": -0.0269,
-     "clear_cost": 0.0815
-    },
-    {
-     "sport": "icehockey_nhl",
-     "event": "FLA Panthers @ OTT Senators",
-     "event_key": "420371_c_p_207_prematch",
-     "start_utc": "2026-10-21T23:30:00+00:00",
-     "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "spreads",
-     "selection": "Florida Panthers",
-     "point": 1.5,
-     "fliff_dec": 1.35,
-     "fair_p": 0.7108,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Alternative PUCK LINE",
-     "boosted": false,
-     "ev": -0.0404,
-     "clear_cost": 0.1626
-    }
-   ],
-   "p": 0.4572,
-   "dec": 2.043,
-   "ev": -0.0662,
-   "clear_cost": 0.1388
+   "p": 0.5095,
+   "dec": 11.021,
+   "ev": 4.6152,
+   "clear_cost": -0.9039
   }
  ],
  "safest_2pick": [
   {
    "legs": [
     {
-     "sport": "icehockey_nhl",
-     "event": "FLA Panthers @ OTT Senators",
-     "event_key": "420371_c_p_207_prematch",
-     "start_utc": "2026-10-21T23:30:00+00:00",
-     "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "spreads",
-     "selection": "Florida Panthers",
-     "point": 1.5,
-     "fliff_dec": 1.35,
-     "fair_p": 0.7108,
+     "sport": "basketball_nba",
+     "event": "SAC Kings @ LA Clippers",
+     "event_key": "417867_c_p_204_prematch",
+     "start_utc": "2026-10-22T02:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 PM PT",
+     "market": "h2h",
+     "selection": "LA Clippers",
+     "point": null,
+     "fliff_dec": 1.513,
+     "fair_p": 0.6465,
      "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Alternative PUCK LINE",
-     "boosted": false,
-     "ev": -0.0404,
-     "clear_cost": 0.1626
+     "fliff_src": "parlayapi",
+     "ev": -0.0219,
+     "clear_cost": 0.0661
     },
     {
      "sport": "tennis_atp",
@@ -3341,13 +2726,57 @@
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
      "ev": -0.0427,
-     "clear_cost": 1.5324
+     "clear_cost": 1.5323
     }
    ],
-   "p": 0.6606,
+   "p": 0.6009,
+   "dec": 1.558,
+   "ev": -0.0636,
+   "clear_cost": 0.1897
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_wta",
+     "event": "Belinda Bencic @ Katarzyna Kawa",
+     "event_key": "420544_c_p_206_prematch",
+     "start_utc": "2026-10-22T05:00:00+00:00",
+     "start_pt": "Wed 10-21 10:00 PM PT",
+     "market": "spreads",
+     "selection": "Belinda Bencic",
+     "point": -1.5,
+     "fliff_dec": 1.35,
+     "fair_p": 0.7103,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "Sets - Point Spread",
+     "boosted": false,
+     "ev": -0.041,
+     "clear_cost": 0.1651
+    },
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
+    }
+   ],
+   "p": 0.6602,
    "dec": 1.391,
-   "ev": -0.0814,
-   "clear_cost": 0.3156
+   "ev": -0.0821,
+   "clear_cost": 0.3183
   },
   {
    "legs": [
@@ -3367,7 +2796,7 @@
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
      "ev": -0.0427,
-     "clear_cost": 1.5324
+     "clear_cost": 1.5323
     },
     {
      "sport": "tennis_atp",
@@ -3396,50 +2825,6 @@
   {
    "legs": [
     {
-     "sport": "icehockey_nhl",
-     "event": "FLA Panthers @ OTT Senators",
-     "event_key": "420371_c_p_207_prematch",
-     "start_utc": "2026-10-21T23:30:00+00:00",
-     "start_pt": "Wed 10-21 04:30 PM PT",
-     "market": "spreads",
-     "selection": "Florida Panthers",
-     "point": 1.5,
-     "fliff_dec": 1.35,
-     "fair_p": 0.7108,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Alternative PUCK LINE",
-     "boosted": false,
-     "ev": -0.0404,
-     "clear_cost": 0.1626
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Sho Shimabukuro @ Daniil Medvedev",
-     "event_key": "420506_c_p_206_prematch",
-     "start_utc": "2026-10-22T06:30:00+00:00",
-     "start_pt": "Wed 10-21 11:30 PM PT",
-     "market": "h2h",
-     "selection": "Daniil Medvedev",
-     "point": null,
-     "fliff_dec": 1.05,
-     "fair_p": 0.9049,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0499,
-     "clear_cost": 1.1031
-    }
-   ],
-   "p": 0.6432,
-   "dec": 1.418,
-   "ev": -0.0883,
-   "clear_cost": 0.3287
-  },
-  {
-   "legs": [
-    {
      "sport": "tennis_atp",
      "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
      "event_key": "420509_c_p_206_prematch",
@@ -3455,227 +2840,7 @@
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
      "ev": -0.0427,
-     "clear_cost": 1.5324
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Taylor Fritz @ Pierre-Hugues Herbert",
-     "event_key": "420518_c_p_206_prematch",
-     "start_utc": "2026-10-22T10:00:00+00:00",
-     "start_pt": "Thu 10-22 03:00 AM PT",
-     "market": "h2h",
-     "selection": "Taylor Fritz",
-     "point": null,
-     "fliff_dec": 1.15,
-     "fair_p": 0.8268,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0492,
-     "clear_cost": 0.3965
-    }
-   ],
-   "p": 0.7684,
-   "dec": 1.184,
-   "ev": -0.0898,
-   "clear_cost": 0.6334
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
-     "event_key": "420509_c_p_206_prematch",
-     "start_utc": "2026-10-21T14:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 AM PT",
-     "market": "h2h",
-     "selection": "Stefanos Tsitsipas",
-     "point": null,
-     "fliff_dec": 1.03,
-     "fair_p": 0.9294,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0427,
-     "clear_cost": 1.5324
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Sho Shimabukuro @ Daniil Medvedev",
-     "event_key": "420506_c_p_206_prematch",
-     "start_utc": "2026-10-22T06:30:00+00:00",
-     "start_pt": "Wed 10-21 11:30 PM PT",
-     "market": "h2h",
-     "selection": "Daniil Medvedev",
-     "point": null,
-     "fliff_dec": 1.05,
-     "fair_p": 0.9049,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0499,
-     "clear_cost": 1.1031
-    }
-   ],
-   "p": 0.841,
-   "dec": 1.082,
-   "ev": -0.0904,
-   "clear_cost": 1.3195
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Lorenzo Musetti @ Moise Kouame",
-     "event_key": "420440_c_p_206_prematch",
-     "start_utc": "2026-10-21T17:00:00+00:00",
-     "start_pt": "Wed 10-21 10:00 AM PT",
-     "market": "h2h",
-     "selection": "Lorenzo Musetti",
-     "point": null,
-     "fliff_dec": 1.25,
-     "fair_p": 0.7647,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0442,
-     "clear_cost": 0.2311
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Taylor Fritz @ Pierre-Hugues Herbert",
-     "event_key": "420518_c_p_206_prematch",
-     "start_utc": "2026-10-22T10:00:00+00:00",
-     "start_pt": "Thu 10-22 03:00 AM PT",
-     "market": "h2h",
-     "selection": "Taylor Fritz",
-     "point": null,
-     "fliff_dec": 1.15,
-     "fair_p": 0.8268,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0492,
-     "clear_cost": 0.3965
-    }
-   ],
-   "p": 0.6323,
-   "dec": 1.438,
-   "ev": -0.0911,
-   "clear_cost": 0.3295
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Lorenzo Musetti @ Moise Kouame",
-     "event_key": "420440_c_p_206_prematch",
-     "start_utc": "2026-10-21T17:00:00+00:00",
-     "start_pt": "Wed 10-21 10:00 AM PT",
-     "market": "h2h",
-     "selection": "Lorenzo Musetti",
-     "point": null,
-     "fliff_dec": 1.25,
-     "fair_p": 0.7647,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0442,
-     "clear_cost": 0.2311
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Sho Shimabukuro @ Daniil Medvedev",
-     "event_key": "420506_c_p_206_prematch",
-     "start_utc": "2026-10-22T06:30:00+00:00",
-     "start_pt": "Wed 10-21 11:30 PM PT",
-     "market": "h2h",
-     "selection": "Daniil Medvedev",
-     "point": null,
-     "fliff_dec": 1.05,
-     "fair_p": 0.9049,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0499,
-     "clear_cost": 1.1031
-    }
-   ],
-   "p": 0.692,
-   "dec": 1.312,
-   "ev": -0.0918,
-   "clear_cost": 0.4244
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
-     "event_key": "420509_c_p_206_prematch",
-     "start_utc": "2026-10-21T14:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 AM PT",
-     "market": "h2h",
-     "selection": "Stefanos Tsitsipas",
-     "point": null,
-     "fliff_dec": 1.03,
-     "fair_p": 0.9294,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0427,
-     "clear_cost": 1.5324
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Felix Balshaw @ Corentin Moutet",
-     "event_key": "420573_c_p_206_prematch",
-     "start_utc": "2026-10-21T13:10:00+00:00",
-     "start_pt": "Wed 10-21 06:10 AM PT",
-     "market": "spreads",
-     "selection": "Corentin Moutet",
-     "point": 1.5,
-     "fliff_dec": 1.35,
-     "fair_p": 0.7019,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
-     "boosted": false,
-     "ev": -0.0525,
-     "clear_cost": 0.2136
-    }
-   ],
-   "p": 0.6523,
-   "dec": 1.391,
-   "ev": -0.0929,
-   "clear_cost": 0.3647
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
-     "event_key": "420509_c_p_206_prematch",
-     "start_utc": "2026-10-21T14:30:00+00:00",
-     "start_pt": "Wed 10-21 07:30 AM PT",
-     "market": "h2h",
-     "selection": "Stefanos Tsitsipas",
-     "point": null,
-     "fliff_dec": 1.03,
-     "fair_p": 0.9294,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0427,
-     "clear_cost": 1.5324
+     "clear_cost": 1.5323
     },
     {
      "sport": "tennis_atp",
@@ -3687,63 +2852,19 @@
      "selection": "Andrey Rublev",
      "point": null,
      "fliff_dec": 1.25,
-     "fair_p": 0.7577,
+     "fair_p": 0.7595,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
-     "ev": -0.0528,
-     "clear_cost": 0.2788
+     "ev": -0.0506,
+     "clear_cost": 0.2663
     }
    ],
-   "p": 0.7042,
+   "p": 0.7059,
    "dec": 1.288,
-   "ev": -0.0933,
-   "clear_cost": 0.461
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Taylor Fritz @ Pierre-Hugues Herbert",
-     "event_key": "420518_c_p_206_prematch",
-     "start_utc": "2026-10-22T10:00:00+00:00",
-     "start_pt": "Thu 10-22 03:00 AM PT",
-     "market": "h2h",
-     "selection": "Taylor Fritz",
-     "point": null,
-     "fliff_dec": 1.15,
-     "fair_p": 0.8268,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0492,
-     "clear_cost": 0.3965
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Sho Shimabukuro @ Daniil Medvedev",
-     "event_key": "420506_c_p_206_prematch",
-     "start_utc": "2026-10-22T06:30:00+00:00",
-     "start_pt": "Wed 10-21 11:30 PM PT",
-     "market": "h2h",
-     "selection": "Daniil Medvedev",
-     "point": null,
-     "fliff_dec": 1.05,
-     "fair_p": 0.9049,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0499,
-     "clear_cost": 1.1031
-    }
-   ],
-   "p": 0.7482,
-   "dec": 1.208,
-   "ev": -0.0966,
-   "clear_cost": 0.6221
+   "ev": -0.0912,
+   "clear_cost": 0.4493
   },
   {
    "legs": [
@@ -3763,7 +2884,51 @@
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
      "ev": -0.0427,
-     "clear_cost": 1.5324
+     "clear_cost": 1.5323
+    },
+    {
+     "sport": "tennis_atp",
+     "event": "Felix Balshaw @ Corentin Moutet",
+     "event_key": "420573_c_p_206_prematch",
+     "start_utc": "2026-10-21T13:10:00+00:00",
+     "start_pt": "Wed 10-21 06:10 AM PT",
+     "market": "spreads",
+     "selection": "Corentin Moutet",
+     "point": 1.5,
+     "fliff_dec": 1.35,
+     "fair_p": 0.6991,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "Sets - Point Spread",
+     "boosted": false,
+     "ev": -0.0562,
+     "clear_cost": 0.2295
+    }
+   ],
+   "p": 0.6497,
+   "dec": 1.391,
+   "ev": -0.0965,
+   "clear_cost": 0.3805
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
     },
     {
      "sport": "tennis_atp",
@@ -3793,133 +2958,45 @@
    "legs": [
     {
      "sport": "tennis_atp",
-     "event": "Taylor Fritz @ Pierre-Hugues Herbert",
-     "event_key": "420518_c_p_206_prematch",
-     "start_utc": "2026-10-22T10:00:00+00:00",
-     "start_pt": "Thu 10-22 03:00 AM PT",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
      "market": "h2h",
-     "selection": "Taylor Fritz",
+     "selection": "Stefanos Tsitsipas",
      "point": null,
-     "fliff_dec": 1.15,
-     "fair_p": 0.8268,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
-     "ev": -0.0492,
-     "clear_cost": 0.3965
+     "ev": -0.0427,
+     "clear_cost": 1.5323
     },
     {
      "sport": "tennis_atp",
-     "event": "Andrey Rublev @ Adrian Mannarino",
-     "event_key": "420400_c_p_206_prematch",
-     "start_utc": "2026-10-21T08:50:00+00:00",
-     "start_pt": "Wed 10-21 01:50 AM PT",
+     "event": "Nikoloz Basilashvili @ Facundo Diaz Acosta",
+     "event_key": "420414_c_p_206_prematch",
+     "start_utc": "2026-10-21T07:40:00+00:00",
+     "start_pt": "Wed 10-21 12:40 AM PT",
      "market": "h2h",
-     "selection": "Andrey Rublev",
+     "selection": "Nikoloz Basilashvili",
      "point": null,
-     "fliff_dec": 1.25,
-     "fair_p": 0.7577,
+     "fliff_dec": 1.4,
+     "fair_p": 0.6718,
      "fair_src": "pinnacle",
      "fliff_src": "scrape",
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
-     "ev": -0.0528,
-     "clear_cost": 0.2788
+     "ev": -0.0595,
+     "clear_cost": 0.2213
     }
    ],
-   "p": 0.6265,
-   "dec": 1.438,
-   "ev": -0.0995,
-   "clear_cost": 0.3629
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Sho Shimabukuro @ Daniil Medvedev",
-     "event_key": "420506_c_p_206_prematch",
-     "start_utc": "2026-10-22T06:30:00+00:00",
-     "start_pt": "Wed 10-21 11:30 PM PT",
-     "market": "h2h",
-     "selection": "Daniil Medvedev",
-     "point": null,
-     "fliff_dec": 1.05,
-     "fair_p": 0.9049,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0499,
-     "clear_cost": 1.1031
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Felix Balshaw @ Corentin Moutet",
-     "event_key": "420573_c_p_206_prematch",
-     "start_utc": "2026-10-21T13:10:00+00:00",
-     "start_pt": "Wed 10-21 06:10 AM PT",
-     "market": "spreads",
-     "selection": "Corentin Moutet",
-     "point": 1.5,
-     "fliff_dec": 1.35,
-     "fair_p": 0.7019,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "Sets - Point Spread",
-     "boosted": false,
-     "ev": -0.0525,
-     "clear_cost": 0.2136
-    }
-   ],
-   "p": 0.6351,
-   "dec": 1.418,
+   "p": 0.6244,
+   "dec": 1.442,
    "ev": -0.0997,
-   "clear_cost": 0.3759
-  },
-  {
-   "legs": [
-    {
-     "sport": "tennis_atp",
-     "event": "Sho Shimabukuro @ Daniil Medvedev",
-     "event_key": "420506_c_p_206_prematch",
-     "start_utc": "2026-10-22T06:30:00+00:00",
-     "start_pt": "Wed 10-21 11:30 PM PT",
-     "market": "h2h",
-     "selection": "Daniil Medvedev",
-     "point": null,
-     "fliff_dec": 1.05,
-     "fair_p": 0.9049,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0499,
-     "clear_cost": 1.1031
-    },
-    {
-     "sport": "tennis_atp",
-     "event": "Andrey Rublev @ Adrian Mannarino",
-     "event_key": "420400_c_p_206_prematch",
-     "start_utc": "2026-10-21T08:50:00+00:00",
-     "start_pt": "Wed 10-21 01:50 AM PT",
-     "market": "h2h",
-     "selection": "Andrey Rublev",
-     "point": null,
-     "fliff_dec": 1.25,
-     "fair_p": 0.7577,
-     "fair_src": "pinnacle",
-     "fliff_src": "scrape",
-     "fliff_market_name": "MONEYLINE",
-     "boosted": false,
-     "ev": -0.0528,
-     "clear_cost": 0.2788
-    }
-   ],
-   "p": 0.6856,
-   "dec": 1.312,
-   "ev": -0.1001,
-   "clear_cost": 0.4672
+   "clear_cost": 0.3611
   },
   {
    "legs": [
@@ -3939,7 +3016,7 @@
      "fliff_market_name": "MONEYLINE",
      "boosted": false,
      "ev": -0.0427,
-     "clear_cost": 1.5324
+     "clear_cost": 1.5323
     },
     {
      "sport": "basketball_nba",
@@ -3964,6 +3041,314 @@
    "dec": 1.288,
    "ev": -0.1002,
    "clear_cost": 0.4984
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
+    },
+    {
+     "sport": "tennis_wta",
+     "event": "Sara Bejlek @ Sorana Cirstea",
+     "event_key": "420492_c_p_206_prematch",
+     "start_utc": "2026-10-21T08:00:00+00:00",
+     "start_pt": "Wed 10-21 01:00 AM PT",
+     "market": "h2h",
+     "selection": "Sorana Cirstea",
+     "point": null,
+     "fliff_dec": 1.4,
+     "fair_p": 0.6708,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0609,
+     "clear_cost": 0.2271
+    }
+   ],
+   "p": 0.6234,
+   "dec": 1.442,
+   "ev": -0.101,
+   "clear_cost": 0.3665
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
+    },
+    {
+     "sport": "basketball_nba",
+     "event": "CHI Bulls @ TOR Raptors",
+     "event_key": "417866_c_p_204_prematch",
+     "start_utc": "2026-10-21T23:30:00+00:00",
+     "start_pt": "Wed 10-21 04:30 PM PT",
+     "market": "h2h",
+     "selection": "Toronto Raptors",
+     "point": null,
+     "fliff_dec": 1.2,
+     "fair_p": 0.7795,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0646,
+     "clear_cost": 0.4142
+    }
+   ],
+   "p": 0.7245,
+   "dec": 1.236,
+   "ev": -0.1046,
+   "clear_cost": 0.6115
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
+    },
+    {
+     "sport": "tennis_wta",
+     "event": "Aliaksandra Sasnovich @ Leylah Fernandez",
+     "event_key": "420390_c_p_206_prematch",
+     "start_utc": "2026-10-21T06:40:00+00:00",
+     "start_pt": "Tue 10-20 11:40 PM PT",
+     "market": "h2h",
+     "selection": "Leylah Fernandez",
+     "point": null,
+     "fliff_dec": 1.4,
+     "fair_p": 0.6677,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0652,
+     "clear_cost": 0.244
+    }
+   ],
+   "p": 0.6206,
+   "dec": 1.442,
+   "ev": -0.1052,
+   "clear_cost": 0.3834
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
+    },
+    {
+     "sport": "tennis_atp",
+     "event": "Jan-Lennard Struff @ Gauthier Onclin",
+     "event_key": "420538_c_p_206_prematch",
+     "start_utc": "2026-10-21T17:10:00+00:00",
+     "start_pt": "Wed 10-21 10:10 AM PT",
+     "market": "h2h",
+     "selection": "Jan-Lennard Struff",
+     "point": null,
+     "fliff_dec": 1.25,
+     "fair_p": 0.7434,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0707,
+     "clear_cost": 0.3804
+    }
+   ],
+   "p": 0.6909,
+   "dec": 1.288,
+   "ev": -0.1104,
+   "clear_cost": 0.556
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
+    },
+    {
+     "sport": "tennis_atp",
+     "event": "Luciano Darderi @ James Duckworth",
+     "event_key": "420391_c_p_206_prematch",
+     "start_utc": "2026-10-21T06:30:00+00:00",
+     "start_pt": "Tue 10-20 11:30 PM PT",
+     "market": "spreads",
+     "selection": "James Duckworth",
+     "point": 1.5,
+     "fliff_dec": 1.35,
+     "fair_p": 0.686,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "Sets - Point Spread",
+     "boosted": false,
+     "ev": -0.0739,
+     "clear_cost": 0.308
+    }
+   ],
+   "p": 0.6376,
+   "dec": 1.391,
+   "ev": -0.1135,
+   "clear_cost": 0.4557
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Mikhail Kukushkin @ Stefanos Tsitsipas",
+     "event_key": "420509_c_p_206_prematch",
+     "start_utc": "2026-10-21T14:30:00+00:00",
+     "start_pt": "Wed 10-21 07:30 AM PT",
+     "market": "h2h",
+     "selection": "Stefanos Tsitsipas",
+     "point": null,
+     "fliff_dec": 1.03,
+     "fair_p": 0.9294,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0427,
+     "clear_cost": 1.5323
+    },
+    {
+     "sport": "tennis_wta",
+     "event": "Belinda Bencic @ Katarzyna Kawa",
+     "event_key": "420544_c_p_206_prematch",
+     "start_utc": "2026-10-22T05:00:00+00:00",
+     "start_pt": "Wed 10-21 10:00 PM PT",
+     "market": "h2h",
+     "selection": "Belinda Bencic",
+     "point": null,
+     "fliff_dec": 1.05,
+     "fair_p": 0.8815,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0745,
+     "clear_cost": 1.6897
+    }
+   ],
+   "p": 0.8193,
+   "dec": 1.082,
+   "ev": -0.114,
+   "clear_cost": 1.7068
+  },
+  {
+   "legs": [
+    {
+     "sport": "tennis_atp",
+     "event": "Lorenzo Musetti @ Moise Kouame",
+     "event_key": "420440_c_p_206_prematch",
+     "start_utc": "2026-10-21T17:00:00+00:00",
+     "start_pt": "Wed 10-21 10:00 AM PT",
+     "market": "h2h",
+     "selection": "Lorenzo Musetti",
+     "point": null,
+     "fliff_dec": 1.25,
+     "fair_p": 0.7647,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0442,
+     "clear_cost": 0.2311
+    },
+    {
+     "sport": "tennis_wta",
+     "event": "Belinda Bencic @ Katarzyna Kawa",
+     "event_key": "420544_c_p_206_prematch",
+     "start_utc": "2026-10-22T05:00:00+00:00",
+     "start_pt": "Wed 10-21 10:00 PM PT",
+     "market": "h2h",
+     "selection": "Belinda Bencic",
+     "point": null,
+     "fliff_dec": 1.05,
+     "fair_p": 0.8815,
+     "fair_src": "pinnacle",
+     "fliff_src": "scrape",
+     "fliff_market_name": "MONEYLINE",
+     "boosted": false,
+     "ev": -0.0745,
+     "clear_cost": 1.6897
+    }
+   ],
+   "p": 0.6741,
+   "dec": 1.312,
+   "ev": -0.1153,
+   "clear_cost": 0.5472
   }
  ]
 }
