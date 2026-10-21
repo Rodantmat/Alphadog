@@ -361,7 +361,8 @@ def build_strategy(legs):
     pos = sorted([l for l in legs if l["ev"] > 0], key=lambda l: -l["ev"])
     safe = sorted([l for l in legs if l["fair_p"] >= 0.70], key=lambda l: (-l["ev"], -l["fair_p"]))
     clear = sorted([l for l in legs if l["clear_cost"] is not None and l["fair_p"] >= 0.45], key=lambda l: l["clear_cost"])
-    pool = sorted([l for l in legs if l["fair_p"] >= 0.55 and l["ev"] >= -0.03], key=lambda l: -l["ev"])[:120]
+    # pool: no EV floor (sample run 2026-10-20: Fliff's game-line margin vs Pinnacle is ~4-6%, a -3% floor left 1 leg)
+    pool = sorted([l for l in legs if l["fair_p"] >= 0.50], key=lambda l: -l["ev"])[:150]
     combos = []
     for a, b in combinations(pool, 2):
         if a["event_key"] == b["event_key"]:
