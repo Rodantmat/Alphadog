@@ -72,6 +72,7 @@ jobs:
             discover) python fliff_probe/discover.py ;;
             discover_props) python fliff_probe/discover_props.py ;;
             discover_ladder) python fliff_probe/discover_ladder.py ;;
+            discover_bundle) python fliff_probe/discover_bundle.py ;;
             pairs) python fliff_probe/pairings.py ;;
             *) python fliff_probe/run_probe.py ;;
           esac
