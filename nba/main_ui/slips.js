@@ -584,9 +584,16 @@ export async function apiHighHit(sql, cfg, url, version) {
   const inSlip = new Set(slips.flatMap(s => s.legs.map(l => l.board_row_id)));
   const pool = [];
   for (const app of ["prizepicks", "underdog"]) {
-    pool.push(...board.filter(l => l.source_key === app && !l.ud_hidden && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore)
-      .sort((a, b) => Number(b.final_hp_raw) - Number(a.final_hp_raw)).slice(0, size)
-      .map(l => slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name) })));
+    const cand = board.filter(l => l.source_key === app && !l.ud_hidden && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore
+                                   && Number(l.edge_0_100) > 0)
+      .sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100));
+    const perType = new Map();
+    for (const l of cand) {
+      const t = String(l.line_type || "regular");
+      if ((perType.get(t) || 0) >= size) continue;
+      perType.set(t, (perType.get(t) || 0) + 1);
+      pool.push(slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name) }));
+    }
   }
   if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - the afternoon run builds them at 1:16 PM PT, or 29 minutes before the first tip when that is earlier; they appear here a few minutes later." : `No slips recorded for ${slate.date}.`);
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, test_only_recorded: testOnly.length, backup_pool: pool,
