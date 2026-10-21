@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-10-21T07:52:08Z",
-  "fetched_at": "2026-10-21T07:52:15Z",
+  "started_at": "2026-10-21T13:59:12Z",
+  "fetched_at": "2026-10-21T13:59:20Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -75,7 +75,7 @@
     [
       "alternate_projections",
       89,
-      285,
+      277,
       0,
       "deduped 0"
     ],
@@ -90,7 +90,7 @@
   ],
   "lines": 154,
   "legs": 154,
-  "ladder_legs": 285,
+  "ladder_legs": 277,
   "ladder_lines_with_alternates": 89,
   "players": 20,
   "pregame_legs": 154,
@@ -118,26 +118,26 @@
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 14,
+    "1.0": 11,
     "None": 5,
+    "0.89": 4,
     "0.8": 4,
-    "1.54": 4,
-    "0.89": 3,
-    "1.09": 3,
+    "1.05": 3,
     "0.91": 3,
+    "2.17": 3,
     "0.75": 3,
-    "0.9": 3,
     "0.84": 3,
     "1.5": 3,
-    "0.87": 2,
-    "2.17": 2,
-    "1.6": 2,
-    "6.1": 2
+    "1.54": 3,
+    "0.73": 2,
+    "1.09": 2,
+    "1.12": 2,
+    "0.87": 2
   },
-  "github_run_id": "39564825455",
+  "github_run_id": "39612639842",
   "target_date_et": "2026-10-21",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 7.0
+  "elapsed_s": 7.5
 }
