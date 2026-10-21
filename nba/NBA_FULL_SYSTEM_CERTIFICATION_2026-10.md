@@ -2576,3 +2576,23 @@ anything that's proved positive, we will try".
    - **Pooled leg rates:** Under beats Over at every depth (top 2: 0.558 / 0.590 against 0.546 / 0.561).
 10. **Standard 2-pick Power 2.9x** (owner screenshots, SGA + Wemby fantasy Less) against 3x (Dort + Carter steals Less). Both pairs are
     same game. Logged in PP_PAYOUT_FINDINGS 0o as an open quote item; the grader is unchanged.
+11. 🔴→✅ **The new alternate-Less rows would have re-tiered tomorrow's board - FIXED before they landed (2026-10-20 evening PT).** The
+    archive files a Less row (price 100) on every goblin / demon rung PrizePicks opens to Less (commit 001c074b, 15:33 PT, not yet run
+    by any P3).
+    - **Defect 1, `build_board_tiers_v2.py`:** the switch-point anchor (ladders with no standard line) took the lowest +100 alternate
+      as the lowest demon WITHOUT a side filter, so a goblin's Less row pulled the anchor down. Fixed: More rungs only (commit
+      d5c75c50).
+    - **Proof, `audit_alt_less_tiers.py` run 39521210467, AUDIT_PASS** (the real 10-21 board parsed by the archiver P3 runs, temp
+      tables only):
+      - More rows 7,225 / 7,225 are identical with and without the 979 Less rows.
+      - The OLD anchor would have changed 767 More rows (10.6% of the board), and with them tiers, price keys and prices.
+      - Less rows follow the four-way rule (454 goblin above, 505 demon below, 20 no anchor) with 0 violations.
+    - **Defect 2, `nba_market.pp_refresh_prices()`:** the anchor rescue labelled rescued rows by position only (below = goblin) and
+      checked the More flag against that label. A Less row below the anchor is a demon. Fixed side-aware (four-way), with the flag
+      check by position.
+      - Identical on More rows, including flag_agrees false at the anchor.
+      - Applied to the DB: md5 396b10f9 = the reviewed source. Recorded by the SQL dump (ba3774a8).
+    - **The certified pick is untouched:** live_slip_engine BOARD_SQL already excludes alternate Less legs (`NOT (kind <> 'standard'
+      AND side Under)`). pp_price_version already prices the Less side (1.7x favourite floor).
+    - **Archiver output on the 10-21 board:** 1,307 alternate Less rows (points 387, rebounds 344, PRA 312, assists 261, steals /
+      blocks 3).
