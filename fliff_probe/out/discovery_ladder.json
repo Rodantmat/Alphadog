@@ -138,19 +138,19 @@
     30
    ],
    [
-    "417866_c_p_204_prematch",
-    1
-   ],
-   [
-    "409516_c_p_204_prematch",
-    1
-   ],
-   [
     "409528_c_p_204_prematch",
     1
    ],
    [
-    "407819_c_p_204_prematch",
+    "409514_c_p_204_prematch",
+    1
+   ],
+   [
+    "407818_c_p_204_prematch",
+    1
+   ],
+   [
+    "407815_c_p_204_prematch",
     1
    ]
   ],
@@ -592,11 +592,11 @@
     30
    ],
    [
-    "409528_c_p_204_prematch",
+    "409514_c_p_204_prematch",
     1
    ],
    [
-    "409529_c_p_204_prematch",
+    "409528_c_p_204_prematch",
     1
    ],
    [
@@ -604,7 +604,7 @@
     1
    ],
    [
-    "417867_c_p_204_prematch",
+    "409515_c_p_204_prematch",
     1
    ]
   ],
@@ -926,7 +926,15 @@
   ],
   "conflicts_in_markets": [
    [
+    "407817_c_p_204_prematch",
+    1
+   ],
+   [
     "407818_c_p_204_prematch",
+    1
+   ],
+   [
+    "407815_c_p_204_prematch",
     1
    ],
    [
@@ -934,15 +942,7 @@
     1
    ],
    [
-    "409516_c_p_204_prematch",
-    1
-   ],
-   [
-    "409514_c_p_204_prematch",
-    1
-   ],
-   [
-    "409529_c_p_204_prematch",
+    "407819_c_p_204_prematch",
     1
    ]
   ],
@@ -1428,5 +1428,44 @@
   ],
   "player_groups": {},
   "player_groups_count": {}
+ },
+ "ping_endpoints": {
+  "aurora_public_feed_endpoint": "",
+  "core_server_private_endpoint": "https://m-c701.app.getfliff.com/",
+  "core_server_public_endpoint": "https://m-c701.app.getfliff.com/",
+  "core_sever_private_endpoint": "https://m-c701.app.getfliff.com/",
+  "core_sever_public_endpoint": "https://m-c701.app.getfliff.com/",
+  "is_alt_prop_button_enabled": true,
+  "proposals_feed_endpoint": "https://herald-2.app.getfliff.com/",
+  "real_time_parlay_plus_offers_endpoint": "https://m-c811.app.getfliff.com/",
+  "skipper_public_feed_endpoint": "https://herald-3.app.getfliff.com/",
+  "skipper_real_time_parlay_plus_offers_endpoint": "https://m-c811.app.getfliff.com/"
+ },
+ "skipper_public_feed_endpoint:3054": {
+  "error": "fliff call failed after retries: api error {'error_code': 30503, 'error_message': \"unknown invocation [FM__Invocation(schema_version=1, request=FCM__Public_Feed_Sync__Request(schema_version=1, subfeed"
+ },
+ "skipper_public_feed_endpoint:3062_conflict": {
+  "error": "fliff call failed after retries: api error {'error_code': 30503, 'error_message': \"unknown invocation [FM__Invocation(schema_version=1, request=FCM__Public_Feed_Sync__Request(schema_version=1, subfeed"
+ },
+ "skipper_public_feed_endpoint:3062_conflict+player": {
+  "error": "fliff call failed after retries: api error {'error_code': 30503, 'error_message': \"unknown invocation [FM__Invocation(schema_version=1, request=FCM__Public_Feed_Sync__Request(schema_version=1, subfeed"
+ },
+ "real_time_parlay_plus_offers_endpoint:3054": {
+  "error": "fliff call failed after retries: http 503"
+ },
+ "real_time_parlay_plus_offers_endpoint:3062_conflict": {
+  "error": "fliff call failed after retries: http 503"
+ },
+ "real_time_parlay_plus_offers_endpoint:3062_conflict+player": {
+  "error": "fliff call failed after retries: http 503"
+ },
+ "skipper_real_time_parlay_plus_offers_endpoint:3054": {
+  "error": "fliff call failed after retries: http 503"
+ },
+ "skipper_real_time_parlay_plus_offers_endpoint:3062_conflict": {
+  "error": "fliff call failed after retries: http 503"
+ },
+ "skipper_real_time_parlay_plus_offers_endpoint:3062_conflict+player": {
+  "error": "fliff call failed after retries: http 503"
  }
 }
