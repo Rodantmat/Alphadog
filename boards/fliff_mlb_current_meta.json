@@ -2,15 +2,15 @@
   "ok": true,
   "source": "fliff fc_mobile_api_public (ping -> sync 3054 -> per-conflict sync 3062)",
   "sport": "mlb",
-  "started_at": "2026-10-20T21:50:42Z",
-  "fetched_at": "2026-10-20T21:50:43Z",
+  "started_at": "2026-10-21T00:52:22Z",
+  "fetched_at": "2026-10-21T00:52:22Z",
   "feed_host": "https://herald-2.app.getfliff.com/",
   "app_version": "5.0.34.285",
   "server_build": 5725,
   "min_app_build": 284,
   "events": 1,
   "markets": 47,
-  "legs": 552,
+  "legs": 548,
   "errors": [],
   "channels_seen": {
     "452": 56,
@@ -30,7 +30,6 @@
     "4230": 18,
     "43045": 17,
     "43021": 16,
-    "753": 16,
     "461": 15,
     "4950": 15,
     "4200": 15,
@@ -38,6 +37,7 @@
     "4320": 14,
     "4386": 13,
     "481": 13,
+    "43023": 12,
     "43032": 12,
     "4383": 12,
     "43037": 10,
@@ -53,7 +53,7 @@
     "Batter Walks": 36,
     "Batter Singles": 36,
     "Batter Doubles": 36,
-    "Batter Home Runs": 30,
+    "Batter Home Runs": 26,
     "Batter Stolen Bases": 26,
     "Batters In Half-Inning Exact": 20,
     "Pitches Thrown In Half-Inning Banded": 20,
@@ -94,5 +94,5 @@
     "TOTAL RUNS": 2
   },
   "players": 20,
-  "github_run_id": "39503436126"
+  "github_run_id": "39523768037"
 }
