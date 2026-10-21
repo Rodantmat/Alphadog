@@ -350,6 +350,62 @@ STREAK_RULES_DEFAULT = {"enabled": False, "rules": {
     "A_regular_5power": {"flag": "losing_days", "days": 3, "stake": 0.5}}}
 _STREAK_RULES = None
 
+# SLIP EXPOSURE (2026-10-21; owner 2026-10-20 21:48 PT: "We clearly have a correlation issue in many players on many slips").
+# Every strategy takes the top-`cap` combinations of its best legs, so its best legs sit in nearly every slip and the strategies
+# repeat each other's legs (10-20: Pritchard turnovers Over in 5 of 8 slips). Every slip holding a leg is one more bet on that leg.
+# Tunable nba_config.classification_config['slip_exposure'] (DB, one row): enabled; share = per strategy, a leg in at most
+# ceil(share x cap) of that strategy's slips; leg_cap = per day, a leg in at most N staked slips across all strategies (production
+# order); player_cap = per day, a player (any prop) in at most N staked slips. A blocked slip is replaced by the next-ranked valid
+# slip of the same strategy (never a different rule). Shadow strategies are never capped and never count. Off = the certified rule,
+# byte for byte. Research: nba/research_slip_exposure.py. LS_EXPOSURE (JSON) overrides the row for research replays only.
+EXPOSURE_DEFAULT = {"enabled": False, "share": None, "leg_cap": None, "player_cap": None}
+_EXPOSURE = None
+
+
+def exposure_cfg(conn):
+    global _EXPOSURE
+    if _EXPOSURE is None:
+        cfg = dict(EXPOSURE_DEFAULT)
+        env = os.environ.get('LS_EXPOSURE')
+        try:
+            if env:
+                cfg.update(json.loads(env))
+            else:
+                row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='slip_exposure'").fetchone()
+                if row:
+                    cfg.update(row[0] if isinstance(row[0], dict) else json.loads(row[0]))
+        except Exception as e:  # noqa: BLE001
+            print(f"  slip_exposure config unreadable ({type(e).__name__}) - exposure caps OFF", flush=True)
+            cfg = dict(EXPOSURE_DEFAULT)
+        _EXPOSURE = cfg
+    return _EXPOSURE
+
+
+def exposure_key(l):
+    return (l['player'], l['prop'], l['side'], float(l['line']))
+
+
+def exposure_select(ranked, cap, cfg, glob, pglob):
+    """Greedy down the production ranking: take a slip unless one of its legs / players is already at its cap."""
+    out, own = [], defaultdict(int)
+    share = cfg.get('share')
+    per = math.ceil(float(share) * cap) if share else None
+    lc, pc = cfg.get('leg_cap'), cfg.get('player_cap')
+    for s in ranked:
+        if len(out) >= cap:
+            break
+        ks = [exposure_key(l) for l in s]
+        if per is not None and any(own[k] >= per for k in ks):
+            continue
+        if lc and any(glob[k] >= int(lc) for k in ks):
+            continue
+        if pc and any(pglob[l['player']] >= int(pc) for l in s):
+            continue
+        out.append(s)
+        for k in ks:
+            own[k] += 1
+    return out
+
 
 def streak_rules(conn):
     global _STREAK_RULES
