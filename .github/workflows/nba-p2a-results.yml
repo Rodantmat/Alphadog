@@ -385,6 +385,17 @@ jobs:
           UDL_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
         run: python -u nba/ud_live_slip_engine.py
 
+      # FORWARD PAPER TRACKER GRADE (2026-10-20): every ungraded paper slip of a finished slate (AL_* goblin / demon Less, SR_*
+      # standard Flex) from the box scores this run loaded - waits while a game is not final or a team's box score is missing.
+      # Paper only: continue-on-error, never disturbs the grades above.
+      - name: Paper tracker grade
+        id: soft_paper_al
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: "grade"
+        run: python -u nba/paper_altless_tracker.py && MODE=report python -u nba/paper_altless_tracker.py
+
       # UNDERDOG EDGE MONITOR (§31o): is the staked P5 portfolio still above break-even? Decisions only at 30 / 60 / 90 / 120
       # graded slates (bootstrap-calibrated); running z in between is information only. Monitoring only: continue-on-error.
       - name: Underdog edge monitor (break-even, group-sequential)
