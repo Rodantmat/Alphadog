@@ -202,7 +202,7 @@ def main():
         for p in ps:
             prod *= p["m"]
         od = j.get("odds") or {}
-        s_mult = float(od.get("decimal") or 0) or None
+        s_mult = float(od.get("multiplier") or od.get("decimal") or 0) or None
         offs = ((j.get("flex") or {}).get("offerings") or [])
         pr = (offs[0].get("pricing") or {}) if offs else {}
         f_mult = float(((pr.get("0") or {}).get("odds") or {}).get("decimal") or 0) or None
