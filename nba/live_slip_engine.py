@@ -381,6 +381,51 @@ def exposure_cfg(conn):
     return _EXPOSURE
 
 
+OVER_MIN_DEFAULT = {"enabled": False, "min_avg": 24.0, "games": 10}
+
+
+def over_minutes_filter(conn, day, pool):
+    """OVER MINUTES FLOOR (2026-10-21; 10-20: Daniss Jenkins rebounds / assists Over on 15 minutes). An Over needs minutes; a player
+    whose last `games` games (before the day, any season) average under `min_avg` minutes is left out of every Over cell. Tunable
+    nba_config.classification_config['over_minutes_floor'] (enabled / min_avg / games); LS_OVER_MIN (JSON) overrides for research
+    replays. Measured: nba/research_slip_exposure.py (variants M20 / M24). Off = the certified pool, unchanged."""
+    cfg = dict(OVER_MIN_DEFAULT)
+    try:
+        env = os.environ.get('LS_OVER_MIN')
+        if env:
+            cfg.update(json.loads(env))
+        else:
+            row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='over_minutes_floor'").fetchone()
+            if row:
+                cfg.update(row[0] if isinstance(row[0], dict) else json.loads(row[0]))
+    except Exception as e:  # noqa: BLE001
+        print(f"  over_minutes_floor config unreadable ({type(e).__name__}) - floor OFF", flush=True)
+        return pool
+    if not cfg.get('enabled'):
+        return pool
+    pids = sorted({str(l['player_id']) for v in pool.values() for l in v if l['side'] == 'Over' and l.get('player_id')})
+    if not pids:
+        return pool
+    mins = {str(r[0]): float(r[1]) for r in conn.execute("""SELECT x.pid, avg(x.m) FROM (SELECT g.nba_player_id pid, g.min::float m,
+                row_number() OVER (PARTITION BY g.nba_player_id ORDER BY g.game_date DESC) rn FROM nba_stats.player_game_log g
+                WHERE g.game_date < %s AND g.nba_player_id::text = ANY(%s)) x WHERE x.rn <= %s GROUP BY x.pid""",
+                (day, pids, int(cfg.get('games', 10)))).fetchall()}
+    floor = float(cfg.get('min_avg', 24.0))
+    out, dropped = {}, set()
+    for c, v in pool.items():
+        keep = []
+        for l in v:
+            # no minutes history (a rookie's first game) -> kept, as the research did
+            if l['side'] == 'Over' and mins.get(str(l.get('player_id')), 99.0) < floor:
+                dropped.add((l['player'], l['prop']))
+                continue
+            keep.append(l)
+        out[c] = keep
+    print(f"  {day}: OVER MINUTES FLOOR {floor:g} min (last {int(cfg.get('games', 10))} games) - {len(dropped)} Over legs left out"
+          + (f": {', '.join(sorted(p + ' ' + q for p, q in dropped)[:12])}" if dropped else ""), flush=True)
+    return out
+
+
 def exposure_key(l):
     return (l['player'], l['prop'], l['side'], float(l['line']))
 
