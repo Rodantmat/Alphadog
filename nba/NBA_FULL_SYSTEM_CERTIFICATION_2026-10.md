@@ -2546,3 +2546,33 @@ anything that's proved positive, we will try".
 7. Other research today: PrizePicks standard-line reconstruction from box scores (fit one season, test the other): same-result 97-98%
    steals / blocks / stocks, ~92% threes / turnovers / points, 83-85% rebounds / assists / combos; live lines 2-18% below last-season
    means.
+8. **Forward paper tracker - CERTIFIED and wired (2026-10-20 evening PT).** `nba/paper_altless_tracker.py` (pick / grade / report),
+   table `nba_score.paper_altless_slips` (status 'paper', never placed, never on the slip screen, one set per slate per rule family).
+   P3 soft step `soft_paper_al` picks after the Underdog paper pick; P2A soft step grades and prints the running report.
+   - **AL_* (goblin / demon Less):** points / PRA / rebounds / assists, tiers 1-3, legs ONLY where PrizePicks' window board opened Less
+     (archive rows side Under on `*_alternate`; the open set is never assumed), depth rmin <= 2 by reverse rank on score / final_hp /
+     baseline_hp per (prop, tier), price from the Less law, sizes 2-6 Power + Flex, >= 2 games, <= 2 legs per game.
+   - **SR_* (standard Flex):** the 9 rules out of 585 whose bootstrap LB5 > 0 in BOTH seasons (research_standard_depth.py run
+     39519383293, 244,670 graded standard legs). All are 5- or 6-pick Flex: baseline_hp Over top 2/3/5/10 5F, baseline_hp both
+     top 2 5F/6F, baseline_hp Under top 3 6F, final_hp Under top 2 5F, final_score Under top 1 5F.
+   - **Audit `audit_paper_altless_tracker.py`, run 39520365935, AUDIT_PASS on 2025-01-15 / 2025-03-10 / 2026-01-20 / 2026-03-15:**
+     - Alt-Less rank parity with the research is 100% inside the tie interval. The research's row_number() orders equal scores
+       arbitrarily: on 2026-01-20 assists D2, Cody Williams / Ochai Agbaji / Quinten Post carry identical scores on all three keys.
+     - Live picks also rank rungs the research dropped as ungraded (DNP / no box score). That is unknowable at pick time and is
+       reported, not failed.
+     - Grade parity is 40/40 per slate.
+     - Standard legs: 908/908 and 772/772, the same three scores, rank and box-score hit.
+     - Stat expressions = prop_universe.stat_actual on 4,113/4,113 legs, all 12 props.
+   - **First real picks:** the 10-21 window (11 games). The 10-20 archive holds no alternate Less rows because the allowed_wager_types
+     filing landed after that run.
+9. **Regular-line 2-pick Flex (owner request 17:04 PT) - measured, NOT positive.**
+   - **Breakevens:** 2-pick Flex 2x / 0.5x needs a leg rate of 0.618 (EV = p^2 + p), against 2-pick Power 0.577. Exact breakevens
+     2-6: 2F .618, 2P .577, 3F .577, 3P .550, 4F .550, 4P .562, 5F .543, 5P .549, 6F .542, 6P .547.
+   - **No rule clears the 2-pick Flex breakeven:** no standard cell holds >= 0.618 in both seasons with n >= 100. The best both-season
+     cells are steals both top 1 (0.605 / 0.594), pts_ast Over top 1 (0.593 / 0.615) and points Under top 2 (0.593 / 0.606).
+   - **Every 2F rule lost in both seasons.** The best was final_hp both top 2 x5 a day at -3.9% / -3.4%.
+   - **Cross-season and trailing selectors** (30 / 60-day trailing leg rate >= breakeven) are positive in 2025-26 and negative in
+     2024-25 at every size, so they are not certified.
+   - **Pooled leg rates:** Under beats Over at every depth (top 2: 0.558 / 0.590 against 0.546 / 0.561).
+10. **Standard 2-pick Power 2.9x** (owner screenshots, SGA + Wemby fantasy Less) against 3x (Dort + Carter steals Less). Both pairs are
+    same game. Logged in PP_PAYOUT_FINDINGS 0o as an open quote item; the grader is unchanged.
