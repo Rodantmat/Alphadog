@@ -358,7 +358,10 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
   const minScore = num(url.searchParams.get("min_score"), 0) || 0;
   const minHp = num(url.searchParams.get("min_hit_probability"), 0) || 0;
   const t0 = Date.now();
-  const overview = url.searchParams.get("view") === "overview";
+  // OVERVIEW OFF UNTIL PROVEN (2026-10-21 15:30 PT): its first pass ran > 4 min in the database through the worker (the 20 s race
+  // returns, the database query keeps running). Asked for while nba_main_ui.overview.enabled is not true = the whole board.
+  const overviewAsked = url.searchParams.get("view") === "overview";
+  const overview = overviewAsked && ((cfg.ui || {}).overview || {}).enabled === true;
   const ovr = overview ? await overviewRows(sql, cfg, slate, minHp) : null;
   const rows = overview ? ovr.rows : await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
   // a leg without its market-anchored row falls back to the raw model number - said on the board, never silent (2026-10-15)
