@@ -750,6 +750,21 @@ jobs:
           UDL_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/ud_live_slip_engine.py
 
+      # FORWARD PAPER TRACKER (2026-10-20, owner: "anything that's proved positive, we will try"): fixed goblin / demon Less rules
+      # (AL_*, sizes 2-6 Power + Flex, ONLY on rungs PrizePicks' window board opened to Less) and the 9 standard-line Flex rules
+      # whose bootstrap lower bound is positive in both seasons (SR_*). PAPER: written to nba_score.paper_altless_slips with status
+      # 'paper', never placed, never on the slip screen; one set per slate; graded by P2A. Certified by audit_paper_altless_tracker.py
+      # (run 39520365935: rank parity up to ties, grade parity, standard legs 908/908 and 772/772). Soft: never disturbs the picks above.
+      - name: Paper tracker - goblin / demon Less + standard Flex rules
+        id: soft_paper_al
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: "pick"
+          PAT_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/paper_altless_tracker.py
+
       # PRICE-SHOPPING LEDGER (§31v, 2026-10-08): MEASUREMENT ONLY. For every leg the two engines selected today, every app's
       # window price for the same leg (Sleeper multiplier, Underdog modifier, Fliff odds; availability on PrizePicks/Betr), the
       # model's p, p*m and the conservative gate. No slip is built or changed; the daily summary is printed. Soft step.
