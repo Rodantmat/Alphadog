@@ -494,7 +494,7 @@ def main():
     pos, safe, clear, best_combo, safe_combo, n_combos = build_strategy(legs)
     report.update({"fliff_boards_pulled": pulls, "graded_legs": len(legs), "unmatched_events_by_sport": dict(unmatched),
                    "fliff_calls": fc.calls, "scrape_market_name_census": {k: v.most_common(40) for k, v in scrape_census.items()},
-                   "xcheck_scrape_vs_parlayapi_fliff": xc, "legs_by_source": dict(Counter((l["fliff_src"], l["fair_src"]) for l in legs).most_common()),
+                   "xcheck_scrape_vs_parlayapi_fliff": xc, "legs_by_source": dict(Counter(f"{l['fliff_src']}/{l['fair_src']}" for l in legs).most_common()),
                    "top_ev_legs": pos[:40], "safest_legs": safe[:40], "cheapest_bonus_clearing": clear[:25],
                    "best_2pick_by_ev": best_combo, "safest_2pick": safe_combo})
     meta = {"when_pt": NOW.astimezone(PT).strftime("%a %b %d %Y, %I:%M %p PT"), "hours": HOURS, "n_events": len(fevs), "pulls": pulls,
