@@ -276,6 +276,10 @@ def parse_fliff_board(j, fkey):
             mk = classify_market(vn)
             if not mk:
                 continue
+            # 3-way guard (full run 2026-10-20: soccer 'moneylines' at 1.04-1.10 graded -17..-26% vs Pinnacle's 1X2 - a 2-way
+            # market (draw-no-bet / double-chance style) is not the 1X2; soccer h2h is graded only when the market has a Draw)
+            _sels = [norm(p.get("t_141_selection_name")) for g0 in (m.get("groups") or []) for p in (g0.get("proposals") or [])]
+            has_draw = any("draw" in s.split() or s.strip() in ("x", "tie") for s in _sels)
             for g in m.get("groups") or []:
                 if g.get("player_fkey"):
                     continue
