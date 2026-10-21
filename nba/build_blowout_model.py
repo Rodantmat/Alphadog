@@ -77,7 +77,13 @@ def main():
     rows = []
     for season in seasons:
         slug = season.replace("-", "_")
-        lg = pd.DataFrame(fetch(f"nba_player_game_log_{slug}.json")["records"])
+        recs = fetch(f"nba_player_game_log_{slug}.json")["records"]
+        if not recs:
+            # an empty stub (ensure_season_files writes records [] before a season's first game is synced) has no columns;
+            # it carries no games, so it contributes nothing - skip it instead of failing on KeyError 'GAME_DATE' (sim 10-21)
+            print(f"{season}: season file has 0 records - skipped", flush=True)
+            continue
+        lg = pd.DataFrame(recs)
         lg["GAME_DATE"] = pd.to_datetime(lg["GAME_DATE"]).dt.date
         lg["PLAYER_ID"] = lg["PLAYER_ID"].astype(str)
         lg["GAME_ID"] = lg["GAME_ID"].astype(str)
