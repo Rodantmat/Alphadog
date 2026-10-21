@@ -141,7 +141,10 @@ def main():
         mins = {str(r[0]): float(r[1]) for r in conn.execute("""SELECT x.pid, avg(x.m) FROM (SELECT g.nba_player_id pid, g.min::float m,
                     row_number() OVER (PARTITION BY g.nba_player_id ORDER BY g.game_date DESC) rn FROM nba_stats.player_game_log g
                     WHERE g.game_date < %s AND g.nba_player_id::text = ANY(%s)) x WHERE x.rn <= 10 GROUP BY x.pid""", (day, pids)).fetchall()}
-        n_games = conn.execute("SELECT count(*) FROM nba_calendar.slate_games WHERE game_date=%s", (day,)).fetchone()[0]
+        # the production count (pick(): slate_games OR the team game log - slate_games does not cover 2024-25; first run had every
+        # 2024-25 day as a small slate, cap 1)
+        n_games = conn.execute("""SELECT greatest((SELECT count(*) FROM nba_calendar.slate_games WHERE game_date=%s),
+                                                  (SELECT count(*) / 2 FROM nba_team.team_game_log WHERE game_date=%s))""", (day, day)).fetchone()[0]
         small = n_games <= 4
         in_week1 = 0 <= (day - s0).days <= 6
 
