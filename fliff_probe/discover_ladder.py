@@ -74,6 +74,33 @@ def main():
         print(name, json.dumps(rep[name].get("player_groups_count") if isinstance(rep[name], dict) else rep[name])[:400], flush=True)
         time.sleep(0.5)
     print("baseline player groups:", rep["baseline_board"]["player_groups_count"], flush=True)
+    # ROUND 2 (focused_player_fkey returned nothing new): the ping lists a separate 'skipper' feed (pick'em product:
+    # skipper_flex_play_modes_enabled, is_alt_prop_button_enabled). Same requests against every non-herald endpoint.
+    rep["ping_endpoints"] = {k: v for k, v in fc.ping_data.items() if isinstance(v, (str, int, bool)) and ("endpoint" in k or "skipper" in k or "alt" in k)}
+    print("ping endpoints:", rep["ping_endpoints"], flush=True)
+    for key in ("skipper_public_feed_endpoint", "aurora_public_feed_endpoint", "real_time_parlay_plus_offers_endpoint",
+                "skipper_real_time_parlay_plus_offers_endpoint"):
+        host = fc.ping_data.get(key)
+        if not isinstance(host, str) or not host.startswith("http"):
+            continue
+        saved = fc.feed_host
+        fc.feed_host = host
+        for name, (ch, cf, pl, code) in {"3054": (-333, "", "", 3054), "3062_conflict": (461, fk, "", 3062),
+                                         "3062_conflict+player": (461, fk, pf, 3062)}.items():
+            tag = f"{key}:{name}"
+            try:
+                j = req(fc, ch, cf, pl, code)
+                s = summarize(j, fk, pf)
+                s["top_keys"] = sorted(j.keys())[:20]
+                s["result_preview"] = json.dumps(j.get("result") or {}, default=str)[:600]
+                rep[tag] = s
+            except Exception as exc:  # noqa: BLE001
+                rep[tag] = {"error": str(exc)[:200]}
+            r = rep[tag]
+            print(tag, "->", r.get("error") or {"x_slots": r.get("x_slots_keys"), "player_groups": r.get("player_groups_count"),
+                                               "markets": (r.get("markets") or [])[:8]}, flush=True)
+            time.sleep(0.5)
+        fc.feed_host = saved
     (OUT / "discovery_ladder.json").write_text(json.dumps(rep, indent=1, default=str))
 
 
