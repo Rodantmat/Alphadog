@@ -1044,6 +1044,9 @@ def pick(conn, day, require_fresh=True):
                     s_ for s_, f_ in flags.items() if f_['acted'] and sr['rules'].get(s_, {}).get('shift_to') == name) + " is flagged"
             if st == 'placed' and below_min_stake(conn, w):
                 st = 'placed_below_min'    # 2026-10-15: unit x stake_weight below the apps' minimum entry - recorded, never staked
+            if st == 'placed':
+                for l in slip:
+                    xglob[exposure_key(l)] += 1; xpglob[l['player']] += 1
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
