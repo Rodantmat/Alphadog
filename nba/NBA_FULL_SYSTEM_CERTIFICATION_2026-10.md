@@ -2596,3 +2596,23 @@ anything that's proved positive, we will try".
       AND side Under)`). pp_price_version already prices the Less side (1.7x favourite floor).
     - **Archiver output on the 10-21 board:** 1,307 alternate Less rows (points 387, rebounds 344, PRA 312, assists 261, steals /
       blocks 3).
+12. **Market anchor: anchored vs raw, sub-group by sub-group** (report-only addition to build_market_anchor.py, run 39521588234; the
+    gate is unchanged and still FAILS).
+    - **Out of sample, both directions:** log-loss 0.633 -> 0.617 and 0.667 -> 0.649. Top band shown 0.764 / hit 0.775 (raw 0.803 /
+      0.717) and 0.765 / 0.754 (raw 0.803 / 0.666).
+    - **Sub-groups at least as close as raw:** 69 of 79 and 64 of 77.
+    - **Over the 5-point bar,** with the raw model on the same legs:
+      - Under/pp/assists .55-.60: -7.4 vs raw +5.6.
+      - Over/dk .55-.60: -6.7 vs raw +5.8.
+      - Under/pp >= .60: +6.4 vs raw +20.3.
+      - Under/dk/threes .55-.60: +7.0 vs raw +3.0.
+    - **Reading:** opposite-sign misses between sides and seasons (season drift of the Over / Under base rates, not learnable from
+      the other season). The one clear regression against raw is Under threes and Under assists in the .55-.60 band.
+    - **Status:** the display layer stays on the earlier-certified live config (better than raw on aggregate and in 83-87% of
+      sub-groups). It remains UNCERTIFIED against the 5-point sub-group bar.
+    - **Candidate fix (not built):** an in-season, as-of intercept per (side, anchor class) from the trailing graded legs, once 2026-27
+      has graded volume.
+13. **JIT on vs off, P3 critical-path reads** (`audit_jit_benchmark.py`, run 39521511180): pp_leg_price window, the live pick's
+    BOARD_SQL, the scorer's board load, the paper tracker's two leg queries, final_hp and board_scored slate reads. 1.4 s on vs 1.3 s
+    off in total, identical results. JIT only hurt the price ledger's large aggregation (48-87 s vs 4 s), which already sets jit off
+    in its own session. No PGOPTIONS change; nothing database-wide.
