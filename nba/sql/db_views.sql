@@ -1,4 +1,4 @@
--- DUMP OF THE NBA DATABASE VIEWS (2026-10-19, nba/dump_db_sql.py). The database is the running copy; this file is the
+-- DUMP OF THE NBA DATABASE VIEWS (2026-10-21, nba/dump_db_sql.py). The database is the running copy; this file is the
 -- record (round-2 P3#16: critical-path SQL must be certifiable from source and recoverable from git).
 -- Do not hand-edit: change the database (or the hand-maintained source files in this folder), then re-dump.
 

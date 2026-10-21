@@ -1,4 +1,4 @@
--- DUMP OF THE NBA DATABASE FUNCTIONS (2026-10-19, nba/dump_db_sql.py). The database is the running copy; this file is the
+-- DUMP OF THE NBA DATABASE FUNCTIONS (2026-10-21, nba/dump_db_sql.py). The database is the running copy; this file is the
 -- record (round-2 P3#16: critical-path SQL must be certifiable from source and recoverable from git).
 -- Do not hand-edit: change the database (or the hand-maintained source files in this folder), then re-dump.
 
@@ -571,13 +571,16 @@ BEGIN
     GROUP BY 1, 2, 3
   ), cand AS (
     SELECT t.game_date, t.snapshot_label, t.player, t.base_market, t.side, t.line, d.std_line,
-           CASE WHEN t.line < d.std_line THEN 'goblin' WHEN t.line > d.std_line THEN 'demon' ELSE 'standard' END AS pos_kind
+           -- FOUR-WAY RULE (2026-10-20): Less below the anchor = demon, Less above = goblin (alternate Less rows now archived)
+           CASE WHEN t.line < d.std_line THEN CASE WHEN t.side = 'Under' THEN 'demon' ELSE 'goblin' END
+                WHEN t.line > d.std_line THEN CASE WHEN t.side = 'Under' THEN 'goblin' ELSE 'demon' END ELSE 'standard' END AS pos_kind,
+           CASE WHEN t.line < d.std_line THEN 'below' WHEN t.line > d.std_line THEN 'above' ELSE 'at' END AS pos
     FROM nba_market.board_tiers_v2 t
     JOIN std_day d ON d.game_date = t.game_date AND d.player = t.player AND d.base_market = t.base_market AND d.n_std = 1
     WHERE t.bookmaker = 'prizepicks' AND t.anchor_type = 'none' AND t.game_date >= p_since
   )
   SELECT c.game_date, c.snapshot_label, c.player, c.base_market, c.side, c.line, c.std_line, c.pos_kind, 'same_day_snapshot', s.price,
-         CASE WHEN s.price = 100 THEN c.pos_kind = 'demon' WHEN s.price = -137 THEN c.pos_kind = 'goblin' END,
+         CASE WHEN s.price = 100 THEN c.pos = 'above' WHEN s.price = -137 THEN c.pos = 'below' END,   -- the MORE rung's flag = position
          'PrizePicks standard seen in another snapshot the same day; one value all day (refresh)'
   FROM cand c
   LEFT JOIN nba_market.board_snapshots s
@@ -602,14 +605,16 @@ BEGIN
     SELECT game_date, player, m, percentile_cont(0.5) WITHIN GROUP (ORDER BY bl) AS consensus, count(*) AS books FROM book GROUP BY 1, 2, 3
   ), cand AS (
     SELECT t.game_date, t.snapshot_label, t.player, t.base_market, t.side, t.line, c.consensus, c.books,
-           CASE WHEN t.line < c.consensus THEN 'goblin' WHEN t.line > c.consensus THEN 'demon' ELSE 'standard' END AS pos_kind
+           CASE WHEN t.line < c.consensus THEN CASE WHEN t.side = 'Under' THEN 'demon' ELSE 'goblin' END
+                WHEN t.line > c.consensus THEN CASE WHEN t.side = 'Under' THEN 'goblin' ELSE 'demon' END ELSE 'standard' END AS pos_kind,
+           CASE WHEN t.line < c.consensus THEN 'below' WHEN t.line > c.consensus THEN 'above' ELSE 'at' END AS pos
     FROM nba_market.board_tiers_v2 t
     JOIN cons c ON c.game_date = t.game_date AND c.player = t.player AND c.m = t.base_market
     LEFT JOIN pp_any a ON a.game_date = t.game_date AND a.player = t.player AND a.m = t.base_market
     WHERE t.bookmaker = 'prizepicks' AND t.anchor_type = 'none' AND a.player IS NULL AND t.game_date >= p_since
   )
   SELECT c.game_date, c.snapshot_label, c.player, c.base_market, c.side, c.line, c.consensus, c.pos_kind, 'sportsbook_consensus', s.price,
-         CASE WHEN s.price = 100 THEN c.pos_kind = 'demon' WHEN s.price = -137 THEN c.pos_kind = 'goblin' END,
+         CASE WHEN s.price = 100 THEN c.pos = 'above' WHEN s.price = -137 THEN c.pos = 'below' END,   -- the MORE rung's flag = position
          'Median of ' || c.books || ' sportsbooks'' lines; PrizePicks posted no standard that day (refresh)'
   FROM cand c
   LEFT JOIN nba_market.board_snapshots s
