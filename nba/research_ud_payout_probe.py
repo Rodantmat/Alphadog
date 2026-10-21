@@ -91,7 +91,10 @@ def main():
                 continue
             od = o.get("odds") or {}
             kind = "fantasy" if od.get("fantasy") else ("prediction" if od.get("prediction") else ("sportsbook" if od.get("sportsbook") else "none"))
-            if kind != os.environ.get("RX_KIND", "fantasy"):
+            want = os.environ.get("RX_KIND", "fantasy")
+            if want != "mix" and kind != want:
+                continue
+            if want == "mix" and kind not in ("fantasy", "prediction"):
                 continue
             opts.append({"id": o["id"], "lookup_id": o.get("lookup_id"), "m": float(o["payout_multiplier"]), "choice": o.get("choice"), "kind": kind,
                          "price": float((od.get(kind) or {}).get("decimal") or 0) or None,
