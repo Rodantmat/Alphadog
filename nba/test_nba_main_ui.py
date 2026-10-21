@@ -731,11 +731,22 @@ def sharp_checks(conn, cfg, leg, ctx, pr):
     od = sh.get("opp_defenders") or {}
     opp_id = conn.execute("SELECT team_id FROM nba_ref.teams WHERE abbreviation=%s", (leg.get("opponent_abbr"),)).fetchone()
     if opp_id and od.get("rows"):
-        top = conn.execute("""WITH lg AS (SELECT player_id, team_id, game_date, min FROM nba_stats.player_game_log WHERE season=%s AND game_date < %s AND min > 0),
+        # LIVE RULE (UI change 2026-10-17, sharp.js opponentDefenders): for today or later the rotation is the opponent's CURRENT
+        # roster (nba_ref.players active) ranked by each man's season minutes on ANY team (arrivals count, departures drop); a past
+        # date keeps the box-score rotation of that season (latest game for the opponent, minutes for the opponent).
+        live = conn.execute("SELECT %s::date >= (now() AT TIME ZONE 'America/Los_Angeles')::date", (d0,)).fetchone()[0]
+        has_ros = conn.execute("SELECT count(*) FROM nba_ref.players WHERE active = 1 AND team_id = %s", (opp_id[0],)).fetchone()[0] > 0
+        if live and has_ros:
+            top = conn.execute("""SELECT p.full_name FROM nba_stats.player_game_log g JOIN nba_ref.players p ON p.player_id = g.player_id
+                                  WHERE g.season = %s AND g.game_date < %s AND g.min > 0 AND p.active = 1 AND p.team_id = %s
+                                  GROUP BY 1 ORDER BY sum(g.min) DESC LIMIT %s""", (od["season"], d0, opp_id[0], sc.get("opp_rotation", 8))).fetchall()
+        else:
+            top = conn.execute("""WITH lg AS (SELECT player_id, team_id, game_date, min FROM nba_stats.player_game_log WHERE season=%s AND game_date < %s AND min > 0),
                               cur AS (SELECT DISTINCT ON (player_id) player_id, team_id FROM lg ORDER BY player_id, game_date DESC)
                               SELECT p.full_name FROM lg JOIN cur ON cur.player_id = lg.player_id AND cur.team_id = %s JOIN nba_ref.players p ON p.player_id = lg.player_id
                               WHERE lg.team_id = %s GROUP BY 1 ORDER BY sum(lg.min) DESC LIMIT %s""", (od["season"], d0, opp_id[0], opp_id[0], sc.get("opp_rotation", 8))).fetchall()
-        check("C44 opponent defenders == the opponent's rotation by minutes", [r["name"] for r in od["rows"]] == [t_[0] for t_ in top], f"ui {[r['name'] for r in od['rows']][:4]} db {[t_[0] for t_ in top][:4]}")
+        check("C44 opponent defenders == the opponent's rotation by minutes", [r["name"] for r in od["rows"]] == [t_[0] for t_ in top],
+              f"{'live roster rule' if live and has_ros else 'box-score rule'} | ui {[r['name'] for r in od['rows']]} db {[t_[0] for t_ in top]}")
     # C45 teammate correlation: r(his PTS, mate PTS) == Postgres corr() on the same games
     tc = (sh.get("teammate_corr") or {}).get("rows") or []
     r0 = next((r for r in tc if r.get("r_pts_pts") is not None), None)
