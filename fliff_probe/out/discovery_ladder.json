@@ -1,0 +1,1432 @@
+{
+ "event": "ATL Hawks @ ORL Magic",
+ "conflict_fkey": "409527_c_p_204_prematch",
+ "player": {
+  "group_tag": "11261_Paolo Banchero#22.5 / (62)",
+  "player_fkey": "extkey__dlt_player__11261"
+ },
+ "baseline_board": {
+  "x_slots_keys": {
+   "inplay_subfeeds_updates": 0,
+   "prematch_subfeeds_updates": 29
+  },
+  "markets": [
+   [
+    "Home Screen - Show Case",
+    13
+   ],
+   [
+    "Points",
+    1
+   ],
+   [
+    "Assists",
+    1
+   ],
+   [
+    "1st Quarter Points",
+    1
+   ],
+   [
+    "Points And Assists",
+    1
+   ],
+   [
+    null,
+    1
+   ],
+   [
+    "Steals",
+    1
+   ],
+   [
+    "Three Pointers Made",
+    1
+   ],
+   [
+    "Double Double",
+    1
+   ],
+   [
+    "Triple Double",
+    1
+   ],
+   [
+    "Points And Rebounds",
+    1
+   ],
+   [
+    "Rebounds",
+    1
+   ],
+   [
+    "Rebounds And Assists",
+    1
+   ],
+   [
+    "Points And Rebounds And Assists",
+    1
+   ],
+   [
+    "Alternative POINT SPREAD",
+    1
+   ],
+   [
+    "Player First To Score",
+    1
+   ],
+   [
+    "Alternative TOTAL SCORE",
+    1
+   ],
+   [
+    "MONEYLINE",
+    1
+   ],
+   [
+    "Away Team Total Score",
+    1
+   ],
+   [
+    "Home Team Total Score",
+    1
+   ],
+   [
+    "POINT SPREAD",
+    1
+   ],
+   [
+    "TOTAL SCORE",
+    1
+   ],
+   [
+    "Steals And Blocks",
+    1
+   ],
+   [
+    "Blocks",
+    1
+   ],
+   [
+    "1st Half Total Score",
+    1
+   ],
+   [
+    "1st Quarter Point Spread",
+    1
+   ],
+   [
+    "1st Quarter Moneyline",
+    1
+   ],
+   [
+    "1st Quarter Total Score",
+    1
+   ],
+   [
+    "1st Half Moneyline",
+    1
+   ],
+   [
+    "1st Half Point Spread",
+    1
+   ]
+  ],
+  "conflicts_in_markets": [
+   [
+    "409527_c_p_204_prematch",
+    30
+   ],
+   [
+    "417866_c_p_204_prematch",
+    1
+   ],
+   [
+    "409516_c_p_204_prematch",
+    1
+   ],
+   [
+    "409528_c_p_204_prematch",
+    1
+   ],
+   [
+    "407819_c_p_204_prematch",
+    1
+   ]
+  ],
+  "player_groups": {
+   "Points": [
+    {
+     "group_tag": "11261_Paolo Banchero#22.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 22.5",
+       1.85,
+       -115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 22.5",
+       1.8,
+       -125,
+       733
+      ]
+     ]
+    }
+   ],
+   "Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#5.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 5.5",
+       2.15,
+       115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 5.5",
+       1.6,
+       -165,
+       733
+      ]
+     ]
+    }
+   ],
+   "1st Quarter Points": [
+    {
+     "group_tag": "11261_Paolo Banchero#6.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 6.5",
+       2.0,
+       100,
+       733
+      ],
+      [
+       "Paolo Banchero Under 6.5",
+       1.65,
+       -145,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#27.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 27.5",
+       1.85,
+       -120,
+       733
+      ],
+      [
+       "Paolo Banchero Under 27.5",
+       1.8,
+       -125,
+       733
+      ]
+     ]
+    }
+   ],
+   "Steals": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       1.6,
+       -165,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       2.15,
+       115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Three Pointers Made": [
+    {
+     "group_tag": "11261_Paolo Banchero#1.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 1.5",
+       2.25,
+       125,
+       733
+      ],
+      [
+       "Paolo Banchero Under 1.5",
+       1.55,
+       -180,
+       733
+      ]
+     ]
+    }
+   ],
+   "Double Double": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       2.35,
+       135,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.5,
+       -195,
+       733
+      ]
+     ]
+    }
+   ],
+   "Triple Double": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       17.3,
+       1630,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.02,
+       -4685,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Rebounds": [
+    {
+     "group_tag": "11261_Paolo Banchero#30.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 30.5",
+       1.8,
+       -125,
+       733
+      ],
+      [
+       "Paolo Banchero Under 30.5",
+       1.85,
+       -115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Rebounds": [
+    {
+     "group_tag": "11261_Paolo Banchero#8.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 8.5",
+       1.9,
+       -110,
+       733
+      ],
+      [
+       "Paolo Banchero Under 8.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ],
+   "Rebounds And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#13.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 13.5",
+       1.75,
+       -130,
+       733
+      ],
+      [
+       "Paolo Banchero Under 13.5",
+       1.9,
+       -115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Rebounds And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#36.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 36.5",
+       1.9,
+       -115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 36.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ],
+   "Player First To Score": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       6.8,
+       580,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.05,
+       -1280,
+       733
+      ]
+     ]
+    }
+   ],
+   "Steals And Blocks": [
+    {
+     "group_tag": "11261_Paolo Banchero#1.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 1.5",
+       1.95,
+       -105,
+       733
+      ],
+      [
+       "Paolo Banchero Under 1.5",
+       1.75,
+       -135,
+       733
+      ]
+     ]
+    }
+   ],
+   "Blocks": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       1.9,
+       -110,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ]
+  },
+  "player_groups_count": {
+   "Points": 1,
+   "Assists": 1,
+   "1st Quarter Points": 1,
+   "Points And Assists": 1,
+   "Steals": 1,
+   "Three Pointers Made": 1,
+   "Double Double": 1,
+   "Triple Double": 1,
+   "Points And Rebounds": 1,
+   "Rebounds": 1,
+   "Rebounds And Assists": 1,
+   "Points And Rebounds And Assists": 1,
+   "Player First To Score": 1,
+   "Steals And Blocks": 1,
+   "Blocks": 1
+  }
+ },
+ "3062_conflict+player": {
+  "x_slots_keys": {
+   "inplay_subfeeds_updates": 0,
+   "prematch_subfeeds_updates": 29
+  },
+  "markets": [
+   [
+    "Home Screen - Show Case",
+    13
+   ],
+   [
+    "Points",
+    1
+   ],
+   [
+    "Assists",
+    1
+   ],
+   [
+    "1st Quarter Points",
+    1
+   ],
+   [
+    "Points And Assists",
+    1
+   ],
+   [
+    null,
+    1
+   ],
+   [
+    "Steals",
+    1
+   ],
+   [
+    "Three Pointers Made",
+    1
+   ],
+   [
+    "Double Double",
+    1
+   ],
+   [
+    "Triple Double",
+    1
+   ],
+   [
+    "Points And Rebounds",
+    1
+   ],
+   [
+    "Rebounds",
+    1
+   ],
+   [
+    "Rebounds And Assists",
+    1
+   ],
+   [
+    "Points And Rebounds And Assists",
+    1
+   ],
+   [
+    "Alternative POINT SPREAD",
+    1
+   ],
+   [
+    "Player First To Score",
+    1
+   ],
+   [
+    "Alternative TOTAL SCORE",
+    1
+   ],
+   [
+    "MONEYLINE",
+    1
+   ],
+   [
+    "Away Team Total Score",
+    1
+   ],
+   [
+    "Home Team Total Score",
+    1
+   ],
+   [
+    "POINT SPREAD",
+    1
+   ],
+   [
+    "TOTAL SCORE",
+    1
+   ],
+   [
+    "Steals And Blocks",
+    1
+   ],
+   [
+    "Blocks",
+    1
+   ],
+   [
+    "1st Half Total Score",
+    1
+   ],
+   [
+    "1st Quarter Point Spread",
+    1
+   ],
+   [
+    "1st Quarter Moneyline",
+    1
+   ],
+   [
+    "1st Quarter Total Score",
+    1
+   ],
+   [
+    "1st Half Moneyline",
+    1
+   ],
+   [
+    "1st Half Point Spread",
+    1
+   ]
+  ],
+  "conflicts_in_markets": [
+   [
+    "409527_c_p_204_prematch",
+    30
+   ],
+   [
+    "409528_c_p_204_prematch",
+    1
+   ],
+   [
+    "409529_c_p_204_prematch",
+    1
+   ],
+   [
+    "417866_c_p_204_prematch",
+    1
+   ],
+   [
+    "417867_c_p_204_prematch",
+    1
+   ]
+  ],
+  "player_groups": {
+   "Points": [
+    {
+     "group_tag": "11261_Paolo Banchero#22.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 22.5",
+       1.85,
+       -115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 22.5",
+       1.8,
+       -125,
+       733
+      ]
+     ]
+    }
+   ],
+   "Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#5.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 5.5",
+       2.15,
+       115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 5.5",
+       1.6,
+       -165,
+       733
+      ]
+     ]
+    }
+   ],
+   "1st Quarter Points": [
+    {
+     "group_tag": "11261_Paolo Banchero#6.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 6.5",
+       2.0,
+       100,
+       733
+      ],
+      [
+       "Paolo Banchero Under 6.5",
+       1.65,
+       -145,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#27.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 27.5",
+       1.85,
+       -120,
+       733
+      ],
+      [
+       "Paolo Banchero Under 27.5",
+       1.8,
+       -125,
+       733
+      ]
+     ]
+    }
+   ],
+   "Steals": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       1.6,
+       -165,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       2.15,
+       115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Three Pointers Made": [
+    {
+     "group_tag": "11261_Paolo Banchero#1.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 1.5",
+       2.25,
+       125,
+       733
+      ],
+      [
+       "Paolo Banchero Under 1.5",
+       1.55,
+       -180,
+       733
+      ]
+     ]
+    }
+   ],
+   "Double Double": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       2.35,
+       135,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.5,
+       -195,
+       733
+      ]
+     ]
+    }
+   ],
+   "Triple Double": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       17.3,
+       1630,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.02,
+       -4685,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Rebounds": [
+    {
+     "group_tag": "11261_Paolo Banchero#30.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 30.5",
+       1.8,
+       -125,
+       733
+      ],
+      [
+       "Paolo Banchero Under 30.5",
+       1.85,
+       -115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Rebounds": [
+    {
+     "group_tag": "11261_Paolo Banchero#8.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 8.5",
+       1.9,
+       -110,
+       733
+      ],
+      [
+       "Paolo Banchero Under 8.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ],
+   "Rebounds And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#13.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 13.5",
+       1.75,
+       -130,
+       733
+      ],
+      [
+       "Paolo Banchero Under 13.5",
+       1.9,
+       -115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Rebounds And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#36.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 36.5",
+       1.9,
+       -115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 36.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ],
+   "Player First To Score": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       6.8,
+       580,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.05,
+       -1280,
+       733
+      ]
+     ]
+    }
+   ],
+   "Steals And Blocks": [
+    {
+     "group_tag": "11261_Paolo Banchero#1.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 1.5",
+       1.95,
+       -105,
+       733
+      ],
+      [
+       "Paolo Banchero Under 1.5",
+       1.75,
+       -135,
+       733
+      ]
+     ]
+    }
+   ],
+   "Blocks": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       1.9,
+       -110,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ]
+  },
+  "player_groups_count": {
+   "Points": 1,
+   "Assists": 1,
+   "1st Quarter Points": 1,
+   "Points And Assists": 1,
+   "Steals": 1,
+   "Three Pointers Made": 1,
+   "Double Double": 1,
+   "Triple Double": 1,
+   "Points And Rebounds": 1,
+   "Rebounds": 1,
+   "Rebounds And Assists": 1,
+   "Points And Rebounds And Assists": 1,
+   "Player First To Score": 1,
+   "Steals And Blocks": 1,
+   "Blocks": 1
+  }
+ },
+ "3062_player_only": {
+  "x_slots_keys": {
+   "inplay_subfeeds_updates": 0,
+   "prematch_subfeeds_updates": 26
+  },
+  "markets": [
+   [
+    "Home Screen - Show Case",
+    13
+   ]
+  ],
+  "conflicts_in_markets": [
+   [
+    "407818_c_p_204_prematch",
+    1
+   ],
+   [
+    "409515_c_p_204_prematch",
+    1
+   ],
+   [
+    "409516_c_p_204_prematch",
+    1
+   ],
+   [
+    "409514_c_p_204_prematch",
+    1
+   ],
+   [
+    "409529_c_p_204_prematch",
+    1
+   ]
+  ],
+  "player_groups": {},
+  "player_groups_count": {}
+ },
+ "3062_player_channel_-333": {
+  "x_slots_keys": {
+   "inplay_subfeeds_updates": 0,
+   "prematch_subfeeds_updates": 5
+  },
+  "markets": [
+   [
+    "Points",
+    1
+   ],
+   [
+    "Assists",
+    1
+   ],
+   [
+    "1st Quarter Points",
+    1
+   ],
+   [
+    "Points And Assists",
+    1
+   ],
+   [
+    null,
+    1
+   ],
+   [
+    "Steals",
+    1
+   ],
+   [
+    "Three Pointers Made",
+    1
+   ],
+   [
+    "Double Double",
+    1
+   ],
+   [
+    "Triple Double",
+    1
+   ],
+   [
+    "Points And Rebounds",
+    1
+   ],
+   [
+    "Rebounds",
+    1
+   ],
+   [
+    "Rebounds And Assists",
+    1
+   ],
+   [
+    "Points And Rebounds And Assists",
+    1
+   ],
+   [
+    "Alternative POINT SPREAD",
+    1
+   ],
+   [
+    "Player First To Score",
+    1
+   ],
+   [
+    "Alternative TOTAL SCORE",
+    1
+   ],
+   [
+    "MONEYLINE",
+    1
+   ],
+   [
+    "Away Team Total Score",
+    1
+   ],
+   [
+    "Home Team Total Score",
+    1
+   ],
+   [
+    "POINT SPREAD",
+    1
+   ],
+   [
+    "TOTAL SCORE",
+    1
+   ],
+   [
+    "Steals And Blocks",
+    1
+   ],
+   [
+    "Blocks",
+    1
+   ],
+   [
+    "1st Half Total Score",
+    1
+   ],
+   [
+    "1st Quarter Point Spread",
+    1
+   ],
+   [
+    "1st Quarter Moneyline",
+    1
+   ],
+   [
+    "1st Quarter Total Score",
+    1
+   ],
+   [
+    "1st Half Moneyline",
+    1
+   ],
+   [
+    "1st Half Point Spread",
+    1
+   ],
+   [
+    "Home Screen - Show Case",
+    1
+   ]
+  ],
+  "conflicts_in_markets": [
+   [
+    "409527_c_p_204_prematch",
+    30
+   ]
+  ],
+  "player_groups": {
+   "Points": [
+    {
+     "group_tag": "11261_Paolo Banchero#22.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 22.5",
+       1.85,
+       -115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 22.5",
+       1.8,
+       -125,
+       733
+      ]
+     ]
+    }
+   ],
+   "Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#5.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 5.5",
+       2.15,
+       115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 5.5",
+       1.6,
+       -165,
+       733
+      ]
+     ]
+    }
+   ],
+   "1st Quarter Points": [
+    {
+     "group_tag": "11261_Paolo Banchero#6.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 6.5",
+       2.0,
+       100,
+       733
+      ],
+      [
+       "Paolo Banchero Under 6.5",
+       1.65,
+       -145,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#27.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 27.5",
+       1.85,
+       -120,
+       733
+      ],
+      [
+       "Paolo Banchero Under 27.5",
+       1.8,
+       -125,
+       733
+      ]
+     ]
+    }
+   ],
+   "Steals": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       1.6,
+       -165,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       2.15,
+       115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Three Pointers Made": [
+    {
+     "group_tag": "11261_Paolo Banchero#1.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 1.5",
+       2.25,
+       125,
+       733
+      ],
+      [
+       "Paolo Banchero Under 1.5",
+       1.55,
+       -180,
+       733
+      ]
+     ]
+    }
+   ],
+   "Double Double": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       2.35,
+       135,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.5,
+       -195,
+       733
+      ]
+     ]
+    }
+   ],
+   "Triple Double": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       17.3,
+       1630,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.02,
+       -4685,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Rebounds": [
+    {
+     "group_tag": "11261_Paolo Banchero#30.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 30.5",
+       1.8,
+       -125,
+       733
+      ],
+      [
+       "Paolo Banchero Under 30.5",
+       1.85,
+       -115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Rebounds": [
+    {
+     "group_tag": "11261_Paolo Banchero#8.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 8.5",
+       1.9,
+       -110,
+       733
+      ],
+      [
+       "Paolo Banchero Under 8.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ],
+   "Rebounds And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#13.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 13.5",
+       1.75,
+       -130,
+       733
+      ],
+      [
+       "Paolo Banchero Under 13.5",
+       1.9,
+       -115,
+       733
+      ]
+     ]
+    }
+   ],
+   "Points And Rebounds And Assists": [
+    {
+     "group_tag": "11261_Paolo Banchero#36.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 36.5",
+       1.9,
+       -115,
+       733
+      ],
+      [
+       "Paolo Banchero Under 36.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ],
+   "Player First To Score": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       6.8,
+       580,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.05,
+       -1280,
+       733
+      ]
+     ]
+    }
+   ],
+   "Steals And Blocks": [
+    {
+     "group_tag": "11261_Paolo Banchero#1.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 1.5",
+       1.95,
+       -105,
+       733
+      ],
+      [
+       "Paolo Banchero Under 1.5",
+       1.75,
+       -135,
+       733
+      ]
+     ]
+    }
+   ],
+   "Blocks": [
+    {
+     "group_tag": "11261_Paolo Banchero#0.5 / (62)",
+     "props": [
+      [
+       "Paolo Banchero Over 0.5",
+       1.9,
+       -110,
+       733
+      ],
+      [
+       "Paolo Banchero Under 0.5",
+       1.75,
+       -130,
+       733
+      ]
+     ]
+    }
+   ]
+  },
+  "player_groups_count": {
+   "Points": 1,
+   "Assists": 1,
+   "1st Quarter Points": 1,
+   "Points And Assists": 1,
+   "Steals": 1,
+   "Three Pointers Made": 1,
+   "Double Double": 1,
+   "Triple Double": 1,
+   "Points And Rebounds": 1,
+   "Rebounds": 1,
+   "Rebounds And Assists": 1,
+   "Points And Rebounds And Assists": 1,
+   "Player First To Score": 1,
+   "Steals And Blocks": 1,
+   "Blocks": 1
+  }
+ },
+ "3054_player": {
+  "x_slots_keys": {
+   "active_inplay_conflicts": 5,
+   "active_prematch_conflicts": 708,
+   "inplay_subfeeds_updates": 5,
+   "prematch_subfeeds_updates": 163
+  },
+  "markets": [
+   [
+    "Home Screen - Show Case",
+    91
+   ],
+   [
+    "z",
+    29
+   ]
+  ],
+  "conflicts_in_markets": [
+   [
+    "420391_c_p_306_inplay",
+    1
+   ],
+   [
+    "420010_c_p_306_inplay",
+    1
+   ],
+   [
+    "420515_c_p_306_inplay",
+    1
+   ],
+   [
+    "420487_c_p_306_inplay",
+    1
+   ],
+   [
+    "419992_c_p_306_inplay",
+    1
+   ]
+  ],
+  "player_groups": {},
+  "player_groups_count": {}
+ }
+}
