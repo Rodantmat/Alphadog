@@ -817,7 +817,15 @@ def browser():
                 page.wait_for_timeout(600)
                 page.screenshot(path=str(OUT / f"{name}.png"))
                 sw = page.evaluate("document.documentElement.scrollWidth")
-                check(f"D {name}", sw <= 431, f"{round(time.time() - t0, 1)}s scrollWidth {sw}")
+                wide = ""
+                if sw > 431:   # name the elements that stick out past the phone width (2026-10-21: D01 scrollWidth 502 with no clue why)
+                    wide = page.evaluate("""() => { const W = window.innerWidth, out = [];
+                        for (const el of document.querySelectorAll('body *')) { const r = el.getBoundingClientRect();
+                          if (r.right > W + 1 && r.width > 0) out.push([Math.round(r.right), el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
+                            (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : ''),
+                            (el.textContent || '').trim().slice(0, 60)]); }
+                        out.sort((a, b) => b[0] - a[0]); return JSON.stringify(out.slice(0, 5)); }""")
+                check(f"D {name}", sw <= 431, f"{round(time.time() - t0, 1)}s scrollWidth {sw}" + (f" widest {wide}" if wide else ""))
             except Exception as e:  # noqa: BLE001
                 try:
                     page.screenshot(path=str(OUT / f"{name}_FAIL.png"))
