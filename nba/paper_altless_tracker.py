@@ -92,6 +92,24 @@ def started_games(conn, d):
     return {str(g) for g, t in rows if t is not None and t <= now}
 
 
+def build(pool, k):
+    """Greedy in pool order: one leg per player, <= MAX_SG legs per game, and never a slip on a single game (a leg that would
+    complete a one-game slip is skipped). The research's builder required 2 TEAMS; the tracker has no team on a live rung, so
+    it requires 2 GAMES - stricter, and it keeps PrizePicks' same-game pricing out of the paper record."""
+    slip, players, games = [], set(), defaultdict(int)
+    for l in pool:
+        if l["player_id"] in players or games[l["game_id"]] >= MAX_SG:
+            continue
+        if len(slip) == k - 1 and set(games) == {l["game_id"]}:
+            continue
+        slip.append(l)
+        players.add(l["player_id"])
+        games[l["game_id"]] += 1
+        if len(slip) == k:
+            return slip
+    return None
+
+
 def pick(conn, d, write):
     if conn.execute("SELECT 1 FROM nba_score.paper_altless_slips WHERE game_date = %s LIMIT 1", (d,)).fetchone():
         print(f"PAPER_ALTLESS|{d}|already picked - one set per day, nothing re-picked")
