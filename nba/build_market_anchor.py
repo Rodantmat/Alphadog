@@ -452,9 +452,17 @@ def main():
             for k, idx in acc.items():
                 if len(idx) >= 1000:
                     gap = float(pt[idx].mean() - yt[idx].mean())
-                    groups.append([gname, "/".join(k), len(idx), round(float(pt[idx].mean()), 3), round(float(yt[idx].mean()), 3), round(gap, 3)])
+                    # REPORT ONLY (2026-10-20): the raw model (what the UI shows without the anchor) on the SAME legs - shown, gap
+                    raw_gap = float(raw[idx].mean() - yt[idx].mean())
+                    groups.append([gname, "/".join(k), len(idx), round(float(pt[idx].mean()), 3), round(float(yt[idx].mean()), 3), round(gap, 3),
+                                   round(float(raw[idx].mean()), 3), round(raw_gap, 3)])
         if groups:
             worst = max(groups, key=lambda g: abs(g[5]))
+            better = sum(1 for g in groups if abs(g[5]) <= abs(g[7]))
+            print(f"  sub-groups where the anchored number is at least as close as the raw model: {better} of {len(groups)}; "
+                  f"anchored worse: {[g[:2] + [g[5], g[7]] for g in groups if abs(g[5]) > abs(g[7])][:10]}", flush=True)
+            over_tol = [g for g in groups if abs(g[5]) > float(os.environ.get("MA_SUB_TOL") or "0.05")]
+            print(f"  over the sub-group bar: {[(g[1], g[2], 'anchored', g[5], 'raw', g[7]) for g in over_tol]}", flush=True)
         res["subgroups"] = sorted(groups, key=lambda g: -abs(g[5]))[:15]
         res["by_class"] = {ac: reliability(pt[ac_t == ac], yt[ac_t == ac]) for ac in ANCHOR_CLASSES if (ac_t == ac).any()}
         sub_tol = float(os.environ.get("MA_SUB_TOL") or "0.05")      # recorded in the written report
