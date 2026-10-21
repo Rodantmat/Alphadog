@@ -577,8 +577,10 @@ export async function apiHighHit(sql, cfg, url, version) {
   if (unmatched) notes.push(`${unmatched} slip legs are not on the scored board (shown without a probability).`);
   if (fallbackNote) notes.push(fallbackNote);
   if (eng.source === "replay_backtest") notes.push(`No engine slips for ${slate.date} - showing the certified backtest's slips for that slate (${({ _mf: "market-free twin", _wo: "window-only twin - the market term as live sees it" })[eng.suffix] || (eng.suffix ? "twin " + eng.suffix : "certified tables")}), with results.`);
-  // backup pool: the best board legs not already in a slip, per app, for substitution - ordered by the UNROUNDED hit
-  // probability (ties keep the board order: score, then player / prop / line / side), so the pool is reproducible from the DB
+  // backup pool: the best board legs not already in a slip, per app, for substitution. ORDERED BY EDGE over the leg's own
+  // break-even (2026-10-21: ordered by hit probability the pool was all goblins - a goblin replaced a regular leg and cut the
+  // payout), +EV legs only, each line type kept in the pool (up to `size` per app per line type) so a removed regular leg has a
+  // regular substitute; ties keep the board order (score, then player / prop / line / side), reproducible from the DB
   const inSlip = new Set(slips.flatMap(s => s.legs.map(l => l.board_row_id)));
   const pool = [];
   for (const app of ["prizepicks", "underdog"]) {
