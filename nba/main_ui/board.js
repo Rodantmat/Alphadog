@@ -271,9 +271,15 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
   const rows = await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
   // a leg without its market-anchored row falls back to the raw model number - said on the board, never silent (2026-10-15)
   const honestMissing = rows.filter(r => !r.hp_is_market_anchored).length;
+  // the slate's games, how many have tipped, and the next slate - so an empty live board says WHY (all games started) and what is next
+  const gi = (await q(sql, `SELECT count(*)::int games, count(*) FILTER (WHERE game_datetime_utc <= now())::int started,
+        (SELECT min(game_date)::text FROM nba_calendar.slate_games WHERE game_date > $1::date) next_date,
+        (SELECT count(*)::int FROM nba_calendar.slate_games WHERE game_date = (SELECT min(game_date) FROM nba_calendar.slate_games WHERE game_date > $1::date)) next_games
+      FROM nba_calendar.slate_games WHERE game_date = $1::date`, [slate.date]))[0] || {};
   return {
     ok: true, data_ok: true, version, route: "/api/main-board/current",
-    slate: { ...slate, honest_missing: honestMissing }, row_count: rows.length, limit, min_score: minScore, min_hit_probability: minHp, rows,
+    slate: { ...slate, honest_missing: honestMissing, games_total: gi.games || 0, games_started: slate.mode === "live" ? (gi.started || 0) : 0,
+             next_slate_date: gi.next_date || null, next_slate_games: gi.next_games || 0 }, row_count: rows.length, limit, min_score: minScore, min_hit_probability: minHp, rows,
     semantics: {
       main_number: "hit_probability_0_100 = nba_score.board_true_hp.true_hp (market-anchored hit probability of this exact leg; falls back to board_scored.final_hp when the slate has no anchored row) - model_hp_0_100 = the model's own number",
       secondary_number: "probability_confidence_0_100 = board_scored.confidence",
