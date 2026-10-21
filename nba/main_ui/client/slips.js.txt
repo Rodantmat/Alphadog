@@ -99,8 +99,8 @@ function returnLegToPool(leg){
   if(!leg)return;
   if(backupPool.some(l=>String(l.board_row_id)===String(leg.board_row_id)))return;
   backupPool.push(leg);
-  // Keep the pool ordered by baseline so "best available" stays meaningful after returns.
-  backupPool.sort((a,b)=>Number(b.hit_probability_0_100||0)-Number(a.hit_probability_0_100||0));
+  // Keep the pool ordered by edge over the leg's own break-even (the server's order) after returns.
+  backupPool.sort((a,b)=>poolEdge(b)-poolEdge(a));
 }
 function poolStatusHtml(){
   if(!backupPool.length)return '<div class="poolStatus" style="opacity:0.7;font-size:12px;margin:6px 0">Backup pool: empty - unchecking a leg will now shrink the slip.</div>';
