@@ -172,6 +172,9 @@ def main():
         seasons = stats_seasons(3)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
+    # JIT OFF for this session (2026-10-21): the 10-21 refit's market aggregate over board_tiers_v2 ran 20+ min where the plan costs
+    # ~1 min - the same JIT pathology build_price_shop_ledger showed (48-87 s on vs 4 s off). Session-scoped: MLB shares the database.
+    conn.execute("SET jit = off")
 
     # JOIN PERFORMANCE. The sampling query joins on lower(regexp_replace(player,...)), and a FUNCTION on
     # the join column cannot use a plain index - Postgres falls back to repeated sequential scans over
