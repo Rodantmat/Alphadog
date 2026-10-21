@@ -964,7 +964,29 @@ def browser():
 
 
 def main():
+    global DATE
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
+    # AFTER EVERY TIP (v1.4.25, 2026-10-20): on a live slate whose games have all started the board serves no leg (started games are
+    # not playable) and names the next slate. That state is checked here; the rest of the suite then runs on the latest past scored
+    # slate (?date=), so every screen and number is still walked on a real board instead of failing on an empty one.
+    if not DATE:
+        try:
+            _, cur, _ = curl("/api/main-board/current?limit=5")
+            _, flt, _ = curl("/api/main-board/filters")
+            s = (cur or {}).get("slate") or {}
+            if s.get("mode") == "live" and s.get("games_total", 0) > 0 and s.get("games_started", 0) >= s["games_total"]:
+                total = ((flt or {}).get("summary") or {}).get("total_rows")
+                check("D00 live slate after every tip: no started leg on the board or in the filter counts, the next slate named",
+                      cur.get("row_count") == 0 and total == 0 and bool(s.get("next_slate_date")),
+                      f"slate {s.get('date')} games {s.get('games_total')} started {s.get('games_started')} | board rows {cur.get('row_count')} | "
+                      f"filter count rows {total} | next {s.get('next_slate_date')} ({s.get('next_slate_games')} games)")
+                prev = conn.execute("""SELECT max(game_date)::text FROM nba_score.board_scored
+                                       WHERE game_date < (now() AT TIME ZONE 'America/Los_Angeles')::date""").fetchone()[0]
+                if prev:
+                    DATE = prev
+                    print(f"every game of {s.get('date')} has started - the rest of the suite runs on the latest past slate {DATE}", flush=True)
+        except Exception as e:  # noqa: BLE001
+            check("D00 live-slate state", False, repr(e))
     try:
         cfg = parity(conn)
         pricing_parity(conn, cfg)
