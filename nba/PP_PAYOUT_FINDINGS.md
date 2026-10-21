@@ -202,6 +202,21 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0o. 🟡 TWO STANDARD 2-PICKS, TWO POWER PRICES — 3x AND 2.9x (owner screenshots, 2026-10-20 17:01 / 17:03 PT)
+
+- **Captured:** 2-pick, both legs standard Less, same game in both cases. (a) Shai Gilgeous-Alexander Fantasy Score 48.5 Less + Victor
+  Wembanyama Fantasy Score 54.5 Less (OKC vs SAS, 18:30 PT) → **Power 2.9x**, Flex 2x / 0.5x. (b) Luguentz Dort Steals 0.5 Less +
+  Wendell Carter Steals 0.5 Less (ATL vs ORL, 10-21 16:00 PT) → **Power 3x**, Flex 2x / 0.5x.
+- **Our archive:** both fantasy legs are plain standards on every 10-20 snapshot (window / morning / close, price -137, both sides
+  open). Nothing we store marks them as repriced.
+- **Consequence:** the certified grader pays every standard-only 2-pick Power the table's 3x. At least one real standard pair pays 2.9x
+  (−3.3%). Same game alone is not the reason, because (b) is same game and pays 3x. Candidates, unproven: the projections'
+  `adjusted_odds` flag (8 of 152 standards carry it on the 10-20 board), or star-vs-star / same-stat correlation pricing.
+- **Flex 2-pick 2x / 0.5x matched the table in both.** That needs a 0.618 leg rate to break even, against 0.577 for Power 3x
+  (research_standard_depth.py prints every size's breakeven exactly).
+- **Open:** quote standard-only 2-picks (same game vs different games, fantasy vs single stat, adjusted_odds true vs false) through
+  the payout map, and archive `adjusted_odds` per projection. The production grader is unchanged until then.
+
 ## 0n. 🔑 GOBLIN / DEMON LESS, 2-6 PICKS POWER + FLEX — PRICED BY PRIZEPICKS ITSELF (2026-10-20 PT, opening night)
 
 **The new market.** The 10-20 board carries `allowed_wager_types` per projection: 'over' or 'under_or_over'. Less opened on 671 goblin
