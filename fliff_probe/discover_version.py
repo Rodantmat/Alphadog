@@ -55,6 +55,10 @@ while queue and len(seen) < 80:
         if v.startswith("5.") and v.count(".") >= 2:
             rep.setdefault("all_5x", {}).setdefault(v, 0)
             rep["all_5x"][v] += 1
+            for mm in re.finditer(re.escape(v), js):
+                ctx = js[max(0, mm.start() - 400): mm.end() + 400].replace("\n", " ")
+                rep.setdefault("ctx_5x", []).append({"v": v, "chunk": u.rsplit("/", 1)[-1], "ctx": ctx})
+                print("CTX5", v, u.rsplit("/", 1)[-1], "|", ctx, flush=True)
 print("html versions:", rep["html_versions"][:20])
 print("chunks:", len(rep["chunks"]))
 print("5.x strings:", json.dumps(rep.get("all_5x", {}))[:1500])
