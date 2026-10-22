@@ -32,6 +32,7 @@ Within a composition, slip k on a day = the k-th best distinct valid slip (cap 1
 Output: nba_score.ud_slip_engine_slips{SUFFIX} (+ _legs). Report: leaderboard by weaker-season ROI (cap 1, phase final7 excluded).
 Env: DATABASE_URL, UD_CAP (5), UD_SIZES (2,3,4,5,6,7,8), UD_TABLE_SUFFIX, UD_MAX_PER_CELL (2), UD_MINRISE_OUT, UD_MINFALL_PREF.
 """
+import math
 import os
 import json
 import itertools
