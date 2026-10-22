@@ -288,9 +288,11 @@ def main():
         for season, d, comp, size, st, k, legs, sg in q:
             sl = [{"hit": x.get("hit"), "factor": float(x.get("factor") or 1.0)} for x in legs]
             hits, pay = SE.grade(sl, st, same_game=bool(sg and sg > 0))
+            half = f"{season} {'H1' if d < dt.date(int(season[:4]) + 1, 1, 15) else 'H2'}"     # half-season stability (PART 1b)
             for cap in (1, 2, 3):
                 if k <= cap:
                     compacc.add((table.split("slips")[1] or "_wo", comp, size, st, cap), season, d, pay, hits == size)
+                    compacc.add((table.split("slips")[1] or "_wo", comp, size, st, cap), half, d, pay, hits == size)
             n += 1
         print(f"PART 1 history {table}: {n:,} slips re-graded | {time.time() - t0:.0f}s", flush=True)
     cmap = SE.load_corr(conn)
