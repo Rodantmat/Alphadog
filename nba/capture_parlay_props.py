@@ -165,6 +165,7 @@ def fetch(key, cfg=None):
         merged = list(items)
         meta["narrowed_pass"] = True
         meta["narrowed_added"], meta["per_book"], meta["narrowed_truncated"] = 0, {}, False
+        book_keys = {}
         # TIME BUDGET: P3 on an early slate has ~29 min from start to the first tip; the per-book reads together never take more
         # than market_feed.per_book_budget_s (default 240 s) - a book not reached in time is reported, the rest of P3 goes on.
         import time as _time
