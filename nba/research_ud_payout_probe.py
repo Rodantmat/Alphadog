@@ -138,6 +138,8 @@ def main():
 
     def call(qs):
         u = "https://api.underdogfantasy.com/v4/entry_slips/estimate?" + common + "&fee=10&fee_source=cash&" + qs
+        if auth:
+            fresh_token()
         for px in ([None, proxy] if proxy else [None]):
             try:
                 rr = sess.get(u, headers=H, timeout=30, proxies=({"https": px, "http": px} if px else None))
