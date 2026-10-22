@@ -88,8 +88,12 @@ def main():
                 print("LOGIN_FAIL|no pending code step - run once without otp first")
                 sys.exit(1)
             p = json.loads(pend)
-            code, j = post(sess, "/oauth/token", {"grant_type": "http://auth0.com/oauth/grant-type/mfa-oob", "client_id": CLIENT_ID,
-                                                   "mfa_token": p["mfa_token"], "oob_code": p["oob_code"], "binding_code": otp}, proxy)
+            # exactly the web app's call (bundle chunk 600: audience + scope included)
+            code, j = post(sess, "/oauth/token", {"audience": AUD, "binding_code": otp, "client_id": CLIENT_ID,
+                                                   "grant_type": "http://auth0.com/oauth/grant-type/mfa-oob",
+                                                   "mfa_token": p["mfa_token"], "oob_code": p["oob_code"], "scope": "offline_access"}, proxy)
+            if code != 200 and not j.get("error"):
+                print(f"LOGIN_DETAIL|non-JSON answer: {str(j.get('raw') or '')[:160]!r}")
             if code == 200 and j.get("access_token"):
                 store_tokens(conn, j)
                 cred_del(conn, "underdog_mfa_pending")
