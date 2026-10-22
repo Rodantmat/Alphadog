@@ -44,7 +44,7 @@ def walk(obj, path=""):
                 continue
             if isinstance(v, (dict, list)):
                 yield from walk(v, p)
-            elif SAFE.search(k):
+            elif SAFE.search(p):          # full path: user.product_experience.id is the account's experience id (run 39714234186 skipped it)
                 yield p, v
     elif isinstance(obj, list):
         for i, v in enumerate(obj[:20]):
