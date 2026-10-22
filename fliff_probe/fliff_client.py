@@ -18,7 +18,46 @@ from urllib.parse import urlencode
 from curl_cffi import requests
 
 PING_HOST = "https://m-c2.app.getfliff.com/"
-APP_VERSION = os.environ.get("FLIFF_APP_VERSION", "5.0.34.285")
+APP_VERSION = os.environ.get("FLIFF_APP_VERSION", "5.0.35.286")   # fallback only; detect_app_version() reads the live one
+_VER_RE = None
+
+
+def detect_app_version(proxy=None):
+    """The live web app's own build: sports.getfliff.com JS carries {marketingVersion:"5.0.35",capNumber:286} -> "5.0.35.286".
+    Fliff raised its minimum build on 2026-10-22 (ping error 30040 'This version of the app is no longer supported') - reading
+    the version each run keeps the client current. Returns None if it can't be read (the caller keeps APP_VERSION)."""
+    import re
+    from urllib.parse import urljoin
+    s = requests.Session()
+
+    def get(u):
+        for px in (None, proxy):
+            try:
+                r = s.get(u, timeout=45, impersonate="chrome124", proxies={"https": px, "http": px} if px else None)
+                if r.status_code == 200:
+                    return r.text
+            except Exception:  # noqa: BLE001
+                pass
+        return None
+    root = "https://sports.getfliff.com/"
+    html = get(root) or ""
+    queue = [urljoin(root, x) for x in re.findall(r"""<script[^>]+src=["']([^"']+)["']""", html)]
+    seen = set()
+    pat = re.compile(r'production:\{appName:"Fliff",marketingVersion:"(\d+\.\d+\.\d+)",capNumber:(\d+)\}')
+    while queue and len(seen) < 80:
+        u = queue.pop(0)
+        if u in seen:
+            continue
+        seen.add(u)
+        js = get(u)
+        if not js:
+            continue
+        m = pat.search(js)
+        if m:
+            return f"{m.group(1)}.{m.group(2)}"
+        base = u.rsplit("/", 1)[0] + "/"
+        queue += [urljoin(base, x) for x in re.findall(r"""["']([0-9a-zA-Z_.~\-]+\.js)["']""", js)]
+    return None
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
 
 
