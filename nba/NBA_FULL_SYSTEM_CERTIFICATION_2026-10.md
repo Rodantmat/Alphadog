@@ -2916,3 +2916,28 @@ should be doing. Mining everything that they should mine, consuming everything t
     node --check OK; staked-profit queries checked (status IN ('graded','graded_void') - backups / gate skips excluded).
     10-22's two rows were left as they were (the owner had already acted on the screen; games tipping) - the gate is live from the
     next P3. Tunables in nba_config.classification_config['pp_portfolio']: quote_min_ratio, backups.
+20. 🔴 **BOARD PROFILES - three tests FAIL out of sample; research + probe show where the grounding is missing** (owner 15:12, 16:23,
+    16:33 PT). (a) research_pp_board_profiles.py (games x phase x strength / demon cells, preset per cell) runs 39870945146 /
+    39871486421: in-sample great, out of sample 2025-26 -> 2024-25 +4.5% / +16.8% with 63-66 unit drawdowns and 28-day losing runs
+    vs the live portfolio +49.0% (dd 20.5, run 9). (b) research_pp_board_profiles_v2.py (2,929 strategies: leg-built 12 props +
+    groups x line type x side x 2-6 picks x Flex / Power, engine units, the portfolio; KNN and hard-cell selection; staged gate) run
+    39872141577: STAGE 1 (first half -> second half of each season) FAIL for every method - selection drifts to 6-pick Power / Flex
+    jackpots; stage 3 (leave one month out) the portfolio +52.4% beats every profile method month by month (0/13 months lost to
+    them on stability). Board shape alone does not choose strategies. (c) Research (sources: Kirch 2013 J. Prediction Markets - NBA
+    Week-1 totals unders 58.2%; Dare, Dennis & Paul 2015 Finance Research Letters - opening lines err when a player is absent, closing
+    lines efficient; Wizard of Odds - prop hold 4-6% stars / 6-10% secondary / 10-20% exotic; Unabated / Stokastic - pick'em vs
+    de-vigged sportsbook probability against the entry break-even, Flex 6 ~54%, 2-Power ~58%; Gemini summary of practitioner
+    consensus: news windows, low-count props, role players, alt-line pricing) gave hypotheses H1-H4, probed in
+    research_board_market_probe.py run 39873678003 on every standard PrizePicks line, both seasons + 10-20..22:
+    - PrizePicks' standard line sits on the market's 50/50: 98% of lines with a same-line consensus have a fair probability
+      0.50-0.54; the market's better side hits 51.0-51.6% (n ~100k) - informative, far below any break-even. Leans >= 0.54 are 1-2%
+      of lines and hit 54-55% (2025-26) / ~50% (2024-25).
+    - Opening days 1-3: the market lean hit 54-56% (24-25 / 25-26), live 10-20 57% (n 54), 10-21 52% (n 60) - modestly better than
+      the rest of the season (51%); H1 opening Unders NOT stable on props (SCORE Under 54.5% / 46.9% / live 56.5%).
+    - H2 role vs star and H3 low-count props: no material difference in the market lean's hit rate on PrizePicks' line (50.5-52%).
+    - THE LIVE GAP: same-line sportsbook coverage of PrizePicks standard lines is 54-74% in history and 5.7-15% live (DEF 0%);
+      market_consensus live = 4 markets, ~1 book (history 20 markets, 1.4-2.1 books); board_true_hp anchors 8-15% of live rows on
+      DraftKings, the rest on PrizePicks' own line. The history PrizePicks board (Odds-API capture) also carried 8-16 DEF rows per
+      game vs ~112 live (PrizePicks' full alt ladders and 30+ new stat types), so the DEF-heavy units were backtested on a much
+      narrower DEF pool than live offers.
+    Nothing changed live. Next (owner's call): widen the live market feed before any market-crossed profile work.
