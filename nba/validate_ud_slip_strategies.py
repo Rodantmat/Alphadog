@@ -126,7 +126,7 @@ def regrade(structure, size, legs, hitmap):
         p = STD[size]
         for _, f in legs:
             p *= f
-        return p - 1.0
+        return math.floor(p * 100 + 1e-6) / 100 - 1.0        # Underdog floors to 2 decimals (2026-10-21 probe)
     base = FLEX.get((size, size - sum(h)), 0.0)
     if base == 0.0:
         return -1.0
@@ -134,7 +134,7 @@ def regrade(structure, size, legs, hitmap):
     for (i, f), hh in zip(legs, h):
         if hh:
             p *= f
-    return p - 1.0
+    return math.floor(p * 100 + 1e-6) / 100 - 1.0
 
 
 def run_direction(conn, strat, sel_season, oos_season, label, rng):
