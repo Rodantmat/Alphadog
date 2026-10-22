@@ -78,7 +78,14 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
     const alt = f.some(x => Math.abs(x - 1) > 1e-9);
     if (mode === "power") {
       if (misses > 0) return 0;
-      if (!alt) { const base = Number((pp.base_power || {})[String(n)]); return base > 0 ? base : null; }
+      if (!alt) {
+        // same-game all-standard 2 / 3-pick Power (2026-10-21, power_same_game_v3, conservative) - twin of build_slip_engine.pp_payout
+        if ((n === 2 || n === 3) && nbaSameGame(legs)) {
+          const sgp = Number((pp.power_same_game_v3 || {})[String(n)]);
+          return sgp > 0 ? sgp : null;
+        }
+        const base = Number((pp.base_power || {})[String(n)]); return base > 0 ? base : null;
+      }
       if (n === 2) return nbaCompress(pricing, 3 * fprod);
       const r = (pp.power_alt_v3 || {})[String(n)];
       if (!r) return null;
