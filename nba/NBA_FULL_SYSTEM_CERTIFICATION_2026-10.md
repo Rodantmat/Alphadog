@@ -2768,7 +2768,7 @@ should be doing. Mining everything that they should mine, consuming everything t
 1. ✅ **P2A 10-22 (run 39763674613)**: every step green, no soft failure. 14 games over 2 dates, gap audit clean; 45,316 legs graded.
    Live PrizePicks 10-21: 16 placed units +2.7 (A_core +4.0, A_wsteals +3.2 on 8 slips all paid, A_wrebounds -0.5, A_regular -2.0,
    C_wstocks -2.0). Underdog paper 10-21: 4 slips, -3.5 of 3.5 staked (two days: 8 of 8 lost). Paper Less tracker: 19 slips graded.
-   The six players with 690 "unmatched_not_in_season" legs (Podziemski, Dybantsa, Monk, Nesmith, Knueppel, Black) were all OUT
+   The six players with 739 "unmatched_not_in_season" legs (Podziemski, Dybantsa, Monk, Nesmith, Knueppel, Black) were all OUT
    (injury report) - voids, no slip carried them.
 2. ✅ **P2B 10-22 (run 39801596345)**: 7 / 7 certified, no soft failure; referee crews 2 / 2; 519 rostered players, 9 Out / Doubtful
    applied; confidence refit 10 min 45 s (the 10-21 refit hung on one query 18:13 -> 20:03 UTC and was terminated - that is the
