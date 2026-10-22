@@ -498,7 +498,12 @@ export async function apiHighHit(sql, cfg, url, version) {
         for (const x of slips) {
           if (x.source_key !== "prizepicks") continue;
           const r = byK.get(x.strategy + ":" + x.k);
-          if (!r) continue;
+          if (!r) {
+            // 2026-10-22 (owner: nothing on the screen unless PrizePicks' own quote confirms it): a slip to PLAY that PrizePicks has not
+            // quoted yet is held back until the quote and the quote gate (nba/apply_quote_gate.py) have run - recorded, not shown
+            if (String(x.stake_label || "").startsWith("PLAY")) { x.stake_label = "SKIP - waiting for PrizePicks' quote"; x.play_usd = null; x.awaiting_quote = true; }
+            continue;
+          }
           const js = v => (typeof v === "string" ? JSON.parse(v) : v);
           if (Number(r.status) === 200) {
             const n = x.slip_size, tb = js(x.entry_mode === "flex" ? r.flex : r.power) || {}, tiers = tb[String(n)] || {};
