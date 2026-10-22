@@ -71,7 +71,8 @@ def main():
             ping = F.call(s, F.PING_HOST, hdr, {"__object_class_name": "FCM__Ping__Request", "message": f"ping {int(time.time()*1000)}"}, px)
             d = ping.get("result", {}).get("response", {}).get("data", {})
             print(f"VERSION {v}: ACCEPTED | min_app_build {d.get('min_app_build')} | server_build {d.get('server_build')} | feed {d.get('proposals_feed_endpoint')}")
-            break
+            if not forced:
+                break
         except Exception as e:  # noqa: BLE001
             print(f"VERSION {v}: refused ({str(e)[:160]})")
         time.sleep(3)
