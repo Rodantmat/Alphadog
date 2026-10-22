@@ -357,8 +357,8 @@ def main():
             rows.sort(key=lambda x: (-x[0], -x[1]))
             print(f"\n  {size}-pick {st.upper()}: {len(rows)} compositions hold | " + " | ".join(f"{h:^22}" for h in halves))
             for npos, _, key, hs in rows:
-                cells = " | ".join(f"n{h['slips']:>4} {100 * h['roi']:+7.1f}% f{h['full']:.2f}" if h else f"{'-':^22}" for h in hs)
-                print(f"  {key[0]:<13} {key[1]:<24} cap{key[4]} | {cells} | {npos}/4")
+                htxt = " | ".join(f"n{h['slips']:>4} {100 * h['roi']:+7.1f}% f{h['full']:.2f}" if h else f"{'-':^22}" for h in hs)
+                print(f"  {key[0]:<13} {key[1]:<24} cap{key[4]} | {htxt} | {npos}/4")      # never reuse 'cells' (PART 3's list)
 
     print("\n" + "=" * 150 + "\nPART 2 - EVERY BUCKET PATTERN (out of sample both directions; LIVE learned on both seasons)")
     for st in STRUCTS:
