@@ -531,7 +531,7 @@ export async function apiHighHit(sql, cfg, url, version) {
         for (const x of slips) for (const m of (x.leg_missing || [])) miss.set(m, (miss.get(m) || 0) + 1);
         const failed = slips.filter(x => x.quote_failed).length;
         if (miss.size) notes.unshift(`⚠ ${failed} PrizePicks slip(s) have a leg that was NOT on PrizePicks' board when PrizePicks quoted them: ` +
-          [...miss].map(([m, n]) => `${m} (in ${n} slip${n > 1 ? "s" : ""})`).join("; ") + ". Substitute that leg before placing - those slips show our model's multipliers, not PrizePicks'.");
+          [...miss].map(([m, n]) => `${m} (in ${n} slip${n > 1 ? "s" : ""})`).join("; ") + ". Those slips cannot be placed as built - they are not shown and not played (recorded).");
         else if (failed) notes.unshift(`⚠ ${failed} PrizePicks slip(s) were not quoted by PrizePicks - their multipliers are our model's.`);
       }
     } catch (e) { notes.push("PrizePicks slip quotes could not be read: " + String(e && e.message || e)); }
