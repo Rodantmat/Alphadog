@@ -338,6 +338,28 @@ def main():
                 live_txt = f"n{lv['slips']:>2} {100 * lv['roi']:+7.1f}%" if lv else "   no slip   "
                 print(f"  {key[0]:<13} {key[1]:<24} cap{key[4]} | {fmt(a)} | {fmt(b)} | {live_txt:<16} | {'HOLDS' if holds(a, b) else ''}")
 
+    print("\n" + "=" * 150 + "\nPART 1b - HALF-SEASON STABILITY of every composition that HOLDS (H1 = before Jan 15, H2 = from Jan 15): "
+          "ROI per half, full-hit rate, halves positive of 4")
+    halves = [f"{s} {h}" for s in SEASONS for h in ("H1", "H2")]
+    for st in STRUCTS:
+        for size in SIZES:
+            keys = sorted({k for (k, p) in compacc.d if k[2] == size and k[3] == st})
+            rows = []
+            for key in keys:
+                a, b = compacc.stats(key, "2024-25"), compacc.stats(key, "2025-26")
+                if not a or not b or a["slips"] < 30 or b["slips"] < 30 or not holds(a, b):
+                    continue
+                hs = [compacc.stats(key, h, with_lb=False) for h in halves]
+                npos = sum(1 for h in hs if h and h["roi"] > 0)
+                rows.append((npos, min(h["roi"] if h else -1 for h in hs), key, hs))
+            if not rows:
+                continue
+            rows.sort(key=lambda x: (-x[0], -x[1]))
+            print(f"\n  {size}-pick {st.upper()}: {len(rows)} compositions hold | " + " | ".join(f"{h:^22}" for h in halves))
+            for npos, _, key, hs in rows:
+                cells = " | ".join(f"n{h['slips']:>4} {100 * h['roi']:+7.1f}% f{h['full']:.2f}" if h else f"{'-':^22}" for h in hs)
+                print(f"  {key[0]:<13} {key[1]:<24} cap{key[4]} | {cells} | {npos}/4")
+
     print("\n" + "=" * 150 + "\nPART 2 - EVERY BUCKET PATTERN (out of sample both directions; LIVE learned on both seasons)")
     for st in STRUCTS:
         for size in SIZES:
