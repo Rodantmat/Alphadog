@@ -172,7 +172,7 @@ def grade(slip, structure):
         p = STD[k]
         for l in slip:
             p *= l['factor']
-        return hits, p
+        return hits, floor2(p)
     base = FLEX.get((k, k - hits), 0.0)
     if base == 0.0:
         return hits, 0.0
@@ -180,7 +180,7 @@ def grade(slip, structure):
     for l in slip:
         if l['hit']:
             p *= l['factor']
-    return hits, p
+    return hits, floor2(p)
 
 
 def candidates_for(comp, pool):
