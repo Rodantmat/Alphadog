@@ -7,10 +7,12 @@ SOURCES: nba_score.ud_tier_map_legs (Underdog window board, certified §30i/§30
 outcome, DNP/push voided) + ud_window_legs (event_id: one pick per game) + ud_cand_leg_features (pre-window signals,
 prior data only: min_trend, pf20). No other table.
 
-PAYOUT (§30f, certified §30i; published tables, conservative - no 1.04, 4-pick Flex at the published 6):
-  Standard (all must hit):        base(n) x prod(m)              base 2:3.5 3:6.5 4:12 5:20 6:35 7:65 8:120
-  Flex, all correct:              F0(n) x prod(m)                F0   3:3.25 4:6 5:10 6:25 7:40 8:80
-  Flex, j misses:                 Fj(n) x prod(m over the hits)  F1 3:1.09 4:1.4 5:2.5 6:2.6 7:2.75 8:3 ; F2 6:0.25 7:0.5 8:1
+PAYOUT (§30f, certified §30i; PROVEN 2026-10-21 against Underdog's own entry estimate - 54 entries of 2-6 fantasy-priced picks,
+  research_ud_payout_probe.py run 39689206312, nba_market.ud_payout_quotes: no 1.04 factor; 4-pick Flex base 7.2, Underdog's own
+  payout table, not the help page's 6 - §30h's "until confirmed" is met; every multiplier FLOORED to 2 decimals as Underdog shows it):
+  Standard (all must hit):        floor2(base(n) x prod(m))      base 2:3.5 3:6.5 4:12 5:20 6:35 7:65 8:120
+  Flex, all correct:              floor2(F0(n) x prod(m))        F0   3:3.25 4:7.2 5:10 6:25 7:40 8:80
+  Flex, j misses:                 floor2(Fj(n) x prod(m over the hits))  F1 3:1.09 4:1.4 5:2.5 6:2.6 7:2.75 8:3 ; F2 6:0.25 7:0.5 8:1
   sizes 2-8 (Flex 3-8; double-flex from 6). Voids are excluded upstream (graded legs only).
 APP RULES: players from >= 2 teams; no player twice. ENGINE RULE: ONE PICK PER GAME, so Underdog's correlation factor
   is 1 and the formula is exact (§30f); cross-game legs are priced as independent.
