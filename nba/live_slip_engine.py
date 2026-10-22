@@ -1187,11 +1187,17 @@ def pick(conn, day, require_fresh=True):
         # THE 2-SLIP PORTFOLIO (see PORTFOLIO_UNITS): built from the same day pools as every strategy (leg filter, Over minutes floor,
         # steals-free family C pool), recorded under each unit's name with its rank k; same daily ceiling / below-minimum / duplicate
         # rules as any placed slip; stake weight 1.
-        for name, k, slip in portfolio_select(pools, cmap, broad_day, pf):
+        # QUOTE GATE BACKUPS (2026-10-22, owner: nothing reaches the screen unless PrizePicks' own quote confirms it): the next
+        # `backups` slips of the same round robin are recorded as 'placed_backup' (never staked, never shown); after P3's slip
+        # quotes, nba/apply_quote_gate.py demotes a placed slip PrizePicks does not price as built and promotes backups in order.
+        n_pf = int(pf['n'])
+        for idx, (name, k, slip) in enumerate(portfolio_select(pools, cmap, broad_day, pf, extra=int(pf.get('backups', 4)))):
             size, structure = PORTFOLIO_UNITS[name][1], PORTFOLIO_UNITS[name][2]
             sig = (structure, tuple(sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in slip)))
             st = 'placed'
-            if sig in placed_sigs:
+            if idx >= n_pf:
+                st = 'placed_backup'
+            elif sig in placed_sigs:
                 st = 'dup'
             else:
                 placed_sigs.add(sig)
