@@ -322,7 +322,9 @@ async function backtestContext(sql, cfg, names) {
 // PLAY OR SKIP, AND HOW MUCH (2026-10-15). Until today the label read only 'shadow' from the status, so a slip the engine recorded
 // but did not stake (week-1 / week-2 rules, the daily ceiling, below the minimum entry) showed "staked" for an active strategy.
 const SKIP_REASON = [["shadow", "shadow strategy"], ["week1_skip", "week-1 rule"], ["week2_skip", "week-2 rule"],
-  ["capped", "daily ceiling reached"], ["below_min", "its half stake is below the minimum entry"]];
+  ["capped", "daily ceiling reached"], ["below_min", "its half stake is below the minimum entry"],
+  // 2026-10-22 quote gate: a backup is used only when a slip fails PrizePicks' quote; a gate skip failed it - never PLAY, never shown
+  ["backup", "backup (not needed)"], ["quote_skip", "PrizePicks' quote did not confirm it"]];
 function udAdvice(s, bt) {
   const st = String(s.status || "");
   if (!bt.unit.udPlay) return { label: "paper (Underdog engine)", play_usd: null };
