@@ -10,8 +10,11 @@ Per table: the payout before v3 is KEPT in payout_grader_v2 (retain all data; se
 recomputed for every slip whose v3 payout differs. same_game = the table's own column (> 0). Idempotent (re-running touches only
 rows whose payout changes - e.g. after a rule refresh). One set-based statement per season. Runs in P5 after the Flex-alternates
 regrade and before certification, so the backtest always matches the current grader.
-Env: DATABASE_URL, REGRADE_TABLES (default: the eight slip_engine_slips tables).
+Env: DATABASE_URL, REGRADE_TABLES (default: the eight slip_engine_slips tables), REGRADE_KEEP_COL (optional, e.g.
+payout_v3_pre_20261021: a rule change keeps every changed row's payout BEFORE this regrade in that column - set once, never
+overwritten - so the earlier v3 numbers stay on record next to payout_grader_v2; 2026-10-21 same-game Power rule).
 """
+import re
 import os
 import sys
 import time
