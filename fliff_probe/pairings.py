@@ -636,7 +636,9 @@ def main():
                        f"settings: near >= {NEAR_P}, good {GOOD_P_MIN}-{NEAR_P} at {GOOD_M_MIN}-{GOOD_M_MAX}x, slip {SLIP_MIN}-{SLIP_MAX}x, joint >= {JOINT_MIN}, "
                        f"one-sided haircut min(q-{ALT_ADD}, q/(1+{ALT_PROP})), leg reuse {LEG_REUSE}",
                        "H2H Combo legs settle on team fantasy points; priced with the moneyline (same Fliff proposal) as a proxy."]}
-    md = render(meta, near, good, pairs)
+    bal = envf("PROBE_BALANCE", 0)
+    meta["stake"] = int(round(bal * STAKE_PCT)) if bal else None
+    md = render_safe(meta, s_pool, s_pairs, s_why, blow_txt) if MODE == "safe" else render(meta, near, good, pairs)
     stamp = NOW.astimezone(PT).strftime("%Y%m%d_%H%M")
     (OUT / "latest_pairings.md").write_text(md)
     (OUT / "latest_pairings.json").write_text(json.dumps({"meta": meta, "pairs": pairs, "near": near[:60], "good": good[:60],
