@@ -548,7 +548,9 @@ export async function apiHighHit(sql, cfg, url, version) {
   // while it is paper, unstaked rows. They stay recorded in live_slips / ud_live_slips with their not-played status; the screen
   // shows only slips of strategies that are bet (PLAY, or a SKIP by a betting rule: week-1/2, ceiling, below-minimum, stand-down,
   // ALARM) and says how many test slips were recorded.
-  const TEST_ONLY = /^(SKIP - shadow|paper|SKIP - strategy |SKIP - not staked|SKIP - a leg is no longer on)/;
+  const TEST_ONLY = /^(SKIP - shadow|paper|SKIP - strategy |SKIP - not staked|SKIP - a leg is no longer on|SKIP - backup|SKIP - PrizePicks' quote|SKIP - waiting for PrizePicks' quote)/;
+  const awaiting = slips.filter(x => x.awaiting_quote).length;
+  if (awaiting) notes.unshift(`${awaiting} PrizePicks slip(s) are waiting for PrizePicks' own quote (asked right after the pick, a few minutes) - they appear here once PrizePicks confirms every leg and the payout.`);
   const testOnly = slips.filter(x => TEST_ONLY.test(String(x.stake_label || "")));
   if (testOnly.length) {
     const kept = slips.filter(x => !TEST_ONLY.test(String(x.stake_label || "")));
