@@ -149,6 +149,16 @@ jobs:
           echo "league: ${LG:-nba} ($PP_LEAGUE) | mode: ${PP_MODE:-full} | quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20} | drift: ${PP_DRIFT_SAMPLE:-10}"
           python nba/pp_payout_map.py
 
+      # QUOTE GATE (2026-10-22, owner: "don't let anything that's not allowed go on that screen"): right after the slip quotes are
+      # stored, a slip PrizePicks does not price as built (pulled / moved / other line type) or prices below the backtest's own
+      # payout is taken off play and the portfolio's next backup in order takes its place (nba/apply_quote_gate.py).
+      - name: Quote gate (slip quotes only)
+        if: ${{ always() && github.event.inputs.mode == 'slipq' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/apply_quote_gate.py
+
       - name: Commit payout map
         if: always()
         # ONE push helper (nba/git_push_retry.sh): the old loop ended on `sleep` after 5 failed pushes, so a lost
