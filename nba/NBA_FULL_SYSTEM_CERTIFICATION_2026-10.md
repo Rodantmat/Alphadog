@@ -2870,3 +2870,16 @@ should be doing. Mining everything that they should mine, consuming everything t
     weighted:threes_D1 4-Flex cap2 (steals-included pool) and weighted:assists_D1 4-Flex cap2 (steals-free pool) - both 4/4 halves;
     C_wstocks_4flex is the weakest live 4-Flex (fails 2024-25), its steals-included twin holds. No 2- or 3-pick Flex strategy should be
     staked. Any change goes through the usual paper gate before a unit is staked.
+16. 🔑 **Portfolio mix** (research_pp_portfolio_mix.py runs 39836756574 leg key / 39836762903 player key; owner 11:58-11:59 PT: 2- and
+    3-pick POWER, 4+ FLEX; "mix them ... more slips, less slips ... cap legs at one / two / three slips"). 2-Power: nothing holds
+    (best weighted:turnovers_R +16.5 / +44.1%, lb < 0 in 2024-25). 3-Power: 12 hold, single:points_R 4/4 halves, weighted:rebounds_R
+    cap2 4/4. Mixed (round robin over units, N slips a day, a leg in at most L slips): LIVE NOW (A_wrebounds 4F, C_wstocks 4F, A_core
+    3P, D_points 3P) N8 no cap +34.5 / +59.9%, max drawdown 92 / 41 units; PROPOSED (threes 4F, assists-ns 4F, rebounds 4F, stocks 4F,
+    points 3P, rebounds 3P) N8 no cap +39.5 / +57.0%, dd 74 / 36; **PROPOSED N4 L2 +42.6 / +53.1%, lb +22.1 / +37.0, dd 37 / 23, 4/4
+    halves** (best lower bound at a useful volume); L1 (no shared leg) leaves ~2.4 slips a day, +32 / +47%. More slips raise drawdown
+    faster than profit; 2-Power added to the mix improves nothing. Owner's decision pending.
+17. **Today vs the seasons** (research_pp_today_profile.py run 39848407232, after P3 39847471379 - certified green, no soft failures):
+    the slips' profile (prop mix, tiers, Under share, price, same-game share, overlap, player spread) of 10-20, 10-21 and 10-22 sits
+    closer to 2025-26 than to 2024-25 for every portfolio (today: LIVE NOW 0.56 vs 0.77, PROPOSED N8 0.78 vs 0.91, N4 L2 0.90 vs
+    1.01). Today: 2 games, every slip same-game; defensive legs 68%. Early-season record of the season it resembles: 2025-26 first 14
+    days -12 / -13% (N4 L2, LIVE NOW), first 30 days +20 / +51%.
