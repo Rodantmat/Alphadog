@@ -321,9 +321,9 @@ def payout(structure, legs_after_void):
     if structure == 'standard' or n == 2:             # a Flex left with 2 picks pays as a 2-pick Standard
         if len(hits) < n:
             return 0.0
-        return E.STD[n] * math.prod(l['factor'] for l in legs_after_void)
+        return E.floor2(E.STD[n] * math.prod(l['factor'] for l in legs_after_void))
     base = E.FLEX.get((n, n - len(hits)), 0.0)
-    return base * math.prod(l['factor'] for l in hits) if base else 0.0
+    return E.floor2(base * math.prod(l['factor'] for l in hits)) if base else 0.0
 
 
 def grade(conn, day):
