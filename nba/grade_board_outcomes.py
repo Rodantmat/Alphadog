@@ -409,7 +409,16 @@ def main():
                     out.append((d, event_id, label, book, mk, player, side, line, None, 1 if hit else 0, res, is_alt, True))
                     tot[res] += 1
                     continue
+                if base in YES_NO_TD:
+                    hit = td(rec)
+                    res = ("over_win" if hit else "under_win") if str(side).lower() in ("yes", "over") else ("under_win" if hit else "over_win")
+                    out.append((d, event_id, label, book, mk, player, side, line, None, 1 if hit else 0, res, is_alt, True))
+                    tot[res] += 1
+                    continue
                 fn = BASE.get(base)
+                mq = QUARTERS_N.match(base)
+                if mq:
+                    fn = (lambda n: (lambda r: quarters_with(r, n)))(int(mq.group(1)))
                 if fn is None or line is None:
                     out.append((d, event_id, label, book, mk, player, side, line, None, None, "no_stat", is_alt, True))
                     tot["no_stat"] += 1
