@@ -329,6 +329,10 @@ function poolLegIsLegalForSlip(leg,keptLegs,slip){
   if(!leg)return false;
   if(slip&&String(leg.source_key||'')!==String(slip.source_key||''))return false;
   for(const l of keptLegs){ if(String(l.mlb_player_id||l.player_id)===String(leg.mlb_player_id||leg.player_id))return false; }
+  // NO OPPOSITE SIDES (owner 2026-10-21 17:30 PT: "some legs are more and some legs are less on the same player"): a substitute is never
+  // the other side of a player already in ANY of the day's slips - it would bet against another slip.
+  const pid=String(leg.mlb_player_id||leg.player_id),side=String(leg.selected_side||'').toLowerCase();
+  for(const s of (lastRawSlips||[]))for(const l of (s.legs||[])){if(String(l.mlb_player_id||l.player_id)===pid&&String(l.selected_side||'').toLowerCase()!==side)return false}
   let sameGame=0;
   for(const l of keptLegs){ if(String(l.game_pk)===String(leg.game_pk))sameGame++; }
   const cap=Number((NBA_MAX_PER_GAME||{})[String(slip&&slip.source_key||'')]||2);
