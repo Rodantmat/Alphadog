@@ -75,19 +75,24 @@ def main():
         sys.exit(1)
     # proof the token works: one read-only call as the signed-in user
     px = os.environ.get("PROXY_URL", "").strip()
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        dev = (conn.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'underdog_device_id'").fetchone() or [""])[0]
     hdr = {"accept": "application/json", "authorization": f"Bearer {tok}", "origin": "https://app.underdogsports.com",
-           "referer": "https://app.underdogsports.com/", "client-type": "web",
-           "client-version": os.environ.get("UNDERDOG_CLIENT_VERSION", "20260907143253")}
-    code = 0
+           "referer": "https://app.underdogsports.com/", "client-type": "web", "client-device-id": dev,
+           "client-version": os.environ.get("UNDERDOG_CLIENT_VERSION", "20260907143253"),
+           "user-latitude": "32.65148161377867", "user-longitude": "-116.8550890281236"}
+    q = "product=fantasy&product_experience_id=b34dfd93-d0e8-4da3-8bf4-45c15c548dec&state_config_id=725014ef-3570-4e93-871d-d69674ab3521"
+    code, body = 0, ""
     for p in ([px, None] if px else [None]):
         try:
-            code = sess.get("https://api.underdogfantasy.com/v1/user/power_ups", headers=hdr, timeout=30,
-                            proxies=({"https": p, "http": p} if p else None)).status_code
+            r = sess.get("https://api.underdogfantasy.com/v1/user/power_ups?" + q, headers=hdr, timeout=30,
+                         proxies=({"https": p, "http": p} if p else None))
+            code, body = r.status_code, r.text[:160]
             break
         except Exception:  # noqa: BLE001 - next route
             continue
-    print(f"UD_TOKEN_OK|{how}; access token lifetime {exp} s; signed-in check HTTP {code}")
-    if code != 200:
+    print(f"UD_TOKEN_OK|{how}; access token lifetime {exp} s; signed-in check HTTP {code}" + ("" if code == 200 else f" - {body!r}"))
+    if code not in (200,):
         sys.exit(1)
 
 
