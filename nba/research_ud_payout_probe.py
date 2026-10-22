@@ -207,7 +207,8 @@ def main():
 
     shape = None
     probe = pick(2)
-    for name, fn in shapes.items():
+    # signed in: the shape is known (round 2) - no burst of trial calls on the owner's account
+    for name, fn in ([("id+type (encoded)", shapes["id+type (encoded)"])] if auth else shapes.items()):
         j = call(fn(probe))
         errs = (j or {}).get("errors") or []
         sc = len((j or {}).get("resolved_selections") or [])
