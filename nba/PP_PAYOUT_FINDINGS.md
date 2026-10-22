@@ -202,6 +202,20 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0r. 🔑 2 / 3 / 4-PICK FLEX AND POWER - OUR GRADER AGAINST EVERY PRIZEPICKS QUOTE; ALTERNATE-LESS NAMING AND PRICE (2026-10-22 PT)
+
+- **Proof** (research_pp_flex_payout_proof.py run 39822487137, research_pp_flex_payout_overpay.py run 39822861068): 4,236 NBA quotes
+  of 2-4 picks re-priced by grader v3 from the legs' mined factors of the same quoting run. All-standard: never above PrizePicks.
+  Flex with alternates: all-hit <= PrizePicks on 99.1% (2-pick, research envelope), 88.3-88.7% (3), 89.8-91.7% (4), mean 0.90-0.96;
+  one miss 95-100%; overpays are cents except 2-pick two goblins fp < 0.5 (1.40 vs 1.20, 8 quotes) and one same-game 4-pick (9 vs 7).
+  **Flex grading is a lower bound.** Power with alternates over-pays on demon stacks (3-pick fp 15-78 up to 380 vs 250; 4-pick fp
+  27-259: 271 vs 39, 2,694 vs 1,500) - power_alt_v3 is not valid above fp ~5; production unchanged (owner's call).
+- **Naming.** PrizePicks names a Less alternate by its rung: goblin Less = the line BELOW the standard (hard Under, quoted 1.45-2.5x),
+  demon Less = ABOVE (easy Under, ~0.80x). The archive (pp_leg_price) names it by difficulty - the opposite word.
+- **Price.** PrizePicks' quotes: 0.5 / f_more + 0.5 / f_less = 0.980 (demon rungs, 46 pairs) / 0.989 (goblin rungs, 29), range
+  0.942-1.005 - the §0n law (0.99) stands. The archive's model Less price sums to 1.046-1.050 (2,399 pairs, 2026-10-21 / 22): it
+  values a live Less leg 5-15% below PrizePicks. Ledger day three items 12-15.
+
 ## 0q. 🔑 UNDERDOG'S EXCHANGE PRICING, MEASURED AGAINST THE BOOKS (2026-10-22 PT)
 
 - Every Underdog pick now carries m = 0.5 x the exchange decimal. On 1,152 sides of 2026-10-20 / 21 matched at the SAME line to the
