@@ -165,6 +165,82 @@ MIN_BOARD_LEGS = int(os.environ.get('LS_MIN_BOARD', '179'))   # §31j: smallest 
 # ~3% less staked). EXCLUDING those legs instead (replacements fill) was REJECTED (2024-25 -0.9..-1.7 at every threshold).
 STAR_UNDER_LINES = {'points': 24.5, 'pra': 34.5, 'pts_ast': 29.5, 'pts_reb': 29.5}
 
+# THE 2-SLIP PORTFOLIO (2026-10-22, owner 14:38 PT: "only two slips a day ... let's do that from now on"; ledger day three items
+# 13-17). The 4-pick Flex / 3-pick Power strategies that hold in both seasons are pooled into ONE daily selection: round robin over
+# the units in PORTFOLIO_UNITS order (k = 1 of every unit, then k = 2, ...), a candidate is taken unless it repeats a taken slip or
+# one of its legs already sits in `leg_cap` taken slips; stop at `n`. Measured (research_pp_portfolio_mix.py run 39836756574, the
+# live engine's window-only twin, final 7 days out): n 2 / leg cap 2 = +49.0% / +56.3% ROI (lb5 +14.4 / +30.0), max drawdown
+# 21 / 11 units, 4/4 half-seasons; n 4 = +42.6% / +53.1%. The strategies it replaces (`replaces`) keep building ONE shadow slip a
+# day (recorded, never staked) so the old record continues. Tunable nba_config.classification_config['pp_portfolio']
+# {enabled, n, leg_cap, order, replaces}; off = the previous production rule, unchanged. Every portfolio slip is 1 unit (the
+# research's staking; no star-Under half stake). Units: name -> (composition, size, structure, pool family: '' = full pool,
+# 'C' = steals-free pool).
+PORTFOLIO_UNITS = {
+    'P_wthrees_4flex':    ('weighted:threes_D1',  4, 'flex',  ''),
+    'P_wassists_4flex':   ('weighted:assists_D1', 4, 'flex',  'C'),
+    'P_wrebounds_4flex':  ('weighted:rebounds_R', 4, 'flex',  ''),
+    'P_wstocks_4flex':    ('weighted:stocks_R',   4, 'flex',  ''),
+    'P_points_3power':    ('single:points_R',     3, 'power', ''),
+    'P_wrebounds_3power': ('weighted:rebounds_R', 3, 'power', ''),
+}
+PORTFOLIO_DEFAULT = {"enabled": False, "n": 2, "leg_cap": 2, "order": list(PORTFOLIO_UNITS),
+                     "replaces": ["A_wrebounds_4flex", "C_wstocks_4flex", "A_core_3power", "D_points_3power"]}
+PORTFOLIO_KMAX = 10
+_PORTFOLIO = None
+
+
+def portfolio_cfg(conn):
+    global _PORTFOLIO
+    if _PORTFOLIO is None:
+        cfg = dict(PORTFOLIO_DEFAULT)
+        try:
+            env = os.environ.get('LS_PORTFOLIO')
+            if env:
+                cfg.update(json.loads(env))
+            else:
+                row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='pp_portfolio'").fetchone()
+                if row:
+                    cfg.update(row[0] if isinstance(row[0], dict) else json.loads(row[0]))
+        except Exception as e:  # noqa: BLE001
+            print(f"  pp_portfolio config unreadable ({type(e).__name__}) - portfolio OFF, previous rule", flush=True)
+            cfg = dict(PORTFOLIO_DEFAULT)
+        bad = [u for u in cfg.get('order', []) if u not in PORTFOLIO_UNITS]
+        if bad:
+            print(f"  pp_portfolio: unknown units {bad} - portfolio OFF, previous rule", flush=True)
+            cfg = dict(PORTFOLIO_DEFAULT)
+        _PORTFOLIO = cfg
+    return _PORTFOLIO
+
+
+def portfolio_select(pools, cmap, broad_day, cfg):
+    """The day's portfolio slips: [(unit name, k, slip)] - round robin over cfg['order'], no repeated slip, a leg (player, prop,
+    side, line) in at most cfg['leg_cap'] taken slips, at most cfg['n'] slips. Pure: reads the pools, writes nothing."""
+    cand = {}
+    for name in cfg['order']:
+        comp, size, structure, fam = PORTFOLIO_UNITS[name]
+        cand[name] = ENG.build_day_slips(pools.get(fam, pools['']), comp, size, structure, PORTFOLIO_KMAX, cmap, broad_day)
+    n, lcap = int(cfg['n']), int(cfg['leg_cap'])
+    taken, use, seen = [], defaultdict(int), set()
+    for k in range(PORTFOLIO_KMAX):
+        for name in cfg['order']:
+            if len(taken) >= n:
+                break
+            if k >= len(cand[name]):
+                continue
+            slip = cand[name][k]
+            keys = list(dict.fromkeys((l['player'], l['prop'], l['side'], round(float(l['line']), 1)) for l in slip))
+            size, structure = PORTFOLIO_UNITS[name][1], PORTFOLIO_UNITS[name][2]
+            sig = (size, structure, tuple(sorted(map(str, keys))))
+            if sig in seen or any(use[x] >= lcap for x in keys):
+                continue
+            seen.add(sig)
+            for x in keys:
+                use[x] += 1
+            taken.append((name, k + 1, slip))
+        if len(taken) >= n:
+            break
+    return taken
+
 
 # THE OWNER'S UNIT (2026-10-15, owner: "the unit is going to be $1 on the beginning ... I cannot go less on most of the apps").
 # nba_config.classification_config['stake_unit'] = {unit_usd, min_stake_usd, below_min, play_from_day1}. A slip whose stake
