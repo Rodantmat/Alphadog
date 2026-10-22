@@ -57,9 +57,15 @@ T_SLIPS = f'nba_score.ud_slip_engine_slips{SUFFIX}'
 T_LEGS = f'nba_score.ud_slip_engine_legs{SUFFIX}'
 
 STD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0, 7: 65.0, 8: 120.0}
-FLEX = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 6.0, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5,
+FLEX = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 7.2, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5,
         (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25, (7, 0): 40.0, (7, 1): 2.75, (7, 2): 0.5,
         (8, 0): 80.0, (8, 1): 3.0, (8, 2): 1.0}
+
+
+def floor2(x):
+    """Underdog floors every entry multiplier to 2 decimals (2026-10-21 probe: Standard and Flex match only floored)"""
+    return math.floor(x * 100 + 1e-6) / 100
+
 
 # name: (prop, tier, side, rank_key, n_band, edge = certified weaker-season p.m)   -- §30k, nba_score.ud_cand_certified
 CELLS = {
