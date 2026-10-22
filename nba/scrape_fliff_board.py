@@ -26,7 +26,12 @@ from curl_cffi import requests
 
 OUT = Path(os.environ.get("FLIFF_OUT_DIR", "boards"))
 PING_HOST = "https://m-c2.app.getfliff.com/"
-APP_VERSION = os.environ.get("FLIFF_APP_VERSION", "5.0.34.285")
+# APP VERSION (2026-10-22): Fliff refuses every call whose build (the LAST field) is below the server's min_app_build with api
+# error 30040 "This version of the app is no longer supported" - 5.0.34.285 died on 2026-10-22 when min_app_build went to 286
+# (proven: 5.0.34.285 refused; 5.0.34.286 / 5.0.35.286 / 5.0.36.287 / 5.0.34.290 accepted - nba/research_fliff_version.py).
+# The scraper now heals itself: on 30040 it raises the build one step at a time (FLIFF_BUILD_STEPS, default 8) and prints
+# the version that was accepted, so the next bump is one visible line in the log, not a silent missing board.
+APP_VERSION = os.environ.get("FLIFF_APP_VERSION", "5.0.35.286")
 NBA_TEAMS = ["Hawks", "Celtics", "Nets", "Hornets", "Bulls", "Cavaliers", "Mavericks", "Nuggets", "Pistons", "Warriors", "Rockets", "Pacers", "Clippers", "Lakers", "Grizzlies", "Heat", "Bucks", "Timberwolves", "Pelicans", "Knicks", "Thunder", "Magic", "76ers", "Suns", "Trail Blazers", "Kings", "Spurs", "Raptors", "Jazz", "Wizards"]
 MLB_TEAMS = ["Yankees", "Red Sox", "Blue Jays", "Orioles", "Rays", "Guardians", "Tigers", "Royals", "Twins", "White Sox", "Astros", "Mariners", "Rangers", "Angels", "Athletics", "Braves", "Phillies", "Mets", "Marlins", "Nationals", "Brewers", "Cubs", "Cardinals", "Reds", "Pirates", "Dodgers", "Padres", "Giants", "Diamondbacks", "Rockies"]
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
