@@ -146,6 +146,9 @@ def main():
         for px in ([None, proxy] if proxy else [None]):
             try:
                 rr = sess.get(u, headers=H, timeout=30, proxies=({"https": px, "http": px} if px else None))
+                if rr.status_code != 200 and not seen_err.get(rr.status_code):
+                    seen_err[rr.status_code] = 1
+                    print(f"HTTP {rr.status_code} from estimate: {rr.text[:300]!r}", flush=True)
                 if rr.status_code == 200:
                     jj = rr.json()
                     if str(jj.get("status") or "").lower() in ("pending", "processing", "queued") and not jj.get("odds"):
