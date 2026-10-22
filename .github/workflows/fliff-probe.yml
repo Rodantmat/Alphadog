@@ -24,6 +24,14 @@ on:
         description: "run: cap on Fliff event boards pulled (sample runs: 20-40)"
         default: "250"
         required: false
+      mode:
+        description: "pairs: safe (default) | wide"
+        default: "safe"
+        required: false
+      balance:
+        description: "pairs: current Fliff balance in $ (sets the flat 5% stake)"
+        default: "0"
+        required: false
 
 permissions:
   contents: write
