@@ -57,8 +57,16 @@ def access_token(conn, sess=None, proxy=None):
 
 def main():
     """The refresher (workflow `NBA Underdog Token Refresh`): keep the session alive and prove it answers."""
+    import random
+    import time
     import psycopg
     from curl_cffi import requests as cr
+    # HUMAN TIMING (owner 2026-10-21 17:48 PT: "time it as a human using it so it won't trigger any blocks or validations"): a scheduled
+    # run starts at a random point up to 20 minutes after its slot, never the same second every day.
+    if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+        wait = random.randint(0, 1200)
+        print(f"UD_AUTH|human timing: starting in {wait} s", flush=True)
+        time.sleep(wait)
     sess = cr.Session(impersonate="chrome")
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         tok, exp, how = access_token(conn, sess)
