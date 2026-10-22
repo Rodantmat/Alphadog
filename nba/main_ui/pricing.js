@@ -149,9 +149,11 @@ export function nbaTiers(pricing, app, mode, legs) {
       cur.push(true); rec(i + 1, left, cur); cur.pop();
       if (left > 0) { cur.push(false); rec(i + 1, left - 1, cur); cur.pop(); }
     })(0, misses, []);
-    for (const m of masks) { const v = nbaPayout(pricing, app, mode, legs, m); if (v == null) nullSeen = true; else { tot += v; cnt++; } }
+    let best = 0;
+    for (const m of masks) { const v = nbaPayout(pricing, app, mode, legs, m); if (v == null) nullSeen = true; else { tot += v; cnt++; if (v > best) best = v; } }
     if (nullSeen) return null;
-    const v = cnt ? tot / cnt : 0;
+    let v = cnt ? tot / cnt : 0;
+    if (String(app || "").toLowerCase() === "underdog" && cnt) v = best;
     if (v > 0) out[n - misses] = Math.round(v * 1000) / 1000;
   }
   return out;
