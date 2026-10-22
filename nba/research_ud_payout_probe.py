@@ -21,7 +21,8 @@ floors to 2 decimals; standard is `odds.multiplier`). Partials fit none of all /
 RX_KIND=mix: one prediction-market pick + fantasy picks, to learn how a prediction pick is priced.
 Every quote is stored (nba_market.ud_payout_quotes, retained). The summary says which prediction matches and by how much.
 Env: RX_N (entries, default 60), RX_SEED, RX_SAME_GAME_SHARE (default 0.2), RX_SIZES (default 2,3,4,5,6), RX_KIND (fantasy | prediction |
-mix), RX_AUTH (1 = signed in as the owner, human pacing, at most 25 entries).
+mix), RX_AUTH (1 = signed in as the owner, human pacing, at most 25 entries), RX_ONE_PROVIDER (1 = every pick of an entry combinable under
+one exchange - udx / kalshi / nadex - per over_under.rfq_combinable_by_provider).
 """
 import itertools
 import json
