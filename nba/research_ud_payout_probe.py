@@ -103,6 +103,11 @@ def main():
             # run 39704098973) - the app would refuse the entry; leave those out of the probe
             if kind == "prediction" and o.get("rfq_combinable") is False:
                 continue
+            # near-certain prediction picks (price ~1.01-1.05: triple-double No, steals Under 1.5 at 1.04) came back "can't be combined"
+            # in every pair (run 39705121639) - left out so the sample measures the pricing (RX_MIN_PRICE, default 1.15)
+            pr_ = float((od.get(kind) or {}).get("decimal") or 0)
+            if kind == "prediction" and pr_ and pr_ < float(os.environ.get("RX_MIN_PRICE", "1.15")):
+                continue
             opts.append({"id": o["id"], "lookup_id": o.get("lookup_id"), "m": float(o["payout_multiplier"]), "choice": o.get("choice"), "kind": kind,
                          "price": float((od.get(kind) or {}).get("decimal") or 0) or None,
                          "player": lg.get("player"), "player_id": lg.get("player_id"), "team": lg.get("team"), "stat": lg.get("stat"),
