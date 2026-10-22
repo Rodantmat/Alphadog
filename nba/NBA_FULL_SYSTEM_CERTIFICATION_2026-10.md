@@ -2922,8 +2922,10 @@ should be doing. Mining everything that they should mine, consuming everything t
     vs the live portfolio +49.0% (dd 20.5, run 9). (b) research_pp_board_profiles_v2.py (2,929 strategies: leg-built 12 props +
     groups x line type x side x 2-6 picks x Flex / Power, engine units, the portfolio; KNN and hard-cell selection; staged gate) run
     39872141577: STAGE 1 (first half -> second half of each season) FAIL for every method - selection drifts to 6-pick Power / Flex
-    jackpots; stage 3 (leave one month out) the portfolio +52.4% beats every profile method month by month (0/13 months lost to
-    them on stability). Board shape alone does not choose strategies. (c) Research (sources: Kirch 2013 J. Prediction Markets - NBA
+    jackpots; stage 2 (season -> season) FAIL for every method too. Stage 3 (leave one month out, 13 months): portfolio +319.6u
+    / +52.4%; KNN K10 +62.3u, K20 -44.7u, K40 +326.6u (beats it in 6/13 months), hard cells +443.3u / +107.1% (7/13 months) but
+    with months of -57% / -31% and 6-pick Power picks (owner rule: 4+ picks Flex only) - by the staged rule (sample first) it does
+    not advance. Board shape alone does not choose strategies. (c) Research (sources: Kirch 2013 J. Prediction Markets - NBA
     Week-1 totals unders 58.2%; Dare, Dennis & Paul 2015 Finance Research Letters - opening lines err when a player is absent, closing
     lines efficient; Wizard of Odds - prop hold 4-6% stars / 6-10% secondary / 10-20% exotic; Unabated / Stokastic - pick'em vs
     de-vigged sportsbook probability against the entry break-even, Flex 6 ~54%, 2-Power ~58%; Gemini summary of practitioner
