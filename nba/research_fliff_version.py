@@ -61,7 +61,10 @@ def main():
     def key(v):
         return tuple(int(x) for x in v.split("."))
     tried = sorted({v for v in cands if v.startswith("5.")}, key=key, reverse=True)[:6]
-    for v in tried + [F.APP_VERSION]:
+    forced = [v for v in (os.environ.get("FV_TRY") or "").split(",") if v]
+    if forced:
+        tried = forced          # FV_TRY=a,b,c: test exactly these, in order, and report every one (no early stop)
+    for v in tried + ([] if forced else [F.APP_VERSION]):
         F.APP_VERSION = v
         hdr = F.header("web." + "0" * 32, "abcdefghij")
         try:
