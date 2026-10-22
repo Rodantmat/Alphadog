@@ -262,7 +262,7 @@ def main():
                      json.dumps({k: j.get(k) for k in ("odds", "true_odds", "flex", "errors", "status", "promo", "resolved_selections")})))
         print(f"#{i} n={n}{' SG' if same else ''} prod m {prod:.4f} | std {s_mult} vs ours {pred_s:.3f} | flex {f_mult} vs ours {pred_f:.3f} | fallbacks {fb}"
               + (f" | std errors {rec['std_err']}" if rec["std_err"] else "") + (f" | flex errors {rec['flex_err']}" if rec["flex_err"] else ""), flush=True)
-        time.sleep(0.6)
+        time.sleep(random.uniform(4.0, 15.0) if auth else 0.6)
 
     with psycopg.connect(url) as conn:
         for rw in rows:
