@@ -303,7 +303,9 @@ def main():
             rec[f"fb{k}_cand_best"] = round(base * max(hit_prods), 4)
         cmp.append(rec)
         rows.append((RUN_ID, n, json.dumps(ps), prod, same, s_mult, f_mult, json.dumps(fb), json.dumps(rec["std_err"]), json.dumps(rec["flex_err"]),
-                     json.dumps({k: j.get(k) for k in ("odds", "true_odds", "flex", "errors", "status", "promo", "resolved_selections")})))
+                     json.dumps({k: j.get(k) for k in ("odds", "true_odds", "flex", "errors", "status", "promo", "resolved_selections",
+                                                        "combinability_rules", "prediction_provider", "predictions_quote", "combo_fantasy_component_odds",
+                                                        "estimate_request_id", "async_config")})))
         print(f"#{i} n={n}{' SG' if same else ''} prod m {prod:.4f} | std {s_mult} vs ours {pred_s:.3f} | flex {f_mult} vs ours {pred_f:.3f} | fallbacks {fb}"
               + (f" | std errors {rec['std_err']}" if rec["std_err"] else "") + (f" | flex errors {rec['flex_err']}" if rec["flex_err"] else ""), flush=True)
         time.sleep(random.uniform(4.0, 15.0) if auth else 0.6)
