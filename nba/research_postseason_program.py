@@ -628,7 +628,7 @@ def ud_grade(slip, structure):
         p = UD_STD[k]
         for l in live:
             p *= l['factor']
-        return hits, p
+        return hits, math.floor(p * 100 + 1e-6) / 100       # Underdog floors to 2 decimals (2026-10-21 probe)
     base = UD_FLEX.get((k, k - hits), 0.0)
     if base == 0.0:
         return hits, 0.0
@@ -636,7 +636,7 @@ def ud_grade(slip, structure):
     for l in live:
         if l['hit']:
             p *= l['factor']
-    return hits, p
+    return hits, math.floor(p * 100 + 1e-6) / 100
 
 
 def build_slips(app, pool, comp_def, all_names, size, structure, cap, cmap, single):
