@@ -202,6 +202,18 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0q. 🔑 UNDERDOG'S EXCHANGE PRICING, MEASURED AGAINST THE BOOKS (2026-10-22 PT)
+
+- Every Underdog pick now carries m = 0.5 x the exchange decimal. On 1,152 sides of 2026-10-20 / 21 matched at the SAME line to the
+  DraftKings / Bovada / Fliff no-vig: m x nv mean **0.4666**, median 0.4661, sd 0.0353, p10 0.446, p90 0.491; corr(m, 0.465 / nv)
+  0.895; 96 sides at exactly 1.00; 70 sides with m x nv >= 0.50, 4 >= 0.535.
+- A leg's return at fair odds is therefore ~0.466 per unit of m; the Standard break-even per-leg return is STD[n]^(-1/n) = 0.535
+  (2) / 0.536 (3) / 0.537 (4) / 0.549 (5) / 0.553 (6).
+- Are Underdog's deviations from the books information or noise? First look (10-20 / 21, graded): the 120 'generous' sides
+  (m x nv >= 0.49) hit **0.458** - Underdog's own implied 0.461, not the books' 0.502; the 111 'stingy' sides (<= 0.445) hit 0.414
+  (books 0.451, Underdog 0.509). Too small to decide; until it is measured over weeks, no rule may count on Underdog's dispersion.
+- Re-priced backtests and the price-aware rules: ledger NBA_FULL_SYSTEM_CERTIFICATION_2026-10.md, day three item 9.
+
 ## 0p. 🔑 RECALCULATED ON THE APPS' OWN PRICES — UNDERDOG 4-PICK FLEX 7.2 + FLOOR, PRIZEPICKS SAME-GAME POWER (2026-10-21 PT)
 
 Owner 19:51 PT: "if you have enough, you need to recalculate the multipliers, the slips, the ROI, and everything again. If you do not,
