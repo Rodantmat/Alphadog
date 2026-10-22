@@ -212,14 +212,16 @@ def portfolio_cfg(conn):
     return _PORTFOLIO
 
 
-def portfolio_select(pools, cmap, broad_day, cfg):
+def portfolio_select(pools, cmap, broad_day, cfg, extra=0):
     """The day's portfolio slips: [(unit name, k, slip)] - round robin over cfg['order'], no repeated slip, a leg (player, prop,
-    side, line) in at most cfg['leg_cap'] taken slips, at most cfg['n'] slips. Pure: reads the pools, writes nothing."""
+    side, line) in at most cfg['leg_cap'] taken slips, at most cfg['n'] slips. `extra` > 0 continues the same round robin for that
+    many more slips (the BACKUPS the quote gate promotes when a slip fails PrizePicks' own quote). Pure: reads the pools, writes
+    nothing."""
     cand = {}
     for name in cfg['order']:
         comp, size, structure, fam = PORTFOLIO_UNITS[name]
         cand[name] = ENG.build_day_slips(pools.get(fam, pools['']), comp, size, structure, PORTFOLIO_KMAX, cmap, broad_day)
-    n, lcap = int(cfg['n']), int(cfg['leg_cap'])
+    n, lcap = int(cfg['n']) + int(extra), int(cfg['leg_cap'])
     taken, use, seen = [], defaultdict(int), set()
     for k in range(PORTFOLIO_KMAX):
         for name in cfg['order']:
