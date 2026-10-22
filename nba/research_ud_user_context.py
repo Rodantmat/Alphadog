@@ -112,7 +112,7 @@ def main():
         print(f"  {p} = {v!r}", flush=True)
         found[p] = v
     ids = {str(v) for v in found.values() if isinstance(v, str) and re.fullmatch(r"[0-9a-f-]{36}", v)}
-    px_user = next((str(v) for p, v in found.items() if "product_experience" in p.lower() and isinstance(v, str)), None)
+    px_user = next((str(v) for p, v in found.items() if re.search(r"product_experience(_id|\.id)$", p) and isinstance(v, str)), None)
     st_user = next((str(v) for p, v in found.items() if "state_config" in p.lower() and isinstance(v, str)), None)
     print(f"account product_experience_id: {px_user or 'not in /v1/user'} (ours {OUR_PX[:8]}) | state_config_id: {st_user or 'not in /v1/user'} (ours {OUR_ST[:8]}) | uuid-like ids seen {len(ids)}", flush=True)
 
