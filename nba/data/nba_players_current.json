@@ -483,8 +483,8 @@
     },
     {
       "id": 1641844,
-      "full_name": "Tarik Biberovic",
-      "last_comma_first": "Biberovic, Tarik",
+      "full_name": "Tarik Biberovi\u0107",
+      "last_comma_first": "Biberovi\u0107, Tarik",
       "roster_status": 1,
       "from_year": "2026",
       "to_year": "2026",
@@ -1169,6 +1169,19 @@
       "team_city": "Chicago",
       "team_name": "Bulls",
       "team_abbreviation": "CHI"
+    },
+    {
+      "id": 1642383,
+      "full_name": "Walter Clayton Jr.",
+      "last_comma_first": "Clayton Jr., Walter",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "walter_clayton_jr",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1642363,
@@ -2588,19 +2601,6 @@
       "team_abbreviation": "CHI"
     },
     {
-      "id": 1642396,
-      "full_name": "Blake Hinson",
-      "last_comma_first": "Hinson, Blake",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2026",
-      "player_code": "blake_hinson",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
-    },
-    {
       "id": 201950,
       "full_name": "Jrue Holiday",
       "last_comma_first": "Holiday, Jrue",
@@ -3615,19 +3615,6 @@
       "team_abbreviation": "LAC"
     },
     {
-      "id": 1643510,
-      "full_name": "Karim Lopez",
-      "last_comma_first": "Lopez, Karim",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "tmp_karim_lopez",
-      "team_id": 1610612763,
-      "team_city": "Memphis",
-      "team_name": "Grizzlies",
-      "team_abbreviation": "MEM"
-    },
-    {
       "id": 1631126,
       "full_name": "Caleb Love",
       "last_comma_first": "Love, Caleb",
@@ -3652,6 +3639,19 @@
       "team_city": "Minnesota",
       "team_name": "Timberwolves",
       "team_abbreviation": "MIN"
+    },
+    {
+      "id": 1643510,
+      "full_name": "Karim L\u00f3pez",
+      "last_comma_first": "L\u00f3pez, Karim",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_karim_lopez",
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
     },
     {
       "id": 1642863,
@@ -4695,8 +4695,8 @@
     },
     {
       "id": 1642889,
-      "full_name": "Labaron Philon",
-      "last_comma_first": "Philon, Labaron",
+      "full_name": "Labaron Philon Jr.",
+      "last_comma_first": "Philon Jr., Labaron",
       "roster_status": 1,
       "from_year": "2026",
       "to_year": "2026",
@@ -6151,8 +6151,8 @@
     },
     {
       "id": 1641774,
-      "full_name": "Tristan Vukcevic",
-      "last_comma_first": "Vukcevic, Tristan",
+      "full_name": "Tristan Vuk\u010devi\u0107",
+      "last_comma_first": "Vuk\u010devi\u0107, Tristan",
       "roster_status": 1,
       "from_year": "2023",
       "to_year": "2026",
