@@ -354,6 +354,28 @@ def main():
                 event_id = label = book = None
                 base = mk.replace("_alternate", "") if mk else ""
                 is_alt = bool(mk and mk.endswith("_alternate"))
+                if base in COMBO:
+                    res, actual = "no_stat", None
+                    parts = [p.strip() for p in str(player or "").split(" + ")]
+                    recs = []
+                    for part in parts:
+                        r_nm, _how = resolve(norm_name(part), day, players_seen, alias_idx)
+                        recs.append(day.get(r_nm) if r_nm else None)
+                    if len(parts) != 2:
+                        res = "unmatched_player"
+                    elif any(r is None or not r["played"] for r in recs):
+                        # a known player absent from today's box scores = did not play (void); an unknown name = join failure
+                        known = all(r is not None or norm_name(p) in all_known_names or NAME_OVERRIDES.get(norm_name(p)) in all_known_names
+                                    for p, r in zip(parts, recs))
+                        res = "dnp" if known else "unmatched_player"
+                    elif line is not None:
+                        actual = float(sum(r[COMBO[base]] or 0 for r in recs))
+                        lv = round(float(line), 3)
+                        res = "push" if round(actual, 3) == lv else ("over_win" if actual > lv else "under_win")
+                    out.append((d, event_id, label, book, mk, player, side, line, None, actual, res, is_alt, res not in ("dnp", "unmatched_player")))
+                    tot["combo_" + res] += 1
+                    tot[res] += 1
+                    continue
                 nm = norm_name(player)
                 resolved, how = resolve(nm, day, players_seen, alias_idx)
                 tot["match_" + how] += 1
