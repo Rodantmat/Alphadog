@@ -7,6 +7,11 @@ name: NBA Grader v3 Regrade + Certify (one-off)
 
 on:
   workflow_dispatch:
+    inputs:
+      keep_col:
+        description: "optional column that keeps each changed row's payout before this regrade (e.g. payout_v3_pre_20261021)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
