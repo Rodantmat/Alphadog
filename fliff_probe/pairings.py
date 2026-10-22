@@ -75,6 +75,17 @@ LEG_REUSE = int(envf("LEG_REUSE", 2))
 CHORD_OVER_MIN = envf("CHORD_OVER_MIN", 0.65)
 N_PAIRS = int(envf("N_PAIRS", 12))
 TIME_BUDGET_S = envf("TIME_BUDGET_S", 900)
+# SAFE MODE (owner 2026-10-22 09:15 PT after both 10-21 slips lost on their 3PM 'good pick' legs: "it needs to be safer, even if
+# it's doing less"). Default mode. Both legs near-locks, stable stats only, price confirmed by >= 2 books (or Pinnacle two-sided),
+# never a single-book interpolation, no overs in projected blowouts, one slip per game, small flat stake.
+MODE = (os.environ.get("PROBE_MODE") or "safe").lower()
+SAFE_LEG_P = envf("SAFE_LEG_P", 0.93)
+SAFE_JOINT_MIN = envf("SAFE_JOINT_MIN", 0.87)
+SAFE_SLIP_MIN = envf("SAFE_SLIP_MIN", 1.05)
+SAFE_STATS = {"pts", "reb", "ast", "pra", "pr", "pa", "ra"}     # no 3PM / steals / blocks: too few events, too much variance
+BLOWOUT_FAV_P = envf("BLOWOUT_FAV_P", 0.78)                      # Pinnacle no-vig favorite >= 78% -> skip Overs in that game
+SAFE_MAX_PAIRS = int(envf("SAFE_MAX_PAIRS", 3))
+STAKE_PCT = envf("STAKE_PCT", 0.05)
 
 NBA_LEAGUE = "fkey__sk_league__461"
 H2H_CAT_NAME = "H2H Combo"
