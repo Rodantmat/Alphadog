@@ -138,6 +138,30 @@ def main():
                 tok_state["tok"], tok_state["until"] = t, time.time() + max(60, (exp or 600) - 90)
                 print(f"AUTH|signed in ({how})", flush=True)
             H["authorization"] = "Bearer " + tok_state["tok"]
+            # the web app sends the signed-in user's id with the estimate (bundle chunk 699: headers {"UD-User-ID": userId}); without it
+            # Underdog answers "User is required" even with a valid token (run 39703068955)
+            if "UD-User-ID" not in H:
+                with psycopg.connect(url) as conn:
+                    uid = (conn.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'underdog_user_id'").fetchone() or [""])[0]
+                if not uid:
+                    rr = sess.get("https://api.underdogfantasy.com/v1/user?" + common, headers=H, timeout=30, proxies=({"https": proxy, "http": proxy} if proxy else None))
+                    jj = rr.json() if rr.status_code == 200 and rr.text.strip().startswith("{") else {}
+                    uid = str(((jj.get("user") or {}).get("id")) or jj.get("id") or "")
+                    print(f"AUTH|user lookup HTTP {rr.status_code} - {'user id found' if uid else 'no user id'}", flush=True)
+                    if uid:
+                        with psycopg.connect(url) as conn:
+                            n = conn.execute("UPDATE nba_config.external_credentials SET credential_value_encrypted = %s, updated_at = now() WHERE credential_key = 'underdog_user_id'", (uid,)).rowcount
+                            if not n:
+                                conn.execute("INSERT INTO nba_config.external_credentials (credential_key, credential_value_encrypted, updated_at) VALUES ('underdog_user_id', %s, now())", (uid,))
+                            conn.commit()
+                if uid:
+                    H["UD-User-ID"] = uid
+
+        # human: a person opens the app a little after the board was looked at - and the board scrape just used the same proxy
+        if auth:
+            gap = random.uniform(45, 90)
+            print(f"AUTH|pause {gap:.0f} s before the first signed-in call", flush=True)
+            time.sleep(gap)
 
     seen_err = {}
 
@@ -145,12 +169,20 @@ def main():
         u = "https://api.underdogfantasy.com/v4/entry_slips/estimate?" + common + "&fee=10&fee_source=cash&" + qs
         if auth:
             fresh_token()
-        for px in ([None, proxy] if proxy else [None]):
-            try:
-                rr = sess.get(u, headers=H, timeout=30, proxies=({"https": px, "http": px} if px else None))
+        # signed in: ONE route (the California proxy, like one phone) - never two IPs in the same second; a Cloudflare 429 waits 1-2 min once
+        routes = ([proxy] if (auth and proxy) else ([None, proxy] if proxy else [None]))
+        for px in routes:
+            for attempt in (1, 2):
+                try:
+                    rr = sess.get(u, headers=H, timeout=30, proxies=({"https": px, "http": px} if px else None))
+                except Exception:  # noqa: BLE001 - next route
+                    break
                 if rr.status_code != 200 and not seen_err.get(rr.status_code):
                     seen_err[rr.status_code] = 1
                     print(f"HTTP {rr.status_code} from estimate: {rr.text[:300]!r}", flush=True)
+                if rr.status_code == 429 and auth and attempt == 1:
+                    time.sleep(random.uniform(60, 120))
+                    continue
                 if rr.status_code == 200:
                     jj = rr.json()
                     if str(jj.get("status") or "").lower() in ("pending", "processing", "queued") and not jj.get("odds"):
@@ -158,8 +190,7 @@ def main():
                         rr = sess.get(u, headers=H, timeout=30, proxies=({"https": px, "http": px} if px else None))
                         jj = rr.json() if rr.status_code == 200 else jj
                     return jj
-            except Exception:  # noqa: BLE001 - next route
-                continue
+                break
         return None
 
     # 2. find the parameter shape the API accepts (the bundle sends options[i][id] / [type], arrayFormat indices)
