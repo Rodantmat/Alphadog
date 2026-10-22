@@ -14,7 +14,7 @@ on:
         default: ""
 
 concurrency:
-  group: nba-underdog-login
+  group: nba-underdog-auth
   cancel-in-progress: false
 
 permissions:
