@@ -36,6 +36,8 @@ from pathlib import Path
 from statistics import median
 
 N = int(os.environ.get("RX_N", "60"))
+if os.environ.get("RX_AUTH") == "1":
+    N = min(N, 25)                      # signed in: a human-sized sitting
 SEED = int(os.environ.get("RX_SEED", str(int(time.time()))))
 SAME = float(os.environ.get("RX_SAME_GAME_SHARE", "0.2"))
 SIZES = [int(x) for x in os.environ.get("RX_SIZES", "2,3,4,5,6").split(",") if x.strip()]
