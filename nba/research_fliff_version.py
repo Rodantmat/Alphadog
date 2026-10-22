@@ -6,7 +6,7 @@ Why: since 2026-10-22 every Fliff call returns api error 30040 "This version of 
 APP_VERSION 5.0.34.285 (P2B morning pull and the standalone Fliff Board Scraper both got no board).
 What this does: loads the Fliff web app (sports.getfliff.com), lists its scripts, finds version-looking strings
 (N.N.NN.NNN) in them, then pings m-c2 with each candidate (newest first) and prints which one the server accepts, plus the
-ping's min_app_build / server_build. Nothing is written. The proxy URL is read from the credential store and never printed.
+ping's min_app_build / server_build. FV_TRY=v1,v2 tests exactly those versions. Nothing is written. The proxy URL is read from the credential store and never printed.
 """
 import os
 import re
