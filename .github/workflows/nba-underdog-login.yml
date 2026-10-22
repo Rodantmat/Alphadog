@@ -1,0 +1,54 @@
+name: NBA Underdog Login (one-time token)
+
+# Owner 2026-10-21 17:32 PT: "can you get the token with the password and use the token?" - one manual run logs in exactly as
+# Underdog's web app does and stores ONLY the refresh token (nba_config.external_credentials 'underdog_refresh_token').
+# The login is read from nba_config.external_credentials ('underdog_email' / 'underdog_password'; the GitHub secrets UD_EMAIL /
+# UD_PASSWORD are the fallback); the password row is deleted as soon as the token is stored; nothing is printed. If Underdog sends a verification code, run again with otp=<code>.
+# Use of the token: read-only price checks (entry estimate). Nothing creates or submits an entry. See nba/underdog_login.py.
+on:
+  workflow_dispatch:
+    inputs:
+      otp:
+        description: "Verification code Underdog sent (only for the second run, when the first one says a code was sent)"
+        required: false
+        default: ""
+
+concurrency:
+  group: nba-underdog-login
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip curl_cffi "psycopg[binary]"
+      - name: Resolve proxy (credential store)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store"
+          else
+            echo "proxy: none"
+          fi
+      - name: Log in and store the refresh token
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UD_EMAIL: ${{ secrets.UD_EMAIL }}
+          UD_PASSWORD: ${{ secrets.UD_PASSWORD }}
+          UD_OTP: ${{ github.event.inputs.otp }}
+        run: |
+          if [ -n "$UD_OTP" ]; then echo "::add-mask::$UD_OTP"; fi
+          python nba/underdog_login.py
