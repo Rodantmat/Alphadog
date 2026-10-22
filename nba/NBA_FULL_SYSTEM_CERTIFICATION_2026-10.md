@@ -2817,3 +2817,55 @@ should be doing. Mining everything that they should mine, consuming everything t
 11. **Recommendations (owner's call, nothing changed live)**: (a) Underdog: stop real Underdog entries until a price-aware engine
     (p_hat x the board's m, model + books blend, 2-4 picks) is built, run as paper and certified on live prices; (b) PrizePicks: no
     change; (c) keep D_points_3power under watch (largest line-shift loss).
+
+### 2 / 3 / 4-PICK FLEX - EVERYTHING AGAIN (owner 10:16 PT: "aim for 2, 3 and 4 pick flex ... which prop line strategy ... both
+### seasons ... the last 2 days ... all demons, all goblins, regulars, all prop lines ... all goblin and demon tiers ... no exception
+### ... if you are not sure about the multipliers, go to PrizePicks, build slips, get the multipliers")
+12. 🔑 **Multipliers proven against PrizePicks' own quotes** (research_pp_flex_payout_proof.py run 39822487137,
+    research_pp_flex_payout_overpay.py run 39822861068): all 4,236 NBA lineups of 2-4 picks PrizePicks priced for us (pp_quote, Power
+    AND Flex tables) re-priced by our grader from the legs' mined factors (4,886 alternate legs priced with the SAME run's factor, 7
+    with another run's, 55 quotes skipped for a leg without a factor).
+    - All-standard 2 / 3 / 4 Flex and Power: 100% exact (57 / 45 / 28 quotes).
+    - Flex WITH goblins / demons - conservative: 2-pick all-hit <= PrizePicks on 99.1% (mean ours / PP 0.921), one miss 100% (0.924);
+      3-pick all-hit 88.3-88.7% (never more than 5% above, mean 0.96), one miss 96.5-98.3%; 4-pick all-hit 89.8-91.7% (mean
+      0.90-0.92), one miss 95.3-95.8% (0.89). The overpays are cents (<= +0.13) except: 2-pick two goblins fp < 0.5 (8 quotes, ours
+      1.40 vs 1.20), 2-pick goblin + demon (+0.20..+0.80 on a handful), one same-game 4-pick SLIPQ (9.00 vs 7.00).
+      ⇒ every Flex number below is a LOWER bound of what PrizePicks pays.
+    - 🔴 Power WITH alternates over-pays on big demon stacks: 3-pick fp 15-78 (+5..+130, e.g. 380 vs 250), 4-pick fp 27-259 (271 vs 39
+      same-game, 2,694 vs 1,500), 2-pick fp > 10 (+1..+2.35). Below fp ~5 Power is <= PrizePicks (within +0.75). Any backtest of
+      multi-demon Power is overstated; production grader not changed (owner's call: cap power_alt_v3 at the quoted envelope).
+13. 🔑 **research_pp_flex234.py** (definitive run 39825792009; PART 1b run 39824726673): ONE grader for every slip (grader v3 + 2-pick
+    Flex alternates priced from PrizePicks' 2-pick quotes, conservative envelope); 2024-25 and 2025-26 (final 7 days out) + LIVE =
+    2026-10-20 (2,193 priced rows, all graded) and 2026-10-21 (8,505, 8,448 graded; the 57 left are players not yet on our 2026-27
+    rosters). Re-graded history slips 103,774 (_wo) + 101,170 (_wo_nosteals) = exactly the stored payouts where both exist.
+    - **2-pick Flex: nothing works.** No composition holds; best min-season ROI -1.2% (weighted:rebounds_R nosteals cap2); 0 of 78
+      bucket patterns positive both directions out of sample; 0 of 737 single cells hold.
+    - **3-pick Flex: nothing holds.** Every composition has a negative 5th percentile in 2024-25 (best: core / weighted:steals_R /
+      weighted:assists_D1 nosteals cap2 +21% / +21%, lb -0.2 / +5.7); 0 of 364 patterns, 0 of 511 cells hold.
+    - **4-pick Flex: 25 compositions hold** (positive both seasons, lb5 > 0 both). Half-season check (H1 = before Jan 15): 4 of 4
+      halves positive for 15 of them. Leaders: _wo weighted:threes_D1 cap2 +41.1 / +68.8% (halves +24.9 / +57.9 / +71.2 / +66.1, live
+      4 slips +262%); _wo_nosteals weighted:assists_D1 cap2 +48.0 / +44.1% (halves +20.9 / +76.2 / +21.3 / +70.0); _wo_nosteals
+      weighted:rebounds_R cap2 +28.9 / +48.6% (4/4); _wo_nosteals regular cap2 +22.4 / +59.6% (4/4); _wo core cap2 +37.0 / +76.1%
+      (4/4); _wo weighted:stocks_R cap2 +34.9 / +49.4% (4/4).
+      Live strategies: A_wrebounds_4flex (_wo weighted:rebounds_R cap2) +40.3 / +76.7%, lb +9.6 / +49.2 - holds, 3 of 4 halves
+      (2024-25 H1 -1.5%). C_wstocks_4flex (_wo_nosteals weighted:stocks_R cap2) +21.2 / +37.5% - does NOT hold (2024-25 lb < 0);
+      the same cell on the steals-included pool holds 4/4.
+    - Power alongside: 3-pick single:points_R (D_points_3power) holds 4/4 halves at every cap (+42.9 / +39.4% cap1); 11 4-pick Power
+      compositions hold.
+    - ⚠️ Honest scope: the compositions were chosen on these two seasons, so their per-season numbers are not out of sample. Out of
+      sample (bucket patterns and single cells valued on the OTHER season): nothing holds at any size, Flex or Power. The 2026-27
+      slates are the only true out-of-sample record (2 slates, 1-3 slips per strategy - they can contradict, never confirm).
+14. 🔴 **Alternate Less - a labelling and a price finding.** (a) PrizePicks names a Less alternate by its RUNG (pp_mined_leg: goblin
+    Less = line below the standard, quoted 1.45-2.5x; demon Less = above, ~0.80x); the archive (pp_leg_price, build_board_tiers_v2's
+    four-way rule) names it by DIFFICULTY - the opposite word. The research's live labels were flipped to the rung convention (history
+    UG = Under on a goblin rung). (b) The archive's model price for a live Less leg sums with its More twin to 1.046-1.050 (2,399 pairs);
+    PrizePicks' own quotes sum to 0.980 (demon rungs, 46 pairs) / 0.989 (goblin rungs, 29) - the archive pays Less legs 5-15% BELOW
+    PrizePicks (ranking / UI value only; PrizePicks pays its own price). Not changed. Research keeps PrizePicks' law (S 0.99, x0.97);
+    a sensitivity run at the archive's 1.049 (run 39823805951) leaves NO Less cell or pattern positive in both seasons.
+    Result at PrizePicks' law: assists hard Less (UG1 Under, PrizePicks "goblin Less") is the one leg class above every break-even in
+    both seasons (e 0.60-0.68, hit 0.42-0.50 at ~1.35-1.45x); as slips +17..+42% (2024-25) / +56..+99% (2025-26) but 2024-25 lb5 < 0
+    (57-140 slips); live 3 legs, 1 hit. Forward record: paper_altless_tracker (1 slate graded: 2-4-pick slips all lost or partial).
+15. **Recommendation (owner's call, nothing changed live)**: concentrate PrizePicks on 4-pick Flex; candidates by evidence:
+    weighted:threes_D1 4-Flex cap2 (steals-included pool) and weighted:assists_D1 4-Flex cap2 (steals-free pool) - both 4/4 halves;
+    C_wstocks_4flex is the weakest live 4-Flex (fails 2024-25), its steals-included twin holds. No 2- or 3-pick Flex strategy should be
+    staked. Any change goes through the usual paper gate before a unit is staked.
