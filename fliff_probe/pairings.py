@@ -641,7 +641,7 @@ def main():
     md = render_safe(meta, s_pool, s_pairs, s_why, blow_txt) if MODE == "safe" else render(meta, near, good, pairs)
     stamp = NOW.astimezone(PT).strftime("%Y%m%d_%H%M")
     (OUT / "latest_pairings.md").write_text(md)
-    (OUT / "latest_pairings.json").write_text(json.dumps({"meta": meta, "pairs": pairs, "near": near[:60], "good": good[:60],
+    (OUT / "latest_pairings.json").write_text(json.dumps({"meta": meta, "mode": MODE, "safe_pairs": s_pairs, "safe_pool": s_pool[:80], "pairs": pairs, "near": near[:60], "good": good[:60],
                                                           "legs": legs, "games": games}, default=str))
     (OUT / "history").mkdir(exist_ok=True)
     (OUT / "history" / f"pairings_{stamp}.md").write_text(md)
