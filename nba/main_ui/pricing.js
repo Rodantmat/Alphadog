@@ -104,17 +104,21 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
     return base;
   }
   if (app === "underdog") {
+    // PROVEN 2026-10-21 on Underdog's own entry estimate (47 / 47 Standard and 36 / 36 Flex entries across different games exact):
+    // base x product of the payout modifiers (Flex partial: the HIT picks' modifiers), FLOORED to 2 decimals; 4-pick Flex base 7.2
+    // (the tunable nba_main_ui.ud_payout). Same-game entries Underdog prices lower (x0.86-0.99, correlation) - the engine never builds them.
     const ud = pricing.ud || {};
+    const floor2 = x => Math.floor(x * 100 + 1e-6) / 100;
     if (mode === "power" || n === 2) {
       const base = Number((ud.standard || {})[String(n)]);
       if (!(base > 0)) return null;
-      return misses === 0 ? base * f.reduce((a, b) => a * b, 1) : 0;
+      return misses === 0 ? floor2(base * f.reduce((a, b) => a * b, 1)) : 0;
     }
     const base = Number((ud.flex || {})[n + "|" + misses] || 0);
     if (!(base > 0)) return 0;
     let prod = 1;
     for (let i = 0; i < n; i++) if (hit[i]) prod *= f[i];
-    return base * prod;
+    return floor2(base * prod);
   }
   if (app === "sleeper") {
     if (mode === "power" || n < 3) return misses === 0 ? f.reduce((a, b) => a * b, 1) : 0;
