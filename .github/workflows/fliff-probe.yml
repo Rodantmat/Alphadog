@@ -85,6 +85,11 @@ jobs:
             discover_bundle) python fliff_probe/discover_bundle.py ;;
             discover_skipper) python fliff_probe/discover_skipper.py ;;
             discover_version) python fliff_probe/discover_version.py ;;
+            check_board)
+              # read-only health check of the pipeline's own Fliff scraper: runs it into a scratch dir, prints its meta
+              mkdir -p /tmp/fliffchk
+              FLIFF_SPORTS=nba FLIFF_OUT_DIR=/tmp/fliffchk timeout 300 python nba/scrape_fliff_board.py | tail -n 15
+              python -c "import json;d=json.load(open('/tmp/fliffchk/fliff_nba_current_meta.json'));print('CHECK', {k:d.get(k) for k in ('ok','fetched_at','app_version','events','markets','legs','players','errors')})" ;;
             pairs) python fliff_probe/pairings.py ;;
             *) python fliff_probe/run_probe.py ;;
           esac
