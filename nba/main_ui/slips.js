@@ -516,6 +516,10 @@ export async function apiHighHit(sql, cfg, url, version) {
             x.quote_failed = true;
             if (lg.unmapped) {
               x.leg_missing = lg.unmapped;
+              // 2026-10-22 (owner 14:52 PT: "whatever shows there, I put ... don't let anything that's not allowed go on that screen"):
+              // a slip with a leg PrizePicks no longer offers cannot be placed as built - never PLAY, kept off the screen (recorded)
+              x.stake_label = "SKIP - a leg is no longer on PrizePicks' board";
+              x.play_usd = null;
               x.quote_note = `⚠ At ${r.t} PT not on PrizePicks' board as built (moved or pulled) - substitute before placing: ${lg.unmapped.join(", ")}. The multiplier shown is our model's, not PrizePicks'.`;
             } else x.quote_note = `⚠ PrizePicks did not quote this slip at ${r.t} PT - the multiplier shown is our model's, not PrizePicks'.`;
           }
