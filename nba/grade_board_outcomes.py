@@ -91,7 +91,7 @@ for _stat, _col in (("points", "PTS"), ("rebounds", "REB"), ("assists", "AST"), 
     for _per in ("q1", "q4", "h1", "h2"):
         BASE[f"player_{_stat}_{_per}"] = (lambda c, p: (lambda r: r[f"{c}_{p.upper()}"]))(_col, _per)
 STAT_COLS = ("PTS", "REB", "AST", "FG3M", "BLK", "STL", "TOV", "FTM", "FTA", "FGM", "FGA", "FG3A", "OREB", "DREB", "PF")
-YES_NO = {"player_double_double"}
+YES_NO = {"player_double_double", "player_to_record_a_double_double"}   # the second = Underdog's spelling (2026-10-21, was no_stat)
 
 
 def norm_name(s):
