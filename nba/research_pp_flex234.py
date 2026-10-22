@@ -132,7 +132,7 @@ def live_legs(conn, day, outcomes):
         if less_alt and not os.environ.get("PF_LIVE_LESS_ARCHIVE"):
             # the archive's Less price sums to ~1.049 with its More twin, PrizePicks' quotes to ~0.99: shift the implied probability
             # by the difference and apply the history rule's x0.97, so live and history Less legs are priced the same way
-            price = 0.97 * 0.5 / max(0.03, 0.5 / float(price) - (1.049 - 0.99))
+            price = max(EX.LESS_FLOOR, min(6.94, 0.97 * 0.5 / max(0.03, 0.5 / float(price) - (1.049 - 0.99))))
         for rk, s in (("final_hp", s_final), ("baseline_hp", s_base), ("final_score", s_score)):
             rk_rows.append({"rank_key": rk, "season": "2026-27", "game_date": day, "player": player, "player_id": pid, "prop": prop,
                             "tier": tier, "side": side, "line": float(line), "factor": float(price), "hit": hit, "n_rank": None,
