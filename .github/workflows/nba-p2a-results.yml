@@ -431,6 +431,7 @@ jobs:
           [ "${{ steps.soft_udgrade.outcome }}" = "failure" ] && L="$L underdog-grade"
           [ "${{ steps.soft_paper_al.outcome }}" = "failure" ] && L="$L paper-tracker-grade"
           [ "${{ steps.soft_udedge.outcome }}" = "failure" ] && L="$L underdog-edge-monitor"
+          [ "${{ steps.soft_consensus.outcome }}" = "failure" ] && L="$L consensus-event-map"
           L="${L# }"
           echo "list=$L" >> "$GITHUB_OUTPUT"
           if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
