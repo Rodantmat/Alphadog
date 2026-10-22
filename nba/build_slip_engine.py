@@ -157,8 +157,10 @@ def payout_v3_rules():
             raise RuntimeError("pp_slip_rules power_alt_v3 / flex_same_game_v3 / power_same_game_v3 missing - a slip cannot be priced (never guessed)")
         pa = rows['power_alt_v3'] if isinstance(rows['power_alt_v3'], dict) else json.loads(rows['power_alt_v3'])
         sg = rows['flex_same_game_v3'] if isinstance(rows['flex_same_game_v3'], dict) else json.loads(rows['flex_same_game_v3'])
+        psg = rows['power_same_game_v3'] if isinstance(rows['power_same_game_v3'], dict) else json.loads(rows['power_same_game_v3'])
         _PAYOUT_V3 = {'power_alt': {int(n): (float(v['b']), float(v['a'])) for n, v in pa.items() if n.isdigit()},
-                      'flex_sg': {(int(n), int(h)): float(x) for n, t in sg.items() if n.isdigit() for h, x in t.items()}}
+                      'flex_sg': {(int(n), int(h)): float(x) for n, t in sg.items() if n.isdigit() for h, x in t.items()},
+                      'power_sg': {int(n): float(v) for n, v in psg.items() if n.isdigit()}}
     return _PAYOUT_V3
 
 
