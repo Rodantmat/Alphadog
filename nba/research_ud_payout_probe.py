@@ -112,6 +112,29 @@ def main():
          "user-latitude": "32.65148161377867", "user-longitude": "-116.8550890281236"}
     common = "product=fantasy&product_experience_id=b34dfd93-d0e8-4da3-8bf4-45c15c548dec&state_config_id=725014ef-3570-4e93-871d-d69674ab3521"
     sess = cr.Session(impersonate="chrome")
+    # SIGNED IN (RX_AUTH=1; owner 2026-10-21 17:32-17:48 PT): the owner's Underdog session (nba/underdog_auth.py - rotating refresh token
+    # in the credential store), his device id, one access token reused until ~1.5 min before it expires. HUMAN PACING: 4-15 s random
+    # pauses between entries, at most RX_N (cap 25) entries per run, never a steady rhythm. Read-only: the estimate only.
+    auth = os.environ.get("RX_AUTH") == "1"
+    tok_state = {"tok": None, "until": 0.0}
+    if auth:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
+        from underdog_auth import access_token
+        with psycopg.connect(url) as conn:
+            dev = (conn.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'underdog_device_id'").fetchone() or [""])[0]
+        if dev:
+            H["client-device-id"] = dev
+
+        def fresh_token():
+            if tok_state["tok"] is None or time.time() > tok_state["until"]:
+                with psycopg.connect(url) as conn:
+                    t, exp, how = access_token(conn, sess, proxy)
+                if not t:
+                    print(f"AUTH_FAIL|{how}")
+                    sys.exit(1)
+                tok_state["tok"], tok_state["until"] = t, time.time() + max(60, (exp or 600) - 90)
+                print(f"AUTH|signed in ({how})", flush=True)
+            H["authorization"] = "Bearer " + tok_state["tok"]
 
     def call(qs):
         u = "https://api.underdogfantasy.com/v4/entry_slips/estimate?" + common + "&fee=10&fee_source=cash&" + qs
