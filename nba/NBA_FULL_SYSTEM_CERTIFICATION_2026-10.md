@@ -2749,3 +2749,71 @@ anything that's proved positive, we will try".
     replaced), so the comparison waits for screenshots of the placed entries.
 26. **Sleeper / Fliff / Betr give no slips - by design** (fact 136): paper boards under the engine's state machine until certified;
     Betr parked.
+27. ✅ **Recalculated on the apps' own prices (owner 19:51 PT)** - PP_PAYOUT_FINDINGS §0p: Underdog 4-pick Flex 7.2 + floor2, PrizePicks
+    same-game 2 / 3-pick Power (power_same_game_v3). Regraded in place with the old values kept (UD table 90,308 rows ->
+    payout_pre_20261021; the eight PP slip_engine tables -> payout_v3_pre_20261021). Replays (stake-weighted, rollback verified):
+    2025-26 +91.3% (was +91.4%), 2024-25 +40.2% (was +40.3%).
+28. ✅ **certify_slip_system L3** read every Less goblin / demon as a sign error (559 / 594) - the check is now side-aware; 83 checks,
+    0 FAIL.
+29. 🟡 **This season's lines and Underdog's new pricing, counterfactual on the certified backtests** (research_line_regime_impact.py,
+    research_ud_pricing_regime.py): PrizePicks' lower points / combo lines cost D_points_3power the most (+47.6 -> +33.2 / +33.8 ->
+    +26.0); the rest move by 0-7 points. Underdog's exchange pricing (m = 0.5 x the exchange decimal, m x books no-vig = 0.465)
+    cuts the P5 portfolio +56.0 / +74.1 -> +29.5 / +46.5 and turns mains 6-Flex / 6-Standard negative.
+
+## DAY THREE (2026-10-22 PT) - P2A / P2B CERTIFIED, P3 READY, PIPELINE AUDIT, EVERY STRATEGY RE-SCRUTINISED
+(owner 09:12 PT: "sharp those logics ... Underdog, see if there is anything that's proven to be positive"; 09:13 PT: "check both
+P2A and P2B. And make sure that everything's ready for P3 ... deep scrutiny to see if those pipelines are doing everything that they
+should be doing. Mining everything that they should mine, consuming everything they should consume")
+
+1. ✅ **P2A 10-22 (run 39763674613)**: every step green, no soft failure. 14 games over 2 dates, gap audit clean; 45,316 legs graded.
+   Live PrizePicks 10-21: 16 placed units +2.7 (A_core +4.0, A_wsteals +3.2 on 8 slips all paid, A_wrebounds -0.5, A_regular -2.0,
+   C_wstocks -2.0). Underdog paper 10-21: 4 slips, -3.5 of 3.5 staked (two days: 8 of 8 lost). Paper Less tracker: 19 slips graded.
+   The six players with 690 "unmatched_not_in_season" legs (Podziemski, Dybantsa, Monk, Nesmith, Knueppel, Black) were all OUT
+   (injury report) - voids, no slip carried them.
+2. ✅ **P2B 10-22 (run 39801596345)**: 7 / 7 certified, no soft failure; referee crews 2 / 2; 519 rostered players, 9 Out / Doubtful
+   applied; confidence refit 10 min 45 s (the 10-21 refit hung on one query 18:13 -> 20:03 UTC and was terminated - that is the
+   10-21 P2B 'failure' row; P3 10-21 ran on the previous model). Open: "with/without minutes multipliers applied to 0 teammates" -
+   the multiplier needs >= 3 games with and without the absent player in THIS season only, so it is inert for the first weeks.
+3. 🔴 -> ✅ **Fliff was dead since 10-22 morning**: every call returned api error 30040 "This version of the app is no longer
+   supported" (our build 285 < the server's min_app_build 286). Proven with nba/research_fliff_version.py (285 refused; 286 / 287 /
+   290 accepted). nba/scrape_fliff_board.py: build 286 and a self-heal (on 30040 it raises the build one step, up to 8, and logs the
+   version accepted). Verified with the production scraper (research_fliff_scrape_check.py): 2,366 legs, 75 players, 14 events.
+4. 🔴 -> ✅ **Board legs that were never graded** (10-21: no_stat 1,263, unmatched_player 688): nba/grade_board_outcomes.py now grades
+   PrizePicks two-player combos (Points / Rebounds / Assists / 3-PT Made (Combo): sum of both box scores, either player out = void),
+   "Quarters with N+ Points" (quarter logs), triple-doubles, and the spellings player_fouls / player_free_throws_attempted /
+   player_free_throws_made / player_reb_q1; name overrides Alexandre Sarr -> Alex Sarr, Lu Dort -> Luguentz Dort. Simulated on
+   synthetic legs (every branch); P2A's 7-day window regrades 10-20 / 10-21 tonight. Not gradable without a new source:
+   player_first_to_score (play-by-play), dunks.
+5. 🔴 -> ✅ **market_consensus / event_game_map / schedule_norm stopped at 2026-06-13** (rebuilt only by hand): the main UI's
+   sportsbook consensus panels (context.js, sharp.js) were empty all season and build_blowout_model's market-spread join saw no
+   2026-27 game. nba/build_market_derived.py MD_DATES = incremental refresh of given dates (schedule from nba_calendar.games, so a
+   slate maps before its box scores exist; LA / L.A. Clippers aliases). Wired as SOFT steps: P2A (recent:3) and P3 (the slate);
+   maintenance task derived_dates. Backfilled 10-20..10-22: 1,851 consensus rows, 15 / 15 sportsbook events -> 14 games.
+6. 🟡 -> ✅ **ParlayAPI market term**: on 10-21 the Bovada-only read was itself truncated (2,341 rows). capture_parlay_props.py now
+   re-reads a truncated book once per market it showed (market_map keys + alternates), AFTER every book's plain read (never
+   starves DraftKings of the time budget), capped by market_feed.split_max_reads (24). Unit-tested on a fake API; live today the
+   reads were not truncated, so no split ran (11,008 credits left). Also measured: ParlayAPI returns 0 rows for BetMGM / Caesars /
+   BetRivers / BetOnline / Fanatics - the live term counts DraftKings, Bovada and some FanDuel, not the history's 8 books.
+7. 🟡 **Stale feeds listed, not changed**: game_lines_closing (2026-06-14 - no closing game lines this season), player_splits and
+   player_career_season_totals (2026-09-08, read by the UI), official_tendency (2026-09-23), defender_ratings (2026-04-09; the
+   2026-27 fit lands with the first P1 that has matchup shards, 10-26). PrizePicks posts new stat types the archive stores under
+   fallback keys (Dunks, Two Pointers Made / Attempted, the four Combos, Quarters with 3+ / 5+ Points) - stored, now graded where
+   a box score exists.
+8. 🟡 **Runner queue**: 16:30-16:45 UTC every workflow sat queued (two sessions' commits each start a deploy + a pages build).
+   Commits batched afterwards; P3 is dispatched by the Cloudflare scheduler at ~20:16 UTC.
+9. 🔑 **Underdog under today's pricing** (research_ud_price_aware.py, 387,587 legs of two seasons with the books' no-vig;
+   research_ud_price_robust.py). The market-free model carries information the books do not (logistic z +19..+33 every season and
+   kind). Today's price-blind ranking (the live engine's) re-priced at m = round(0.465 / nv, 2): 2024-25 NEGATIVE at every size
+   (2S -9.9% ... 6S -30.9%), 2025-26 positive. Ranking by the calibrated return p_hat x m: positive in both seasons for many
+   compositions (2S k1 +15.8 / +25.2, 3S k1 +23.1 / +46.1, 4S k1 +26.4 / +55.2, 5S k1 +76.0 / +26.9) but only 2 of 533 rules have a
+   positive 5th-percentile ROI in both seasons. With Underdog's real price dispersion (sd 0.035 of m x nv, measured on 1,152 sides)
+   and K 0.455-0.475, 151 of 324 rules stay positive on every draw and walk-forward picks hold out of season (10 / 10 both ways) -
+   BUT that gain assumes Underdog's deviations from the books are noise; on 10-20 / 21 the 120 'generous' sides hit 0.458, Underdog's
+   own 0.461, not the books' 0.502. Trusted number: the noise-free one.
+10. 🔑 **PrizePicks and the books** (research_pp_market_info.py, research_pp_market_filter.py): at the leg level the books' no-vig
+    still adds information to the live final_hp (standard z +6.9 / +4.7, goblin +3.8, demon +5.4) and final_hp is over-confident on
+    standard legs (stated 0.71 -> hit 0.55-0.57). Inside the slips the live strategies actually take, most legs have no book line at
+    that rung and the agree / disagree split flips between seasons - no filter is supported; the strategies stay as certified.
+11. **Recommendations (owner's call, nothing changed live)**: (a) Underdog: stop real Underdog entries until a price-aware engine
+    (p_hat x the board's m, model + books blend, 2-4 picks) is built, run as paper and certified on live prices; (b) PrizePicks: no
+    change; (c) keep D_points_3power under watch (largest line-shift loss).
