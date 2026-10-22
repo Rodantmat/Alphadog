@@ -283,6 +283,16 @@ jobs:
           GRADE_END: ${{ github.event.inputs.asof && steps.d.outputs.asof || '' }}
         run: python nba/grade_board_outcomes.py
 
+      # 3-) SPORTSBOOK CONSENSUS + EVENT MAP, last 3 days (2026-10-22 pipeline audit): market_consensus / event_game_map were only
+      #     rebuilt by hand and stopped at 2026-06-13. Incremental (delete + insert of those dates); SOFT - display + research.
+      - name: Sportsbook consensus and event map (last 3 days)
+        id: soft_consensus
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MD_DATES: "recent:3"
+        run: python -u nba/build_market_derived.py
+
       # 3a) RETENTION (owner rule 2026-09-24): prune yesterday's baseline to the board, keys refreshed first.
       - name: Prune yesterday's baseline to the board
         env:
