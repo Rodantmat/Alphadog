@@ -175,6 +175,10 @@ def pp_payout(k, hits, structure, fprod, alt, same_game=False):
         if hits != k:
             return 0.0
         if not alt:
+            # same-game all-standard 2 / 3-pick Power: PrizePicks pays 2.9 / 2.8 and 5.75 on some pairs (2026-10-21, pp_quote NBA:
+            # 5 of 17 and 2 of 8) - conservative, pp_slip_rules power_same_game_v3; 4-6 picks never adjusted
+            if same_game and k in payout_v3_rules()['power_sg']:
+                return payout_v3_rules()['power_sg'][k]
             return POWER[k]
         if k == 2:
             return compress(3.0 * fprod)
