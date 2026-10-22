@@ -152,9 +152,9 @@ def payout_v3_rules():
     global _PAYOUT_V3
     if _PAYOUT_V3 is None:
         with psycopg.connect(os.environ['DATABASE_URL']) as c:
-            rows = dict(c.execute("SELECT rule_key, rule_json FROM nba_config.pp_slip_rules WHERE rule_key IN ('power_alt_v3', 'flex_same_game_v3')").fetchall())
-        if 'power_alt_v3' not in rows or 'flex_same_game_v3' not in rows:
-            raise RuntimeError("pp_slip_rules power_alt_v3 / flex_same_game_v3 missing - a slip cannot be priced (never guessed)")
+            rows = dict(c.execute("SELECT rule_key, rule_json FROM nba_config.pp_slip_rules WHERE rule_key IN ('power_alt_v3', 'flex_same_game_v3', 'power_same_game_v3')").fetchall())
+        if 'power_alt_v3' not in rows or 'flex_same_game_v3' not in rows or 'power_same_game_v3' not in rows:
+            raise RuntimeError("pp_slip_rules power_alt_v3 / flex_same_game_v3 / power_same_game_v3 missing - a slip cannot be priced (never guessed)")
         pa = rows['power_alt_v3'] if isinstance(rows['power_alt_v3'], dict) else json.loads(rows['power_alt_v3'])
         sg = rows['flex_same_game_v3'] if isinstance(rows['flex_same_game_v3'], dict) else json.loads(rows['flex_same_game_v3'])
         _PAYOUT_V3 = {'power_alt': {int(n): (float(v['b']), float(v['a'])) for n, v in pa.items() if n.isdigit()},
