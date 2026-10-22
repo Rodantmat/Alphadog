@@ -99,6 +99,10 @@ def main():
                 continue
             if want == "mix" and kind not in ("fantasy", "prediction"):
                 continue
+            # a prediction-market pick Underdog flags rfq_combinable false cannot sit in a multi-pick entry ("Picks can't be combined",
+            # run 39704098973) - the app would refuse the entry; leave those out of the probe
+            if kind == "prediction" and o.get("rfq_combinable") is False:
+                continue
             opts.append({"id": o["id"], "lookup_id": o.get("lookup_id"), "m": float(o["payout_multiplier"]), "choice": o.get("choice"), "kind": kind,
                          "price": float((od.get(kind) or {}).get("decimal") or 0) or None,
                          "player": lg.get("player"), "player_id": lg.get("player_id"), "team": lg.get("team"), "stat": lg.get("stat"),
