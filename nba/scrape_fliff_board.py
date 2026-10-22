@@ -94,8 +94,22 @@ def main():
     s = requests.Session()
     device_id = os.environ.get("FLIFF_DEVICE_ID") or "web." + "".join(random.choices("0123456789abcdef", k=32))
     install_token = os.environ.get("FLIFF_INSTALL_TOKEN") or "".join(random.choices(string.ascii_letters + string.digits, k=10))
+    global APP_VERSION
     hdr = header(device_id, install_token)
-    ping = call(s, PING_HOST, hdr, {"__object_class_name": "FCM__Ping__Request", "message": f"ping {int(time.time()*1000)}"}, proxies)
+    steps = int(os.environ.get("FLIFF_BUILD_STEPS", "8"))
+    for step in range(steps + 1):
+        try:
+            ping = call(s, PING_HOST, hdr, {"__object_class_name": "FCM__Ping__Request", "message": f"ping {int(time.time()*1000)}"}, proxies)
+            break
+        except RuntimeError as exc:
+            if "30040" not in str(exc) or step == steps:
+                raise
+            parts = APP_VERSION.split(".")
+            parts[-1] = str(int(parts[-1]) + 1)
+            print(f"fliff: app version {APP_VERSION} refused (30040, below min_app_build) - trying {'.'.join(parts)}", flush=True)
+            APP_VERSION = ".".join(parts)
+            hdr = header(device_id, install_token)
+    print(f"fliff: app version {APP_VERSION} accepted", flush=True)
     data = ping.get("result", {}).get("response", {}).get("data", {})
     feed_host = data.get("proposals_feed_endpoint") or "https://herald-2.app.getfliff.com/"
     print("feed host:", feed_host, "| min_app_build:", data.get("min_app_build"), "| server build:", data.get("server_build"))
