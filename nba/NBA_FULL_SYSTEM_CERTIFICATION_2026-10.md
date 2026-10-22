@@ -2883,3 +2883,16 @@ should be doing. Mining everything that they should mine, consuming everything t
     closer to 2025-26 than to 2024-25 for every portfolio (today: LIVE NOW 0.56 vs 0.77, PROPOSED N8 0.78 vs 0.91, N4 L2 0.90 vs
     1.01). Today: 2 games, every slip same-game; defensive legs 68%. Early-season record of the season it resembles: 2025-26 first 14
     days -12 / -13% (N4 L2, LIVE NOW), first 30 days +20 / +51%.
+18. ✅ **OWNER DECISION 14:38 PT - THE 2-SLIP PORTFOLIO IS LIVE.** Back-to-back losing days (research_pp_losing_streaks.py run
+    39855586300): each unit alone 10-13 days (2024-25) / 6-12 (2025-26); PROPOSED N4 L2 8 / 6 days; LIVE NOW 8/day 16 / 6. Owner chose
+    2 slips a day in total (n 2, leg cap 2: +49.0 / +56.3%, max dd 21 / 11 units). live_slip_engine.py: PORTFOLIO_UNITS (threes_D1
+    4F, assists_D1 4F steals-free, rebounds_R 4F, stocks_R 4F, single:points_R 3P, rebounds_R 3P), portfolio_select (round robin,
+    no repeat, leg cap), placed after the strategies; the replaced strategies (A_wrebounds_4flex, C_wstocks_4flex, A_core_3power,
+    D_points_3power) build shadow only. Tunable nba_config.classification_config['pp_portfolio'] (enabled true, n 2, leg_cap 2;
+    false = the previous rule). The 5-pick strategies are unchanged (owner: no preference; kept as certified). Certified: dry run
+    on 10-20..22 (research_pp_portfolio_dryrun.py run 39859401270), production pick() on 2025-11-15 / 2026-01-10 inside a
+    rolled-back transaction (research_pp_portfolio_pick_rollback.py run 39859794158: n <= 2, replaced never staked, ledger
+    restored - ALL PASS). Today (owner: "put it today", no scheduled task touched): today's 3 placed slips of the replaced
+    strategies set to placed_shadow; manual P4 pick (run 39859966807) placed P_wthrees_4flex k1 and P_wassists_4flex k1; slip quotes
+    dispatched (nba-pp-payout-map slipq). Note: the research build of today first omitted the engine's Over-minutes floor (22 min) -
+    the engine's slips are the ones staked. Follow-ups: the edge monitor and hurdles do not yet cover the P_ units.
