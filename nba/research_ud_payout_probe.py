@@ -109,8 +109,14 @@ def main():
             pr_ = float((od.get(kind) or {}).get("decimal") or 0)
             if kind == "prediction" and pr_ and pr_ < float(os.environ.get("RX_MIN_PRICE", "1.15")):
                 continue
+            ou = rl.get("over_under") or {}
             opts.append({"id": o["id"], "lookup_id": o.get("lookup_id"), "m": float(o["payout_multiplier"]), "choice": o.get("choice"), "kind": kind,
                          "price": float((od.get(kind) or {}).get("decimal") or 0) or None,
+                         # run 39705795800: 25 of 25 signed-in prediction entries "can't be combined" - picks were drawn across exchanges.
+                         # Each line's exchange (provider_id) and the exchanges it can be combined under (over_under.rfq_combinable_by_provider)
+                         # are kept so an entry can be built under ONE exchange (RX_ONE_PROVIDER=1) and the rule tested.
+                         "provider": rl.get("provider_id"), "comb_by": {k: bool(v) for k, v in (ou.get("rfq_combinable_by_provider") or {}).items()},
+                         "pm": bool(ou.get("prediction_market")), "stat_id": ou.get("pickem_stat_id") or (ou.get("appearance_stat") or {}).get("id"),
                          "player": lg.get("player"), "player_id": lg.get("player_id"), "team": lg.get("team"), "stat": lg.get("stat"),
                          "line": lg.get("line"), "line_type": rl.get("line_type"), "game": lg.get("game_id"), "start": gs})
     games = sorted({o["game"] for o in opts})
