@@ -219,8 +219,26 @@ def main():
     }
     rng = random.Random(SEED)
 
+    one_prov = os.environ.get("RX_ONE_PROVIDER") == "1"
+    provs = sorted({p for o in opts for p, ok in o["comb_by"].items() if ok})
+    print(f"exchanges a line can be combined under: { {p: sum(1 for o in opts if o['comb_by'].get(p)) for p in provs} } | "
+          f"line exchange (provider_id): { {p: sum(1 for o in opts if o['provider'] == p) for p in sorted({str(o['provider']) for o in opts})} }", flush=True)
+
     def pick(n, same_game=False):
-        gl = games[:]
+        if one_prov and provs:
+            # every pick combinable under one exchange, chosen per entry (alternating so each exchange is measured)
+            pv = provs[pick.k % len(provs)]
+            pick.k += 1
+            full = opts
+            sub = [o for o in full if o["comb_by"].get(pv)]
+            got = _pick(n, same_game, sub)
+            return [dict(o, entry_provider=pv) for o in got] if got else None
+        return _pick(n, same_game, opts)
+
+    pick.k = 0
+
+    def _pick(n, same_game, opts):
+        gl = sorted({o["game"] for o in opts})
         rng.shuffle(gl)
         chosen, used_players = [], set()
         if same_game:
