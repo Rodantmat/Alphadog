@@ -2838,7 +2838,7 @@ should be doing. Mining everything that they should mine, consuming everything t
     Flex alternates priced from PrizePicks' 2-pick quotes, conservative envelope); 2024-25 and 2025-26 (final 7 days out) + LIVE =
     2026-10-20 (2,193 priced rows, all graded) and 2026-10-21 (8,505, 8,448 graded; the 57 left are players not yet on our 2026-27
     rosters). Re-graded history slips 103,774 (_wo) + 101,170 (_wo_nosteals) = exactly the stored payouts where both exist.
-    - **2-pick Flex: nothing works.** No composition holds; best min-season ROI -1.2% (weighted:rebounds_R nosteals cap2); 0 of 78
+    - **2-pick Flex: nothing works.** No composition holds; best: single:steals_R cap1 +0.8 / +11.2% (lb -10.8 / -0.0); 0 of 78
       bucket patterns positive both directions out of sample; 0 of 737 single cells hold.
     - **3-pick Flex: nothing holds.** Every composition has a negative 5th percentile in 2024-25 (best: core / weighted:steals_R /
       weighted:assists_D1 nosteals cap2 +21% / +21%, lb -0.2 / +5.7); 0 of 364 patterns, 0 of 511 cells hold.
