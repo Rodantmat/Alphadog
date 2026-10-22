@@ -113,8 +113,15 @@ def live_legs(conn, day, outcomes):
         if team is None or event is None:
             miss_team += 1
             continue
-        base = "R" if kind == "standard" else ("G" if kind == "goblin" else "D") + str(t3)
         less_alt = kind != "standard" and str(side).lower().startswith("u")
+        if less_alt:
+            # PrizePicks names a Less alternate from the PICKER's side (2026-10-20..22 board: 'goblin' Less sits ABOVE the standard
+            # line at ~0.83x = the easy Under on a demon rung; 'demon' Less sits BELOW it at ~1.19x = the hard Under on a goblin
+            # rung). The history buckets are named by the RUNG (UG = Under on a goblin rung, UD = Under on a demon rung), so the
+            # live label is flipped here to compare like with like.
+            base = ("D" if kind == "goblin" else "G") + str(t3)
+        else:
+            base = "R" if kind == "standard" else ("G" if kind == "goblin" else "D") + str(t3)
         tier = ("U" + base) if less_alt else base
         res = outcomes.get((day, norm(player), MK.get(prop, "player_" + prop), round(float(line), 1)))
         if res in ("over_win", "under_win"):
