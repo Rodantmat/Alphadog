@@ -202,6 +202,36 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0p. 🔑 RECALCULATED ON THE APPS' OWN PRICES — UNDERDOG 4-PICK FLEX 7.2 + FLOOR, PRIZEPICKS SAME-GAME POWER (2026-10-21 PT)
+
+Owner 19:51 PT: "if you have enough, you need to recalculate the multipliers, the slips, the ROI, and everything again. If you do not,
+you need to keep probing ... all the apps."
+
+**Underdog - PROVEN and applied.** Underdog's own entry estimate (`research_ud_payout_probe.py`, `nba_market.ud_payout_quotes`):
+entries across DIFFERENT games, 47 / 47 Standard and 36 / 36 Flex exact to the cent with
+`floor2(base(n) x prod(payout_multiplier))` (Flex partial: the HIT picks' modifiers), base Standard 3.5 / 6.5 / 12 / 20 / 35,
+Flex 3.25 / **7.2** / 10 / 25 (Underdog's payout_outcome table also says 7.2; we had the help page's 6 everywhere). No 1.04 factor
+(§30h): the formula is exact without it. Same-game entries: 4 of 7 exact, the rest x0.86-0.99 (correlation) - the engine never builds
+them. Applied 2026-10-21: `build_ud_slip_engine` (FLEX, floor2, grade), `ud_live_slip_engine.payout`, `validate_ud_slip_strategies`,
+`research_postseason_program`, `main_ui/pricing.js` (UI v1.4.36; Underdog Flex tiers shown as the app's BEST case), and
+`nba_main_ui.ud_payout.flex["4|0"]` = 7.2 (old value kept in `ud_payout.changes`). UI test A4 / B2 pass.
+
+**Underdog prediction-market lines - NOT a Flex blocker.** On the 13:22 board 1,634 of 2,274 priced sides carry only a
+prediction-market price (no fantasy price); signed-in estimates of such picks answered "Picks can't be combined" 48 of 50 times. But
+the owner's real entries on those legs priced as ordinary picks: 4-pick Standard 9.84 = 12 x 0.82 exactly (three prediction-only legs),
+and a 6-pick Flex placed as Flex with four prediction-only legs (owner screenshot 20:15 PT; the placed legs differed - Sabonis Lower 13.5
+vs our 11.5, Traore Higher 1.5). The estimate refusals do not reflect placing; no engine restriction. Same product experience /
+state config as our scraper (`research_ud_user_context.py`). Open: the owner once saw "a prediction leg" block Flex - which leg type
+does that is not identified.
+
+**PrizePicks same-game - the "over-estimates" were a measurement error.** The proof script graded slips with no event_id, so the
+grader's same-game rule never switched on (4-Flex 1.20x = 6 / 5, 3-Flex one miss 1.33x = 1 / 0.75 exactly). With it on, every Flex size
+matches or under-pays. **Real gap, fixed:** all-standard same-game POWER. NBA quotes (incl. SGPOWER round
+`pp_payout_map_20261022T030917Z`, 37 quotes): 2-pick 3.0 x28 / 2.9 x6 / 2.8 x1; 3-pick 6.0 x23 / 5.75 x4; 4-6 picks never adjusted.
+Cuts in the SGPOWER round only on teammates taken the SAME direction (one pair of four). New rule `pp_slip_rules.power_same_game_v3`
+= 2.8 / 5.75 (conservative, like flex_same_game_v3) in `build_slip_engine.pp_payout`, `nba_market.pp_payout_v3` (+ `sql/pp_payout_v3.sql`),
+`pricing.js`. Backtests regraded (old payout kept in `payout_v3_pre_20261021`), certification 83 / 83 after L3 was made side-aware.
+
 ## 0o. 🟡 TWO STANDARD 2-PICKS, TWO POWER PRICES — 3x AND 2.9x (owner screenshots, 2026-10-20 17:01 / 17:03 PT)
 
 - **Captured:** 2-pick, both legs standard Less, same game in both cases. (a) Shai Gilgeous-Alexander Fantasy Score 48.5 Less + Victor
