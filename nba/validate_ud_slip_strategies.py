@@ -20,6 +20,7 @@ Output: nba_score.ud_slip_validation (+ a retained copy nba_score.ud_slip_valida
 verdict history is never overwritten, retention 2026-10-08). Env: DATABASE_URL, SV_TOPK (30), SV_BOOT (10000), SV_NULL (200),
 SV_SOURCE, SV_SNAPSHOT (e.g. _dlt_orig2_mf).
 """
+import math
 import os
 import json
 import random
