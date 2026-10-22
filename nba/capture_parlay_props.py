@@ -190,6 +190,43 @@ def fetch(key, cfg=None):
             meta["narrowed_added"] += len(new_rows)
             if meta["truncated"]:
                 meta["narrowed_truncated"] = True
+                book_keys[b] = sorted({str(x.get("market_key") or x.get("market") or "") for x in items} - {""})
+        # SPLIT A TRUNCATED BOOK BY MARKET (2026-10-22 P3 audit): on 2026-10-21 the Bovada-only read was itself truncated (2,341
+        # rows, x-result-truncated) - ParlayAPI's cap is per source, so one book's board can still exceed it; its own hint is to
+        # narrow with ?markets=. A truncated book is re-read once per market key it showed that the market term uses (market_map
+        # and its alternate spellings), AFTER every book's plain read so the split never starves another book of the time budget.
+        # Tunables: market_feed.split_truncated (default true), split_max_reads (default 24 reads a day, ~3 credits each).
+        meta["split"] = {}
+        if book_keys and cfg.get("split_truncated", True):
+            mapped = set(cfg.get("market_map") or {})
+            sfx = list(cfg.get("alternate_suffixes") or [])
+            reads_left = int(cfg.get("split_max_reads") or 24)
+            for b, keys in book_keys.items():
+                keys = [k for k in keys if k in mapped or any(k.endswith(x) and k[: -len(x)] in mapped for x in sfx)]
+                complete = bool(keys)
+                for k in keys:
+                    left = t_end - _time.monotonic()
+                    if left < 10 or reads_left <= 0:
+                        meta["split"][f"{b}:{k}"] = (0, 0, "skipped (time / read budget)")
+                        complete = False
+                        continue
+                    reads_left -= 1
+                    items.clear()
+                    meta["truncated"] = False
+                    err = run(f"&bookmakers={b}&markets={k}", max(10.0, left))
+                    if err is not None:
+                        meta["split"][f"{b}:{k}"] = (0, 0, f"error {str(err)[:80]}")
+                        complete = False
+                        continue
+                    new_rows = [x for x in items if ident(x) not in seen]
+                    seen.update(ident(x) for x in new_rows)
+                    merged.extend(new_rows)
+                    meta["split"][f"{b}:{k}"] = (len(items), len(new_rows), meta["truncated"])
+                    meta["narrowed_added"] += len(new_rows)
+                    complete = complete and not meta["truncated"]
+                meta["per_book"][b] = meta["per_book"][b][:2] + ("RECOVERED by market split" if complete else True,)
+            meta["narrowed_truncated"] = any(v[2] is True or (isinstance(v[2], str) and not v[2].startswith("RECOVERED"))
+                                             for v in meta["per_book"].values())
         items[:] = merged
         meta["truncated"] = full_truncated
     return 200, remaining, items, meta
