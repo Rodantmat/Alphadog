@@ -2896,3 +2896,23 @@ should be doing. Mining everything that they should mine, consuming everything t
     strategies set to placed_shadow; manual P4 pick (run 39859966807) placed P_wthrees_4flex k1 and P_wassists_4flex k1; slip quotes
     dispatched (nba-pp-payout-map slipq). Note: the research build of today first omitted the engine's Over-minutes floor (22 min) -
     the engine's slips are the ones staked. Follow-ups: the edge monitor and hurdles do not yet cover the P_ units.
+19. ✅ **THE QUOTE GATE - nothing on the screen unless PrizePicks' own quote confirms it** (owner 14:52 PT: "whatever shows there,
+    I put ... don't let anything that's not allowed go on that screen"; 15:22 PT: "be sure you are reading and mapping properly the
+    multipliers"). Found: today's two portfolio slips were same-game demon slips PrizePicks CUT (quotes 6x vs the backtest's 6.66x,
+    7x vs 9x) and the screen showed them as PLAY; the 5-pick / other strategies and Underdog were also on the screen (hidden
+    14:52 PT: every non-portfolio PrizePicks strategy in pp_portfolio.replaces = shadow, stake_unit.ud_play false). Built:
+    (a) live_slip_engine.pick() records pp_portfolio.backups (4) extra portfolio slips in round-robin order as 'placed_backup'
+    (graded 'graded_backup'; staked profit reads status 'graded' only, so backups never count as staked);
+    (b) nba/apply_quote_gate.py (step "Quote gate" of nba-pp-payout-map.yml, mode slipq, right after PrizePicks quotes every
+    placed / backup slip): FAIL = no quote, status <> 200, a leg not on PrizePicks' board as built, no all-hit payout, or all-hit
+    payout < pp_portfolio.quote_min_ratio (0.95) x build_slip_engine.pp_payout; walking k then unit order, the first n passing are
+    'placed', a failed placed slip becomes 'placed_quote_skip' (graded 'graded_quote_skip'), passing extras stay backups; idempotent,
+    notes on streak_note, ::warning:: when fewer than n pass;
+    (c) Slips screen v1.4.38: a PrizePicks PLAY slip with no quote yet says "SKIP - waiting for PrizePicks' quote" and is hidden
+    (the note counts them); backup / quote-skip statuses are SKIP and hidden; a slip with a leg no longer on the board was already
+    hidden (v1.4.37). Certified: dry run on 10-22 (research_quote_gate_dry.py run 39870037530: both slips FAIL on the ratio, 0 of 2
+    pass - nothing written); production pick() with backups on 2025-11-15 / 2026-01-10 inside a rolled-back transaction
+    (run 39870386868: 2 placed + 4 placed_backup per day, replaced never staked, ledger restored - ALL PASS); slips.js / main UI
+    node --check OK; staked-profit queries checked (status IN ('graded','graded_void') - backups / gate skips excluded).
+    10-22's two rows were left as they were (the owner had already acted on the screen; games tipping) - the gate is live from the
+    next P3. Tunables in nba_config.classification_config['pp_portfolio']: quote_min_ratio, backups.
