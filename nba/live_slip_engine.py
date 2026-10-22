@@ -170,8 +170,8 @@ STAR_UNDER_LINES = {'points': 24.5, 'pra': 34.5, 'pts_ast': 29.5, 'pts_reb': 29.
 # the units in PORTFOLIO_UNITS order (k = 1 of every unit, then k = 2, ...), a candidate is taken unless it repeats a taken slip or
 # one of its legs already sits in `leg_cap` taken slips; stop at `n`. Measured (research_pp_portfolio_mix.py run 39836756574, the
 # live engine's window-only twin, final 7 days out): n 2 / leg cap 2 = +49.0% / +56.3% ROI (lb5 +14.4 / +30.0), max drawdown
-# 21 / 11 units, 4/4 half-seasons; n 4 = +42.6% / +53.1%. The strategies it replaces (`replaces`) keep building ONE shadow slip a
-# day (recorded, never staked) so the old record continues. Tunable nba_config.classification_config['pp_portfolio']
+# 21 / 11 units, 4/4 half-seasons; n 4 = +42.6% / +53.1%. The strategies it replaces (`replaces`) keep building their shadow
+# slips (recorded, never staked, hidden on the slip screen) so the old record continues. Tunable nba_config.classification_config['pp_portfolio']
 # {enabled, n, leg_cap, order, replaces}; off = the previous production rule, unchanged. Every portfolio slip is 1 unit (the
 # research's staking; no star-Under half stake). Units: name -> (composition, size, structure, pool family: '' = full pool,
 # 'C' = steals-free pool).
