@@ -1475,6 +1475,8 @@ def grade(conn, day):
                       else 'graded_late' if status0 == 'placed_late'
                       else 'graded_post_shadow' if status0 == 'placed_post_shadow'
                       else 'graded_post' if status0 == 'placed_post'
+                      else 'graded_backup' if status0 == 'placed_backup'            # 2026-10-22 quote gate: never staked
+                      else 'graded_quote_skip' if status0 == 'placed_quote_skip'    # 2026-10-22 quote gate: never staked
                       else ('graded' if n_void == 0 else 'graded_void'))
         conn.execute("""UPDATE nba_score.live_slips SET status=%s, hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now(), payout_model=%s
                         WHERE game_date=%s AND strategy=%s AND k=%s""",
