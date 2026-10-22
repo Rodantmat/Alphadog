@@ -209,13 +209,17 @@ def main():
     cols = [c.name for c in cur.description]
     alt = [dict(zip(cols, r)) for r in cur.fetchall()]
     alt = [r for r in alt if EX.less_open(r["f_over"], r["tier"])]
-    # SIMULATED LESS PRICE, re-fitted on PrizePicks' REAL More / Less pairs of the same rung (pp_leg_price 2026-10-20..22, 2,399
-    # pairs): 0.5 / f_more + 0.5 / f_less = 1.049 (median 1.049, every tier 1.044-1.050) - the earlier rule (sum 0.99, x0.97)
-    # priced the Less leg ~8-12% too generously. f_less = 0.5 / (PSUM - 0.5 / f_more_quote), PF_LESS_PSUM (default 1.049).
-    psum = float(os.environ.get("PF_LESS_PSUM") or "1.049")
+    # SIMULATED LESS PRICE. PrizePicks' OWN quotes (pp_mined_leg, More and Less of the same projection in the same run, 75 pairs):
+    # 0.5 / f_more + 0.5 / f_less = 0.980 (demon rungs) / 0.989 (goblin rungs), range 0.942-1.005 - the research_exhaustive_pp rule
+    # (sum 0.99, then x0.97) stands. The ARCHIVE's model price for a live Less leg (pp_leg_price) sums to 1.046-1.050 - it pays a
+    # Less leg ~5-15% BELOW PrizePicks. PF_LESS_PSUM set = price with that sum instead (sensitivity: 1.049 = the archive's model).
+    psum_env = os.environ.get("PF_LESS_PSUM")
     for r in alt:
-        fq = r.pop("f_over") * EX.QUOTE_LIFT[r["tier"][1]]          # tier 'UG1' / 'UD2' -> the rung kind G / D
-        r["factor"] = 0.5 / max(0.03, psum - min(0.97, 0.5 / fq))
+        if psum_env:
+            fq = r.pop("f_over") * EX.QUOTE_LIFT[r["tier"][1]]      # tier 'UG1' / 'UD2' -> the rung kind G / D
+            r["factor"] = 0.5 / max(0.03, float(psum_env) - min(0.97, 0.5 / fq))
+        else:
+            r["factor"] = EX.less_price(r.pop("f_over"), r["tier"])
         st_ = r.pop("stat_actual")
         r["hit"] = None if st_ is None or st_ == r["line"] else int(st_ < r["line"])
     hist += alt
