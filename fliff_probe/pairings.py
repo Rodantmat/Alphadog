@@ -608,6 +608,13 @@ def main():
                      "id": h["proposal"] or f"h2h|{h['game']}|{h['side']}", "when": pt(h["start"]), "matchup": f"{g.get('away_abbr')} @ {g.get('home_abbr')}",
                      "team": h["team"]})
     near, good, cands, pairs = build_pairs(legs)
+    blowout_games, blow_txt = set(), []
+    for g in games:
+        fp = game_fav_p(ml_events, g)
+        if fp is not None and fp >= BLOWOUT_FAV_P:
+            blowout_games.add(g["id"])
+            blow_txt.append(f"{g['away_abbr']} @ {g['home_abbr']} (favorite {fp * 100:.0f}%)")
+    s_pool, s_cands, s_pairs, s_why = build_safe_pairs(legs, blowout_games)
     # sanity: ladder order on every run (a higher Over line must never price more likely; Under the reverse)
     viol = 0
     by = defaultdict(list)
