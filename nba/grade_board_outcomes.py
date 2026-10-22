@@ -287,6 +287,16 @@ def dd(r):
     return sum(1 for v in (r["PTS"], r["REB"], r["AST"], r["STL"], r["BLK"]) if (v or 0) >= 10) >= 2
 
 
+def td(r):
+    return sum(1 for v in (r["PTS"], r["REB"], r["AST"], r["STL"], r["BLK"]) if (v or 0) >= 10) >= 3
+
+
+def quarters_with(r, n):
+    if not r.get("QDATA"):
+        raise KeyError("no quarter data for this date")
+    return sum(1 for qq in (1, 2, 3, 4) if (r.get(f"PTS_Q{qq}") or 0) >= n)
+
+
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
     conn.execute("SET statement_timeout = 0")
