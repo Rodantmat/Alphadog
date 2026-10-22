@@ -51,10 +51,11 @@ jobs:
           COMPACT_DRY: ${{ github.event.inputs.task == 'compact_dry' && '1' || '' }}
         run: python -u nba/db_compact.py
       - name: Build derived market tables
-        if: ${{ github.event.inputs.task == 'derived' || github.event.inputs.task == 'map' }}
+        if: ${{ github.event.inputs.task == 'derived' || github.event.inputs.task == 'map' || github.event.inputs.task == 'derived_dates' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DERIVED_STEP: ${{ github.event.inputs.task == 'map' && 'map' || 'all' }}
+          MD_DATES: ${{ github.event.inputs.task == 'derived_dates' && github.event.inputs.date || '' }}
         run: python nba/build_market_derived.py
       - name: Build book curves and calibration
         if: ${{ github.event.inputs.task == 'curves' }}
