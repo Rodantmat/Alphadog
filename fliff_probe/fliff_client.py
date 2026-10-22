@@ -66,6 +66,9 @@ class FliffClient:
         self.s = requests.Session()
         self.proxies = {"https": proxy, "http": proxy} if proxy else None
         self.verbose = verbose
+        self.app_version = os.environ.get("FLIFF_APP_VERSION") or detect_app_version(proxy) or APP_VERSION
+        if verbose:
+            print("fliff app version:", self.app_version, flush=True)
         dev = "web." + "".join(random.choices("0123456789abcdef", k=32))
         tok = "".join(random.choices(string.ascii_letters + string.digits, k=10))
         self.hdr = {"product_code": 10, "device_x_id": dev, "app_x_version": APP_VERSION, "app_install_token": tok,
