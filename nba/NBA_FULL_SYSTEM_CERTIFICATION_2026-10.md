@@ -2861,7 +2861,7 @@ should be doing. Mining everything that they should mine, consuming everything t
     UG = Under on a goblin rung). (b) The archive's model price for a live Less leg sums with its More twin to 1.046-1.050 (2,399 pairs);
     PrizePicks' own quotes sum to 0.980 (demon rungs, 46 pairs) / 0.989 (goblin rungs, 29) - the archive pays Less legs 5-15% BELOW
     PrizePicks (ranking / UI value only; PrizePicks pays its own price). Not changed. Research keeps PrizePicks' law (S 0.99, x0.97);
-    a sensitivity run at the archive's 1.049 (run 39823805951) leaves NO Less cell or pattern positive in both seasons.
+    a sensitivity run at the archive's 1.049 (run 39823805951) leaves no Less cell or pattern that holds (best +4..+16%, lb5 < 0).
     Result at PrizePicks' law: assists hard Less (UG1 Under, PrizePicks "goblin Less") is the one leg class above every break-even in
     both seasons (e 0.60-0.68, hit 0.42-0.50 at ~1.35-1.45x); as slips +17..+42% (2024-25) / +56..+99% (2025-26) but 2024-25 lb5 < 0
     (57-140 slips); live 3 legs, 1 hit. Forward record: paper_altless_tracker (1 slate graded: 2-4-pick slips all lost or partial).
