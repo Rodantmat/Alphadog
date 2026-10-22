@@ -139,8 +139,9 @@ export function nbaTiers(pricing, app, mode, legs) {
   const out = {};
   if (n < 2) return out;
   for (let misses = 0; misses <= Math.min(2, n - 1); misses++) {
-    // partial tiers depend on WHICH legs miss (Underdog / Sleeper scale by the hit legs' factors): report the mean over the
-    // possible miss sets so the field shows one honest estimate
+    // partial tiers depend on WHICH legs miss (Underdog / Sleeper scale by the hit legs' factors). Underdog's app shows the BEST case
+    // (the lowest-modifier picks miss - proven 2026-10-21 on its own estimate), so Underdog tiers show that, to match the app the
+    // owner reads; Sleeper keeps the mean over the miss sets. EV (nbaEv) always uses every outcome's real payout.
     let tot = 0, cnt = 0, nullSeen = false;
     const masks = [];
     (function rec(i, left, cur) {
