@@ -86,7 +86,19 @@ BASE = {
     "player_field_goals_attempted": lambda r: r["FGA"],
     "player_field_goals_made": lambda r: r["FGM"],
     "player_pra_h1": lambda r: r["PTS_H1"] + r["REB_H1"] + r["AST_H1"],
+    # 2026-10-22 (P2A audit of 10-21: these were archived and no_stat): other books' spellings of the same box-score columns
+    "player_reb_q1": lambda r: r["REB_Q1"],
+    "player_fouls": lambda r: r["PF"],
+    "player_free_throws_attempted": lambda r: r["FTA"],
+    "player_free_throws_made": lambda r: r["FTM"],
 }
+# 2026-10-22: PrizePicks "Quarters with N+ Points" - how many of the four quarters the player scored N or more (quarter logs;
+# a played game whose date has quarter data but no row for a quarter = 0 in that quarter; a date without quarter data = no_stat)
+QUARTERS_N = re.compile(r"^player_quarters_with_(\d+)\+_points$")
+# 2026-10-22: PrizePicks two-player combos ("Zion Williamson + Andrew Nembhard"): the sum of the two players' column.
+# Either player not playing = dnp (the leg is void), either name unresolved = unmatched_player.
+COMBO = {"player_points_(combo)": "PTS", "player_rebounds_(combo)": "REB", "player_rebound_(combos)": "REB",
+         "player_assists_(combo)": "AST", "player_3-pt_made_(combo)": "FG3M"}
 for _stat, _col in (("points", "PTS"), ("rebounds", "REB"), ("assists", "AST"), ("threes", "FG3M")):
     for _per in ("q1", "q4", "h1", "h2"):
         BASE[f"player_{_stat}_{_per}"] = (lambda c, p: (lambda r: r[f"{c}_{p.upper()}"]))(_col, _per)
