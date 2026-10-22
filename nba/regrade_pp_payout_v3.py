@@ -41,6 +41,8 @@ def main():
         for t in TABLES:
             t0 = time.time()
             c.execute(f"ALTER TABLE nba_score.{t} ADD COLUMN IF NOT EXISTS payout_grader_v2 double precision")
+            if KEEP:
+                c.execute(f"ALTER TABLE nba_score.{t} ADD COLUMN IF NOT EXISTS {KEEP} double precision")
             c.commit()
             seasons = [r[0] for r in c.execute(f"SELECT DISTINCT season FROM nba_score.{t} ORDER BY 1").fetchall()]
             n = 0
