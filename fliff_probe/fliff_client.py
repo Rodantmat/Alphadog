@@ -71,7 +71,7 @@ class FliffClient:
             print("fliff app version:", self.app_version, flush=True)
         dev = "web." + "".join(random.choices("0123456789abcdef", k=32))
         tok = "".join(random.choices(string.ascii_letters + string.digits, k=10))
-        self.hdr = {"product_code": 10, "device_x_id": dev, "app_x_version": APP_VERSION, "app_install_token": tok,
+        self.hdr = {"product_code": 10, "device_x_id": dev, "app_x_version": self.app_version, "app_install_token": tok,
                     "auth_token": "", "conn_id": 1, "platform": "prod", "usa_state_code": "",
                     "usa_state_code_source": "ipOrigin=2702|regionCode=|meta=|geocodeOrigin=2702|regionCode=|meta=",
                     "xtag": "", "country_code": "", "af_uid": "no_appsflyer_uid_for_web", "location_token": ""}
