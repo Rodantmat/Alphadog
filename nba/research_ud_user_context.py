@@ -69,6 +69,8 @@ def count_kinds(j):
 
 
 def main():
+    import subprocess
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "curl_cffi"], check=True)
     import psycopg
     from curl_cffi import requests as cr
     from underdog_auth import access_token
