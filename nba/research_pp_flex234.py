@@ -209,8 +209,13 @@ def main():
     cols = [c.name for c in cur.description]
     alt = [dict(zip(cols, r)) for r in cur.fetchall()]
     alt = [r for r in alt if EX.less_open(r["f_over"], r["tier"])]
+    # SIMULATED LESS PRICE, re-fitted on PrizePicks' REAL More / Less pairs of the same rung (pp_leg_price 2026-10-20..22, 2,399
+    # pairs): 0.5 / f_more + 0.5 / f_less = 1.049 (median 1.049, every tier 1.044-1.050) - the earlier rule (sum 0.99, x0.97)
+    # priced the Less leg ~8-12% too generously. f_less = 0.5 / (PSUM - 0.5 / f_more_quote), PF_LESS_PSUM (default 1.049).
+    psum = float(os.environ.get("PF_LESS_PSUM") or "1.049")
     for r in alt:
-        r["factor"] = EX.less_price(r.pop("f_over"), r["tier"])
+        fq = r.pop("f_over") * EX.QUOTE_LIFT[r["tier"][2] if r["tier"].startswith("U") else r["tier"][1]]
+        r["factor"] = 0.5 / max(0.03, psum - min(0.97, 0.5 / fq))
         st_ = r.pop("stat_actual")
         r["hit"] = None if st_ is None or st_ == r["line"] else int(st_ < r["line"])
     hist += alt
