@@ -357,6 +357,17 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    - **Leg lookups normalise the market key once per row** (v1.4.30; md5-identical output on 3,000 legs); index
      `nba_market.ud_line_flags_hide_lookup`.
    - **Sleeper / Fliff / Betr:** no slips by design (fact 136; Betr parked).
+177. 🔑 **PRIZEPICKS PLAYS 2 SLIPS A DAY - THE PORTFOLIO (owner decision 2026-10-22 14:38 PT; ledger DAY THREE 16-18).**
+   `live_slip_engine.PORTFOLIO_UNITS` in order: threes_D1 4-Flex, assists_D1 4-Flex (steals-free pool), rebounds_R 4-Flex,
+   stocks_R 4-Flex, single points_R 3-Power, rebounds_R 3-Power; round robin (k1 of every unit, then k2 ...), no repeated slip, a leg
+   in at most 2 slips, n 2. Backtest +49.0% / +56.3% ROI, max drawdown 21 / 11 units (2024-25 / 2025-26). Every other PrizePicks
+   strategy builds shadow only (pp_portfolio.replaces) and is not shown; Underdog back to paper, hidden (stake_unit.ud_play false).
+   Tunable `nba_config.classification_config['pp_portfolio']` (enabled false = the previous rule).
+178. 🔑 **THE QUOTE GATE: NOTHING IS SHOWN UNLESS PRIZEPICKS' OWN QUOTE CONFIRMS IT (2026-10-22; ledger DAY THREE 19).** Our grader
+   overpays same-game demon slips that PrizePicks cuts (10-22: 6x vs 6.66x, 7x vs 9x). The engine records 4 backup portfolio slips
+   ('placed_backup'); `nba/apply_quote_gate.py` runs after P3's slip quotes and keeps as 'placed' the first 2 that PrizePicks quoted
+   with every leg on its board as built and an all-hit payout >= 0.95 x ours; failures become 'placed_quote_skip'. The Slips
+   screen (v1.4.38) hides unquoted, failed and backup slips. Tunables pp_portfolio.quote_min_ratio / backups.
 
 ---
 
