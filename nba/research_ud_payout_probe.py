@@ -139,6 +139,8 @@ def main():
                 print(f"AUTH|signed in ({how})", flush=True)
             H["authorization"] = "Bearer " + tok_state["tok"]
 
+    seen_err = {}
+
     def call(qs):
         u = "https://api.underdogfantasy.com/v4/entry_slips/estimate?" + common + "&fee=10&fee_source=cash&" + qs
         if auth:
