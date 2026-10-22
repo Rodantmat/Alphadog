@@ -214,7 +214,7 @@ def main():
     # priced the Less leg ~8-12% too generously. f_less = 0.5 / (PSUM - 0.5 / f_more_quote), PF_LESS_PSUM (default 1.049).
     psum = float(os.environ.get("PF_LESS_PSUM") or "1.049")
     for r in alt:
-        fq = r.pop("f_over") * EX.QUOTE_LIFT[r["tier"][2] if r["tier"].startswith("U") else r["tier"][1]]
+        fq = r.pop("f_over") * EX.QUOTE_LIFT[r["tier"][1]]          # tier 'UG1' / 'UD2' -> the rung kind G / D
         r["factor"] = 0.5 / max(0.03, psum - min(0.97, 0.5 / fq))
         st_ = r.pop("stat_actual")
         r["hit"] = None if st_ is None or st_ == r["line"] else int(st_ < r["line"])
