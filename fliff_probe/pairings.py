@@ -259,6 +259,69 @@ def build_pairs(legs):
     return near, good, cands, out
 
 
+def n_books(how):
+    srcs = (how or "").split(" ", 1)[-1]
+    return len([x for x in srcs.split("+") if x])
+
+
+def safe_eligible(l, blowout_games):
+    """-> (ok, reason). The SAFE MODE leg filter."""
+    if l["kind"] != "prop":
+        return False, "not a player prop"
+    if l["stat"] not in SAFE_STATS:
+        return False, f"stat {l['stat']} excluded"
+    if l["fair"] < SAFE_LEG_P:
+        return False, "below near-lock"
+    how = l.get("how") or ""
+    if how.startswith("interp"):
+        return False, "interpolated price"
+    if not ("pinnacle" in how or n_books(how) >= 2):
+        return False, "single-book price"
+    if l["side"] == "over" and l["game"] in blowout_games:
+        return False, "over in projected blowout"
+    return True, "ok"
+
+
+def build_safe_pairs(legs, blowout_games):
+    why = Counter()
+    pool = []
+    for l in legs:
+        ok, r = safe_eligible(l, blowout_games)
+        why[r] += 1
+        if ok:
+            pool.append(l)
+    cands = []
+    for i, a in enumerate(pool):
+        for b in pool[i + 1:]:
+            if a["game"] == b["game"] or a["player"] == b["player"] or (a.get("team") and a.get("team") == b.get("team")):
+                continue
+            m = round(a["m"] * b["m"], 4)
+            p = a["fair"] * b["fair"]
+            if m < SAFE_SLIP_MIN or p < SAFE_JOINT_MIN:
+                continue
+            ev, cost = grade(p, m)
+            cands.append({"near": a, "good": b, "m": m, "p": round(p, 4), "ev": round(ev, 4), "clear_cost": None if cost is None else round(cost, 4)})
+    # safest first, then cheapest per dollar cleared; every game appears in at most ONE slip (no shared-game risk)
+    cands.sort(key=lambda c: (-round(c["p"], 2), c["clear_cost"] if c["clear_cost"] is not None else 9))
+    used_games, out = set(), []
+    for c in cands:
+        gs = {c["near"]["game"], c["good"]["game"]}
+        if gs & used_games:
+            continue
+        used_games |= gs
+        out.append(c)
+        if len(out) >= SAFE_MAX_PAIRS:
+            break
+    return pool, cands, out, why
+
+
+def game_fav_p(ml_events, g):
+    ph = h2h_fair(ml_events, g.get("home"), g["ms"])
+    pa = h2h_fair(ml_events, g.get("away"), g["ms"])
+    vals = [x for x in (ph, pa) if x is not None]
+    return max(vals) if vals else None
+
+
 # ------------------------------------------------------------------ Fliff Pick'Em fetch
 class Skipper:
     def __init__(self):
