@@ -74,6 +74,8 @@ jobs:
           PROBE_SPORTS: ${{ github.event.inputs.sports || 'auto' }}
           PROBE_HOURS: ${{ github.event.inputs.hours || '48' }}
           PROBE_MAX_EVENTS: ${{ github.event.inputs.max_events || '250' }}
+          PROBE_MODE: ${{ github.event.inputs.mode || 'safe' }}
+          PROBE_BALANCE: ${{ github.event.inputs.balance || '0' }}
         run: |
           STEP="${{ github.event.inputs.step || 'run' }}"
           case "$STEP" in
