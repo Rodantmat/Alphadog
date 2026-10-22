@@ -254,6 +254,10 @@ def main():
                 def _dec(am):
                     try: am = float(am)
                     except (TypeError, ValueError): return None
+                    # 2026-10-21 18:41 PT (run 39706985176): an alternate rung came back american_price 0 - not a price; it divided by
+                    # zero and killed the whole board scrape. American odds live outside (-100, +100); anything inside is no price.
+                    if -100.0 < am < 100.0:
+                        return None
                     return round(1 + am / 100.0, 4) if am > 0 else round(1 + 100.0 / (-am), 4)
                 def _payout(am):
                     # LEGACY (2026-09-10 'decimal(American) x 0.963'): SUPERSEDED 2026-10-03 by strategy doc §30f/§30g - the slip pays
