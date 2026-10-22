@@ -536,6 +536,19 @@ jobs:
           python nba/export_market_spreads.py
           python nba/build_rung_market.py
 
+      # 3a) SPORTSBOOK CONSENSUS + EVENT MAP for the slate (2026-10-22 pipeline audit): nba_market.market_consensus (the main UI's
+      #     consensus / sharp panels) and nba_market.event_game_map (the blowout model's market-spread join) were only rebuilt by
+      #     hand and stopped at 2026-06-13 - empty for all of 2026-27. Incremental, this slate only; SOFT (display + research).
+      - name: Sportsbook consensus and event map (slate)
+        id: soft_consensus
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MD_DATES: ${{ steps.d.outputs.asof }}
+        run: python -u nba/build_market_derived.py
+
       # 3b) MARKET REFRESH of final_hp - MOVED (2026-10-16) below "Wait for P2B": it rewrites today's final_hp, so it must never
       #     run while P2B for the same slate is still writing it (early-tip days), and it is SOFT (a failure leaves P2B's
       #     market-free scores in place and the pick proceeds).
