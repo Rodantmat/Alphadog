@@ -16,6 +16,8 @@ import capture_parlay_props as C   # noqa: E402
 
 
 def main():
+    import subprocess
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "requests"], check=True)   # net_retry's sender (P3 installs it)
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         cfg = C.load_cfg(conn)
         key = C.api_key(conn, cfg["key_name"])
