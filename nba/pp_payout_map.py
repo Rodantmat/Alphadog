@@ -895,6 +895,50 @@ def main():
             save("complete (proof)")
             return 0
 
+        if MODE == "sgpower":
+            # SGPOWER (2026-10-21, owner: "if you do not [have enough], you need to keep probing"): same-game ALL-STANDARD Power / Flex.
+            # 25 stored NBA quotes say PrizePicks cuts some same-game pairs (2-pick 3.0 -> 2.9 / 2.8 on 5 of 17; 3-pick 6 -> 5.75 on 2 of
+            # 8) and leaves others alone; pp_slip_rules power_same_game_v3 pays every one the lowest seen (2.8 / 5.75) until the rule
+            # is understood. Each quote returns the full Power AND Flex tables + is_adjusted, so it feeds both rules:
+            #  SG2   - one same-game pair alone, by relation (opponents / teammates) x sides (More-More, More-Less, Less-Less)
+            #  SG3   - the same pair + one standard from another game
+            #  SG3G  - three players from ONE game (both teams)
+            def tkey(r):
+                return r.get("team") or ("game:" + str(r["game"]))
+            rng = random.Random(1021)
+            by_game = {}
+            for r in std:
+                by_game.setdefault(r["game"], []).append(r)
+            games_sg = [g for g, rs in by_game.items() if len({x["player"] for x in rs}) >= 3]
+            rng.shuffle(games_sg)
+            result["meta"].update({"mode": "sgpower", "games": len(games_sg)})
+            print(f"SGPOWER|standards={len(std)}|games with 3+ players={len(games_sg)}", flush=True)
+            sides = [("over", "over"), ("over", "under"), ("under", "under")]
+            for g in games_sg:
+                rs = by_game[g][:]
+                rng.shuffle(rs)
+                for rel in ("opp", "mate"):
+                    a = rs[0]
+                    b = next((x for x in rs if x["player"] != a["player"] and ((tkey(x) != tkey(a)) if rel == "opp" else (tkey(x) == tkey(a)))), None)
+                    if not b:
+                        continue
+                    other = next((x for x in std if x["game"] != g), None)
+                    for sa, sb in sides:
+                        run("SG2", [leg(a, sa), leg(b, sb)], f"{rel} {sa}/{sb} {a['stat']}+{b['stat']}")
+                        if other is not None:
+                            run("SG3", [leg(a, sa), leg(b, sb), leg(other)], f"{rel} {sa}/{sb} + other game")
+                trio, seen = [], set()
+                for x in rs:
+                    if x["player"] not in seen:
+                        trio.append(x)
+                        seen.add(x["player"])
+                    if len(trio) == 3:
+                        break
+                if len(trio) == 3 and len({tkey(x) for x in trio}) == 2:
+                    run("SG3G", [leg(x) for x in trio], "three from one game, both teams")
+            save("complete (sgpower)")
+            return 0
+
         if MODE == "multi":
             # MULTI (2026-09-21): slips with 2 and 3 alternates at 3..6 picks; every alternate is also priced alone (LEG)
             # in this run. Models the multi-alternate haircut (4-6 picks pay ~7% below b * prod(f)^a).
