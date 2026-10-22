@@ -25,8 +25,13 @@ TABLES = [t.strip() for t in (os.environ.get("REGRADE_TABLES") or
           "slip_engine_slips,slip_engine_slips_mf,slip_engine_slips_nosteals,slip_engine_slips_mf_nosteals,"
           "slip_engine_slips_post,slip_engine_slips_post_nosteals,slip_engine_slips_wo,slip_engine_slips_wo_nosteals").split(",") if t.strip()]
 
+KEEP = (os.environ.get("REGRADE_KEEP_COL") or "").strip()
+if KEEP and not re.fullmatch(r"payout_[a-z0-9_]{1,40}", KEEP):
+    raise SystemExit(f"REGRADE_KEEP_COL must look like payout_<name>: {KEEP!r}")
+KEEP_SET = f"{KEEP} = coalesce(x.{KEEP}, x.payout), " if KEEP else ""
+
 SQL = """WITH n AS (SELECT ctid id, nba_market.pp_slip_payout_v3(legs_json, structure, same_game > 0) np FROM nba_score.{t} WHERE season = %s)
-UPDATE nba_score.{t} x SET payout_grader_v2 = coalesce(x.payout_grader_v2, x.payout), payout = n.np, profit = n.np * x.stake - x.stake
+UPDATE nba_score.{t} x SET payout_grader_v2 = coalesce(x.payout_grader_v2, x.payout), """ + KEEP_SET + """payout = n.np, profit = n.np * x.stake - x.stake
 FROM n WHERE x.ctid = n.id AND (x.payout IS NULL OR abs(x.payout - n.np) > 1e-9)"""
 
 
