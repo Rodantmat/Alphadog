@@ -35,7 +35,7 @@ T_VAL = 'nba_score.ud_slip_validation'
 SNAPSHOT = os.environ.get('SV_SNAPSHOT') or ''
 S1, S2 = '2024-25', '2025-26'
 STD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}
-FLEX = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 6.0, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5, (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25}
+FLEX = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 7.2, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5, (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25}
 CELL_EDGE = {'turnovers_R': 0.638, 'reb_ast_B1_U': 0.612, 'rebounds_F2_U': 0.594, 'rebounds_R': 0.593, 'assists_R_U': 0.592,
              'blocks_R': 0.591, 'points_R_U': 0.590, 'reb_ast_R_O': 0.586, 'threes_R': 0.578, 'rebounds_B1_U': 0.576,
              'stocks_R_U': 0.566, 'pts_ast_R_O': 0.562, 'pts_reb_R_U': 0.561, 'pra_R_U': 0.559}
