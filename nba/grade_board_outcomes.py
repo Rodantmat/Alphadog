@@ -261,9 +261,15 @@ def load_logs(slug, pid_to_name):
             qd = []
         qd = list(qd) + _optional_records(f"nba_player_game_log_q{qq}_postseason_{slug}.json")
         q[qq] = {(str(x.get("GAME_DATE") or "")[:10], pid_to_name.get(str(x.get("PLAYER_ID")))): x for x in qd}
+    q_dates = {qq: {k[0] for k in q[qq]} for qq in (1, 2, 3, 4)}
     for d, day in by_date.items():
         for nm, rec in day.items():
             rows_q = {qq: q[qq].get((d, nm)) for qq in (1, 2, 3, 4)}
+            # every quarter's points, for "Quarters with N+ Points" (2026-10-22): only when the league's quarter files hold this date
+            if all(d in q_dates[qq] for qq in (1, 2, 3, 4)):
+                rec["QDATA"] = True
+                for qq in (1, 2, 3, 4):
+                    rec[f"PTS_Q{qq}"] = (rows_q[qq].get("PTS") or 0) if rows_q[qq] is not None else 0
             for col in ("PTS", "REB", "AST", "FG3M"):
                 for qq in (1, 4):
                     if rows_q[qq] is not None:
