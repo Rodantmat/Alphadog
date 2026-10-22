@@ -108,7 +108,10 @@ def main():
     print("L3 tier", flush=True)
     r = one(conn, """SELECT count(*) FILTER (WHERE kind IN ('goblin','demon') AND COALESCE(NULLIF(tier,0), round(line-anchor_line)::int) IS NULL),
                             count(*) FILTER (WHERE kind IN ('goblin','demon') AND COALESCE(NULLIF(tier,0), round(line-anchor_line)::int)=0),
-                            count(*) FILTER (WHERE kind='goblin' AND tier>0), count(*) FILTER (WHERE kind='demon' AND tier<0),
+                            -- side-aware (2026-10-21: PrizePicks' Less goblins / demons reached the window board - a Less goblin sits ABOVE the
+                            -- main line (easier to stay under), a Less demon BELOW it; the sign flips with the side, a wrong sign on either side fails)
+                            count(*) FILTER (WHERE kind='goblin' AND ((side IS DISTINCT FROM 'Under' AND tier>0) OR (side='Under' AND tier<0))),
+                            count(*) FILTER (WHERE kind='demon' AND ((side IS DISTINCT FROM 'Under' AND tier<0) OR (side='Under' AND tier>0))),
                             count(*) FILTER (WHERE kind_position_mismatch)
                      FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND factor IS NOT NULL""")
     check(conn, "L3.every_ladder_leg_has_a_tier", r[0] == 0, r[0])
