@@ -77,6 +77,15 @@ BASE = {
     "player_threes_attempted": lambda r: r["FG3A"],
     "player_oreb": lambda r: r["OREB"], "player_dreb": lambda r: r["DREB"],
     "player_personal_fouls": lambda r: r["PF"],
+    # 2026-10-21 (owner: "out of the new ... prop lines, anything positive?"): these keys were archived on the 10-20 / 10-21 boards
+    # and never graded (no_stat) - PrizePicks' 2-point markets, a field-goal spelling, first-half PRA - so no forward test could
+    # ever see them. Same box-score columns as above.
+    "player_two_pointers_attempted": lambda r: r["FGA"] - r["FG3A"],
+    "player_two_pointers_attempts": lambda r: r["FGA"] - r["FG3A"],
+    "player_two_pointers_made": lambda r: r["FGM"] - r["FG3M"],
+    "player_field_goals_attempted": lambda r: r["FGA"],
+    "player_field_goals_made": lambda r: r["FGM"],
+    "player_pra_h1": lambda r: r["PTS_H1"] + r["REB_H1"] + r["AST_H1"],
 }
 for _stat, _col in (("points", "PTS"), ("rebounds", "REB"), ("assists", "AST"), ("threes", "FG3M")):
     for _per in ("q1", "q4", "h1", "h2"):
