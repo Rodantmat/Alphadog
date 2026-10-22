@@ -19,7 +19,7 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30      # a scheduled run waits up to 20 min first (human timing)
     steps:
       - uses: actions/checkout@v4
         with:
