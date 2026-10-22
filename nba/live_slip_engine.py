@@ -1067,6 +1067,11 @@ def pick(conn, day, require_fresh=True):
     n = 0
     placed_sigs = set()   # (structure, sorted legs) already placed today by an earlier strategy - a duplicate is staked once
     xcfg = exposure_cfg(conn)
+    pf = portfolio_cfg(conn)
+    pf_replaced = set(pf.get('replaces') or []) if pf.get('enabled') else set()
+    if pf.get('enabled'):
+        print(f"  {day}: 2-SLIP PORTFOLIO ON - {pf['n']} slips a day, leg cap {pf['leg_cap']}, units {pf['order']}; "
+              f"replaced (shadow only): {sorted(pf_replaced)}", flush=True)
     xglob, xpglob = defaultdict(int), defaultdict(int)   # staked slips per leg / per player today (slip_exposure)
     if xcfg.get('enabled'):
         print(f"  {day}: SLIP EXPOSURE caps ON - share {xcfg.get('share')}, leg cap {xcfg.get('leg_cap')}, player cap {xcfg.get('player_cap')}", flush=True)
