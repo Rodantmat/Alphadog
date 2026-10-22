@@ -2825,7 +2825,8 @@ should be doing. Mining everything that they should mine, consuming everything t
     research_pp_flex_payout_overpay.py run 39822861068): all 4,236 NBA lineups of 2-4 picks PrizePicks priced for us (pp_quote, Power
     AND Flex tables) re-priced by our grader from the legs' mined factors (4,886 alternate legs priced with the SAME run's factor, 7
     with another run's, 55 quotes skipped for a leg without a factor).
-    - All-standard 2 / 3 / 4 Flex and Power: 100% exact (57 / 45 / 28 quotes).
+    - All-standard 2 / 3 / 4 Flex and Power (57 / 45 / 28 quotes): never above PrizePicks; Flex exact, Power exact except where the
+      conservative same-game rule pays less (median 0.96-1.00).
     - Flex WITH goblins / demons - conservative: 2-pick all-hit <= PrizePicks on 99.1% (mean ours / PP 0.921), one miss 100% (0.924);
       3-pick all-hit 88.3-88.7% (never more than 5% above, mean 0.96), one miss 96.5-98.3%; 4-pick all-hit 89.8-91.7% (mean
       0.90-0.92), one miss 95.3-95.8% (0.89). The overpays are cents (<= +0.13) except: 2-pick two goblins fp < 0.5 (8 quotes, ours
