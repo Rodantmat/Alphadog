@@ -113,7 +113,7 @@ def pricing_parity(conn, cfg):
     import build_slip_engine as E
     import ud_live_slip_engine as UL
     rules = {k: v for k, v in conn.execute("SELECT rule_key, rule_json FROM nba_config.pp_slip_rules WHERE rule_key = ANY(%s)",
-                                           (["base_power", "flex_all_standard", "flex_2pick_base", "compression", "flex_alt_tiers", "power_alt_v3", "flex_same_game_v3"],)).fetchall()}
+                                           (["base_power", "flex_all_standard", "flex_2pick_base", "compression", "flex_alt_tiers", "power_alt_v3", "flex_same_game_v3", "power_same_game_v3"],)).fetchall()}
     pricing = {"pp": rules, "ud": cfg["ud_payout"]}
     rnd = random.Random(20261014)
     cases = []
