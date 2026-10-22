@@ -548,6 +548,31 @@ def render(meta, near, good, pairs):
     return "\n".join(md)
 
 
+def render_safe(meta, pool, pairs, why, blow):
+    def pc(x):
+        return "" if x is None else f"{x * 100:.1f}%"
+    stake = meta.get("stake")
+    md = [f"# Fliff Pick'Em SAFE pairings — {meta['when']}", "",
+          f"NBA games in window: {meta['games']} · ladders read: {meta['ladders']} · priced legs: {meta['priced']} · "
+          f"safe legs: {len(pool)} · safe slips: {len(pairs)}", "",
+          "**Rules.** Both legs are near-locks (each ≥ {:.0f}% by a conservative estimate), points / rebounds / assists and their combos only "
+          "(no threes, steals or blocks), each price confirmed by two sportsbooks or Pinnacle, no Overs in games projected as blowouts, "
+          "every game used in only one slip. Stake: flat {:.0f}% of balance{}.".format(SAFE_LEG_P * 100, STAKE_PCT * 100,
+                                                                                    f" (${stake})" if stake else ""), ""]
+    if not pairs:
+        md += ["## No safe slip today", "", "Nothing on the board passes every rule. **Don't play today** — that is the safe answer.", ""]
+    else:
+        md += ["## Safe slips", "| # | Leg 1 | x | Leg 2 | x | Slip | Win chance | Counts per $100 |", "|---|---|---|---|---|---|---|---|"]
+        for i, c in enumerate(pairs, 1):
+            a, b = c["near"], c["good"]
+            md.append(f"| {i} | {a['when']} {a['matchup']}: **{leg_txt(a)}** ({pc(a['fair'])}) | {a['m']:.2f} | "
+                      f"{b['when']} {b['matchup']}: **{leg_txt(b)}** ({pc(b['fair'])}) | {b['m']:.2f} | {c['m']:.2f}x | {pc(c['p'])} | "
+                      f"${min(1, c['m'] - 1) * 100:.0f} |")
+    md += ["", "## Data checks", f"- leg filter: {dict(why)}", f"- games skipped for Overs (blowout risk): {blow or 'none'}"] + \
+          [f"- {x}" for x in meta["checks"]]
+    return "\n".join(md)
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     t_end = time.monotonic() + TIME_BUDGET_S
