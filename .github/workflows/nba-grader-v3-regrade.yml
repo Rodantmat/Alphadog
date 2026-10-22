@@ -35,6 +35,7 @@ jobs:
       - name: Regrade every PrizePicks backtest slip to grader v3
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REGRADE_KEEP_COL: ${{ github.event.inputs.keep_col }}
         run: python -u nba/regrade_pp_payout_v3.py
       - name: Certification pass (frozen invariant list)
         env:
