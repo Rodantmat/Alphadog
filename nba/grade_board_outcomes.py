@@ -152,6 +152,8 @@ NAME_OVERRIDES = {
     "herbjones": "herbertjones",
     "nicolasclaxton": "nicclaxton",
     "moewagner": "moritzwagner",
+    "alexandresarr": "alexsarr",        # 2026-10-22 P2A audit: PrizePicks / Underdog spelling (69 legs unmatched on 10-21)
+    "ludort": "luguentzdort",           # 2026-10-22 P2A audit (19 legs unmatched on 10-21)
 }
 
 
