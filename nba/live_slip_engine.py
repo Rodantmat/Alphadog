@@ -1181,6 +1181,31 @@ def pick(conn, day, require_fresh=True):
                                                      'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'pf20': l.get('pf20'), 'event_id': l.get('event_id')} for l in slip]), size, structure, st,
                           w, note))
             n += 1
+    if pf.get('enabled'):
+        # THE 2-SLIP PORTFOLIO (see PORTFOLIO_UNITS): built from the same day pools as every strategy (leg filter, Over minutes floor,
+        # steals-free family C pool), recorded under each unit's name with its rank k; same daily ceiling / below-minimum / duplicate
+        # rules as any placed slip; stake weight 1.
+        for name, k, slip in portfolio_select(pools, cmap, broad_day, pf):
+            size, structure = PORTFOLIO_UNITS[name][1], PORTFOLIO_UNITS[name][2]
+            sig = (structure, tuple(sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in slip)))
+            st = 'placed'
+            if sig in placed_sigs:
+                st = 'dup'
+            else:
+                placed_sigs.add(sig)
+                staked_today = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed'", (day,)).fetchone()[0]
+                if staked_today >= MAX_DAILY_STAKE:
+                    st = 'placed_capped'
+                elif below_min_stake(conn, 1.0):
+                    st = 'placed_below_min'
+            conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                         (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
+                                                     'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'pf20': l.get('pf20'), 'event_id': l.get('event_id')} for l in slip]),
+                          size, structure, st, 1.0, '2-slip portfolio'))
+            print(f"  {day}: PORTFOLIO {name} k{k} {size}-pick {structure} -> {st}: " +
+                  "; ".join(f"{l['player']} {l['prop']} {l['side']} {float(l['line']):g}" for l in slip), flush=True)
+            n += 1
     conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
     conn.commit()
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
