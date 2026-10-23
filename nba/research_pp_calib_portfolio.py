@@ -171,7 +171,7 @@ def main():
             report("alone: " + tag(u), [u], n, 2)
 
     print("\n" + "=" * 190 + "\nPORTFOLIOS")
-    ports = {"LIVE NOW (A_wrebounds 4F, C_wstocks 4F, A_core 3P, D_points 3P) on the new final_hp": LIVE_NOW,
+    ports = {"LIVE NOW (P_wthrees 4F, P_wassists 4F, P_wrebounds 4F, P_wstocks 4F, P_points 3P, P_wrebounds 3P) on the new final_hp": LIVE_NOW,
              "ALL CALIBRATED (7 units, research order)": CALIB}
     for i, a in enumerate(CALIB):
         for j, b in enumerate(CALIB):
