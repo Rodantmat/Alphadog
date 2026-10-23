@@ -1,0 +1,201 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.40",
+ "route": "/api/main-board/filters",
+ "slate": {
+  "date": "2026-10-22",
+  "today": "2026-10-23",
+  "mode": "replay",
+  "latest_scored": "2026-10-22",
+  "next_slate": "2026-10-23",
+  "first_tip_today": "2026-10-23T20:00:00.000Z",
+  "requested": null
+ },
+ "source_table": "nba_score.board_scored",
+ "summary": {
+  "total_rows": 3911,
+  "max_hp": 98.4,
+  "min_hp": 0,
+  "max_score": 98.8,
+  "min_score": 4.3,
+  "max_certainty": 96.3,
+  "min_certainty": 85.8
+ },
+ "prop_groups": {
+  "hitter": [
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "points",
+    "label": "Points",
+    "rows": 578
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "rebounds",
+    "label": "Rebounds",
+    "rows": 442
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "assists",
+    "label": "Assists",
+    "rows": 378
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "threes_made",
+    "label": "3-PT Made",
+    "rows": 362
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "blocks",
+    "label": "Blocks",
+    "rows": 107
+   },
+   {
+    "prop_family": "hitter",
+    "canonical_prop_key": "steals",
+    "label": "Steals",
+    "rows": 228
+   },
+   "... 8 more"
+  ],
+  "pitcher": [
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "pts_reb",
+    "label": "Pts+Rebs",
+    "rows": 299
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "pts_ast",
+    "label": "Pts+Asts",
+    "rows": 279
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "reb_ast",
+    "label": "Rebs+Asts",
+    "rows": 318
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "pra",
+    "label": "Pts+Rebs+Asts",
+    "rows": 429
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "stocks",
+    "label": "Blks+Stls",
+    "rows": 109
+   },
+   {
+    "prop_family": "pitcher",
+    "canonical_prop_key": "fantasy_score",
+    "label": "Fantasy Score",
+    "rows": 55
+   },
+   "... 1 more"
+  ],
+  "other": []
+ },
+ "prop_group_labels": {
+  "hitter": "Single Stat Props",
+  "pitcher": "Combo Props"
+ },
+ "source_groups": {
+  "prizepicks": [
+   {
+    "source_key": "prizepicks",
+    "line_type": "goblin",
+    "label": "Goblin",
+    "line_type_label": "Goblin",
+    "app_line_label": "PrizePicks \u2022 Goblin",
+    "rows": 665
+   },
+   {
+    "source_key": "prizepicks",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "PrizePicks \u2022 Regular",
+    "rows": 520
+   },
+   {
+    "source_key": "prizepicks",
+    "line_type": "demon",
+    "label": "Demon",
+    "line_type_label": "Demon",
+    "app_line_label": "PrizePicks \u2022 Demon",
+    "rows": 798
+   }
+  ],
+  "sleeper": [
+   {
+    "source_key": "sleeper",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "Sleeper \u2022 Regular",
+    "rows": 853
+   }
+  ],
+  "underdog": [
+   {
+    "source_key": "underdog",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "Underdog \u2022 Regular",
+    "rows": 156
+   },
+   {
+    "source_key": "underdog",
+    "line_type": "higher_payout",
+    "label": "Higher Payout",
+    "line_type_label": "Higher Payout",
+    "app_line_label": "Underdog \u2022 Higher Payout",
+    "rows": 210
+   },
+   {
+    "source_key": "underdog",
+    "line_type": "lower_payout",
+    "label": "Lower Payout",
+    "line_type_label": "Lower Payout",
+    "app_line_label": "Underdog \u2022 Lower Payout",
+    "rows": 221
+   }
+  ],
+  "fliff": [
+   {
+    "source_key": "fliff",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "Fliff \u2022 Regular",
+    "rows": 488
+   }
+  ],
+  "betr": [
+   {
+    "source_key": "betr",
+    "line_type": "regular",
+    "label": "Regular",
+    "line_type_label": "Regular",
+    "app_line_label": "Betr \u2022 Regular",
+    "rows": 0,
+    "documented": true
+   }
+  ],
+  "other": []
+ },
+ "probability_bands": [],
+ "probability_grades": [],
+ "board_tiers": [],
+ "writes_performed": 0,
+ "timestamp_utc": "2026-10-23T08:04:41.704Z"
+}

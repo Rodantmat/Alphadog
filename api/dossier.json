@@ -1,0 +1,4454 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.40",
+ "route": "/api/main-board/dossier",
+ "slate": {
+  "date": "2026-10-22",
+  "mode": "replay"
+ },
+ "selected": {
+  "final_board_row_id": "2026-10-22~fliff~1629661~double_double~0.5~Under",
+  "rank_order": 1,
+  "source_key": "fliff",
+  "source_display_label": "Fliff",
+  "game_pk": "0022600007",
+  "official_date": "2026-10-22",
+  "official_game_time_utc": "2026-10-23T01:30:00.000Z",
+  "mlb_player_id": "1629661",
+  "player_id": "1629661",
+  "player_name": "Cameron Johnson",
+  "team_id": "nba_1610612743",
+  "team_abbr": "DEN",
+  "team_name": "Denver Nuggets",
+  "opponent_abbr": "OKC",
+  "is_home": 0,
+  "position": "F",
+  "canonical_prop_key": "double_double",
+  "prop_label": "Double-Double",
+  "prop_family": "combo",
+  "line_value": 0.5,
+  "selected_side": "less",
+  "score_0_100": 98.8,
+  "confidence_0_100": 92.2,
+  "overall_score_0_100": 98.8,
+  "certainty_0_100": 92.2,
+  "hit_probability_0_100": 98.4,
+  "estimated_hit_probability_0_100": 98.4,
+  "final_hp_raw": 0.9838,
+  "probability_confidence_0_100": 92.2,
+  "baseline_hp_0_100": 98.4,
+  "calibration_shift_pp": 0,
+  "model_hp_0_100": null,
+  "model_score_0_100": 98.8,
+  "market_hp_0_100": null,
+  "hp_anchor": null,
+  "dk_line": 0,
+  "dk_p_over_0_100": null,
+  "pp_line": 0,
+  "hp_fit_set": null,
+  "hp_is_market_anchored": 0,
+  "ud_hidden": false,
+  "calibration_shift_logit": 0,
+  "edge_0_100": -0.6,
+  "breakeven_0_100": 99,
+  "interpolated": false,
+  "line_type": "regular",
+  "line_type_label": "Regular",
+  "app_line_label": "Fliff \u2022 Regular",
+  "is_goblin": 0,
+  "is_demon": 0,
+  "is_standard": 1,
+  "more_only": 0,
+  "pp_kind": null,
+  "pp_tier": null,
+  "anchor_line": null,
+  "leg_factor": 1.0069468565474122,
+  "app_multiplier": 0,
+  "app_shown_x": 1.01,
+  "app_shown_exact": 1,
+  "board_tier": "regular",
+  "home_team_name": "Oklahoma City Thunder",
+  "away_team_name": "Denver Nuggets",
+  "home_team_abbr": "OKC",
+  "away_team_abbr": "DEN",
+  "venue_name": "Paycom Center, Oklahoma City",
+  "game_status_code": "9:30 pm ET",
+  "hp_sample_size": 54,
+  "hp_non_push_sample": 54,
+  "live_playable": 0,
+  "review_playable": 1,
+  "replay_mode": 1,
+  "slate_date": "2026-10-22",
+  "scored_at": "2026-10-22T20:22:00.461Z",
+  "leg_insight_comment": "99 score gives this real backing at 98.4%. Minutes are steady (32.7 a game). Fliff prices this side at 1.01x (sportsbook odds)."
+ },
+ "other_player_legs": [
+  {
+   "final_board_row_id": "2026-10-22~fliff~1629661~double_double~0.5~Under",
+   "rank_order": 1,
+   "source_key": "fliff",
+   "source_display_label": "Fliff",
+   "game_pk": "0022600007",
+   "official_date": "2026-10-22",
+   "official_game_time_utc": "2026-10-23T01:30:00.000Z",
+   "mlb_player_id": "1629661",
+   "player_id": "1629661",
+   "player_name": "Cameron Johnson",
+   "team_id": "nba_1610612743",
+   "team_abbr": "DEN",
+   "team_name": "Denver Nuggets",
+   "opponent_abbr": "OKC",
+   "is_home": 0,
+   "position": "F",
+   "canonical_prop_key": "double_double",
+   "prop_label": "Double-Double",
+   "prop_family": "combo",
+   "line_value": 0.5,
+   "selected_side": "less",
+   "score_0_100": 98.8,
+   "confidence_0_100": 92.2,
+   "overall_score_0_100": 98.8,
+   "certainty_0_100": 92.2,
+   "hit_probability_0_100": 98.4,
+   "estimated_hit_probability_0_100": 98.4,
+   "final_hp_raw": 0.9838,
+   "probability_confidence_0_100": 92.2,
+   "baseline_hp_0_100": 98.4,
+   "calibration_shift_pp": 0,
+   "model_hp_0_100": null,
+   "model_score_0_100": 98.8,
+   "market_hp_0_100": null,
+   "hp_anchor": null,
+   "dk_line": 0,
+   "dk_p_over_0_100": null,
+   "pp_line": 0,
+   "hp_fit_set": null,
+   "hp_is_market_anchored": 0,
+   "ud_hidden": false,
+   "calibration_shift_logit": 0,
+   "edge_0_100": -0.6,
+   "breakeven_0_100": 99,
+   "interpolated": false,
+   "line_type": "regular",
+   "line_type_label": "Regular",
+   "app_line_label": "Fliff \u2022 Regular",
+   "is_goblin": 0,
+   "is_demon": 0,
+   "is_standard": 1,
+   "more_only": 0,
+   "pp_kind": null,
+   "pp_tier": null,
+   "anchor_line": null,
+   "leg_factor": 1.0069468565474122,
+   "app_multiplier": 0,
+   "app_shown_x": 1.01,
+   "app_shown_exact": 1,
+   "board_tier": "regular",
+   "home_team_name": "Oklahoma City Thunder",
+   "away_team_name": "Denver Nuggets",
+   "home_team_abbr": "OKC",
+   "away_team_abbr": "DEN",
+   "venue_name": "Paycom Center, Oklahoma City",
+   "game_status_code": "9:30 pm ET",
+   "hp_sample_size": 54,
+   "hp_non_push_sample": 54,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-10-22",
+   "scored_at": "2026-10-22T20:22:00.461Z",
+   "leg_insight_comment": "99 score gives this real backing at 98.4%. Minutes are steady (32.7 a game). Fliff prices this side at 1.01x (sportsbook odds)."
+  },
+  {
+   "final_board_row_id": "2026-10-22~prizepicks~1629661~pts_reb~10.5~Over",
+   "rank_order": 2,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0022600007",
+   "official_date": "2026-10-22",
+   "official_game_time_utc": "2026-10-23T01:30:00.000Z",
+   "mlb_player_id": "1629661",
+   "player_id": "1629661",
+   "player_name": "Cameron Johnson",
+   "team_id": "nba_1610612743",
+   "team_abbr": "DEN",
+   "team_name": "Denver Nuggets",
+   "opponent_abbr": "OKC",
+   "is_home": 0,
+   "position": "F",
+   "canonical_prop_key": "pts_reb",
+   "prop_label": "Pts+Rebs",
+   "prop_family": "combo",
+   "line_value": 10.5,
+   "selected_side": "more",
+   "score_0_100": 85.5,
+   "confidence_0_100": 92.3,
+   "overall_score_0_100": 85.5,
+   "certainty_0_100": 92.3,
+   "hit_probability_0_100": 80.8,
+   "estimated_hit_probability_0_100": 80.8,
+   "final_hp_raw": 0.80808,
+   "probability_confidence_0_100": 92.3,
+   "baseline_hp_0_100": 81.3,
+   "calibration_shift_pp": -0.5,
+   "model_hp_0_100": null,
+   "model_score_0_100": 85.5,
+   "market_hp_0_100": null,
+   "hp_anchor": "pp",
+   "dk_line": 0,
+   "dk_p_over_0_100": null,
+   "pp_line": 16.5,
+   "hp_fit_set": "POOLED",
+   "hp_is_market_anchored": 0,
+   "ud_hidden": false,
+   "calibration_shift_logit": -0.03139,
+   "edge_0_100": -10.4,
+   "breakeven_0_100": 91.2,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 16.5,
+   "leg_factor": 0.614301,
+   "app_multiplier": 0,
+   "app_shown_x": null,
+   "app_shown_exact": 0,
+   "board_tier": "goblin",
+   "home_team_name": "Oklahoma City Thunder",
+   "away_team_name": "Denver Nuggets",
+   "home_team_abbr": "OKC",
+   "away_team_abbr": "DEN",
+   "venue_name": "Paycom Center, Oklahoma City",
+   "game_status_code": "9:30 pm ET",
+   "hp_sample_size": 54,
+   "hp_non_push_sample": 54,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-10-22",
+   "scored_at": "2026-10-22T20:22:00.461Z",
+   "leg_insight_comment": "Fair read at 80.8% - worth a look, not a headline play. Minutes are steady (32.7 a game). PrizePicks goblin - the line sits below the main number, so the payout factor is reduced."
+  },
+  {
+   "final_board_row_id": "2026-10-22~prizepicks~1629661~reb_ast~3.5~Over",
+   "rank_order": 3,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0022600007",
+   "official_date": "2026-10-22",
+   "official_game_time_utc": "2026-10-23T01:30:00.000Z",
+   "mlb_player_id": "1629661",
+   "player_id": "1629661",
+   "player_name": "Cameron Johnson",
+   "team_id": "nba_1610612743",
+   "team_abbr": "DEN",
+   "team_name": "Denver Nuggets",
+   "opponent_abbr": "OKC",
+   "is_home": 0,
+   "position": "F",
+   "canonical_prop_key": "reb_ast",
+   "prop_label": "Rebs+Asts",
+   "prop_family": "combo",
+   "line_value": 3.5,
+   "selected_side": "more",
+   "score_0_100": 83.9,
+   "confidence_0_100": 92.6,
+   "overall_score_0_100": 83.9,
+   "certainty_0_100": 92.6,
+   "hit_probability_0_100": 78.4,
+   "estimated_hit_probability_0_100": 78.4,
+   "final_hp_raw": 0.78367,
+   "probability_confidence_0_100": 92.6,
+   "baseline_hp_0_100": 78.8,
+   "calibration_shift_pp": -0.4,
+   "model_hp_0_100": null,
+   "model_score_0_100": 83.9,
+   "market_hp_0_100": null,
+   "hp_anchor": "pp",
+   "dk_line": 0,
+   "dk_p_over_0_100": null,
+   "pp_line": 6,
+   "hp_fit_set": "POOLED",
+   "hp_is_market_anchored": 0,
+   "ud_hidden": false,
+   "calibration_shift_logit": -0.02272,
+   "edge_0_100": -12.8,
+   "breakeven_0_100": 91.2,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 6,
+   "leg_factor": 0.614301,
+   "app_multiplier": 0,
+   "app_shown_x": null,
+   "app_shown_exact": 0,
+   "board_tier": "goblin",
+   "home_team_name": "Oklahoma City Thunder",
+   "away_team_name": "Denver Nuggets",
+   "home_team_abbr": "OKC",
+   "away_team_abbr": "DEN",
+   "venue_name": "Paycom Center, Oklahoma City",
+   "game_status_code": "9:30 pm ET",
+   "hp_sample_size": 54,
+   "hp_non_push_sample": 54,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-10-22",
+   "scored_at": "2026-10-22T20:22:00.461Z",
+   "leg_insight_comment": "Middle-of-the-board profile at 78.4%: nothing screams avoid, nothing screams lock. Role looks stable at about 33 minutes. Rebounds + assists is a role prop - minutes and lineup decide it. Road game vs OKC."
+  },
+  {
+   "final_board_row_id": "2026-10-22~prizepicks~1629661~pts_ast~9.5~Over",
+   "rank_order": 4,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0022600007",
+   "official_date": "2026-10-22",
+   "official_game_time_utc": "2026-10-23T01:30:00.000Z",
+   "mlb_player_id": "1629661",
+   "player_id": "1629661",
+   "player_name": "Cameron Johnson",
+   "team_id": "nba_1610612743",
+   "team_abbr": "DEN",
+   "team_name": "Denver Nuggets",
+   "opponent_abbr": "OKC",
+   "is_home": 0,
+   "position": "F",
+   "canonical_prop_key": "pts_ast",
+   "prop_label": "Pts+Asts",
+   "prop_family": "combo",
+   "line_value": 9.5,
+   "selected_side": "more",
+   "score_0_100": 83.8,
+   "confidence_0_100": 92.4,
+   "overall_score_0_100": 83.8,
+   "certainty_0_100": 92.4,
+   "hit_probability_0_100": 78.5,
+   "estimated_hit_probability_0_100": 78.5,
+   "final_hp_raw": 0.78545,
+   "probability_confidence_0_100": 92.4,
+   "baseline_hp_0_100": 78.8,
+   "calibration_shift_pp": -0.3,
+   "model_hp_0_100": null,
+   "model_score_0_100": 83.8,
+   "market_hp_0_100": null,
+   "hp_anchor": "pp",
+   "dk_line": 0,
+   "dk_p_over_0_100": null,
+   "pp_line": 14.5,
+   "hp_fit_set": "POOLED",
+   "hp_is_market_anchored": 0,
+   "ud_hidden": false,
+   "calibration_shift_logit": -0.01639,
+   "edge_0_100": -11.7,
+   "breakeven_0_100": 90.2,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 14.5,
+   "leg_factor": 0.620868887544918,
+   "app_multiplier": 0,
+   "app_shown_x": null,
+   "app_shown_exact": 0,
+   "board_tier": "goblin",
+   "home_team_name": "Oklahoma City Thunder",
+   "away_team_name": "Denver Nuggets",
+   "home_team_abbr": "OKC",
+   "away_team_abbr": "DEN",
+   "venue_name": "Paycom Center, Oklahoma City",
+   "game_status_code": "9:30 pm ET",
+   "hp_sample_size": 54,
+   "hp_non_push_sample": 54,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-10-22",
+   "scored_at": "2026-10-22T20:22:00.461Z",
+   "leg_insight_comment": "Usable candidate at 78.5%, not a blind play. Role looks stable at about 33 minutes. Goblin line: an easier rung than the main line, priced lower on PrizePicks. Road game vs OKC."
+  },
+  {
+   "final_board_row_id": "2026-10-22~prizepicks~1629661~pra~12.5~Over",
+   "rank_order": 5,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0022600007",
+   "official_date": "2026-10-22",
+   "official_game_time_utc": "2026-10-23T01:30:00.000Z",
+   "mlb_player_id": "1629661",
+   "player_id": "1629661",
+   "player_name": "Cameron Johnson",
+   "team_id": "nba_1610612743",
+   "team_abbr": "DEN",
+   "team_name": "Denver Nuggets",
+   "opponent_abbr": "OKC",
+   "is_home": 0,
+   "position": "F",
+   "canonical_prop_key": "pra",
+   "prop_label": "Pts+Rebs+Asts",
+   "prop_family": "combo",
+   "line_value": 12.5,
+   "selected_side": "more",
+   "score_0_100": 82.8,
+   "confidence_0_100": 92.3,
+   "overall_score_0_100": 82.8,
+   "certainty_0_100": 92.3,
+   "hit_probability_0_100": 77.3,
+   "estimated_hit_probability_0_100": 77.3,
+   "final_hp_raw": 0.7728,
+   "probability_confidence_0_100": 92.3,
+   "baseline_hp_0_100": 78.7,
+   "calibration_shift_pp": -1.4,
+   "model_hp_0_100": null,
+   "model_score_0_100": 82.8,
+   "market_hp_0_100": 76.7,
+   "hp_anchor": "dk+pp",
+   "dk_line": 18.5,
+   "dk_p_over_0_100": 51.8,
+   "pp_line": 18.5,
+   "hp_fit_set": "POOLED",
+   "hp_is_market_anchored": 0,
+   "ud_hidden": false,
+   "calibration_shift_logit": -0.08337,
+   "edge_0_100": -13.9,
+   "breakeven_0_100": 91.2,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -3,
+   "anchor_line": 18.5,
+   "leg_factor": 0.614301,
+   "app_multiplier": 0,
+   "app_shown_x": null,
+   "app_shown_exact": 0,
+   "board_tier": "goblin",
+   "home_team_name": "Oklahoma City Thunder",
+   "away_team_name": "Denver Nuggets",
+   "home_team_abbr": "OKC",
+   "away_team_abbr": "DEN",
+   "venue_name": "Paycom Center, Oklahoma City",
+   "game_status_code": "9:30 pm ET",
+   "hp_sample_size": 54,
+   "hp_non_push_sample": 54,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-10-22",
+   "scored_at": "2026-10-22T20:22:00.461Z",
+   "leg_insight_comment": "Middle-of-the-board profile at 77.3%: nothing screams avoid, nothing screams lock. Visiting OKC tonight. PrizePicks goblin - the line sits below the main number, so the payout factor is reduced."
+  },
+  {
+   "final_board_row_id": "2026-10-22~prizepicks~1629661~rebounds~2.5~Over",
+   "rank_order": 6,
+   "source_key": "prizepicks",
+   "source_display_label": "PrizePicks",
+   "game_pk": "0022600007",
+   "official_date": "2026-10-22",
+   "official_game_time_utc": "2026-10-23T01:30:00.000Z",
+   "mlb_player_id": "1629661",
+   "player_id": "1629661",
+   "player_name": "Cameron Johnson",
+   "team_id": "nba_1610612743",
+   "team_abbr": "DEN",
+   "team_name": "Denver Nuggets",
+   "opponent_abbr": "OKC",
+   "is_home": 0,
+   "position": "F",
+   "canonical_prop_key": "rebounds",
+   "prop_label": "Rebounds",
+   "prop_family": "single",
+   "line_value": 2.5,
+   "selected_side": "more",
+   "score_0_100": 82.4,
+   "confidence_0_100": 92.7,
+   "overall_score_0_100": 82.4,
+   "certainty_0_100": 92.7,
+   "hit_probability_0_100": 76.3,
+   "estimated_hit_probability_0_100": 76.3,
+   "final_hp_raw": 0.76294,
+   "probability_confidence_0_100": 92.7,
+   "baseline_hp_0_100": 77.7,
+   "calibration_shift_pp": -1.4,
+   "model_hp_0_100": null,
+   "model_score_0_100": 82.4,
+   "market_hp_0_100": null,
+   "hp_anchor": "pp",
+   "dk_line": 0,
+   "dk_p_over_0_100": null,
+   "pp_line": 3.5,
+   "hp_fit_set": "POOLED",
+   "hp_is_market_anchored": 0,
+   "ud_hidden": false,
+   "calibration_shift_logit": -0.07939,
+   "edge_0_100": -5,
+   "breakeven_0_100": 81.3,
+   "interpolated": false,
+   "line_type": "goblin",
+   "line_type_label": "Goblin",
+   "app_line_label": "PrizePicks \u2022 Goblin",
+   "is_goblin": 1,
+   "is_demon": 0,
+   "is_standard": 0,
+   "more_only": 1,
+   "pp_kind": "goblin",
+   "pp_tier": -1,
+   "anchor_line": 3.5,
+   "leg_factor": 0.688743748954849,
+   "app_multiplier": 0,
+   "app_shown_x": null,
+   "app_shown_exact": 0,
+   "board_tier": "goblin",
+   "home_team_name": "Oklahoma City Thunder",
+   "away_team_name": "Denver Nuggets",
+   "home_team_abbr": "OKC",
+   "away_team_abbr": "DEN",
+   "venue_name": "Paycom Center, Oklahoma City",
+   "game_status_code": "9:30 pm ET",
+   "hp_sample_size": 54,
+   "hp_non_push_sample": 54,
+   "live_playable": 0,
+   "review_playable": 1,
+   "replay_mode": 1,
+   "slate_date": "2026-10-22",
+   "scored_at": "2026-10-22T20:22:00.461Z",
+   "leg_insight_comment": "Usable candidate at 76.3%, not a blind play. Minutes are steady (32.7 a game). A boards prop lives on minutes and who else is on the glass."
+  },
+  "... 119 more"
+ ],
+ "dossier_context": {
+  "player_profile": {
+   "player_id": "nba_1629661",
+   "nba_player_id": "1629661",
+   "full_name": "Cameron Johnson",
+   "first_name": "Cameron",
+   "last_name": "Johnson",
+   "position": "F",
+   "height_inches": 80,
+   "weight_lbs": 210,
+   "birth_date": null,
+   "age": 30,
+   "years_pro": 7,
+   "college": "North Carolina",
+   "country": "USA",
+   "draft_year": 2019,
+   "draft_round": 1,
+   "draft_number": 11,
+   "active": 1,
+   "team_id": "nba_1610612743",
+   "team_abbr": "DEN",
+   "team_name": "Denver Nuggets"
+  },
+  "hp_lines": [
+   {
+    "final_board_row_id": "2026-10-22~fliff~1629661~double_double~0.5~Under",
+    "source_key": "fliff",
+    "canonical_prop_key": "double_double",
+    "prop_label": "Double-Double",
+    "selected_side": "less",
+    "line_value": 0.5,
+    "line_type": "regular",
+    "estimated_hit_probability_0_100": 98.4,
+    "probability_confidence_0_100": 92.2,
+    "score_0_100": 98.8,
+    "edge_0_100": -0.6,
+    "leg_factor": 1.0069468565474122,
+    "baseline_hp_0_100": 98.4,
+    "calibration_shift_pp": 0,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-10-22~prizepicks~1629661~pts_reb~10.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "pts_reb",
+    "prop_label": "Pts+Rebs",
+    "selected_side": "more",
+    "line_value": 10.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 80.8,
+    "probability_confidence_0_100": 92.3,
+    "score_0_100": 85.5,
+    "edge_0_100": -10.4,
+    "leg_factor": 0.614301,
+    "baseline_hp_0_100": 81.3,
+    "calibration_shift_pp": -0.5,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-10-22~prizepicks~1629661~reb_ast~3.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "reb_ast",
+    "prop_label": "Rebs+Asts",
+    "selected_side": "more",
+    "line_value": 3.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 78.4,
+    "probability_confidence_0_100": 92.6,
+    "score_0_100": 83.9,
+    "edge_0_100": -12.8,
+    "leg_factor": 0.614301,
+    "baseline_hp_0_100": 78.8,
+    "calibration_shift_pp": -0.4,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-10-22~prizepicks~1629661~pts_ast~9.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "pts_ast",
+    "prop_label": "Pts+Asts",
+    "selected_side": "more",
+    "line_value": 9.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 78.5,
+    "probability_confidence_0_100": 92.4,
+    "score_0_100": 83.8,
+    "edge_0_100": -11.7,
+    "leg_factor": 0.620868887544918,
+    "baseline_hp_0_100": 78.8,
+    "calibration_shift_pp": -0.3,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-10-22~prizepicks~1629661~pra~12.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "pra",
+    "prop_label": "Pts+Rebs+Asts",
+    "selected_side": "more",
+    "line_value": 12.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 77.3,
+    "probability_confidence_0_100": 92.3,
+    "score_0_100": 82.8,
+    "edge_0_100": -13.9,
+    "leg_factor": 0.614301,
+    "baseline_hp_0_100": 78.7,
+    "calibration_shift_pp": -1.4,
+    "interpolated": false
+   },
+   {
+    "final_board_row_id": "2026-10-22~prizepicks~1629661~rebounds~2.5~Over",
+    "source_key": "prizepicks",
+    "canonical_prop_key": "rebounds",
+    "prop_label": "Rebounds",
+    "selected_side": "more",
+    "line_value": 2.5,
+    "line_type": "goblin",
+    "estimated_hit_probability_0_100": 76.3,
+    "probability_confidence_0_100": 92.7,
+    "score_0_100": 82.4,
+    "edge_0_100": -5,
+    "leg_factor": 0.688743748954849,
+    "baseline_hp_0_100": 77.7,
+    "calibration_shift_pp": -1.4,
+    "interpolated": false
+   },
+   "... 119 more"
+  ],
+  "recent_games": [
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500166",
+    "game_date": "2026-04-30",
+    "opponent_abbr": "MIN",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 39.2,
+    "pts": 27,
+    "reb": 8,
+    "ast": 3,
+    "fg3m": 5,
+    "fg3a": 10,
+    "stl": 0,
+    "blk": 1,
+    "tov": 2,
+    "fgm": 8,
+    "fga": 15,
+    "ftm": 6,
+    "fta": 9,
+    "oreb": 0,
+    "dreb": 8,
+    "pf": 5,
+    "plus_minus": -3,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500165",
+    "game_date": "2026-04-27",
+    "opponent_abbr": "MIN",
+    "is_home": 1,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 35.7,
+    "pts": 18,
+    "reb": 6,
+    "ast": 5,
+    "fg3m": 2,
+    "fg3a": 7,
+    "stl": 3,
+    "blk": 0,
+    "tov": 1,
+    "fgm": 8,
+    "fga": 13,
+    "ftm": 0,
+    "fta": 0,
+    "oreb": 2,
+    "dreb": 4,
+    "pf": 1,
+    "plus_minus": 24,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500164",
+    "game_date": "2026-04-25",
+    "opponent_abbr": "MIN",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 26.6,
+    "pts": 9,
+    "reb": 2,
+    "ast": 2,
+    "fg3m": 1,
+    "fg3a": 2,
+    "stl": 1,
+    "blk": 1,
+    "tov": 2,
+    "fgm": 3,
+    "fga": 6,
+    "ftm": 2,
+    "fta": 4,
+    "oreb": 1,
+    "dreb": 1,
+    "pf": 3,
+    "plus_minus": -12,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500163",
+    "game_date": "2026-04-23",
+    "opponent_abbr": "MIN",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 23.6,
+    "pts": 6,
+    "reb": 2,
+    "ast": 1,
+    "fg3m": 0,
+    "fg3a": 3,
+    "stl": 1,
+    "blk": 0,
+    "tov": 0,
+    "fgm": 2,
+    "fga": 6,
+    "ftm": 2,
+    "fta": 2,
+    "oreb": 0,
+    "dreb": 2,
+    "pf": 3,
+    "plus_minus": -14,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500162",
+    "game_date": "2026-04-20",
+    "opponent_abbr": "MIN",
+    "is_home": 1,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 28.2,
+    "pts": 13,
+    "reb": 1,
+    "ast": 2,
+    "fg3m": 1,
+    "fg3a": 6,
+    "stl": 1,
+    "blk": 0,
+    "tov": 0,
+    "fgm": 5,
+    "fga": 10,
+    "ftm": 2,
+    "fta": 2,
+    "oreb": 0,
+    "dreb": 1,
+    "pf": 5,
+    "plus_minus": -10,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500161",
+    "game_date": "2026-04-18",
+    "opponent_abbr": "MIN",
+    "is_home": 1,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 33.1,
+    "pts": 12,
+    "reb": 0,
+    "ast": 1,
+    "fg3m": 2,
+    "fg3a": 7,
+    "stl": 0,
+    "blk": 0,
+    "tov": 1,
+    "fgm": 5,
+    "fga": 12,
+    "ftm": 0,
+    "fta": 0,
+    "oreb": 0,
+    "dreb": 0,
+    "pf": 1,
+    "plus_minus": 5,
+    "team_id": "nba_1610612743"
+   },
+   "... 24 more"
+  ],
+  "games_full": [
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500166",
+    "game_date": "2026-04-30",
+    "opponent_abbr": "MIN",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 39.2,
+    "pts": 27,
+    "reb": 8,
+    "ast": 3,
+    "fg3m": 5,
+    "fg3a": 10,
+    "stl": 0,
+    "blk": 1,
+    "tov": 2,
+    "fgm": 8,
+    "fga": 15,
+    "ftm": 6,
+    "fta": 9,
+    "oreb": 0,
+    "dreb": 8,
+    "pf": 5,
+    "plus_minus": -3,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500165",
+    "game_date": "2026-04-27",
+    "opponent_abbr": "MIN",
+    "is_home": 1,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 35.7,
+    "pts": 18,
+    "reb": 6,
+    "ast": 5,
+    "fg3m": 2,
+    "fg3a": 7,
+    "stl": 3,
+    "blk": 0,
+    "tov": 1,
+    "fgm": 8,
+    "fga": 13,
+    "ftm": 0,
+    "fta": 0,
+    "oreb": 2,
+    "dreb": 4,
+    "pf": 1,
+    "plus_minus": 24,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500164",
+    "game_date": "2026-04-25",
+    "opponent_abbr": "MIN",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 26.6,
+    "pts": 9,
+    "reb": 2,
+    "ast": 2,
+    "fg3m": 1,
+    "fg3a": 2,
+    "stl": 1,
+    "blk": 1,
+    "tov": 2,
+    "fgm": 3,
+    "fga": 6,
+    "ftm": 2,
+    "fta": 4,
+    "oreb": 1,
+    "dreb": 1,
+    "pf": 3,
+    "plus_minus": -12,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500163",
+    "game_date": "2026-04-23",
+    "opponent_abbr": "MIN",
+    "is_home": 0,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 23.6,
+    "pts": 6,
+    "reb": 2,
+    "ast": 1,
+    "fg3m": 0,
+    "fg3a": 3,
+    "stl": 1,
+    "blk": 0,
+    "tov": 0,
+    "fgm": 2,
+    "fga": 6,
+    "ftm": 2,
+    "fta": 2,
+    "oreb": 0,
+    "dreb": 2,
+    "pf": 3,
+    "plus_minus": -14,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500162",
+    "game_date": "2026-04-20",
+    "opponent_abbr": "MIN",
+    "is_home": 1,
+    "wl": "L",
+    "is_starter": 1,
+    "min": 28.2,
+    "pts": 13,
+    "reb": 1,
+    "ast": 2,
+    "fg3m": 1,
+    "fg3a": 6,
+    "stl": 1,
+    "blk": 0,
+    "tov": 0,
+    "fgm": 5,
+    "fga": 10,
+    "ftm": 2,
+    "fta": 2,
+    "oreb": 0,
+    "dreb": 1,
+    "pf": 5,
+    "plus_minus": -10,
+    "team_id": "nba_1610612743"
+   },
+   {
+    "phase": "Playoffs",
+    "season": "2025-26",
+    "game_id": "0042500161",
+    "game_date": "2026-04-18",
+    "opponent_abbr": "MIN",
+    "is_home": 1,
+    "wl": "W",
+    "is_starter": 1,
+    "min": 33.1,
+    "pts": 12,
+    "reb": 0,
+    "ast": 1,
+    "fg3m": 2,
+    "fg3a": 7,
+    "stl": 0,
+    "blk": 0,
+    "tov": 1,
+    "fgm": 5,
+    "fga": 12,
+    "ftm": 0,
+    "fta": 0,
+    "oreb": 0,
+    "dreb": 0,
+    "pf": 1,
+    "plus_minus": 5,
+    "team_id": "nba_1610612743"
+   },
+   "... 94 more"
+  ],
+  "recent_form": [
+   {
+    "metric_window": "last_5_games",
+    "games_count": 5,
+    "min": 30.7,
+    "pts": 14.6,
+    "reb": 3.8,
+    "ast": 2.6,
+    "fg3m": 1.8,
+    "stl": 1.2,
+    "blk": 0.4,
+    "tov": 1,
+    "pra": 21,
+    "fg_pct": 52,
+    "fg3_pct": 32.1,
+    "ft_pct": 70.6,
+    "plus_minus": -3,
+    "starts": 5,
+    "playoff_games": 5
+   },
+   {
+    "metric_window": "last_10_games",
+    "games_count": 10,
+    "min": 32.7,
+    "pts": 15.6,
+    "reb": 4.4,
+    "ast": 3,
+    "fg3m": 2.1,
+    "stl": 1.1,
+    "blk": 0.4,
+    "tov": 1.1,
+    "pra": 23,
+    "fg_pct": 54.2,
+    "fg3_pct": 36.8,
+    "ft_pct": 76,
+    "plus_minus": 4.5,
+    "starts": 10,
+    "playoff_games": 6
+   },
+   {
+    "metric_window": "last_20_games",
+    "games_count": 20,
+    "min": 31.2,
+    "pts": 14.8,
+    "reb": 3.9,
+    "ast": 2.6,
+    "fg3m": 2.5,
+    "stl": 1,
+    "blk": 0.4,
+    "tov": 0.9,
+    "pra": 21.2,
+    "fg_pct": 53.8,
+    "fg3_pct": 42.6,
+    "ft_pct": 78.6,
+    "plus_minus": 5.8,
+    "starts": 20,
+    "playoff_games": 6
+   },
+   {
+    "metric_window": "season_to_date",
+    "games_count": 60,
+    "min": 30.6,
+    "pts": 12.4,
+    "reb": 3.8,
+    "ast": 2.4,
+    "fg3m": 2,
+    "stl": 0.8,
+    "blk": 0.4,
+    "tov": 0.9,
+    "pra": 18.6,
+    "fg_pct": 48.2,
+    "fg3_pct": 41.6,
+    "ft_pct": 82.2,
+    "plus_minus": 5.6,
+    "starts": 60,
+    "playoff_games": 6
+   }
+  ],
+  "splits": [
+   {
+    "split_type": "days_rest",
+    "group_value": "0 Days Rest",
+    "season": "2025-26",
+    "gp": 9,
+    "min": 28,
+    "pts": 13.2,
+    "reb": 3.6,
+    "ast": 2.9,
+    "fg3m": 2.1,
+    "stl": 0.6,
+    "blk": 0.6,
+    "tov": 1,
+    "fg_pct": 0.538,
+    "fg3_pct": 0.514,
+    "ft_pct": 0.842,
+    "plus_minus": 2.9
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "1 Days Rest",
+    "season": "2025-26",
+    "gp": 29,
+    "min": 30.5,
+    "pts": 10.8,
+    "reb": 3.5,
+    "ast": 2.4,
+    "fg3m": 1.9,
+    "stl": 0.9,
+    "blk": 0.4,
+    "tov": 0.9,
+    "fg_pct": 0.441,
+    "fg3_pct": 0.403,
+    "ft_pct": 0.85,
+    "plus_minus": 5.2
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "2 Days Rest",
+    "season": "2025-26",
+    "gp": 8,
+    "min": 30.4,
+    "pts": 13.1,
+    "reb": 5.3,
+    "ast": 2.4,
+    "fg3m": 2.1,
+    "stl": 0.6,
+    "blk": 0.4,
+    "tov": 0.6,
+    "fg_pct": 0.493,
+    "fg3_pct": 0.425,
+    "ft_pct": 0.824,
+    "plus_minus": 15.1
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "3 Days Rest",
+    "season": "2025-26",
+    "gp": 3,
+    "min": 37.8,
+    "pts": 19,
+    "reb": 4,
+    "ast": 1.3,
+    "fg3m": 3,
+    "stl": 1,
+    "blk": 0.3,
+    "tov": 1.3,
+    "fg_pct": 0.553,
+    "fg3_pct": 0.474,
+    "ft_pct": 0.75,
+    "plus_minus": 10.7
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "4 Days Rest",
+    "season": "2025-26",
+    "gp": 2,
+    "min": 29.3,
+    "pts": 14.5,
+    "reb": 3.5,
+    "ast": 4,
+    "fg3m": 3,
+    "stl": 0.5,
+    "blk": 0,
+    "tov": 0.5,
+    "fg_pct": 0.526,
+    "fg3_pct": 0.6,
+    "ft_pct": 0.75,
+    "plus_minus": 3.5
+   },
+   {
+    "split_type": "days_rest",
+    "group_value": "5 Days Rest",
+    "season": "2025-26",
+    "gp": 1,
+    "min": 32,
+    "pts": 5,
+    "reb": 3,
+    "ast": 2,
+    "fg3m": 1,
+    "stl": 1,
+    "blk": 0,
+    "tov": 1,
+    "fg_pct": 0.25,
+    "fg3_pct": 0.167,
+    "ft_pct": 0,
+    "plus_minus": -17
+   },
+   "... 13 more"
+  ],
+  "shot_quality": {
+   "by_defender_distance": [
+    {
+     "range": "0-2 Feet - Very Tight",
+     "freq": 5.7,
+     "fga": 27,
+     "fg_pct": 51.9,
+     "efg_pct": 51.9,
+     "fg3a_freq": 0,
+     "fg3_pct": null
+    },
+    {
+     "range": "2-4 Feet - Tight",
+     "freq": 27.4,
+     "fga": 130,
+     "fg_pct": 43.1,
+     "efg_pct": 43.8,
+     "fg3a_freq": 2.1,
+     "fg3_pct": 20
+    },
+    {
+     "range": "4-6 Feet - Open",
+     "freq": 27.8,
+     "fga": 132,
+     "fg_pct": 51.5,
+     "efg_pct": 65.9,
+     "fg3a_freq": 18.6,
+     "fg3_pct": 43.2
+    },
+    {
+     "range": "6+ Feet - Wide Open",
+     "freq": 38.6,
+     "fga": 183,
+     "fg_pct": 49.2,
+     "efg_pct": 68.3,
+     "fg3a_freq": 33.1,
+     "fg3_pct": 44.6
+    }
+   ],
+   "delta": {
+    "actual_efg": 59.9,
+    "expected_efg": 55.8,
+    "delta_pp": 4.2,
+    "fga": 472
+   },
+   "zones": [
+    {
+     "zone": "Above the Break 3",
+     "fgm": 66,
+     "fga": 165,
+     "fg_pct": 40
+    },
+    {
+     "zone": "Restricted Area",
+     "fgm": 79,
+     "fga": 114,
+     "fg_pct": 69.3
+    },
+    {
+     "zone": "Corner 3",
+     "fgm": 44,
+     "fga": 91,
+     "fg_pct": 48.4
+    },
+    {
+     "zone": "In The Paint (Non-RA)",
+     "fgm": 21,
+     "fga": 58,
+     "fg_pct": 36.2
+    },
+    {
+     "zone": "Right Corner 3",
+     "fgm": 23,
+     "fga": 47,
+     "fg_pct": 48.9
+    },
+    {
+     "zone": "Mid-Range",
+     "fgm": 18,
+     "fga": 47,
+     "fg_pct": 38.3
+    },
+    "... 2 more"
+   ]
+  },
+  "advanced": {
+   "season_profile": {
+    "season": "2025-26",
+    "games": 54,
+    "pts_per_game": 12.2,
+    "reb_per_game": 3.8,
+    "ast_per_game": 2.4,
+    "usage_pct": 14.4,
+    "true_shooting_pct": 62.9,
+    "assist_pct": 9.8,
+    "oreb_pct": 2.7,
+    "dreb_pct": 9.5,
+    "net_rating": 9.5
+   },
+   "tracking": {
+    "season": "2025-26",
+    "speed_mph": 4.3,
+    "speed_off": 4.6,
+    "speed_def": 3.9,
+    "miles": 2.2,
+    "miles_off": 1.2,
+    "miles_def": 1
+   },
+   "impact": {
+    "dpm": 0.7,
+    "o_dpm": 0.9,
+    "d_dpm": -0.2,
+    "box_dpm": -0.3,
+    "on_off_dpm": 1.1,
+    "rank": 122,
+    "source": "DARKO_APP_GITHUB_COMMITTED_SCRAPE"
+   },
+   "on_off": {
+    "season": "2025-26",
+    "net_on": 9.5,
+    "net_off": 1.9,
+    "net_diff": 7.6,
+    "off_on": 124.2,
+    "off_off": 117.3,
+    "def_on": 114.7,
+    "def_off": 115.5
+   },
+   "play_types": [
+    {
+     "play_type": "Spotup",
+     "grouping": "Offensive",
+     "gp": 52,
+     "poss_pct": 31.3,
+     "ppp": 1.278,
+     "efg_pct": 63.9,
+     "percentile": 93.7
+    },
+    {
+     "play_type": "Transition",
+     "grouping": "Offensive",
+     "gp": 52,
+     "poss_pct": 25.6,
+     "ppp": 1.246,
+     "efg_pct": 64.5,
+     "percentile": 74.3
+    },
+    {
+     "play_type": "Handoff",
+     "grouping": "Offensive",
+     "gp": 52,
+     "poss_pct": 13.3,
+     "ppp": 0.681,
+     "efg_pct": 34.2,
+     "percentile": 17.8
+    },
+    {
+     "play_type": "PRBallHandler",
+     "grouping": "Offensive",
+     "gp": 52,
+     "poss_pct": 8.9,
+     "ppp": 0.75,
+     "efg_pct": 40.5,
+     "percentile": 29.3
+    },
+    {
+     "play_type": "OffScreen",
+     "grouping": "Offensive",
+     "gp": 52,
+     "poss_pct": 4.8,
+     "ppp": 1.038,
+     "efg_pct": 45.8,
+     "percentile": 62.6
+    },
+    {
+     "play_type": "Cut",
+     "grouping": "Offensive",
+     "gp": 52,
+     "poss_pct": 4.8,
+     "ppp": 1.577,
+     "efg_pct": 76,
+     "percentile": 94.1
+    },
+    "... 2 more"
+   ]
+  },
+  "prop_market_current_lines": [
+   {
+    "source_key": "bovada",
+    "book_key": "bovada",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "more",
+    "line_value": 2.5,
+    "price_american": 130,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:20:41.222Z"
+   },
+   {
+    "source_key": "bovada",
+    "book_key": "bovada",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "less",
+    "line_value": 2.5,
+    "price_american": -170,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:20:41.222Z"
+   },
+   {
+    "source_key": "bovada",
+    "book_key": "bovada",
+    "prop_key": "points",
+    "canonical_prop_key": "points",
+    "market_key": "player_points",
+    "side": "more",
+    "line_value": 9.5,
+    "price_american": -300,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:20:41.222Z"
+   },
+   {
+    "source_key": "bovada",
+    "book_key": "bovada",
+    "prop_key": "points",
+    "canonical_prop_key": "points",
+    "market_key": "player_points",
+    "side": "more",
+    "line_value": 14.5,
+    "price_american": 145,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:20:41.222Z"
+   },
+   {
+    "source_key": "bovada",
+    "book_key": "bovada",
+    "prop_key": "rebounds",
+    "canonical_prop_key": "rebounds",
+    "market_key": "player_rebounds",
+    "side": "more",
+    "line_value": 4.5,
+    "price_american": 155,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:20:41.222Z"
+   },
+   {
+    "source_key": "bovada",
+    "book_key": "bovada",
+    "prop_key": "rebounds",
+    "canonical_prop_key": "rebounds",
+    "market_key": "player_rebounds",
+    "side": "more",
+    "line_value": 6.5,
+    "price_american": 115,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:20:41.222Z"
+   },
+   "... 8 more"
+  ],
+  "prop_market_consensus": [
+   {
+    "prop": "assists",
+    "line": 2.5,
+    "books": 1,
+    "p_over": 40.8,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "pra",
+    "line": 18.5,
+    "books": 1,
+    "p_over": 51.8,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "rebounds",
+    "line": 4.5,
+    "books": 1,
+    "p_over": 36.7,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "rebounds",
+    "line": 6.5,
+    "books": 1,
+    "p_over": 43.7,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "rebounds",
+    "line": 16.5,
+    "books": 1,
+    "p_over": 61.6,
+    "sd": 0,
+    "label": "window"
+   },
+   {
+    "prop": "threes_made",
+    "line": 2.5,
+    "books": 1,
+    "p_over": 39.4,
+    "sd": 0,
+    "label": "window"
+   }
+  ],
+  "prepared_lines": [
+   {
+    "source_key": "fliff",
+    "book_key": "fliff",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "more",
+    "line_value": 1.5,
+    "price_american": -195,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:19:34.320Z"
+   },
+   {
+    "source_key": "fliff",
+    "book_key": "fliff",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "more",
+    "line_value": 2.5,
+    "price_american": 125,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "close",
+    "last_update": "2026-10-22T22:38:22.032Z"
+   },
+   {
+    "source_key": "fliff",
+    "book_key": "fliff",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "less",
+    "line_value": 1.5,
+    "price_american": 135,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:19:34.320Z"
+   },
+   {
+    "source_key": "fliff",
+    "book_key": "fliff",
+    "prop_key": "assists",
+    "canonical_prop_key": "assists",
+    "market_key": "player_assists",
+    "side": "less",
+    "line_value": 2.5,
+    "price_american": -185,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "close",
+    "last_update": "2026-10-22T22:38:22.032Z"
+   },
+   {
+    "source_key": "fliff",
+    "book_key": "fliff",
+    "prop_key": "double_double",
+    "canonical_prop_key": "double_double",
+    "market_key": "player_double_double",
+    "side": "more",
+    "line_value": 0.5,
+    "price_american": 3360,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:19:34.320Z"
+   },
+   {
+    "source_key": "fliff",
+    "book_key": "fliff",
+    "prop_key": "double_double",
+    "canonical_prop_key": "double_double",
+    "market_key": "player_double_double",
+    "side": "less",
+    "line_value": 0.5,
+    "price_american": -14395,
+    "multiplier": null,
+    "kind": null,
+    "snapshot_label": "window",
+    "last_update": "2026-10-22T20:19:34.320Z"
+   },
+   "... 175 more"
+  ],
+  "game": {
+   "game_id": "0022600007",
+   "game_date": "2026-10-22",
+   "game_datetime_utc": "2026-10-23T01:30:00.000Z",
+   "home_team_id": "nba_1610612760",
+   "away_team_id": "nba_1610612743",
+   "home_team_tricode": "OKC",
+   "away_team_tricode": "DEN",
+   "arena_name": "Paycom Center",
+   "arena_city": "Oklahoma City",
+   "game_status_text": "9:30 pm ET",
+   "home_name": "Oklahoma City Thunder",
+   "away_name": "Denver Nuggets",
+   "home_abbr": "OKC",
+   "away_abbr": "DEN",
+   "game_time_utc": "2026-10-23T01:30:00.000Z"
+  },
+  "opponent_team_id": "nba_1610612760",
+  "team_profiles": [
+   {
+    "team_id": "nba_1610612743",
+    "abbreviation": "DEN",
+    "full_name": "Denver Nuggets",
+    "conference": "West",
+    "division": "Northwest",
+    "season": "2025-26",
+    "games_played": 82,
+    "wins": 54,
+    "losses": 28,
+    "pace": 99.49,
+    "off_rating": 121.2,
+    "def_rating": 116,
+    "net_rating": 5.2,
+    "last10": "LWLLLWWWWW",
+    "last10_record": "6-4"
+   },
+   {
+    "team_id": "nba_1610612760",
+    "abbreviation": "OKC",
+    "full_name": "Oklahoma City Thunder",
+    "conference": "West",
+    "division": "Northwest",
+    "season": "2025-26",
+    "games_played": 82,
+    "wins": 64,
+    "losses": 18,
+    "pace": 100.37,
+    "off_rating": 117.6,
+    "def_rating": 106.5,
+    "net_rating": 11.1,
+    "last10": "WLLWLWWLWW",
+    "last10_record": "6-4"
+   }
+  ],
+  "defense_vs_position": {
+   "position": "F",
+   "season": "2026-27",
+   "games_sampled": 3,
+   "avg_pts_allowed": 3.7,
+   "avg_reb_allowed": 1,
+   "avg_ast_allowed": 0.7,
+   "avg_fg_pct_allowed": 45.8,
+   "pts_rank": 27,
+   "reb_rank": 27,
+   "ast_rank": 25,
+   "fg_rank": 10,
+   "teams": 27,
+   "note": "rank 1 = allows the most to this position"
+  },
+  "injuries": {
+   "as_of": "2026-10-22T21:15:00.000Z",
+   "rows": [
+    {
+     "team": "Denver Nuggets",
+     "player": "Julian Strawther",
+     "status": "Out",
+     "reason": "Injury/Illness - Left Knee Sprain Injury/Illness - Right Achilles Tendon"
+    },
+    {
+     "team": "Denver Nuggets",
+     "player": "Spencer Jones",
+     "status": "Questionable",
+     "reason": "Injury Management"
+    },
+    {
+     "team": "Oklahoma City Thunder",
+     "player": "Otega Oweh",
+     "status": "Out",
+     "reason": "Repair / Surgery"
+    },
+    {
+     "team": "Oklahoma City Thunder",
+     "player": "Thomas Sorber",
+     "status": "Out",
+     "reason": "Injury/Illness - Right Knee Surgery"
+    },
+    {
+     "team": "Oklahoma City Thunder",
+     "player": "Nikola Topic",
+     "status": "Out",
+     "reason": "Injury/Illness - Low Back Surgery"
+    }
+   ]
+  },
+  "starters": [
+   {
+    "team_id": "nba_1610612743",
+    "team_abbr": "DEN",
+    "game_date": "2026-04-30",
+    "player": "Christian Braun",
+    "start_position": "G",
+    "min": 27.5883333333333
+   },
+   {
+    "team_id": "nba_1610612743",
+    "team_abbr": "DEN",
+    "game_date": "2026-04-30",
+    "player": "Jamal Murray",
+    "start_position": "G",
+    "min": 40.2983333333333
+   },
+   {
+    "team_id": "nba_1610612743",
+    "team_abbr": "DEN",
+    "game_date": "2026-04-30",
+    "player": "Cameron Johnson",
+    "start_position": "F",
+    "min": 39.2333333333333
+   },
+   {
+    "team_id": "nba_1610612743",
+    "team_abbr": "DEN",
+    "game_date": "2026-04-30",
+    "player": "Spencer Jones",
+    "start_position": "F",
+    "min": 35.2866666666667
+   },
+   {
+    "team_id": "nba_1610612743",
+    "team_abbr": "DEN",
+    "game_date": "2026-04-30",
+    "player": "Nikola Joki\u0107",
+    "start_position": "C",
+    "min": 43.3933333333333
+   },
+   {
+    "team_id": "nba_1610612760",
+    "team_abbr": "OKC",
+    "game_date": "2026-10-20",
+    "player": "Cason Wallace",
+    "start_position": "G",
+    "min": 19.255
+   },
+   "... 4 more"
+  ],
+  "schedule_spot": [
+   {
+    "team_id": "nba_1610612743",
+    "team_abbr": "DEN",
+    "team_name": "Denver Nuggets",
+    "last_game": null,
+    "days_rest": null,
+    "back_to_back": 0,
+    "games_in_4_nights": 1,
+    "games_in_6_nights": 1,
+    "three_in_four": 0,
+    "four_in_six": 0,
+    "last_game_location": null,
+    "schedule_risk_level": "normal"
+   },
+   {
+    "team_id": "nba_1610612760",
+    "team_abbr": "OKC",
+    "team_name": "Oklahoma City Thunder",
+    "last_game": "2026-10-20",
+    "days_rest": 1,
+    "back_to_back": 0,
+    "games_in_4_nights": 2,
+    "games_in_6_nights": 2,
+    "three_in_four": 0,
+    "four_in_six": 0,
+    "last_game_location": "road",
+    "schedule_risk_level": "normal"
+   }
+  ],
+  "officials": {
+   "source": "pregame assignment",
+   "rows": [
+    {
+     "full_name": "Zach Zarba",
+     "slot": 1,
+     "source": "pregame assignment",
+     "games": "184",
+     "pf": 37.5,
+     "fta": 43.7,
+     "pf_delta": -0.596,
+     "league_pf": 38.1,
+     "league_fta": 44.6
+    },
+    {
+     "full_name": "Sean Corbin",
+     "slot": 2,
+     "source": "pregame assignment",
+     "games": "177",
+     "pf": 37.7,
+     "fta": 44,
+     "pf_delta": -0.424,
+     "league_pf": 38.1,
+     "league_fta": 44.6
+    },
+    {
+     "full_name": "Robert Hussey",
+     "slot": 3,
+     "source": "pregame assignment",
+     "games": "130",
+     "pf": 38.2,
+     "fta": 44.6,
+     "pf_delta": 0.054,
+     "league_pf": 38.1,
+     "league_fta": 44.6
+    }
+   ]
+  },
+  "market_summary": {
+   "label": "morning",
+   "books": 9,
+   "home_team": "OKC",
+   "away_team": "DEN",
+   "home_ml": -340,
+   "away_ml": 270,
+   "best_home_ml": -320,
+   "best_away_ml": 278,
+   "home_spread": -8.5,
+   "total": 236,
+   "home_implied": 122.3,
+   "away_implied": 113.8,
+   "updated": "2026-10-22T15:10:19.000Z"
+  },
+  "market_odds": [
+   {
+    "book": "betmgm",
+    "market": "h2h",
+    "outcome": "Denver Nuggets",
+    "point": null,
+    "price": 260,
+    "updated": "2026-10-22T15:10:19.721Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "h2h",
+    "outcome": "Oklahoma City Thunder",
+    "point": null,
+    "price": -325,
+    "updated": "2026-10-22T15:10:19.721Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "spreads",
+    "outcome": "Denver Nuggets",
+    "point": 8.5,
+    "price": -110,
+    "updated": "2026-10-22T15:10:19.721Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "spreads",
+    "outcome": "Oklahoma City Thunder",
+    "point": -8.5,
+    "price": -110,
+    "updated": "2026-10-22T15:10:19.721Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "totals",
+    "outcome": "Over",
+    "point": 235.5,
+    "price": -118,
+    "updated": "2026-10-22T15:10:19.721Z"
+   },
+   {
+    "book": "betmgm",
+    "market": "totals",
+    "outcome": "Under",
+    "point": 235.5,
+    "price": -110,
+    "updated": "2026-10-22T15:10:19.721Z"
+   },
+   "... 48 more"
+  ],
+  "usage_detail": {
+   "usage": [
+    {
+     "window": "Last 5",
+     "games": 5,
+     "min": 30.7,
+     "usg": 17.3,
+     "ts": 60.3,
+     "efg": 57.2,
+     "astp": 13.2,
+     "rebp": 5.8,
+     "orebp": 2.2,
+     "drebp": 8.8,
+     "pace": 101,
+     "ortg": 104,
+     "drtg": 112.8,
+     "tm_pts": 20.3,
+     "tm_reb": 15.4,
+     "tm_ast": 15.1,
+     "tm_fga": 18.6,
+     "tm_fg3a": 25.5,
+     "fga": 10,
+     "fg3a": 5.6,
+     "fta": 3.4,
+     "three_rate": 56,
+     "ft_rate": 34
+    },
+    {
+     "window": "Last 10",
+     "games": 10,
+     "min": 32.7,
+     "usg": 16.6,
+     "ts": 64.5,
+     "efg": 62.1,
+     "astp": 12.5,
+     "rebp": 6.4,
+     "orebp": 3.2,
+     "drebp": 9,
+     "pace": 101.1,
+     "ortg": 116.3,
+     "drtg": 112.9,
+     "tm_pts": 19,
+     "tm_reb": 14.7,
+     "tm_ast": 14.1,
+     "tm_fga": 18.3,
+     "tm_fg3a": 24.1,
+     "fga": 10.7,
+     "fg3a": 5.7,
+     "fta": 2.5,
+     "three_rate": 53.3,
+     "ft_rate": 23.4
+    },
+    {
+     "window": "Last 20",
+     "games": 20,
+     "min": 31.2,
+     "usg": 15.6,
+     "ts": 67.2,
+     "efg": 65,
+     "astp": 10.7,
+     "rebp": 5.9,
+     "orebp": 3,
+     "drebp": 8.7,
+     "pace": 102.5,
+     "ortg": 120.1,
+     "drtg": 112.6,
+     "tm_pts": 18.3,
+     "tm_reb": 13.4,
+     "tm_ast": 12,
+     "tm_fga": 17.5,
+     "tm_fg3a": 23.5,
+     "fga": 10,
+     "fg3a": 5.8,
+     "fta": 2.1,
+     "three_rate": 57.8,
+     "ft_rate": 21.1
+    },
+    {
+     "window": "Season 2025-26 (incl. 6 playoff G)",
+     "games": 60,
+     "min": 30.6,
+     "usg": 14.6,
+     "ts": 60.4,
+     "efg": 57,
+     "astp": 10.2,
+     "rebp": 6.1,
+     "orebp": 2.7,
+     "drebp": 9.3,
+     "pace": 101.5,
+     "ortg": 122.3,
+     "drtg": 114,
+     "tm_pts": 15.3,
+     "tm_reb": 13.6,
+     "tm_ast": 12.3,
+     "tm_fga": 15.9,
+     "tm_fg3a": 21.1,
+     "fga": 9,
+     "fg3a": 4.9,
+     "fta": 2.2,
+     "three_rate": 54.2,
+     "ft_rate": 24
+    }
+   ],
+   "scoring": [
+    {
+     "window": "Last 5",
+     "games": 5,
+     "paint": 50.1,
+     "mid": 2.2,
+     "three": 29.1,
+     "ft": 18.6,
+     "fb": 43.9,
+     "offtov": 7.5,
+     "uast": 9,
+     "fga3": 52.8
+    },
+    {
+     "window": "Last 10",
+     "games": 10,
+     "paint": 45.8,
+     "mid": 4.5,
+     "three": 36.4,
+     "ft": 13.3,
+     "fb": 30.5,
+     "offtov": 8.3,
+     "uast": 17.1,
+     "fga3": 51.5
+    },
+    {
+     "window": "Last 20",
+     "games": 20,
+     "paint": 36.8,
+     "mid": 3.8,
+     "three": 47.4,
+     "ft": 12.1,
+     "fb": 24.9,
+     "offtov": 7.6,
+     "uast": 16.5,
+     "fga3": 56.8
+    },
+    {
+     "window": "Season 2025-26 (incl. 6 playoff G)",
+     "games": 60,
+     "paint": 32.7,
+     "mid": 4.8,
+     "three": 44.5,
+     "ft": 17.9,
+     "fb": 22.1,
+     "offtov": 12.2,
+     "uast": 16.3,
+     "fga3": 54.2
+    }
+   ],
+   "per_game": [
+    {
+     "game_date": "2026-04-30",
+     "phase": "Playoffs",
+     "min": 39.2,
+     "usg": 25,
+     "ts": 71.2,
+     "tm_pts": 31.4,
+     "tm_reb": 29.6,
+     "tm_ast": 14.3,
+     "pace": 94.8,
+     "paint": 22.2,
+     "three": 55.6
+    },
+    {
+     "game_date": "2026-04-27",
+     "phase": "Playoffs",
+     "min": 35.7,
+     "usg": 16.9,
+     "ts": 69.2,
+     "tm_pts": 17.5,
+     "tm_reb": 25,
+     "tm_ast": 16.7,
+     "pace": 103.5,
+     "paint": 55.6,
+     "three": 33.3
+    },
+    {
+     "game_date": "2026-04-25",
+     "phase": "Playoffs",
+     "min": 26.6,
+     "usg": 15.4,
+     "ts": 58,
+     "tm_pts": 17.3,
+     "tm_reb": 10.5,
+     "tm_ast": 16.7,
+     "pace": 97.5,
+     "paint": 44.4,
+     "three": 33.3
+    },
+    {
+     "game_date": "2026-04-23",
+     "phase": "Playoffs",
+     "min": 23.6,
+     "usg": 12.5,
+     "ts": 43.6,
+     "tm_pts": 15.4,
+     "tm_reb": 8.7,
+     "tm_ast": 16.7,
+     "pace": 103.7,
+     "paint": 66.7,
+     "three": 0
+    },
+    {
+     "game_date": "2026-04-20",
+     "phase": "Playoffs",
+     "min": 28.2,
+     "usg": 16.7,
+     "ts": 59.7,
+     "tm_pts": 20,
+     "tm_reb": 3.4,
+     "tm_ast": 11.1,
+     "pace": 105.7,
+     "paint": 61.5,
+     "three": 23.1
+    },
+    {
+     "game_date": "2026-04-18",
+     "phase": "Playoffs",
+     "min": 33.1,
+     "usg": 16.3,
+     "ts": 50,
+     "tm_pts": 14.1,
+     "tm_reb": 0,
+     "tm_ast": 4.8,
+     "pace": 104.5,
+     "paint": 50,
+     "three": 50
+    },
+    "... 14 more"
+   ]
+  },
+  "tracking_skills": {
+   "games": 54,
+   "min_per_game": 30.5,
+   "updated": "2026-10-19",
+   "groups": [
+    {
+     "key": "Passing",
+     "title": "Passing & Playmaking",
+     "rows": [
+      [
+       "Passes Made",
+       25.5
+      ],
+      [
+       "Passes Received",
+       28
+      ],
+      [
+       "Assists",
+       2.4
+      ],
+      [
+       "Potential Assists",
+       4.5
+      ],
+      [
+       "Secondary Assists",
+       0.4
+      ],
+      [
+       "FT Assists",
+       0.2
+      ],
+      "... 2 more"
+     ]
+    },
+    {
+     "key": "Rebounding",
+     "title": "Rebounding",
+     "rows": [
+      [
+       "Rebounds",
+       3.8
+      ],
+      [
+       "Rebound Chances",
+       5.6
+      ],
+      [
+       "Rebound Chance %",
+       68.7
+      ],
+      [
+       "Contested Reb %",
+       22.3
+      ],
+      [
+       "OREB Chances",
+       1.4
+      ],
+      [
+       "OREB Chance %",
+       57.3
+      ],
+      "... 3 more"
+     ]
+    },
+    {
+     "key": "CatchShoot",
+     "title": "Catch & Shoot",
+     "rows": [
+      [
+       "C&S Points",
+       5.1
+      ],
+      [
+       "C&S FGA",
+       4
+      ],
+      [
+       "C&S FG%",
+       42.2
+      ],
+      [
+       "C&S 3PA",
+       3.9
+      ],
+      [
+       "C&S 3PM",
+       1.6
+      ],
+      [
+       "C&S 3P%",
+       42.2
+      ],
+      "... 1 more"
+     ]
+    },
+    {
+     "key": "PullUpShot",
+     "title": "Pull-Up Shooting",
+     "rows": [
+      [
+       "Pull-Up Points",
+       1.7
+      ],
+      [
+       "Pull-Up FGA",
+       1.7
+      ],
+      [
+       "Pull-Up FG%",
+       41.1
+      ],
+      [
+       "Pull-Up 3PA",
+       0.8
+      ],
+      [
+       "Pull-Up 3PM",
+       0.4
+      ],
+      [
+       "Pull-Up 3P%",
+       47.6
+      ],
+      "... 1 more"
+     ]
+    },
+    {
+     "key": "Drives",
+     "title": "Drives",
+     "rows": [
+      [
+       "Drives",
+       6.3
+      ],
+      [
+       "Drive Points",
+       2.5
+      ],
+      [
+       "Drive FGA",
+       2
+      ],
+      [
+       "Drive FG%",
+       45.4
+      ],
+      [
+       "Drive FTA",
+       0.8
+      ],
+      [
+       "Drive Assists",
+       0.9
+      ],
+      "... 2 more"
+     ]
+    },
+    {
+     "key": "Touches",
+     "title": "Touches",
+     "rows": [
+      [
+       "Touches",
+       33.8
+      ],
+      [
+       "Paint Touches",
+       1.2
+      ],
+      [
+       "Paint Touch Points",
+       0.7
+      ],
+      [
+       "Post Touches",
+       0.2
+      ],
+      [
+       "Post Touch Points",
+       0
+      ],
+      [
+       "Elbow Touches",
+       0.7
+      ],
+      "... 1 more"
+     ]
+    }
+   ]
+  },
+  "career": [
+   {
+    "season": "2025-26",
+    "team": "DEN",
+    "age": 30,
+    "gp": 54,
+    "gs": 54,
+    "min": 30.5,
+    "pts": 12.2,
+    "reb": 3.8,
+    "ast": 2.4,
+    "fg3m": 2,
+    "stl": 0.7,
+    "blk": 0.4,
+    "tov": 0.9,
+    "pra": 18.5,
+    "fg_pct": 48,
+    "fg3_pct": 43,
+    "ft_pct": 83.9
+   },
+   {
+    "season": "2024-25",
+    "team": "BKN",
+    "age": 29,
+    "gp": 57,
+    "gs": 57,
+    "min": 31.6,
+    "pts": 18.8,
+    "reb": 4.3,
+    "ast": 3.4,
+    "fg3m": 2.8,
+    "stl": 0.9,
+    "blk": 0.4,
+    "tov": 1.7,
+    "pra": 26.5,
+    "fg_pct": 47.5,
+    "fg3_pct": 39,
+    "ft_pct": 89.3
+   },
+   {
+    "season": "2023-24",
+    "team": "BKN",
+    "age": 28,
+    "gp": 58,
+    "gs": 47,
+    "min": 27.6,
+    "pts": 13.4,
+    "reb": 4.3,
+    "ast": 2.4,
+    "fg3m": 2.4,
+    "stl": 0.8,
+    "blk": 0.3,
+    "tov": 1,
+    "pra": 20.1,
+    "fg_pct": 44.6,
+    "fg3_pct": 39.1,
+    "ft_pct": 78.9
+   },
+   {
+    "season": "2022-23",
+    "team": "TOT",
+    "age": 27,
+    "gp": 42,
+    "gs": 41,
+    "min": 28.6,
+    "pts": 15.5,
+    "reb": 4.4,
+    "ast": 1.9,
+    "fg3m": 2.5,
+    "stl": 1.2,
+    "blk": 0.3,
+    "tov": 0.9,
+    "pra": 21.7,
+    "fg_pct": 47,
+    "fg3_pct": 40.4,
+    "ft_pct": 84.2
+   },
+   {
+    "season": "2022-23",
+    "team": "BKN",
+    "age": 27,
+    "gp": 25,
+    "gs": 25,
+    "min": 30.8,
+    "pts": 16.6,
+    "reb": 4.8,
+    "ast": 2.1,
+    "fg3m": 2.3,
+    "stl": 1.4,
+    "blk": 0.3,
+    "tov": 1.1,
+    "pra": 23.4,
+    "fg_pct": 46.8,
+    "fg3_pct": 37.2,
+    "ft_pct": 85.1
+   },
+   {
+    "season": "2022-23",
+    "team": "PHX",
+    "age": 27,
+    "gp": 17,
+    "gs": 16,
+    "min": 25.2,
+    "pts": 13.9,
+    "reb": 3.8,
+    "ast": 1.5,
+    "fg3m": 2.6,
+    "stl": 0.9,
+    "blk": 0.4,
+    "tov": 0.6,
+    "pra": 19.2,
+    "fg_pct": 47.4,
+    "fg3_pct": 45.5,
+    "ft_pct": 81.8
+   },
+   "... 3 more"
+  ],
+  "vs_opponent": [
+   {
+    "phase": "Regular",
+    "game_date": "2026-03-09",
+    "season": "2025-26",
+    "matchup": "DEN @ OKC",
+    "wl": "L",
+    "min": 22.701666666666668,
+    "pts": 6,
+    "reb": 3,
+    "ast": 1,
+    "fg3m": 1,
+    "stl": 0,
+    "blk": 0,
+    "tov": 0,
+    "fgm": 1,
+    "fga": 5,
+    "ftm": 3,
+    "fta": 4,
+    "plus_minus": 9,
+    "is_home": 0,
+    "opponent_abbr": "OKC"
+   },
+   {
+    "phase": "Regular",
+    "game_date": "2026-02-27",
+    "season": "2025-26",
+    "matchup": "DEN @ OKC",
+    "wl": "L",
+    "min": 40.06666666666667,
+    "pts": 7,
+    "reb": 8,
+    "ast": 1,
+    "fg3m": 1,
+    "stl": 0,
+    "blk": 3,
+    "tov": 3,
+    "fgm": 2,
+    "fga": 7,
+    "ftm": 2,
+    "fta": 2,
+    "plus_minus": -25,
+    "is_home": 0,
+    "opponent_abbr": "OKC"
+   },
+   {
+    "phase": "Regular",
+    "game_date": "2025-02-26",
+    "season": "2024-25",
+    "matchup": "BKN vs. OKC",
+    "wl": "L",
+    "min": 32.983333333333334,
+    "pts": 19,
+    "reb": 3,
+    "ast": 7,
+    "fg3m": 4,
+    "stl": 1,
+    "blk": 0,
+    "tov": 0,
+    "fgm": 6,
+    "fga": 13,
+    "ftm": 3,
+    "fta": 4,
+    "plus_minus": 12,
+    "is_home": 1,
+    "opponent_abbr": "OKC"
+   },
+   {
+    "phase": "Regular",
+    "game_date": "2025-01-19",
+    "season": "2024-25",
+    "matchup": "BKN @ OKC",
+    "wl": "L",
+    "min": 24.75,
+    "pts": 15,
+    "reb": 2,
+    "ast": 2,
+    "fg3m": 3,
+    "stl": 0,
+    "blk": 0,
+    "tov": 4,
+    "fgm": 6,
+    "fga": 11,
+    "ftm": 0,
+    "fta": 0,
+    "plus_minus": -6,
+    "is_home": 0,
+    "opponent_abbr": "OKC"
+   },
+   {
+    "phase": "Regular",
+    "game_date": "2024-01-05",
+    "season": "2023-24",
+    "matchup": "BKN vs. OKC",
+    "wl": "W",
+    "min": 32.123333333333335,
+    "pts": 9,
+    "reb": 3,
+    "ast": 2,
+    "fg3m": 3,
+    "stl": 1,
+    "blk": 0,
+    "tov": 0,
+    "fgm": 3,
+    "fga": 15,
+    "ftm": 0,
+    "fta": 0,
+    "plus_minus": -6,
+    "is_home": 1,
+    "opponent_abbr": "OKC"
+   },
+   {
+    "phase": "Regular",
+    "game_date": "2023-12-31",
+    "season": "2023-24",
+    "matchup": "BKN @ OKC",
+    "wl": "L",
+    "min": 33.74666666666667,
+    "pts": 13,
+    "reb": 6,
+    "ast": 0,
+    "fg3m": 2,
+    "stl": 1,
+    "blk": 0,
+    "tov": 1,
+    "fgm": 5,
+    "fga": 11,
+    "ftm": 1,
+    "fta": 2,
+    "plus_minus": -8,
+    "is_home": 0,
+    "opponent_abbr": "OKC"
+   }
+  ],
+  "vs_opponent_abbr": "OKC",
+  "with_without": {
+   "season": "2025-26",
+   "rows": [
+    {
+     "player_id": "nba_1642461",
+     "name": "Spencer Jones",
+     "mate_mins": 1416.7899999999997,
+     "with": {
+      "games": 42,
+      "min": 30.7,
+      "pts": 12.5,
+      "reb": 3.6,
+      "ast": 2.5,
+      "fg3m": 2.2,
+      "fga": 8.8,
+      "pra": 18.6
+     },
+     "without": {
+      "games": 12,
+      "min": 29.7,
+      "pts": 11.1,
+      "reb": 4.5,
+      "ast": 2.3,
+      "fg3m": 1.5,
+      "fga": 8.9,
+      "pra": 17.9
+     },
+     "status": "Questionable",
+     "reason": "Injury Management"
+    },
+    {
+     "player_id": "nba_1631124",
+     "name": "Julian Strawther",
+     "mate_mins": 860.6733333333331,
+     "with": {
+      "games": 36,
+      "min": 28.3,
+      "pts": 11.6,
+      "reb": 3.7,
+      "ast": 2.5,
+      "fg3m": 1.9,
+      "fga": 8.3,
+      "pra": 17.8
+     },
+     "without": {
+      "games": 18,
+      "min": 34.8,
+      "pts": 13.4,
+      "reb": 4,
+      "ast": 2.3,
+      "fg3m": 2.3,
+      "fga": 9.8,
+      "pra": 19.8
+     },
+     "status": "Out",
+     "reason": "Injury/Illness - Left Knee Sprain Injury/Illness - Right Achilles Tendon"
+    },
+    {
+     "player_id": "nba_1627750",
+     "name": "Jamal Murray",
+     "mate_mins": 2651.891666666667,
+     "with": {
+      "games": 53,
+      "min": 30.6,
+      "pts": 12.2,
+      "reb": 3.8,
+      "ast": 2.4,
+      "fg3m": 2.1,
+      "fga": 8.8,
+      "pra": 18.5
+     },
+     "without": {
+      "games": 1,
+      "min": 27.3,
+      "pts": 12,
+      "reb": 2,
+      "ast": 4,
+      "fg3m": 0,
+      "fga": 11,
+      "pra": 18
+     },
+     "status": null,
+     "reason": null
+    },
+    {
+     "player_id": "nba_203999",
+     "name": "Nikola Joki\u0107",
+     "mate_mins": 2264.855,
+     "with": {
+      "games": 54,
+      "min": 30.5,
+      "pts": 12.2,
+      "reb": 3.8,
+      "ast": 2.4,
+      "fg3m": 2,
+      "fga": 8.8,
+      "pra": 18.5
+     },
+     "without": null,
+     "status": null,
+     "reason": null
+    },
+    {
+     "player_id": "nba_203501",
+     "name": "Tim Hardaway Jr.",
+     "mate_mins": 2127.2999999999993,
+     "with": {
+      "games": 54,
+      "min": 30.5,
+      "pts": 12.2,
+      "reb": 3.8,
+      "ast": 2.4,
+      "fg3m": 2,
+      "fga": 8.8,
+      "pra": 18.5
+     },
+     "without": null,
+     "status": null,
+     "reason": null
+    },
+    {
+     "player_id": "nba_1628971",
+     "name": "Bruce Brown",
+     "mate_mins": 1997.7883333333334,
+     "with": {
+      "games": 54,
+      "min": 30.5,
+      "pts": 12.2,
+      "reb": 3.8,
+      "ast": 2.4,
+      "fg3m": 2,
+      "fga": 8.8,
+      "pra": 18.5
+     },
+     "without": null,
+     "status": null,
+     "reason": null
+    },
+    "... 1 more"
+   ]
+  },
+  "lineups": {
+   "season": "2025-26",
+   "five": [
+    {
+     "group": "A. Gordon - N. Joki\u0107 - J. Murray - C. Johnson - C. Braun",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 23,
+     "record": "18-5",
+     "min": 359.5,
+     "plus_minus": 111,
+     "per48": 14.8,
+     "pts": 956
+    },
+    {
+     "group": "N. Joki\u0107 - J. Murray - C. Johnson - P. Watson - S. Jones",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 13,
+     "record": "9-4",
+     "min": 171.1,
+     "plus_minus": 63,
+     "per48": 17.7,
+     "pts": 484
+    },
+    {
+     "group": "N. Joki\u0107 - J. Murray - C. Johnson - J. Strawther - C. Braun",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 10,
+     "record": "4-6",
+     "min": 119.4,
+     "plus_minus": 15,
+     "per48": 6,
+     "pts": 327
+    },
+    {
+     "group": "T. Hardaway Jr. - N. Joki\u0107 - J. Murray - C. Johnson - C. Braun",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 14,
+     "record": "6-8",
+     "min": 54,
+     "plus_minus": 7,
+     "per48": 6.2,
+     "pts": 150
+    },
+    {
+     "group": "J. Valan\u010di\u016bnas - T. Hardaway Jr. - B. Brown - C. Johnson - S. Jones",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 9,
+     "record": "4-5",
+     "min": 49,
+     "plus_minus": 6,
+     "per48": 5.9,
+     "pts": 114
+    },
+    {
+     "group": "T. Hardaway Jr. - N. Joki\u0107 - J. Murray - C. Johnson - S. Jones",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 8,
+     "record": "6-2",
+     "min": 45.6,
+     "plus_minus": 10,
+     "per48": 10.5,
+     "pts": 109
+    }
+   ],
+   "pairs": [
+    {
+     "group": "N. Joki\u0107 - C. Johnson",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 54,
+     "record": "37-17",
+     "min": 1323.8,
+     "plus_minus": 342,
+     "per48": 12.4,
+     "pts": 3578
+    },
+    {
+     "group": "J. Murray - C. Johnson",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 53,
+     "record": "36-17",
+     "min": 1147.7,
+     "plus_minus": 333,
+     "per48": 13.9,
+     "pts": 3109
+    },
+    {
+     "group": "C. Johnson - C. Braun",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 37,
+     "record": "26-11",
+     "min": 788.9,
+     "plus_minus": 186,
+     "per48": 11.3,
+     "pts": 2110
+    },
+    {
+     "group": "T. Hardaway Jr. - C. Johnson",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 54,
+     "record": "37-17",
+     "min": 618.7,
+     "plus_minus": 109,
+     "per48": 8.5,
+     "pts": 1587
+    },
+    {
+     "group": "B. Brown - C. Johnson",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 51,
+     "record": "35-16",
+     "min": 582.1,
+     "plus_minus": -17,
+     "per48": -1.4,
+     "pts": 1397
+    },
+    {
+     "group": "A. Gordon - C. Johnson",
+     "team": "DEN",
+     "season": "2025-26",
+     "gp": 25,
+     "record": "19-6",
+     "min": 498,
+     "plus_minus": 161,
+     "per48": 15.5,
+     "pts": 1331
+    },
+    "... 2 more"
+   ]
+  },
+  "team_trends": [
+   {
+    "team_id": "nba_1610612760",
+    "team": "OKC",
+    "window": "Last 10",
+    "games": 1,
+    "record": "1-0",
+    "ppg": 116,
+    "opp_ppg": 104,
+    "pace": 102,
+    "ortg": 113.7,
+    "drtg": 102,
+    "efg": 0,
+    "opp_efg": 0,
+    "tov": 0,
+    "opp_tov": 0,
+    "oreb": 0,
+    "opp_oreb": 0,
+    "ftr": 0,
+    "opp_ftr": 0
+   },
+   {
+    "team_id": "nba_1610612760",
+    "team": "OKC",
+    "window": "Season 2026-27",
+    "games": 1,
+    "record": "1-0",
+    "ppg": 116,
+    "opp_ppg": 104,
+    "pace": 102,
+    "ortg": 113.7,
+    "drtg": 102,
+    "efg": 0,
+    "opp_efg": 0,
+    "tov": 0,
+    "opp_tov": 0,
+    "oreb": 0,
+    "opp_oreb": 0,
+    "ftr": 0,
+    "opp_ftr": 0
+   },
+   {
+    "team_id": "nba_1610612743",
+    "team": "DEN",
+    "window": "Last 10",
+    "games": 10,
+    "record": "6-4",
+    "ppg": 117.3,
+    "opp_ppg": 114.8,
+    "pace": 99.6,
+    "ortg": 116.5,
+    "drtg": 114.2,
+    "efg": 53.9,
+    "opp_efg": 53.6,
+    "tov": 12.4,
+    "opp_tov": 12.6,
+    "oreb": 28.4,
+    "opp_oreb": 30.7,
+    "ftr": 30,
+    "opp_ftr": 24.8
+   },
+   {
+    "team_id": "nba_1610612743",
+    "team": "DEN",
+    "window": "Season 2025-26 (incl. 6 postseason G)",
+    "games": 88,
+    "record": "56-32",
+    "ppg": 121.1,
+    "opp_ppg": 116.6,
+    "pace": 99.5,
+    "ortg": 120.3,
+    "drtg": 115.8,
+    "efg": 57.2,
+    "opp_efg": 54.2,
+    "tov": 12.7,
+    "opp_tov": 11.8,
+    "oreb": 28.1,
+    "opp_oreb": 28.4,
+    "ftr": 30.2,
+    "opp_ftr": 25.6
+   }
+  ],
+  "arena": {
+   "arena_name": "Paycom Center",
+   "city": "Oklahoma City",
+   "state": null,
+   "capacity": null,
+   "altitude_ft": null,
+   "timezone": null
+  },
+  "depth_errors": [],
+  "sharp": {
+   "market": {
+    "date": "2026-10-22",
+    "labels": [
+     "window"
+    ],
+    "label_note": "routine = earlier in the day, window = pre-game window, close = at tip",
+    "props": [
+     {
+      "prop": "threes_made",
+      "labels": [
+       "window"
+      ],
+      "books": 1,
+      "fair": {
+       "window": null
+      },
+      "fair_move": null,
+      "ladder": [
+       {
+        "line": 2.5,
+        "window": 39.4,
+        "books": 1
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 2.5,
+         "over": 138,
+         "under": -183,
+         "p_over": 39.4,
+         "hold": 6.7,
+         "at": "2026-10-22T20:20:41.222Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 0.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 1.03
+         }
+        ]
+       },
+       {
+        "line": 1.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 1.44
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 2.28
+         },
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 2.5,
+        "p_over": 39.4,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 2.21
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 3.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 3.41
+         }
+        ]
+       },
+       {
+        "line": 4.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 6.11
+         }
+        ]
+       },
+       {
+        "line": 5.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 9.11
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "prop": "assists",
+      "labels": [
+       "window"
+      ],
+      "books": 1,
+      "fair": {
+       "window": null
+      },
+      "fair_move": null,
+      "ladder": [
+       {
+        "line": 2.5,
+        "window": 40.8,
+        "books": 1
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 2.5,
+         "over": 130,
+         "under": -170,
+         "p_over": 40.8,
+         "hold": 6.4,
+         "at": "2026-10-22T20:20:41.222Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 1.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 1.46
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 2.25
+         },
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "less",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 2.5,
+        "p_over": 40.8,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "less",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 3.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 3.41
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 5.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 8.82
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "prop": "rebounds",
+      "labels": [
+       "window"
+      ],
+      "books": 1,
+      "fair": {
+       "window": null
+      },
+      "fair_move": null,
+      "ladder": [
+       {
+        "line": 4.5,
+        "window": 36.7,
+        "books": 1
+       },
+       {
+        "line": 6.5,
+        "window": 43.7,
+        "books": 1
+       },
+       {
+        "line": 16.5,
+        "window": 61.6,
+        "books": 1
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "bovada",
+        "window": {
+         "book": "bovada",
+         "line": 6.5,
+         "over": 115,
+         "under": -150,
+         "p_over": 43.7,
+         "hold": 6.5,
+         "at": "2026-10-22T20:20:41.222Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 2.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 3.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 1.72
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 1.84
+         },
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 4.5,
+        "p_over": 36.7,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "less",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 5.5,
+        "p_over": 40.2,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 3.2
+         }
+        ]
+       },
+       {
+        "line": 6.5,
+        "p_over": 43.7,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 7.5,
+        "p_over": 45.5,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 7.04
+         }
+        ]
+       },
+       "... 1 more"
+      ]
+     },
+     {
+      "prop": "pra",
+      "labels": [
+       "window"
+      ],
+      "books": 1,
+      "fair": {
+       "window": null
+      },
+      "fair_move": null,
+      "ladder": [
+       {
+        "line": 18.5,
+        "window": 51.8,
+        "books": 1
+       }
+      ],
+      "book_lines": [
+       {
+        "book": "draftkings",
+        "window": {
+         "book": "draftkings",
+         "line": 18.5,
+         "over": -124,
+         "under": -106,
+         "p_over": 51.8,
+         "hold": 6.8,
+         "at": "2026-10-22T20:20:41.222Z"
+        }
+       }
+      ],
+      "dfs_lines": [
+       {
+        "line": 12.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 14.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 17.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "less",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 18.5,
+        "p_over": 51.8,
+        "offers": [
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 1.74
+         },
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "fliff",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 1.82
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "regular",
+          "side": "less",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 19.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         },
+         {
+          "app": "sleeper",
+          "line_type": "regular",
+          "side": "more",
+          "multiplier": 1.88
+         },
+         {
+          "app": "prizepicks",
+          "line_type": "goblin",
+          "side": "less",
+          "multiplier": 0
+         }
+        ]
+       },
+       {
+        "line": 24.5,
+        "p_over": null,
+        "offers": [
+         {
+          "app": "prizepicks",
+          "line_type": "demon",
+          "side": "more",
+          "multiplier": 0
+         }
+        ]
+       },
+       "... 1 more"
+      ]
+     }
+    ]
+   },
+   "market_history": {
+    "label_pref": [
+     "close",
+     "window"
+    ],
+    "props": [
+     {
+      "prop": "points",
+      "games": 20,
+      "over": 16,
+      "under": 4,
+      "avg_diff": 3.3,
+      "l5_over": 3,
+      "l5_games": 5,
+      "line_trend": 2,
+      "rows": [
+       {
+        "game_date": "2026-04-30",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 11.4,
+        "actual": 27,
+        "diff": 15.6,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-27",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 11.5,
+        "actual": 18,
+        "diff": 6.5,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-25",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 11.4,
+        "actual": 9,
+        "diff": -2.4,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-23",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 12.3,
+        "actual": 6,
+        "diff": -6.3,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-20",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 12.5,
+        "actual": 13,
+        "diff": 0.5,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-18",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 11.8,
+        "actual": 12,
+        "diff": 0.2,
+        "result": "Over"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "rebounds",
+      "games": 20,
+      "over": 10,
+      "under": 10,
+      "avg_diff": 0.4,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": -0.3,
+      "rows": [
+       {
+        "game_date": "2026-04-30",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 3.1,
+        "actual": 8,
+        "diff": 4.9,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-27",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 3.1,
+        "actual": 6,
+        "diff": 2.9,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-25",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 3.1,
+        "actual": 2,
+        "diff": -1.1,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-23",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 3.8,
+        "actual": 2,
+        "diff": -1.8,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-20",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 3.7,
+        "actual": 1,
+        "diff": -2.7,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-18",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 3.7,
+        "actual": 0,
+        "diff": -3.7,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "assists",
+      "games": 20,
+      "over": 10,
+      "under": 10,
+      "avg_diff": 0.3,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": 0,
+      "rows": [
+       {
+        "game_date": "2026-04-30",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 2,
+        "actual": 3,
+        "diff": 1,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-25",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 1.8,
+        "actual": 2,
+        "diff": 0.2,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-23",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 2.3,
+        "actual": 1,
+        "diff": -1.3,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-20",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 2.2,
+        "actual": 2,
+        "diff": -0.2,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-18",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 2.3,
+        "actual": 1,
+        "diff": -1.3,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-08",
+        "opp": "vs MEM",
+        "label": "close",
+        "fair": 2.3,
+        "actual": 2,
+        "diff": -0.3,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "threes_made",
+      "games": 20,
+      "over": 13,
+      "under": 6,
+      "avg_diff": 0.7,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": 0.4,
+      "rows": [
+       {
+        "game_date": "2026-04-30",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 1.8,
+        "actual": 5,
+        "diff": 3.2,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-27",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 1.7,
+        "actual": 2,
+        "diff": 0.3,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-25",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 1.7,
+        "actual": 1,
+        "diff": -0.7,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-23",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 1.9,
+        "actual": 0,
+        "diff": -1.9,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-20",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 1.9,
+        "actual": 1,
+        "diff": -0.9,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-18",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 1.9,
+        "actual": 2,
+        "diff": 0.1,
+        "result": "Over"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "pra",
+      "games": 20,
+      "over": 12,
+      "under": 8,
+      "avg_diff": 3.8,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": 3.2,
+      "rows": [
+       {
+        "game_date": "2026-04-30",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 16.9,
+        "actual": 38,
+        "diff": 21.1,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-27",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 16.9,
+        "actual": 29,
+        "diff": 12.1,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-25",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 17.1,
+        "actual": 13,
+        "diff": -4.1,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-23",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 19.5,
+        "actual": 9,
+        "diff": -10.5,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-20",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 18.9,
+        "actual": 16,
+        "diff": -2.9,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-18",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 18.5,
+        "actual": 13,
+        "diff": -5.5,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     {
+      "prop": "pts_reb",
+      "games": 20,
+      "over": 13,
+      "under": 7,
+      "avg_diff": 3.4,
+      "l5_over": 2,
+      "l5_games": 5,
+      "line_trend": 0.6,
+      "rows": [
+       {
+        "game_date": "2026-04-30",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 14.7,
+        "actual": 35,
+        "diff": 20.3,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-27",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 14.7,
+        "actual": 24,
+        "diff": 9.3,
+        "result": "Over"
+       },
+       {
+        "game_date": "2026-04-25",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 14.8,
+        "actual": 11,
+        "diff": -3.8,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-23",
+        "opp": "@ MIN",
+        "label": "close",
+        "fair": 16.4,
+        "actual": 8,
+        "diff": -8.4,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-20",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 16.4,
+        "actual": 14,
+        "diff": -2.4,
+        "result": "Under"
+       },
+       {
+        "game_date": "2026-04-18",
+        "opp": "vs MIN",
+        "label": "close",
+        "fair": 15.7,
+        "actual": 12,
+        "diff": -3.7,
+        "result": "Under"
+       },
+       "... 14 more"
+      ]
+     },
+     "... 3 more"
+    ]
+   },
+   "env": [
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-04-30",
+     "matchup": "DEN @ MIN",
+     "wl": "L",
+     "min": 39.2,
+     "pts": 27,
+     "reb": 8,
+     "ast": 3,
+     "fg3m": 5,
+     "stl": 0,
+     "blk": 1,
+     "tov": 2,
+     "pf": 5,
+     "fga": 15,
+     "fta": 9,
+     "team_pts": 98,
+     "margin": -12,
+     "opp_pts": 110,
+     "spread": -6.5,
+     "total": 225
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-04-27",
+     "matchup": "DEN vs. MIN",
+     "wl": "W",
+     "min": 35.7,
+     "pts": 18,
+     "reb": 6,
+     "ast": 5,
+     "fg3m": 2,
+     "stl": 3,
+     "blk": 0,
+     "tov": 1,
+     "pf": 1,
+     "fga": 13,
+     "fta": 0,
+     "team_pts": 125,
+     "margin": 12,
+     "opp_pts": 113,
+     "spread": -11.5,
+     "total": 224.5
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-04-25",
+     "matchup": "DEN @ MIN",
+     "wl": "L",
+     "min": 26.6,
+     "pts": 9,
+     "reb": 2,
+     "ast": 2,
+     "fg3m": 1,
+     "stl": 1,
+     "blk": 1,
+     "tov": 2,
+     "pf": 3,
+     "fga": 6,
+     "fta": 4,
+     "team_pts": 96,
+     "margin": -16,
+     "opp_pts": 112,
+     "spread": -1,
+     "total": 229
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-04-23",
+     "matchup": "DEN @ MIN",
+     "wl": "L",
+     "min": 23.6,
+     "pts": 6,
+     "reb": 2,
+     "ast": 1,
+     "fg3m": 0,
+     "stl": 1,
+     "blk": 0,
+     "tov": 0,
+     "pf": 3,
+     "fga": 6,
+     "fta": 2,
+     "team_pts": 96,
+     "margin": -17,
+     "opp_pts": 113,
+     "spread": -2,
+     "total": 232.5
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-04-20",
+     "matchup": "DEN vs. MIN",
+     "wl": "L",
+     "min": 28.2,
+     "pts": 13,
+     "reb": 1,
+     "ast": 2,
+     "fg3m": 1,
+     "stl": 1,
+     "blk": 0,
+     "tov": 0,
+     "pf": 5,
+     "fga": 10,
+     "fta": 2,
+     "team_pts": 114,
+     "margin": -5,
+     "opp_pts": 119,
+     "spread": -7.5,
+     "total": 232
+    },
+    {
+     "phase": "Playoffs",
+     "season": "2025-26",
+     "game_date": "2026-04-18",
+     "matchup": "DEN vs. MIN",
+     "wl": "W",
+     "min": 33.1,
+     "pts": 12,
+     "reb": 0,
+     "ast": 1,
+     "fg3m": 2,
+     "stl": 0,
+     "blk": 0,
+     "tov": 1,
+     "pf": 1,
+     "fga": 12,
+     "fta": 0,
+     "team_pts": 116,
+     "margin": 11,
+     "opp_pts": 105,
+     "spread": -6.5,
+     "total": 232.5
+    },
+    "... 94 more"
+   ],
+   "tonight_script": {
+    "spread": 8.5,
+    "total": 236,
+    "expected_margin": -8.5,
+    "margin_sd": 12,
+    "blowout_margin": 15,
+    "p_win": 23.9,
+    "p_win_by_blowout": 2.5,
+    "p_lose_by_blowout": 29.4,
+    "p_blowout": 31.9,
+    "team_implied": 113.8
+   },
+   "availability": {
+    "season": "2025-26",
+    "team_games": 88,
+    "played": 60,
+    "missed": 28,
+    "current_out_streak": 0,
+    "current_out_since": null,
+    "absences": [
+     {
+      "from": "2026-04-10",
+      "to": "2026-04-12",
+      "games": 2,
+      "return_date": "2026-04-18"
+     },
+     {
+      "from": "2026-03-02",
+      "to": "2026-03-05",
+      "games": 2,
+      "return_date": "2026-03-06"
+     },
+     {
+      "from": "2025-12-25",
+      "to": "2026-02-04",
+      "games": 23,
+      "return_date": "2026-02-07"
+     }
+    ],
+    "ramp": {
+     "return_date": "2026-04-18",
+     "games_missed": 2,
+     "games_since_return": 6,
+     "since_return": [
+      {
+       "game_date": "2026-04-18",
+       "min": 33.1,
+       "pts": 12,
+       "reb": 0,
+       "ast": 1
+      },
+      {
+       "game_date": "2026-04-20",
+       "min": 28.2,
+       "pts": 13,
+       "reb": 1,
+       "ast": 2
+      },
+      {
+       "game_date": "2026-04-23",
+       "min": 23.6,
+       "pts": 6,
+       "reb": 2,
+       "ast": 1
+      },
+      {
+       "game_date": "2026-04-25",
+       "min": 26.6,
+       "pts": 9,
+       "reb": 2,
+       "ast": 2
+      },
+      {
+       "game_date": "2026-04-27",
+       "min": 35.7,
+       "pts": 18,
+       "reb": 6,
+       "ast": 5
+      }
+     ],
+     "min_since_return": 31.1,
+     "min_before_absence": 30.5,
+     "pts_since_return": 14.2,
+     "pts_before_absence": 12.2
+    }
+   },
+   "travel": [
+    {
+     "team_id": "nba_1610612760",
+     "team": "OKC",
+     "is_home": true,
+     "last_game": "2026-10-20",
+     "last_site": "SAS",
+     "rest_days": 1,
+     "miles_to_tonight": 421,
+     "tz_change_hours": 0,
+     "tonight_tz": "America/Chicago",
+     "tonight_elev_ft": 1201,
+     "high_altitude": false,
+     "road_trip_game": null,
+     "home_stand_game": 1,
+     "games_last_week": 2,
+     "miles_last_week": 421,
+     "recent_path": [
+      {
+       "date": "2026-10-20",
+       "site": "SAS",
+       "away": true,
+       "tonight": false
+      },
+      {
+       "date": "2026-10-22",
+       "site": "OKC",
+       "away": false,
+       "tonight": true
+      }
+     ]
+    },
+    {
+     "team_id": "nba_1610612743",
+     "team": "DEN",
+     "is_home": false,
+     "last_game": null,
+     "last_site": null,
+     "rest_days": null,
+     "miles_to_tonight": null,
+     "tz_change_hours": null,
+     "tonight_tz": "America/Chicago",
+     "tonight_elev_ft": 1201,
+     "high_altitude": false,
+     "road_trip_game": 1,
+     "home_stand_game": null,
+     "games_last_week": 1,
+     "miles_last_week": 0,
+     "recent_path": [
+      {
+       "date": "2026-10-22",
+       "site": "OKC",
+       "away": true,
+       "tonight": true
+      }
+     ]
+    }
+   ],
+   "opp_defenders": {
+    "season": "2026-27",
+    "darko_updated": "2026-10-19",
+    "rows": [
+     {
+      "player_id": "nba_1628983",
+      "name": "Shai Gilgeous-Alexander",
+      "position": "G",
+      "height_inches": 78,
+      "weight_lbs": 195,
+      "gp": 1,
+      "min": 36.1,
+      "stl": 3,
+      "blk": 3,
+      "pf": 2,
+      "dreb": 4,
+      "stl36": 3,
+      "blk36": 3,
+      "d_dpm": 0.6,
+      "dpm": 5.8
+     },
+     {
+      "player_id": "nba_1631096",
+      "name": "Chet Holmgren",
+      "position": "C-F",
+      "height_inches": 85,
+      "weight_lbs": 208,
+      "gp": 1,
+      "min": 30.5,
+      "stl": 0,
+      "blk": 4,
+      "pf": 0,
+      "dreb": 3,
+      "stl36": 0,
+      "blk36": 4.7,
+      "d_dpm": 2.5,
+      "dpm": 4.2
+     },
+     {
+      "player_id": "nba_1631114",
+      "name": "Jalen Williams",
+      "position": "G-F",
+      "height_inches": 77,
+      "weight_lbs": 211,
+      "gp": 1,
+      "min": 29.9,
+      "stl": 1,
+      "blk": 1,
+      "pf": 4,
+      "dreb": 7,
+      "stl36": 1.2,
+      "blk36": 1.2,
+      "d_dpm": 0.1,
+      "dpm": 1.8
+     },
+     {
+      "player_id": "nba_1627936",
+      "name": "Alex Caruso",
+      "position": "G",
+      "height_inches": 77,
+      "weight_lbs": 186,
+      "gp": 1,
+      "min": 24.7,
+      "stl": 1,
+      "blk": 0,
+      "pf": 1,
+      "dreb": 6,
+      "stl36": 1.5,
+      "blk36": 0,
+      "d_dpm": 2.3,
+      "dpm": 2.6
+     },
+     {
+      "player_id": "nba_1642349",
+      "name": "Ajay Mitchell",
+      "position": "G",
+      "height_inches": 76,
+      "weight_lbs": 190,
+      "gp": 1,
+      "min": 22.7,
+      "stl": 0,
+      "blk": 0,
+      "pf": 3,
+      "dreb": 5,
+      "stl36": 0,
+      "blk36": 0,
+      "d_dpm": 0,
+      "dpm": 1.2
+     },
+     {
+      "player_id": "nba_1642272",
+      "name": "Jared McCain",
+      "position": "G",
+      "height_inches": 75,
+      "weight_lbs": 195,
+      "gp": 1,
+      "min": 22.2,
+      "stl": 1,
+      "blk": 0,
+      "pf": 1,
+      "dreb": 2,
+      "stl36": 1.6,
+      "blk36": 0,
+      "d_dpm": -1.3,
+      "dpm": -1.5
+     },
+     "... 2 more"
+    ]
+   },
+   "teammate_corr": {
+    "season": "2025-26",
+    "min_games": 10,
+    "rows": [
+     {
+      "player_id": "nba_203999",
+      "name": "Nikola Joki\u0107",
+      "games": 54,
+      "min": 35.3,
+      "r_pts_pts": -0.253,
+      "r_reb_reb": -0.097,
+      "r_ast_pts": -0.038,
+      "r_pts_ast": 0.23,
+      "r_pra_pra": -0.162,
+      "r_3pm_3pm": -0.153
+     },
+     {
+      "player_id": "nba_1627750",
+      "name": "Jamal Murray",
+      "games": 53,
+      "min": 34.6,
+      "r_pts_pts": 0.04,
+      "r_reb_reb": -0.046,
+      "r_ast_pts": 0.064,
+      "r_pts_ast": 0.077,
+      "r_pra_pra": 0.069,
+      "r_3pm_3pm": 0.308
+     },
+     {
+      "player_id": "nba_1631128",
+      "name": "Christian Braun",
+      "games": 37,
+      "min": 31.9,
+      "r_pts_pts": 0.314,
+      "r_reb_reb": 0.299,
+      "r_ast_pts": -0.069,
+      "r_pts_ast": 0.083,
+      "r_pra_pra": 0.264,
+      "r_3pm_3pm": 0.327
+     },
+     {
+      "player_id": "nba_203932",
+      "name": "Aaron Gordon",
+      "games": 25,
+      "min": 27.8,
+      "r_pts_pts": -0.211,
+      "r_reb_reb": -0.094,
+      "r_ast_pts": -0.113,
+      "r_pts_ast": 0.244,
+      "r_pra_pra": -0.17,
+      "r_3pm_3pm": -0.119
+     },
+     {
+      "player_id": "nba_203501",
+      "name": "Tim Hardaway Jr.",
+      "games": 54,
+      "min": 25.2,
+      "r_pts_pts": -0.191,
+      "r_reb_reb": 0.073,
+      "r_ast_pts": -0.252,
+      "r_pts_ast": -0.074,
+      "r_pra_pra": -0.218,
+      "r_3pm_3pm": 0.029
+     },
+     {
+      "player_id": "nba_1631212",
+      "name": "Peyton Watson",
+      "games": 31,
+      "min": 24.8,
+      "r_pts_pts": 0.432,
+      "r_reb_reb": 0.074,
+      "r_ast_pts": 0.283,
+      "r_pts_ast": 0.091,
+      "r_pra_pra": 0.36,
+      "r_3pm_3pm": 0.258
+     },
+     "... 2 more"
+    ]
+   },
+   "names": [
+    "Cameron Johnson"
+   ],
+   "config": {
+    "blowout_margin": 15,
+    "margin_sd": 12,
+    "big_favorite_spread": 8,
+    "proj_minutes_window": 10,
+    "proj_rate_weights": {
+     "last10": 0.5,
+     "season": 0.5
+    },
+    "form_z_window": 5,
+    "foul_trouble_pf": 5,
+    "corr_min_games": 10
+   },
+   "errors": []
+  }
+ },
+ "raw_context": {}
+}

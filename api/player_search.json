@@ -1,0 +1,45 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.40",
+ "route": "/api/player-search",
+ "rows": [
+  {
+   "player_id": "nba_1642358",
+   "player_name": "AJ Johnson",
+   "primary_position": "G \u2022 NOP",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1629661",
+   "player_name": "Cameron Johnson",
+   "primary_position": "F \u2022 DEN",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1643052",
+   "player_name": "Chaney Johnson",
+   "primary_position": "G-F \u2022 BKN",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1630552",
+   "player_name": "Jalen Johnson",
+   "primary_position": "F \u2022 ATL",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1629640",
+   "player_name": "Keldon Johnson",
+   "primary_position": "F-G \u2022 SAS",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1642352",
+   "player_name": "Keshad Johnson",
+   "primary_position": "F \u2022 MIA",
+   "active": 1
+  },
+  "... 8 more"
+ ]
+}
