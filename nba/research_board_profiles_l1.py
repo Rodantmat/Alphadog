@@ -40,7 +40,12 @@ mismatches, both teams on a back-to-back, usual hitters MISSING, new players, pr
 player's previous board), raw quartiles, HDBSCAN and spectral clustering, typical vs unusual boards (isolation forest, analog density
 in the other season); batch 3 (online: Wasserstein k-means of market regimes arXiv 2110.11848, LSEG regime detection - GMM / HMM /
 change points) - Wasserstein k-means of each slate's final_hp / goblin multiplier distributions, Gaussian HMM regimes over
-consecutive slates, PELT change-point segments.
+consecutive slates, PELT change-point segments. Round 2 (run 40021463152): 283 profiles (215 elected), trailing clean passes 1.
+Batch 4 (Gemini 2.5-pro consult, 25 further views; the feasible ones): 9 more features (star players on the board, star share,
+team concentration, the biggest game's share, prop-mix and tier entropy, bimodality of the standard / goblin final_hp
+distributions), NMF archetypes and LDA topics of the board's composition (leg counts per prop x line type x side, the component
+re-found by the other season's fit), compositional (centred log-ratio) clustering of the prop mix, non-linear (RBF kernel PCA)
+embeddings, 3-slate trajectories, consensus clustering across 12 clusterings.
 PASSES: the techniques below run in order, each one a pass; a pass is CLEAN when it registers no new profile. The run reports the
 registry (name, definition, ranges in raw units, days / months / episodes per season, 2026-27 slates in it) and the trailing run of
 clean passes. Layer 2 (strategies per profile) waits for 10 consecutive clean passes.
