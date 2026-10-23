@@ -83,7 +83,7 @@ def features(conn, days):
     """{(season, day): {feature: value}}"""
     lines = defaultdict(list)
     for d, ev, tot, sp in conn.execute("""SELECT game_date, canonical_event_id, total_line::float8, home_spread::float8
-                                          FROM nba_market.game_lines_closing WHERE season = ANY(%s)""", (list(SEASONS),)):
+                                          FROM nba_market.game_lines_closing WHERE game_date BETWEEN '2024-10-01' AND '2026-06-30'"""):
         lines[(d, ev)].append((tot, sp))
     by_day_lines = defaultdict(list)
     for (d, ev), v in lines.items():
