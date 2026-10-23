@@ -92,3 +92,19 @@ One line per finding, newest section last. Each finding names its script and run
        inside final_hp_board_cal.PROPS until those props get the chain.
 - N-6  Standard-line source: a book listing a ladder in its main market (Fanatics stocks, BetRivers points) is not a main line - left
        out of the books median (audit_one_number run 39917858707).
+
+## 6. Game environment and board profiles on the one number (2026-10-23; ledger DAY THREE 24)
+
+- E-1  game_lines_closing.game_date is the UTC tip date and season is the calendar year - join on the local date via
+       research_leg_environment.game_lines_local() (schedule_norm, same pairing on the date or the day before).
+- E-2  Leg level: final_hp already carries the environment. Cross-fitted corrections per dimension (total, spread, back-to-back,
+       opponent back-to-back, slate size, month) change log-loss by -0.00007 .. +0.00013 - no L3 environment layer.
+- E-3  The one consistent leak: Overs on goblin / demon lines for a team on a back-to-back (combos / points Over goblins -0.024..-0.040
+       in both seasons). Same direction: assists Over demons on low totals, points Over demons as an 8+ favourite, threes Over demons
+       in Dec-Jan.
+- E-4  Slate level (pre-registered A / B / C profiles): <= 4 games loses for nearly every calibrated unit; >= 9 games with few
+       back-to-backs (C1) is where long calibrated slips earn (5-6 picks); >= 9 games with many back-to-backs (C2) is where they lose.
+- E-5  Candidate, not live: on C1 slates swap the calibrated 3-Power for calib R 0.60 6-Flex (+9.3 / +64.3 units over the two
+       seasons, lb5 flat in 2024-25; the 6F was picked after seeing both seasons). Track it on 2026-27 C1 slates before any decision.
+- E-6  One-feature board rules over-fit: 0 of ~2,100 held in both directions. Board-shape features (legs, shares, std >= x) differ
+       between the 2024-25 capture and the 2025-26 live board, so they cannot be cut on one season and applied to the other.
