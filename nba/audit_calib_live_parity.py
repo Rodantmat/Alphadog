@@ -51,6 +51,12 @@ def main():
             ls = CS.unit_slips(lpool, comp, size, K)
             rs = CS.unit_slips(rpool, comp, size, K) if rpool else []
             print(f"  {u} ({comp} {size}-{structure}): eligible legs live {nl}, research {nr}")
+            el = [l for l in lpool if l["tier"] in CS.POOLS[pool_] and l["p"] >= minp]
+            keys = [(l["player"], l["prop"], l["side"], float(l["line"])) for l in el]
+            byprop = {}
+            for l in el:
+                byprop[(l["prop"], l["prop"] in CS.CALIBRATED_PROPS)] = byprop.get((l["prop"], l["prop"] in CS.CALIBRATED_PROPS), 0) + 1
+            print(f"    live eligible: distinct legs {len(set(keys))} of {len(keys)} rows; by (prop, calibrated): {dict(sorted(byprop.items()))}")
             for i in range(max(len(ls), len(rs))):
                 a = ls[i] if i < len(ls) else None
                 b = rs[i] if i < len(rs) else None
