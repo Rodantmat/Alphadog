@@ -130,3 +130,13 @@ One line per finding, newest section last. Each finding names its script and run
 - T-7  The market at pick time is already inside final_hp (books' devigged probability at PrizePicks' line adds nothing in 2024-25).
 - T-8  TIMING: the historical 'window' snapshot is ~14:40 PT; the live pick is ~13:15 PT. Backtests carry ~85 minutes more news than
        live. Any live-vs-backtest gap should be read with this in mind.
+- T-9  One model over every factor (ridge / gradient boosting) sharpens probabilities in a 2025-26 walk-forward but costs the live
+       pair units and helps only 5-6-pick slips: better log-loss is not better 2-4-pick slips. Refit input, not a slip rule (ledger 27).
+- T-10 Day-to-day relations are absent: slate residuals and strategy profits do not persist, trailing / look-alike-day forecasts
+       fail both seasons, play/skip gates do no better than random skips (ledger 28). Single exploratory lead: 2-Power after a
+       losing 15-slate stretch - unconfirmed.
+- T-11 PROFILE METHOD (ledger 29): a profile is defined WITHOUT strategies, must recur in both seasons, be identifiable before the
+       pick and be distinct (also from intersections / unions of known profiles). Clustering is only meaningful on feature families
+       that co-move beyond noise, and must beat shuffled data; without these gates random features produce 'profiles'.
+- T-12 OPERATIONS: the pick must respect each leg's own tip vs when the owner places (10-23: an early 13:00 PT game made a slip
+       unplaceable); soft steps can time out silently on big slates (market refresh 8 minutes).
