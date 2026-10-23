@@ -167,24 +167,28 @@ def main():
         ud = np.unique(dd)
         hold = set(rng.choice(ud, max(1, int(0.15 * len(ud))), replace=False))
         vmask = np.array([x in hold for x in dd])
-        m = HistGradientBoostingRegressor(max_depth=4, learning_rate=0.05, max_iter=600, min_samples_leaf=400,
-                                          categorical_features=cat_mask, l2_regularization=1.0, early_stopping=True,
-                                          validation_fraction=None, n_iter_no_change=30, random_state=5)
-        # day-held-out early stopping: fit on the non-held days, the held days as the validation set via a manual loop
-        m.set_params(early_stopping=False, max_iter=50)
-        best, best_it, model = None, 0, None
-        for it in (50, 100, 200, 300, 450, 600):
+        # day-held-out early stopping along ONE warm-started path; 0 trees (no correction) competes
+        m = HistGradientBoostingRegressor(max_depth=4, learning_rate=0.05, max_iter=10, min_samples_leaf=400,
+                                          categorical_features=cat_mask, l2_regularization=1.0, early_stopping=False,
+                                          warm_start=True, random_state=5)
+        best, best_it = float(ll(p0[mf][vmask], y[mf][vmask]).mean()), 0
+        for it in (10, 25, 50, 100, 200, 400):
             m.set_params(max_iter=it)
             m.fit(Xh[mf][~vmask], r[mf][~vmask])
             pv = np.clip(p0[mf][vmask] + m.predict(Xh[mf][vmask]), 0.01, 0.99)
             sc = float(ll(pv, y[mf][vmask]).mean())
-            if best is None or sc < best:
+            if sc < best:
                 best, best_it = sc, it
-        m.set_params(max_iter=best_it)
-        m.fit(Xh[mf], r[mf])
-        ph[ma] = m.predict(Xh[ma])
-        log(f"HGB fitted on {fit_s}: {best_it} iterations (day-held-out log-loss {best:.5f})")
-        if fit_s == SEASONS[0]:
+        if best_it == 0:
+            ph[ma] = 0.0
+        else:
+            m = HistGradientBoostingRegressor(max_depth=4, learning_rate=0.05, max_iter=best_it, min_samples_leaf=400,
+                                              categorical_features=cat_mask, l2_regularization=1.0, early_stopping=False, random_state=5)
+            m.fit(Xh[mf], r[mf])
+            ph[ma] = m.predict(Xh[ma])
+        log(f"HGB fitted on {fit_s}: {best_it} trees (held-out-day log-loss {best:.5f} vs final_hp "
+            f"{float(ll(p0[mf][vmask], y[mf][vmask]).mean()):.5f})")
+        if fit_s == SEASONS[0] and best_it > 0:
             sub = np.where(ma)[0]
             sub = rng.choice(sub, min(60000, len(sub)), replace=False)
             pi = permutation_importance(m, Xh[sub], r[sub], n_repeats=3, random_state=5, scoring="neg_mean_squared_error")
