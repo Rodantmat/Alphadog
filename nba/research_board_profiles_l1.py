@@ -1407,6 +1407,58 @@ def techniques(reg, P, cols, fam):
     T.append(("kernel embeddings on every family (incl. laplacian)", kernel_all))
     T.append(("k-means k 9-12 on every family", lambda: sum(clusters("kmeans", f_, (9, 10, 11, 12))() for f_ in MAIN if f_ in fam)))
     T.append(("GMM k 9-12 on every family", lambda: sum(clusters("gmm", f_, (9, 10, 11, 12))() for f_ in MAIN if f_ in fam)))
+
+    # ---------------- batch 9 (round 9 run 40031202918; own ideas): graph communities, biclusters, 3-way co-occurrence; every
+    # clustering now also has to survive Hennig's bootstrap (>= 0.75 in both seasons) ----------------
+    for fname in MAIN:
+        if fname in fam:
+            T.append((f"louvain communities on {fname}", clusters("louvain", fname, (2, 3, 4, 5, 6, 8))))
+            T.append((f"spectral biclustering on {fname}", clusters("cocluster", fname, (2, 3, 4, 5))))
+
+    def triples(lo=1 / 3, hi=2 / 3):
+        """three features together - only when a co-occurring PAIR (a, b) also attracts c beyond chance: inside the pair's slates,
+        c's side is >= 1.3 x its share and hypergeometric p < 0.001 in BOTH seasons (a 3-way commonality, not a pair plus noise)"""
+        from scipy.stats import hypergeom
+        n = 0
+        side = {}
+        for c in cols:
+            x = P[:, ci[c]]
+            side[(c, "HIGH")] = (x >= hi); side[(c, "LOW")] = (x <= lo)
+        okc = {c: ~np.isnan(P[:, ci[c]]) for c in cols}
+        prs = []
+        for a, b in itertools.combinations(cols, 2):
+            for sa, sb in itertools.product(("HIGH", "LOW"), repeat=2):
+                ma, mb = side[(a, sa)], side[(b, sb)]
+                ok = okc[a] & okc[b]
+                good = True
+                for s_ in HIST:
+                    m_ = ok & (seas == s_)
+                    N, A, B, K = int(m_.sum()), int((ma & m_).sum()), int((mb & m_).sum()), int((ma & mb & m_).sum())
+                    if N == 0 or K < 1.3 * A * B / max(N, 1) or hypergeom.sf(K - 1, N, A, B) >= 0.001:
+                        good = False; break
+                if good:
+                    prs.append(((a, sa), (b, sb), ma & mb & ok))
+        log(f"  triples: {len(prs)} co-occurring pairs to extend")
+        for (a, sa), (b, sb), mab in prs:
+            for c in cols:
+                if c in (a, b):
+                    continue
+                for sc in ("HIGH", "LOW"):
+                    mc = side[(c, sc)]
+                    good = True
+                    for s_ in HIST:
+                        m_ = mab & okc[c] & (seas == s_)
+                        base = okc[c] & (seas == s_) & reg.hist
+                        N, A = int(base.sum()), int((mc & base).sum())
+                        K, Nab = int((mc & m_).sum()), int(m_.sum())
+                        if Nab == 0 or N == 0 or K < 1.3 * Nab * A / N or hypergeom.sf(K - 1, N, A, Nab) >= 0.001:
+                            good = False; break
+                    n += 1
+                    if good:
+                        reg.offer(f"{a} {sa} & {b} {sb} & {c} {sc}", mab & mc & okc[c], f"{a} {sa}, {b} {sb} and {c} {sc} - the pair "
+                                  f"co-occurs beyond chance and draws the third beyond chance, both seasons", [a, b, c], "triples")
+        return n
+    T.append(("3-way co-occurrence (pairs that draw a third)", triples))
     return T
 
 
