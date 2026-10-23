@@ -124,3 +124,9 @@ One line per finding, newest section last. Each finding names its script and run
 - T-5  Slate types recur (k-means fitted on either season finds the deep / strong board and the thin board), but the strategy edge on
        them is concentrated in a few big long-slip days in 2024-25; on trailing percentiles the strong-board 6-Flex swap is a 2025-26
        pattern only. Next tests on slate types must report the gain without the best 3 days and across windows / thresholds.
+- T-6  final_hp over-credits recent form: last-5 average above the line -> More ~2-3 points below final_hp; below the line -> ~2.5-3
+       above (points, combos, both seasons; round 2 run 40004208892). As a cross-fitted layer it sharpens the top buckets but is not
+       significant both ways and costs the live pair units - it belongs in the next final_hp refit as an input, not in a slip rule.
+- T-7  The market at pick time is already inside final_hp (books' devigged probability at PrizePicks' line adds nothing in 2024-25).
+- T-8  TIMING: the historical 'window' snapshot is ~14:40 PT; the live pick is ~13:15 PT. Backtests carry ~85 minutes more news than
+       live. Any live-vs-backtest gap should be read with this in mind.
