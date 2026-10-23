@@ -3056,3 +3056,33 @@ should be doing. Mining everything that they should mine, consuming everything t
       stocks 0.596, blocks 0.611 in 2025-26) - the strategy results are measured on real hits, the number itself needs an L3 cell
       for those props; whole-number rows of final_hp_derived keep the as-of chain; Underdog / other apps' paper strategies were
       not re-researched on the new number.
+24. 🟡 **BOARD PROFILES ON THE ONE NUMBER - GAME ENVIRONMENT, PROFILE RULES; ONE CANDIDATE, NOTHING LIVE** (owner 2026-10-23 09:51 PT:
+    "keep digging, researching, learning, identifying, granulating profiles. You cannot be stuck on research by scheduled tasks").
+    Research now runs beside the pipelines; only heavy DB writes keep out of the P2A / P2B / P3 windows.
+    - DATA FIX FIRST. nba_market.game_lines_closing.game_date is the UTC tip date (a 7 PM PT game sits on the next day) and its season
+      column is the calendar year. `research_leg_environment.game_lines_local()` maps each line to the schedule's local date
+      (nba_market.schedule_norm, same pairing on the date or the day before): 13,348 lines, 57 unmatched; legs with an environment
+      went from 31% to 96% (757,723 of 786,447). Earlier environment numbers (runs 39991477715 / 39992322723) are void.
+    - LEG LEVEL (research_leg_environment.py run 39993166920): residual hit - final_hp by game environment. Pooled, 2025-26 legs run
+      below final_hp on low totals (-0.011), the team on a back-to-back (-0.013), Dec-Jan (-0.007); 2024-25 shows only the
+      back-to-back (-0.012). 8 of 352 cells (group x side x line type x bucket) are consistent in both seasons - all Overs on goblin /
+      demon lines over-estimated: combos / points Over goblins on a back-to-back (-0.024..-0.040), threes Over demons in Dec-Jan,
+      assists Over demons on low totals, points Over demons as an 8+ favourite. A cross-fitted log-odds correction per dimension
+      does NOT generalise (log-loss change -0.00007 .. +0.00013; back-to-back the only one better both ways, -0.00003 / -0.00007).
+      Verdict: final_hp already carries the game environment at leg level; no environment layer (L3) is worth building.
+    - SLATE LEVEL (research_pp_board_profiles_v3.py runs 39993211117 / 39993987751; live pair REB 4F + CAL 3P, grader v3, every
+      structure 2-6 F / P reported). One-feature rules chosen on one season, tested on the other: none holds in both directions
+      (1,080 / 1,062 rules each way). Board-shape features are not comparable across seasons (2024-25 board = Odds-API capture,
+      2025-26 = live). The pre-registered hierarchy (A <= 4 games, B 5-8, C >= 9 split by back-to-back share 0.25) is the stable
+      read: A slates lose for nearly every calibrated unit in both seasons; C1 (>= 9 games, few back-to-backs) is where long
+      calibrated slips earn (calib R 0.60 6P +92% / +317%, 5P +105% / +204%, 6F +69% / +242%); C2 (many back-to-backs) loses for the
+      long ones (6F -57% / -60%, 6P -100% / -100%) - the slate-level face of the back-to-back Over bias above.
+    - FIXED RULES (section 4, written before scoring; net units vs the pair +162.8 / +232.5):
+        R1 C1: swap 3P -> calib R 0.60 6F   +9.3 / +64.3   lb5 +24.7 / +56.5 (pair +24.9 / +47.2)
+        R2 C1: swap 3P -> calib R 0.60 5F   +7.3 / +15.3   lb5 +26.9 / +49.8
+        R3 C1: swap 3P -> calib GR ev 6F    +9.3 / +60.7
+        R4 C1: add a 6F as a 3rd slip       +12.9 / +18.8  (ROI lower: +52.5 / +77.1%)
+        R5 A: skip 3P  -3.0 / +5.3;  R6 A: skip all  -27.9 / +4.4;  R7 R1 + R5  +6.2 / +69.6;  R8 C2: skip 3P  -12.5 / +5.0
+      R1 gains in both seasons and sits inside the owner's scope (4+ picks Flex), but it is NOT clean out of sample: the 6F was picked
+      after section 2 showed both seasons, 2024-25 lb5 does not move, and the 2025-26 gain rests on a few 6-of-6 hits. Small-slate
+      skips do not pay. NOTHING GOES LIVE; R1 is the candidate for the 2026-27 record (C1 slates only).
