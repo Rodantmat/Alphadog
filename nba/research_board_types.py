@@ -825,33 +825,50 @@ def main():
         return float(-np.mean(yy * np.log(p) + (1 - yy) * np.log(1 - p)))
     z0 = logit(p0)
     print("\n" + "=" * 190 + "\nCROSS-FIT per factor: log-odds shift per (bin, side, line type) fitted on one season, shrunk n / (n + 2000), "
-          "applied to the other (negative = better)")
+          "applied to the other ON TOP of a side x line type baseline shift (negative = the factor adds over the baseline); HOLDS = day-clustered "
+          "z <= -2 in BOTH directions")
     xf = []
     for f, vals in feats.items():
         v = np.array([x if x is not None else "~" for x in vals], dtype=object).astype(str)
         key = pd.Series(v) + "|" + pd.Series(side_lt)
         codes, uniq = pd.factorize(key)
+        bcodes, buniq = pd.factorize(pd.Series(side_lt))
         out = []
+
+        def fit_shift(cd, nu, mf, offset, shrink=2000):
+            b = np.zeros(nu)
+            cnt = np.bincount(cd[mf], minlength=nu)
+            for _ in range(6):
+                q_ = sig(offset + b[cd[mf]])
+                gsum = np.bincount(cd[mf], weights=y[mf] - q_, minlength=nu)
+                hsum = np.bincount(cd[mf], weights=q_ * (1 - q_), minlength=nu)
+                b += gsum / np.maximum(hsum, 1e-9)
+            return b * cnt / (cnt + shrink)
         for fit, app in (SEASONS, SEASONS[::-1]):
             mf = (seas == fit) & (v != "~")
-            b = np.zeros(len(uniq))
-            cnt = np.bincount(codes[mf], minlength=len(uniq))
-            for _ in range(6):
-                q_ = sig(z0[mf] + b[codes[mf]])
-                gsum = np.bincount(codes[mf], weights=y[mf] - q_, minlength=len(uniq))
-                hsum = np.bincount(codes[mf], weights=q_ * (1 - q_), minlength=len(uniq))
-                b += gsum / np.maximum(hsum, 1e-9)
-            b = b * cnt / (cnt + 2000)
             ma = (seas == app) & (v != "~")
-            p1 = sig(z0[ma] + b[codes[ma]])
-            out.append(ll(p1, y[ma]) - ll(p0[ma], y[ma]))
+            # baseline: one shift per side x line type; candidate: the factor's bins ON TOP of that baseline
+            bb = fit_shift(bcodes, len(buniq), mf, z0[mf], shrink=0)   # the baseline in full (6 cells, huge n)
+            zb = z0 + bb[bcodes]
+            bf = fit_shift(codes, len(uniq), mf, zb[mf])
+            p_base = np.clip(sig(zb[ma]), 1e-4, 1 - 1e-4)
+            p1 = np.clip(sig(zb[ma] + bf[codes[ma]]), 1e-4, 1 - 1e-4)
+            yy = y[ma]
+            dl = -(yy * np.log(p1) + (1 - yy) * np.log(1 - p1)) + (yy * np.log(p_base) + (1 - yy) * np.log(1 - p_base))
+            # day-clustered z of the log-loss change (random factors 'held' 4 of 13 times on the mean alone - synthetic test)
+            dsum = pd.Series(dl).groupby(dd_[ma]).agg(["sum", "count"])
+            mu = dl.mean()
+            D = len(dsum)
+            se = math.sqrt(((dsum["sum"] - dsum["count"] * mu) ** 2).sum() * D / max(D - 1, 1)) / len(dl)
+            out.append((mu, mu / se if se > 0 else 0.0))
         cov = float(np.mean(v != "~"))
         xf.append((f, out[0], out[1], cov))
-    xf.sort(key=lambda x: max(x[1], x[2]))
+    xf.sort(key=lambda x: max(x[1][1], x[2][1]))
     for f, a, b_, cov in xf:
-        tagx = "HOLDS" if a < 0 and b_ < 0 else ""
-        print(f"  {f:<20} fit 24-25 -> 25-26 {a:+.6f} | fit 25-26 -> 24-25 {b_:+.6f}  coverage {100 * cov:5.1f}%  {tagx}")
-    holds = [f for f, a, b_, c in xf if a < 0 and b_ < 0]
+        tagx = "HOLDS" if a[1] <= -2 and b_[1] <= -2 else ""
+        print(f"  {f:<20} fit 24-25 -> 25-26 {a[0]:+.6f} (z {a[1]:+5.1f}) | fit 25-26 -> 24-25 {b_[0]:+.6f} (z {b_[1]:+5.1f})  "
+              f"coverage {100 * cov:5.1f}%  {tagx}")
+    holds = [f for f, a, b_, c in xf if a[1] <= -2 and b_[1] <= -2]
     print(f"\n  factors that HOLD both ways: {len(holds)} of {len(xf)}: {', '.join(holds)}")
 
     # holding factors by prop group
