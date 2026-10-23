@@ -380,7 +380,7 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
     semantics: {
       main_number: "hit_probability_0_100 = final_hp, the board-scoped hit probability of this exact leg (board_scored.final_hp: final_hp's own number for every leg final_hp holds - what the slip engine reads - and the same board-centred chain for the rest) - model_hp_0_100 retired (null): one number",
       secondary_number: "probability_confidence_0_100 = board_scored.confidence",
-      tertiary_number: "score_0_100 = the certified score formula on the market-anchored probability (model_score_0_100 = on the model's)",
+      tertiary_number: "score_0_100 = the certified score formula on final_hp (model_score_0_100 = the same)",
       rows_are: slate.mode === "live" ? "today's scored board (P3)" : `replay of the latest scored slate ${slate.date} - no scored board for today yet`
     },
     query_ms: Date.now() - t0, writes_performed: 0, timestamp_utc: new Date().toISOString()
