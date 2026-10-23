@@ -283,6 +283,17 @@ def slate_features(conn, days, order):
                                                  np.linspace(0.05, 0.95, 19))
                                      if sum(l["prop"] == "points" and l["tier"] == "R" for l in legs) >= 20 else None),
                         "player_props": np.quantile(list(defaultdict_count(legs).values()), np.linspace(0.05, 0.95, 19))}
+        # batch 10 (online research: sliced Wasserstein k-means for multivariate distributions, Luan & Hamp 2023 / LSE): the whole
+        # leg cloud (final_hp, log multiplier) of the slate, projected on 16 fixed directions, 19 quantiles per direction -
+        # Euclidean distance between these vectors = sliced Wasserstein-2 between two slates' leg clouds
+        pf_ = [(l["p"], float(l["factor"])) for l in legs if l["p"] is not None and float(l["factor"]) > 0]
+        if len(pf_) >= 40:
+            Z_ = np.array([((a - 0.55) / 0.1, np.log(b) / 0.3) for a, b in pf_])
+            th_ = np.linspace(0, np.pi, 16, endpoint=False)
+            DIST[(s, d)]["sw_hp_factor"] = np.concatenate([np.quantile(Z_ @ np.array([np.cos(t), np.sin(t)]), np.linspace(0.05, 0.95, 19))
+                                                            for t in th_])
+        else:
+            DIST[(s, d)]["sw_hp_factor"] = None
         # batch 6: each prop group's own board quality (standard legs >= 0.62, goblins >= 0.75, demon share) and its final_hp
         # distribution (Wasserstein view per group)
         for g in GROUPS:
