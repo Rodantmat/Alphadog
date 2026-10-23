@@ -831,23 +831,9 @@ jobs:
               sys.exit(1)
           EOF
 
-      # BOARD HP (2026-10-22, owner 17:49 PT: calibrate demons and every prop line, "replicated to full back history and the live
-      # pipeline"). nba/build_board_hp.py score mode: the window board x the day's ladder, re-centred on PrizePicks' standard line and
-      # calibrated per line type with the latest as-of tunable set (nba_score.board_hp_tunables) -> nba_score.board_hp. Runs AFTER
-      # the pick and reads nothing the pick wrote; nothing reads board_hp yet (final_hp stays the engine's number - slips as is).
-      # Certified: audit_board_hp.py run 39890697569. Soft and listed below when it fails.
-      - name: Board HP (board-centred, line-type calibrated; beside final_hp)
-        id: soft_boardhp
-        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
-        continue-on-error: true
-        timeout-minutes: 5
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          BH_MODE: "score"
-          BH_DATES: ${{ steps.d.outputs.asof }}
-          BH_WRITE: "1"
-        run: python -u nba/build_board_hp.py
-
+      # (2026-10-23) The BOARD HP step (nba/build_board_hp.py -> nba_score.board_hp, a parallel number beside final_hp) is RETIRED:
+      # owner 21:01 PT - one number. final_hp itself carries the board-centred calibration (classification_config
+      # ['final_hp_board_centre'], build_final_hp.py) and every app board leg shows it (score_board_legs.py step 4b).
       - name: Collect soft-step failures
         id: soft
         if: always()
