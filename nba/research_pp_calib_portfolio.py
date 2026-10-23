@@ -8,7 +8,7 @@ UNITS
   calib  - calib_slips.unit_slips (the live engine's own builder for 'calib:...' units) on every PrizePicks window-board leg of the
            tier map ranked on final_hp (research_pp_calibrated_slips.load: final 7 days of each season out), k = 1..10 per day.
            The 7 calibrated units below each HOLD alone (research_pp_calibrated_slips run 39914672627).
-  live   - the four units of today's portfolio, from the recertified window-only slip tables (slip_engine_slips_wo /
+  live   - the six units of the production portfolio (pp_portfolio.order), from the recertified window-only slip tables (slip_engine_slips_wo /
            _wo_nosteals, rebuilt on the board-centred final_hp by nba-recert-chain), phase <> 'final7', k = 1..10.
 PORTFOLIO = units in order + N slips a day + leg cap L: the live engine's portfolio_select (round robin k = 1, 2, ... over the units, a
 candidate is taken unless it repeats a taken slip or one of its legs (player, prop, side, line) already sits in L taken slips; stop
