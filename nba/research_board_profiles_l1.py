@@ -49,6 +49,9 @@ embeddings, 3-slate trajectories, consensus clustering across 12 clusterings. Ro
 trailing clean passes 1 (3-slate trajectories found 3). Batch 5 (variations of what still finds profiles): 2- and 5-slate
 trajectories, trajectories / HMM regimes / change points on every family (two more PELT penalties), Wasserstein k-means of the demon
 multiplier, points-line and props-per-player distributions, absolute-scale clusters (z-scores on 2024-25's own mean / sd).
+Round 4 (run 40023838699): 324 profiles (244 elected), trailing clean 0 (trajectories 13, absolute scale 3, points-line 1). Batch 6:
+each prop group's own board quality (standard legs >= 0.62, goblins >= 0.75, demon share; 18 features) and final_hp distribution,
+4 / 7 / 10-slate trajectories on every family, absolute-scale Ward / spectral / HDBSCAN on every family, group-quality clusters.
 PASSES: the techniques below run in order, each one a pass; a pass is CLEAN when it registers no new profile. The run reports the
 registry (name, definition, ranges in raw units, days / months / episodes per season, 2026-27 slates in it) and the trailing run of
 clean passes. Layer 2 (strategies per profile) waits for 10 consecutive clean passes.
