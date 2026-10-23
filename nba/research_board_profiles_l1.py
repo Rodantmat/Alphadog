@@ -288,6 +288,7 @@ def slate_features(conn, days, order):
             f[f"gobstrong_{g}"] = float(sum(x >= 0.75 for x in Gg))
             f[f"demshare_{g}"] = sum(GRP.get(l["prop"]) == g and l["tier"].startswith("D") for l in legs) / max(ng_, 1)
             DIST[(s, d)][f"std_hp_{g}"] = np.quantile(Rg, np.linspace(0.05, 0.95, 19)) if len(Rg) >= 20 else None
+            DIST[(s, d)][f"gob_hp_{g}"] = np.quantile(Gg, np.linspace(0.05, 0.95, 19)) if len(Gg) >= 20 else None
         # batch 4 (Gemini consult 2026-10-23: composition, concentration, multimodality, entropy)
         cc = defaultdict(int)
         for l in legs:
