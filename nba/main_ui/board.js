@@ -308,13 +308,11 @@ function overviewSql() {
   return `
 WITH ${STARTED_CTE},
 mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop)),
-c AS MATERIALIZED (SELECT b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, th.true_hp final_hp,
+c AS MATERIALIZED (SELECT b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.final_hp,
              concat_ws('|', b0.player, b0.prop, b0.side, (b0.line::float8)::text) k
       FROM nba_score.board_scored b0
-      JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
-                                     AND th.line = b0.line AND th.side = b0.side
       WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[]) AND b0.app = ANY($6::text[]) AND NOT (b0.prop = ANY($7::text[]))
-        AND th.fit_set IS NOT NULL AND th.true_hp * 100 >= $8 AND th.true_hp < $9
+        AND b0.final_hp * 100 >= $8 AND b0.final_hp < $9
         AND NOT ${UD_HIDE("b0")} ${NOT_STARTED("b0")}),
 ${lookupCtes("c", "'underdog', 'sleeper'")}
 SELECT c.app, c.player_id, c.player, c.prop, c.line::float line, c.side, c.final_hp::float final_hp,
