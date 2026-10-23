@@ -316,6 +316,8 @@ def main():
                 bins = [(p, (0, 0)) for p in PROF]
             else:
                 vals = [feat[(disc, d)][f] for d in by_season[disc] if feat[(disc, d)][f] == feat[(disc, d)][f]]
+                if len(vals) < 30:
+                    continue
                 q1, q2 = np.percentile(vals, [33.3, 66.7])
                 if q1 == q2:
                     continue
