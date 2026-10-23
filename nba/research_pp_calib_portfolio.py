@@ -44,8 +44,12 @@ CALIB = [("calib", "calib:R:p:0.70:2", 3, "power"), ("calib", "calib:R:p:0.65:2"
          ("calib", "calib:R:p:0.65:1", 5, "flex"), ("calib", "calib:R:p:0.0:2", 5, "flex"),
          ("calib", "calib:GR:ev:0.65:2", 3, "power"), ("calib", "calib:R:p:0.70:2", 3, "flex"),
          ("calib", "calib:GR:ev:0.55:2", 5, "flex")]
-LIVE_NOW = [("_wo", "weighted:rebounds_R", 4, "flex"), ("_wo_nosteals", "weighted:stocks_R", 4, "flex"),
-            ("_wo", "core", 3, "power"), ("_wo_nosteals", "single:points_R", 3, "power")]
+# THE PRODUCTION PORTFOLIO (classification_config['pp_portfolio'].order, decided 2026-10-22): P_wthrees_4flex, P_wassists_4flex
+# (steals-free pool), P_wrebounds_4flex, P_wstocks_4flex, P_points_3power, P_wrebounds_3power
+LIVE_NOW = [("_wo", "weighted:threes_D1", 4, "flex"), ("_wo_nosteals", "weighted:assists_D1", 4, "flex"),
+            ("_wo", "weighted:rebounds_R", 4, "flex"), ("_wo", "weighted:stocks_R", 4, "flex"),
+            ("_wo", "single:points_R", 3, "power"), ("_wo", "weighted:rebounds_R", 3, "power")]
+REB4F = ("_wo", "weighted:rebounds_R", 4, "flex")
 NS = (1, 2, 3, 4)
 LS = (1, 2)
 
