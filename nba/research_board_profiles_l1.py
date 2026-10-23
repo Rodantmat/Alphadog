@@ -558,7 +558,9 @@ def techniques(reg, P, cols, fam):
                 return False
         return True
 
-    def clusters(method, fname, pars):
+    def clusters(method, fname, pars, derived=False):
+        """derived=True for decorrelated axes (kernel PCA, trajectories of PCA axes): no co-movement gate (uncorrelated by
+        construction), a cluster must instead beat the shuffled maximum by 0.05"""
         def fn():
             n = 0
             fc = fam[fname]
