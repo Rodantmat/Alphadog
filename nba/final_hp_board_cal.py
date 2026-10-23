@@ -210,11 +210,16 @@ STD_LINE_SQL = """
     pp AS (SELECT DISTINCT ON (game_date, pid, market_key) game_date, pid, market_key, line
            FROM s WHERE bookmaker = 'prizepicks'
            ORDER BY game_date, pid, market_key, (snapshot_label = 'window') DESC, snapshot_ts DESC, line),
+    -- each book's window-or-latest snapshot; a book whose snapshot carries MORE THAN ONE line in the main market (a ladder:
+    -- Fanatics stocks, BetRivers points - 2026-10-23 audit_one_number) has no single main line and is left out of the median
+    -- (before, DISTINCT ON picked one of its rungs arbitrarily: L0 0.5 vs 3.5 on the same leg between two reads)
+    bk0 AS (SELECT game_date, pid, market_key, bookmaker, snapshot_ts, bool_or(snapshot_label = 'window') AS win,
+                   min(line) AS line, count(DISTINCT line) AS nl
+            FROM s WHERE bookmaker <> 'prizepicks' GROUP BY 1, 2, 3, 4, 5),
+    bk1 AS (SELECT DISTINCT ON (game_date, pid, market_key, bookmaker) game_date, pid, market_key, line, nl
+            FROM bk0 ORDER BY game_date, pid, market_key, bookmaker, win DESC, snapshot_ts DESC),
     bk AS (SELECT game_date, pid, market_key, percentile_disc(0.5) WITHIN GROUP (ORDER BY line) AS line
-           FROM (SELECT DISTINCT ON (game_date, pid, market_key, bookmaker) game_date, pid, market_key, bookmaker, line
-                 FROM s WHERE bookmaker <> 'prizepicks'
-                 ORDER BY game_date, pid, market_key, bookmaker, (snapshot_label = 'window') DESC, snapshot_ts DESC) x
-           GROUP BY 1, 2, 3)
+           FROM bk1 WHERE nl = 1 GROUP BY 1, 2, 3)
     SELECT coalesce(pp.game_date, bk.game_date), coalesce(pp.pid, bk.pid), coalesce(pp.market_key, bk.market_key),
            coalesce(pp.line, bk.line), CASE WHEN pp.line IS NOT NULL THEN 'prizepicks' ELSE 'books' END
     FROM pp FULL JOIN bk ON bk.game_date = pp.game_date AND bk.pid = pp.pid AND bk.market_key = pp.market_key"""
