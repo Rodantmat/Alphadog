@@ -412,7 +412,7 @@ def leg_level(res_series, analog_res, order, seas_arr):
             if not np.isnan(x[j]):
                 vals.append(x[j])
             j -= 1
-        return float(np.mean(vals)) if len(vals) >= max(2, N // 2) else None
+        return float(np.mean(vals)) if len(vals) >= (1 if N == 1 else max(2, N // 2)) else None   # lag 1 needs one slate (was 0% coverage)
 
     cache = {}
 
