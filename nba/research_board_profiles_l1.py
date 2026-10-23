@@ -80,6 +80,7 @@ GRP = {"points": "points", "rebounds": "rebounds", "assists": "assists", "threes
 GROUPS = ("points", "rebounds", "assists", "threes", "combos", "lowvol")
 ONLY = [x for x in os.environ.get("L1_TECH", "").split(",") if x]
 DIST = {}          # (season, day) -> per-slate leg distributions as quantile vectors (Wasserstein views)
+CELLS = {}         # (season, day) -> leg counts per prop x line type x side (NMF / LDA views of the board's composition)
 
 
 def log(m):
