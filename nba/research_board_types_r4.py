@@ -140,7 +140,7 @@ def residual_series(days, order):
                 if l["p"] >= 0.65:
                     acc[f"res {sd}R p65"].append(r)
         for k, v in acc.items():
-            if len(v) >= 15:
+            if len(v) >= (5 if k.endswith("p65") else 15):
                 cells[k][i] = float(np.mean(v))
     return dict(cells)
 
