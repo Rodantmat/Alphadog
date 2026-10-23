@@ -567,14 +567,12 @@ def techniques(reg, P, cols, fam):
         return n
     T.append(("raw-unit ranges", raw_ranges))
 
-    def fit_labels(method, Xf, ok, par):
-        """fit on each season, assign every slate; -> {season: (labels, centres)}"""
+    def fit_once(method, Xm, par):
+        """one clustering of the rows Xm -> labels (-1 = noise)"""
         from sklearn.cluster import HDBSCAN, SpectralClustering
-        labs = {}
-        for fit in HIST:
-            mf = ok & (seas == fit)
-            if mf.sum() < 3 * max(par, 2):
-                continue
+        if True:
+            mf = np.ones(len(Xm), dtype=bool)
+            Xf = Xm
             if method == "kmeans":
                 mdl = KMeans(n_clusters=par, n_init=20, random_state=7).fit(Xf[mf]); lf = mdl.labels_
             elif method == "gmm":
