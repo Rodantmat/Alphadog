@@ -1001,6 +1001,10 @@ def pick(conn, day, require_fresh=True):
     pools = {'': pool}
     for fam, excl in EXCLUDE_BY_FAMILY.items():
         pools[fam] = {c: v for c, v in pool.items() if c not in excl}
+    # the calibrated-pool units' board: every half-point priced leg, its final_hp as p (the research read tier_map_legs: half-point
+    # PrizePicks window legs, final_hp rank rows)
+    pools['__calib__'] = [dict(l, p=float(l['score']), cell=f"{l['prop']}_{l['tier']}") for l in legs
+                          if l['rank_key'] == 'final_hp' and not l.get('whole_number') and l.get('score') is not None]
     # 29p: the drought rotation state, set by the last grade from the per-cell trailing-10 hit (steals / turnovers cool < 50%)
     rot_row = conn.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy='_ROTATION'").fetchone()
     rotation = bool(rot_row and rot_row[0] == 'rotation')
