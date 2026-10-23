@@ -1015,11 +1015,11 @@ def techniques(reg, P, cols, fam):
             P = saved
     T.append(("non-linear embedding (kernel PCA) clusters", kernel_embed))
 
-    def trajectories():
-        """3-slate trajectories: today's family vector with the previous two slates' (same season), clustered (k-means) with the
-        re-finding / shuffle tests - boards defined by how the last days moved, not only by today"""
+    def trajectories(win=3, fams=("BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION")):
+        """multi-slate trajectories: today's family vector with the previous win-1 slates' (same season), clustered (k-means) with
+        the re-finding / shuffle tests - boards defined by how the last days moved, not only by today"""
         n = 0
-        for fname in ("BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION"):
+        for fname in fams:
             fc = fam.get(fname, [])
             if len(fc) < 2:
                 continue
