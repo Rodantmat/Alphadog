@@ -618,6 +618,40 @@ def techniques(reg, P, cols, fam):
                 lf = np.full(len(Xf), -1)
                 for q, com in enumerate(sorted(nx.community.louvain_communities(G, resolution=par / 4, seed=7), key=min)):
                     lf[list(com)] = q
+            elif method == "affprop":           # exemplar slates by message passing; par = preference percentile of similarities
+                from sklearn.cluster import AffinityPropagation
+                Sim = -((Xf[:, None, :] - Xf[None]) ** 2).sum(axis=2)
+                lf = AffinityPropagation(preference=float(np.percentile(Sim, par)), random_state=7, max_iter=500,
+                                         affinity="precomputed").fit(Sim).labels_
+            elif method == "som":               # self-organising map, a x b grid (par = a*10+b); units = clusters
+                a_, b_ = divmod(par, 10)
+                rng_ = np.random.default_rng(7)
+                W = Xf[rng_.choice(len(Xf), a_ * b_, replace=False)].copy()
+                grid = np.array([(i, j) for i in range(a_) for j in range(b_)], float)
+                T_ = 30 * len(Xf)
+                for t_ in range(T_):
+                    x_ = Xf[rng_.integers(len(Xf))]
+                    bmu = int(np.argmin(((W - x_) ** 2).sum(axis=1)))
+                    sig = max(0.5, max(a_, b_) / 2 * (1 - t_ / T_))
+                    h_ = np.exp(-((grid - grid[bmu]) ** 2).sum(axis=1) / (2 * sig ** 2))
+                    W += (0.5 * (1 - t_ / T_) + 0.01) * h_[:, None] * (x_ - W)
+                lf = np.argmin(((Xf[:, None, :] - W[None]) ** 2).sum(axis=2), axis=1)
+            elif method == "archetype":         # archetypal analysis (par archetypes): slate -> its dominant archetype
+                from scipy.optimize import nnls
+                rng_ = np.random.default_rng(7)
+
+                def cvx(A, Y, w=200.0):
+                    # rows of Y as convex combinations of rows of A (NNLS with a heavy sum-to-one row)
+                    Aa = np.vstack([A.T, w * np.ones(len(A))])
+                    return np.array([nnls(Aa, np.append(y, w))[0] for y in Y])
+                Z_ = Xf[rng_.choice(len(Xf), par, replace=False)].copy()
+                for _ in range(15):
+                    Wt = cvx(Z_, Xf)                       # slates as mixtures of archetypes
+                    Zt = np.linalg.lstsq(Wt, Xf, rcond=None)[0]
+                    Bt = cvx(Xf, Zt)                       # archetypes as mixtures of slates (kept on the hull)
+                    Z_ = Bt @ Xf
+                Wt = cvx(Z_, Xf)
+                lf = np.argmax(Wt, axis=1)
             elif method == "cocluster":         # spectral biclustering of slates x features (rows = slates)
                 from sklearn.cluster import SpectralBiclustering
                 lf = SpectralBiclustering(n_clusters=(par, min(par, Xf.shape[1])), random_state=7).fit(Xf + 1e-3).row_labels_
