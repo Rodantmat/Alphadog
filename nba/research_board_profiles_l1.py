@@ -1040,7 +1040,7 @@ def techniques(reg, P, cols, fam):
             for j in range(T3.shape[1]):
                 v = T3[okt, j]
                 zr[okt, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
-            key = f"TRAJ-{fname}"
+            key = f"TRAJ{win}-{fname}"
             fam[key] = [f"{key}-{j}" for j in range(T3.shape[1])]
             base = P.shape[1]
             for j in range(T3.shape[1]):
