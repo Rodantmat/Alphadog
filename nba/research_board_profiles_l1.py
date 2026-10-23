@@ -882,7 +882,9 @@ def techniques(reg, P, cols, fam):
             log("ruptures unavailable - change-point pass skipped")
             return 0
         n = 0
-        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL"):
+        for fname in fams:
+            if len(fam.get(fname, [])) < 2:
+                continue
             Xf = P[:, [ci[c] for c in fam[fname]]]
             ok = ~np.isnan(Xf).any(axis=1)
             pca = PCA(n_components=1).fit(Xf[ok & (seas == HIST[0])])
