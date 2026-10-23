@@ -793,8 +793,10 @@ def honest_checks(conn, cfg, d0):
             d_end = last + __import__("datetime").timedelta(days=1)
     d0 = d_end
     rows = conn.execute("""
-        WITH t AS (SELECT th.game_date, th.player_id, th.prop, th.line::float8 line, th.side, th.true_hp::float8 p, th.model_hp::float8 m FROM nba_score.board_true_hp th
-                   WHERE th.game_date BETWEEN %s::date - 30 AND %s::date - 1),
+        -- ONE NUMBER (2026-10-23): the calibration of final_hp itself (the number every board shows; history rebuilt board-centred)
+        WITH t AS (SELECT th.game_date, th.player_id::text player_id, th.prop, th.line::float8 line, th.side, th.final_hp::float8 p,
+                          th.final_hp::float8 m FROM nba_score.final_hp th
+                   WHERE th.game_date BETWEEN %s::date - 30 AND %s::date - 1 AND th.final_hp IS NOT NULL),
         s AS (SELECT player_id, game_date, pts::float8 pts, reb::float8 reb, ast::float8 ast, fg3m::float8 fg3m, stl::float8 stl, blk::float8 blk, tov::float8 tov
               FROM nba_stats.player_game_log WHERE game_date BETWEEN %s::date - 30 AND %s::date - 1 AND min > 0
               UNION ALL SELECT player_id, game_date, pts, reb, ast, fg3m, stl, blk, tov FROM nba_stats.player_game_log_postseason
