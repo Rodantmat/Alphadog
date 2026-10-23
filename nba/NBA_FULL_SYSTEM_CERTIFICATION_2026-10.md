@@ -3020,7 +3020,13 @@ should be doing. Mining everything that they should mine, consuming everything t
       a book listing a LADDER in its main market (Fanatics stocks, BetRivers points) made DISTINCT ON pick an arbitrary rung (L0 0.5
       vs 3.5 on one leg between two reads) - fixed: such a book is left out of the median (deterministic). Main UI v1.4.39 reads
       board_scored's own final_hp / score (board_true_hp kept as reference fields only; "model HP" retired); UI tests C3 / C47 / C48
-      on the one number. P3's parallel board-hp step retired.
+      on the one number. P3's parallel board-hp step retired. UI test 104/104 (nba-main-ui-test run 39921835148, v1.4.40); the first
+      run (39920815662, 102/104) found D01 - a leg offered on four apps pushed its card to 525 px on the 430 px phone screen (the
+      board's new order put such a leg first): the app badge pairs now wrap two per row (v1.4.40) - and C47 comparing a slate scored
+      before the switch with its re-priced final_hp (C47 now requires the match on slates P3 scored after 2026-10-23 07:52 UTC).
+      FE_DATE dry run with the switch on (nba-engine-test run 39920531087, 2026-10-22): every calibrated prop on the chain where the
+      board has a standard line (points / pra / pts_ast / threes 100%, rebounds 98%, steals 97%; blocks 51% / turnovers 23% / stocks
+      69% - their missing rows are other-app rungs with no standard line, priced by the as-of chain).
     - THE NEW PORTFOLIO (research first: Stokastic / Action Network / OddsShopper break-even practice and a Gemini consult, recorded
       in research_pp_calibrated_slips.py). Calibrated-pool strategies built by ONE shared builder `nba/calib_slips.py` (the research
       and the live engine call the same function): the day's PrizePicks board legs of the 12 calibrated props, ranked on final_hp
