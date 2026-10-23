@@ -359,6 +359,37 @@ def main():
     d["cal_shift"] = [shift.get((p, b, s), 0.0) for p, b, s in zip(d["prop"], d["band"], d["side_n"])]
     d["final_hp"] = sigmoid(logit(d["baseline_hp"].values) + d["cal_shift"].values)
 
+    # 4b) ONE NUMBER (2026-10-23; owner 21:01 PT: "the final hit probability and board hit probability should be the same thing ...
+    # app board scoped"). With classification_config['final_hp_board_centre'] on, every board leg takes final_hp_board_cal.board_legs:
+    # final_hp's own stored number when final_hp holds this exact leg (what the slip engine reads), else - for the 12 calibrated
+    # props - the same board-centred chain on that day's ladder; anything else keeps the as-of number above. A failure here is
+    # printed as an error and the slate keeps the as-of numbers (never a half-applied board).
+    # Certified: audit_one_number.py runs 39916804962 / 39917858707 (every app's leg: final_hp's own row or the chain; the chain on
+    # the day's ladder reproduces final_hp's board rows, mean |diff| 0.00005 / 0.00025 - the rest is the books standard line made
+    # deterministic the same night).
+    try:
+        import json as _jbc
+        import sys as _sys_bc
+        _sys_bc.path.insert(0, "nba")
+        import final_hp_board_cal as _BC
+        _r = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'final_hp_board_centre'").fetchone()
+        _on = bool(((_r[0] if isinstance(_r[0], dict) else _jbc.loads(_r[0])) if _r else {}).get("enabled", False))
+        if _on:
+            _res = _BC.board_legs(conn, asof, list(zip(d["player_id"].astype(str), d["prop"], d["line"].astype(float), d["side_n"],
+                                                       d["baseline_hp"].astype(float))))
+            _p = np.array([np.nan if x[0] is None else x[0] for x in _res], dtype=float)
+            _hit = ~np.isnan(_p)
+            d.loc[_hit, "final_hp"] = _p[_hit]
+            d["cal_shift"] = logit(d["final_hp"].values) - logit(d["baseline_hp"].values)
+            _src = [x[2] for x in _res]
+            print(f"  one number (board-centred final_hp): {int(_hit.sum()):,} of {len(d):,} legs - final_hp's own row "
+                  f"{_src.count('final_hp'):,}, board chain on the day's ladder {_src.count('chain'):,}; as-of kept "
+                  f"{int((~_hit).sum()):,}", flush=True)
+    except Exception as _exc:  # noqa: BLE001
+        conn.rollback()
+        print(f"::error::one-number board chain failed ({type(_exc).__name__}: {str(_exc)[:120]}) - the slate keeps the as-of numbers",
+              flush=True)
+
     # 5) CONFIDENCE (measured deductions) -> SCORE (0-100, confidence ENHANCES) -> EDGE
     cm = pd.read_sql("SELECT factor, deduction, base, floor FROM nba_score.confidence_model", conn)
     ded = {r.factor: float(r.deduction) for r in cm.itertuples(index=False) if float(r.deduction) > 0}
