@@ -1463,7 +1463,7 @@ def techniques(reg, P, cols, fam):
 
 
 def main():
-    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "scikit-learn"], check=True)
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "scikit-learn", "networkx"], check=True)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     days = RC.load(conn)
