@@ -352,6 +352,48 @@ def main():
     for k, v in seen.items():
         if len({x[0] for x in v}) == 2:
             print(f"    {k}: " + " | ".join(f"chosen on {x[0]} gain {x[1]:+.1f}, test net {x[2]['net']:+.1f} lb5 {100 * x[2]['lb5']:+.1f}%" for x in v))
+    # 4. PRE-REGISTERED FIXED RULES (written 2026-10-23 10:25 PT after reading section 2 of run 39993211117, BEFORE any of these
+    # composite rules was scored): no discovery, the same rule scored on both seasons; day-bootstrap lb5. A = <= 4 games (A1 + A2).
+    print("\n" + "=" * 200 + "\n4. PRE-REGISTERED FIXED RULES (no discovery; scored on both seasons as written)")
+    S6F = ("calib", "calib:R:p:0.60:2", 6, "flex")
+    S5F = ("calib", "calib:R:p:0.60:2", 5, "flex")
+    G6F = ("calib", "calib:GR:ev:0.55:2", 6, "flex")
+
+    def fixed(rule, s, d):
+        p = prof(feat[(s, d)])
+        for prof_set, action, alt in rule:
+            if p in prof_set:
+                if action == "skip3P":
+                    return port_day([REB4F], s, d, n=1)
+                if action == "skipall":
+                    return (0, 0.0)
+                if action == "swap":
+                    return port_day([REB4F, alt], s, d)
+                if action == "add":
+                    return port_day([REB4F, CAL3P, alt], s, d, n=3)
+        return unit_day[("PAIR", s, d)]
+    FIXED = {
+        "R1 C1: swap 3P -> c:R:p:0.60:2 6F": [({"C1"}, "swap", S6F)],
+        "R2 C1: swap 3P -> c:R:p:0.60:2 5F": [({"C1"}, "swap", S5F)],
+        "R3 C1: swap 3P -> c:GR:ev:0.55:2 6F": [({"C1"}, "swap", G6F)],
+        "R4 C1: add c:R:p:0.60:2 6F (3 slips)": [({"C1"}, "add", S6F)],
+        "R5 A: skip 3P": [({"A1", "A2"}, "skip3P", None)],
+        "R6 A: skip all": [({"A1", "A2"}, "skipall", None)],
+        "R7 R1 + R5": [({"C1"}, "swap", S6F), ({"A1", "A2"}, "skip3P", None)],
+        "R8 C2: skip 3P": [({"C2"}, "skip3P", None)],
+    }
+    for name, rule in FIXED.items():
+        out = []
+        for s in SEASONS:
+            st, pr = [], []
+            for d in by_season[s]:
+                a, b = fixed(rule, s, d)
+                if a:
+                    st.append(a); pr.append(b)
+            net = sum(pr)
+            out.append(f"{s}: net {net:+6.1f} (base {base[s]['net']:+6.1f}, {net - base[s]['net']:+6.1f}) ROI {100 * net / max(sum(st), 1):+5.1f}% "
+                       f"lb5 {100 * lb5(pr, st):+5.1f}% slips {sum(st)}")
+        print(f"  {name:<40} " + " | ".join(out))
     print(f"\ndone in {time.time() - t0:.0f}s")
 
 
