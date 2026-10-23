@@ -1211,6 +1211,44 @@ def techniques(reg, P, cols, fam):
         ("kmeans", (2, 3, 4, 5, 6)), ("gmm", (2, 3, 4, 5, 6)), ("ward", (2, 3, 4, 5, 6)), ("pca-kmeans", (2, 3, 4, 5, 6))))))
     for g in GROUPS:
         T.append((f"wasserstein k-means on std_hp_{g}", wasserstein(f"std_hp_{g}")))
+
+    # ---------------- batch 7 (variations only - no new features): other clustering algorithms on every family, Wasserstein at
+    # k 7-8, trajectories at 6 / 8, polynomial / cosine kernel embeddings ----------------
+    MAIN = ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "CONCENTRATION", "STRENGTH",
+            "SCHEDULE", "LINES", "GROUP-QUALITY", "BOARD+INTERNAL")
+    for method, pars in (("gmm-full", (2, 3, 4, 5)), ("bgmm", (4, 6, 8)), ("average", (2, 3, 4, 5, 6)), ("complete", (2, 3, 4, 5, 6)),
+                         ("birch", (2, 3, 4, 5, 6)), ("optics", (8, 12, 16)), ("meanshift", (2, 3, 4))):
+        T.append((f"{method} on every family", (lambda m, pr: (lambda: sum(clusters(m, f_, pr)() for f_ in MAIN if f_ in fam)))(method, pars)))
+    for key in ("std_hp", "gob_hp", "gob_factor", "all_hp", "dem_factor", "pts_line", "player_props") + tuple(f"std_hp_{g}" for g in GROUPS):
+        T.append((f"wasserstein k-means on {key} (k 7-8)", wasserstein(key, (7, 8))))
+    for win in (6, 8):
+        T.append((f"{win}-slate trajectories, all families", (lambda w: (lambda: trajectories(w, MAIN)))(win)))
+
+    def kernel_more():
+        from sklearn.decomposition import KernelPCA
+        n = 0
+        for kern in ("poly", "cosine", "sigmoid"):
+            for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION", "GROUP-QUALITY", "MIX"):
+                fc = fam.get(fname, [])
+                if len(fc) < 3:
+                    continue
+                Xf = P[:, [ci[c] for c in fc]]
+                ok = ~np.isnan(Xf).any(axis=1)
+                if not has_structure(Xf, ok):
+                    continue
+                kp = KernelPCA(n_components=4, kernel=kern, random_state=7).fit(Xf[ok & (seas == HIST[0])])
+                Z = np.full((len(seas), 4), np.nan); Z[ok] = kp.transform(Xf[ok])
+                zr = np.full_like(Z, np.nan)
+                for j in range(4):
+                    v = Z[ok, j]
+                    zr[ok, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
+                key = f"KPCA{kern}-{fname}"
+                fam[key] = [f"{key}-{j}" for j in range(4)]
+                for j in range(4):
+                    ci[f"{key}-{j}"] = P.shape[1] + j
+                n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5, 6))
+        return n
+    T.append(("kernel embeddings (poly / cosine / sigmoid)", kernel_more))
     return T
 
 
