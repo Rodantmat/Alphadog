@@ -183,6 +183,8 @@ def load_training(conn):
     T = {"day": np.array([r[0] for r in rows]), "prop": np.array([r[1] for r in rows]), "side": np.array([r[2] for r in rows]),
          "lt": np.array([r[3] for r in rows]), "y": np.array([r[7] for r in rows], float)}
     T["q"] = np.array([anchor_q(r[3], r[8]) for r in rows])
+    T["line"] = np.array([r[4] for r in rows], float)
+    T["L0"] = np.array([r[5] for r in rows], float)
     T["pw"] = {w: np.array([side_p(r[6], r[4], r[5], w, r[2]) for r in rows]) for w in WGRID}
     print(f"training legs (graded, with a ladder and a standard line): {len(rows):,}; days {T['day'].min()} .. {T['day'].max()}", flush=True)
     return T
