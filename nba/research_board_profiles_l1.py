@@ -938,7 +938,8 @@ def techniques(reg, P, cols, fam):
         """cluster slates by the WHOLE distribution of a leg quantity (1-D Wasserstein-2 = L2 between quantile functions)"""
         def fn():
             n = 0
-            Q = np.array([DIST[k][key] if DIST.get(k, {}).get(key) is not None else np.full(19, np.nan) for k in reg.order])
+            L_ = next((len(DIST[k][key]) for k in reg.order if DIST.get(k, {}).get(key) is not None), 19)
+            Q = np.array([DIST[k][key] if DIST.get(k, {}).get(key) is not None else np.full(L_, np.nan) for k in reg.order])
             ok = ~np.isnan(Q).any(axis=1)
             for k in ks:
                 labs = {}
