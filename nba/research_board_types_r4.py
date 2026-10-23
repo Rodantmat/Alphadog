@@ -448,6 +448,9 @@ def leg_level(res_series, analog_res, order, seas_arr):
         feats[f"rd_{kind}_side_lt"] = a1
         feats[f"rd_{kind}_grp_side"] = a2
     log(f"leg factors {len(feats)} on {len(df):,} legs")
+    for f, vals in feats.items():
+        cov = {s_: float(np.mean([vv is not None for vv, ss in zip(vals, df.season.values) if ss == s_])) for s_ in SEASONS}
+        log(f"  {f}: coverage " + ", ".join(f"{k} {100 * v:.0f}%" for k, v in cov.items()))
     BT.analyze(df, feats)
 
 
