@@ -257,6 +257,94 @@ def main():
             seen[u].append((fit, j, ea, eb))
     for u, v in seen.items():
         print(f"  {u:<40} " + " | ".join(f"types fitted on {f}: type {j} excess {100 * ea:+.0f} / {100 * eb:+.0f}" for f, j, ea, eb in v))
+    # 4. BOARD QUALITY ON TRAILING PERCENTILES ONLY (pre-registered 2026-10-23 11:00 PT after section 1 found the deep / strong board
+    # type independently from both seasons; within-season percentiles there use the whole season, which a live pick cannot know).
+    # Q = mean percentile of (top20_hp, std_ge60, std_ge65, std_ge70) against the previous 30 slates of the same season (>= 10 needed,
+    # else neutral). STRONG = Q >= 0.67, THIN = Q <= 0.33.
+    print("\n" + "=" * 200 + "\n4. BOARD QUALITY Q (trailing 30-slate percentiles of top20_hp / std_ge60 / std_ge65 / std_ge70; STRONG >= 0.67, "
+          "THIN <= 0.33) - pre-registered")
+    QF = ("top20_hp", "std_ge60", "std_ge65", "std_ge70")
+    Q = {}
+    for s in SEASONS:
+        ds = by_season[s]
+        for i, d in enumerate(ds):
+            prev = ds[max(0, i - 30):i]
+            if len(prev) < 10:
+                Q[(s, d)] = "neutral"
+                continue
+            ranks = []
+            for f in QF:
+                hv = [feat[(s, x)][f] for x in prev if feat[(s, x)][f] == feat[(s, x)][f]]
+                v = feat[(s, d)][f]
+                if hv and v == v:
+                    ranks.append((sum(h < v for h in hv) + 0.5 * sum(h == v for h in hv)) / len(hv))
+            q = float(np.mean(ranks)) if ranks else 0.5
+            Q[(s, d)] = "STRONG" if q >= 0.67 else ("THIN" if q <= 0.33 else "mid")
+    for s in SEASONS:
+        cnt = defaultdict(int)
+        for d in by_season[s]:
+            cnt[Q[(s, d)]] += 1
+        print(f"  {s} days: " + ", ".join(f"{k} {v}" for k, v in sorted(cnt.items())))
+    for u in UNITS:
+        print(f"  {V3.tag(u):<40} " + " | ".join(
+            f"{s[2:]} " + " ".join(f"{b}:{100 * r[0]:+5.0f}%({r[1]}d,{100 * r[2]:.0f}%+)" for b in ("THIN", "mid", "STRONG")
+                                   for r in [score(u, s, [d for d in by_season[s] if Q[(s, d)] == b])]) for s in SEASONS))
+
+    REB4F, CAL3P = V3.REB4F, V3.CAL3P
+    S6F = ("calib", "calib:R:p:0.60:2", 6, "flex")
+    S5F = ("calib", "calib:R:p:0.60:2", 5, "flex")
+    G6F = ("calib", "calib:GR:ev:0.55:2", 6, "flex")
+
+    def port_day(units, s, d, n=2, lcap=2):
+        taken, use, seen_ = [], defaultdict(int), set()
+        for k in range(V3.KMAX):
+            for u in units:
+                lst = cand.get((u, s, d))
+                if not lst or k >= len(lst) or len(taken) >= n:
+                    continue
+                keys = list(dict.fromkeys(V3.legkey(l) for l in lst[k][0]))
+                sg = (u[2], u[3], tuple(sorted(map(str, keys))))
+                if sg in seen_ or any(use[x] >= lcap for x in keys):
+                    continue
+                seen_.add(sg)
+                for x in keys:
+                    use[x] += 1
+                taken.append((u, k))
+            if len(taken) >= n:
+                break
+        return (len(taken), sum(pay(u, s, d, k) - 1.0 for u, k in taken)) if taken else (0, 0.0)
+    RULES = {
+        "BASE live pair": {},
+        "S1 STRONG: swap 3P -> c:R 0.60 6F": {"STRONG": ("swap", S6F)},
+        "S2 STRONG: swap 3P -> c:R 0.60 5F": {"STRONG": ("swap", S5F)},
+        "S3 STRONG: swap 3P -> c:GR ev 6F": {"STRONG": ("swap", G6F)},
+        "S4 STRONG: add c:R 0.60 6F (3 slips)": {"STRONG": ("add", S6F)},
+        "S5 THIN: skip 3P": {"THIN": ("skip3P", None)},
+        "S6 THIN: skip all": {"THIN": ("skipall", None)},
+        "S7 S1 + S5": {"STRONG": ("swap", S6F), "THIN": ("skip3P", None)},
+    }
+    for name, rule in RULES.items():
+        row = []
+        for s in SEASONS:
+            st, pr = [], []
+            for d in by_season[s]:
+                act = rule.get(Q[(s, d)])
+                if act is None:
+                    a, b = port_day([REB4F, CAL3P], s, d)
+                elif act[0] == "swap":
+                    a, b = port_day([REB4F, act[1]], s, d)
+                elif act[0] == "add":
+                    a, b = port_day([REB4F, CAL3P, act[1]], s, d, n=3)
+                elif act[0] == "skip3P":
+                    a, b = port_day([REB4F], s, d, n=1)
+                else:
+                    a, b = 0, 0.0
+                if a:
+                    st.append(a); pr.append(b)
+            net = sum(pr)
+            row.append(f"{s}: net {net:+6.1f} ROI {100 * net / max(sum(st), 1):+5.1f}% lb5 {100 * V3.lb5(pr, st):+5.1f}% slips {sum(st)} "
+                       f"days+ {100 * np.mean([x > 0 for x in pr]):.0f}%")
+        print(f"  {name:<40} " + " | ".join(row))
     log("done")
 
 
