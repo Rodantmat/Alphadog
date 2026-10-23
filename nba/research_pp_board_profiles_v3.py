@@ -81,10 +81,11 @@ def lb5(pr, st, seed=7):
 
 def features(conn, days):
     """{(season, day): {feature: value}}"""
+    # on the LOCAL game date (research_leg_environment.game_lines_local: the table's date is the UTC tip date - a west-coast night
+    # game sat on the next slate in the first run 39991477715)
     lines = defaultdict(list)
-    for d, ev, tot, sp in conn.execute("""SELECT game_date, canonical_event_id, total_line::float8, home_spread::float8
-                                          FROM nba_market.game_lines_closing WHERE game_date BETWEEN '2024-10-01' AND '2026-06-30'"""):
-        lines[(d, ev)].append((tot, sp))
+    for d, h, a, tot, sp in LE.game_lines_local(conn):
+        lines[(d, h + "|" + a)].append((tot, sp))
     by_day_lines = defaultdict(list)
     for (d, ev), v in lines.items():
         t = [x[0] for x in v if x[0] is not None]
