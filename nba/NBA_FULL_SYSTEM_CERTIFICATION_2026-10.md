@@ -3155,3 +3155,46 @@ should be doing. Mining everything that they should mine, consuming everything t
       PrizePicks lines, the books' standard line and the tier map - is taken at ~14:40 PT (median, every month 2024-10 .. 2026-06),
       while the live engine picks at ~13:15 PT (P3). The backtests see ~85 minutes more news (late scratches, line moves) than the live
       pick. Recorded; the schedule is the owner's and is not touched.
+27. 🟡 **BOARD TYPES, ROUND 3 - ONE MODEL OVER ALL ~137 FACTORS (RIDGE / GRADIENT BOOSTING) + A WALK-FORWARD - SHARPER PROBABILITIES,
+    NOT BETTER LIVE SLIPS** (research_board_types_r3.py).
+    - Cross-season (run 40009617082): fitted on 2024-25 the ridge (penalty 2e5 chosen on held-out days) and HGB (100 trees) improve
+      2025-26 log-loss (-0.000425 z -3.4 / -0.000394 z -1.8); fitted on 2025-26 both choose NO correction. Not both ways.
+    - Walk-forward over 2025-26 (run 40013321912; each month predicted by models trained only on earlier legs, settings fixed in
+      advance): HGB -0.000752 (z -4.1), ridge -0.000534 (z -3.3) - the probabilities get sharper. Slips: the LIVE PAIR 232.5 ->
+      226.4 (HGB) / 224.5 (ridge) units - worse; long slips gain (calib 5-Power +82 -> +117%, 5-Flex +68 -> +90%, 6-Flex +115 ->
+      +125%) and 2-4-pick lose. NOT ADOPTED; a candidate input for the next final_hp refit. Top HGB inputs: the multiplier, the books'
+      disagreement, side, final_hp itself, the pairing of strengths, back-to-back, DraftKings' line gap, key injuries.
+28. 🟡 **BOARD TYPES, ROUND 4 - RELATING DAYS (owner 10:30 PT: "the profiles need to ... correlate in different days")**
+    (research_board_types_r4.py runs 40014229964 / 40015535906 / 40016380957; design checked with Gemini). 45 slate series (residual by
+    side x line type, by prop group, strong legs; every unit's profit): PERSISTENCE 0 of 259 series x lags consistent in both
+    seasons (chance ~1.3); TRAILING-mean forecasts and ANALOG DAYS (K nearest past slates on match / board / all features, K picked on
+    2024-25) hold for no series; PLAY / SKIP gates from trailing profit or analogs never beat random day-skips in both seasons; leg
+    factors from related days: 0 consistent cells, nothing holds in the cross-fit. One exploratory lead (found after looking): the
+    calib R 0.60 2-POWER after a losing trailing 15 slates: +31.2 / +30.8 units vs always +9.6 / +19.4 (p-rand 0.00 both seasons) -
+    robustness grid R4_ONLY=contra built, to be read before anything; tracked, not live.
+29. 🔵 **BOARD PROFILES, LAYERED (owner 13:11 - 13:23 PT: profiles FIRST, as similarities of boards across days - external, internal,
+    board-only - named, with ranges, recurring, identifiable; exhausted until 10 consecutive clean passes; THEN every strategy per
+    profile; boards in several profiles later)** - research_board_profiles_l1.py (Layer 1), IN PROGRESS.
+    - ~120 slate features (board, internal, external, deltas, regimes, group quality), trailing percentiles (live-identifiable),
+      2024-25 + 2025-26 define, 2026-27 slates (10-20 .. 10-23) are labelled.
+    - Profile = recurs (>= 15 slates, >= 3 months, >= 5 episodes in EACH season), identifiable (a rule, or a cluster re-found by the
+      other season's fit), distinct (Jaccard < 0.5 with every known profile and with every intersection / union of two).
+      ELECTED >= 25 slates a season (detectable ROI difference ~50 points pooled), CANDIDATE 15-24.
+    - Rigor built and certified on synthetic data before the real runs: random features give no composite profile (associated
+      pairs p < 0.001 both seasons; clustering only on families that co-move beyond the Marchenko-Pastur edge; clusters must beat 8
+      within-season shuffles; HMM beats order-shuffled fits); a planted 5-feature group is found.
+    - Techniques so far (~170 passes, 8 batches: own knowledge, online - Wasserstein k-means of distributions arXiv 2110.11848, LSEG
+      regime detection GMM / HMM / change points - and a Gemini consult of 25 views): terciles / quintiles / raw ranges, calendar,
+      k-means / GMM / Ward / PCA-k-means / HDBSCAN / spectral / BIRCH / OPTICS / mean shift on 15 families, latent axes, co-moving
+      groups, associated pairs, typicality, Wasserstein k-means of final_hp / multiplier / line distributions (whole board and per
+      prop group), HMM regimes, PELT change points, NMF / LDA board archetypes, compositional (CLR) clusters, kernel embeddings,
+      2-15-slate trajectories, consensus clustering, absolute-scale clusters.
+    - Rounds: 230 -> 283 -> 310 -> 324 -> 405 -> 423 profiles, then 346 under the stricter NEW test (round 7 run 40027670708, 261
+      elected); trailing clean passes 0 so far - variations of distributions, kernels and long trajectories still add a few.
+30. 🔴 **P3 10-23 (run 40012048430) - TWO OPERATIONAL GAPS.** (a) The market refresh of final_hp hit its 8-minute step limit on the
+    big slate after 9 of 12 props (soft step, run green): stocks / threes / turnovers carry no market term so no slip leg changed, but
+    the whole-number re-pricing after it was skipped; raising the limit to 15 minutes is waiting for the owner. (b) EARLY TIP: the
+    pick ran 12:47 PT, the first game (CHI @ MIL) tipped 13:00 PT; the rebounds 4-Flex (main and backup) held Giddey from that game -
+    unplaceable by 14:22 PT when the owner looked (audit_portfolio_replacements.py run 40026535440: no placeable 4-Flex in the
+    round robin; the 3-Power was placeable). The pick checks only the slate's first tip, not each leg's own tip vs when the owner
+    places; fix to be designed. Also: board_scored == final_hp on every 10-23 leg except Zach Edey turnovers 1.5 (2 legs).
