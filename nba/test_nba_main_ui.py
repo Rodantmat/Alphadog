@@ -203,7 +203,7 @@ def api_checks(conn, cfg):
         if not db or abs(float(db[0]) * 100 - r["estimated_hit_probability_0_100"]) > 0.051 or abs(float(db[2]) - r["score_0_100"]) > 0.051 \
                 or abs(float(db[1]) * 100 - r["probability_confidence_0_100"]) > 0.051:
             bad.append((r["final_board_row_id"], db))
-    check("C3 every board leg's HP / confidence / score == the market-anchored board (board_true_hp over board_scored)", not bad and rows, bad[:3])
+    check("C3 every board leg's HP / confidence / score == board_scored (one number)", not bad and rows, bad[:3])
     # C63 (2026-10-18, owner comparing the apps): every Underdog / Sleeper leg carries the number the app SHOWS (Underdog's pick
     # price, Sleeper's multiplier) beside the payout factor, and a Sleeper leg breaks even at 1 / its multiplier (a price), not 0.56 / m
     code63, b63, _ = curl("/api/main-board/current?limit=600&min_score=0")
