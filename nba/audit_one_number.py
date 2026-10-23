@@ -49,6 +49,18 @@ def main():
             print(f"  {app:<12} {grp:<9} " + ", ".join(f"{k} {v:,}" for k, v in sorted(c.items())))
         for app, v in sorted(shift.items()):
             print(f"  shift vs board_scored.final_hp {app:<12} mean {np.mean(v):.4f} p90 {np.percentile(v, 90):.4f} (n {len(v):,})")
+        if os.environ.get("AO_DIAG") == "1":
+            std = BC.std_lines(conn, date=day)
+            mat = {(p, pr): (ln, src) for p, pr, ln, src in conn.execute(
+                "SELECT player_id, prop, line::float8, src FROM nba_score.board_std_line WHERE game_date = %s", (day,))}
+            worst = sorted(((abs(p - q), r, p, q) for r, (p, ch, src), (q, _c, _s) in zip(rows, res, chain)
+                            if src == "final_hp" and ch == "board" and q is not None), key=lambda x: -x[0])[:12]
+            dd = BC.dt.date.fromisoformat(day)
+            for gap, r, p, q in worst:
+                nr = conn.execute("""SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s AND player_id::text = %s AND prop = %s
+                                     AND side = 'Over'""", (day, r[1], r[2])).fetchone()[0]
+                print(f"    DIAG gap {gap:.3f} {r[0]} pid {r[1]} {r[2]} {r[3]} {r[4]} stored {p:.4f} chain {q:.4f} | L0 live "
+                      f"{std.get((dd, r[1], r[2]))} materialized {mat.get((r[1], r[2]))} | Over rungs in final_hp {nr}")
         if par:
             a = np.array(par)
             print(f"  PARITY chain-on-ladder vs final_hp's board rows: n {len(a):,} max {a.max():.5f} mean {a.mean():.6f} "
