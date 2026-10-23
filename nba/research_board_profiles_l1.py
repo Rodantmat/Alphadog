@@ -1156,6 +1156,42 @@ def techniques(reg, P, cols, fam):
         finally:
             P = saved
     T.append(("absolute-scale clusters", absolute_scale))
+
+    # ---------------- batch 6 (round 4 run 40023838699: trajectories, absolute scale and the points-line distribution still found
+    # profiles - their variations, plus each prop group's own board quality) ----------------
+    for win in (4, 7, 10):
+        T.append((f"{win}-slate trajectories, all families", (lambda w: (lambda: trajectories(w, (
+            "ALL", "BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION", "MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "STRENGTH",
+            "SCHEDULE", "LINES", "GROUP-QUALITY"))))(win)))
+    T.append(("trajectories of the group quality (2, 3, 5)", lambda: sum(trajectories(w, ("GROUP-QUALITY",)) for w in (2, 3, 5))))
+
+    def absolute_more():
+        n = 0
+        mu = np.nanmean(reg.X[seas == HIST[0]], axis=0)
+        sd = np.nanstd(reg.X[seas == HIST[0]], axis=0)
+        sd[~(sd > 0)] = 1.0
+        Zabs = (np.clip((reg.X - mu) / sd, -3, 3) + 3) / 6
+        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "CONCENTRATION",
+                      "STRENGTH", "SCHEDULE", "LINES", "GROUP-QUALITY"):
+            fc = [c for c in fam.get(fname, []) if c in cols]
+            if len(fc) < 2:
+                continue
+            key = f"ABS2-{fname}"
+            fam[key] = [f"{key}-{c}" for c in fc]
+            base = P.shape[1]
+            for j, c in enumerate(fc):
+                ci[f"{key}-{c}"] = base + j
+            Pz = np.column_stack([P, Zabs[:, [ci[c] for c in fc]]])
+            for method, pars in (("ward", (2, 3, 4, 5, 6)), ("spectral", (2, 3, 4, 5)), ("hdbscan", (10, 15, 20)),
+                                 ("kmeans", (2, 3, 4, 5, 6)) if fname in ("STRENGTH", "SCHEDULE", "LINES", "GROUP-QUALITY") else ("gmm", ())):
+                if pars:
+                    n += clusters_on_gate(Pz, method, key, pars)
+        return n
+    T.append(("absolute-scale clusters, more methods and families", absolute_more))
+    T.append(("clusters on the prop groups' own quality", lambda: sum(clusters(m, "GROUP-QUALITY", pr)() for m, pr in (
+        ("kmeans", (2, 3, 4, 5, 6)), ("gmm", (2, 3, 4, 5, 6)), ("ward", (2, 3, 4, 5, 6)), ("pca-kmeans", (2, 3, 4, 5, 6))))))
+    for g in GROUPS:
+        T.append((f"wasserstein k-means on std_hp_{g}", wasserstein(f"std_hp_{g}")))
     return T
 
 
