@@ -45,7 +45,10 @@ Batch 4 (Gemini 2.5-pro consult, 25 further views; the feasible ones): 9 more fe
 team concentration, the biggest game's share, prop-mix and tier entropy, bimodality of the standard / goblin final_hp
 distributions), NMF archetypes and LDA topics of the board's composition (leg counts per prop x line type x side, the component
 re-found by the other season's fit), compositional (centred log-ratio) clustering of the prop mix, non-linear (RBF kernel PCA)
-embeddings, 3-slate trajectories, consensus clustering across 12 clusterings.
+embeddings, 3-slate trajectories, consensus clustering across 12 clusterings. Round 3 (run 40022511432): 310 profiles (234 elected),
+trailing clean passes 1 (3-slate trajectories found 3). Batch 5 (variations of what still finds profiles): 2- and 5-slate
+trajectories, trajectories / HMM regimes / change points on every family (two more PELT penalties), Wasserstein k-means of the demon
+multiplier, points-line and props-per-player distributions, absolute-scale clusters (z-scores on 2024-25's own mean / sd).
 PASSES: the techniques below run in order, each one a pass; a pass is CLEAN when it registers no new profile. The run reports the
 registry (name, definition, ranges in raw units, days / months / episodes per season, 2026-27 slates in it) and the trailing run of
 clean passes. Layer 2 (strategies per profile) waits for 10 consecutive clean passes.
