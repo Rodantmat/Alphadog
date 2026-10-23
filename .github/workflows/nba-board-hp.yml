@@ -1,0 +1,52 @@
+name: NBA Board HP (board-centred, line-type calibrated probability)
+
+# nba/build_board_hp.py - fits the three calibration layers as of each date (nba_score.board_hp_tunables, one set per date) and /
+# or scores the PrizePicks window board with them (nba_score.board_hp, one set per date). final_hp and every consumer of it are
+# untouched. Manual dispatch for backfills; P3 runs the score mode for the slate.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "fit | score | both"
+        default: "score"
+        required: true
+      dates:
+        description: "comma list or FROM:TO (blank = today Pacific)"
+        default: ""
+        required: false
+      write:
+        description: "1 writes, 0 dry run"
+        default: "0"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-board-hp
+  cancel-in-progress: false
+
+jobs:
+  board-hp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy
+      - name: Build board HP
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BH_MODE: ${{ github.event.inputs.mode }}
+          BH_DATES: ${{ github.event.inputs.dates }}
+          BH_WRITE: ${{ github.event.inputs.write }}
+        run: |
+          set -euo pipefail
+          [[ "$BH_MODE" =~ ^(fit|score|both)$ ]] || { echo "refused mode: $BH_MODE"; exit 1; }
+          [[ "$BH_DATES" =~ ^[0-9:,-]*$ ]] || { echo "refused dates: $BH_DATES"; exit 1; }
+          [[ "$BH_WRITE" =~ ^[01]$ ]] || { echo "refused write: $BH_WRITE"; exit 1; }
+          python -u nba/build_board_hp.py
