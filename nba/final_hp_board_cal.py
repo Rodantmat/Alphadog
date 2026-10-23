@@ -153,6 +153,55 @@ class TunableSets:
         return (self.dates[out], self.sets[out]) if out is not None else (None, None)
 
 
+def board_legs(conn, day, legs, table="nba_score.final_hp_board_cal", use_stored=True):
+    """ONE NUMBER ON EVERY APP BOARD LEG (2026-10-23; owner 21:01 PT: final_hp IS the board hit probability, on every leg of every
+    app board). legs: [(player_id, prop, line, side, baseline_hp)] of one slate (side 'Over' / 'Under').
+    Returns [(p, chain, source)] in order (source "final_hp" | "chain" | None):
+      * final_hp's own row for this exact leg (game_date, player_id, prop, line, side) -> (its final_hp, its cal_chain): the stored
+        number, never recomputed - what the slip engine reads is what every board shows;
+      * else, for the 12 calibrated props, the board-centred chain on that day's ladder (final_hp's Over rungs + final_hp_derived
+        beyond-certified-depth / wn-neighbour Over rungs - the rungs build_final_hp prices from; a player with none falls back to
+        the board legs' own rungs) with the slate's tunable set and standard line -> (p, 'board');
+      * else (None, None, None): the caller keeps its own (as-of) number.
+    use_stored=False skips the first rule (the audit: the chain on the day's ladder vs final_hp's own rows)."""
+    day = day if isinstance(day, dt.date) else dt.date.fromisoformat(str(day))
+    stored, rungs = {}, defaultdict(dict)
+    for pid, prop, line, side, fh, ch, bh in conn.execute(
+            """SELECT player_id::text, prop, line::float8, side, final_hp::float8, cal_chain, baseline_hp::float8
+               FROM nba_score.final_hp WHERE game_date = %s AND final_hp IS NOT NULL""", (day,)):
+        stored[(pid, prop, round(line, 1), side)] = (fh, ch or "asof")
+        if side == "Over" and bh is not None:
+            rungs[(pid, prop)][round(line, 1)] = bh
+    for pid, prop, line, bh in conn.execute(
+            """SELECT player_id::text, prop, line::float8, baseline_hp::float8 FROM nba_score.final_hp_derived
+               WHERE game_date = %s AND side = 'Over' AND baseline_hp IS NOT NULL
+                 AND derivation IN ('beyond_certified_depth', 'wn_neighbor')""", (day,)):
+        rungs[(pid, prop)].setdefault(round(line, 1), bh)
+    own = defaultdict(dict)
+    for pid, prop, line, side, bh in legs:
+        if bh is not None and bh == bh and prop in PROPS:
+            own[(str(pid), prop)].setdefault(round(float(line), 1), float(bh) if side == "Over" else 1.0 - float(bh))
+    _d, prm = TunableSets(conn, table).at(day)
+    std = std_lines(conn, date=day) if prm is not None else {}
+    lad, out = {}, []
+    for pid, prop, line, side, bh in legs:
+        pid, line = str(pid), float(line)
+        k = (pid, prop, round(line, 1), side)
+        if use_stored and k in stored:
+            out.append(stored[k] + ("final_hp",))
+            continue
+        L0 = std.get((day, pid, prop))
+        r = rungs.get((pid, prop)) or own.get((pid, prop))
+        if prm is None or prop not in PROPS or L0 is None or not r:
+            out.append((None, None, None))
+            continue
+        if (pid, prop) not in lad:
+            lad[(pid, prop)] = Ladder(list(r.items()), prm["slope_c"].get(prop))
+        p, _lt, _w = apply(prm, prop, side, lad[(pid, prop)], line, L0[0])
+        out.append((p, "board", "chain") if p is not None else (None, None, None))
+    return out
+
+
 STD_LINE_SQL = """
     WITH s AS (
       SELECT b.game_date, nm.player_id::text AS pid, b.market_key, b.bookmaker, b.line::float8 AS line, b.snapshot_label, b.snapshot_ts
