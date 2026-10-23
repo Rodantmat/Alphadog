@@ -538,6 +538,22 @@ def techniques(reg, P, cols, fam):
                 lf = AgglomerativeClustering(n_clusters=par, linkage="ward").fit(Xf[mf]).labels_
             elif method == "hdbscan":
                 lf = HDBSCAN(min_cluster_size=par).fit(Xf[mf]).labels_
+            elif method == "gmm-full":
+                lf = GaussianMixture(n_components=par, covariance_type="full", random_state=7, n_init=3, reg_covar=1e-3).fit(Xf[mf]).predict(Xf[mf])
+            elif method == "bgmm":
+                from sklearn.mixture import BayesianGaussianMixture
+                lf = BayesianGaussianMixture(n_components=par, covariance_type="diag", random_state=7, max_iter=500).fit(Xf[mf]).predict(Xf[mf])
+            elif method in ("average", "complete"):
+                lf = AgglomerativeClustering(n_clusters=par, linkage=method).fit(Xf[mf]).labels_
+            elif method == "birch":
+                from sklearn.cluster import Birch
+                lf = Birch(n_clusters=par, threshold=0.3).fit(Xf[mf]).labels_
+            elif method == "optics":
+                from sklearn.cluster import OPTICS
+                lf = OPTICS(min_samples=par).fit(Xf[mf]).labels_
+            elif method == "meanshift":
+                from sklearn.cluster import MeanShift, estimate_bandwidth
+                lf = MeanShift(bandwidth=estimate_bandwidth(Xf[mf], quantile=par / 10, random_state=7) or 0.5).fit(Xf[mf]).labels_
             else:
                 lf = SpectralClustering(n_clusters=par, random_state=7, affinity="nearest_neighbors", n_neighbors=10).fit(Xf[mf]).labels_
             ks = [c for c in sorted(set(lf)) if c >= 0]
