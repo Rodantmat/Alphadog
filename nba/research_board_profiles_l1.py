@@ -586,7 +586,7 @@ def techniques(reg, P, cols, fam):
                     if sum(abs(v - 0.5) >= 0.15 for _, v in top) < 2:
                         continue        # not a multi-feature commonality
                     thr = null_threshold(method, fname, Xf, ok, par) if thr is None else thr
-                    if jb <= thr:
+                    if jb <= thr + (0.05 if derived else 0.0):
                         continue        # no better than clusters of shuffled (structure-free) data
                     desc = ", ".join(f"{nm_} {'HIGH' if v > 0.5 else 'LOW'} {v:.2f}" for nm_, v in top)
                     reg.offer(f"{method}-{fname}-{par}-c{c}", la == c, f"{method} on {fname} ({par}); re-found by the other fit (J {jb:.2f}, "
