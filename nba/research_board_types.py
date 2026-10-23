@@ -818,7 +818,7 @@ def analyze(df, feats):
           f"seasons): {len(cons)} of {len(W)}")
     print("  side+lt: OR = Over standard, OG = Over goblin, OD = Over demon, UR / UG / UD = Under")
     for (f, k), r in cons.iterrows():
-        b, sl = k.split("|")
+        b, sl = k.rsplit("|", 1)   # interaction labels carry '|' themselves
         print(f"  {f:<20} {b:<12} {sl}  " + " | ".join(
             f"{s}: resid {r[('mean', s)]:+.4f} n {int(r[('n', s)]):>7,} days {int(r[('days', s)]):>3} same-sign {100 * r[('same', s)]:3.0f}% "
             f"z(day) {r[('z', s)]:+5.1f}" for s in SEASONS))
