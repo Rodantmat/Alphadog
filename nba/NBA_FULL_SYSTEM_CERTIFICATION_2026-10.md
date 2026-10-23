@@ -3086,3 +3086,49 @@ should be doing. Mining everything that they should mine, consuming everything t
       R1 gains in both seasons and sits inside the owner's scope (4+ picks Flex), but it is NOT clean out of sample: the 6F was picked
       after section 2 showed both seasons, 2024-25 lb5 does not move, and the 2025-26 gain rests on a few 6-of-6 hits. Small-slate
       skips do not pay. NOTHING GOES LIVE; R1 is the candidate for the 2026-27 record (C1 slates only).
+25. 🟡 **BOARD TYPES, ROUND 1: ~100 PRE-PICK FACTORS ON EVERY LEG, DATA-DRIVEN SLATE TYPES, THE LINE GAP - NOTHING LIVE** (owner
+    2026-10-23 10:24 PT: strong v weak, weekends, days of the week, many injuries, "the structure of the app board itself ... is there
+    less of our main prop lines ... the players that usually hit, are they there"; 10:25 PT: "I give you 6, you need to come back with
+    100"; 10:30 PT: "the profiles need to be identified and correlate in different days").
+    - METHOD (research_board_types.py; grounded on a Gemini 2.5-pro consult: leg level, residual modelling, FDR, cross-season tests,
+      shrunk player memory). Residual hit - final_hp RELATIVE TO THE SEASON'S SIDE x LINE TYPE BASELINE; z CLUSTERED BY SLATE (a slate's
+      legs move together); cells need >= 300 legs and >= 20 days in both seasons, the same sign, |z| >= 2 and Benjamini-Hochberg q <
+      0.05 in each season; each cell reports its days and the share of days with its sign. Cross-fit: a shift per (bin, side, line
+      type) fitted on one season ON TOP OF a side x line type baseline, applied to the other; HOLDS = day-clustered z <= -2 both ways.
+      Certified on synthetic data before use: a planted +0.05 effect passes; 13 random leg-level and 6 random slate-level factors (with
+      day shocks) all fail. The first draft passed 4 of 13 random factors (mean log-loss alone, no baseline) - fixed before any real
+      run. CONSEQUENCE: item 24's "back-to-back better both ways (-0.00003 / -0.00007)" is inside the noise band.
+    - FACTORS (100, all known before the 13:15 PT pick): calendar 13 (day of week, weekend, Friday, month, season phase, first 14 /
+      last 21 days, post All-Star, holidays, NBA Cup nights, slate games, tip hour, slate tip spread); rest / travel 14 (b2b, opp b2b,
+      rest days and advantage, 3-in-4, 4-in-6, home / away, road-trip / homestand game #, first home game after a trip, time-zone
+      shift, altitude, days since and result of the last meeting); strength 15 (trailing-25 net margin classes and pairing, form vs
+      trailing, streak, pace / opp pace / combined, opp points allowed, OPP ALLOWED IN THE LEG'S STAT, division / conference, late-
+      season bad team, early sample); market 8 (total, spread bucket, favourite, total / spread move morning -> window, PrizePicks
+      line vs books, multiplier quintile, books / DFS apps listing the player-market); injuries 15 (team key / rotation / star out,
+      absent minutes, opp key / star out, questionables, the player himself questionable, games missed, games since return, traded,
+      slate totals); form 15 (minutes trend / volatility, starter, last-5 vs line, last-10 over-rate at the line, streak vs line,
+      line vs season average, games played, foul rate, usage trend, double-double rate, heavy last game, blowout last game, line change
+      since the previous slate, three-point luck); officials 3 (crew fouls / points / free throws, trailing 40 games); board 11 (own
+      prop depth vs trailing 20 slates, board size, depth >= 0.60, ladder rungs, props of the player, standard line present, game
+      coverage, teammates on board, whole-number line, rung rank); memory 7 (shrunk player alpha, per prop group, per side, usual
+      hitters on the board, prop x side 7-slate regime, previous slate residual, final_hp decile). Legs 786,447, 309 slates.
+    - RESULT (run 39998306774): 9 consistent cells of 1,217; ONE factor holds in the cross-fit - mkt_pp_vs_books (PrizePicks' standard
+      line vs the books' median main line). Near misses: opp allowed in the leg's stat (z -1.8 / -2.1), last-5 vs line (-1.6 / -3.9).
+      Everything else - calendar, rest / travel, strength pairings, injuries, officials, board depth, usual hitters, player memory -
+      adds nothing over final_hp out of season.
+    - THE LINE GAP AND A LOOK-AHEAD LEAK (research_final_hp_linegap.py run 40000649597). Round 1 read the books' line from every
+      board_snapshots label, including 'close' (tip time, after the pick): PrizePicks 1+ below the books -> More +0.069 / +0.053 over
+      final_hp. On the WINDOW snapshot only (the pick): +0.028 / +0.023 (z +2.1 / +2.1); 1+ above -> Less +0.028 / +0.023. About half
+      the round-1 size was post-pick information. As a layer on final_hp (slopes per group x line type, cross-fitted): log-loss
+      -0.000079 (z -2.2) on 2025-26, -0.000063 (z -1.4) on 2024-25 - does not pass both ways. Slips: the live pair 162.8 -> 162.8 /
+      232.5 -> 231.0; calibrated structures mixed (GR ev 6F +16 -> +31% / +97 -> +112%; R 0.60 5P lb5 worse both seasons). NOT
+      ADOPTED. Rule recorded: every factor's source is checked for post-pick snapshots before it is scored.
+    - SLATE LEVEL (research_board_types_slate.py runs 39997279432 / 39997957766 / 39998402661). k-means board types on within-season
+      percentiles, fitted on one season, the other assigned: the same type appears from BOTH directions - the DEEP / STRONG board (high
+      top-20 standard final_hp, many standard legs >= 0.65 / 0.70, deep prop menus) where the rebounds 4-Flex and long calibrated Flex
+      beat their season averages, and the THIN board where they fall below. Two-factor profiles: 422 'hits' vs a random-day null of 359
+      (p95 383) - modestly above chance. With TRAILING percentiles only (Q of top20_hp / std >= 0.60 / 0.65 / 0.70 vs the previous 30
+      slates), pre-registered: STRONG -> swap the 3-Power for calib R 0.60 6F = +21.9 / +72.6 units, lb5 +24.9 -> +29.6 / +47.2 ->
+      +61.7. ROBUSTNESS (25 window x threshold settings): 2025-26 holds broadly (swap helps ~50% of strong days, hurts 12-20%, positive
+      without its 3 best days); 2024-25 flips sign across settings and is negative without its 3 best days in every setting. NOT LIVE;
+      tracked candidate. THIN -> skip the 3-Power / skip all costs units in 2024-25.
