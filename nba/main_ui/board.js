@@ -63,8 +63,10 @@ export function legsSql(where, limit, screen = true) {
   return `
 WITH ${STARTED_CTE},
 bs AS (
-  -- HONEST PROBABILITY (2026-10-14): final_hp / score / edge are the market-anchored values (nba_score.board_true_hp, written by
-  -- nba/apply_market_anchor.py) wherever they exist; the model's own number travels beside them as model_hp / model_score.
+  -- ONE NUMBER (2026-10-23; owner 21:01 PT: "the final hit probability and board hit probability should be the same thing"):
+  -- final_hp / score / edge are board_scored's own - P3 writes there final_hp's stored number for every leg final_hp holds (what
+  -- the slip engine reads) and the same board-centred chain for the rest (score_board_legs.py step 4b). The market-anchored
+  -- board_true_hp (2026-10-14 .. 10-22 main number) is no longer the main number: its fields stay beside it for reference only.
   SELECT b.game_date, b.app, b.player_id, b.player, b.prop, b.line, b.side, b.final_hp, b.baseline_hp, b.cal_shift,
          b.confidence, b.score, b.edge, b.interpolated, b.built_at, b.model_hp, b.model_score, b.market_hp, b.hp_anchor,
          b.dk_line, b.dk_p, b.pp_line, b.true_fit, b.ud_hide
