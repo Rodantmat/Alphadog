@@ -110,6 +110,13 @@ def load_current(conn):
     return out
 
 
+def defaultdict_count(legs):
+    c = defaultdict(int)
+    for l in legs:
+        c[l["player"]] += 1
+    return c
+
+
 def morning_lines(conn):
     import datetime as dt
     acc = defaultdict(lambda: {"tot": [], "sp": [], "tip": None})
