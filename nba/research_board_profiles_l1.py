@@ -335,6 +335,8 @@ def families(cols):
                                      "close_share", "mismatch_share") if c in cols],
             "LINES": [c for c in ("line_points_rel", "line_rebounds_rel", "line_assists_rel", "line_up_share", "line_down_share",
                                   "pts_line") if c in cols],
+            "CONCENTRATION": [c for c in ("hhi_games", "team_hhi", "max_game_share", "stars", "star_share", "mix_entropy", "tier_entropy",
+                                          "legs_per_game", "props_per_player") if c in cols],
             "DELTA": [c for c in cols if c.startswith("dlt_")], "REGIME": [c for c in cols if c.startswith("reg_")]}
 
 
