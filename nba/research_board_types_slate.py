@@ -345,6 +345,39 @@ def main():
             row.append(f"{s}: net {net:+6.1f} ROI {100 * net / max(sum(st), 1):+5.1f}% lb5 {100 * V3.lb5(pr, st):+5.1f}% slips {sum(st)} "
                        f"days+ {100 * np.mean([x > 0 for x in pr]):.0f}%")
         print(f"  {name:<40} " + " | ".join(row))
+
+    # 5. ROBUSTNESS OF S1 (owner 10:30 PT: a profile counts only if it recurs across many days): every window x threshold, the gain over
+    # the live pair per season, the STRONG days, the share of those days the swap helped, and the gain WITHOUT its 3 best days.
+    print("\n" + "=" * 200 + "\n5. ROBUSTNESS OF S1 (STRONG -> swap the 3-Power for c:R 0.60 6F): window x threshold; gain vs the pair; days the "
+          "swap helped; gain without the 3 best days")
+
+    def qlabel(s, d, i, win, thr):
+        ds = by_season[s]
+        prev = ds[max(0, i - win):i]
+        if len(prev) < 10:
+            return False
+        ranks = []
+        for f in QF:
+            hv = [feat[(s, x)][f] for x in prev if feat[(s, x)][f] == feat[(s, x)][f]]
+            v = feat[(s, d)][f]
+            if hv and v == v:
+                ranks.append((sum(h < v for h in hv) + 0.5 * sum(h == v for h in hv)) / len(hv))
+        return bool(ranks) and float(np.mean(ranks)) >= thr
+    base_day = {(s, d): port_day([REB4F, CAL3P], s, d) for s in SEASONS for d in by_season[s]}
+    swap_day = {(s, d): port_day([REB4F, S6F], s, d) for s in SEASONS for d in by_season[s]}
+    for win in (15, 20, 30, 45, 60):
+        for thr in (0.55, 0.60, 0.67, 0.75, 0.80):
+            row = []
+            for s in SEASONS:
+                diffs = []
+                for i, d in enumerate(by_season[s]):
+                    if qlabel(s, d, i, win, thr):
+                        diffs.append(swap_day[(s, d)][1] - base_day[(s, d)][1])
+                g = sum(diffs)
+                top3 = sum(sorted(diffs, reverse=True)[:3])
+                row.append(f"{s[2:]} {len(diffs):>3}d gain {g:+6.1f} helped {100 * np.mean([x > 0 for x in diffs]) if diffs else 0:3.0f}% "
+                           f"hurt {100 * np.mean([x < 0 for x in diffs]) if diffs else 0:3.0f}% w/o top3 {g - top3:+6.1f}")
+            print(f"  win {win:>2} thr {thr:.2f}  " + " | ".join(row))
     log("done")
 
 
