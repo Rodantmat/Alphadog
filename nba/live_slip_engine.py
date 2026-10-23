@@ -183,6 +183,15 @@ PORTFOLIO_UNITS = {
     'P_wstocks_4flex':    ('weighted:stocks_R',   4, 'flex',  ''),
     'P_points_3power':    ('single:points_R',     3, 'power', ''),
     'P_wrebounds_3power': ('weighted:rebounds_R', 3, 'power', ''),
+    # CALIBRATED-POOL UNITS (2026-10-23; owner 21:07 PT: new strategies on the board-centred final_hp by the next slate). Built by
+    # calib_slips (the research's own builder) from the PrizePicks window board's STANDARD lines ranked on the calibrated final_hp:
+    # the top legs with final_hp >= the floor, distinct players, <= 2 legs of one game, >= 2 teams. Spec
+    # 'calib:<pool>:<rank>:<min final_hp>:<legs per game>'. Both hold alone in both seasons (research_pp_calibrated_slips run
+    # 39914672627); in the 2-slip portfolio (research_pp_calib_portfolio run 39918732552) P_wrebounds_4flex + C_r70_3power =
+    # +52.5 / +75.5% ROI, lb5 +24.9 / +47.2, max dd 20.0 / 12.0 units (production 6-unit order on the same history: +55.1 / +65.8%,
+    # lb5 +22.5 / +37.5, dd 26.5 / 12.5). The owner's scope (11:58 PT): 2 / 3-pick Power and 4-pick Flex only.
+    'C_r70_3power':       ('calib:R:p:0.70:2',     3, 'power', ''),
+    'C_gr65ev_3power':    ('calib:GR:ev:0.65:2',   3, 'power', ''),
 }
 PORTFOLIO_DEFAULT = {"enabled": False, "n": 2, "leg_cap": 2, "order": list(PORTFOLIO_UNITS),
                      "replaces": ["A_wrebounds_4flex", "C_wstocks_4flex", "A_core_3power", "D_points_3power"]}
