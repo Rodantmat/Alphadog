@@ -454,6 +454,42 @@ def leg_level(res_series, analog_res, order, seas_arr):
     BT.analyze(df, feats)
 
 
+def contra_grid(prof, stake, seas):
+    """robustness of the exploratory contrarian gate (calib R 0.60 2-Power; run 40016380957: trailing-15 <= 0 -> +31.2 / +30.8 units,
+    p-rand 0.00 both seasons vs always +9.6 / +19.4): every window 5..30 on every owner-scope unit and the pair, with the
+    1,000 random-skip null and net without the 3 best days. Synthetic check: random series reach p 0.00 in ONE season at some
+    window - a gate needs p < 0.05 in BOTH seasons across neighbouring windows"""
+    print("\n" + "=" * 190 + "\n6. CONTRARIAN GATE ROBUSTNESS - play only when the unit's trailing-N profit <= 0 (net, ROI, -3best, days, p-rand) per season")
+    names = [V3.tag(u) for u in OWNER_SCOPE] + ["PAIR"]
+    for nm in names:
+        x, st = prof[nm], stake[nm]
+        row = []
+        for N in (5, 10, 15, 20, 25, 30):
+            seg = []
+            for s in SEASONS:
+                idx = np.where(seas == s)[0]
+                xs, sts = x[idx], st[idx]
+                ps = np.where(sts > 0, xs / np.maximum(sts, 1), np.nan)
+                g = np.zeros(len(idx), bool)
+                for j in range(len(idx)):
+                    past = ps[:j]
+                    past = past[~np.isnan(past)][-N:]
+                    g[j] = len(past) >= N and past.sum() <= 0
+                ok = ~np.isnan(xs) & (sts > 0)
+                take = g & ok
+                pr, sk = xs[take], sts[take]
+                if len(pr) < 5:
+                    seg.append(f"{s[2:]} -"); continue
+                allx, alls = xs[ok], sts[ok]
+                roi = pr.sum() / sk.sum()
+                rr = [allx[pk].sum() / alls[pk].sum() for pk in (RNG.choice(len(allx), len(pr), replace=False) for _ in range(1000))]
+                prand = (1 + np.sum(np.array(rr) >= roi)) / 1001
+                no3 = np.sort(pr)[:-3].sum()
+                seg.append(f"{s[2:]} {pr.sum():+.1f} ({100 * roi:+.0f}%, -3b {no3:+.1f}, {len(pr)}d, p {prand:.2f}) of all {allx.sum():+.1f}")
+            row.append(f"N{N}: " + " / ".join(seg))
+        print(f"  {nm}\n      " + "\n      ".join(row))
+
+
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
