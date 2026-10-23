@@ -111,6 +111,8 @@ def main():
         p = np.clip(p, 1e-4, 1 - 1e-4)
         return -(yy * np.log(p) + (1 - yy) * np.log(1 - p))
     preds = {}
+    if os.environ.get("R3_WF"):
+        return walk_forward(M, fcols, y, p0, r, ll)
     # ---------------- RIDGE (additive, all factors x side) ----------------
     from scipy import sparse
     rows_i, cols_i = [], []
