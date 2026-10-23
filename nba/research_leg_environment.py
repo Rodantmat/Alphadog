@@ -74,9 +74,8 @@ def main():
     days = RC.load(conn)
     name_tid = {n: t for n, t in conn.execute("SELECT full_name, team_id FROM nba_ref.teams")}
     name_tid["Los Angeles Clippers"] = name_tid.get("LA Clippers", name_tid.get("Los Angeles Clippers"))
-    gl = defaultdict(list)   # (date, team_id) -> [(total, team_spread, opp_tid)]
-    for d, h, a, tot, hs in conn.execute("""SELECT game_date, home_team, away_team, total_line::float8, home_spread::float8
-                                            FROM nba_market.game_lines_closing WHERE game_date BETWEEN '2024-10-01' AND '2026-06-30'"""):
+    gl = defaultdict(list)   # (local game date, team_id) -> [(total, team_spread, opp_tid)]
+    for d, h, a, tot, hs in game_lines_local(conn):
         th, ta = name_tid.get(h), name_tid.get(a)
         if th is None or ta is None:
             continue
