@@ -127,13 +127,30 @@ def main():
     log(f"ridge design: {Xs.shape[0]:,} x {Xs.shape[1]:,}")
     from scipy.sparse.linalg import cg
     pr = np.full(len(M), np.nan)
+    rng0 = np.random.default_rng(3)
     for fit_s, app_s in (SEASONS, SEASONS[::-1]):
         mf, ma = seas == fit_s, seas == app_s
-        Xf = Xs[mf]
-        lam = 2000.0
-        Aop = (Xf.T @ Xf) + lam * sparse.identity(Xs.shape[1], format="csr")
-        b, _ = cg(Aop, Xf.T @ r[mf], maxiter=400)
-        pr[ma] = Xs[ma] @ b
+        # the penalty chosen on 15% held-out DAYS of the fit season; 'none' (no correction) competes
+        dd = M.d.values
+        ud = np.unique(dd[mf])
+        hold = set(rng0.choice(ud, max(1, int(0.15 * len(ud))), replace=False))
+        hv = mf & np.array([x in hold for x in dd])
+        tr = mf & ~hv
+        Xt = Xs[tr]
+        best = ("none", float(ll(p0[hv], y[hv]).mean()), None)
+        for lam in (2e3, 2e4, 2e5, 2e6):
+            b, _ = cg((Xt.T @ Xt) + lam * sparse.identity(Xs.shape[1], format="csr"), Xt.T @ r[tr], maxiter=400)
+            sc = float(ll(np.clip(p0[hv] + Xs[hv] @ b, 0.01, 0.99), y[hv]).mean())
+            if sc < best[1]:
+                best = (lam, sc, None)
+        if best[0] == "none":
+            pr[ma] = 0.0
+        else:
+            Xf = Xs[mf]
+            b, _ = cg((Xf.T @ Xf) + best[0] * sparse.identity(Xs.shape[1], format="csr"), Xf.T @ r[mf], maxiter=400)
+            pr[ma] = Xs[ma] @ b
+        log(f"RIDGE fitted on {fit_s}: penalty {best[0]} (held-out-day log-loss {best[1]:.5f} vs final_hp "
+            f"{float(ll(p0[hv], y[hv]).mean()):.5f})")
     preds["RIDGE"] = pr
 
     # ---------------- HGB (interactions) ----------------
