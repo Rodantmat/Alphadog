@@ -2943,3 +2943,22 @@ should be doing. Mining everything that they should mine, consuming everything t
       game vs ~112 live (PrizePicks' full alt ladders and 30+ new stat types), so the DEF-heavy units were backtested on a much
       narrower DEF pool than live offers.
     Nothing changed live. Next (owner's call): widen the live market feed before any market-crossed profile work.
+21. 🟡 **THE BOARD DAY BY DAY ON OUR OWN NUMBERS** (owner 17:08 PT: no new feed; "comparing day by day, grounded by our own numbers,
+    baseline, final hp, final score ... the day by day differences in the board is where the solution resides"). Probe
+    research_board_day_probe.py run 39876488648 (first 3 slates of 24-25 / 25-26 + 10-20..22), then research_board_day_signal.py
+    staged: sample (first 30 slates of each season, run 39876938671) and both full seasons (run 39877339008). Per slate and line
+    type: our numbers' shape (share final_hp >= .55 / .58 / .62, enrichment push final - baseline, final_score p50 / p90, legs,
+    players, Under / DEF share of the top legs, slate number) vs that slate's result (hit of the >= .58 legs, calibration gap,
+    top 20 by final_score); a signal counts only with the same sign in both seasons and |Spearman| >= 0.2 in both.
+    - STANDARD legs (R): >= .58 legs hit 54.8% / 55.3% (26,838 / 39,004 legs), our final_hp too high by +0.086 / +0.084 every
+      season; day to day the hit rate swings (sd 6 points, 35-78%). Opening slates: gap +0.07..+0.19; live 10-20 +0.13, 10-21 +0.15.
+    - GOBLINS (G): calibrated (>= .58 hit 70.8% / 69.4%, gap -0.017 / -0.005).
+    - DEMONS (D): our final_hp is far too high at the top - >= .58 demon legs hit 39.2% / 43.4% (gap +0.19 / +0.18); every probe
+      day the same (15-42%). A demon chosen for a high final_hp is a trap on our own numbers.
+    - SAMPLE (first 30 slates): consistent signals for R - a larger enrichment push and a larger share of legs >= .58 / .62 mean a
+      larger overconfidence that day (push -> hit -0.28 / -0.39, calgap +0.26 / +0.45; share >= .62 -> calgap +0.24 / +0.43), and
+      the overconfidence shrinks through the first month (slate number -> calgap -0.28 / -0.56); demons likewise.
+    - FULL SEASONS: those signals fade to |rho| <= 0.24 (R share >= .62 -> calgap +0.15 / +0.23; push -> hit -0.10 / -0.21); only
+      goblin fs90 -> calgap holds (+0.28 / +0.27, an effect of 3 points). The board's own-number shape does not tell good days from
+      bad days over a season; it does in the season's first month - which is now.
+    Nothing changed live.
