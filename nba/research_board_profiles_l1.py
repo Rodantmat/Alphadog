@@ -823,9 +823,14 @@ def techniques(reg, P, cols, fam):
             log("hmmlearn unavailable - HMM pass skipped")
             return 0
         n = 0
-        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL"):
+        for fname in fams:
+            if len(fam.get(fname, [])) < 3:
+                continue
             Xf = P[:, [ci[c] for c in fam[fname]]]
             ok = ~np.isnan(Xf).any(axis=1)
+            if not has_structure(Xf, ok):        # HMM on a family without co-movement finds only noise (synthetic check)
+                log(f"  {fname}: no co-movement beyond noise - HMM skipped")
+                continue
             pca = PCA(n_components=3).fit(Xf[ok & (seas == HIST[0])])
             for k in (2, 3, 4):
                 labs = {}
