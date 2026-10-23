@@ -869,6 +869,7 @@ jobs:
           [ "${{ steps.soft_market.outcome }}" = "failure" ] && L="$L market-snapshot"
           [ "${{ steps.soft_mrefresh.outcome }}" = "failure" ] && L="$L market-refresh"
           [ "${{ steps.soft_consensus.outcome }}" = "failure" ] && L="$L consensus-event-map"
+          [ "${{ steps.soft_boardhp.outcome }}" = "failure" ] && L="$L board-hp"
           L="${L# }"
           echo "list=$L" >> "$GITHUB_OUTPUT"
           if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
