@@ -682,6 +682,7 @@ def main():
                              round(float(r.c_exist), 4), round(float(r.c_quality), 4), round(float(r.c_market), 4),
                              r.prop_tier, r.band, r.phase, int(r.n_uncertain))
                             for r in frame.itertuples(index=False)]
+                chains = list(d.loc[~deep & ~d["wn_nb"].fillna(False).astype(bool).values, "cal_chain"])
                 nb = d["wn_nb"].fillna(False).astype(bool).values
                 rows = _rowify(d[~deep & ~nb])
                 deep_rows = ([t + ("beyond_certified_depth",) for t in _rowify(d[deep & ~nb])]
