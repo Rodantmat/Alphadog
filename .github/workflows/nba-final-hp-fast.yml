@@ -1,0 +1,63 @@
+name: NBA final_hp fast board-centred rebuild (from stored rows)
+
+# nba/rebuild_final_hp_board.py - the board-centred chain applied to the final_hp rows already stored (2026-10-22 night): same
+# numbers as build_final_hp.py with FE_BOARD_CENTRE=1, without re-reading baseline_history. compare=1 diffs against rows the full
+# build wrote (parity), write=1 updates final_hp / final_hp_derived (final_hp, cal_shift, score, edge, cal_chain).
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "comma list, e.g. 2024-25,2025-26"
+        default: "2024-25,2025-26"
+        required: true
+      props:
+        description: "comma list (blank = the 12 calibrated props)"
+        default: ""
+        required: false
+      write:
+        description: "1 writes"
+        default: "0"
+        required: true
+      compare:
+        description: "1 = parity diff only"
+        default: "0"
+        required: true
+      cal_table:
+        description: "tunable table"
+        default: "nba_score.final_hp_board_cal"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-final-hp-fast
+  cancel-in-progress: false
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Rebuild
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FB_SEASONS: ${{ github.event.inputs.seasons }}
+          FB_PROPS: ${{ github.event.inputs.props }}
+          FB_WRITE: ${{ github.event.inputs.write }}
+          FB_COMPARE: ${{ github.event.inputs.compare }}
+          FB_CAL_TABLE: ${{ github.event.inputs.cal_table }}
+        run: |
+          set -euo pipefail
+          [[ "$FB_SEASONS" =~ ^[0-9,-]+$ ]] || { echo "refused seasons"; exit 1; }
+          [[ "$FB_PROPS" =~ ^[a-z_,]*$ ]] || { echo "refused props"; exit 1; }
+          [[ "$FB_WRITE" =~ ^[01]$ && "$FB_COMPARE" =~ ^[01]$ ]] || { echo "refused flags"; exit 1; }
+          [[ "$FB_CAL_TABLE" =~ ^nba_score\.final_hp_board_cal(_hold)?$ ]] || { echo "refused table"; exit 1; }
+          python -u nba/rebuild_final_hp_board.py
