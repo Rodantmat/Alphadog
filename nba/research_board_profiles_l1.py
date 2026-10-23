@@ -252,6 +252,37 @@ def slate_features(conn, days, order):
                         "gob_factor": (np.quantile([float(l["factor"]) for l in legs if l["tier"].startswith("G")], np.linspace(0.05, 0.95, 19))
                                        if sum(l["tier"].startswith("G") for l in legs) >= 20 else None),
                         "all_hp": np.quantile([l["p"] for l in legs if l["p"] is not None], np.linspace(0.05, 0.95, 19))}
+        # batch 4 (Gemini consult 2026-10-23: composition, concentration, multimodality, entropy)
+        cc = defaultdict(int)
+        for l in legs:
+            cc[(l["prop"], l["tier"][0], l["side"][0])] += 1
+        CELLS[(s, d)] = dict(cc)
+        star = {l["player"] for l in legs if l["prop"] == "points" and l["tier"] == "R" and float(l["line"]) >= 24.5}
+        f["stars"] = len(star)
+        f["star_share"] = len(star) / max(len(players), 1)
+        per_team = defaultdict(int)
+        for l in legs:
+            per_team[str(l["team_id"])] += 1
+        tsh = np.array(list(per_team.values()), float) / max(len(legs), 1)
+        f["team_hhi"] = float((tsh ** 2).sum())
+        per_game_c = defaultdict(int)
+        for l in legs:
+            per_game_c[l["event_id"]] += 1
+        f["max_game_share"] = max(per_game_c.values()) / max(len(legs), 1) if per_game_c else np.nan
+        mixp = np.array([cnt[g] for g in GROUPS], float); mixp = mixp / max(mixp.sum(), 1)
+        f["mix_entropy"] = float(-(mixp[mixp > 0] * np.log(mixp[mixp > 0])).sum())
+        tierp = np.array([sum(l["tier"][0] == t for l in legs) for t in "RGD"], float); tierp = tierp / max(tierp.sum(), 1)
+        f["tier_entropy"] = float(-(tierp[tierp > 0] * np.log(tierp[tierp > 0])).sum())
+
+        def bimod(v):       # Sarle's bimodality coefficient (> 0.555 suggests two modes)
+            if len(v) < 20:
+                return np.nan
+            import pandas as pd
+            sk, ku = float(pd.Series(v).skew()), float(pd.Series(v).kurt())
+            nn = len(v)
+            return (sk ** 2 + 1) / (ku + 3 * (nn - 1) ** 2 / ((nn - 2) * (nn - 3)))
+        f["std_bimod"] = bimod(R)
+        f["gob_bimod"] = bimod(G)
         rungs = defaultdict(int)
         for l in legs:
             rungs[(l["player"], l["prop"])] += 1
