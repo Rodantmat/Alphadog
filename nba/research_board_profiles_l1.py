@@ -61,7 +61,9 @@ family; Wasserstein k-means at k 7-8 on every distribution; 6 / 8-slate trajecto
 Round 6 (run 40025729814): 423 profiles (316 elected), trailing clean 0 - new views kept re-slicing the same slates; the NEW test now
 also rejects a candidate explained by two known profiles (their intersection or union). Round 7 (run 40027670708): 346 profiles
 (261 elected), trailing clean 0. Batch 8 (variations): goblin final_hp distributions per prop group, Wasserstein at k 9-10, 12 / 15-
-slate trajectories, kernel embeddings on every family incl. a Laplacian kernel, k-means / GMM at k 9-12.
+slate trajectories, kernel embeddings on every family incl. a Laplacian kernel, k-means / GMM at k 9-12. Round 8 (run
+40029366209): 372 profiles (275 elected), trailing clean 1; kernels / long trajectories / k 9-12 kept re-combining known profiles ->
+the predictable-from-known-profiles test.
 PASSES: the techniques below run in order, each one a pass; a pass is CLEAN when it registers no new profile. The run reports the
 registry (name, definition, ranges in raw units, days / months / episodes per season, 2026-27 slates in it) and the trailing run of
 clean passes. Layer 2 (strategies per profile) waits for 10 consecutive clean passes.
