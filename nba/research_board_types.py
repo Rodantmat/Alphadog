@@ -853,6 +853,9 @@ def analyze(df, feats):
         for fit, app in (SEASONS, SEASONS[::-1]):
             mf = (seas == fit) & (v != "~")
             ma = (seas == app) & (v != "~")
+            if not mf.any() or not ma.any():          # a factor with no values in one season cannot be cross-fitted
+                out.append((float("nan"), 0.0))
+                continue
             # baseline: one shift per side x line type; candidate: the factor's bins ON TOP of that baseline
             bb = fit_shift(bcodes, len(buniq), mf, z0[mf], shrink=0)   # the baseline in full (6 cells, huge n)
             zb = z0 + bb[bcodes]
