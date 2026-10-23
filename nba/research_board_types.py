@@ -246,6 +246,8 @@ def main():
     for ct, home, away, mk, out, pt, lab in conn.execute("""
             SELECT commence_time, home_team, away_team, market, outcome, point::float8, snapshot_label FROM nba_market.game_lines_snapshots
             WHERE game_date BETWEEN '2024-10-01' AND '2026-06-30' AND market IN ('totals', 'spreads') AND point IS NOT NULL"""):
+        if isinstance(ct, str):   # the column is text (ISO 8601, 'Z')
+            ct = dt.datetime.fromisoformat(ct.replace("Z", "+00:00"))
         loc = ct.astimezone(dt.timezone(dt.timedelta(hours=-8 if ct.month in (11, 12, 1, 2) or (ct.month == 3 and ct.day < 9) else -7)))
         key = (loc.date(), nm_team(home), nm_team(away))
         tip[key] = loc.hour + loc.minute / 60
