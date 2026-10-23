@@ -391,11 +391,8 @@ export async function apiFilters(sql, cfg, slate, version) {
   // the counts are of the legs the board can show (2026-10-20): unplaceable Underdog rungs and started games are left out, as on the board
   const rows = await q(sql, `
     WITH ${STARTED_CTE},
-    bs AS (SELECT b0.app, b0.player, b0.prop, b0.line, b0.side, coalesce(th.true_hp::numeric, b0.final_hp) final_hp,
-                       coalesce(th.true_score::numeric, b0.score) score, b0.confidence
+    bs AS (SELECT b0.app, b0.player, b0.prop, b0.line, b0.side, b0.final_hp, b0.score, b0.confidence
                 FROM nba_score.board_scored b0
-                LEFT JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
-                                                    AND th.line = b0.line AND th.side = b0.side
                 WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[]) AND NOT ${UD_HIDE("b0")} ${NOT_STARTED("b0")}),
     mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop)),
     pk AS (SELECT DISTINCT ON (t.player, mk.prop, t.side, t.line) t.player, mk.prop, t.side, t.line, t.kind
