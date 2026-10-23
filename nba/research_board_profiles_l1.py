@@ -1093,6 +1093,55 @@ def techniques(reg, P, cols, fam):
                           + ", ".join(f"{a} {b:.2f}" for a, b in top), [a for a, _ in top], "consensus")
         return n
     T.append(("consensus clustering", consensus))
+
+    # ---------------- batch 5 (variations of what found profiles: other windows, other families, other distributions,
+    # absolute instead of relative scale) ----------------
+    for win in (2, 5):
+        T.append((f"{win}-slate trajectories", (lambda w: (lambda: trajectories(w, ("BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION",
+                                                                                 "MIX", "TIERS", "CONFIDENCE", "AVAILABILITY"))))(win)))
+    T.append(("3-slate trajectories, more families", lambda: trajectories(3, ("MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "STRENGTH",
+                                                                               "SCHEDULE", "LINES", "ALL"))))
+    T.append(("hidden regimes (HMM), more families", lambda: hmm_regimes(("MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "STRENGTH",
+                                                                         "SCHEDULE", "LINES", "CONCENTRATION", "MATCHUPS"))))
+    for pen in (1.5, 6.0):
+        T.append((f"change points (penalty {pen:g}), all families", (lambda pn: (lambda: change_points(
+            ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "STRENGTH", "SCHEDULE",
+             "CONCENTRATION"), pn)))(pen)))
+    for key in ("dem_factor", "pts_line", "player_props"):
+        T.append((f"wasserstein k-means on {key}", wasserstein(key)))
+
+    def absolute_scale():
+        """ABSOLUTE instead of relative: each feature z-scored on 2024-25's own mean / sd (the earlier season, so no look-ahead for
+        2025-26), clipped to +-3 and mapped to 0..1; then k-means / GMM on the main families with the same gates and nulls"""
+        n = 0
+        mu = np.nanmean(reg.X[seas == HIST[0]], axis=0)
+        sd = np.nanstd(reg.X[seas == HIST[0]], axis=0)
+        sd[~(sd > 0)] = 1.0
+        Zabs = (np.clip((reg.X - mu) / sd, -3, 3) + 3) / 6
+        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "CONCENTRATION"):
+            fc = fam.get(fname, [])
+            if len(fc) < 2:
+                continue
+            key = f"ABS-{fname}"
+            fam[key] = [f"{key}-{c}" for c in fc]
+            base = P.shape[1]
+            for j, c in enumerate(fc):
+                ci[f"{key}-{c}"] = base + j
+            Pz = np.column_stack([P, Zabs[:, [ci[c] for c in fc]]])
+            nonlocal_P = Pz
+            for method in ("kmeans", "gmm"):
+                n += clusters_on_gate(nonlocal_P, method, key, (2, 3, 4, 5, 6))
+        return n
+
+    def clusters_on_gate(Pz, method, fname, pars):
+        nonlocal P
+        saved = P
+        P = Pz
+        try:
+            return clusters(method, fname, pars, derived=False)()
+        finally:
+            P = saved
+    T.append(("absolute-scale clusters", absolute_scale))
     return T
 
 
