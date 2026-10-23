@@ -25,7 +25,8 @@ A PROFILE = a set of slates sharing a definition, that RECURS: >= 15 slates, >= 
 of 2024-25 and 2025-26; and is IDENTIFIABLE: a rule (ranges of named features) or a cluster whose fit on one season is re-found by
 the fit on the other (best-match Jaccard >= 0.5). It is NEW when its slate set overlaps every registered profile with Jaccard < 0.5
 AND is not (nearly) the intersection or the union of two registered profiles (Jaccard < 0.5 with every A-and-B and A-or-B; added
-after round 6 - see Registry.offer).
+after round 6 - see Registry.offer) AND cannot be predicted from the known profiles' memberships (depth-3 tree fitted on one season,
+balanced accuracy >= 0.85 on the other, both ways - added after round 8, Registry.explained).
 ELECTION (owner 13:23 PT: "define some metrics for how to elect a profile ... how many as in multiple ... worth it to have a set of
 strategies behind it"): a profile's strategies are judged on its own slates only, so its size sets what can ever be proven. The
 minimum detectable ROI difference (80% power, 5% two-sided) of one slip a slate is 2.8 x sd / sqrt(slates); the per-slip profit sd
