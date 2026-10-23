@@ -49,6 +49,7 @@ import build_slip_engine as SE              # noqa: E402
 import calib_slips as CS                    # noqa: E402
 import research_pp_calibrated_slips as RC   # noqa: E402
 import research_pp_flex234 as F             # noqa: E402
+import research_leg_environment as LE       # noqa: E402
 
 BOOT = int(os.environ.get("BP_BOOT") or 500)
 SEASONS = ("2024-25", "2025-26")
