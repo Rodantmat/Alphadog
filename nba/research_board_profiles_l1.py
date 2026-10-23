@@ -271,6 +271,16 @@ def slate_features(conn, days, order):
                                                  np.linspace(0.05, 0.95, 19))
                                      if sum(l["prop"] == "points" and l["tier"] == "R" for l in legs) >= 20 else None),
                         "player_props": np.quantile(list(defaultdict_count(legs).values()), np.linspace(0.05, 0.95, 19))}
+        # batch 6: each prop group's own board quality (standard legs >= 0.62, goblins >= 0.75, demon share) and its final_hp
+        # distribution (Wasserstein view per group)
+        for g in GROUPS:
+            Rg = [l["p"] for l in legs if l["tier"] == "R" and GRP.get(l["prop"]) == g and l["p"] is not None]
+            Gg = [l["p"] for l in legs if l["tier"].startswith("G") and GRP.get(l["prop"]) == g and l["p"] is not None]
+            ng_ = sum(GRP.get(l["prop"]) == g for l in legs)
+            f[f"strong_{g}"] = float(sum(x >= 0.62 for x in Rg))
+            f[f"gobstrong_{g}"] = float(sum(x >= 0.75 for x in Gg))
+            f[f"demshare_{g}"] = sum(GRP.get(l["prop"]) == g and l["tier"].startswith("D") for l in legs) / max(ng_, 1)
+            DIST[(s, d)][f"std_hp_{g}"] = np.quantile(Rg, np.linspace(0.05, 0.95, 19)) if len(Rg) >= 20 else None
         # batch 4 (Gemini consult 2026-10-23: composition, concentration, multimodality, entropy)
         cc = defaultdict(int)
         for l in legs:
