@@ -32,7 +32,7 @@ def RC_norm(x):
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
-    units = [u for u in (os.environ.get("CP_UNITS") or "C_r70_3power").split(",") if u]
+    units = [u for u in (os.environ.get("CP_UNITS") or "P_cal_r70_3power").split(",") if u]
     same = total = 0
     for day in [d for d in (os.environ.get("CP_DATES") or "").split(",") if d]:
         live = L.load_board_legs_live(conn, day)
