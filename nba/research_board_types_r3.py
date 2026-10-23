@@ -295,5 +295,127 @@ def main():
     log("done")
 
 
+def walk_forward(M, fcols, y, p0, r, ll):
+    """WALK-FORWARD over 2025-26 (the way a model would run live): each calendar month of 2025-26 (Nov .. Apr) is predicted by models
+    trained ONLY on legs before that month (all of 2024-25 + earlier 2025-26). Settings fixed in advance from the cross-season
+    round 3 run 40009617082 (what the 2024-25 fit chose): HGB 100 trees depth 4 lr 0.05; ridge penalty 2e5. October 2025-26
+    (no own-season history yet) uses the 2024-25 model. Env R3_WF=1. Reported on 2025-26: log-loss vs final_hp (day-clustered z) per month and total; every calibrated structure
+    and the live pair, BASE vs WF-HGB vs WF-RIDGE."""
+    from scipy import sparse
+    from scipy.sparse.linalg import cg
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    seas = M.season.values
+    dd = M.d.values
+    feat_cols = fcols + ["side_c", "lt_c", "prop_c"]
+    Xh = np.column_stack([M[feat_cols].values.astype(np.float32), p0.astype(np.float32)])
+    cat_mask = [True] * len(fcols) + [True, True, True] + [False]
+    rows_i, cols_i, ncol = [], [], 0
+    side_c = M.side_c.values.astype(np.int64)
+    for c in fcols + ["lt_c", "prop_c"]:
+        v = M[c].values.astype(np.int64) * 2 + side_c
+        u, inv = np.unique(v, return_inverse=True)
+        rows_i.append(np.arange(len(M))); cols_i.append(inv + ncol); ncol += len(u)
+    Xs = sparse.csr_matrix((np.ones(sum(len(x) for x in rows_i)), (np.concatenate(rows_i), np.concatenate(cols_i))), shape=(len(M), ncol))
+    test = seas == SEASONS[1]
+    months = sorted({(d.year, d.month) for d in dd[test]})
+    ph = np.full(len(M), np.nan)
+    pr = np.full(len(M), np.nan)
+    for (yy_, mm_) in months:
+        start = pd.Timestamp(yy_, mm_, 1).date()
+        tr = np.array([d < start for d in dd])
+        te = test & np.array([(d.year, d.month) == (yy_, mm_) for d in dd])
+        m = HistGradientBoostingRegressor(max_depth=4, learning_rate=0.05, max_iter=100, min_samples_leaf=400, categorical_features=cat_mask,
+                                          l2_regularization=1.0, early_stopping=False, random_state=5)
+        m.fit(Xh[tr], r[tr])
+        ph[te] = m.predict(Xh[te])
+        Xt = Xs[tr]
+        b, _ = cg((Xt.T @ Xt) + 2e5 * sparse.identity(ncol, format="csr"), Xt.T @ r[tr], maxiter=400)
+        pr[te] = Xs[te] @ b
+        log(f"walk-forward {yy_}-{mm_:02d}: trained on {int(tr.sum()):,} legs, predicted {int(te.sum()):,}")
+    print("\n" + "=" * 190 + "\nWF-A. WALK-FORWARD LOG-LOSS ON 2025-26 vs final_hp (negative = better; day-clustered z)")
+    padj = {}
+    for name, pp in (("WF-HGB", ph), ("WF-RIDGE", pr)):
+        pa = np.clip(p0 + np.nan_to_num(pp), 0.01, 0.99)
+        padj[name] = pa
+        dl = ll(pa[test], y[test]) - ll(p0[test], y[test])
+        mu, z, D = day_z(dl, dd[test])
+        print(f"  {name:<9} total {mu:+.6f} (z {z:+.1f}, {D} days)")
+        for (yy_, mm_) in months:
+            mk = test & np.array([(d.year, d.month) == (yy_, mm_) for d in dd])
+            dl2 = ll(pa[mk], y[mk]) - ll(p0[mk], y[mk])
+            mu2, z2, D2 = day_z(dl2, dd[mk])
+            print(f"    {yy_}-{mm_:02d}: {mu2:+.6f} (z {z2:+.1f}, {D2} days)")
+    # slips on 2025-26
+    SE.flex_alt_tiers(); SE.payout_v3_rules()
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
+    days = RC.load(conn)
+    s = SEASONS[1]
+    ds = sorted(d for (ss, d) in days if ss == s)
+    look = {n: dict(zip(zip(M.d, M.nm, M.prop, M.side, M.line.astype(float)), v)) for n, v in padj.items()}
+    REB4F, CAL3P = V3.REB4F, V3.CAL3P
+    reb = defaultdict(list)
+    for season, d, k, legs, sg in conn.execute(
+            """SELECT season, game_date, k, legs_json, same_game FROM nba_score.slip_engine_slips_wo
+               WHERE composition = %s AND size = %s AND structure = %s AND k <= %s AND phase <> 'final7' ORDER BY game_date, k""",
+            (REB4F[1], REB4F[2], REB4F[3], V3.KMAX)):
+        if season == s and (season, d) in days:
+            reb[(season, d)].append((legs, bool(sg and sg > 0)))
+
+    def grade(slip, structure, sg=None):
+        sl = [{"hit": x.get("hit"), "factor": float(x.get("factor") or 1.0), "event_id": x.get("event_id")} for x in slip]
+        return SE.grade(sl, structure, same_game=sg)[1] - 1.0
+
+    def pool_for(d, variant):
+        out = []
+        for l in days[(s, d)]:
+            if l["prop"] in BT.PROPS and l["p"] is not None:
+                q = l["p"] if variant == "BASE" else look[variant].get((d, F.norm(l["player"]), l["prop"], l["side"], float(l["line"])))
+                if q is None or q != q:
+                    q = l["p"]
+                out.append(dict(l, p=float(q)))
+        return out
+    variants = ["BASE"] + list(padj)
+    print("\n" + "=" * 190 + f"\nWF-B. EVERY CALIBRATED STRUCTURE ON {s} (k = 1 slip a day) - ROI % (days, lb5)")
+    for u in [u for u in V3.UNITS if u[0] == "calib"]:
+        parts = []
+        for v in variants:
+            prr, st = [], []
+            for d in ds:
+                sl_ = CS.unit_slips(pool_for(d, v), u[1], u[2], 1)
+                if sl_:
+                    prr.append(grade(sl_[0], u[3])); st.append(1)
+            parts.append(f"{v} {100 * sum(prr) / max(len(prr), 1):+6.1f}% ({len(prr)}d, lb5 {100 * V3.lb5(prr, st):+5.1f})")
+        print(f"  {V3.tag(u):<22} " + " | ".join(parts))
+    parts = []
+    for v in variants:
+        prr, st = [], []
+        for d in ds:
+            c3 = CS.unit_slips(pool_for(d, v), CAL3P[1], CAL3P[2], V3.KMAX)
+            r4 = reb.get((s, d), [])
+            taken, use_, seen = [], defaultdict(int), set()
+            for k in range(V3.KMAX):
+                for kind, lst in (("r4", r4), ("c3", c3)):
+                    if k >= len(lst) or len(taken) >= 2:
+                        continue
+                    slip, sg = (lst[k] if kind == "r4" else (lst[k], None))
+                    keys_ = list(dict.fromkeys(V3.legkey(x) for x in slip))
+                    sgn = (kind, tuple(sorted(map(str, keys_))))
+                    if sgn in seen or any(use_[x] >= 2 for x in keys_):
+                        continue
+                    seen.add(sgn)
+                    for x in keys_:
+                        use_[x] += 1
+                    taken.append(grade(slip, "flex" if kind == "r4" else "power", sg))
+                if len(taken) >= 2:
+                    break
+            if taken:
+                prr.append(sum(taken)); st.append(len(taken))
+        parts.append(f"{v} net {sum(prr):+6.1f} ROI {100 * sum(prr) / max(sum(st), 1):+5.1f}% lb5 {100 * V3.lb5(prr, st):+5.1f}% "
+                     f"days+ {100 * np.mean([x > 0 for x in prr]):.0f}%")
+    print(f"\n  LIVE PAIR {s}: " + " | ".join(parts))
+    log("done")
+
+
 if __name__ == "__main__":
     main()
