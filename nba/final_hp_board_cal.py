@@ -335,6 +335,9 @@ def main():
                                            WHERE game_date BETWEEN %s AND %s""", (min(days), max(days))).fetchall()}
     days = [d for d in days if d in slate]
     print(f"{VERSION}: {len(days)} slate dates", flush=True)
+    if os.environ.get("BC_STD_RANGE"):
+        a, b = (dt.date.fromisoformat(x) for x in os.environ["BC_STD_RANGE"].split(":"))
+        print(f"standard lines materialized for {a} .. {b}: {materialize_std_lines(conn, a, b):,}", flush=True)
     if days:
         run_fit(conn, days, (os.environ.get("BC_WRITE") or "0") == "1")
 
