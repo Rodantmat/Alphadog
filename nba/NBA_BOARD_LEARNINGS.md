@@ -71,3 +71,24 @@ One line per finding, newest section last. Each finding names its script and run
 - Q-3  Same-player / same-game correlation is the main amplifier of daily swings (S-1): measure it directly on board_hp and on the
        slips (how much of a slip's variance is shared legs).
 - Q-4  Alternate Less legs: no graded history yet - grade them live and fit their own L2 / L3 cells once enough exist.
+
+## 5. On the one number (final_hp board-centred, 2026-10-23; ledger DAY THREE 23)
+
+- N-1  The calibrated pool, standard lines: final_hp >= 0.70 is a SMALL pool (0-5 legs on most 2024-25 / 2025-26 slates; 80-100 slates
+       a season produce a 3-leg slip) and it is dominated by the low-volume props - turnovers, steals, stocks, blocks. Their tails are
+       still overconfident (>= 0.70: turnovers hit 0.644, steals 0.678, stocks 0.596, blocks 0.611 in 2025-26) while the big props
+       almost never reach 0.70 on a standard line (points 21 legs, rebounds 0, threes 0 in 2025-26). research: tier_map_legs query.
+- N-2  Best 2-slip mix on the new number: rebounds 4-Flex + calibrated 3-Power (P_cal_r70_3power) - lb5 +24.9 / +47.2 vs production
+       +22.5 / +37.5, drawdown 20.0 / 12.0 vs 26.5 / 12.5 (research_pp_calib_portfolio run 39918732552). On days the 3-Power has no
+       slip, the rebounds 4-Flex's second slip beats any other production unit as the fill.
+- N-3  The weighted:rebounds_R 4-Flex alone (1 slip a day) is the strongest single unit on the new number: +60.5 / +101.0%, lb5 +25.2 /
+       +66.2, dd 9.2 / 8.0, halves +31 +92 +97 +105.
+- N-4  BOARD PROFILES (slate size x calibrated depth): a unit switch per profile, chosen on one season, loses on the other (N2: +46.9%
+       vs +65.8%, +52.1% vs +55.1%). Crude board profiles over-fit. Stable pattern: small slates (<= 4 games) are where units lose
+       (calibrated 3-Power -100% on its 3-7 small-slate days, production 3-Powers -40..-100%); stocks 4-Flex is the exception
+       (S-thin +116% / 20 days, 2025-26). Next pass: a small-slate rule (skip or swap) tested chosen-on-one / tested-on-the-other.
+- N-5  Live boards carry props outside the 12 calibrated ones (fgm, fga, ...) whose final_hp is the as-of number - not comparable with
+       the calibrated props in one ranking (10-22: fgm Under at 0.883 led the board). Any strategy ranking across props must stay
+       inside final_hp_board_cal.PROPS until those props get the chain.
+- N-6  Standard-line source: a book listing a ladder in its main market (Fanatics stocks, BetRivers points) is not a main line - left
+       out of the books median (audit_one_number run 39917858707).
