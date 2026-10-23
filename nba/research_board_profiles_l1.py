@@ -316,7 +316,7 @@ EXTERNAL = ["games", "m_total", "close_share", "mismatch_share", "tip_spread", "
             "str_any_S", "b2b_share", "mean_rest", "key_injuries", "questionable", "weekend", "month", "season_day", "post_asb",
             "div_share", "conf_share", "rest_mismatch_share", "both_b2b_share"]
 INTERNAL = ["std_ge60", "std_ge65", "std_ge70", "std_disp", "std_mean", "std_skew", "std_top20", "std_p90", "gob_ge75", "uh_count",
-            "uh_share", "uh_missing", "new_players", "line_up_share", "line_down_share"]
+            "uh_share", "uh_missing", "new_players", "line_up_share", "line_down_share", "std_bimod", "gob_bimod"]
 
 
 def families(cols):
