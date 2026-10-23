@@ -21,6 +21,10 @@ on:
         description: "FROM:TO to (re)fit tunables first (blank = no fit)"
         default: ""
         required: false
+      std_range:
+        description: "FROM:TO to materialize the standard lines once (nba_score.board_std_line) before pricing (blank = none)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
