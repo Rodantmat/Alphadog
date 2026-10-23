@@ -56,6 +56,14 @@ def main():
             worst = sorted(((abs(p - q), r, p, q) for r, (p, ch, src), (q, _c, _s) in zip(rows, res, chain)
                             if src == "final_hp" and ch == "board" and q is not None), key=lambda x: -x[0])[:12]
             dd = BC.dt.date.fromisoformat(day)
+            both = [(k, v) for k, v in std.items() if (k[1], k[2]) in mat]
+            ndiff = sum(1 for k, v in both if abs(v[0] - mat[(k[1], k[2])][0]) > 1e-9)
+            by_src = defaultdict(int)
+            for k, v in both:
+                if abs(v[0] - mat[(k[1], k[2])][0]) > 1e-9:
+                    by_src[(k[2], v[1])] += 1
+            print(f"    standard lines: live {len(std):,}, materialized {len(mat):,}, both {len(both):,}, different {ndiff:,} "
+                  f"(prop / source: {dict(sorted(by_src.items()))})")
             for gap, r, p, q in worst:
                 nr = conn.execute("""SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s AND player_id::text = %s AND prop = %s
                                      AND side = 'Over'""", (day, r[1], r[2])).fetchone()[0]
