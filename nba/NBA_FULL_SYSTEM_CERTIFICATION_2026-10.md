@@ -3132,3 +3132,26 @@ should be doing. Mining everything that they should mine, consuming everything t
       +61.7. ROBUSTNESS (25 window x threshold settings): 2025-26 holds broadly (swap helps ~50% of strong days, hurts 12-20%, positive
       without its 3 best days); 2024-25 flips sign across settings and is negative without its 3 best days in every setting. NOT LIVE;
       tracked candidate. THIN -> skip the 3-Power / skip all costs units in 2024-25.
+26. 🟡 **BOARD TYPES, ROUND 2 (37 MORE FACTORS) + RECENT FORM AS A final_hp LAYER - FORM IS REAL AT LEG LEVEL, HURTS THE LIVE PAIR;
+    AND THE BACKTEST 'WINDOW' IS 85 MINUTES AFTER THE LIVE PICK** (owner 10:25 PT: "try another 50, 100").
+    - ROUND 2 (research_board_types_r2.py run 40004208892; same certified test as item 25). Market at the window snapshot (books'
+      devigged probability at PrizePicks' line vs final_hp, market lean, hold, line dispersion, FanDuel / DraftKings / BetMGM /
+      Underdog line vs PrizePicks, whole vs half line, multiplier vs the day's median for the same prop x tier), role / usage (starts,
+      start change, last-game minutes ratio, FGA / points / assist share trends, stat volatility, line percentile in the last 20 games,
+      line vs season max / min, venue split, history vs this opponent, games in 7 days, minutes load, 3PA-rate trend, FT rate), matchup
+      mapped to the leg's stat (steals <- opponent turnovers, blocks <- opponent FGA, turnovers <- opponent steals, rebounds <- opponent
+      misses, threes <- 3PA allowed, points / combos <- FTA allowed, assists <- assists allowed; opponent defence and pace trends,
+      overtime last game), board shape (ladder span, goblin / demon counts, team scoring rank by points line, props vs the player's
+      usual), and two pre-registered interactions of round 1's near misses. HOLD both ways: only the two interactions, both built on
+      the player's LAST-5 AVERAGE vs THE LINE (x line gap z -2.7 / -3.3; x opponent allowance in the stat z -2.6 / -3.0): last-5 above
+      the line -> More hits ~2-3 points BELOW final_hp, below the line -> ~2.5-3 ABOVE (points, combos; thousands of legs a season).
+      The books' devigged probability at PrizePicks' line adds nothing in 2024-25 (z -0.7) - final_hp already carries the market.
+    - FORM AS A LAYER (research_final_hp_form.py run 40005774138; cross-fitted slopes per group x line type): log-loss fitted 2025-26
+      -> 2024-25 -0.000543 (z -5.3), FORM+GAP -0.000617 (z -5.4); fitted 2024-25 -> 2025-26 -0.000095 (z -0.6) / -0.000183 (z -1.1) -
+      not both ways. Slips rebuilt on the layered number: the LIVE PAIR loses in both seasons (FORM 162.8 -> 157.5 / 232.5 -> 220.1);
+      long calibrated Flex / Power gain in 2024-25 (6P +25 -> +63%, 6F +26 -> +54%, GR ev 6F +16 -> +50%) while the 3- and 4-Powers
+      lose. NOT ADOPTED. The form effect is recorded for the next final_hp refit (an input of the model, not a slip rule).
+    - TIMING (found while building round 2): the historical board_snapshots 'window' snapshot - the source of every backtest's
+      PrizePicks lines, the books' standard line and the tier map - is taken at ~14:40 PT (median, every month 2024-10 .. 2026-06),
+      while the live engine picks at ~13:15 PT (P3). The backtests see ~85 minutes more news (late scratches, line moves) than the live
+      pick. Recorded; the schedule is the owner's and is not touched.
