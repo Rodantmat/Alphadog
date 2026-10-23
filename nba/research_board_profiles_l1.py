@@ -873,7 +873,7 @@ def techniques(reg, P, cols, fam):
         return n
     T.append(("hidden regimes (HMM)", hmm_regimes))
 
-    def change_points():
+    def change_points(fams=("ALL", "BOARD", "EXTERNAL", "INTERNAL"), pen=3.0):
         """change-point segments of each family's first PCA axis (PELT); a segment profile = segments above / below the mean"""
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "ruptures"], check=False)
         try:
