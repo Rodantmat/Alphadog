@@ -398,6 +398,34 @@ def main():
     CERT_DEPTH = {str(k): int(v) for k, v in _dcj["depth"].items()}
     print(f"certified depth (routing beyond it to final_hp_derived): {len(CERT_DEPTH)} props", flush=True)
 
+    # BOARD-CENTRED CALIBRATION (2026-10-22 night; owner 21:01 PT: one number - "the final hit probability and board hit probability
+    # should be the same thing ... board scoped, app board scoped"; ledger DAY THREE 22-23, COMPASS fact 179). For the 12 calibrated
+    # props the as-of shift below is REPLACED by final_hp_board_cal.apply(): the day's ladder re-centred toward the board's standard
+    # line (L1) and calibrated per prop x line type x side (L2), with the latest tunable set published on or before the game date
+    # (nba_score.final_hp_board_cal). Every other prop - and any leg with no standard line - keeps the as-of shift. Switch:
+    # classification_config['final_hp_board_centre'].enabled; FE_BOARD_CENTRE=1 / 0 overrides it (history rebuilds, rollbacks).
+    import final_hp_board_cal as BC
+    _bc = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'final_hp_board_centre'").fetchone()
+    _bcj = (_bc[0] if isinstance(_bc[0], dict) else json.loads(_bc[0])) if _bc else {}
+    BOARD_CENTRE = {"1": True, "0": False}.get(os.environ.get("FE_BOARD_CENTRE", "").strip(), bool(_bcj.get("enabled", False)))
+    BC_SETS = BC.TunableSets(conn) if BOARD_CENTRE else None
+    if BOARD_CENTRE and not BC_SETS.dates:
+        raise SystemExit("REFUSED: board-centred calibration is on but nba_score.final_hp_board_cal holds no tunable set")
+    STD = {}
+    if BOARD_CENTRE:
+        if FE_DATE:
+            STD = BC.std_lines(conn, date=FE_DATE)
+        else:
+            _rng = conn.execute("SELECT min(game_date), max(game_date) FROM nba_score.baseline_history WHERE season = ANY(%s)",
+                                (seasons,)).fetchone()
+            if _rng[0] is not None:
+                STD = BC.std_lines(conn, seasons_dates=_rng)
+        print(f"board-centred calibration ON: {len(BC_SETS.dates)} tunable sets ({BC_SETS.dates[0]} .. {BC_SETS.dates[-1]}), "
+              f"{len(STD):,} standard lines (PrizePicks {sum(v[1] == 'prizepicks' for v in STD.values()):,})", flush=True)
+    else:
+        print("board-centred calibration OFF (classification_config['final_hp_board_centre'] / FE_BOARD_CENTRE) - as-of shift only",
+              flush=True)
+
     if write:
         with conn.cursor() as cur:
             cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.final_hp (
