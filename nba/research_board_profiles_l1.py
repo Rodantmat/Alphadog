@@ -600,8 +600,28 @@ def techniques(reg, P, cols, fam):
             elif method == "meanshift":
                 from sklearn.cluster import MeanShift, estimate_bandwidth
                 lf = MeanShift(bandwidth=estimate_bandwidth(Xf[mf], quantile=par / 10, random_state=7) or 0.5).fit(Xf[mf]).labels_
+            elif method == "louvain":           # community detection on the 10-nearest-neighbour graph; par / 4 = resolution
+                import networkx as nx
+                from sklearn.neighbors import kneighbors_graph
+                G = nx.from_scipy_sparse_array(kneighbors_graph(Xf, n_neighbors=min(10, len(Xf) - 1), include_self=False))
+                lf = np.full(len(Xf), -1)
+                for q, com in enumerate(sorted(nx.community.louvain_communities(G, resolution=par / 4, seed=7), key=min)):
+                    lf[list(com)] = q
+            elif method == "cocluster":         # spectral biclustering of slates x features (rows = slates)
+                from sklearn.cluster import SpectralBiclustering
+                lf = SpectralBiclustering(n_clusters=(par, min(par, Xf.shape[1])), random_state=7).fit(Xf + 1e-3).row_labels_
             else:
                 lf = SpectralClustering(n_clusters=par, random_state=7, affinity="nearest_neighbors", n_neighbors=10).fit(Xf[mf]).labels_
+        return np.asarray(lf)
+
+    def fit_labels(method, Xf, ok, par):
+        """fit on each season, assign every slate; -> {season: (labels, centres)}"""
+        labs = {}
+        for fit in HIST:
+            mf = ok & (seas == fit)
+            if mf.sum() < 3 * max(par, 2):
+                continue
+            lf = fit_once(method, Xf[mf], par)
             ks = [c for c in sorted(set(lf)) if c >= 0]
             if len(ks) < 2:
                 continue
