@@ -177,9 +177,10 @@ def player_logs(conn):
         FROM nba_stats.player_game_log WHERE season IN ('2023-24', '2024-25', '2025-26') ORDER BY game_date""").fetchall()
     pl = defaultdict(list)
     for r in rows:
-        pl[r[0]].append({"gid": r[1], "tid": r[2], "d": r[3], "min": r[4] or 0.0, "pts": r[5] or 0, "reb": r[6] or 0, "ast": r[7] or 0,
-                         "fg3m": r[8] or 0, "fg3a": r[9] or 0, "stl": r[10] or 0, "blk": r[11] or 0, "tov": r[12] or 0, "pf": r[13] or 0,
-                         "fga": r[14] or 0, "fta": r[15] or 0, "dd2": r[16] or 0, "season": r[18]})
+        fl = lambda x: float(x or 0)   # noqa: E731  (numeric columns arrive as Decimal)
+        pl[r[0]].append({"gid": r[1], "tid": r[2], "d": r[3], "min": fl(r[4]), "pts": fl(r[5]), "reb": fl(r[6]), "ast": fl(r[7]),
+                         "fg3m": fl(r[8]), "fg3a": fl(r[9]), "stl": fl(r[10]), "blk": fl(r[11]), "tov": fl(r[12]), "pf": fl(r[13]),
+                         "fga": fl(r[14]), "fta": fl(r[15]), "dd2": fl(r[16]), "season": r[18]})
     st = {(int(str(p).replace("nba_", "")), gid): int(s or 0) for p, gid, s in
           conn.execute("SELECT player_id, game_id, is_starter FROM nba_stats.player_game_starter_status")}
     log(f"player logs: {len(rows):,} rows, {len(pl):,} players; starter rows {len(st):,}")
