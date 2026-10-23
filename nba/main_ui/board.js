@@ -378,7 +378,7 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
              next_slate_date: gi.next_date || null, next_slate_games: gi.next_games || 0 }, row_count: rows.length, limit, min_score: minScore, min_hit_probability: minHp, rows,
     view: overview ? "overview" : "all", overview: overview ? { candidates: ovr.candidates, settings: ovr.settings || null } : null,
     semantics: {
-      main_number: "hit_probability_0_100 = nba_score.board_true_hp.true_hp (market-anchored hit probability of this exact leg; falls back to board_scored.final_hp when the slate has no anchored row) - model_hp_0_100 = the model's own number",
+      main_number: "hit_probability_0_100 = final_hp, the board-scoped hit probability of this exact leg (board_scored.final_hp: final_hp's own number for every leg final_hp holds - what the slip engine reads - and the same board-centred chain for the rest) - model_hp_0_100 retired (null): one number",
       secondary_number: "probability_confidence_0_100 = board_scored.confidence",
       tertiary_number: "score_0_100 = the certified score formula on the market-anchored probability (model_score_0_100 = on the model's)",
       rows_are: slate.mode === "live" ? "today's scored board (P3)" : `replay of the latest scored slate ${slate.date} - no scored board for today yet`
