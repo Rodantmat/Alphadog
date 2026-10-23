@@ -36,11 +36,10 @@ OUT = Path(os.environ.get("OUT_DIR", "nba_ui_probe"))
 OUT.mkdir(parents=True, exist_ok=True)
 (OUT / "api").mkdir(exist_ok=True)
 DATE = os.environ.get("UI_DATE", "").strip()
-# the board as the UI shows it (2026-10-14): the market-anchored probability / score where nba_score.board_true_hp has the leg
-HB = """(SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.confidence,
-                coalesce(th.true_hp::numeric, b0.final_hp) final_hp, coalesce(th.true_score::numeric, b0.score) score
-         FROM nba_score.board_scored b0 LEFT JOIN nba_score.board_true_hp th
-           ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop AND th.line = b0.line AND th.side = b0.side) hb"""
+# the board as the UI shows it (ONE NUMBER since 2026-10-23, owner 21:01 PT): board_scored's own final_hp / score - final_hp's stored
+# number for every leg final_hp holds, the same board-centred chain for the rest (score_board_legs.py step 4b)
+HB = """(SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.confidence, b0.final_hp, b0.score
+         FROM nba_score.board_scored b0) hb"""
 def ud_hide_sql(cfg, a):
     """SQL for 'this leg is an Underdog alternate rung of a prediction-market line the app does not offer' (2026-10-20), independent of the UI's own query."""
     pairs = ",".join("('%s','%s')" % (str(k).replace("'", ""), str(v).replace("'", "")) for k, v in cfg["market_to_prop"].items())
