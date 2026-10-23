@@ -22226,8 +22226,8 @@
       "away_team_tricode": "CLE",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22241,8 +22241,8 @@
       "away_team_tricode": "DEN",
       "arena_name": "Paycom Center",
       "arena_city": "Oklahoma City",
-      "game_status": 1,
-      "game_status_text": "9:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
