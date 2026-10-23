@@ -760,9 +760,13 @@ def main():
     # ---------------- ANALYSIS ----------------
     y = df.hit.values.astype(float)
     p0 = df.p.values.astype(float)
-    res = y - p0
     seas = df.season.values
     side_lt = (df["side"].str[0] + df["lt"]).values   # df.lt is DataFrame.lt (less-than), not the column
+    # residual RELATIVE TO THE SIDE x LINE TYPE BASELINE of the season: a cell must differ from its own side / line type (e.g. Over
+    # demons as a whole run below final_hp), else every bin of a meaningless factor inherits that bias (synthetic test 2026-10-23)
+    res = y - p0
+    base_mean = pd.Series(res).groupby([seas, side_lt]).transform("mean").values
+    res = res - base_mean
     from scipy.stats import norm as N
     # DAY-CLUSTERED (owner 10:30 PT: "the profiles need to be identified and correlate in different days"): a slate's legs move together,
     # so z is cluster-robust by slate (each day one cluster), and every cell reports the days it appears on and the share of those
