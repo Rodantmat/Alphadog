@@ -568,7 +568,7 @@ def techniques(reg, P, cols, fam):
                 return 0
             Xf = P[:, [ci[c] for c in fc]]
             ok = ~np.isnan(Xf).any(axis=1)
-            if not has_structure(Xf, ok):
+            if not derived and not has_structure(Xf, ok):
                 log(f"  {fname}: no co-movement beyond noise - {method} skipped")
                 return 0
             for par in pars:
