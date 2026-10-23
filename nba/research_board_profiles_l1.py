@@ -883,6 +883,187 @@ def techniques(reg, P, cols, fam):
                                   "change points")
         return n
     T.append(("change-point segments (PELT)", change_points))
+
+    # ---------------- batch 4 (Gemini consult: composition factorisations, compositional geometry, non-linear embeddings,
+    # trajectories, consensus) ----------------
+    keys_c = sorted({k for v in CELLS.values() for k in v})
+    Cm = np.array([[CELLS.get(k, {}).get(c, 0) for c in keys_c] for k in reg.order], float)
+    Cn = Cm / np.maximum(Cm.sum(axis=1, keepdims=True), 1)
+
+    def factor_profiles(kind):
+        """the board as a MIXTURE of archetypal compositions (NMF / LDA on leg counts per prop x line type x side), fitted on each
+        season; a component counts when the other season's fit has the same component (cosine >= 0.8); profile = the slates whose
+        weight on it is in the top / bottom third"""
+        def fn():
+            from sklearn.decomposition import NMF, LatentDirichletAllocation
+            n = 0
+            # the same structure gate as the clusters: the cells' shares must co-move beyond noise in both seasons (synthetic:
+            # independent random cell counts gave 'replicated' generic components without it)
+            if not has_structure(Cn, np.ones(len(seas), bool) & reg.hist):
+                log(f"  cell shares: no co-movement beyond noise - {kind} skipped")
+                return 0
+            for k in (3, 4, 5, 6):
+                if k >= Cm.shape[1]:
+                    continue
+                fits = {}
+                for fit in HIST:
+                    mf = seas == fit
+                    if kind == "nmf":
+                        m = NMF(n_components=k, init="nndsvda", random_state=7, max_iter=800).fit(Cn[mf])
+                        fits[fit] = (m, m.components_ / np.linalg.norm(m.components_, axis=1, keepdims=True))
+                    else:
+                        m = LatentDirichletAllocation(n_components=k, random_state=7, max_iter=60).fit(Cm[mf])
+                        comp = m.components_ / m.components_.sum(axis=1, keepdims=True)
+                        fits[fit] = (m, comp / np.linalg.norm(comp, axis=1, keepdims=True))
+                ma, ca = fits[HIST[0]]
+                _, cb = fits[HIST[1]]
+                W = ma.transform(Cn if kind == "nmf" else Cm)
+                W = W / np.maximum(W.sum(axis=1, keepdims=True), 1e-12)
+                for j in range(k):
+                    n += 1
+                    cos = float(np.max(cb @ ca[j]))
+                    if cos < 0.8:
+                        continue
+                    top = [keys_c[i] for i in np.argsort(-ca[j])[:4]]
+                    w = W[:, j]
+                    q1, q2 = np.percentile(w[seas == HIST[0]], [33.3, 66.7])
+                    for nm_, m_ in (("HIGH", w >= q2), ("LOW", w <= q1)):
+                        reg.offer(f"{kind}-k{k}-comp{j}-{nm_}", m_, f"{kind.upper()} board archetype {j} (k {k}, other-season cosine {cos:.2f}) "
+                                  f"weight {nm_}: " + ", ".join("/".join(t) for t in top), [], f"{kind} composition",
+                                  key=(f"{kind}-{','.join('/'.join(t) for t in top[:2])}", nm_))
+            return n
+        return fn
+    T.append(("NMF archetypes of the board composition", factor_profiles("nmf")))
+    T.append(("LDA topics of the board composition", factor_profiles("lda")))
+
+    def clr_clusters():
+        """compositions (prop-group mix, tier shares) in Aitchison geometry: centred log-ratio, then k-means with the same
+        re-finding / shuffle tests"""
+        n = 0
+        comp_cols = [c for c in cols if c.startswith("mix_")]
+        Xr = reg.X[:, [ci[c] for c in comp_cols]] + 1e-3
+        clr = np.log(Xr) - np.log(Xr).mean(axis=1, keepdims=True)
+        ok = ~np.isnan(clr).any(axis=1)
+        fam["CLR-MIX"] = comp_cols
+        saved = P[:, [ci[c] for c in comp_cols]].copy()
+        P[:, [ci[c] for c in comp_cols]] = np.where(ok[:, None], clr, np.nan)
+        try:
+            n += clusters("kmeans", "CLR-MIX", (2, 3, 4, 5, 6))()
+            n += clusters("gmm", "CLR-MIX", (2, 3, 4, 5, 6))()
+        finally:
+            P[:, [ci[c] for c in comp_cols]] = saved
+        return n
+    T.append(("compositional (CLR) clustering of the prop mix", clr_clusters))
+
+    def kernel_embed():
+        """non-linear embedding (RBF kernel PCA, 4 components, fitted on 2024-25) of each family, then k-means with the tests"""
+        from sklearn.decomposition import KernelPCA
+        n = 0
+        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION"):
+            fc = fam.get(fname, [])
+            if len(fc) < 3:
+                continue
+            Xf = P[:, [ci[c] for c in fc]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            kp = KernelPCA(n_components=4, kernel="rbf", random_state=7).fit(Xf[ok & (seas == HIST[0])])
+            Z = np.full((len(seas), 4), np.nan); Z[ok] = kp.transform(Xf[ok])
+            zr = np.full_like(Z, np.nan)
+            for j in range(4):           # back to percentile scale so the shuffle null / gates apply unchanged
+                v = Z[ok, j]
+                zr[ok, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
+            key = f"KPCA-{fname}"
+            fam[key] = [f"{key}-{j}" for j in range(4)]
+            for j in range(4):
+                ci[f"{key}-{j}"] = P.shape[1] + j
+            Pz = np.column_stack([P, zr])
+            n += clusters_on(Pz, "kmeans", key, (2, 3, 4, 5, 6))
+        return n
+
+    def clusters_on(Pz, method, fname, pars):
+        nonlocal P
+        saved = P
+        P = Pz
+        try:
+            return clusters(method, fname, pars, derived=True)()
+        finally:
+            P = saved
+    T.append(("non-linear embedding (kernel PCA) clusters", kernel_embed))
+
+    def trajectories():
+        """3-slate trajectories: today's family vector with the previous two slates' (same season), clustered (k-means) with the
+        re-finding / shuffle tests - boards defined by how the last days moved, not only by today"""
+        n = 0
+        for fname in ("BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION"):
+            fc = fam.get(fname, [])
+            if len(fc) < 2:
+                continue
+            pca = PCA(n_components=min(3, len(fc)))
+            Xf = P[:, [ci[c] for c in fc]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            pca.fit(Xf[ok & (seas == HIST[0])])
+            Z = np.full((len(seas), pca.n_components_), np.nan); Z[ok] = pca.transform(Xf[ok])
+            T3 = np.full((len(seas), 3 * pca.n_components_), np.nan)
+            for i in range(2, len(seas)):
+                if seas[i] == seas[i - 2]:
+                    T3[i] = np.concatenate([Z[i], Z[i - 1], Z[i - 2]])
+            zr = np.full_like(T3, np.nan)
+            okt = ~np.isnan(T3).any(axis=1)
+            for j in range(T3.shape[1]):
+                v = T3[okt, j]
+                zr[okt, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
+            key = f"TRAJ-{fname}"
+            fam[key] = [f"{key}-{j}" for j in range(T3.shape[1])]
+            base = P.shape[1]
+            for j in range(T3.shape[1]):
+                ci[f"{key}-{j}"] = base + j
+            n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5))
+        return n
+    T.append(("3-slate trajectories", trajectories))
+
+    def consensus():
+        """consensus clustering: how often two slates land together across k-means / GMM / Ward at k 3-6 on ALL (fitted per season);
+        the consensus matrix is clustered (average linkage) and each group is tested for re-finding across the two seasons' fits"""
+        from scipy.cluster.hierarchy import fcluster, linkage
+        from scipy.spatial.distance import squareform
+        n = 0
+        fc = fam["ALL"]
+        Xf = P[:, [ci[c] for c in fc]]
+        ok = ~np.isnan(Xf).any(axis=1)
+        idx = np.where(ok)[0]
+        labsets = {}
+        for fit in HIST:
+            co = np.zeros((len(idx), len(idx)))
+            runs = 0
+            for method in ("kmeans", "gmm", "ward"):
+                for k in (3, 4, 5, 6):
+                    labs = fit_labels(method, Xf, ok, k)
+                    if fit not in labs:
+                        continue
+                    lab = labs[fit][0][idx]
+                    co += (lab[:, None] == lab[None, :])
+                    runs += 1
+            co /= max(runs, 1)
+            Zl = linkage(squareform(1 - co, checks=False), "average")
+            labsets[fit] = Zl
+        for cut in (0.3, 0.4, 0.5):
+            la = np.full(len(seas), -1); lb = np.full(len(seas), -1)
+            la[idx] = fcluster(labsets[HIST[0]], cut, "distance"); lb[idx] = fcluster(labsets[HIST[1]], cut, "distance")
+            for c in sorted(set(la[idx])):
+                ma = la == c
+                if ma.sum() < 30:
+                    continue
+                jb = max(np.sum(ma & (lb == c2)) / max(np.sum(ma | (lb == c2)), 1) for c2 in sorted(set(lb[idx])))
+                n += 1
+                if jb < 0.6:
+                    continue
+                mean_p = np.nanmean(Xf[ma], axis=0)
+                top = sorted(zip(fc, mean_p), key=lambda x: -abs(x[1] - 0.5))[:5]
+                if sum(abs(v - 0.5) >= 0.15 for _, v in top) < 2:
+                    continue
+                reg.offer(f"consensus-cut{cut}-g{c}", ma, f"consensus of 12 clusterings on ALL (cut {cut}, re-found J {jb:.2f}): "
+                          + ", ".join(f"{a} {b:.2f}" for a, b in top), [a for a, _ in top], "consensus")
+        return n
+    T.append(("consensus clustering", consensus))
     return T
 
 
