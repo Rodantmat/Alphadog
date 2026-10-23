@@ -29,7 +29,9 @@ line, mean multiplier of goblins / demons).
 Smoke-tested on synthetic series before the real run: a planted AR(1) 0.4 series is consistent at lags 1-2 and its trailing means
 forecast it (p < 0.01); 20 random series give about the chance rate. Analog power is modest: a series driven 0.5 sd by one of 12
 features reached rank correlation +0.14 / +0.23 - analog-day forecasts only find strong day-type effects.
-Env: DATABASE_URL, R4_PERMS (default 2000), R4_SKIP_LEGS=1 to skip part 5.
+  6 CONTRA       (R4_ONLY=contra) robustness grid of the exploratory contrarian gate found in part 4 (windows 5..30, every
+                 owner-scope unit and the pair, random-skip null, net without the 3 best days).
+Env: DATABASE_URL, R4_PERMS (default 2000), R4_SKIP_LEGS=1 to skip part 5, R4_ONLY=contra for part 6 alone.
 """
 import os
 import sys
