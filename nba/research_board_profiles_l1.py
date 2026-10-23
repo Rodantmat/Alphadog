@@ -261,7 +261,13 @@ def slate_features(conn, days, order):
                         "gob_hp": np.quantile(G, np.linspace(0.05, 0.95, 19)) if len(G) >= 20 else None,
                         "gob_factor": (np.quantile([float(l["factor"]) for l in legs if l["tier"].startswith("G")], np.linspace(0.05, 0.95, 19))
                                        if sum(l["tier"].startswith("G") for l in legs) >= 20 else None),
-                        "all_hp": np.quantile([l["p"] for l in legs if l["p"] is not None], np.linspace(0.05, 0.95, 19))}
+                        "all_hp": np.quantile([l["p"] for l in legs if l["p"] is not None], np.linspace(0.05, 0.95, 19)),
+                        "dem_factor": (np.quantile([float(l["factor"]) for l in legs if l["tier"].startswith("D")], np.linspace(0.05, 0.95, 19))
+                                       if sum(l["tier"].startswith("D") for l in legs) >= 20 else None),
+                        "pts_line": (np.quantile([float(l["line"]) for l in legs if l["prop"] == "points" and l["tier"] == "R"],
+                                                 np.linspace(0.05, 0.95, 19))
+                                     if sum(l["prop"] == "points" and l["tier"] == "R" for l in legs) >= 20 else None),
+                        "player_props": np.quantile(list(defaultdict_count(legs).values()), np.linspace(0.05, 0.95, 19))}
         # batch 4 (Gemini consult 2026-10-23: composition, concentration, multimodality, entropy)
         cc = defaultdict(int)
         for l in legs:
