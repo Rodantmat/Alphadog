@@ -765,12 +765,22 @@ def sharp_checks(conn, cfg, leg, ctx, pr):
           f"errors {ps.get('errors')} env {len(ps.get('env') or [])} history props {len((ps.get('market_history') or {}).get('props') or [])} market {bool(ps.get('market'))}")
 
 
-# ------------------------------------------------------------------ C47-C48: the honest (market-anchored) probability
+# ------------------------------------------------------------------ C47-C48: ONE NUMBER (final_hp IS the board's hit probability)
 def honest_checks(conn, cfg, d0):
-    n_all, n_th = conn.execute("""SELECT count(*), count(th.true_hp) FROM nba_score.board_scored b0 LEFT JOIN nba_score.board_true_hp th
-                                    ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop AND th.line = b0.line AND th.side = b0.side
-                                  WHERE b0.game_date = %s AND b0.app = ANY(%s)""", (d0, cfg["apps"])).fetchone()
-    check("C47 every board leg carries the market-anchored probability (board_true_hp)", n_all and n_th / n_all >= 0.99, f"{n_th:,} of {n_all:,} legs ({d0})")
+    # C47 (2026-10-23, owner 21:01 PT): every leg final_hp holds shows final_hp's own number on every app's board. Slates scored
+    # before the board-centred chain went live (cal_chain 'board' absent on the slate) carried P3's own as-of number - stated.
+    n_all, n_fh, n_eq = conn.execute("""SELECT count(*), count(f.final_hp), count(*) FILTER (WHERE abs(f.final_hp - b0.final_hp) <= 0.00051)
+                                        FROM nba_score.board_scored b0 LEFT JOIN nba_score.final_hp f
+                                          ON f.game_date = b0.game_date AND f.player_id::text = b0.player_id::text AND f.prop = b0.prop
+                                         AND f.line = b0.line AND f.side = b0.side
+                                        WHERE b0.game_date = %s AND b0.app = ANY(%s) AND b0.final_hp IS NOT NULL""", (d0, cfg["apps"])).fetchone()
+    n_board = conn.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s AND cal_chain = 'board'", (d0,)).fetchone()[0]
+    if n_board:
+        check("C47 one number: every board leg final_hp holds shows final_hp's own number", n_fh and n_eq / n_fh >= 0.99,
+              f"{n_eq:,} of {n_fh:,} legs equal ({n_all:,} board legs; {d0})")
+    else:
+        check("C47 one number (slate scored before the board-centred chain went live - P3's as-of number shown; stated)", n_all > 0,
+              f"{n_all:,} board legs, {n_fh:,} held by final_hp ({d0})")
     # OPENING NIGHT (2026-10-20): the 30 days before the first slate of a season hold no anchored graded legs (offseason). Then the
     # window ends at the LAST date with anchored legs that have box scores (the latest graded stretch), stated in the detail.
     d_end = d0
