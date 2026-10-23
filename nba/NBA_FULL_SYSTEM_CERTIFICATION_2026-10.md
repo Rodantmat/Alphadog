@@ -2962,3 +2962,40 @@ should be doing. Mining everything that they should mine, consuming everything t
       goblin fs90 -> calgap holds (+0.28 / +0.27, an effect of 3 points). The board's own-number shape does not tell good days from
       bad days over a season; it does in the season's first month - which is now.
     Nothing changed live.
+22. ✅ **CALIBRATION FIXED BY LAYER - board_hp BESIDE final_hp, HISTORY AND LIVE** (owner 17:49 PT: "proper calibrate our demons,
+    understand why they are so off and fix it, same for all other prop lines ... replicated to full back history and the live
+    pipeline"; 18:02 PT: "the fix can be granulated and spread in different layers"). Learnings log: `nba/NBA_BOARD_LEARNINGS.md`.
+    - AUDIT (research_calibration_audit.py run 39880546631): final_hp too spread on every line type, already in baseline_hp (the
+      enrichment does not add it); demon order vs the standard More is kept (not an ordering bug); the demon top-end gap grows with
+      distance from the standard line (D3 +1-3: +0.31). The as-of calibration is keyed (prop, phase, band, side) - blind to line
+      type - and fitted on graded ladder rungs, not on the PrizePicks board: its top-band shifts are -0.1..-0.55 log-odds where the
+      board needs ~-1.1.
+    - WHY (research_calibration_layers.py run 39882518299): on standard legs our projected mean is worse than PrizePicks' line
+      (MAE points 5.30 vs 5.04); the weight our disagreement earns is w +0.03..+0.12 (points / rebounds / assists / turnovers),
+      +0.33..+0.46 (blocks / steals). On the standard line bh 0.29 -> hit 0.48 and bh 0.55 -> hit 0.49 (Over); on alternates the
+      hit rate follows the rung's distance from the standard line and our disagreement counts against the leg (D2 top decile 0.26
+      vs 0.33). Side note: baseline_history.rate36 of threes_made / ftm is an attempts rate (diagnostic column only; the ladder
+      probabilities are sane).
+    - FIX, staged (research_calibration_layers_v2.py run 39883191272; research_recalibration_v3.py run 39881111672 for the
+      anchored form): L1 board-centred ladder, L2 spread per line type x side, L3 anchored residual per prop x line type x side.
+      Every stage passes: sample 2025-26 H1 -> H2, both season directions, leave-one-month-out 14/14 (pooled log-loss 0.6463 ->
+      L1 0.6288 -> 0.6280). WALK-FORWARD (research_board_centring_asof.py run 39884286185, only past legs, month by month): 12/12
+      months, 0.6443 -> 0.6262, opener 2025-10 0.6657 -> 0.6310. L1 carries almost all of it; w is stable month to month.
+    - BUILT: `nba/build_board_hp.py` (fit / score), workflow `nba-board-hp.yml`, tables nba_score.board_hp_tunables (407 as-of sets
+      2024-11-13 .. 2026-10-22, one per slate date, trained only on earlier graded board legs) and nba_score.board_hp (1,065,829
+      legs, 402 days; 85% of the 2024-25 board, 93% of 2025-26 and live - the rest has no ladder). P3 scores each slate after the
+      pick (soft step `soft_boardhp`, listed as `board-hp` when it fails).
+    - CERTIFIED (audit_board_hp.py run 39890697569): no row uses a set dated after its day; no set trained on its own day. On
+      841,446 graded legs: log-loss final_hp 0.6219 -> board_hp 0.6052; every decile within 1-2 points (0.128 -> 0.123 ...
+      0.749 -> 0.741). Per line type board_hp mean vs hit: R Over 0.492 / 0.488, R Under 0.508 / 0.512, G1 0.629 / 0.631, G2 0.697 /
+      0.696, G3 0.747 / 0.744, D1 0.324 / 0.319, D2 0.296 / 0.281, D3 0.199 / 0.190.
+    - WHAT HONEST NUMBERS SAY (legs >= .58, graded history): standard Over final_hp 20,117 legs hit 0.537 -> board_hp 553 legs hit
+      0.588; standard Under 28,764 at 0.548 -> 3,664 at 0.566; demons D1-D3 5,647 legs at 0.33-0.45 -> 23 legs; goblins G1 85,952 at
+      0.669 -> 104,476 at 0.657, G2 51,674 at 0.714 -> 67,624 at 0.698, G3 22,050 at 0.752 -> 26,203 at 0.744. Standard-line
+      discrimination stays AUC 0.53-0.54 after any calibration: our edge on PrizePicks' standard line is thin; goblins carry it.
+    - SWINGS (research_day_swings.py run 39881322193): luck with independent legs explains 34-52% of the day-to-day variance of the
+      >= .58 hit rate (17% goblins 2025-26), all of it if a player's legs are fully tied; the night's scoring surprise, minutes
+      shock and blowouts explain another 14-27% (known only after tip); no streaks (lag-1 / lag-2 autocorrelation inside chance).
+    - OPEN: alternate Less legs (new on the live board) have no graded history, so their board_hp is L1 only; live graded legs are
+      not yet in the training set (tunables carry the 2026-10-22 set forward until they are). NOTHING READS board_hp: final_hp
+      stays the engine's number, slips untouched ("leave the slips as is for now").
