@@ -1272,6 +1272,53 @@ def techniques(reg, P, cols, fam):
                 n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5, 6))
         return n
     T.append(("kernel embeddings (poly / cosine / sigmoid)", kernel_more))
+
+    # ---------------- batch 8 (round 7 run 40027670708: 346 profiles after the stricter NEW test; per-group distributions, kernels
+    # and long trajectories still add a few) - their variations: goblin distributions per group, more k, longer windows, kernels on
+    # every family, spectral with an RBF affinity ----------------
+    for g in GROUPS:
+        T.append((f"wasserstein k-means on gob_hp_{g}", wasserstein(f"gob_hp_{g}", (2, 3, 4, 5, 6, 7, 8))))
+    for key in ("std_hp", "gob_hp", "all_hp", "pts_line") + tuple(f"std_hp_{g}" for g in GROUPS):
+        T.append((f"wasserstein k-means on {key} (k 9-10)", wasserstein(key, (9, 10))))
+    for win in (12, 15):
+        T.append((f"{win}-slate trajectories, all families", (lambda w: (lambda: trajectories(w, MAIN)))(win)))
+
+    def kernel_all():
+        from sklearn.decomposition import KernelPCA
+        n = 0
+        for kern in ("rbf", "poly", "cosine", "sigmoid", "laplacian"):
+            for fname in MAIN:
+                if fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "CONCENTRATION", "GROUP-QUALITY", "MIX") and kern != "laplacian":
+                    continue            # already done in batches 4 / 7
+                fc = fam.get(fname, [])
+                if len(fc) < 3:
+                    continue
+                Xf = P[:, [ci[c] for c in fc]]
+                ok = ~np.isnan(Xf).any(axis=1)
+                if not has_structure(Xf, ok):
+                    continue
+                Xfit = Xf[ok & (seas == HIST[0])]
+                Z = np.full((len(seas), 4), np.nan)
+                if kern == "laplacian":         # not a built-in KernelPCA kernel: precomputed Laplacian kernel
+                    from sklearn.metrics.pairwise import laplacian_kernel
+                    kp = KernelPCA(n_components=4, kernel="precomputed", random_state=7).fit(laplacian_kernel(Xfit))
+                    Z[ok] = kp.transform(laplacian_kernel(Xf[ok], Xfit))
+                else:
+                    kp = KernelPCA(n_components=4, kernel=kern, random_state=7).fit(Xfit)
+                    Z[ok] = kp.transform(Xf[ok])
+                zr = np.full_like(Z, np.nan)
+                for j in range(4):
+                    v = Z[ok, j]
+                    zr[ok, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
+                key = f"KPCA{kern}2-{fname}"
+                fam[key] = [f"{key}-{j}" for j in range(4)]
+                for j in range(4):
+                    ci[f"{key}-{j}"] = P.shape[1] + j
+                n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5, 6))
+        return n
+    T.append(("kernel embeddings on every family (incl. laplacian)", kernel_all))
+    T.append(("k-means k 9-12 on every family", lambda: sum(clusters("kmeans", f_, (9, 10, 11, 12))() for f_ in MAIN if f_ in fam)))
+    T.append(("GMM k 9-12 on every family", lambda: sum(clusters("gmm", f_, (9, 10, 11, 12))() for f_ in MAIN if f_ in fam)))
     return T
 
 
