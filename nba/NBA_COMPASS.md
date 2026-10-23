@@ -368,6 +368,17 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    ('placed_backup'); `nba/apply_quote_gate.py` runs after P3's slip quotes and keeps as 'placed' the first 2 that PrizePicks quoted
    with every leg on its board as built and an all-hit payout >= 0.95 x ours; failures become 'placed_quote_skip'. The Slips
    screen (v1.4.38) hides unquoted, failed and backup slips. Tunables pp_portfolio.quote_min_ratio / backups.
+180. 🔑 **ONE NUMBER: final_hp IS THE BOARD HIT PROBABILITY, BOARD-CENTRED; NEW 2-SLIP PORTFOLIO (2026-10-23; ledger DAY THREE 23;
+   supersedes the "beside it" part of fact 179).** The chain of fact 179 lives in final_hp itself: `nba/final_hp_board_cal.py`
+   (L1 board-centred ladder + L2 per prop x line type x side; tunables nba_score.final_hp_board_cal, one set per as-of date)
+   applied by build_final_hp.py to the 12 calibrated props (final_hp.cal_chain 'board'); switch
+   classification_config['final_hp_board_centre'].enabled = true since 2026-10-23 00:52 PT. History re-priced (both seasons +
+   2026-27), P5 chain recertified on it. Every app's board leg shows final_hp's own number (score_board_legs.py step 4b; UI
+   v1.4.39 reads board_scored.final_hp; board_true_hp is reference only; nba_score.board_hp / P3 board-hp step retired).
+   Portfolio pp_portfolio.order = [P_wrebounds_4flex, P_cal_r70_3power] (calib_slips.py: standard lines of the 12 calibrated
+   props, final_hp >= 0.70, <= 2 legs a game, 3-pick Power): +52.5 / +75.5% ROI, lb5 +24.9 / +47.2, dd 20.0 / 12.0 vs the
+   previous 6-unit order +55.1 / +65.8%, lb5 +22.5 / +37.5, dd 26.5 / 12.5 (run 39918732552). Board-profile switching tested and
+   rejected (out of sample worse). Learnings: `nba/NBA_BOARD_LEARNINGS.md` section 5.
 179. 🔑 **final_hp IS MIS-CENTRED; board_hp IS THE CALIBRATED NUMBER BESIDE IT (2026-10-22 night; ledger DAY THREE 22).** Our
    projected mean barely adds to PrizePicks' standard line (earned weight w 0.03-0.12 for points / rebounds / assists), so the
    ladder - centred on our own mean - makes final_hp far too spread on every line type (standard fh 0.80 -> hit 0.58; demons
