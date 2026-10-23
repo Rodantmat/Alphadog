@@ -485,6 +485,26 @@ class Registry:
             self.keys.add(key)
         return True
 
+    def explained(self, mask):
+        """PREDICTABLE FROM KNOWN PROFILES (round 8, 2026-10-23): a depth-3 decision tree over the registered profiles' memberships,
+        fitted on one season, predicts the candidate's slates in the other season with balanced accuracy >= 0.85 - in BOTH directions -
+        -> the candidate is a combination of up to ~3 known profiles, not new information. Generalises the pairwise intersection /
+        union test; after round 8 (372 profiles) new views still re-combined known ones (kernels, long trajectories, k 9-12)."""
+        from sklearn.tree import DecisionTreeClassifier
+        from sklearn.metrics import balanced_accuracy_score
+        ni = len(self.items)
+        Xm = np.array([it["mask"] for it in self.items]).T.astype(np.int8)
+        y = mask.astype(int)
+        accs = []
+        for fit, app in (HIST, HIST[::-1]):
+            mf, ma = self.seas == fit, self.seas == app
+            if y[mf].min() == y[mf].max() or y[ma].min() == y[ma].max():
+                return False
+            t = DecisionTreeClassifier(max_depth=3, class_weight="balanced", random_state=7).fit(Xm[mf], y[mf])
+            accs.append(balanced_accuracy_score(y[ma], t.predict(Xm[ma])))
+        _ = ni
+        return min(accs) >= 0.85
+
     def run_pass(self, tech, fn):
         n0 = len(self.items)
         tried = fn()
