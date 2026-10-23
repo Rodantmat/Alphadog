@@ -9,8 +9,8 @@ BIAS of the calibrated probability on the legs it touches - and a bias can be co
 layer of final_hp_board_cal), instead of choosing strategies per slate.
 
 LEGS: every PrizePicks window leg of the tier map (rank 'final_hp' = the board-centred final_hp, walk-forward), both seasons, final 7
-days out, graded (hit 0 / 1). ENVIRONMENT of the leg's game (known before tip): closing game total (median across books; tercile of the
-season), the player's team spread (favourite by 8+ / close +-7.5 / underdog by 8+), the team on the 2nd night of a back-to-back, the
+days out, graded (hit 0 / 1). ENVIRONMENT of the leg's game (known before tip): closing game total (median across books, on the LOCAL
+game date - the table's date is the UTC tip date; tercile of the season), the player's team spread (favourite by 8+ / close +-7.5 / underdog by 8+), the team on the 2nd night of a back-to-back, the
 opponent on a back-to-back, slate size (<= 4 / 5-8 / 9+ games), month block (Oct-Nov / Dec-Jan / Feb-Apr).
 RESIDUAL = hit - final_hp, per cell (prop group x side x line type x environment bucket): mean residual, n, z = mean / se; per season.
 CONSISTENT = same sign in both seasons, |z| >= 2.5 in both, n >= 300 in both. Also the pooled log-loss gain if each consistent cell's
