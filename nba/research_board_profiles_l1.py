@@ -902,7 +902,7 @@ def techniques(reg, P, cols, fam):
                         st = b
             q1, q2 = np.nanpercentile(seg_val[reg.hist], [33.3, 66.7])
             for nm_, m in (("LOW segment", seg_val <= q1), ("HIGH segment", seg_val >= q2)):
-                n += 1; reg.offer(f"changepoint-{fname}-{nm_}", m & ~np.isnan(seg_val), f"{fname} axis-1 change-point segment {nm_}", [],
+                n += 1; reg.offer(f"changepoint-{fname}-pen{pen:g}-{nm_}", m & ~np.isnan(seg_val), f"{fname} axis-1 change-point segment {nm_}", [],
                                   "change points")
         return n
     T.append(("change-point segments (PELT)", change_points))
