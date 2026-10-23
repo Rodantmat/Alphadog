@@ -947,9 +947,12 @@ def techniques(reg, P, cols, fam):
                     n += 1
                     if jb < 0.5:
                         continue
+                    st, (sa, sb) = boot_stable(("wasserstein", key), "kmeans", Q, ok, k, labs, c)
+                    if not st:
+                        continue        # dissolves under resampling (Hennig bootstrap < 0.75)
                     qs = ca[c]
                     reg.offer(f"wasserstein-{key}-k{k}-c{c}", ma, f"slates whose {key} distribution looks alike (Wasserstein k-means k {k}, J "
-                              f"{jb:.2f}): p10 {qs[1]:.3f} median {qs[9]:.3f} p90 {qs[17]:.3f}", [], f"wasserstein {key}")
+                              f"{jb:.2f}, bootstrap {sa:.2f}/{sb:.2f}): p10 {qs[1]:.3f} median {qs[9]:.3f} p90 {qs[17]:.3f}", [], f"wasserstein {key}")
             return n
         return fn
     for key in ("std_hp", "gob_hp", "gob_factor", "all_hp"):
