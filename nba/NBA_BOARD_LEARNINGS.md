@@ -108,3 +108,19 @@ One line per finding, newest section last. Each finding names its script and run
        seasons, lb5 flat in 2024-25; the 6F was picked after seeing both seasons). Track it on 2026-27 C1 slates before any decision.
 - E-6  One-feature board rules over-fit: 0 of ~2,100 held in both directions. Board-shape features (legs, shares, std >= x) differ
        between the 2024-25 capture and the 2025-26 live board, so they cannot be cut on one season and applied to the other.
+
+## 7. Board types round 1 - 100 factors, slate types, the line gap (2026-10-23; ledger DAY THREE 25)
+
+- T-1  Test design that survives: residual vs the season's side x line type baseline, z clustered by slate, >= 20 days, BH q < 0.05
+       in each season, cross-fit on top of the baseline with a day-clustered z. Without the baseline and the day clustering, random
+       factors 'hold' (4 of 13 in the synthetic test). Earlier 'better both ways' results of size ~0.00005 log-loss are noise.
+- T-2  final_hp already carries the match day: calendar, rest / travel, team strength and pairings, injuries (team, opponent, the
+       player himself), officials, board depth, usual hitters and player memory add nothing out of season.
+- T-3  The one survivor is market structure - PrizePicks' standard line vs the books' consensus. At pick time (window snapshot) it is
+       ~2-3 points of hit rate when the gap is >= 1 (More when PrizePicks is lower, Less when higher), on a few % of legs - real but
+       too small to change slips. Near misses worth a round 2: opp allowed in the leg's stat, last-5 average vs the line.
+- T-4  LEAK RULE: board_snapshots 'close' is tip time (after the pick). Any books / market factor must use the 'window' label (or
+       earlier); the round-1 line gap doubled on the close snapshot.
+- T-5  Slate types recur (k-means fitted on either season finds the deep / strong board and the thin board), but the strategy edge on
+       them is concentrated in a few big long-slip days in 2024-25; on trailing percentiles the strong-board 6-Flex swap is a 2025-26
+       pattern only. Next tests on slate types must report the gain without the best 3 days and across windows / thresholds.
