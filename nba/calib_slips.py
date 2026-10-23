@@ -5,7 +5,8 @@ CALIBRATED-POOL SLIPS - the one slip builder shared by the research (research_pp
 new strategies on the board-centred final_hp by the next slate).
 
 A unit spec 'calib:<pool>:<rank>:<minp>:<gamecap>':
-  pool    R (standard lines) | G (goblins G1-G3) | GR (both) | ALL (+ demons D1-D3) - the leg's tier is PrizePicks' own label
+  pool    R (standard lines) | G (goblins G1-G3) | GR (both) | ALL (+ demons D1-D3) - the leg's tier is PrizePicks' own label;
+          the 12 calibrated props only (final_hp_board_cal.PROPS)
   rank    p (the calibrated final_hp) | ev (final_hp x the leg's PrizePicks factor)
   minp    the leg's final_hp must be >= minp
   gamecap at most this many legs of one game in a slip
@@ -13,6 +14,8 @@ Slips: greedy from the ranked pool - distinct players, the game cap, >= 2 teams,
 the k-th slip is built after the first k-1 took their legs.
 """
 from collections import defaultdict
+
+from final_hp_board_cal import PROPS as CALIBRATED_PROPS   # the 12 props whose final_hp carries the board-centred calibration
 
 POOLS = {"R": ("R",), "G": ("G1", "G2", "G3"), "GR": ("R", "G1", "G2", "G3"), "ALL": ("R", "G1", "G2", "G3", "D1", "D2", "D3")}
 LEGCAP = 2
@@ -27,7 +30,11 @@ def parse(comp):
 
 def rank_pool(legs, pool, rank):
     """legs: dicts with tier, p (calibrated probability), factor, team_id, event_id, player"""
-    cand = [l for l in legs if l["tier"] in POOLS[pool] and l.get("team_id") is not None and l.get("p") is not None]
+    # ONLY THE CALIBRATED PROPS (2026-10-23, audit_calib_live_parity run 39919223605): the live board also carries props whose final_hp
+    # never went through the board-centred chain (fgm, fga, ...: as-of only, overconfident - 10-22's top leg was an fgm Under at
+    # 0.883); the research measured these units on the tier map, which holds the 12 calibrated props only
+    cand = [l for l in legs if l["tier"] in POOLS[pool] and l.get("prop") in CALIBRATED_PROPS and l.get("team_id") is not None
+            and l.get("p") is not None]
     cand.sort(key=(lambda l: -l["p"]) if rank == "p" else (lambda l: -l["p"] * l["factor"]))
     return cand
 
