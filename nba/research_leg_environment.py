@@ -44,6 +44,30 @@ def sig(z):
     return 1 / (1 + np.exp(-z))
 
 
+def _nm(x):
+    x = "".join(ch for ch in str(x).lower() if ch.isalpha())
+    return "losangelesclippers" if x == "laclippers" else x
+
+
+def game_lines_local(conn):
+    """closing game lines keyed by the LOCAL (US) game date: game_lines_closing.game_date is the UTC date of tip, so a 7 PM PT game
+    sits on the next day (2025-12-10 OKC - PHX is dated 12-11). The local date is the schedule's (nba_market.schedule_norm) date of the
+    same home / away pairing on the line's date or the day before. -> [(local_date, home_full_name, away_full_name, total, home_spread)]"""
+    sched = {(d, h, a) for d, h, a in conn.execute("SELECT game_date, home, away FROM nba_market.schedule_norm")}
+    out, unmatched = [], 0
+    for d, h, a, tot, hs in conn.execute("""SELECT game_date, home_team, away_team, total_line::float8, home_spread::float8
+                                            FROM nba_market.game_lines_closing WHERE game_date BETWEEN '2024-10-01' AND '2026-06-30'"""):
+        hn, an = _nm(h), _nm(a)
+        if (d, hn, an) in sched:
+            out.append((d, h, a, tot, hs))
+        elif (d - dt.timedelta(days=1), hn, an) in sched:
+            out.append((d - dt.timedelta(days=1), h, a, tot, hs))
+        else:
+            unmatched += 1
+    print(f"game lines on the local date: {len(out):,} rows (unmatched to the schedule {unmatched:,})", flush=True)
+    return out
+
+
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
