@@ -33,13 +33,23 @@ is ~1.5 (2-Power), ~2.6 (3-Power), ~1.3 (4-Flex), ~4 (5-6 Flex). Tiers, per seas
   CANDIDATE  15-24 slates in each season - registered and tracked (2026-27 adds slates), strategy search only as a pooled read
   below 15 in either season, < 3 months or < 5 episodes - not a profile (one season's few big nights, a single streak)
 Every profile prints its slate counts, months, episodes and the detectable ROI difference for 2P / 4F at its pooled size.
+TECHNIQUES (passes, in order): round 1 (run 40019821135: 230 profiles, 170 elected, last pass not clean) - terciles / quintiles /
+halves, calendar, raw ranges, k-means / GMM / Ward / PCA-k-means on 11 families, latent axes, co-moving groups, associated pairs,
+delta / regime splits, similarity to yesterday; batch 2 (own knowledge) - 13 more features (division / conference games, rest
+mismatches, both teams on a back-to-back, usual hitters MISSING, new players, props per player, standard lines up / down vs the
+player's previous board), raw quartiles, HDBSCAN and spectral clustering, typical vs unusual boards (isolation forest, analog density
+in the other season); batch 3 (online: Wasserstein k-means of market regimes arXiv 2110.11848, LSEG regime detection - GMM / HMM /
+change points) - Wasserstein k-means of each slate's final_hp / goblin multiplier distributions, Gaussian HMM regimes over
+consecutive slates, PELT change-point segments.
 PASSES: the techniques below run in order, each one a pass; a pass is CLEAN when it registers no new profile. The run reports the
 registry (name, definition, ranges in raw units, days / months / episodes per season, 2026-27 slates in it) and the trailing run of
 clean passes. Layer 2 (strategies per profile) waits for 10 consecutive clean passes.
 SYNTHETIC CHECK before the real run (72 random features + one planted group of 5 features shifted together on 30% of slates): random
 features give only their own single-feature splits (simple profiles) and NO composite (pairs at p < 0.05 let 10 random pairs in;
-p < 0.001 none; PCA axes need >= 2x an average share and the same axis in the other season); the planted group is found by k-means,
-GMM and PCA-k-means on its family.
+p < 0.001 none; PCA axes need >= 2x an average share and the same axis in the other season; a family is clustered only when its
+features co-move beyond the Marchenko-Pastur noise edge in both seasons, and a cluster must be re-found across seasons better than
+every cluster of 8 within-season shuffles; HMM regimes better than 6 order-shuffled fits); the planted group is found by k-means,
+GMM and Ward on its families; another cut of an already registered single feature (same feature and side) is a variant, not new.
 Env: DATABASE_URL, L1_TECH (comma list to run a subset; default all).
 """
 import itertools
@@ -64,6 +74,7 @@ GRP = {"points": "points", "rebounds": "rebounds", "assists": "assists", "threes
        "pts_ast": "combos", "reb_ast": "combos", "steals": "lowvol", "blocks": "lowvol", "turnovers": "lowvol", "stocks": "lowvol"}
 GROUPS = ("points", "rebounds", "assists", "threes", "combos", "lowvol")
 ONLY = [x for x in os.environ.get("L1_TECH", "").split(",") if x]
+DIST = {}          # (season, day) -> per-slate leg distributions as quantile vectors (Wasserstein views)
 
 
 def log(m):
@@ -120,8 +131,13 @@ def slate_features(conn, days, order):
         for c in ("mean_total", "max_spread", "blowout_share", "weekday"):   # closing (tip-time) lines are post-pick; weekday is categorical
             F[k].pop(c, None)
     ml = morning_lines(conn)
-    _, _, tg = BT.team_tables(conn)
+    _, tinfo, tg = BT.team_tables(conn)
     ts = {str(t): [(g["d"], g["pts"] - g["opp_pts"]) for g in v] for t, v in tg.items()}
+    tinfo = {str(t): v for t, v in tinfo.items()}
+    tdates = {str(t): sorted({g["d"] for g in v}) for t, v in tg.items()}
+    seen_players = set()
+    last_line = {}                                      # (player, prop) -> the standard More line on his previous board
+    recent_uh = deque(maxlen=5)                         # usual hitters on the last 5 boards, with their team
     hist = deque(maxlen=20)
     player_rec = defaultdict(lambda: [0, 0])
     prev = None
@@ -155,6 +171,27 @@ def slate_features(conn, days, order):
                 nm = float(np.mean(g)) if len(g) >= 5 else 0.0
                 c.append("S" if nm >= 4 else ("W" if nm <= -4 else "M"))
             cls.append("".join(sorted(c)))
+        # batch 2 (2026-10-23): division / conference games, rest mismatches, both teams on a back-to-back
+        div = conf = restm = bothb2b = 0
+        for ev, tt in ev_teams.items():
+            if len(tt) != 2:
+                continue
+            a, b = sorted(tt)
+            ia, ib = tinfo.get(a), tinfo.get(b)
+            if ia and ib:
+                div += ia[2] == ib[2]
+                conf += ia[1] == ib[1]
+            ra = [x for x in tdates.get(a, []) if x < d]
+            rb = [x for x in tdates.get(b, []) if x < d]
+            da = (d - ra[-1]).days if ra else 9
+            db = (d - rb[-1]).days if rb else 9
+            restm += (min(da, db) == 1 and max(da, db) >= 3)
+            bothb2b += (da == 1 and db == 1)
+        ng = max(len(ev_teams), 1)
+        f["div_share"] = div / ng
+        f["conf_share"] = conf / ng
+        f["rest_mismatch_share"] = restm / ng
+        f["both_b2b_share"] = bothb2b / ng
         n = max(len(cls), 1)
         f["str_SS"] = sum(c == "SS" for c in cls) / n
         f["str_SW"] = sum(c == "SW" for c in cls) / n
@@ -178,10 +215,37 @@ def slate_features(conn, days, order):
         uh = {p for p in players if player_rec[p][1] >= 10 and player_rec[p][0] / player_rec[p][1] >= 0.58}
         f["uh_count"] = len(uh)
         f["uh_share"] = len(uh) / max(len(players), 1)
+        # usual hitters MISSING: seen as usual hitters on the last 5 boards, their team plays today, they are not on the board
+        teams_today = {str(l["team_id"]) for l in legs if l["team_id"] is not None}
+        prev_uh = {}
+        for h in recent_uh:
+            prev_uh.update(h)
+        f["uh_missing"] = sum(1 for p_, t_ in prev_uh.items() if t_ in teams_today and p_ not in players)
+        recent_uh.append({p_: str(next(l["team_id"] for l in legs if l["player"] == p_)) for p_ in uh})
+        f["new_players"] = len(players - seen_players)
+        seen_players |= players
+        f["props_per_player"] = len({(l["player"], l["prop"]) for l in legs}) / max(len(players), 1)
+        up = dn = same = 0
+        cur_lines = {}
+        for l in legs:
+            if l["tier"] == "R" and l["side"] == "Over":
+                cur_lines[(l["player"], l["prop"])] = float(l["line"])
+        for k_, v_ in cur_lines.items():
+            if k_ in last_line:
+                up += v_ > last_line[k_]; dn += v_ < last_line[k_]; same += v_ == last_line[k_]
+        tot_ = max(up + dn + same, 1)
+        f["line_up_share"] = up / tot_
+        f["line_down_share"] = dn / tot_
+        last_line.update(cur_lines)
         R = np.array([l["p"] for l in legs if l["tier"] == "R" and l["p"] is not None], float)
         G = np.array([l["p"] for l in legs if l["tier"].startswith("G") and l["p"] is not None], float)
         f["std_p90"] = float(np.percentile(R, 90)) if len(R) else np.nan
         f["gob_ge75"] = float(np.sum(G >= 0.75)) if len(G) else 0.0
+        DIST[(s, d)] = {"std_hp": np.quantile(R, np.linspace(0.05, 0.95, 19)) if len(R) >= 20 else None,
+                        "gob_hp": np.quantile(G, np.linspace(0.05, 0.95, 19)) if len(G) >= 20 else None,
+                        "gob_factor": (np.quantile([float(l["factor"]) for l in legs if l["tier"].startswith("G")], np.linspace(0.05, 0.95, 19))
+                                       if sum(l["tier"].startswith("G") for l in legs) >= 20 else None),
+                        "all_hp": np.quantile([l["p"] for l in legs if l["p"] is not None], np.linspace(0.05, 0.95, 19))}
         rungs = defaultdict(int)
         for l in legs:
             rungs[(l["player"], l["prop"])] += 1
@@ -212,9 +276,10 @@ def slate_features(conn, days, order):
 
 
 EXTERNAL = ["games", "m_total", "close_share", "mismatch_share", "tip_spread", "early_games", "late_share", "str_SS", "str_SW", "str_WW",
-            "str_any_S", "b2b_share", "mean_rest", "key_injuries", "questionable", "weekend", "month", "season_day", "post_asb"]
+            "str_any_S", "b2b_share", "mean_rest", "key_injuries", "questionable", "weekend", "month", "season_day", "post_asb",
+            "div_share", "conf_share", "rest_mismatch_share", "both_b2b_share"]
 INTERNAL = ["std_ge60", "std_ge65", "std_ge70", "std_disp", "std_mean", "std_skew", "std_top20", "std_p90", "gob_ge75", "uh_count",
-            "uh_share"]
+            "uh_share", "uh_missing", "new_players", "line_up_share", "line_down_share"]
 
 
 def families(cols):
@@ -227,7 +292,12 @@ def families(cols):
             "CONFIDENCE": [c for c in ("std_mean", "std_disp", "std_skew", "std_p90", "std_top20", "std_ge65", "gob_ge75") if c in cols],
             "SCHEDULE": [c for c in ("games", "tip_spread", "early_games", "late_share", "b2b_share", "mean_rest", "weekend") if c in cols],
             "STRENGTH": [c for c in ("str_SS", "str_SW", "str_WW", "str_any_S", "close_share", "mismatch_share", "m_total") if c in cols],
-            "AVAILABILITY": [c for c in ("key_injuries", "questionable", "uh_count", "uh_share", "players") if c in cols],
+            "AVAILABILITY": [c for c in ("key_injuries", "questionable", "uh_count", "uh_share", "uh_missing", "players", "new_players")
+                             if c in cols],
+            "MATCHUPS": [c for c in ("div_share", "conf_share", "rest_mismatch_share", "both_b2b_share", "str_SS", "str_SW", "str_WW",
+                                     "close_share", "mismatch_share") if c in cols],
+            "LINES": [c for c in ("line_points_rel", "line_rebounds_rel", "line_assists_rel", "line_up_share", "line_down_share",
+                                  "pts_line") if c in cols],
             "DELTA": [c for c in cols if c.startswith("dlt_")], "REGIME": [c for c in cols if c.startswith("reg_")]}
 
 
@@ -257,6 +327,7 @@ class Registry:
         self.hist = np.isin(seas, HIST)
         self.items = []
         self.passes = []
+        self.keys = set()
         self.M = np.zeros((512, len(order)), np.float32)
         self.Msum = np.zeros(512, np.float32)
 
@@ -287,8 +358,12 @@ class Registry:
                 out.append(f"{c} {np.percentile(v, 10):.3g}..{np.percentile(v, 90):.3g}")
         return "; ".join(out)
 
-    def offer(self, name, mask, definition, feats, tech):
+    def offer(self, name, mask, definition, feats, tech, key=None):
+        """key: for SIMPLE profiles (one feature / one construct) - (construct, side); another cut of the same construct and side
+        (quintile, half, raw quartile) is a variant of the registered profile, not a new one"""
         mask = np.asarray(mask, bool)
+        if key is not None and key in self.keys:
+            return False
         ok, info = self.recur(mask)
         if not ok:
             return False
@@ -307,6 +382,8 @@ class Registry:
         cur = [str(k[1]) for k, m in zip(self.order, mask) if m and k[0] not in HIST]
         self.items.append({"name": name, "mask": mask, "def": definition, "feats": feats, "tech": tech, "info": info,
                            "ranges": self.ranges(mask, feats), "cur": cur})
+        if key is not None:
+            self.keys.add(key)
         return True
 
     def run_pass(self, tech, fn):
@@ -331,9 +408,9 @@ def techniques(reg, P, cols, fam):
             n = 0
             for c in cols:
                 x = P[:, ci[c]]
-                for nm_, m in ((f"{c}<= p{int(lo * 100)}", x <= lo), (f"{c}>= p{int(hi * 100)}", x >= hi)):
+                for nm_, m, side in ((f"{c}<= p{int(lo * 100)}", x <= lo, "LOW"), (f"{c}>= p{int(hi * 100)}", x >= hi, "HIGH")):
                     n += 1
-                    reg.offer(nm_, m & ~np.isnan(x), f"trailing percentile of {nm_}", [c], label)
+                    reg.offer(nm_, m & ~np.isnan(x), f"trailing percentile of {nm_}", [c], label, key=(c, side))
             return n
         return fn
     T.append(("single feature terciles", thresholds(1 / 3, 2 / 3, "terciles")))
@@ -362,12 +439,85 @@ def techniques(reg, P, cols, fam):
             if len(np.unique(v)) < 4:
                 continue
             q1, q2 = np.percentile(v, [33.3, 66.7])
-            for nm_, m in ((f"{c} <= {q1:.3g}", x <= q1), (f"{c} {q1:.3g}..{q2:.3g}", (x > q1) & (x <= q2)), (f"{c} > {q2:.3g}", x > q2)):
-                n += 1; reg.offer(nm_, m & ~np.isnan(x), f"raw {nm_}", [c], "raw ranges")
+            for nm_, m, side in ((f"{c} <= {q1:.3g}", x <= q1, "RAWLOW"), (f"{c} {q1:.3g}..{q2:.3g}", (x > q1) & (x <= q2), "MID"),
+                                 (f"{c} > {q2:.3g}", x > q2, "RAWHIGH")):
+                n += 1; reg.offer(nm_, m & ~np.isnan(x), f"raw {nm_}", [c], "raw ranges", key=(c, side))
         return n
     T.append(("raw-unit ranges", raw_ranges))
 
-    def clusters(method, fname, ks):
+    def fit_labels(method, Xf, ok, par):
+        """fit on each season, assign every slate; -> {season: (labels, centres)}"""
+        from sklearn.cluster import HDBSCAN, SpectralClustering
+        labs = {}
+        for fit in HIST:
+            mf = ok & (seas == fit)
+            if mf.sum() < 3 * max(par, 2):
+                continue
+            if method == "kmeans":
+                mdl = KMeans(n_clusters=par, n_init=20, random_state=7).fit(Xf[mf]); lf = mdl.labels_
+            elif method == "gmm":
+                lf = GaussianMixture(n_components=par, covariance_type="diag", random_state=7, n_init=3).fit(Xf[mf]).predict(Xf[mf])
+            elif method == "pca-kmeans":
+                pca = PCA(n_components=min(3, Xf.shape[1])).fit(Xf[mf])
+                lf = KMeans(n_clusters=par, n_init=20, random_state=7).fit(pca.transform(Xf[mf])).labels_
+            elif method == "ward":
+                lf = AgglomerativeClustering(n_clusters=par, linkage="ward").fit(Xf[mf]).labels_
+            elif method == "hdbscan":
+                lf = HDBSCAN(min_cluster_size=par).fit(Xf[mf]).labels_
+            else:
+                lf = SpectralClustering(n_clusters=par, random_state=7, affinity="nearest_neighbors", n_neighbors=10).fit(Xf[mf]).labels_
+            ks = [c for c in sorted(set(lf)) if c >= 0]
+            if len(ks) < 2:
+                continue
+            cen = np.array([Xf[mf][lf == c].mean(axis=0) for c in ks])
+            lab = np.full(len(seas), -1)
+            lab[ok] = np.argmin(((Xf[ok][:, None, :] - cen[None]) ** 2).sum(axis=2), axis=1)
+            labs[fit] = (lab, cen)
+        return labs
+
+    def refound(labs):
+        (la, ca), (lb, cb) = labs[HIST[0]], labs[HIST[1]]
+        return [max(np.sum((la == c) & (lb == c2)) / max(np.sum((la == c) | (lb == c2)), 1) for c2 in range(len(cb))) for c in range(len(ca))]
+
+    NULL_CACHE = {}
+
+    def null_threshold(method, fname, Xf, ok, par):
+        """the same clustering on SHUFFLED data (each feature permuted within season: same marginals, no co-movement) - a real
+        profile must be re-found across seasons better than EVERY shuffled cluster of 8 shuffles (synthetic check: k-means on 6 random
+        features gave 'profiles' re-found at J >= 0.5 without a null, and still some against a 4-shuffle p95)"""
+        key = (method, fname, par)
+        if key not in NULL_CACHE:
+            rng = np.random.default_rng(11)
+            vals = []
+            for _ in range(8):
+                Xs = Xf.copy()
+                for s_ in HIST:
+                    idx = np.where(ok & (seas == s_))[0]
+                    for j in range(Xs.shape[1]):
+                        Xs[idx, j] = Xs[rng.permutation(idx), j]
+                labs = fit_labels(method, Xs, ok, par)
+                if len(labs) == 2:
+                    vals += refound(labs)
+            NULL_CACHE[key] = max(0.5, float(np.max(vals))) if vals else 0.5   # the MAX over 8 shuffles: ~35 clusters per method x family
+        return NULL_CACHE[key]
+
+    def has_structure(Xf, ok):
+        """the family's features must CO-MOVE: the top eigenvalue of their rank-correlation matrix above the Marchenko-Pastur
+        noise edge (1 + sqrt(p / n))^2 x 1.1 in BOTH seasons; otherwise any clusters are only geometric cuts of independent
+        features (synthetic check: random 6-8-feature families gave cross-season-stable clusters that beat even shuffled data)"""
+        import pandas as pd
+        for s_ in HIST:
+            Xs = Xf[ok & (seas == s_)]
+            nn, pp = Xs.shape
+            if nn < 20 or pp < 2:
+                return False
+            C = pd.DataFrame(Xs).corr(method="spearman").fillna(0).values
+            lam = np.linalg.eigvalsh(C)[-1]
+            if lam <= 1.1 * (1 + np.sqrt(pp / nn)) ** 2:
+                return False
+        return True
+
+    def clusters(method, fname, pars):
         def fn():
             n = 0
             fc = fam[fname]
@@ -375,43 +525,29 @@ def techniques(reg, P, cols, fam):
                 return 0
             Xf = P[:, [ci[c] for c in fc]]
             ok = ~np.isnan(Xf).any(axis=1)
-            for k in ks:
-                labs = {}
-                for fit in HIST:
-                    mf = ok & (seas == fit)
-                    if mf.sum() < 3 * k:
-                        continue
-                    if method == "kmeans":
-                        mdl = KMeans(n_clusters=k, n_init=20, random_state=7).fit(Xf[mf]); pred = mdl.predict(Xf[ok]); cen = mdl.cluster_centers_
-                    elif method == "gmm":
-                        mdl = GaussianMixture(n_components=k, covariance_type="diag", random_state=7, n_init=3).fit(Xf[mf])
-                        pred = mdl.predict(Xf[ok]); cen = mdl.means_
-                    elif method == "pca-kmeans":
-                        pca = PCA(n_components=min(3, len(fc))).fit(Xf[mf])
-                        Z = pca.transform(Xf[ok]); Zf = pca.transform(Xf[mf])
-                        mdl = KMeans(n_clusters=k, n_init=20, random_state=7).fit(Zf); pred = mdl.predict(Z)
-                        cen = np.array([Xf[ok][pred == c].mean(axis=0) if np.any(pred == c) else np.full(len(fc), 0.5) for c in range(k)])
-                    else:   # agglomerative (Ward) - fitted on the season, the other season assigned to the nearest cluster mean
-                        mdl = AgglomerativeClustering(n_clusters=k, linkage="ward").fit(Xf[mf])
-                        cen = np.array([Xf[mf][mdl.labels_ == c].mean(axis=0) for c in range(k)])
-                        pred = np.argmin(((Xf[ok][:, None, :] - cen[None]) ** 2).sum(axis=2), axis=1)
-                    lab = np.full(len(seas), -1); lab[ok] = pred
-                    labs[fit] = (lab, cen)
+            if not has_structure(Xf, ok):
+                log(f"  {fname}: no co-movement beyond noise - {method} skipped")
+                return 0
+            for par in pars:
+                labs = fit_labels(method, Xf, ok, par)
                 if len(labs) < 2:
                     continue
-                (la, ca), (lb, cb) = labs[HIST[0]], labs[HIST[1]]
-                for c in range(k):
-                    ma = la == c
-                    jb = max(np.sum(ma & (lb == c2)) / max(np.sum(ma | (lb == c2)), 1) for c2 in range(k))
+                la, ca = labs[HIST[0]]
+                jbs = refound(labs)
+                thr = None
+                for c, jb in enumerate(jbs):
                     n += 1
                     if jb < 0.5:
                         continue        # the other season's fit does not find it - not identifiable
                     top = sorted(zip(fc, ca[c]), key=lambda x: -abs(x[1] - 0.5))[:5]
                     if sum(abs(v - 0.5) >= 0.15 for _, v in top) < 2:
                         continue        # not a multi-feature commonality
+                    thr = null_threshold(method, fname, Xf, ok, par) if thr is None else thr
+                    if jb <= thr:
+                        continue        # no better than clusters of shuffled (structure-free) data
                     desc = ", ".join(f"{nm_} {'HIGH' if v > 0.5 else 'LOW'} {v:.2f}" for nm_, v in top)
-                    reg.offer(f"{method}-{fname}-k{k}-c{c}", ma, f"{method} on {fname} (k {k}); re-found by the other fit (J {jb:.2f}): {desc}",
-                              [t[0] for t in top], f"{method} {fname}")
+                    reg.offer(f"{method}-{fname}-{par}-c{c}", la == c, f"{method} on {fname} ({par}); re-found by the other fit (J {jb:.2f}, "
+                              f"shuffled max {thr:.2f}): {desc}", [t[0] for t in top], f"{method} {fname}")
             return n
         return fn
     for method in ("kmeans", "gmm", "ward", "pca-kmeans"):
@@ -519,8 +655,8 @@ def techniques(reg, P, cols, fam):
             n = 0
             for c in fam[fname]:
                 x = P[:, ci[c]]
-                for nm_, m in ((f"{c} LOW", x <= 1 / 3), (f"{c} HIGH", x >= 2 / 3)):
-                    n += 1; reg.offer(nm_, m & ~np.isnan(x), f"{fname.lower()}: {nm_}", [c], fname.lower())
+                for nm_, m, side in ((f"{c} LOW", x <= 1 / 3, "LOW"), (f"{c} HIGH", x >= 2 / 3, "HIGH")):
+                    n += 1; reg.offer(nm_, m & ~np.isnan(x), f"{fname.lower()}: {nm_}", [c], fname.lower(), key=(c, side))
             return n
         return fn
     T.append(("delta vs previous slate", day_relation("DELTA")))
@@ -540,6 +676,170 @@ def techniques(reg, P, cols, fam):
                 n += 1; reg.offer(f"{fname} {nm_}", m & ~np.isnan(dist), f"{fname} board {nm_} (rms percentile distance)", [], "similarity")
         return n
     T.append(("similarity to the previous slate", same_as_yesterday))
+
+    # ---------------- batch 2 (own knowledge) ----------------
+    def raw_quartiles():
+        n = 0
+        for c in cols:
+            x = reg.X[:, ci[c]]
+            v = x[reg.hist & ~np.isnan(x)]
+            if len(np.unique(v)) < 5:
+                continue
+            q = np.percentile(v, [25, 50, 75])
+            for nm_, m, side in ((f"{c} <= {q[0]:.3g}", x <= q[0], "RAWLOW"), (f"{c} {q[0]:.3g}..{q[1]:.3g}", (x > q[0]) & (x <= q[1]), "MID"),
+                                 (f"{c} {q[1]:.3g}..{q[2]:.3g}", (x > q[1]) & (x <= q[2]), "MID"), (f"{c} > {q[2]:.3g}", x > q[2], "RAWHIGH")):
+                n += 1; reg.offer(nm_, m & ~np.isnan(x), f"raw quartile {nm_}", [c], "raw quartiles", key=(c, side))
+        return n
+    T.append(("raw-unit quartiles", raw_quartiles))
+
+    for method, pars in (("hdbscan", (10, 15, 20)), ("spectral", (2, 3, 4, 5, 6))):
+        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "MIX", "TIERS", "MATCHUPS", "LINES", "AVAILABILITY"):
+            if fname in fam:
+                T.append((f"{method} on {fname}", clusters(method, fname, pars)))
+
+    def typicality():
+        """typical vs unusual boards: isolation-forest score and the number of close analogs in the OTHER season"""
+        from sklearn.ensemble import IsolationForest
+        n = 0
+        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL"):
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            iso = IsolationForest(random_state=7, n_estimators=300).fit(Xf[ok & (seas == HIST[0])])
+            sc = np.full(len(seas), np.nan); sc[ok] = iso.score_samples(Xf[ok])
+            q1, q2 = np.nanpercentile(sc[reg.hist], [33.3, 66.7])
+            for nm_, m in (("unusual", sc <= q1), ("typical", sc >= q2)):
+                n += 1; reg.offer(f"{fname} board {nm_}", m & ~np.isnan(sc), f"{fname} isolation-forest {nm_}", [], "typicality",
+                                  key=(f"iso-{fname}", nm_))
+            dens = np.full(len(seas), np.nan)
+            for i in np.where(ok)[0]:
+                other = ok & (seas != seas[i]) & reg.hist
+                dist = np.sqrt(((Xf[other] - Xf[i]) ** 2).mean(axis=1))
+                dens[i] = np.sum(dist <= 0.22)
+            q1, q2 = np.nanpercentile(dens[reg.hist], [33.3, 66.7])
+            for nm_, m in (("rare (few analogs)", dens <= q1), ("common (many analogs)", dens >= q2)):
+                n += 1; reg.offer(f"{fname} board {nm_}", m & ~np.isnan(dens), f"{fname} analog density {nm_}", [], "typicality",
+                                  key=(f"dens-{fname}", nm_))
+        return n
+    T.append(("typical vs unusual boards", typicality))
+
+    # ---------------- batch 3 (online research: Wasserstein k-means of distributions; regime switching; change points) ----------------
+    def wasserstein(key):
+        """cluster slates by the WHOLE distribution of a leg quantity (1-D Wasserstein-2 = L2 between quantile functions)"""
+        def fn():
+            n = 0
+            Q = np.array([DIST[k][key] if DIST.get(k, {}).get(key) is not None else np.full(19, np.nan) for k in reg.order])
+            ok = ~np.isnan(Q).any(axis=1)
+            for k in (2, 3, 4, 5, 6):
+                labs = {}
+                for fit in HIST:
+                    mf = ok & (seas == fit)
+                    if mf.sum() < 3 * k:
+                        continue
+                    km = KMeans(n_clusters=k, n_init=20, random_state=7).fit(Q[mf])
+                    lab = np.full(len(seas), -1); lab[ok] = km.predict(Q[ok])
+                    labs[fit] = (lab, km.cluster_centers_)
+                if len(labs) < 2:
+                    continue
+                (la, ca), (lb, cb) = labs[HIST[0]], labs[HIST[1]]
+                for c in range(k):
+                    ma = la == c
+                    jb = max(np.sum(ma & (lb == c2)) / max(np.sum(ma | (lb == c2)), 1) for c2 in range(k))
+                    n += 1
+                    if jb < 0.5:
+                        continue
+                    qs = ca[c]
+                    reg.offer(f"wasserstein-{key}-k{k}-c{c}", ma, f"slates whose {key} distribution looks alike (Wasserstein k-means k {k}, J "
+                              f"{jb:.2f}): p10 {qs[1]:.3f} median {qs[9]:.3f} p90 {qs[17]:.3f}", [], f"wasserstein {key}")
+            return n
+        return fn
+    for key in ("std_hp", "gob_hp", "gob_factor", "all_hp"):
+        T.append((f"wasserstein k-means on {key}", wasserstein(key)))
+
+    def hmm_regimes():
+        """hidden regimes over consecutive slates: Gaussian HMM on the first 3 PCA axes of each family (2-4 states)"""
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "hmmlearn"], check=False)
+        try:
+            from hmmlearn.hmm import GaussianHMM
+        except Exception:
+            log("hmmlearn unavailable - HMM pass skipped")
+            return 0
+        n = 0
+        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL"):
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            pca = PCA(n_components=3).fit(Xf[ok & (seas == HIST[0])])
+            for k in (2, 3, 4):
+                labs = {}
+                for fit in HIST:
+                    mf = ok & (seas == fit)
+                    m = GaussianHMM(n_components=k, covariance_type="diag", n_iter=200, random_state=7).fit(pca.transform(Xf[mf]))
+                    lab = np.full(len(seas), -1)
+                    for s_ in HIST:
+                        ms = ok & (seas == s_)
+                        lab[ms] = m.predict(pca.transform(Xf[ms]))
+                    labs[fit] = lab
+                la, lb = labs[HIST[0]], labs[HIST[1]]
+                # null: the same HMM on slates in shuffled ORDER (no persistence) - a regime must be re-found better than that
+                rng = np.random.default_rng(13)
+                nullj = []
+                for _ in range(6):
+                    lab_n = {}
+                    for fit in HIST:
+                        mf = ok & (seas == fit)
+                        Zs = pca.transform(Xf[mf])[rng.permutation(int(mf.sum()))]
+                        m = GaussianHMM(n_components=k, covariance_type="diag", n_iter=200, random_state=7).fit(Zs)
+                        lab = np.full(len(seas), -1)
+                        for s_ in HIST:
+                            ms = ok & (seas == s_)
+                            lab[ms] = m.predict(pca.transform(Xf[ms]))
+                        lab_n[fit] = lab
+                    nullj += [max(np.sum((lab_n[HIST[0]] == c) & (lab_n[HIST[1]] == c2)) / max(np.sum((lab_n[HIST[0]] == c) | (lab_n[HIST[1]] == c2)), 1)
+                                  for c2 in range(k)) for c in range(k)]
+                thr = max(0.5, float(np.max(nullj)))
+                for c in range(k):
+                    ma = la == c
+                    jb = max(np.sum(ma & (lb == c2)) / max(np.sum(ma | (lb == c2)), 1) for c2 in range(k))
+                    n += 1
+                    if jb <= thr:
+                        continue
+                    mean_p = np.nanmean(Xf[ma], axis=0)
+                    top = sorted(zip(fam[fname], mean_p), key=lambda x: -abs(x[1] - 0.5))[:4]
+                    reg.offer(f"hmm-{fname}-k{k}-s{c}", ma, f"hidden regime (HMM over consecutive slates, {fname}, {k} states, J {jb:.2f}): "
+                              + ", ".join(f"{a} {b:.2f}" for a, b in top), [a for a, _ in top], f"hmm {fname}")
+        return n
+    T.append(("hidden regimes (HMM)", hmm_regimes))
+
+    def change_points():
+        """change-point segments of each family's first PCA axis (PELT); a segment profile = segments above / below the mean"""
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "ruptures"], check=False)
+        try:
+            import ruptures as rpt
+        except Exception:
+            log("ruptures unavailable - change-point pass skipped")
+            return 0
+        n = 0
+        for fname in ("ALL", "BOARD", "EXTERNAL", "INTERNAL"):
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            pca = PCA(n_components=1).fit(Xf[ok & (seas == HIST[0])])
+            seg_val = np.full(len(seas), np.nan)
+            for s_ in sorted(set(seas)):
+                idx = np.where(ok & (seas == s_))[0]
+                if len(idx) < 20:
+                    continue
+                z = pca.transform(Xf[idx])[:, 0]
+                for pen in (3.0,):
+                    bk = rpt.Pelt(model="l2", min_size=5).fit(z).predict(pen=pen)
+                    st = 0
+                    for b in bk:
+                        seg_val[idx[st:b]] = z[st:b].mean()
+                        st = b
+            q1, q2 = np.nanpercentile(seg_val[reg.hist], [33.3, 66.7])
+            for nm_, m in (("LOW segment", seg_val <= q1), ("HIGH segment", seg_val >= q2)):
+                n += 1; reg.offer(f"changepoint-{fname}-{nm_}", m & ~np.isnan(seg_val), f"{fname} axis-1 change-point segment {nm_}", [],
+                                  "change points")
+        return n
+    T.append(("change-point segments (PELT)", change_points))
     return T
 
 
