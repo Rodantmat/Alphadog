@@ -1471,6 +1471,143 @@ def techniques(reg, P, cols, fam):
                                   f"co-occurs beyond chance and draws the third beyond chance, both seasons", [a, b, c], "triples")
         return n
     T.append(("3-way co-occurrence (pairs that draw a third)", triples))
+
+    # ---------------- batch 10 (online research, 2026-10-23: sliced Wasserstein k-means of multivariate distributions [Luan & Hamp,
+    # arXiv 2310.01285]; statistical jump models [Nystrup et al. 2020]; path signatures for path-dependent regimes [Horvath, Issa
+    # & Muguruza, arXiv 2306.15835]) ----------------
+    T.append(("sliced Wasserstein k-means on the (final_hp, multiplier) leg cloud",
+              wasserstein("sw_hp_factor", (2, 3, 4, 5, 6, 7, 8))))
+
+    def jump_fit(Z, k, lam, iters=10, seed=7):
+        """statistical jump model: k-means with a penalty lam for every change of state between consecutive slates (Viterbi /
+        coordinate descent as in Nystrup et al.) -> (states, centres)"""
+        km = KMeans(n_clusters=k, n_init=10, random_state=seed).fit(Z)
+        cen = km.cluster_centers_
+        st = km.labels_
+        for _ in range(iters):
+            D = ((Z[:, None, :] - cen[None]) ** 2).sum(axis=2)
+            V = D[0].copy(); bp = np.zeros((len(Z), k), int)
+            for t in range(1, len(Z)):
+                cand = V[:, None] + lam * (1 - np.eye(k))
+                bp[t] = np.argmin(cand, axis=0)
+                V = cand[bp[t], np.arange(k)] + D[t]
+            new = np.zeros(len(Z), int); new[-1] = int(np.argmin(V))
+            for t in range(len(Z) - 1, 0, -1):
+                new[t - 1] = bp[t, new[t]]
+            if np.array_equal(new, st):
+                break
+            st = new
+            cen = np.array([Z[st == c].mean(axis=0) if np.any(st == c) else cen[c] for c in range(k)])
+        return st, cen
+
+    def jump_decode(Z, cen, lam):
+        k = len(cen)
+        D = ((Z[:, None, :] - cen[None]) ** 2).sum(axis=2)
+        V = D[0].copy(); bp = np.zeros((len(Z), k), int)
+        for t in range(1, len(Z)):
+            cand = V[:, None] + lam * (1 - np.eye(k))
+            bp[t] = np.argmin(cand, axis=0)
+            V = cand[bp[t], np.arange(k)] + D[t]
+        st = np.zeros(len(Z), int); st[-1] = int(np.argmin(V))
+        for t in range(len(Z) - 1, 0, -1):
+            st[t - 1] = bp[t, st[t]]
+        return st
+
+    def jump_models():
+        """persistent board regimes: jump model on the first 3 PCA axes of each family (k 2-4, penalty 1x / 3x the median squared
+        distance to the nearest centre); a regime must be re-found by the other season's fit better than the same model fitted
+        on slates in shuffled ORDER (max of 20 shuffles + 0.05)"""
+        n = 0
+        for fname in MAIN:
+            if len(fam.get(fname, [])) < 3:
+                continue
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            if not has_structure(Xf, ok):
+                continue
+            pca = PCA(n_components=3).fit(Xf[ok & (seas == HIST[0])])
+            Zall = np.full((len(seas), 3), np.nan); Zall[ok] = pca.transform(Xf[ok])
+            for k in (2, 3, 4):
+                d0 = np.median(KMeans(n_clusters=k, n_init=10, random_state=7).fit_transform(Zall[ok & (seas == HIST[0])]).min(axis=1) ** 2)
+                for mult in (1.0, 3.0):
+                    lam = mult * d0
+
+                    def fit_all(perm_rng=None):
+                        labs = {}
+                        for fit in HIST:
+                            mf = ok & (seas == fit)
+                            Zf = Zall[mf]
+                            if perm_rng is not None:
+                                Zf = Zf[perm_rng.permutation(len(Zf))]
+                            _, cen = jump_fit(Zf, k, lam)
+                            lab = np.full(len(seas), -1)
+                            for s_ in HIST:
+                                ms = ok & (seas == s_)
+                                lab[ms] = jump_decode(Zall[ms], cen, lam)
+                            labs[fit] = lab
+                        return labs
+                    labs = fit_all()
+                    rng = np.random.default_rng(17)
+                    nullj = []
+                    for _ in range(20):
+                        ln = fit_all(rng)
+                        nullj += [max(np.sum((ln[HIST[0]] == c) & (ln[HIST[1]] == c2)) / max(np.sum((ln[HIST[0]] == c) | (ln[HIST[1]] == c2)), 1)
+                                      for c2 in range(k)) for c in range(k)]
+                    thr = max(0.5, float(np.max(nullj)))
+                    la, lb = labs[HIST[0]], labs[HIST[1]]
+                    for c in range(k):
+                        ma = la == c
+                        jb = max(np.sum(ma & (lb == c2)) / max(np.sum(ma | (lb == c2)), 1) for c2 in range(k))
+                        n += 1
+                        if jb <= thr + 0.05:
+                            continue        # synthetic check: the max of 6 order-shuffles let a noise regime through
+                        mean_p = np.nanmean(Xf[ma], axis=0)
+                        top = sorted(zip(fam[fname], mean_p), key=lambda x: -abs(x[1] - 0.5))[:4]
+                        reg.offer(f"jump-{fname}-k{k}-x{mult:g}-s{c}", ma, f"persistent regime (jump model, {fname}, {k} states, penalty "
+                                  f"{mult:g}x, J {jb:.2f}, order-shuffled max {thr:.2f}): " + ", ".join(f"{a} {b:.2f}" for a, b in top),
+                                  [a for a, _ in top], f"jump {fname}")
+        return n
+    T.append(("statistical jump models (persistent regimes)", jump_models))
+
+    def signatures(win=5):
+        """path signature (level 2) of each family's 2-D PCA path over the last win slates: the total move on each axis plus the
+        signed Levy area (did axis 1 move before axis 2) and the squared moves - clustered with the derived-view gates"""
+        n = 0
+        for fname in MAIN:
+            fc = fam.get(fname, [])
+            if len(fc) < 3:
+                continue
+            Xf = P[:, [ci[c] for c in fc]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            if not has_structure(Xf, ok):
+                continue
+            pca = PCA(n_components=2).fit(Xf[ok & (seas == HIST[0])])
+            Z = np.full((len(seas), 2), np.nan); Z[ok] = pca.transform(Xf[ok])
+            S = np.full((len(seas), 5), np.nan)
+            for i in range(win - 1, len(seas)):
+                if seas[i] != seas[i - win + 1]:
+                    continue
+                path = Z[i - win + 1: i + 1]
+                if np.isnan(path).any():
+                    continue
+                dx = np.diff(path, axis=0)
+                inc = path[-1] - path[0]
+                s12 = sum(((path[t] - path[0])[0]) * dx[t, 1] for t in range(len(dx)))
+                s21 = sum(((path[t] - path[0])[1]) * dx[t, 0] for t in range(len(dx)))
+                S[i] = [inc[0], inc[1], 0.5 * (s12 - s21), (dx[:, 0] ** 2).sum(), (dx[:, 1] ** 2).sum()]
+            okt = ~np.isnan(S).any(axis=1)
+            zr = np.full_like(S, np.nan)
+            for j in range(S.shape[1]):
+                v = S[okt, j]
+                zr[okt, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
+            key = f"SIG{win}-{fname}"
+            fam[key] = [f"{key}-{j}" for j in range(S.shape[1])]
+            for j in range(S.shape[1]):
+                ci[f"{key}-{j}"] = P.shape[1] + j
+            n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5, 6))
+        return n
+    for win in (3, 5, 10):
+        T.append((f"path signatures ({win} slates)", (lambda w: (lambda: signatures(w)))(win)))
     return T
 
 
