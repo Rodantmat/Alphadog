@@ -784,10 +784,10 @@ def honest_checks(conn, cfg, d0):
     # OPENING NIGHT (2026-10-20): the 30 days before the first slate of a season hold no anchored graded legs (offseason). Then the
     # window ends at the LAST date with anchored legs that have box scores (the latest graded stretch), stated in the detail.
     d_end = d0
-    have = conn.execute("""SELECT count(*) FROM nba_score.board_true_hp th WHERE th.game_date BETWEEN %s::date - 30 AND %s::date - 1
+    have = conn.execute("""SELECT count(*) FROM nba_score.final_hp th WHERE th.game_date BETWEEN %s::date - 30 AND %s::date - 1
                            AND EXISTS (SELECT 1 FROM nba_stats.player_game_log g WHERE g.game_date = th.game_date)""", (d0, d0)).fetchone()[0]
     if not have:
-        last = conn.execute("""SELECT max(th.game_date) FROM nba_score.board_true_hp th WHERE th.game_date < %s
+        last = conn.execute("""SELECT max(th.game_date) FROM nba_score.final_hp th WHERE th.game_date < %s
                                AND EXISTS (SELECT 1 FROM nba_stats.player_game_log g WHERE g.game_date = th.game_date)""", (d0,)).fetchone()[0]
         if last:
             d_end = last + __import__("datetime").timedelta(days=1)
