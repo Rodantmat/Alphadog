@@ -49,11 +49,14 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BC_DATES: ${{ github.event.inputs.fit_dates }}
+          BC_STD_RANGE: ${{ github.event.inputs.std_range }}
           BC_WRITE: "1"
         run: |
           set -euo pipefail
           [[ "$BC_DATES" =~ ^[0-9:,-]*$ ]] || { echo "refused dates: $BC_DATES"; exit 1; }
-          if [ -z "$BC_DATES" ]; then echo "no fit requested"; exit 0; fi
+          [[ "$BC_STD_RANGE" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2}:[0-9]{4}-[0-9]{2}-[0-9]{2})?$ ]] || { echo "refused std_range"; exit 1; }
+          if [ -z "$BC_DATES" ] && [ -z "$BC_STD_RANGE" ]; then echo "no fit / standard lines requested"; exit 0; fi
+          if [ -z "$BC_DATES" ]; then export BC_DATES="1900-01-01"; fi
           python -u nba/final_hp_board_cal.py
 
   price:
