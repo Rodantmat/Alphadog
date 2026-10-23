@@ -757,6 +757,12 @@ def main():
     put("mem_hp_decile", [dec[i] for i in df.index])
     log(f"memory done; {len(feats)} factors")
 
+    analyze(df, feats)
+
+
+def analyze(df, feats):
+    """the certified leg-level test (synthetic check 2026-10-23): day-clustered cells vs the side x line type baseline with BH q in each
+    season, and the cross-fit over a baseline shift with a day-clustered z; then the holding factors by prop group. Shared by round 2."""
     # ---------------- ANALYSIS ----------------
     y = df.hit.values.astype(float)
     p0 = df.p.values.astype(float)
