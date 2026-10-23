@@ -224,7 +224,7 @@ def main():
     best = [x for x in summary if x[1] == 2 and x[2] == 2 and x[6] and x[5] == 4 and not x[0].startswith("alone")]
     best.sort(key=lambda x: -min(x[3]["lb5"], x[4]["lb5"]))
     for name, n, lcap, a, b, npos, _ in best[:30]:
-        print(f"  {name[:80]:<80} ROI {100 * a['roi']:+6.1f} / {100 * b['roi']:+6.1f}% | lb5 {100 * a['lb5']:+6.1f} / {100 * b['lb5']:+6.1f} "
+        print(f"  {name[:95]:<95} ROI {100 * a['roi']:+6.1f} / {100 * b['roi']:+6.1f}% | lb5 {100 * a['lb5']:+6.1f} / {100 * b['lb5']:+6.1f} "
               f"| net {a['net']:+6.1f} / {b['net']:+6.1f} | dd {a['dd']:5.1f} / {b['dd']:5.1f}")
     print(f"\ndone in {time.time() - t0:.0f}s")
 
