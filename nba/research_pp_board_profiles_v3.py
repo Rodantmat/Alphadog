@@ -231,6 +231,9 @@ def main():
         print(f"\n  cut points from {disc}")
         for f in fnames:
             vals = [feat[(disc, d)][f] for d in by_season[disc] if feat[(disc, d)][f] == feat[(disc, d)][f]]
+            if len(vals) < 30:
+                print(f"    {f:<14} too few values ({len(vals)}) - skipped")
+                continue
             q1, q2 = np.percentile(vals, [33.3, 66.7])
             if q1 == q2:
                 continue
