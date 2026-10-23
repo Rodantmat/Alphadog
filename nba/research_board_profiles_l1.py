@@ -1026,12 +1026,15 @@ def techniques(reg, P, cols, fam):
             pca = PCA(n_components=min(3, len(fc)))
             Xf = P[:, [ci[c] for c in fc]]
             ok = ~np.isnan(Xf).any(axis=1)
+            if not has_structure(Xf, ok):        # trajectories of a family without co-movement find only noise (synthetic check)
+                log(f"  {fname}: no co-movement beyond noise - trajectories skipped")
+                continue
             pca.fit(Xf[ok & (seas == HIST[0])])
             Z = np.full((len(seas), pca.n_components_), np.nan); Z[ok] = pca.transform(Xf[ok])
-            T3 = np.full((len(seas), 3 * pca.n_components_), np.nan)
-            for i in range(2, len(seas)):
-                if seas[i] == seas[i - 2]:
-                    T3[i] = np.concatenate([Z[i], Z[i - 1], Z[i - 2]])
+            T3 = np.full((len(seas), win * pca.n_components_), np.nan)
+            for i in range(win - 1, len(seas)):
+                if seas[i] == seas[i - win + 1]:
+                    T3[i] = np.concatenate([Z[i - w] for w in range(win)])
             zr = np.full_like(T3, np.nan)
             okt = ~np.isnan(T3).any(axis=1)
             for j in range(T3.shape[1]):
