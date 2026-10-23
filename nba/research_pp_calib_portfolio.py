@@ -161,7 +161,7 @@ def main():
         hv = a["halves"] + b["halves"]
         npos = sum(1 for h in hv if h > 0)
         holds = a["roi"] > 0 and b["roi"] > 0 and a["lb5"] > 0 and b["lb5"] > 0
-        print(f"  {name[:70]:<70} N{n} L{lcap} | 24-25 {f(a)} | 25-26 {f(b)} | halves "
+        print(f"  {name[:95]:<95} N{n} L{lcap} | 24-25 {f(a)} | 25-26 {f(b)} | halves "
               f"{' '.join(f'{100 * h:+.0f}' for h in hv)} ({npos}/4){' HOLDS' if holds else ''}", flush=True)
         summary.append((name, n, lcap, a, b, npos, holds))
 
