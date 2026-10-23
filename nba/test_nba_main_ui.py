@@ -774,7 +774,10 @@ def honest_checks(conn, cfg, d0):
                                           ON f.game_date = b0.game_date AND f.player_id::text = b0.player_id::text AND f.prop = b0.prop
                                          AND f.line = b0.line AND f.side = b0.side
                                         WHERE b0.game_date = %s AND b0.app = ANY(%s) AND b0.final_hp IS NOT NULL""", (d0, cfg["apps"])).fetchone()
-    n_board = conn.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s AND cal_chain = 'board'", (d0,)).fetchone()[0]
+    # the switch went on 2026-10-23 00:52 PT (07:52 UTC); a slate P3 scored before it keeps P3's as-of number on its board even though
+    # final_hp itself was re-priced afterwards (history rebuild) - only slates scored after the switch must match
+    n_board = conn.execute("""SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s AND built_at >= '2026-10-23 07:52:00+00'""",
+                           (d0,)).fetchone()[0]
     if n_board:
         check("C47 one number: every board leg final_hp holds shows final_hp's own number", n_fh and n_eq / n_fh >= 0.99,
               f"{n_eq:,} of {n_fh:,} legs equal ({n_all:,} board legs; {d0})")
