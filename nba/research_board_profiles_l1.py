@@ -471,6 +471,8 @@ class Registry:
                 np.fill_diagonal(ji, 0); np.fill_diagonal(ju, 0)
                 if ji.max() >= 0.5 or ju.max() >= 0.5:
                     return False
+            if ni >= 10 and self.explained(mask):
+                return False
         if len(self.items) >= len(self.M):
             self.M = np.vstack([self.M, np.zeros_like(self.M)])
             self.Msum = np.concatenate([self.Msum, np.zeros_like(self.Msum)])
