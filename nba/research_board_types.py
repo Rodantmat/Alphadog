@@ -762,7 +762,7 @@ def main():
     p0 = df.p.values.astype(float)
     res = y - p0
     seas = df.season.values
-    side_lt = (df.side.str[0] + df.lt).values
+    side_lt = (df["side"].str[0] + df["lt"]).values   # df.lt is DataFrame.lt (less-than), not the column
     from scipy.stats import norm as N
     # DAY-CLUSTERED (owner 10:30 PT: "the profiles need to be identified and correlate in different days"): a slate's legs move together,
     # so z is cluster-robust by slate (each day one cluster), and every cell reports the days it appears on and the share of those
