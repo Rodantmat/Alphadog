@@ -535,6 +535,30 @@ def main():
             d["cal_shift"] = [shift_for(prop, ph, bd, sd, gd)
                               for ph, bd, sd, gd in zip(d["phase"], d["band"], d["side"], d["game_date"])]
             d["final_hp"] = sigmoid(logit(d["baseline_hp"].values) + d["cal_shift"].values)
+            d["cal_chain"] = "asof"
+            if BOARD_CENTRE and prop in BC.PROPS:
+                # the day's ladder per player = this prop's board rungs read above (the same board-scoped rungs history keeps)
+                rungs = defaultdict(list)
+                for gd, pid, ln, pm in zip(h["game_date"], h["player_id"].astype(str), h["line"].astype(float), h["p_more"].astype(float)):
+                    if pm == pm:
+                        rungs[(gd, pid)].append((ln, pm))
+                lad_cache, fhp, chain = {}, d["final_hp"].values.copy(), np.array(["asof"] * len(d), dtype=object)
+                n_bc = 0
+                for i, (gd, pid, ln, sd) in enumerate(zip(d["game_date"], d["player_id"].astype(str), d["line"].astype(float), d["side"])):
+                    asof_d, prm = BC_SETS.at(gd)
+                    std = STD.get((gd, pid, prop))
+                    if prm is None or std is None or not rungs.get((gd, pid)):
+                        continue
+                    key = (gd, pid)
+                    if key not in lad_cache:
+                        lad_cache[key] = BC.Ladder(rungs[key], prm["slope_c"].get(prop))
+                    p, _lt, _w = BC.apply(prm, prop, sd, lad_cache[key], ln, std[0])
+                    if p is not None:
+                        fhp[i] = p; chain[i] = "board"; n_bc += 1
+                d["final_hp"] = fhp
+                d["cal_chain"] = chain
+                d["cal_shift"] = logit(d["final_hp"].values) - logit(d["baseline_hp"].values)
+                print(f"    {prop}: board-centred {n_bc:,} of {len(d):,} legs (the rest: no standard line / no tunable set)", flush=True)
 
             # 6) CONFIDENCE - how much to trust THIS leg's number. Three independent pillars, each
             # measured, never inflating the probability:
