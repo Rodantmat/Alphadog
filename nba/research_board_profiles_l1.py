@@ -57,6 +57,8 @@ each prop group's own board quality (standard legs >= 0.62, goblins >= 0.75, dem
 Round 5 (run 40024700150): 405 profiles (305 elected), trailing clean 0 (per-group final_hp distributions found 10). Batch 7 -
 variations only, no new features: full-covariance and Bayesian GMM, average / complete linkage, BIRCH, OPTICS, mean shift on every
 family; Wasserstein k-means at k 7-8 on every distribution; 6 / 8-slate trajectories; polynomial / cosine / sigmoid kernel embeddings.
+Round 6 (run 40025729814): 423 profiles (316 elected), trailing clean 0 - new views kept re-slicing the same slates; the NEW test now
+also rejects a candidate explained by two known profiles (their intersection or union).
 PASSES: the techniques below run in order, each one a pass; a pass is CLEAN when it registers no new profile. The run reports the
 registry (name, definition, ranges in raw units, days / months / episodes per season, 2026-27 slates in it) and the trailing run of
 clean passes. Layer 2 (strategies per profile) waits for 10 consecutive clean passes.
