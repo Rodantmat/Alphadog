@@ -134,9 +134,11 @@ def apply(prm, prop, side, lad, line, L0):
 class TunableSets:
     """every stored set; .at(d) = the latest set published on or before d (never a future one)"""
 
-    def __init__(self, conn):
-        rows = conn.execute("SELECT as_of_date, params FROM nba_score.final_hp_board_cal ORDER BY as_of_date").fetchall() \
-            if conn.execute("SELECT to_regclass('nba_score.final_hp_board_cal')").fetchone()[0] else []
+    def __init__(self, conn, table="nba_score.final_hp_board_cal"):
+        if table not in ("nba_score.final_hp_board_cal", "nba_score.final_hp_board_cal_hold"):
+            raise ValueError(f"unknown tunable table {table!r}")
+        rows = conn.execute(f"SELECT as_of_date, params FROM {table} ORDER BY as_of_date").fetchall() \
+            if conn.execute("SELECT to_regclass(%s)", (table,)).fetchone()[0] else []
         self.dates = [r[0] for r in rows]
         self.sets = [r[1] if isinstance(r[1], dict) else json.loads(r[1]) for r in rows]
 
