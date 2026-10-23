@@ -390,6 +390,8 @@ class Registry:
     def ranges(self, mask, feats):
         out = []
         for c in feats[:4]:
+            if c not in self.cols:          # derived axes (kernel PCA, trajectories) have no raw range
+                continue
             j = self.cols.index(c)
             v = self.X[mask & self.hist, j]
             v = v[~np.isnan(v)]
