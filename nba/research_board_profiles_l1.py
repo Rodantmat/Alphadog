@@ -443,11 +443,27 @@ class Registry:
             return False
         h = (mask & self.hist).astype(np.float32)
         if self.items:
-            M = self.M[: len(self.items)]                     # registered profiles' historical masks (vectorised Jaccard)
+            ni = len(self.items)
+            M = self.M[: ni]                                  # registered profiles' historical masks (vectorised Jaccard)
             inter = M @ h
-            union = self.Msum[: len(self.items)] + h.sum() - inter
+            hs = h.sum()
+            union = self.Msum[: ni] + hs - inter
             if np.any(inter / np.maximum(union, 1) >= 0.5):
                 return False
+            if ni >= 2:
+                # EXPLAINED BY KNOWN PROFILES (round 6, 2026-10-23): a candidate that is (nearly) the intersection or the union of
+                # two registered profiles is a combination of known profiles, not a new commonality - Jaccard >= 0.5 with any
+                # A and B / A or B rejects it. Without this, every new view kept re-slicing the same slates (423 'profiles' and no
+                # clean pass).
+                AB = (M @ M.T)                                   # |A and B|
+                B3 = (M * h) @ M.T                               # |A and B and m|
+                ji = B3 / np.maximum(hs + AB - B3, 1)
+                ai = inter[:, None] + inter[None, :] - B3        # |m and (A or B)|
+                uab = self.Msum[: ni][:, None] + self.Msum[: ni][None, :] - AB
+                ju = ai / np.maximum(hs + uab - ai, 1)
+                np.fill_diagonal(ji, 0); np.fill_diagonal(ju, 0)
+                if ji.max() >= 0.5 or ju.max() >= 0.5:
+                    return False
         if len(self.items) >= len(self.M):
             self.M = np.vstack([self.M, np.zeros_like(self.M)])
             self.Msum = np.concatenate([self.Msum, np.zeros_like(self.Msum)])
