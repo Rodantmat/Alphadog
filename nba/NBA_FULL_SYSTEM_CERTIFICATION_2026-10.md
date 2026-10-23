@@ -2999,3 +2999,54 @@ should be doing. Mining everything that they should mine, consuming everything t
     - OPEN: alternate Less legs (new on the live board) have no graded history, so their board_hp is L1 only; live graded legs are
       not yet in the training set (tunables carry the 2026-10-22 set forward until they are). NOTHING READS board_hp: final_hp
       stays the engine's number, slips untouched ("leave the slips as is for now").
+23. ✅ **ONE NUMBER: final_hp IS THE BOARD HIT PROBABILITY; NEW 2-SLIP PORTFOLIO ON IT; LIVE FROM THE 10-23 SLATE** (owner 21:01 PT:
+    "the final hit probability and board hit probability should be the same thing ... board scoped, app board scoped"; 21:07 PT:
+    "by tomorrow, for the next slate, we should have the new strategies already"). Supersedes item 22's parallel board_hp.
+    - THE CHAIN MOVED INTO final_hp. `nba/final_hp_board_cal.py` (fitter + per-leg arithmetic; chain B of research_final_chain_asof.py
+      run 6b73177f: L1 board-centred ladder + L2 per prop x line type x side shrunk to the line type x side parent, n / (n + 400); line
+      type derived from the line vs the standard line - 71.5% equal to PrizePicks' own label, same performance). `build_final_hp.py`
+      applies it to the 12 calibrated props (column final_hp.cal_chain 'board' / 'asof'); every other prop keeps the as-of shift.
+      Tunables nba_score.final_hp_board_cal: 427 sets 2024-11-09 .. 2026-10-23, each trained only on earlier graded PrizePicks board
+      legs. Switch classification_config['final_hp_board_centre'].enabled = TRUE since 2026-10-23 00:52 PT (FE_BOARD_CENTRE=1/0
+      overrides; false = rollback to the as-of chain).
+    - HISTORY: both seasons re-priced by `nba/rebuild_final_hp_board.py` (workflow nba-final-hp-fast.yml; parity with the full build
+      max |diff| 5e-6), 2024-25 89% / 2025-26 98.5% of rows on the board chain; 2026-27 (10-20 .. 10-22) run 39919664544. The P5
+      certification chain re-run in full on it without live side effects (nba-recert-chain.yml run 39913913996: tier map, selection
+      table, certifier, window-only slip engines, regrades, validation).
+    - EVERY APP BOARD SHOWS IT. `score_board_legs.py` step 4b (`final_hp_board_cal.board_legs`): a board leg takes final_hp's own
+      stored row when final_hp holds it, else the same chain on the day's ladder (12 props), else the as-of number. Audit
+      audit_one_number.py runs 39916804962 / 39917858707: nearly every leg of every app is final_hp's own row; the chain on the
+      ladder reproduces final_hp's board rows (mean |diff| 0.00005 / 0.00025). The residual gaps were the books standard line:
+      a book listing a LADDER in its main market (Fanatics stocks, BetRivers points) made DISTINCT ON pick an arbitrary rung (L0 0.5
+      vs 3.5 on one leg between two reads) - fixed: such a book is left out of the median (deterministic). Main UI v1.4.39 reads
+      board_scored's own final_hp / score (board_true_hp kept as reference fields only; "model HP" retired); UI tests C3 / C47 / C48
+      on the one number. P3's parallel board-hp step retired.
+    - THE NEW PORTFOLIO (research first: Stokastic / Action Network / OddsShopper break-even practice and a Gemini consult, recorded
+      in research_pp_calibrated_slips.py). Calibrated-pool strategies built by ONE shared builder `nba/calib_slips.py` (the research
+      and the live engine call the same function): the day's PrizePicks board legs of the 12 calibrated props, ranked on final_hp
+      (or final_hp x factor), a final_hp floor, distinct players, <= 1-2 legs of one game, >= 2 teams. Grid run 39914672627: 2,160
+      strategies, every structure 2-6 x Flex / Power, staged sample -> season -> chosen on one / tested on the other; 45 hold in both
+      seasons. Portfolio run 39918732552 (the live engine's round robin, n 2, leg cap 2, grader v3, final 7 days out):
+        PRODUCTION (P_wthrees 4F, P_wassists 4F, P_wrebounds 4F, P_wstocks 4F, P_points 3P, P_wrebounds 3P) on the new final_hp:
+          +55.1 / +65.8% ROI, lb5 +22.5 / +37.5, net +170.7 / +202.7 units, max dd 26.5 / 12.5, halves +38 +73 +58 +75.
+        NEW: P_wrebounds_4flex + P_cal_r70_3power (standard lines, final_hp >= 0.70, <= 2 legs a game, 3-pick Power):
+          +52.5 / +75.5% ROI, lb5 +24.9 / +47.2, net +162.8 / +232.5, max dd 20.0 / 12.0, halves +44 +62 +84 +66.
+      Chosen by the weaker season's lb5 (best of every N2 L2 portfolio), lower drawdown, more units over the two seasons; inside the
+      owner's scope (2 / 3-pick Power, 4-pick Flex). Falling back to the other production units on days the 3-Power has no slip was
+      WORSE (+39.8 / +71.8%) than taking the rebounds 4-Flex's second slip - so the order holds the two units only. In-sample note:
+      the calibrated unit was chosen on both seasons; the live record is the first out-of-sample test.
+      pp_portfolio.order = [P_wrebounds_4flex, P_cal_r70_3power] (previous_order kept in the config), n 2, leg cap 2, backups 4,
+      PrizePicks' quote gate unchanged. Unit names carry the P_ prefix (apply_quote_gate.PORTFOLIO_PREFIX).
+    - LIVE = RESEARCH (audit_calib_live_parity.py runs 39919223605 / 39919637966): on history slates the live loader + pick()'s pool +
+      calib_slips build the same slips as the research, 8 of 8. The first run found the live board also carries props whose final_hp
+      never went through the chain (10-22's top leg was an fgm Under at 0.883) - calib_slips now draws from the 12 calibrated props
+      only, as the research did.
+    - BOARD PROFILES (owner 17:49 PT): slate size (S <= 4 / M 5-8 / L >= 9 games) x calibrated depth (standard legs >= 0.65: thin /
+      deep). A per-profile unit switch chosen on one season LOST on the other (N2: +46.9% vs +65.8% production; +52.1% vs +55.1%):
+      no profile switch goes live. Small slates (S) are where most units lose (calibrated 3-Power S -100% on 3-7 days) - recorded
+      in NBA_BOARD_LEARNINGS section 5 for the next pass.
+    - OPEN: tunables are fitted on 2024-25 / 2025-26 graded legs only (2026-27 legs join when a refit adds them; none scheduled
+      yet); the R tails are still overconfident on the low-volume props (standard legs >= 0.70: turnovers hit 0.644, steals 0.678,
+      stocks 0.596, blocks 0.611 in 2025-26) - the strategy results are measured on real hits, the number itself needs an L3 cell
+      for those props; whole-number rows of final_hp_derived keep the as-of chain; Underdog / other apps' paper strategies were
+      not re-researched on the new number.
