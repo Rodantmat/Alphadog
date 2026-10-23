@@ -815,13 +815,13 @@ def techniques(reg, P, cols, fam):
     T.append(("typical vs unusual boards", typicality))
 
     # ---------------- batch 3 (online research: Wasserstein k-means of distributions; regime switching; change points) ----------------
-    def wasserstein(key):
+    def wasserstein(key, ks=(2, 3, 4, 5, 6)):
         """cluster slates by the WHOLE distribution of a leg quantity (1-D Wasserstein-2 = L2 between quantile functions)"""
         def fn():
             n = 0
             Q = np.array([DIST[k][key] if DIST.get(k, {}).get(key) is not None else np.full(19, np.nan) for k in reg.order])
             ok = ~np.isnan(Q).any(axis=1)
-            for k in (2, 3, 4, 5, 6):
+            for k in ks:
                 labs = {}
                 for fit in HIST:
                     mf = ok & (seas == fit)
