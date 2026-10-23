@@ -988,6 +988,9 @@ def techniques(reg, P, cols, fam):
                 continue
             Xf = P[:, [ci[c] for c in fc]]
             ok = ~np.isnan(Xf).any(axis=1)
+            if not has_structure(Xf, ok):        # a view of a family without co-movement finds only noise (synthetic check)
+                log(f"  {fname}: no co-movement beyond noise - kernel PCA skipped")
+                continue
             kp = KernelPCA(n_components=4, kernel="rbf", random_state=7).fit(Xf[ok & (seas == HIST[0])])
             Z = np.full((len(seas), 4), np.nan); Z[ok] = kp.transform(Xf[ok])
             zr = np.full_like(Z, np.nan)
