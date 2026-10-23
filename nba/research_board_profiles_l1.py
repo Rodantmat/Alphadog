@@ -894,8 +894,8 @@ def techniques(reg, P, cols, fam):
                 if len(idx) < 20:
                     continue
                 z = pca.transform(Xf[idx])[:, 0]
-                for pen in (3.0,):
-                    bk = rpt.Pelt(model="l2", min_size=5).fit(z).predict(pen=pen)
+                for pen_ in (pen,):
+                    bk = rpt.Pelt(model="l2", min_size=5).fit(z).predict(pen=pen_)
                     st = 0
                     for b in bk:
                         seg_val[idx[st:b]] = z[st:b].mean()
