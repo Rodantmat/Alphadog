@@ -1,0 +1,84 @@
+name: NBA final_hp rebuild (board-centred calibration; fit + parallel by prop)
+
+# 2026-10-22 night (owner 21:01 / 21:07 PT: one final hit probability, board scoped; new strategies on it by the next slate).
+# Job 1 (optional): nba/final_hp_board_cal.py fits the board-centred tunables as of every slate date in FIT_DATES
+# (nba_score.final_hp_board_cal, one set per date, trained only on earlier graded board legs).
+# Job 2: build_final_hp.py for one season, the 12 calibrated props in parallel groups (each (season, prop) slice is replaced as one
+# set - groups never touch each other; the board-key table is a session TEMP table), FE_BOARD_CENTRE forced by input.
+# 3 at a time (nine concurrent copies of the board-key table saturated the database IO, 2026-10-09).
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "2024-25 or 2025-26 (blank = fit only)"
+        default: ""
+        required: false
+      board_centre:
+        description: "1 = board-centred chain, 0 = as-of chain (rollback)"
+        default: "1"
+        required: true
+      fit_dates:
+        description: "FROM:TO to (re)fit tunables first (blank = no fit)"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-final-hp-rebuild-${{ github.event.inputs.season }}
+  cancel-in-progress: false
+
+jobs:
+  fit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy
+      - name: Fit the board-centred tunables (skipped when fit_dates is blank)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BC_DATES: ${{ github.event.inputs.fit_dates }}
+          BC_WRITE: "1"
+        run: |
+          set -euo pipefail
+          [[ "$BC_DATES" =~ ^[0-9:,-]*$ ]] || { echo "refused dates: $BC_DATES"; exit 1; }
+          if [ -z "$BC_DATES" ]; then echo "no fit requested"; exit 0; fi
+          python -u nba/final_hp_board_cal.py
+
+  price:
+    needs: fit
+    if: ${{ github.event.inputs.season != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        props: ["points", "rebounds", "assists,threes_made", "pra", "pts_reb", "pts_ast", "reb_ast", "steals,blocks,turnovers,stocks"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy
+      - name: final_hp ${{ github.event.inputs.season }} (${{ matrix.props }})
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_SEASONS: ${{ github.event.inputs.season }}
+          FE_PROPS: ${{ matrix.props }}
+          FE_WRITE: "1"
+          FE_BOARD_CENTRE: ${{ github.event.inputs.board_centre }}
+        run: |
+          set -euo pipefail
+          [[ "$FE_SEASONS" =~ ^20[0-9]{2}-[0-9]{2}$ ]] || { echo "refused season: $FE_SEASONS"; exit 1; }
+          [[ "$FE_BOARD_CENTRE" =~ ^[01]$ ]] || { echo "refused board_centre: $FE_BOARD_CENTRE"; exit 1; }
+          python -u nba/build_final_hp.py
