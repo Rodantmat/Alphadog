@@ -356,6 +356,14 @@ def rules(prof, stake, seas, analog_pred):
                     past = past[~np.isnan(past)][-N:]
                     g[j] = len(past) >= N and past.sum() > 0
                 gates[f"TRAIL{N}>0"] = g
+            # exploratory, added after run 40014229964 part 2 (calib R 0.60 2-Power: trailing-15 profit rank-correlates -0.28 / -0.25
+            # with the next slate, p 0.01 both seasons): the contrarian gate - play only after a losing trailing 15
+            g = np.zeros(len(idx), bool)
+            for j in range(len(idx)):
+                past = per_stake[:j]
+                past = past[~np.isnan(past)][-15:]
+                g[j] = len(past) >= 15 and past.sum() <= 0
+            gates["TRAIL15<=0 (expl.)"] = g
             ap = analog_pred.get(nm)
             if ap is not None:
                 a = ap[idx]
