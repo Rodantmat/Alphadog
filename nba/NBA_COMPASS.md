@@ -368,6 +368,16 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    ('placed_backup'); `nba/apply_quote_gate.py` runs after P3's slip quotes and keeps as 'placed' the first 2 that PrizePicks quoted
    with every leg on its board as built and an all-hit payout >= 0.95 x ours; failures become 'placed_quote_skip'. The Slips
    screen (v1.4.38) hides unquoted, failed and backup slips. Tunables pp_portfolio.quote_min_ratio / backups.
+179. 🔑 **final_hp IS MIS-CENTRED; board_hp IS THE CALIBRATED NUMBER BESIDE IT (2026-10-22 night; ledger DAY THREE 22).** Our
+   projected mean barely adds to PrizePicks' standard line (earned weight w 0.03-0.12 for points / rebounds / assists), so the
+   ladder - centred on our own mean - makes final_hp far too spread on every line type (standard fh 0.80 -> hit 0.58; demons
+   fh >= .58 hit 0.39-0.43). Fixed in layers by `nba/build_board_hp.py`: L1 re-centres each ladder toward PrizePicks' line keeping
+   w of our distance (points / rebounds / assists / threes / combos 0.2-0.3; steals / blocks / turnovers 1.0), L2 spread per line
+   type x side, L3 anchored residual per prop x line type x side. Tunables fitted as of each day (nba_score.board_hp_tunables, one
+   set per date, trained only on earlier graded board legs); scores in nba_score.board_hp (history backfilled 2024-11-13 ..
+   2026-10-22, P3 scores each slate after the pick). Walk-forward 12/12 months; audit run 39890697569: log-loss 0.6219 -> 0.6052,
+   every decile within 1-2 points. NOTHING READS board_hp YET - final_hp stays the engine's number (owner: slips as is). Alternate
+   Less legs have no graded history, so their board_hp is L1 only (uncalibrated). Learnings log: `nba/NBA_BOARD_LEARNINGS.md`.
 
 ---
 
