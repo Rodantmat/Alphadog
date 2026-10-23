@@ -47,6 +47,7 @@ import psycopg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_slip_engine as ENG   # certified rules: CELLS, eligible_legs, build_day_slips, grade, compress, load_corr
+import calib_slips as CS          # 2026-10-23: calibrated-pool portfolio units ('calib:...'), the research's own builder
 
 PT = ZoneInfo('America/Los_Angeles')
 MODE = os.environ.get('LS_MODE', 'pick')
