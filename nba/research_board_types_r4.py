@@ -505,6 +505,10 @@ def main():
     res = residual_series(days, order)
     prof, stake = unit_series(conn, days, order)
     log(f"series: {len(res)} residual, {len(prof)} unit")
+    if os.environ.get("R4_ONLY") == "contra":
+        contra_grid(prof, stake, seas)
+        log("done")
+        return
     per_unit = {nm: np.where(stake[nm] > 0, prof[nm] / np.maximum(stake[nm], 1), np.nan) for nm in prof}
     series = dict(res)
     series.update({f"unit {k}": v for k, v in per_unit.items()})
