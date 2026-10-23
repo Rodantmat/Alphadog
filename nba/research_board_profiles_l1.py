@@ -814,7 +814,7 @@ def techniques(reg, P, cols, fam):
     for key in ("std_hp", "gob_hp", "gob_factor", "all_hp"):
         T.append((f"wasserstein k-means on {key}", wasserstein(key)))
 
-    def hmm_regimes():
+    def hmm_regimes(fams=("ALL", "BOARD", "EXTERNAL", "INTERNAL")):
         """hidden regimes over consecutive slates: Gaussian HMM on the first 3 PCA axes of each family (2-4 states)"""
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "hmmlearn"], check=False)
         try:
