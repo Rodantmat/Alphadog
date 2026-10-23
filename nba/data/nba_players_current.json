@@ -1106,19 +1106,6 @@
       "team_abbreviation": "DAL"
     },
     {
-      "id": 1630619,
-      "full_name": "Moussa Cisse",
-      "last_comma_first": "Cisse, Moussa",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2026",
-      "player_code": "tmp_moussa_cisse",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
-    },
-    {
       "id": 1631321,
       "full_name": "Sidy Cissoko",
       "last_comma_first": "Cissoko, Sidy",
@@ -1130,6 +1117,19 @@
       "team_city": "Portland",
       "team_name": "Trail Blazers",
       "team_abbreviation": "POR"
+    },
+    {
+      "id": 1630619,
+      "full_name": "Moussa Ciss\u00e9",
+      "last_comma_first": "Ciss\u00e9, Moussa",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "tmp_moussa_cisse",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1641740,
