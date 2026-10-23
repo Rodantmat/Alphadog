@@ -635,6 +635,45 @@ def techniques(reg, P, cols, fam):
         (la, ca), (lb, cb) = labs[HIST[0]], labs[HIST[1]]
         return [max(np.sum((la == c) & (lb == c2)) / max(np.sum((la == c) | (lb == c2)), 1) for c2 in range(len(cb))) for c in range(len(ca))]
 
+    BOOT_CACHE = {}
+
+    def boot_stable(key, method, Xf, ok, par, labs, ca_idx, B=20):
+        """Hennig (2007) clusterwise bootstrap stability: refit the clustering on B bootstrap resamples of the season's slates,
+        assign every slate of the season to the nearest resample centre, and take the cluster's best Jaccard with a resample
+        cluster; the mean over B must be >= 0.75 ('stable' in Hennig's scale; 0.6-0.75 = pattern, < 0.5 = dissolved) in BOTH
+        seasons (season A: the cluster itself, season B: its re-found match). Returns (ok, (mean A, mean B))."""
+        (la, ca), (lb, cb) = labs[HIST[0]], labs[HIST[1]]
+        ma = la == ca_idx
+        c2 = int(np.argmax([np.sum(ma & (lb == c)) / max(np.sum(ma | (lb == c)), 1) for c in range(len(cb))]))
+        out = []
+        for fit, lab, c in ((HIST[0], la, ca_idx), (HIST[1], lb, c2)):
+            ck = (key, fit, par)
+            if ck not in BOOT_CACHE:
+                idx = np.where(ok & (seas == fit))[0]
+                rng = np.random.default_rng(23)
+                res = []
+                for _ in range(B):
+                    bi = rng.choice(idx, len(idx), replace=True)
+                    try:
+                        lf = fit_once(method, Xf[bi], par)
+                    except Exception:
+                        lf = np.full(len(bi), -1)
+                    ks = [q for q in sorted(set(lf)) if q >= 0]
+                    if not ks:
+                        res.append(None); continue
+                    cen = np.array([Xf[bi][lf == q].mean(axis=0) for q in ks])
+                    res.append(np.argmin(((Xf[idx][:, None, :] - cen[None]) ** 2).sum(axis=2), axis=1))
+                BOOT_CACHE[ck] = (idx, res)
+            idx, res = BOOT_CACHE[ck]
+            m = lab[idx] == c
+            js = []
+            for r in res:
+                if r is None:
+                    js.append(0.0); continue
+                js.append(max(np.sum(m & (r == q)) / max(np.sum(m | (r == q)), 1) for q in set(r)))
+            out.append(float(np.mean(js)))
+        return min(out) >= 0.75, tuple(out)
+
     NULL_CACHE = {}
 
     def null_threshold(method, fname, Xf, ok, par):
