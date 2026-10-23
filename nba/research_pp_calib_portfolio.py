@@ -174,6 +174,8 @@ def main():
             if i != j:
                 ports[f"calib pair: {tag(a)} + {tag(b)}"] = [a, b]
     for c in CALIB:
+        ports[f"calib + rebounds 4F: {tag(c)} + {tag(LIVE_NOW[0])}"] = [c, LIVE_NOW[0]]
+        ports[f"rebounds 4F + calib: {tag(LIVE_NOW[0])} + {tag(c)}"] = [LIVE_NOW[0], c]
         ports[f"calib first + live: {tag(c)} + LIVE NOW"] = [c] + LIVE_NOW
         ports[f"live first + calib: LIVE NOW + {tag(c)}"] = LIVE_NOW + [c]
     for name, port in ports.items():
