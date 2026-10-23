@@ -183,9 +183,32 @@ def std_lines(conn, date=None, seasons_dates=None):
         scope, params = "b.game_date BETWEEN %(a)s AND %(b)s", {"a": seasons_dates[0], "b": seasons_dates[1]}
     params["mk"] = list(MARKETS)
     out = {}
+    if date is None and conn.execute("SELECT to_regclass('nba_score.board_std_line')").fetchone()[0]:
+        a, b = seasons_dates
+        have = conn.execute("SELECT min(game_date), max(game_date) FROM nba_score.board_std_line").fetchone()
+        if have[0] is not None and have[0] <= a and have[1] >= b:
+            for d, pid, pr, line, src in conn.execute("""SELECT game_date, player_id, prop, line::float8, src FROM nba_score.board_std_line
+                                                         WHERE game_date BETWEEN %s AND %s""", (a, b)):
+                out[(d, pid, pr)] = (float(line), src)
+            return out
     for d, pid, mk, line, src in conn.execute(STD_LINE_SQL.format(scope=scope), params):
         out[(d, pid, MARKETS[mk])] = (float(line), src)
     return out
+
+
+def materialize_std_lines(conn, a, b):
+    """nba_score.board_std_line for [a, b] - the same rule as std_lines(), computed once so a multi-job season rebuild does not
+    rescan board_snapshots in every job (a season scan is ~17 minutes). Replaced as one set for the range."""
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.board_std_line (game_date date, player_id text, prop text, line numeric,
+                    src text, built_at timestamptz DEFAULT now(), PRIMARY KEY (game_date, player_id, prop))""")
+    rows = [(d, pid, MARKETS[mk], line, src) for d, pid, mk, line, src in conn.execute(
+        STD_LINE_SQL.format(scope="b.game_date BETWEEN %(a)s AND %(b)s"), {"a": a, "b": b, "mk": list(MARKETS)})]
+    with conn.transaction():
+        conn.execute("DELETE FROM nba_score.board_std_line WHERE game_date BETWEEN %s AND %s", (a, b))
+        with conn.cursor() as cur:
+            cur.executemany("INSERT INTO nba_score.board_std_line (game_date, player_id, prop, line, src) VALUES (%s,%s,%s,%s,%s)", rows)
+    conn.commit()
+    return len(rows)
 
 
 # ---------------------------------------------------------------- fit
