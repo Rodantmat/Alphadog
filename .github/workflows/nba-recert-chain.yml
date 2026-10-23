@@ -1,0 +1,100 @@
+name: NBA recertification chain (full, no live side effects)
+
+# 2026-10-22 night (owner 21:07 PT: new strategies on the new final_hp by the next slate). The certification chain of P5 run IN FULL
+# (no delta - every day of history was re-priced) on the board-centred final_hp, WITHOUT P5's live side effects: no verdicts into
+# live_strategy_state (step 6), no hurdle recalibration (6b), no Underdog twin (3e), no postseason refresh (7).
+# 1 tier map legs + bands (all three ranks) -> 1b selection leg table -> 2 candidate certifier -> 3 window-only selection table +
+# its slip engines (_wo, _wo_nosteals: the live engine's backtest, live_backtest_suffix) -> 3f / 3g regrades of those two tables ->
+# 5 validation of those two tables. stages input: 'all' or a comma list of 1,1b,2,3,3f,3g,5 (re-run a failed stage alone).
+on:
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: "all, or a comma list of 1,1b,2,3,3f,3g,5"
+        default: "all"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-p5
+  cancel-in-progress: false
+
+jobs:
+  chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      STAGES: ${{ github.event.inputs.stages }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Guard the stage list
+        run: |
+          set -euo pipefail
+          [[ "$STAGES" =~ ^(all|[0-9a-z,]+)$ ]] || { echo "refused stages: $STAGES"; exit 1; }
+
+      - name: "1. Tier map legs (full rebuild) + bands, all three ranks"
+        if: ${{ github.event.inputs.stages == 'all' || contains(format(',{0},', github.event.inputs.stages), ',1,') }}
+        env:
+          TM_RANK: "final_hp,baseline_hp,final_score"
+          TM_REBUILD: "1"
+          TM_NMAX: "25"
+          TM_PCTMAX: "30"
+        run: python -u nba/build_tier_map_bands.py
+
+      - name: "1b. Selection leg table"
+        if: ${{ github.event.inputs.stages == 'all' || contains(format(',{0},', github.event.inputs.stages), ',1b,') }}
+        run: python -u nba/build_tier_map_sel.py
+
+      - name: "2. Candidate certifier"
+        if: ${{ github.event.inputs.stages == 'all' || contains(format(',{0},', github.event.inputs.stages), ',2,') }}
+        run: python -u nba/certify_candidates.py
+
+      - name: "3. Window-only selection table, then its slip engines (full)"
+        if: ${{ github.event.inputs.stages == 'all' || contains(format(',{0},', github.event.inputs.stages), ',3,') }}
+        env:
+          SE_CAP: "10"
+          SE_SIZES: "2,3,4,5,6"
+          SE_LEGS_TABLE: nba_score.tier_map_legs_sel_wo
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              c.execute("SET statement_timeout = 0")
+              c.execute(open("nba/sql/build_tier_map_legs_sel_wo.sql").read())
+              n = c.execute("SELECT nba_score.build_tier_map_legs_sel_wo()").fetchone()[0]
+              c.commit()
+              print(f"tier_map_legs_sel_wo: {n:,} legs", flush=True)
+          EOF
+          SE_TABLE_SUFFIX="_wo" python -u nba/build_slip_engine.py
+          SE_TABLE_SUFFIX="_wo_nosteals" SE_EXCLUDE_CELLS="steals_R,steals_R_U" python -u nba/build_slip_engine.py
+
+      - name: "3f. Regrade Flex-with-alternates (window-only tables)"
+        if: ${{ github.event.inputs.stages == 'all' || contains(format(',{0},', github.event.inputs.stages), ',3f,') }}
+        env:
+          REGRADE_TABLES: "slip_engine_slips_wo,slip_engine_slips_wo_nosteals"
+        run: python -u nba/regrade_pp_flex_alt.py
+
+      - name: "3g. Regrade to grader v3 (window-only tables)"
+        if: ${{ github.event.inputs.stages == 'all' || contains(format(',{0},', github.event.inputs.stages), ',3g,') }}
+        env:
+          REGRADE_TABLES: "slip_engine_slips_wo,slip_engine_slips_wo_nosteals"
+        run: python -u nba/regrade_pp_payout_v3.py
+
+      - name: "5. Validation (window-only tables)"
+        if: ${{ github.event.inputs.stages == 'all' || contains(format(',{0},', github.event.inputs.stages), ',5,') }}
+        env:
+          SV_TOPK: "30"
+          SV_BOOT: "2000"
+          SV_NULL: "30"
+        run: |
+          SV_TABLE_SUFFIX="_wo" python -u nba/validate_slip_strategies.py
+          SV_TABLE_SUFFIX="_wo_nosteals" python -u nba/validate_slip_strategies.py
