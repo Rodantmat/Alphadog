@@ -1642,6 +1642,47 @@ def techniques(reg, P, cols, fam):
         return n
     for win in (3, 5, 10):
         T.append((f"path signatures ({win} slates)", (lambda w: (lambda: signatures(w)))(win)))
+
+    # ---------------- batch 11 (Gemini 2.5 Pro consult 2026-10-23: affinity propagation exemplars, self-organising maps, archetypal
+    # analysis, formal-concept / frequent-itemset profiles beyond three attributes) ----------------
+    for fname in MAIN:
+        if fname in fam:
+            T.append((f"affinity propagation on {fname}", clusters("affprop", fname, (5, 10, 25, 50))))
+            T.append((f"self-organising map on {fname}", clusters("som", fname, (22, 23, 33))))
+            T.append((f"archetypal analysis on {fname}", clusters("archetype", fname, (3, 4, 5, 6))))
+
+    def quads(lo=1 / 3, hi=2 / 3):
+        """four attributes together (formal concepts of the binarised board): a slate set that already meets three co-occurring
+        attributes AND draws a fourth beyond chance (>= 1.3 x, hypergeometric p < 0.001 in both seasons)"""
+        from scipy.stats import hypergeom
+        n = 0
+        side = {}
+        for c in cols:
+            x = P[:, ci[c]]
+            side[(c, "HIGH")] = (x >= hi); side[(c, "LOW")] = (x <= lo)
+        okc = {c: ~np.isnan(P[:, ci[c]]) for c in cols}
+        bases = [(it["name"], it["mask"]) for it in reg.items if it["tech"] == "triples"]
+        log(f"  quads: {len(bases)} registered triples to extend")
+        for nm0, m0 in bases:
+            used = {t.rsplit(" ", 1)[0] for t in nm0.split(" & ")}
+            for c in cols:
+                if c in used:
+                    continue
+                for sc in ("HIGH", "LOW"):
+                    mc = side[(c, sc)]
+                    good = True
+                    for s_ in HIST:
+                        m_ = m0 & okc[c] & (seas == s_)
+                        base = okc[c] & (seas == s_)
+                        N, A, K, Nab = int(base.sum()), int((mc & base).sum()), int((mc & m_).sum()), int(m_.sum())
+                        if Nab == 0 or N == 0 or K < 1.3 * Nab * A / N or hypergeom.sf(K - 1, N, A, Nab) >= 0.001:
+                            good = False; break
+                    n += 1
+                    if good:
+                        reg.offer(f"{nm0} & {c} {sc}", m0 & mc & okc[c], f"{nm0} and {c} {sc} - the three co-occur and draw the fourth "
+                                  f"beyond chance, both seasons", [c], "quads")
+        return n
+    T.append(("4-way co-occurrence (formal concepts)", quads))
     return T
 
 
