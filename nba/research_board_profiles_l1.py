@@ -1852,7 +1852,7 @@ def techniques(reg, P, cols, fam):
         for a_, b_ in itertools.combinations(sorted(ax), 2):
             r = np.full(len(seas), np.nan)
             for i in range(win, len(seas)):
-                if seas[i] != seas[i - win]:
+                if SEAS_REAL[i] != SEAS_REAL[i - win]:
                     continue
                 xa, xb = ax[a_][i - win: i], ax[b_][i - win: i]          # the previous win slates, today excluded
                 g = ~np.isnan(xa) & ~np.isnan(xb)
