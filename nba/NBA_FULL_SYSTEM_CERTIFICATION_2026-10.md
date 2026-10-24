@@ -3191,6 +3191,21 @@ should be doing. Mining everything that they should mine, consuming everything t
       2-15-slate trajectories, consensus clustering, absolute-scale clusters.
     - Rounds: 230 -> 283 -> 310 -> 324 -> 405 -> 423 profiles, then 346 under the stricter NEW test (round 7 run 40027670708, 261
       elected); trailing clean passes 0 so far - variations of distributions, kernels and long trajectories still add a few.
+    - Rounds 8-13 (2026-10-23 evening): round 8 372, round 9 371 after the depth-3-tree 'explained by known profiles' test.
+      HENNIG BOOTSTRAP (round 10): every clustering must also hold together on 20 bootstrap resamples of each season (mean
+      Jaccard >= 0.75 in BOTH seasons; Hennig 2007) - on synthetic data it removed every clustering 'profile' of noise (k-means,
+      GMM, Ward, kernels, trajectories) and kept the planted group; real data 371 -> 271 (222 elected). New techniques: batch 9
+      (own) Louvain kNN-graph communities, spectral biclustering, 3-way co-occurrence; batch 10 (online: sliced-Wasserstein
+      k-means of multivariate distributions arXiv 2310.01285, statistical jump models Nystrup 2020, path signatures arXiv
+      2306.15835) - jump models needed 20 order-shuffles + 0.05 after synthetic noise passed 6; batch 11 (Gemini 2.5 Pro consult:
+      affinity propagation, self-organising maps, archetypal analysis, 4-way formal concepts); batch 12 (variations: signature
+      windows 7 / 15 / 20, 3-axis signatures, pairs at quartile extremes). Round 10 271 (0 clean), round 11 274, round 12 275
+      (226 elected, 8 trailing clean), round 13 (run 40047045296) 280 (230 elected) - every new signature window added 1-2.
+    - SAME-CONSTRUCT VARIANTS (round 14): a derived view at another setting (signature / trajectory window, kernel, Wasserstein k
+      of one distribution) is the same construct; its cluster is a variant when Jaccard >= 0.3 with a registered profile of that
+      construct. Pairs are keyed by their two sides (another cut of the same two sides = variant), like single-feature profiles.
+    - Closed: the 2-Power contrarian lead (ledger 28) - R4_ONLY=contra run 40033092278: only the 15-slate trailing window is
+      significant (p 0.00 / 0.00); 10, 20, 25, 30 are not (p 0.06-0.30) - an isolated window, not a rule.
 30. 🔴 **P3 10-23 (run 40012048430) - TWO OPERATIONAL GAPS.** (a) The market refresh of final_hp hit its 8-minute step limit on the
     big slate after 9 of 12 props (soft step, run green): stocks / threes / turnovers carry no market term so no slip leg changed, but
     the whole-number re-pricing after it was skipped; raising the limit to 15 minutes is waiting for the owner. (b) EARLY TIP: the
