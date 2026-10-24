@@ -1427,7 +1427,7 @@ def techniques(reg, P, cols, fam):
     # ---------------- batch 7 (variations only - no new features): other clustering algorithms on every family, Wasserstein at
     # k 7-8, trajectories at 6 / 8, polynomial / cosine kernel embeddings ----------------
     MAIN = ("ALL", "BOARD", "EXTERNAL", "INTERNAL", "MIX", "TIERS", "CONFIDENCE", "AVAILABILITY", "CONCENTRATION", "STRENGTH",
-            "SCHEDULE", "LINES", "GROUP-QUALITY", "BOARD+INTERNAL")
+            "SCHEDULE", "LINES", "GROUP-QUALITY", "BOARD+INTERNAL", "SIDES")
     for method, pars in (("gmm-full", (2, 3, 4, 5)), ("bgmm", (4, 6, 8)), ("average", (2, 3, 4, 5, 6)), ("complete", (2, 3, 4, 5, 6)),
                          ("birch", (2, 3, 4, 5, 6)), ("optics", (8, 12, 16)), ("meanshift", (2, 3, 4))):
         T.append((f"{method} on every family", (lambda m, pr: (lambda: sum(clusters(m, f_, pr)() for f_ in MAIN if f_ in fam)))(method, pars)))
