@@ -16,7 +16,7 @@ template makes is out of sample by construction, and the template carries to any
   profile's earlier slates, re-chosen every slate) vs the same procedure on the GLOBAL slots (selectors ranked on all earlier slates)
   played on the same slates; p vs random slate sets; BH q 0.10; (c) VOLUME for the chosen template: 1 .. 20 slips a slate (slip j uses
   the next legs of each slot, disjoint) and 5 .. 100 % (step 5) of the slips the slate allows - ROI per slip and units per slate.
-Env: DATABASE_URL, MS_SLOTS (default 6), MS_NULL (default 20; random slate sets per size bucket of 20), L1_ONE_SEASON.
+Env: DATABASE_URL, MS_SLOTS (default 5), MS_NULL (default 20; random slate sets per size bucket of 20), MS_SHARD (i/n), L1_ONE_SEASON.
 """
 import itertools
 import os
