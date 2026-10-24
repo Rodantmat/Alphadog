@@ -2044,6 +2044,13 @@ def main():
         i = order.index(k)
         ps = [f"P{j + 1:03d}" for j, it in enumerate(reg.items) if it["mask"][i]]
         print(f"    {k[1]}: {len(ps)} profiles - {', '.join(ps[:60])}{' ...' if len(ps) > 60 else ''}")
+    # COVERAGE (owner 16:40 PT: "ideally every single day, every single board is gonna fit in one of the many profiles. But if not
+    # ... we're gonna keep with the best strategy ... as a fallback"): slates in >= 1 board profile (calendar rules not counted)
+    Mb = np.array([it["mask"] for it in reg.items if it["tech"] != "calendar"], bool).reshape(-1, len(order))
+    cnt = Mb.sum(axis=0)
+    print("\n  COVERAGE (board profiles, calendar rules not counted): " + " | ".join(
+        f"{s_}: {int(((cnt > 0) & (seas == s_)).sum())} of {int((seas == s_).sum())} slates in >= 1 profile "
+        f"(median {np.median(cnt[seas == s_]):.0f} a slate)" for s_ in sorted(set(seas))))
     print("\n  passes: " + " | ".join(f"{t}: {n}" for t, _, n in reg.passes))
     log("done")
 
