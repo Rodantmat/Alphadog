@@ -1225,12 +1225,12 @@ def techniques(reg, P, cols, fam):
             n += clusters_on(Pz, "kmeans", key, (2, 3, 4, 5, 6))
         return n
 
-    def clusters_on(Pz, method, fname, pars):
+    def clusters_on(Pz, method, fname, pars, block=1):
         nonlocal P
         saved = P
         P = Pz
         try:
-            return clusters(method, fname, pars, derived=True)()
+            return clusters(method, fname, pars, derived=True, block=block)()
         finally:
             P = saved
     T.append(("non-linear embedding (kernel PCA) clusters", kernel_embed))
