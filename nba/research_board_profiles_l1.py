@@ -1721,6 +1721,22 @@ def techniques(reg, P, cols, fam):
     def pairs_extreme():
         return pairs(0.25, 0.75)()
     T.append(("co-occurring pairs at the quartile extremes", pairs_extreme))
+
+    # ---------------- batch 13 (round 14 run 40050723286: 15- and 20-slate signatures on STRENGTH / GROUP-QUALITY / CONFIDENCE, a
+    # SOM cell on LINES and one quartile pair still new - their variations: longer windows, 3-axis long windows, more SOM grids,
+    # more jump-model states, triples at the quartile extremes) ----------------
+    for win in (25, 30):
+        T.append((f"path signatures ({win} slates)", (lambda w: (lambda: signatures(w)))(win)))
+    for win in (15, 20):
+        T.append((f"3-axis path signatures ({win} slates)", (lambda w: (lambda: signatures(w, 3)))(win)))
+    T.append(("20-slate trajectories, all families", lambda: trajectories(20, MAIN)))
+    for fname in MAIN:
+        if fname in fam:
+            T.append((f"self-organising map (more grids) on {fname}", clusters("som", fname, (24, 34, 44))))
+
+    def triples_extreme():
+        return triples(0.25, 0.75)
+    T.append(("3-way co-occurrence at the quartile extremes", triples_extreme))
     return T
 
 
