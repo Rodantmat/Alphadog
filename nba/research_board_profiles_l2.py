@@ -348,7 +348,7 @@ def evaluate(P, strat, label, reg, hist_ix, hseas):
         wnull[sz] = (float(np.mean(c)), float(np.percentile(c, 95)))
     pmax = [max(r["res"][0][1], r["res"][1][1]) if r["res"][0][0] > 0 and r["res"][1][0] > 0 else 1.0 for r in rows]
     ok = bh(pmax, 0.10)
-    print("\n" + "=" * 190 + "\nPER PROFILE (own 5 vs global 5 on the profile's test-season slates, units per slip; p vs random slate sets)")
+    print("\n" + "=" * 190 + f"\n[{label}] PER PROFILE (own 5 vs global 5 on the profile's test-season slates, units per slip; p vs random slate sets)")
     for r, pm, w in zip(rows, pmax, ok):
         it = r["it"]
         sz = tuple(int((it["mask"][hist_ix] & (hseas == s)).sum()) for s in HIST)
