@@ -1153,8 +1153,8 @@ def techniques(reg, P, cols, fam):
             ok = ~np.isnan(Xf).any(axis=1)
             pca = PCA(n_components=1).fit(Xf[ok & (seas == HIST[0])])
             seg_val = np.full(len(seas), np.nan)
-            for s_ in sorted(set(seas)):
-                idx = np.where(ok & (seas == s_))[0]
+            for s_ in sorted(set(SEAS_REAL)):
+                idx = np.where(ok & (SEAS_REAL == s_))[0]
                 if len(idx) < 20:
                     continue
                 z = pca.transform(Xf[idx])[:, 0]
