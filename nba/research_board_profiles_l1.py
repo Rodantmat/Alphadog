@@ -1843,18 +1843,18 @@ def techniques(reg, P, cols, fam):
         return n
     T.append(("co-movement regime of two families (rolling 10-slate rank correlation)", comovement_regime))
 
-    def turnover():
+    def turnover(lag=1):
         n = 0
         for fname in MAINF:
             Xf = P[:, [ci[c] for c in fam[fname]]]
             tb = np.where(np.isnan(Xf), np.nan, np.digitize(Xf, [1 / 3, 2 / 3]))
             x = np.full(len(seas), np.nan)
-            for i in range(1, len(seas)):
-                if seas[i] == seas[i - 1]:
-                    g = ~np.isnan(tb[i]) & ~np.isnan(tb[i - 1])
+            for i in range(lag, len(seas)):
+                if seas[i] == seas[i - lag]:
+                    g = ~np.isnan(tb[i]) & ~np.isnan(tb[i - lag])
                     if g.sum() >= 2:
-                        x[i] = float(np.mean(tb[i][g] != tb[i - 1][g]))
-            n += tercile_offer(x, f"{fname} turnover vs the previous slate (features changing tercile)", "turnover")
+                        x[i] = float(np.mean(tb[i][g] != tb[i - lag][g]))
+            n += tercile_offer(x, f"{fname} turnover vs {lag} slate(s) before (features changing tercile)", "turnover", key=fname)
         return n
     T.append(("turnover vs the previous slate", turnover))
 
