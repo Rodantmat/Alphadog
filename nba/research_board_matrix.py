@@ -15,7 +15,7 @@ LEVEL 1 - LEG SELECTORS: cell (prop x line type x side) x RANK x CUT, the legs o
           t3 / t5 / t10 (player x prop x line type x side, earlier slates only), PROP-LINE trailing (prop x line type x side x exact
           line, last 30 earlier legs), LINE-VARIATION trailing (prop x line type x side x line band low / mid / high, last 60)
   cuts    EVERY top n = 1 .. 30 and EVERY top 1 .. 40 % of the cell (a cut is read only where the cell has that many legs)
-LEVEL 2 - ENHANCEMENT FACTORS on top of the final_hp selectors (cuts 3 / 5 / 10 / 20): keep only the legs inside a band of player
+LEVEL 2 - ENHANCEMENT FACTORS on top of the final_hp selectors (every cut 1 .. 20): keep only the legs inside a band of player
   trailing (t3 / t10 hot or cold), consistency (sd10), plain hit rate, minutes trend, usage trend, rest / back-to-back, season phase,
   line class, model-vs-market edge, book count (nba_score.cand_leg_features, the documented factor table, where the leg has it), and
   the line type's own trailing (goblin / demon / standard per tier and direction, last 300 earlier legs) above / below its median.
