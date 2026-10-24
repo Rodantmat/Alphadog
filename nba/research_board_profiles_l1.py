@@ -474,14 +474,25 @@ class Registry:
         if not ok:
             return False
         h = (mask & self.hist).astype(np.float32)
+        cons = construct_of(tech)
         if self.items:
             ni = len(self.items)
             M = self.M[: ni]                                  # registered profiles' historical masks (vectorised Jaccard)
             inter = M @ h
             hs = h.sum()
             union = self.Msum[: ni] + hs - inter
-            if np.any(inter / np.maximum(union, 1) >= 0.5):
+            jac = inter / np.maximum(union, 1)
+            if np.any(jac >= 0.5):
                 return False
+            if cons is not None:
+                # SAME CONSTRUCT, OTHER SETTING (round 13, 2026-10-23): a derived view at another window / kernel / k (path
+                # signatures 3-20 slates, trajectories 2-15, kernel PCA kernels, Wasserstein k 2-10 of one distribution) is a
+                # setting of the SAME construct; like the simple-profile keys, its clusters are variants of the registered
+                # ones unless clearly apart: Jaccard >= 0.3 with a registered profile of the same construct -> variant.
+                # Round 13 (run 40047045296): every new signature window still added 1-2.
+                same = np.array([it.get("cons") == cons for it in self.items])
+                if np.any(jac[same] >= 0.3):
+                    return False
             if ni >= 2:
                 # EXPLAINED BY KNOWN PROFILES (round 6, 2026-10-23): a candidate that is (nearly) the intersection or the union of
                 # two registered profiles is a combination of known profiles, not a new commonality - Jaccard >= 0.5 with any
