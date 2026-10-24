@@ -1297,7 +1297,7 @@ def techniques(reg, P, cols, fam):
             Z = np.full((len(seas), pca.n_components_), np.nan); Z[ok] = pca.transform(Xf[ok])
             T3 = np.full((len(seas), win * pca.n_components_), np.nan)
             for i in range(win - 1, len(seas)):
-                if seas[i] == seas[i - win + 1]:
+                if SEAS_REAL[i] == SEAS_REAL[i - win + 1]:
                     T3[i] = np.concatenate([Z[i - w] for w in range(win)])
             zr = np.full_like(T3, np.nan)
             okt = ~np.isnan(T3).any(axis=1)
