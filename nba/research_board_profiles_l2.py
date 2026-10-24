@@ -381,7 +381,7 @@ def evaluate(P, strat, label, reg, hist_ix, hseas):
                           f"{'  [live scope]' if strat[i][1:] in OWNER_SCOPE else ''}")
     nw = int(ok.sum())
     nm = sum(int(r["both"].sum()) > wnull[tuple(int((r["it"]["mask"][hist_ix] & (hseas == s)).sum()) for s in HIST)][1] for r in rows)
-    print("\n" + "=" * 190 + f"\nSUMMARY: {nw} of {len(rows)} profiles WORK (own picks beat the global picks in both directions, BH q 0.10); "
+    print("\n" + "=" * 190 + f"\n[{label}] SUMMARY: {nw} of {len(rows)} profiles WORK (own picks beat the global picks in both directions, BH q 0.10); "
           f"{nm} have more both-season winners than random slate sets' p95 (expected ~{0.05 * len(rows):.0f} by chance)")
     return nw, nm
 
