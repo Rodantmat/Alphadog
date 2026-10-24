@@ -3914,19 +3914,6 @@
       "team_abbreviation": "IND"
     },
     {
-      "id": 1641755,
-      "full_name": "Kevin McCullar Jr.",
-      "last_comma_first": "McCullar Jr., Kevin",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2026",
-      "player_code": "kevin_mccullar_jr",
-      "team_id": 1610612752,
-      "team_city": "New York",
-      "team_name": "Knicks",
-      "team_abbreviation": "NYK"
-    },
-    {
       "id": 1630183,
       "full_name": "Jaden McDaniels",
       "last_comma_first": "McDaniels, Jaden",
@@ -4653,6 +4640,19 @@
       "team_city": "Phoenix",
       "team_name": "Suns",
       "team_abbreviation": "PHX"
+    },
+    {
+      "id": 1642951,
+      "full_name": "Sean Pedulla",
+      "last_comma_first": "Pedulla, Sean",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "sean_pedulla",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
     },
     {
       "id": 1642869,
