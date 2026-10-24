@@ -674,6 +674,12 @@ def techniques(reg, P, cols, fam):
                     Z_ = Bt @ Xf
                 Wt = cvx(Z_, Xf)
                 lf = np.argmax(Wt, axis=1)
+            elif method == "average-cosine":    # average linkage on cosine distance (direction of the board's profile, not size)
+                lf = AgglomerativeClustering(n_clusters=par, linkage="average", metric="cosine").fit(Xf - 0.5 + 1e-9).labels_
+            elif method == "spectral-rbf":      # spectral clustering with a Gaussian (RBF) affinity
+                lf = SpectralClustering(n_clusters=par, random_state=7, affinity="rbf", gamma=1.0 / Xf.shape[1]).fit(Xf).labels_
+            elif method == "gmm-tied":          # mixture with one shared covariance (clusters of equal shape)
+                lf = GaussianMixture(n_components=par, covariance_type="tied", random_state=7, n_init=3).fit(Xf).predict(Xf)
             elif method == "cocluster":         # spectral biclustering of slates x features (rows = slates)
                 from sklearn.cluster import SpectralBiclustering
                 lf = SpectralBiclustering(n_clusters=(par, min(par, Xf.shape[1])), random_state=7).fit(Xf + 1e-3).row_labels_
