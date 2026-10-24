@@ -288,7 +288,7 @@ def evaluate(P, strat, label, reg, hist_ix, hseas):
     _, muA, _ = st.agg(mA)
     _, muB, _ = st.agg(mB)
     all_mu = {HIST[0]: muA[:, 0], HIST[1]: muB[:, 0]}
-    print("\n" + "=" * 190 + f"\nGLOBAL PICKS (best 5 on all slates of the fit season; read on the other season):")
+    print("\n" + "=" * 190 + f"\n[{label}] GLOBAL PICKS (best 5 on all slates of the fit season; read on the other season):")
     for fit, test in (HIST, HIST[::-1]):
         print(f"  fit {fit}: " + " | ".join(f"{name(strat[i])} fit {100 * all_mu[fit][i]:+.0f}% test {100 * all_mu[test][i]:+.0f}%"
                                               for i in glob[fit]))
