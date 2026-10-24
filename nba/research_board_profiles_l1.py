@@ -1912,6 +1912,13 @@ def build(conn):
         if ONLY and not any(tech.startswith(o) for o in ONLY):
             continue
         reg.run_pass(tech, fn)
+    return reg, days, order, seas
+
+
+def main():
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
+    reg, days, order, seas = build(conn)
     clean = 0
     for _, _, new in reversed(reg.passes):
         if new:
