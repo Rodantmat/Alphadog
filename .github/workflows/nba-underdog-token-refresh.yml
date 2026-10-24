@@ -3,10 +3,11 @@ name: NBA Underdog Token Refresh
 # Owner 2026-10-21 17:37 PT: "create a token refresher so we can always have a fresh token like betr". Keeps the Underdog session
 # alive (refresh token rotated and saved under a row lock - nba/underdog_auth.py); if Underdog refused the stored token it logs in
 # again from the GitHub secrets UD_EMAIL / UD_PASSWORD. Proves the token with one read-only signed-in call. Prints no secret.
-# Twice a day: 08:41 and 20:41 PT (15:41 / 03:41 UTC) - before the morning work and after the night's games.
+# Every 6 hours (owner 2026-10-24 15:43 PT, after the 10-24 refresh was refused and a new verification code was needed): 02:41,
+# 08:41, 14:41, 20:41 PT (09:41 / 15:41 / 21:41 / 03:41 UTC) - a session used more often is less likely to lapse.
 on:
   schedule:
-    - cron: '41 15,3 * * *'
+    - cron: '41 3,9,15,21 * * *'
   workflow_dispatch: {}
 
 concurrency:
