@@ -872,7 +872,8 @@ def techniques(reg, P, cols, fam):
                             break
                     if assoc:
                         reg.offer(f"{na} & {nb}", ma & mb & ok, f"{na} and {nb} - they co-occur beyond chance in both seasons "
-                                  f"(trailing percentiles, cut {lo:.2f} / {hi:.2f})", [a, b], "pairs")
+                                  f"(trailing percentiles, cut {lo:.2f} / {hi:.2f})", [a, b], "pairs",
+                                  key=("pair", frozenset((na, nb))))     # another cut of the same two sides is a variant
             return n
         return fn
 
