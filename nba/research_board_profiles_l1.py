@@ -1532,7 +1532,8 @@ def techniques(reg, P, cols, fam):
                     n += 1
                     if good:
                         reg.offer(f"{a} {sa} & {b} {sb} & {c} {sc}", mab & mc & okc[c], f"{a} {sa}, {b} {sb} and {c} {sc} - the pair "
-                                  f"co-occurs beyond chance and draws the third beyond chance, both seasons", [a, b, c], "triples")
+                                  f"co-occurs beyond chance and draws the third beyond chance, both seasons", [a, b, c], "triples",
+                                  key=("triple", frozenset((f"{a} {sa}", f"{b} {sb}", f"{c} {sc}"))))   # another cut = variant
         return n
     T.append(("3-way co-occurrence (pairs that draw a third)", triples))
 
