@@ -62,9 +62,10 @@ def main():
     import psycopg
     from curl_cffi import requests as cr
     # HUMAN TIMING (owner 2026-10-21 17:48 PT: "time it as a human using it so it won't trigger any blocks or validations"): a scheduled
-    # run starts at a random point up to 20 minutes after its slot, never the same second every day.
+    # run starts at a random point after its slot, never the same second every day (up to 5 minutes since 2026-10-24, when the
+    # refresh went from 2 to 4 runs a day - a waiting runner is billed Actions minutes).
     if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
-        wait = random.randint(0, 1200)
+        wait = random.randint(0, 300)
         print(f"UD_AUTH|human timing: starting in {wait} s", flush=True)
         time.sleep(wait)
     sess = cr.Session(impersonate="chrome")
