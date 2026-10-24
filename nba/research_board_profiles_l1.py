@@ -1603,7 +1603,7 @@ def techniques(reg, P, cols, fam):
         return n
     T.append(("statistical jump models (persistent regimes)", jump_models))
 
-    def signatures(win=5):
+    def signatures(win=5, dims=2):
         """path signature (level 2) of each family's 2-D PCA path over the last win slates: the total move on each axis plus the
         signed Levy area (did axis 1 move before axis 2) and the squared moves - clustered with the derived-view gates"""
         n = 0
