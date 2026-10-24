@@ -1763,6 +1763,96 @@ def techniques(reg, P, cols, fam):
             fam[key] = list(dict.fromkeys(fam[a_] + fam[b_]))
             T.append((f"cross-family k-means on {key}", clusters("kmeans", key, (2, 3, 4, 5, 6))))
             T.append((f"cross-family Ward on {key}", clusters("ward", key, (2, 3, 4, 5, 6))))
+
+    # ---------------- batch 15 (own ideas + Gemini leftovers, round 17 run 40059973198 reached 18 trailing clean passes; a last
+    # batch of genuinely different points of view to confirm): how EXTREME the board is, the distribution of its deviations,
+    # whether its families move together lately, its turnover vs yesterday, its distance to the season's centre, and three more
+    # cluster geometries (cosine, RBF spectral, tied mixture) ----------------
+    MAINF = [f_ for f_ in MAIN if f_ in fam]
+
+    def tercile_offer(x, name, kname, feats=()):
+        n = 0
+        q1, q2 = np.nanpercentile(x[reg.hist], [33.3, 66.7])
+        if not q1 < q2:
+            return 0
+        for nm_, m, side in ((f"{name} LOW", x <= q1, "LOW"), (f"{name} HIGH", x >= q2, "HIGH")):
+            n += 1; reg.offer(nm_, m & ~np.isnan(x), f"{name}: historical tercile {side}", list(feats), kname, key=(kname + name, side))
+        return n
+
+    def extremeness():
+        n = 0
+        for fname in MAINF:
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            x = np.where(ok, ((Xf >= 0.9) | (Xf <= 0.1)).mean(axis=1), np.nan)
+            n += tercile_offer(x, f"share of {fname} features at a 10% extreme", "extremeness")
+        return n
+    T.append(("how extreme the board is (share of features at a 10% extreme)", extremeness))
+
+    def deviation_distribution():
+        Xa = P[:, [ci[c] for c in fam["ALL"]]]
+        for k, row in zip(reg.order, Xa):
+            v = np.abs(row[~np.isnan(row)] - 0.5)
+            DIST.setdefault(k, {})["abs_dev"] = np.quantile(v, np.linspace(0.05, 0.95, 19)) if len(v) >= 40 else None
+        return wasserstein("abs_dev", (2, 3, 4, 5, 6))()
+    T.append(("distribution of the board's deviations (Wasserstein k-means)", deviation_distribution))
+
+    def comovement_regime(win=10):
+        n = 0
+        ax = {}
+        for fname in ("BOARD", "EXTERNAL", "INTERNAL", "SCHEDULE", "AVAILABILITY"):
+            if fname not in fam:
+                continue
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            pca = PCA(n_components=1).fit(Xf[ok & (seas == HIST[0])])
+            z = np.full(len(seas), np.nan); z[ok] = pca.transform(Xf[ok])[:, 0]
+            ax[fname] = z
+        from scipy.stats import spearmanr
+        for a_, b_ in itertools.combinations(sorted(ax), 2):
+            r = np.full(len(seas), np.nan)
+            for i in range(win, len(seas)):
+                if seas[i] != seas[i - win]:
+                    continue
+                xa, xb = ax[a_][i - win: i], ax[b_][i - win: i]          # the previous win slates, today excluded
+                g = ~np.isnan(xa) & ~np.isnan(xb)
+                if g.sum() >= win - 2:
+                    r[i] = spearmanr(xa[g], xb[g])[0]
+            n += tercile_offer(r, f"{a_} and {b_} moving together (last {win} slates)", "co-movement regime")
+        return n
+    T.append(("co-movement regime of two families (rolling 10-slate rank correlation)", comovement_regime))
+
+    def turnover():
+        n = 0
+        for fname in MAINF:
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            tb = np.where(np.isnan(Xf), np.nan, np.digitize(Xf, [1 / 3, 2 / 3]))
+            x = np.full(len(seas), np.nan)
+            for i in range(1, len(seas)):
+                if seas[i] == seas[i - 1]:
+                    g = ~np.isnan(tb[i]) & ~np.isnan(tb[i - 1])
+                    if g.sum() >= 2:
+                        x[i] = float(np.mean(tb[i][g] != tb[i - 1][g]))
+            n += tercile_offer(x, f"{fname} turnover vs the previous slate (features changing tercile)", "turnover")
+        return n
+    T.append(("turnover vs the previous slate", turnover))
+
+    def mahalanobis():
+        n = 0
+        for fname in MAINF:
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            x = np.full(len(seas), np.nan)
+            ref = ok & (seas == HIST[0])            # centre / spread of 2024-25, applied to every slate
+            mu = Xf[ref].mean(axis=0)
+            Ci = np.linalg.inv(np.cov(Xf[ref].T) + 1e-3 * np.eye(Xf.shape[1]))
+            d = Xf[ok] - mu
+            x[ok] = np.sqrt(np.einsum("ij,jk,ik->i", d, Ci, d))
+            n += tercile_offer(x, f"{fname} distance to the typical board (Mahalanobis)", "mahalanobis")
+        return n
+    T.append(("distance to the typical board (Mahalanobis)", mahalanobis))
+    for meth_ in ("average-cosine", "spectral-rbf", "gmm-tied"):
+        T.append((f"{meth_} on every family", (lambda m: (lambda: sum(clusters(m, f_, (2, 3, 4, 5, 6))() for f_ in MAINF)))(meth_)))
     return T
 
 
