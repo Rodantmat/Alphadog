@@ -314,11 +314,18 @@ def evaluate(P, strat, label, reg, hist_ix, hseas):
                 Rf = random_masks(hseas, fit, nf, NULL)
                 Rt = random_masks(hseas, test, nt, NULL)
                 tops = st.top(Rf)
-                null_cache[key] = st.roi(tops, Rt) - st.roi(np.repeat(glob[fit][None, :], NULL, axis=0), Rt)
-            null = null_cache[key]
+                g_r = st.roi(np.repeat(glob[fit][None, :], NULL, axis=0), Rt)
+                null_cache[key] = (st.roi(tops, Rt) - g_r, g_r)
+            null, g_null = null_cache[key]
             null = null[~np.isnan(null)]
+            g_null = g_null[~np.isnan(g_null)]
             p = (1 + np.sum(null >= obs)) / (len(null) + 1) if obs == obs else 1.0
-            res.append((obs, p, own, gl))
+            # PLAY / AVOID read: are the profile's slates better or worse for the GLOBAL picks than random slate sets of the
+            # same size (out of sample: picks from the fit season, read on the profile's test-season slates)?
+            p_lo = (1 + np.sum(g_null <= gl)) / (len(g_null) + 1) if gl == gl else 1.0
+            p_hi = (1 + np.sum(g_null >= gl)) / (len(g_null) + 1) if gl == gl else 1.0
+            g_med = float(np.median(g_null)) if len(g_null) else float("nan")
+            res.append((obs, p, own, gl, p_lo, p_hi, g_med))
             _, mu_t, _ = st.agg(mt)
             _, mu_f, _ = st.agg(mf)
             detail.append((fit, test, own, gl, obs, p, float(np.median(null)) if len(null) else float("nan"),
