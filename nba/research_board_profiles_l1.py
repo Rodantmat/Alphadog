@@ -1615,9 +1615,10 @@ def techniques(reg, P, cols, fam):
             ok = ~np.isnan(Xf).any(axis=1)
             if not has_structure(Xf, ok):
                 continue
-            pca = PCA(n_components=2).fit(Xf[ok & (seas == HIST[0])])
-            Z = np.full((len(seas), 2), np.nan); Z[ok] = pca.transform(Xf[ok])
-            S = np.full((len(seas), 5), np.nan)
+            pca = PCA(n_components=dims).fit(Xf[ok & (seas == HIST[0])])
+            Z = np.full((len(seas), dims), np.nan); Z[ok] = pca.transform(Xf[ok])
+            prs_ = list(itertools.combinations(range(dims), 2))
+            S = np.full((len(seas), 2 * dims + len(prs_)), np.nan)
             for i in range(win - 1, len(seas)):
                 if seas[i] != seas[i - win + 1]:
                     continue
