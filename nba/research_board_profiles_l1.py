@@ -97,6 +97,7 @@ GRP = {"points": "points", "rebounds": "rebounds", "assists": "assists", "threes
        "pts_ast": "combos", "reb_ast": "combos", "steals": "lowvol", "blocks": "lowvol", "turnovers": "lowvol", "stocks": "lowvol"}
 GROUPS = ("points", "rebounds", "assists", "threes", "combos", "lowvol")
 ONLY = [x for x in os.environ.get("L1_TECH", "").split(",") if x]
+ONE_SEASON = os.environ.get("L1_ONE_SEASON", "") == "1"
 DIST = {}          # (season, day) -> per-slate leg distributions as quantile vectors (Wasserstein views)
 CELLS = {}         # (season, day) -> leg counts per prop x line type x side (NMF / LDA views of the board's composition)
 
