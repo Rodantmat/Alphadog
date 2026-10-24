@@ -704,7 +704,7 @@ def techniques(reg, P, cols, fam):
 
     BOOT_CACHE = {}
 
-    def boot_stable(key, method, Xf, ok, par, labs, ca_idx, B=20):
+    def boot_stable(key, method, Xf, ok, par, labs, ca_idx, B=20, block=1):
         """Hennig (2007) clusterwise bootstrap stability: refit the clustering on B bootstrap resamples of the season's slates,
         assign every slate of the season to the nearest resample centre, and take the cluster's best Jaccard with a resample
         cluster; the mean over B must be >= 0.75 ('stable' in Hennig's scale; 0.6-0.75 = pattern, < 0.5 = dissolved) in BOTH
