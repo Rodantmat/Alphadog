@@ -516,7 +516,7 @@ class Registry:
         self.Msum[len(self.items)] = h.sum()
         cur = [str(k[1]) for k, m in zip(self.order, mask) if m and k[0] not in HIST]
         self.items.append({"name": name, "mask": mask, "def": definition, "feats": feats, "tech": tech, "info": info,
-                           "ranges": self.ranges(mask, feats), "cur": cur})
+                           "ranges": self.ranges(mask, feats), "cur": cur, "cons": cons})
         if key is not None:
             self.keys.add(key)
         return True
