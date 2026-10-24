@@ -1981,12 +1981,45 @@ def build(conn):
     X, P = trailing_pct(F, order, cols)
     fam = families(cols)
     log(f"features {len(cols)}: " + ", ".join(f"{k} {len(v)}" for k, v in fam.items()))
-    reg = Registry(order, seas, X, cols)
+    reg = Registry(order, split, X, cols)
     for tech, fn in techniques(reg, P, cols, fam):
         if ONLY and not any(tech.startswith(o) for o in ONLY):
             continue
         reg.run_pass(tech, fn)
+    if AGNOSTIC:
+        calendar_profiles(reg, order)
     return reg, days, order, seas
+
+
+def calendar_profiles(reg, order):
+    """CALENDAR profiles (owner 16:40 PT: "unless it's a board profile that's specifically for the first week of the season or for the
+    end of the season, for the playoffs, then that's different"): defined by the date rule alone, so replicable by construction; they
+    skip the recurrence / distinctness gates (an opening fortnight is ~10 slates a season by definition). The history is regular
+    season only (2024-10-22..2025-04-13, 2025-10-21..2026-04-12): no playoff boards exist to profile."""
+    start, end = {}, {}
+    for k in order:
+        start[k[0]] = min(start.get(k[0], k[1]), k[1])
+        end[k[0]] = max(end.get(k[0], k[1]), k[1])
+    since = np.array([(k[1] - start[k[0]]).days for k in order])
+    # days to the season's end: its last slate when finished; for the running season April 12 (regular seasons end Apr 12-14)
+    to_end = np.array([((end[k[0]] if k[0] in REAL_HIST else k[1].replace(month=4, day=12) if k[1].month < 7
+                         else k[1].replace(year=k[1].year + 1, month=4, day=12)) - k[1]).days for k in order])
+    mo = np.array([k[1].month for k in order])
+    dy = np.array([k[1].day for k in order])
+    rules = [("CAL opening week (season days 0-7)", since <= 7), ("CAL opening fortnight (days 0-14)", since <= 14),
+             ("CAL first month (days 0-30)", since <= 30), ("CAL days 15-45", (since > 14) & (since <= 45)),
+             ("CAL holiday stretch (Dec 20 - Jan 5)", ((mo == 12) & (dy >= 20)) | ((mo == 1) & (dy <= 5))),
+             ("CAL pre-All-Star fortnight (Feb 1-14)", (mo == 2) & (dy <= 14)),
+             ("CAL post-All-Star (Feb 20 on)", ((mo == 2) & (dy >= 20)) | np.isin(mo, (3, 4))),
+             ("CAL last month (<= 30 days to season end)", to_end <= 30), ("CAL last fortnight (<= 14 days to end)", to_end <= 14),
+             ("CAL last week (<= 7 days to end)", to_end <= 7)]
+    for name, m in rules:
+        m = np.asarray(m, bool)
+        cnt = " ".join(f"{s_[2:]}: {int((m & (SEAS_REAL == s_)).sum())}d" for s_ in REAL_HIST)
+        cur = [str(k[1]) for k, x in zip(order, m) if x and k[0] not in REAL_HIST]
+        reg.items.append({"name": name, "mask": m, "def": name + " - date rule", "feats": [], "tech": "calendar",
+                          "info": f"{cnt} CALENDAR", "ranges": "", "cur": cur, "cons": "calendar"})
+    log(f"calendar profiles added: {len(rules)}")
 
 
 def main():
