@@ -456,7 +456,7 @@ class Registry:
         self.Msum = np.zeros(512, np.float32)
 
     def recur(self, mask):
-        info, ok = [], True
+        info, okk = [], []
         for s in HIST:
             ms = mask & (self.seas == s)
             nd = int(ms.sum())
