@@ -51,8 +51,12 @@ NULLN = int(os.environ.get("MX_NULL", "60"))
 RNG = np.random.default_rng(41)
 WARM = 15
 RANKS = ("final_hp", "baseline_hp", "final_score", "plain", "t3", "t5", "t10", "line_trail", "band_trail")
-CUTS = [("n", k) for k in (1, 2, 3, 5, 8, 10, 15, 20)] + [("pct", q) for q in (5, 10, 20, 30)]
-FCUTS = (3, 5, 10, 20)
+# EVERY cut, not examples (owner 16:01 PT: "1, 2, 3, 4, 5, 10, 20 - that's an example. Granulate everything in between and test every
+# single number in between, even above and beyond ... make the system understand what makes sense to try"): top n = 1 .. 30 and top
+# 1 .. 40 % of the cell; a cut is read only on slates where the cell has that many legs and only when it reaches >= 8 slates - the
+# data decide how deep a cut is worth going
+CUTS = [("n", k) for k in range(1, 31)] + [("pct", q) for q in range(1, 41)]
+FCUTS = tuple(range(1, 21))
 
 
 def log(m):
