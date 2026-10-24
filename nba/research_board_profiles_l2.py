@@ -265,7 +265,7 @@ def main():
     hist_ix = [i for i, k in enumerate(order) if k[0] in HIST]
     horder = [order[i] for i in hist_ix]
     hseas = seas[hist_ix]
-    strat, P = strategy_grid(days, horder)
+    strat, P = strategy_grid2(days, horder) if GRID == 2 else strategy_grid(days, horder)
     log(f"strategy grid done: {len(strat):,} strategies; slips built {int((~np.isnan(P)).sum()):,}")
     st = Stats(P)
     mA = (hseas == HIST[0]).astype(np.float32)[:, None]
