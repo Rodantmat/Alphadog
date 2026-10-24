@@ -53,6 +53,7 @@ T0 = time.time()
 NULL = int(os.environ.get("LP_NULL", "200"))
 ONLY = {int(x) for x in os.environ.get("L2_ONLY", "").split(",") if x.strip()}
 RNG = np.random.default_rng(29)
+GRID = int(os.environ.get("L2_GRID", "1"))
 HIST = L1.HIST
 GRP = L1.GRP
 POOLS = {"R": ("R",), "G": ("G1", "G2", "G3"), "D": ("D1", "D2", "D3"), "GR": ("R", "G1", "G2", "G3"), "RD": ("R", "D1", "D2", "D3"),
