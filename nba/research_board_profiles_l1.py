@@ -1745,6 +1745,18 @@ def techniques(reg, P, cols, fam):
     def triples_extreme():
         return triples(0.25, 0.75)
     T.append(("3-way co-occurrence at the quartile extremes", triples_extreme))
+
+    # ---------------- batch 14 (own ideas, round 16 run 40057155516): CROSS-FAMILY views (subspace idea from the Gemini consult) -
+    # boards alike on two families at once (schedule with availability, lines with strength, ...), clustered with every gate ------
+    CROSS = (("SCHEDULE", "AVAILABILITY"), ("STRENGTH", "LINES"), ("MIX", "TIERS"), ("CONFIDENCE", "GROUP-QUALITY"),
+             ("CONCENTRATION", "SCHEDULE"), ("AVAILABILITY", "CONFIDENCE"), ("LINES", "CONFIDENCE"), ("MATCHUPS", "TIERS"),
+             ("SCHEDULE", "LINES"), ("AVAILABILITY", "MIX"), ("STRENGTH", "CONFIDENCE"), ("CONCENTRATION", "GROUP-QUALITY"))
+    for a_, b_ in CROSS:
+        if a_ in fam and b_ in fam:
+            key = f"{a_}x{b_}"
+            fam[key] = list(dict.fromkeys(fam[a_] + fam[b_]))
+            T.append((f"cross-family k-means on {key}", clusters("kmeans", key, (2, 3, 4, 5, 6))))
+            T.append((f"cross-family Ward on {key}", clusters("ward", key, (2, 3, 4, 5, 6))))
     return T
 
 
