@@ -138,5 +138,7 @@ One line per finding, newest section last. Each finding names its script and run
 - T-11 PROFILE METHOD (ledger 29): a profile is defined WITHOUT strategies, must recur in both seasons, be identifiable before the
        pick and be distinct (also from intersections / unions of known profiles). Clustering is only meaningful on feature families
        that co-move beyond noise, and must beat shuffled data; without these gates random features produce 'profiles'.
+       A cluster must also survive resampling of its own season (Hennig bootstrap >= 0.75): this removed ~100 of 371. Another
+       window / kernel / k of the same derived view is a setting, not a new profile (variant if Jaccard >= 0.3).
 - T-12 OPERATIONS: the pick must respect each leg's own tip vs when the owner places (10-23: an early 13:00 PT game made a slip
        unplaceable); soft steps can time out silently on big slates (market refresh 8 minutes).
