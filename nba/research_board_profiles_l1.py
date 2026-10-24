@@ -1869,7 +1869,7 @@ def techniques(reg, P, cols, fam):
             Ci = np.linalg.inv(np.cov(Xf[ref].T) + 1e-3 * np.eye(Xf.shape[1]))
             d = Xf[ok] - mu
             x[ok] = np.sqrt(np.einsum("ij,jk,ik->i", d, Ci, d))
-            n += tercile_offer(x, f"{fname} distance to the typical board (Mahalanobis)", "mahalanobis")
+            n += tercile_offer(x, f"{fname} distance to the typical board (Mahalanobis)", "mahalanobis", key=fname)
         return n
     T.append(("distance to the typical board (Mahalanobis)", mahalanobis))
     for meth_ in ("average-cosine", "spectral-rbf", "gmm-tied"):
