@@ -1789,22 +1789,24 @@ def techniques(reg, P, cols, fam):
     # cluster geometries (cosine, RBF spectral, tied mixture) ----------------
     MAINF = [f_ for f_ in MAIN if f_ in fam]
 
-    def tercile_offer(x, name, kname, feats=()):
+    def tercile_offer(x, name, kname, feats=(), key=None):
+        """key: the construct (without its setting) - another window / cut / reference of the same construct is a variant"""
         n = 0
         q1, q2 = np.nanpercentile(x[reg.hist], [33.3, 66.7])
         if not q1 < q2:
             return 0
         for nm_, m, side in ((f"{name} LOW", x <= q1, "LOW"), (f"{name} HIGH", x >= q2, "HIGH")):
-            n += 1; reg.offer(nm_, m & ~np.isnan(x), f"{name}: historical tercile {side}", list(feats), kname, key=(kname + name, side))
+            n += 1; reg.offer(nm_, m & ~np.isnan(x), f"{name}: historical tercile {side}", list(feats), kname,
+                              key=(kname + (key or name), side))
         return n
 
-    def extremeness():
+    def extremeness(cut=0.1):
         n = 0
         for fname in MAINF:
             Xf = P[:, [ci[c] for c in fam[fname]]]
             ok = ~np.isnan(Xf).any(axis=1)
-            x = np.where(ok, ((Xf >= 0.9) | (Xf <= 0.1)).mean(axis=1), np.nan)
-            n += tercile_offer(x, f"share of {fname} features at a 10% extreme", "extremeness")
+            x = np.where(ok, ((Xf >= 1 - cut) | (Xf <= cut)).mean(axis=1), np.nan)
+            n += tercile_offer(x, f"share of {fname} features at a {cut:.0%} extreme", "extremeness", key=fname)
         return n
     T.append(("how extreme the board is (share of features at a 10% extreme)", extremeness))
 
