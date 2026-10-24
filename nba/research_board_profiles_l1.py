@@ -720,7 +720,14 @@ def techniques(reg, P, cols, fam):
                 rng = np.random.default_rng(23)
                 res = []
                 for _ in range(B):
-                    bi = rng.choice(idx, len(idx), replace=True)
+                    if block > 1:
+                        # MOVING-BLOCK bootstrap for views built from the last `block` slates (round 15, 2026-10-23): such
+                        # views are smooth by construction, so resampling single slates overstates stability; whole runs of
+                        # consecutive slates are resampled instead (Kunsch 1989)
+                        st_ = rng.integers(0, max(len(idx) - block + 1, 1), size=int(np.ceil(len(idx) / block)))
+                        bi = np.concatenate([idx[a: a + block] for a in st_])[: len(idx)]
+                    else:
+                        bi = rng.choice(idx, len(idx), replace=True)
                     try:
                         lf = fit_once(method, Xf[bi], par)
                     except Exception:
