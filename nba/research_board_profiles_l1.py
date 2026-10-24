@@ -98,6 +98,19 @@ GRP = {"points": "points", "rebounds": "rebounds", "assists": "assists", "threes
 GROUPS = ("points", "rebounds", "assists", "threes", "combos", "lowvol")
 ONLY = [x for x in os.environ.get("L1_TECH", "").split(",") if x]
 ONE_SEASON = os.environ.get("L1_ONE_SEASON", "") == "1"
+# SEASON-AGNOSTIC MODE (owner 2026-10-24 16:40 PT: "a profile should be season agnostic ... no matter which season it's in or which
+# time of the year it is in, unless it's a board profile that's specifically for the first week of the season or for the end of the
+# season, for the playoffs ... the board needs to be agnostic, so you don't need to force it to work with something else").
+# L1_AGNOSTIC=1: every gate that read "fit on 2024-25, re-found on 2025-26" / "in both seasons" reads instead across two HALVES OF
+# TIME - the historical slates in date order are cut into blocks of L1_BLOCK slates (default 10, about two weeks) dealt alternately
+# to half H-A and half H-B, so each half spans both seasons and every month. A profile must be re-found in the other half
+# (replicable in any season, any time of year), recur in each half (>= 15 slates, >= 3 months, >= 5 episodes) and pass every noise
+# gate there. build() sets HIST to the two halves for the gates; REAL_HIST keeps the seasons; multi-slate windows and change points
+# never cross a real season break (SEAS_REAL). Calendar profiles are added by their date rule (calendar_profiles).
+AGNOSTIC = os.environ.get("L1_AGNOSTIC", "") == "1"
+BLOCK = int(os.environ.get("L1_BLOCK", "10"))
+REAL_HIST = tuple(HIST)
+SEAS_REAL = None
 DIST = {}          # (season, day) -> per-slate leg distributions as quantile vectors (Wasserstein views)
 CELLS = {}         # (season, day) -> leg counts per prop x line type x side (NMF / LDA views of the board's composition)
 
