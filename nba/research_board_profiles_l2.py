@@ -31,7 +31,11 @@ PER PROFILE, both directions (fit on one season, read on the other):
   WORKS when diff > 0 in BOTH directions and the larger of the two p values survives Benjamini-Hochberg over all profiles at
   q 0.10. Also counted per profile: strategies better on the profile than on all slates with lower bound > 0 in BOTH seasons,
   vs the same count on random slate sets (p95).
-Env: DATABASE_URL, LP_NULL (default 200), L2_ONLY (comma list of profile numbers, e.g. 1,5,12 - default all).
+BATTERY 2 (L2_GRID=2; owner 2026-10-24 00:14 PT: "slip strategy battery non stop over all profiles"): every single goblin / demon
+  level on its own (G1 G2 G3 D1 D2 D3, and standard), More / Less / both, the 8 prop sets, rank final_hp / EV, PROP-LINE position
+  (all lines / lines at or below the slate's median line of that prop and line type / above it), a PROP-GROUP cap (none / at most
+  2 legs of one prop group), game cap 1 / 2, the 9 structures -> 36,288 strategies, judged exactly like battery 1.
+Env: DATABASE_URL, LP_NULL (default 200), L2_ONLY (comma list of profile numbers, e.g. 1,5,12 - default all), L2_GRID (1 / 2).
 """
 import os
 import sys
