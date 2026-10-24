@@ -464,10 +464,15 @@ class Registry:
             sub = mask[self.seas == s]
             ep = int(np.sum(sub[1:] & ~sub[:-1]) + (1 if len(sub) and sub[0] else 0))
             info.append(f"{s[2:]}: {nd}d/{nm}mo/{ep}ep")
-            ok &= nd >= 15 and nm >= 3 and ep >= 5
+            okk.append(nd >= 15 and nm >= 3 and ep >= 5)
+        # ONE-SEASON MODE (owner 2026-10-24 15:51 PT: "there are profiles that are going to be for a specific season, and another
+        # season may not even have that profile ... we should not try to force it to work on both"): L1_ONE_SEASON=1 keeps a
+        # profile that recurs in ONE season (the same bar inside that season)
+        ok = any(okk) if ONE_SEASON else all(okk)
         if ok:
             npool = int((mask & self.hist).sum())
-            tier = "ELECTED" if all(int((mask & (self.seas == s)).sum()) >= 25 for s in HIST) else "CANDIDATE"
+            tier = "ELECTED" if all(int((mask & (self.seas == s)).sum()) >= 25 for s in HIST) else (
+                "ONE-SEASON" if not all(okk) else "CANDIDATE")
             info.append(f"{tier}; detectable ROI diff on {npool} slates: 2P {280 * 1.5 / np.sqrt(npool):.0f} / 4F "
                         f"{280 * 1.3 / np.sqrt(npool):.0f} pts")
         return ok, " ".join(info)
