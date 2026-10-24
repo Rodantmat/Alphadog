@@ -356,6 +356,8 @@ def evaluate(P, strat, label, reg, hist_ix, hseas):
         cnt = int(r["both"].sum())
         (o1, p1, own1, g1), (o2, p2, own2, g2) = r["res"]
         flag = ("*** WORKS (BH q 0.10) *** " if w else "") + ("MANY-WINNERS " if cnt > n95 else "")
+        if label != "ALL STRUCTURES" and not flag:
+            continue            # per-structure reads list only the flagged profiles
         print(f"  {flag}P{r['pi']:03d} [{it['tech']}] {it['name']} ({sz[0]} / {sz[1]} slates) | 24->25 own {100 * own1:+.0f}% vs global "
               f"{100 * g1:+.0f}% (diff {100 * o1:+.0f}, p {p1:.3f}) | 25->24 own {100 * own2:+.0f}% vs global {100 * g2:+.0f}% (diff "
               f"{100 * o2:+.0f}, p {p2:.3f}) | both-season winners {cnt} (random {nm_:.0f}, p95 {n95:.0f})")
