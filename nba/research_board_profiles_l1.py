@@ -1627,9 +1627,12 @@ def techniques(reg, P, cols, fam):
                     continue
                 dx = np.diff(path, axis=0)
                 inc = path[-1] - path[0]
-                s12 = sum(((path[t] - path[0])[0]) * dx[t, 1] for t in range(len(dx)))
-                s21 = sum(((path[t] - path[0])[1]) * dx[t, 0] for t in range(len(dx)))
-                S[i] = [inc[0], inc[1], 0.5 * (s12 - s21), (dx[:, 0] ** 2).sum(), (dx[:, 1] ** 2).sum()]
+                areas = []
+                for a_, b_ in prs_:
+                    sab = sum(((path[t] - path[0])[a_]) * dx[t, b_] for t in range(len(dx)))
+                    sba = sum(((path[t] - path[0])[b_]) * dx[t, a_] for t in range(len(dx)))
+                    areas.append(0.5 * (sab - sba))
+                S[i] = list(inc) + areas + list((dx ** 2).sum(axis=0))
             okt = ~np.isnan(S).any(axis=1)
             zr = np.full_like(S, np.nan)
             for j in range(S.shape[1]):
