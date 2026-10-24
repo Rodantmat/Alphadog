@@ -133,8 +133,8 @@ One line per finding, newest section last. Each finding names its script and run
 - T-9  One model over every factor (ridge / gradient boosting) sharpens probabilities in a 2025-26 walk-forward but costs the live
        pair units and helps only 5-6-pick slips: better log-loss is not better 2-4-pick slips. Refit input, not a slip rule (ledger 27).
 - T-10 Day-to-day relations are absent: slate residuals and strategy profits do not persist, trailing / look-alike-day forecasts
-       fail both seasons, play/skip gates do no better than random skips (ledger 28). Single exploratory lead: 2-Power after a
-       losing 15-slate stretch - unconfirmed.
+       fail both seasons, play/skip gates do no better than random skips (ledger 28). The one lead (2-Power after a losing
+       15-slate stretch) holds at 15 slates only, not at 10 / 20 / 25 / 30 - closed as an isolated window.
 - T-11 PROFILE METHOD (ledger 29): a profile is defined WITHOUT strategies, must recur in both seasons, be identifiable before the
        pick and be distinct (also from intersections / unions of known profiles). Clustering is only meaningful on feature families
        that co-move beyond noise, and must beat shuffled data; without these gates random features produce 'profiles'.
