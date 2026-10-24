@@ -1890,10 +1890,9 @@ def techniques(reg, P, cols, fam):
     return T
 
 
-def main():
+def build(conn):
+    """Layer 1 end to end -> (registry, days, order, seasons); used by main() and by Layer 2 (research_board_profiles_l2.py)"""
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "scikit-learn", "networkx"], check=True)
-    conn = psycopg.connect(os.environ["DATABASE_URL"])
-    conn.execute("SET statement_timeout = 0")
     days = RC.load(conn)
     days = {k: [l for l in v if l["prop"] in CAL_PROPS] for k, v in days.items()}
     try:
