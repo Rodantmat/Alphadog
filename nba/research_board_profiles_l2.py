@@ -200,7 +200,13 @@ def main():
     SE.flex_alt_tiers(); SE.payout_v3_rules()
     reg, days, order, seas = L1.build(conn)
     nel = sum("ELECTED" in it["info"] for it in reg.items)
-    log(f"Layer 1: {len(reg.items)} profiles ({nel} ELECTED)")
+    clean = 0
+    for _, _, new in reversed(reg.passes):
+        if new:
+            break
+        clean += 1
+    log(f"Layer 1: {len(reg.items)} profiles ({nel} ELECTED); trailing clean passes {clean}; last 25 passes: "
+        + " | ".join(f"{t}: {n}" for t, _, n in reg.passes[-25:]))
     hist_ix = [i for i, k in enumerate(order) if k[0] in HIST]
     horder = [order[i] for i in hist_ix]
     hseas = seas[hist_ix]
