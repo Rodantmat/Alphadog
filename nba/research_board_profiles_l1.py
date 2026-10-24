@@ -1695,7 +1695,7 @@ def techniques(reg, P, cols, fam):
             prs_ = list(itertools.combinations(range(dims), 2))
             S = np.full((len(seas), 2 * dims + len(prs_)), np.nan)
             for i in range(win - 1, len(seas)):
-                if seas[i] != seas[i - win + 1]:
+                if SEAS_REAL[i] != SEAS_REAL[i - win + 1]:
                     continue
                 path = Z[i - win + 1: i + 1]
                 if np.isnan(path).any():
