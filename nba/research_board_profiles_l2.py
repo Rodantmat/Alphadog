@@ -267,6 +267,20 @@ def main():
     hseas = seas[hist_ix]
     strat, P = strategy_grid2(days, horder) if GRID == 2 else strategy_grid(days, horder)
     log(f"strategy grid done: {len(strat):,} strategies; slips built {int((~np.isnan(P)).sum()):,}")
+    res = {"ALL STRUCTURES": evaluate(P, strat, "ALL STRUCTURES", reg, hist_ix, hseas)}
+    if PER_STRUCT:
+        # PER STRUCTURE (2026-10-24): the all-structure read is dominated by 5-6-pick slips (high mean, high variance); each
+        # structure is also read on its own - own 5 vs global 5 among that structure's strategies only
+        for size, stt in STRUCTS:
+            rows_ = [i for i, s_ in enumerate(strat) if s_[1:] == (size, stt)]
+            lab = f"{size}{'F' if stt == 'flex' else 'P'}"
+            res[lab] = evaluate(P[rows_], [strat[i] for i in rows_], lab, reg, hist_ix, hseas)
+    print("\n" + "=" * 190 + "\nBATTERY SUMMARY: " + " | ".join(f"{k}: {a} WORK, {b} many-winners" for k, (a, b) in res.items()))
+    log("done")
+
+
+def evaluate(P, strat, label, reg, hist_ix, hseas):
+    """one battery read: per profile own 5 vs global 5 (strategies = the rows of P), BH over profiles; returns (n works, n many)"""
     st = Stats(P)
     mA = (hseas == HIST[0]).astype(np.float32)[:, None]
     mB = (hseas == HIST[1]).astype(np.float32)[:, None]
