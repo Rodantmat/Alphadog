@@ -1638,7 +1638,7 @@ def techniques(reg, P, cols, fam):
             for j in range(S.shape[1]):
                 v = S[okt, j]
                 zr[okt, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
-            key = f"SIG{win}-{fname}"
+            key = f"SIG{win}{'' if dims == 2 else f'd{dims}'}-{fname}"
             fam[key] = [f"{key}-{j}" for j in range(S.shape[1])]
             for j in range(S.shape[1]):
                 ci[f"{key}-{j}"] = P.shape[1] + j
