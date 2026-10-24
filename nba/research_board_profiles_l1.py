@@ -1839,7 +1839,7 @@ def techniques(reg, P, cols, fam):
                 g = ~np.isnan(xa) & ~np.isnan(xb)
                 if g.sum() >= win - 2:
                     r[i] = spearmanr(xa[g], xb[g])[0]
-            n += tercile_offer(r, f"{a_} and {b_} moving together (last {win} slates)", "co-movement regime")
+            n += tercile_offer(r, f"{a_} and {b_} moving together (last {win} slates)", "co-movement regime", key=f"{a_}-{b_}")
         return n
     T.append(("co-movement regime of two families (rolling 10-slate rank correlation)", comovement_regime))
 
