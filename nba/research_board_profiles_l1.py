@@ -1887,6 +1887,48 @@ def techniques(reg, P, cols, fam):
             fam[key_] = list(dict.fromkeys(fam["SIDES"] + fam[b_]))
             T.append((f"cross-family k-means on {key_}", clusters("kmeans", key_, (2, 3, 4, 5, 6))))
             T.append((f"cross-family Ward on {key_}", clusters("ward", key_, (2, 3, 4, 5, 6))))
+
+    # ---------------- batch 18 (round 20 run 40069977459 reached 10 trailing clean passes, all of one kind - More / Less crossed
+    # with other families; an independent CONFIRMATION batch of different points of view before closing Layer 1): multi-view
+    # consensus (Gemini consult: boards alike in several views at once), More / Less with schedule, availability and the
+    # external family, density / graph clusterings on the More / Less family (its distance to the
+    # typical board is already the batch-15 Mahalanobis view) ----------------
+    def multiview():
+        """each view (BOARD, EXTERNAL, INTERNAL, SIDES) clustered on 2024-25 (k-means, 3); a slate becomes its distances to the 12
+        view centres (percentile scale) - boards alike in SEVERAL views at once - then k-means with the derived-view gates"""
+        n = 0
+        cols_ = []
+        for fname in ("BOARD", "EXTERNAL", "INTERNAL", "SIDES"):
+            if len(fam.get(fname, [])) < 2:
+                continue
+            Xf = P[:, [ci[c] for c in fam[fname]]]
+            ok = ~np.isnan(Xf).any(axis=1)
+            km = KMeans(n_clusters=3, n_init=20, random_state=7).fit(Xf[ok & (seas == HIST[0])])
+            D = np.full((len(seas), 3), np.nan)
+            D[ok] = km.transform(Xf[ok])
+            cols_.append(D)
+        Z = np.column_stack(cols_)
+        okz = ~np.isnan(Z).any(axis=1)
+        zr = np.full_like(Z, np.nan)
+        for j in range(Z.shape[1]):
+            v = Z[okz, j]
+            zr[okz, j] = (np.argsort(np.argsort(v)) + 0.5) / len(v)
+        key = "MULTIVIEW"
+        fam[key] = [f"{key}-{j}" for j in range(Z.shape[1])]
+        for j in range(Z.shape[1]):
+            ci[f"{key}-{j}"] = P.shape[1] + j
+        n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5, 6))
+        return n
+    T.append(("multi-view consensus (board, external, internal, More / Less)", multiview))
+    for b_ in ("SCHEDULE", "AVAILABILITY", "EXTERNAL"):
+        if "SIDES" in fam and b_ in fam:
+            key_ = f"SIDESx{b_}"
+            fam[key_] = list(dict.fromkeys(fam["SIDES"] + fam[b_]))
+            T.append((f"cross-family k-means on {key_}", clusters("kmeans", key_, (2, 3, 4, 5, 6))))
+            T.append((f"cross-family Ward on {key_}", clusters("ward", key_, (2, 3, 4, 5, 6))))
+    T.append(("hdbscan on SIDES", clusters("hdbscan", "SIDES", (8, 12, 16, 24))))
+    T.append(("spectral on SIDES", clusters("spectral", "SIDES", (2, 3, 4, 5))))
+
     return T
 
 
