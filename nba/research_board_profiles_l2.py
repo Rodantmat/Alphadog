@@ -375,7 +375,7 @@ def evaluate(P, strat, label, reg, hist_ix, hseas):
         sz = tuple(int((it["mask"][hist_ix] & (hseas == s)).sum()) for s in HIST)
         nm_, n95 = wnull[sz]
         cnt = int(r["both"].sum())
-        (o1, p1, own1, g1), (o2, p2, own2, g2) = r["res"]
+        (o1, p1, own1, g1, *_), (o2, p2, own2, g2, *_) = r["res"]
         flag = ("*** WORKS (BH q 0.10) *** " if w else "") + ("MANY-WINNERS " if cnt > n95 else "")
         if label != "ALL STRUCTURES" and not flag:
             continue            # per-structure reads list only the flagged profiles
