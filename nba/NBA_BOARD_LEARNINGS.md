@@ -142,3 +142,7 @@ One line per finding, newest section last. Each finding names its script and run
        window / kernel / k of the same derived view is a setting, not a new profile (variant if Jaccard >= 0.3).
 - T-12 OPERATIONS: the pick must respect each leg's own tip vs when the owner places (10-23: an early 13:00 PT game made a slip
        unplaceable); soft steps can time out silently on big slates (market refresh 8 minutes).
+- T-13 BOARDS DIFFER, THE BEST STRATEGY DOES NOT (ledger 29, COMPASS 180): 375 recurring, identifiable board profiles exist,
+       but across 133,056 strategies none earns its own strategy set out of sample (0 of 375, every structure) and none marks
+       days to skip or press for the all-slates picks. A profile's best strategies on one season are no better on the other
+       season than the all-slates picks; profile-level 'winner' counts are ~1.7x chance at most and do not transfer.
