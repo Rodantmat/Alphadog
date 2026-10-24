@@ -3204,6 +3204,21 @@ should be doing. Mining everything that they should mine, consuming everything t
     - SAME-CONSTRUCT VARIANTS (round 14): a derived view at another setting (signature / trajectory window, kernel, Wasserstein k
       of one distribution) is the same construct; its cluster is a variant when Jaccard >= 0.3 with a registered profile of that
       construct. Pairs are keyed by their two sides (another cut of the same two sides = variant), like single-feature profiles.
+    - Rounds 14-20 (2026-10-23 night): moving-block bootstrap for windowed views (Kunsch 1989; synthetic: keeps a planted
+      persistent regime, drops the signature artifacts), triples / pairs keyed by their sides, batch 14 cross-family views,
+      batch 15 board-level measures (extremeness, deviation distribution, co-movement regime, turnover, Mahalanobis), batch 16
+      MORE / LESS features (no side feature existed: Less share overall / per tier / per group / among strong legs / top 20,
+      side strength gap), batch 17 their settings (keyed) and More / Less crosses. Round 20 (run 40069977459): 375 profiles
+      (303 ELECTED, 72 CANDIDATE), 10 trailing clean; batch 18 confirmation (multi-view consensus, More / Less x schedule /
+      availability / external, HDBSCAN / spectral on SIDES) ran inside the first Layer 2 run (40072942025): 19 trailing clean.
+      LAYER 1 CLOSED 2026-10-24 00:53 PT.
+    - LAYER 2 (research_board_profiles_l2.py; per profile the 5 best strategies on its fit-season slates vs the 5 best on all
+      fit-season slates, read on its test-season slates, both directions, p vs random slate sets, BH q 0.10 over 375 profiles):
+      battery 1 (96,768: line-type pools x side x 8 prop sets x rank final_hp / EV / blend / trailing hit rate x min final_hp x
+      game cap x skip-top x 9 structures; run 40072942025): 0 of 375 WORK; 33 profiles with more both-season winners than the
+      random p95 (~19 expected). Battery 2 (36,288: single goblin / demon levels x side x props x rank x prop-line position x
+      prop-group cap x game cap x structure; runs 40073397647 and per structure 40075499949): 0 of 375 WORK in the mixed read and
+      in EVERY structure (2P 3P 3F 4P 4F 5P 5F 6P 6F); many-winners 16-44 per structure vs ~19 by chance.
     - Closed: the 2-Power contrarian lead (ledger 28) - R4_ONLY=contra run 40033092278: only the 15-slate trailing window is
       significant (p 0.00 / 0.00); 10, 20, 25, 30 are not (p 0.06-0.30) - an isolated window, not a rule.
 30. 🔴 **P3 10-23 (run 40012048430) - TWO OPERATIONAL GAPS.** (a) The market refresh of final_hp hit its 8-minute step limit on the
