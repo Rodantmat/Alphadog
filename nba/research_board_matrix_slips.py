@@ -10,7 +10,7 @@ Built on the level-1/2 selectors (research_board_matrix.py: cell x rank / traili
 A COMPOSITION is a template over the profile's best selectors AS KNOWN BEFORE THE SLATE: "2 legs of slot 1 + 1 leg of slot 3" where
 slot k is the k-th best selector on the profile's EARLIER slates (lower-bound margin; slots re-ranked every slate). So every slip a
 template makes is out of sample by construction, and the template carries to any profile and any season.
-  templates  every multiset of MS_SLOTS slots with 2..6 legs (6 slots: 917), each as Power and as Flex (3+ legs)
+  templates  every multiset of MS_SLOTS slots with 2..6 legs (5 slots: 456), each as Power and as Flex (3+ legs)
   slips      exact legs (no player twice, players on >= 2 teams), graded by build_slip_engine.grade on PrizePicks' payouts
   per profile: (a) every template's out-of-sample ROI on the profile's slates; (b) the template CHOSEN walk-forward (best on the
   profile's earlier slates, re-chosen every slate) vs the same procedure on the GLOBAL slots (selectors ranked on all earlier slates)
