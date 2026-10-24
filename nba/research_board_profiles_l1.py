@@ -1265,7 +1265,7 @@ def techniques(reg, P, cols, fam):
             base = P.shape[1]
             for j in range(T3.shape[1]):
                 ci[f"{key}-{j}"] = base + j
-            n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5))
+            n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5), block=win)
         return n
     T.append(("3-slate trajectories", trajectories))
 
