@@ -552,7 +552,7 @@ class Registry:
             self.Msum = np.concatenate([self.Msum, np.zeros_like(self.Msum)])
         self.M[len(self.items)] = h
         self.Msum[len(self.items)] = h.sum()
-        cur = [str(k[1]) for k, m in zip(self.order, mask) if m and k[0] not in HIST]
+        cur = [str(k[1]) for k, m in zip(self.order, mask) if m and k[0] not in REAL_HIST]
         self.items.append({"name": name, "mask": mask, "def": definition, "feats": feats, "tech": tech, "info": info,
                            "ranges": self.ranges(mask, feats), "cur": cur, "cons": cons})
         if key is not None:
