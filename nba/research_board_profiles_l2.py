@@ -137,7 +137,57 @@ def strategy_grid(days, order):
     return strat, P
 
 
+def strategy_grid2(days, order):
+    """battery 2: single line-type levels x side x props x rank x prop-line position x prop-group cap x game cap x structure"""
+    LEVELS = ("R", "G1", "G2", "G3", "D1", "D2", "D3")
+    combos = [(lv, side, ps, rk, lp, pc, gc) for lv in LEVELS for side in SIDES for ps in PROPSETS for rk in ("p", "ev")
+              for lp in ("all", "low", "high") for pc in (0, 2) for gc in GAMECAPS]
+    strat = [(c, size, st) for c in combos for (size, st) in STRUCTS]
+    P = np.full((len(strat), len(order)), np.nan, np.float32)
+    nst = len(STRUCTS)
+    for di, key in enumerate(order):
+        legs = [l for l in days[key] if l["p"] is not None and l["team_id"] is not None]
+        med = defaultdict(list)
+        for l in legs:
+            med[(l["prop"], l["tier"])].append(float(l["line"]))
+        med = {k: float(np.median(v)) for k, v in med.items()}
+        for l in legs:
+            l["_grp"] = GRP.get(l["prop"])
+            l["_lp"] = "low" if float(l["line"]) <= med[(l["prop"], l["tier"])] else "high"
+        ci = 0
+        for lv in LEVELS:
+            for side in SIDES:
+                for ps, pset in PROPSETS.items():
+                    base = [l for l in legs if l["tier"] == lv and l["side"] in SIDES[side] and (pset is None or l["_grp"] in pset)]
+                    for rk in ("p", "ev"):
+                        ranked = sorted(base, key=(lambda l: -l["p"]) if rk == "p" else (lambda l: -l["p"] * float(l["factor"])))
+                        for lp in ("all", "low", "high"):
+                            cand = ranked if lp == "all" else [l for l in ranked if l["_lp"] == lp]
+                            for pc in (0, 2):
+                                for gc in GAMECAPS:
+                                    pick, players, games, grps = [], set(), defaultdict(int), defaultdict(int)
+                                    for l in cand:
+                                        if l["player"] in players or games[l["event_id"]] >= gc or (pc and grps[l["_grp"]] >= pc):
+                                            continue
+                                        pick.append(l); players.add(l["player"]); games[l["event_id"]] += 1; grps[l["_grp"]] += 1
+                                        if len(pick) == 6:
+                                            break
+                                    for j, (size, st) in enumerate(STRUCTS):
+                                        if len(pick) >= size and len({l["team_id"] for l in pick[:size]}) >= 2:
+                                            sl = [{"hit": l["hit"], "factor": float(l["factor"] or 1.0), "event_id": l["event_id"]}
+                                                  for l in pick[:size]]
+                                            P[ci * nst + j, di] = SE.grade(sl, st)[1] - 1.0
+                                    ci += 1
+        if di % 25 == 0:
+            log(f"strategy grid 2: slate {di + 1} / {len(order)}")
+    return strat, P
+
+
 def name(s):
+    if GRID == 2:
+        (lv, side, ps, rk, lp, pc, gc), size, st = s
+        return (f"{lv}-{'More' if side == 'O' else 'Less' if side == 'U' else 'both'}-{ps}-{rk}-lines {lp}-{'grp<=2-' if pc else ''}gc{gc} "
+                f"{size}{'F' if st == 'flex' else 'P'}")
     (pool, side, ps, rk, mp, gc, tp), size, st = s
     return f"{pool}-{'More' if side == 'O' else 'Less' if side == 'U' else 'both'}-{ps}-{rk}-p{mp:.2f}-gc{gc}{'-skip1' if tp else ''} " \
            f"{size}{'F' if st == 'flex' else 'P'}"
