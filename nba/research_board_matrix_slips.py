@@ -205,6 +205,8 @@ def main():
     D = len(horder)
     print("\n" + "=" * 190 + "\nPER PROFILE - composition templates over the profile's own best selectors (as known before each slate), out of sample")
     for pi, it in enumerate(profiles, 1):
+        if (pi - 1) % SHARD[1] != SHARD[0]:
+            continue
         dix = np.where(it["mask"][hist_ix])[0]
         if len(dix) < WARM + 20:
             continue
