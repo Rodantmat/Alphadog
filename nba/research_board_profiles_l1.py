@@ -2039,7 +2039,7 @@ def main():
               + (f"\n        2026-27 slates in it: {', '.join(it['cur'])}" if it["cur"] else ""))
     print("\n  2026-27 slates and their profiles:")
     for k in order:
-        if k[0] in HIST:
+        if k[0] in REAL_HIST:
             continue
         i = order.index(k)
         ps = [f"P{j + 1:03d}" for j, it in enumerate(reg.items) if it["mask"][i]]
