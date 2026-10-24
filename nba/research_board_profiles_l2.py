@@ -356,6 +356,19 @@ def evaluate(P, strat, label, reg, hist_ix, hseas):
         wnull[sz] = (float(np.mean(c)), float(np.percentile(c, 95)))
     pmax = [max(r["res"][0][1], r["res"][1][1]) if r["res"][0][0] > 0 and r["res"][1][0] > 0 else 1.0 for r in rows]
     ok = bh(pmax, 0.10)
+    # PLAY / AVOID: the global picks on the profile's slates worse (AVOID) / better (PLAY MORE) than random slate sets in BOTH
+    # directions, BH q 0.10 over profiles
+    p_avoid = [max(r["res"][0][4], r["res"][1][4]) for r in rows]
+    p_boost = [max(r["res"][0][5], r["res"][1][5]) for r in rows]
+    ok_av, ok_bo = bh(p_avoid, 0.10), bh(p_boost, 0.10)
+    print("\n" + "=" * 190 + f"\n[{label}] PLAY / AVOID - the global picks on each profile's slates vs random slate sets (BH q 0.10): "
+          f"{int(ok_av.sum())} AVOID, {int(ok_bo.sum())} PLAY-MORE")
+    for r, a_, b_, pa, pb in zip(rows, ok_av, ok_bo, p_avoid, p_boost):
+        if a_ or b_ or min(pa, pb) <= 0.01:
+            (_, _, _, g1, _, _, m1), (_, _, _, g2, _, _, m2) = r["res"]
+            print(f"  {'AVOID ' if a_ else 'PLAY-MORE ' if b_ else '(nominal) '}P{r['pi']:03d} {r['it']['name']} | global picks on its "
+                  f"slates 24->25 {100 * g1:+.0f}% (random median {100 * m1:+.0f}%) | 25->24 {100 * g2:+.0f}% (random median "
+                  f"{100 * m2:+.0f}%) | p low {pa:.3f} / high {pb:.3f}")
     print("\n" + "=" * 190 + f"\n[{label}] PER PROFILE (own 5 vs global 5 on the profile's test-season slates, units per slip; p vs random slate sets)")
     for r, pm, w in zip(rows, pmax, ok):
         it = r["it"]
