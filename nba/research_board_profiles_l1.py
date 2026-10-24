@@ -1672,7 +1672,7 @@ def techniques(reg, P, cols, fam):
             fam[key] = [f"{key}-{j}" for j in range(S.shape[1])]
             for j in range(S.shape[1]):
                 ci[f"{key}-{j}"] = P.shape[1] + j
-            n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5, 6))
+            n += clusters_on(np.column_stack([P, zr]), "kmeans", key, (2, 3, 4, 5, 6), block=win)
         return n
     for win in (3, 5, 10):
         T.append((f"path signatures ({win} slates)", (lambda w: (lambda: signatures(w)))(win)))
