@@ -34,7 +34,7 @@ import research_board_matrix as MX                   # noqa: E402
 T0 = time.time()
 HIST = MX.HIST
 SLOTS = int(os.environ.get("MS_SLOTS", "5"))
-SHARD = [int(x) for x in os.environ.get("MS_SHARD", "0/1").split("/")]      # i/n: this run takes every n-th profile from i
+SHARD = [int(x) for x in os.environ.get("MS_SHARD", "0:1").replace("/", ":").split(":")]  # i:n - every n-th profile from i
 GCACHE = {}                                                                  # slate -> the global slots' template results
 NULLN = int(os.environ.get("MS_NULL", "20"))
 RNG = np.random.default_rng(43)
