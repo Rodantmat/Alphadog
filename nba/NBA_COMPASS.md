@@ -399,6 +399,20 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    0 of 375 profiles beat the all-slates picks - mixed and in EVERY structure (2P .. 6F) - and 0 profiles are AVOID or
    PLAY-MORE days for the all-slates picks. DECISION: no profile-specific strategy sets and no profile skip filter; the live
    strategy stays as is. The multi-profile combine / cap step is moot (nothing to combine).
+   **SUPERSEDED IN PART by 181** - the 0-of-375 read forced each profile's strategy to transfer from one season to the other.
+
+181. 🔑 **BOARD PROFILES ARE SEASON-AGNOSTIC; STRATEGIES CHOSEN WALK-FORWARD; COVERAGE + FALLBACK (owner 2026-10-24 15:51 /
+   16:40 PT).** A profile is defined by the board's own characteristics and must be replicable in any season and any time of the
+   year - it is never forced to hold "in both seasons" and never tied to a season. Only CALENDAR profiles (opening week /
+   fortnight / first month, holiday stretch, pre / post All-Star, last month / fortnight / week; date rules) are tied to time; the
+   history is regular season only, so no playoff profile exists yet. Layer 1 `L1_AGNOSTIC=1`: every replication gate reads across
+   two halves of time (blocks of 10 slates dealt alternately, each half spanning both seasons and every month) instead of
+   2024-25 vs 2025-26. A profile is useful only if a slip strategy holds on it; the strategy is chosen walk-forward (the
+   profile's earlier slates, any season) - `research_board_profiles_wf.py`, the leg / factor / composition / volume matrix
+   (`research_board_matrix.py`, `research_board_matrix_slips.py`). Goal: every board fits at least one useful profile (Layer 1
+   prints COVERAGE); a board that fits none plays the current best all-slates strategy as the FALLBACK - not expected to be
+   needed always. Battery 3 (run 40140403817, documented compositions): 28-55 profiles per structure have more both-season
+   winners than random slate sets (~19 by chance) - the signal the walk-forward reads now test.
 
 ---
 
