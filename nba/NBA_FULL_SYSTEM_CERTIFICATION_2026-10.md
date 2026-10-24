@@ -3219,6 +3219,11 @@ should be doing. Mining everything that they should mine, consuming everything t
       random p95 (~19 expected). Battery 2 (36,288: single goblin / demon levels x side x props x rank x prop-line position x
       prop-group cap x game cap x structure; runs 40073397647 and per structure 40075499949): 0 of 375 WORK in the mixed read and
       in EVERY structure (2P 3P 3F 4P 4F 5P 5F 6P 6F); many-winners 16-44 per structure vs ~19 by chance.
+      Battery 1 per structure (run 40077123434): 0 of 375 WORK in every structure (many-winners 15-36). PLAY / AVOID (the
+      all-slates picks on each profile's slates vs random slate sets, both directions, BH; runs 40079171982 battery 2 and
+      40080746277 battery 1): 0 AVOID and 0 PLAY-MORE in every structure. CONCLUDED 2026-10-24 03:15 PT: profiles do not change
+      the best strategy and do not mark skip / press days; no profile-specific strategy sets; live strategy unchanged
+      (COMPASS 180, learnings T-13).
     - Closed: the 2-Power contrarian lead (ledger 28) - R4_ONLY=contra run 40033092278: only the 15-slate trailing window is
       significant (p 0.00 / 0.00); 10, 20, 25, 30 are not (p 0.06-0.30) - an isolated window, not a rule.
 30. 🔴 **P3 10-23 (run 40012048430) - TWO OPERATIONAL GAPS.** (a) The market refresh of final_hp hit its 8-minute step limit on the
