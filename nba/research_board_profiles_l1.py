@@ -816,7 +816,7 @@ def techniques(reg, P, cols, fam):
                     thr = null_threshold(method, fname, Xf, ok, par) if thr is None else thr
                     if jb <= thr + (0.05 if derived else 0.0):
                         continue        # no better than clusters of shuffled (structure-free) data
-                    st, (sa, sb) = boot_stable((method, fname), method, Xf, ok, par, labs, c)
+                    st, (sa, sb) = boot_stable((method, fname), method, Xf, ok, par, labs, c, block=block)
                     if not st:
                         continue        # dissolves under resampling of its own season's slates (Hennig bootstrap < 0.75)
                     desc = ", ".join(f"{nm_} {'HIGH' if v > 0.5 else 'LOW'} {v:.2f}" for nm_, v in top)
