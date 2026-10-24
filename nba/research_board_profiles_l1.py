@@ -1869,7 +1869,7 @@ def techniques(reg, P, cols, fam):
             tb = np.where(np.isnan(Xf), np.nan, np.digitize(Xf, [1 / 3, 2 / 3]))
             x = np.full(len(seas), np.nan)
             for i in range(lag, len(seas)):
-                if seas[i] == seas[i - lag]:
+                if SEAS_REAL[i] == SEAS_REAL[i - lag]:
                     g = ~np.isnan(tb[i]) & ~np.isnan(tb[i - lag])
                     if g.sum() >= 2:
                         x[i] = float(np.mean(tb[i][g] != tb[i - lag][g]))
