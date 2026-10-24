@@ -389,6 +389,16 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    2026-10-22, P3 scores each slate after the pick). Walk-forward 12/12 months; audit run 39890697569: log-loss 0.6219 -> 0.6052,
    every decile within 1-2 points. NOTHING READS board_hp YET - final_hp stays the engine's number (owner: slips as is). Alternate
    Less legs have no graded history, so their board_hp is L1 only (uncalibrated). Learnings log: `nba/NBA_BOARD_LEARNINGS.md`.
+180. 🔑 **LAYERED BOARD PROFILES: 375 PROFILES, NO PER-PROFILE STRATEGY (2026-10-24 03:15 PT; ledger 29).** Layer 1
+   (`nba/research_board_profiles_l1.py`, profiles defined WITHOUT strategies, live-identifiable, recurring in both seasons,
+   distinct, noise-gated incl. Hennig / moving-block bootstrap) closed with 19 consecutive clean passes over ~340 passes of
+   ~60 techniques: 375 profiles (303 ELECTED, 72 CANDIDATE); every slate sits in ~100-125 of them. Layer 2
+   (`nba/research_board_profiles_l2.py`) searched 133,056 strategies (two batteries: line types / single goblin-demon levels,
+   More / Less, 8 prop sets, ranks final_hp / EV / blended or pure trailing hit rate, final_hp floors, prop-line position,
+   prop-group and game caps, skip-top, all 9 structures) per profile, out of sample both directions, vs random slate sets, BH:
+   0 of 375 profiles beat the all-slates picks - mixed and in EVERY structure (2P .. 6F) - and 0 profiles are AVOID or
+   PLAY-MORE days for the all-slates picks. DECISION: no profile-specific strategy sets and no profile skip filter; the live
+   strategy stays as is. The multi-profile combine / cap step is moot (nothing to combine).
 
 ---
 
