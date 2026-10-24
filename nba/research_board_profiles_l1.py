@@ -1874,6 +1874,19 @@ def techniques(reg, P, cols, fam):
     T.append(("distance to the typical board (Mahalanobis)", mahalanobis))
     for meth_ in ("average-cosine", "spectral-rbf", "gmm-tied"):
         T.append((f"{meth_} on every family", (lambda m: (lambda: sum(clusters(m, f_, (2, 3, 4, 5, 6))() for f_ in MAINF)))(meth_)))
+
+    # ---------------- batch 17 (round 19 run 40066582170: More / Less features added 30; the batch-15 constructs added ~45; their
+    # variations - other cuts / windows / lags of the same constructs (keyed: a variant unless the construct is new), More / Less
+    # crossed with tiers, confidence, group quality and lines, and spectral clustering at other RBF widths) ----------------
+    T.append(("how extreme the board is (20% extremes)", lambda: extremeness(0.2)))
+    T.append(("co-movement regime (5 and 20 slates)", lambda: comovement_regime(5) + comovement_regime(20)))
+    T.append(("turnover vs 3 slates before", lambda: turnover(3)))
+    for b_ in ("TIERS", "CONFIDENCE", "GROUP-QUALITY", "LINES", "MIX"):
+        if "SIDES" in fam and b_ in fam:
+            key_ = f"SIDESx{b_}"
+            fam[key_] = list(dict.fromkeys(fam["SIDES"] + fam[b_]))
+            T.append((f"cross-family k-means on {key_}", clusters("kmeans", key_, (2, 3, 4, 5, 6))))
+            T.append((f"cross-family Ward on {key_}", clusters("ward", key_, (2, 3, 4, 5, 6))))
     return T
 
 
