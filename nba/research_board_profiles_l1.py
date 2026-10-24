@@ -305,6 +305,24 @@ def slate_features(conn, days, order):
             f[f"demshare_{g}"] = sum(GRP.get(l["prop"]) == g and l["tier"].startswith("D") for l in legs) / max(ng_, 1)
             DIST[(s, d)][f"std_hp_{g}"] = np.quantile(Rg, np.linspace(0.05, 0.95, 19)) if len(Rg) >= 20 else None
             DIST[(s, d)][f"gob_hp_{g}"] = np.quantile(Gg, np.linspace(0.05, 0.95, 19)) if len(Gg) >= 20 else None
+        # batch 16 (round 18, 2026-10-23): MORE / LESS - no feature described the board's sides yet. Share of Less legs (all,
+        # standard, goblin, demon, per prop group), where the strong legs are (share of Less among standard legs >= 0.62 and among
+        # the top 20 by final_hp), and the strength gap between the sides (mean final_hp of standard Less minus More)
+        def _ushare(sel):
+            v = [l["side"] == "Under" for l in legs if sel(l)]
+            return float(np.mean(v)) if len(v) >= 5 else np.nan
+        f["under_share"] = _ushare(lambda l: True)
+        f["under_share_std"] = _ushare(lambda l: l["tier"] == "R")
+        f["under_share_gob"] = _ushare(lambda l: l["tier"].startswith("G"))
+        f["under_share_dem"] = _ushare(lambda l: l["tier"].startswith("D"))
+        for g in GROUPS:
+            f[f"under_share_{g}"] = _ushare(lambda l, g=g: GRP.get(l["prop"]) == g)
+        f["under_share_strong"] = _ushare(lambda l: l["tier"] == "R" and l["p"] is not None and l["p"] >= 0.62)
+        top_ = sorted((l for l in legs if l["tier"] == "R" and l["p"] is not None), key=lambda l: -l["p"])[:20]
+        f["under_share_top20"] = float(np.mean([l["side"] == "Under" for l in top_])) if len(top_) >= 10 else np.nan
+        pu = [l["p"] for l in legs if l["tier"] == "R" and l["side"] == "Under" and l["p"] is not None]
+        po = [l["p"] for l in legs if l["tier"] == "R" and l["side"] == "Over" and l["p"] is not None]
+        f["side_gap"] = float(np.mean(pu) - np.mean(po)) if len(pu) >= 5 and len(po) >= 5 else np.nan
         # batch 4 (Gemini consult 2026-10-23: composition, concentration, multimodality, entropy)
         cc = defaultdict(int)
         for l in legs:
