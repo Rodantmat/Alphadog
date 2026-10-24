@@ -1960,9 +1960,22 @@ def build(conn):
         days.update(load_current(conn))
     except Exception as e:      # the live loader must never stop the research; reported plainly
         log(f"2026-27 slates not loaded: {type(e).__name__}")
+    global HIST, SEAS_REAL
     order = sorted(days, key=lambda k: k[1])
     seas = np.array([k[0] for k in order])
+    SEAS_REAL = seas
     log(f"slates {len(order)}: " + ", ".join(f"{s} {int((seas == s).sum())}" for s in sorted(set(seas))))
+    split = seas
+    if AGNOSTIC:
+        halves = ("H-A", "H-B")
+        split = seas.astype(object).copy()
+        hi = [i for i, k in enumerate(order) if k[0] in REAL_HIST]
+        for j, i in enumerate(hi):
+            split[i] = halves[(j // BLOCK) % 2]
+        split = split.astype(str)
+        HIST = halves
+        log(f"SEASON-AGNOSTIC: blocks of {BLOCK} slates dealt to two halves of time - " + ", ".join(
+            f"{h}: " + " / ".join(f"{s_} {int(((split == h) & (seas == s_)).sum())}" for s_ in REAL_HIST) for h in halves))
     F = slate_features(conn, days, order)
     cols = sorted({c for f in F.values() for c in f})
     X, P = trailing_pct(F, order, cols)
