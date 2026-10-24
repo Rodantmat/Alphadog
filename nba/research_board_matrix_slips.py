@@ -128,9 +128,13 @@ def run_profile(dix, days, horder, mat, sels, tpls, gslots_t):
                 p = build(tpl, own_slots, cache)
                 if p is not None:
                     ro[ti] = grade(p, tpl[2])
-                p = build(tpl, gslots_t[t], cache)
-                if p is not None:
-                    rg[ti] = grade(p, tpl[2])
+            if t not in GCACHE:                              # the global slots depend on the slate only: built once per slate
+                for ti, tpl in enumerate(tpls):
+                    p = build(tpl, gslots_t[t], cache)
+                    if p is not None:
+                        rg[ti] = grade(p, tpl[2])
+                GCACHE[t] = rg
+            rg = GCACHE[t]
             Ro.append(ro); Rg.append(rg); played.append(t); slots_at.append(own_slots)
         h += mat.H[:, t]; n += mat.N[:, t]; be += mat.BE[:, t]; d += (mat.N[:, t] > 0)
     if not played:
