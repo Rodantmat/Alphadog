@@ -1687,6 +1687,17 @@ def techniques(reg, P, cols, fam):
                                   f"beyond chance, both seasons", [c], "quads")
         return n
     T.append(("4-way co-occurrence (formal concepts)", quads))
+
+    # ---------------- batch 12 (round 11 run 40040166639: 5- and 10-slate path signatures still found 3; their variations -
+    # more windows, 3-axis signatures; co-occurring pairs at the quartile extremes) ----------------
+    for win in (7, 15, 20):
+        T.append((f"path signatures ({win} slates)", (lambda w: (lambda: signatures(w)))(win)))
+    for win in (5, 10):
+        T.append((f"3-axis path signatures ({win} slates)", (lambda w: (lambda: signatures(w, 3)))(win)))
+
+    def pairs_extreme():
+        return pairs(0.25, 0.75)()
+    T.append(("co-occurring pairs at the quartile extremes", pairs_extreme))
     return T
 
 
