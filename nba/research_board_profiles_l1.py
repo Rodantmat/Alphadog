@@ -412,6 +412,17 @@ def trailing_pct(F, order, cols):
     return X, P
 
 
+def construct_of(tech):
+    """the construct behind a derived view, its setting removed: 'kmeans SIG15d3-EXTERNAL' -> 'kmeans SIG-EXTERNAL', 'kmeans
+    TRAJ7-ALL' -> 'kmeans TRAJ-ALL', 'kmeans KPCAlaplacian2-TIERS' -> 'kmeans KPCA-TIERS', 'wasserstein std_hp' -> itself;
+    None for every other technique"""
+    import re
+    if tech.startswith("wasserstein "):
+        return tech
+    m = re.match(r"^(\S+) (SIG|TRAJ|KPCA)[A-Za-z]*\d*(?:d\d+)?-(.+)$", tech)
+    return f"{m.group(1)} {m.group(2)}-{m.group(3)}" if m else None
+
+
 # ===================================================================== REGISTRY =========================================================
 class Registry:
     def __init__(self, order, seas, X, cols):
