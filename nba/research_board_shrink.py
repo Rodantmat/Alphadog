@@ -22,7 +22,9 @@ Run 1 (40145207059, 30 nulls): the live system with light tilts (K 400 - 3200) b
 a leg (global +1.88 -> +2.37 at K 1600); per profile (A) nothing beyond chance. Run 2 adds slips per structure (spread / top shapes,
 SH_SLIP_K), per-season and per-third breakdowns, a finer K grid and more nulls.
 Env: DATABASE_URL, L1_AGNOSTIC, MX_TOPK (default 5), SH_NULL (default 30), SH_K (default 25 .. 12800, 13 values),
-SH_SLIP_K (default 400,800,1600,3200,6400), SH_ONLY_B, SH_POOL (default 300).
+SH_SLIP_K (default 400,800,1600,3200,6400), SH_ONLY_B, SH_POOL (default 300), SH_KNN (look-alike sizes, read C), SH_ONLY_C.
+  C  LOOK-ALIKE TILT: each slate tilted by its nn most similar earlier slates (the board's own season-agnostic profile; owner 16:40
+     PT: "ideally every single board is gonna fit in one of the many profiles") vs nn random earlier slates.
 """
 import os
 import sys
