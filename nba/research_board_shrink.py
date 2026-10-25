@@ -229,6 +229,9 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     reg, days, order, seas = L1.build(conn)
+    # the MLB runners terminate connections idle > 2 minutes (selfCleanupAfterPhase): fresh connection after Layer 1's compute
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
     log(f"Layer 1: {len(reg.items)} profiles ({sum(it['tech'] == 'calendar' for it in reg.items)} calendar)")
     hist_ix = [i for i, k in enumerate(order) if k[0] in HIST]
     horder = [order[i] for i in hist_ix]
