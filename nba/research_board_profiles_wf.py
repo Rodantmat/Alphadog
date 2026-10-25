@@ -200,7 +200,8 @@ def evaluate_wf(P, strat, reg, hist_ix, hseas, label, name, menu=0):
     nb = int(ok.sum())
     npos = sum(r[5] > 0 for r in rows)
     print(f"\n[{label}] WF SUMMARY: {nb} of {len(rows)} profiles beat the global picks walk-forward (BH q 0.10); {npos} have a positive "
-          f"difference (half expected by chance); nominal p < 0.05: {sum(r[6] < 0.05 for r in rows)} (~{0.05 * len(rows):.0f} by chance)")
+          f"difference (half expected by chance); p < 0.05: {sum(r[6] < 0.05 for r in rows)} (~{0.05 * len(rows):.0f} by chance; binomial "
+          f"p of that many or more {__import__('scipy.stats', fromlist=['binom']).binom.sf(sum(r[6] < 0.05 for r in rows) - 1, len(rows), 0.05):.4f})")
     return nb, npos
 
 
