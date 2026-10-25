@@ -76,6 +76,14 @@ def main():
     url = os.environ["DATABASE_URL"]
     proxy = (os.environ.get("PROXY_URL") or "").strip()
     otp = (os.environ.get("UD_OTP") or "").strip()
+    if not otp and os.environ.get("GITHUB_EVENT_PATH"):
+        # 2026-10-25: the code is read from the dispatch event file, never from a step env (GitHub prints step env values in
+        # the public log before any mask applies)
+        try:
+            with open(os.environ["GITHUB_EVENT_PATH"]) as fh:
+                otp = str(((json.load(fh).get("inputs") or {}).get("otp")) or "").strip()
+        except (OSError, ValueError):
+            otp = ""
     if otp and not otp.isdigit():
         # 2026-10-25 (owner's iPhone automation): the WHOLE Underdog message may arrive as otp - take the code out of it here
         # (the first run of 4-8 digits), so the phone needs no text-parsing step. Nothing of the message is printed.
