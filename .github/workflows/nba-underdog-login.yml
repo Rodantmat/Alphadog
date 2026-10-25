@@ -50,5 +50,6 @@ jobs:
           UD_PASSWORD: ${{ secrets.UD_PASSWORD }}
           UD_OTP: ${{ github.event.inputs.otp }}
         run: |
-          if [ -n "$UD_OTP" ]; then echo "::add-mask::$UD_OTP"; fi
+          # the otp input may be the whole Underdog message (iPhone automation, 2026-10-25): mask every digit run in it, never echo the text
+          if [ -n "$UD_OTP" ]; then printf '%s\n' "$UD_OTP" | grep -oE '[0-9]{4,8}' | while read -r c; do echo "::add-mask::$c"; done; fi
           python nba/underdog_login.py
