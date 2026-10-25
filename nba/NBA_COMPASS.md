@@ -465,6 +465,11 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    939) and final_hp ran 4-5 points hot on those boards at 0.55-0.65 - the app prices beat our probability where they disagree. The
    simulated history (prices modelled from DraftKings / Bovada, R2 0.85-0.88) shows big ROIs but is NOT trusted: no live candidate.
    The same in-sample caveat applies to PrizePicks B (182: plan on 40-60%).
+   SMALL / FLEX SAFE CUT (owner 16:39 PT; UD run 40245882938 scope 2S/3S/3F/4F/5F, Betr run 40245885501): safest UD sets - 2-pick
+   rebounds-weighted composition + 2-pick all-lines Less base >=0.60 skip-top + 5-pick Flex standard Less base: 2.81/day, ROI +52%
+   (+53 / +51), max drawdown 7.3u, losing days 38%; three 2-pick Standards: 2.94/day, +44%, dd 13.1u, losing days 29%. Honest
+   holdout of the small-slip safe sets: +6..+25% ROI, drawdown 11-30u at 1.6-2.9 slips a day. Lowest-risk singles: 3F standard
+   both base >=0.65 (31% losing slips, dd 4.6u, +30 / +16%), 2S Less assists base >=0.65 skip-top (dd 4.0u, +51 / +44%).
 
 ---
 
