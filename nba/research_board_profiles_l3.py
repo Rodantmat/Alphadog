@@ -42,7 +42,7 @@ import research_board_profiles_l2 as L2              # noqa: E402
 
 T0 = time.time()
 STAGE = os.environ.get("L3_STAGE", "AB")
-HIST = L1.HIST
+HIST = L1.REAL_HIST          # the real seasons (with L1_AGNOSTIC, L1.HIST becomes the two time halves once Layer 1 has been built)
 GRP = L1.GRP
 RANK_KEYS = ("final_hp", "baseline_hp", "final_score")
 STRUCTS = L2.STRUCTS
