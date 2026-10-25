@@ -413,6 +413,18 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    prints COVERAGE); a board that fits none plays the current best all-slates strategy as the FALLBACK - not expected to be
    needed always. Battery 3 (run 40140403817, documented compositions): 28-55 profiles per structure have more both-season
    winners than random slate sets (~19 by chance) - the signal the walk-forward reads now test.
+   **2026-10-24 evening reads (research only, nothing live):** (1) POWER: slip-level per-profile selection over ~100k strategies
+   is BLIND - a planted profile-only edge of +60 / +100 % ROI a slip was picked 0 % of the time (run 40153840076) - so every
+   slip-level "no profile beats global" read is uninformative, not a negative. (2) AUDIT (independent review): earlier leg reads
+   could not pass BH (too few nulls), the pooling tilt only reached the global top-300 selectors, and the live system diluted a
+   profile across its ~120 neighbours - all fixed (research_board_shrink.py SH_POOL=0 / SH_COARSE / SH_AGG / parametric p).
+   (3) Corrected per-profile LEG tilt (run 40154353910, shifted-mask null keeps the profile's runs): 13 of 435 profiles pass BH,
+   44 at p < 0.05 vs ~22 by chance, +6 .. +18 pts margin a leg (e.g. P218 str_WW low +17.9, P348 +12.3, P346 / P221 ~+9.7).
+   (4) Leg-level recalibration by profile / look-alike / board-feature ridge / recency half-lives / line bands: no usable gain
+   (Brier better by ~0.002 %, top-leg margin unchanged) - profiles do not shift whole cells, they shift which selectors win.
+   (5) Slip-level documented compositions with the run-preserving null: a few profiles pass BH (e.g. P008 dem_factor low 6P / 6F,
+   P253 board unlike yesterday 6F), but most of it fades against a global choice made on the last 60 slates - recency, tested
+   next as a possible global improvement. NEXT: strict holdout (profiles + trust decided on 2024-25 only, verdict on 2025-26).
 
 ---
 
