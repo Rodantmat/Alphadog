@@ -78,6 +78,8 @@ class WF:
                     c = np.argpartition(-sc, mmax)[:mmax]
                     self.gmenu[t] = c[np.argsort(-sc[c])]          # the global top mmax, best first
             n += self.V[:, t]; s += self.X[:, t]; s2 += self.X2[:, t]
+            if GWIN and t - GWIN >= 0:                           # recency-matched global: only the last GWIN slates count
+                n -= self.V[:, t - GWIN]; s -= self.X[:, t - GWIN]; s2 -= self.X2[:, t - GWIN]
 
     @staticmethod
     def _top(n, s, s2, k=5):
