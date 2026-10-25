@@ -180,6 +180,43 @@ def system(run, masks, ks):
     return {k: float(np.mean(np.array(v) - gl)) for k, v in res.items()}, float(np.mean(gl)), {k: float(np.mean(v)) for k, v in res.items()}, covered, len(gl)
 
 
+def knn_system(run, X, ks, nns, rand=False):
+    """LOOK-ALIKE TILT (season-agnostic, every board has one): on slate t the tilt comes from its nn MOST SIMILAR EARLIER slates
+    (all features as trailing percentiles, ALL family; any season, any time of year) - the board's own profile. rand=True: nn random
+    earlier slates instead (the null). -> {(nn, K): mean diff vs the global choice}, per-slate diffs"""
+    out, per = {}, {}
+    D = run.D
+    for nn in nns:
+        dif = {k: [] for k in ks}
+        for t in range(D):
+            if t < WARM or run.glb[t] is None or t < nn:
+                continue
+            g = run.realized(run.gsel[t], t)
+            if g != g:
+                continue
+            if rand:
+                nb = RNG.choice(t, nn, replace=False)
+            else:
+                x = X[t]
+                ok = ~np.isnan(x)
+                dist = np.sqrt(np.nanmean((X[:t][:, ok] - x[ok]) ** 2, axis=1))
+                dist = np.where(np.isnan(dist), np.inf, dist)
+                nb = np.argsort(dist)[:nn]
+            h = run.H[:, nb].sum(axis=1); n = run.N[:, nb].sum(axis=1); be = run.BE[:, nb].sum(axis=1)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                pm = np.where(n > 0, (h - be) / np.maximum(n, 1), 0)
+            dev = np.where(run.gok[t], pm - run.gmar[t], 0)
+            for k in ks:
+                sc = run.glb[t] + (n / (n + k)) * dev
+                sel = np.argpartition(-sc, TOPK)[:TOPK]
+                r = run.realized(sel, t)
+                dif[k].append((r if r == r else g) - g)
+        for k in ks:
+            out[(nn, k)] = float(np.mean(dif[k])) if dif[k] else np.nan
+            per[(nn, k)] = np.array(dif[k])
+    return out, per
+
+
 SYS_LAST = {}             # the last system() call's per-slate differences (for the per-season / per-half breakdown)
 CHOSEN = {}               # the last system() call's chosen selectors per played slate (in score order): K -> [..], "glob" -> [..]
 
