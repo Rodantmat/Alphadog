@@ -247,6 +247,10 @@ def portfolio_select(pools, cmap, broad_day, cfg, extra=0):
             # CALIBRATED-POOL UNIT (2026-10-23): built by calib_slips.unit_slips from the whole priced board (every line type) ranked on
             # the board-centred final_hp - exactly research_pp_calibrated_slips.py's builder; no cell pool, no leg filter
             cand[name] = CS.unit_slips(pools.get('__calib__', []), comp, size, PORTFOLIO_KMAX)
+        elif comp.startswith('pb:'):
+            # PORTFOLIO B UNIT (2026-10-25): the unit's one slip from the prepared calibrated board (pick() builds pools['__pb__'])
+            s_ = PB.unit_slip(pools.get('__pb__', []), comp.split(':', 1)[1])
+            cand[name] = [s_] if s_ else []
         else:
             cand[name] = ENG.build_day_slips(pools.get(fam, pools['']), comp, size, structure, PORTFOLIO_KMAX, cmap, broad_day)
     n, lcap = int(cfg['n']) + int(extra), int(cfg['leg_cap'])
