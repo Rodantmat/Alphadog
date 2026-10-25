@@ -1114,6 +1114,18 @@ def pick(conn, day, require_fresh=True):
     xcfg = exposure_cfg(conn)
     pf = portfolio_cfg(conn)
     pf_replaced = set(pf.get('replaces') or []) if pf.get('enabled') else set()
+    if pf.get('enabled') and any(PORTFOLIO_UNITS[u][0].startswith('pb:') for u in pf['order']):
+        # PORTFOLIO B: the calibrated board prepared once (trailing cell window, slate line medians, fixed tie order). SAFETY NET:
+        # if B cannot be prepared (a query or data error) the slate falls back to pp_portfolio.fallback (the previous portfolio)
+        # instead of placing nothing; the savepoint keeps the pick's own transaction usable.
+        try:
+            with conn.transaction():
+                pools['__pb__'] = PB.prepare(pools['__calib__'], pb_rates(conn, day))
+        except Exception as e:  # noqa: BLE001
+            fb = pf.get('fallback') or {}
+            print(f"::warning::portfolio B could not be prepared ({type(e).__name__}: {e}) - fallback portfolio {fb.get('order')}", flush=True)
+            pf = dict(pf, **fb) if fb else dict(pf, enabled=False)
+            pf_replaced = set(pf.get('replaces') or []) if pf.get('enabled') else set()
     if pf.get('enabled'):
         print(f"  {day}: 2-SLIP PORTFOLIO ON - {pf['n']} slips a day, leg cap {pf['leg_cap']}, units {pf['order']}; "
               f"replaced (shadow only): {sorted(pf_replaced)}", flush=True)
