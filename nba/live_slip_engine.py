@@ -1590,6 +1590,57 @@ def release_record(conn, name, day, draws=2000):
     return lo, len(g), source
 
 
+def pb_rates(conn, day):
+    """PORTFOLIO B's trailing cell window for `day` (portfolio_b.window_rates): the graded window-board legs of this season's
+    earlier slates (the live board as pick() reads it, graded on the box score: a DNP or a push is not graded), topped up to 20
+    slates with the latest backtest slates before the season (nba_score.tier_map_legs final_hp rows on real lines - the research's
+    own legs - the final 7 days of a season out, as research_pp_calibrated_slips.load). Only the cells B ranks by (low-volume props,
+    standard lines) are kept."""
+    s0, _s1 = regular_season_window(conn, day)
+    lowvol = [p for p, g in PB.GRP.items() if g == 'lowvol']
+    live_days = []
+    if s0 is not None:
+        live_days = [r[0] for r in conn.execute("SELECT DISTINCT game_date FROM nba_score.final_hp WHERE game_date >= %s AND game_date < %s "
+                                                 "ORDER BY 1", (s0, day)).fetchall()][-PB.WINDOW:]
+    hist = []
+    for d in live_days:
+        legs = [dict(l, p=float(l['score'])) for l in load_board_legs_live(conn, d)
+                if l['rank_key'] == 'final_hp' and not l.get('whole_number') and l.get('score') is not None
+                and l['tier'] == 'R' and l['prop'] in lowvol]
+        if not legs:
+            continue   # no window board that day (the research window counts only slates with a board)
+        box = {}
+        for pid, stl, blk, tov, mins in conn.execute("SELECT nba_player_id::text, stl, blk, tov, min FROM nba_stats.player_game_log "
+                                                     "WHERE game_date=%s", (d,)).fetchall():
+            if mins and float(mins) > 0:
+                box[pid] = (0.0, 0.0, 0.0, 0.0, float(stl or 0), float(blk or 0), float(tov or 0))
+        for l in legs:
+            s = box.get(str(l.get('player_id')))
+            v = _STAT[l['prop']](s) if s is not None else None
+            l['hit'] = None if (v is None or v == float(l['line'])) else int((v > float(l['line'])) if l['side'] == 'Over' else (v < float(l['line'])))
+        hist.append(PB.slate_counts(PB.eligible(legs)))
+    need = PB.WINDOW - len(hist)
+    back = []
+    if need > 0:
+        cut = s0 or day
+        dates = [r[0] for r in conn.execute("""WITH b AS (SELECT season, max(game_date) hi FROM nba_score.tier_map_legs WHERE rank_key='final_hp' GROUP BY season)
+            SELECT DISTINCT l.game_date FROM nba_score.tier_map_legs l JOIN b ON b.season = l.season
+            WHERE l.rank_key='final_hp' AND l.game_date < %s AND l.game_date < b.hi - 7 ORDER BY 1 DESC LIMIT %s""", (cut, need)).fetchall()]
+        by = defaultdict(list)
+        for d, pr, t, sd, ln, h, p, tm in conn.execute("""SELECT l.game_date, l.prop, l.tier, l.side, l.line::float8, l.hit, l.score::float8, pu.team_id
+            FROM nba_score.tier_map_legs l
+            JOIN nba_market.prop_universe pu ON pu.game_date = l.game_date AND pu.player = l.player AND pu.prop = l.prop AND pu.side = l.side
+                                             AND pu.line = l.line AND pu.line_source = 'real'
+            WHERE l.rank_key = 'final_hp' AND l.factor IS NOT NULL AND l.game_date = ANY(%s) AND l.tier = 'R' AND l.prop = ANY(%s)""",
+                                                         (dates, lowvol)).fetchall():
+            by[d].append({'player': '', 'prop': pr, 'tier': t, 'side': sd, 'line': ln, 'hit': h, 'p': p, 'team_id': tm})
+        back = [PB.slate_counts(PB.eligible(by[d])) for d in sorted(dates)]
+    rates = PB.window_rates(back + hist)
+    print(f"  {day}: portfolio B trailing window - {len(hist)} slates this season + {len(back)} backtest slates; low-volume standard "
+          f"cells (hits / graded): " + ", ".join(f"{c[0]} {c[2]} {a}/{b}" for c, (a, b) in sorted(rates.items())), flush=True)
+    return rates
+
+
 def regular_season_window(conn, today):
     """(first, last) regular-season game dates of the season containing today - the schedule merged with the played-games
     log (season_block), so a historical season the calendar does not hold (2024-25) resolves correctly."""
