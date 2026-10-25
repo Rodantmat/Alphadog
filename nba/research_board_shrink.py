@@ -42,7 +42,7 @@ import research_board_profiles_l3 as L3              # noqa: E402
 import research_board_matrix as MX                   # noqa: E402
 
 T0 = time.time()
-HIST = L1.HIST
+HIST = L1.REAL_HIST          # the real seasons (with L1_AGNOSTIC, L1.HIST becomes the two time halves once Layer 1 has been built)
 TOPK = int(os.environ.get("MX_TOPK", "5"))
 NULLN = int(os.environ.get("SH_NULL", "30"))
 POOL = int(os.environ.get("SH_POOL", "300"))    # the tilt reorders, on each slate, the POOL best selectors by global evidence before it
