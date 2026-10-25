@@ -479,7 +479,11 @@ def main():
     lead = []
     for lab, key in (("best profit / drawdown, weaker period ROI >= +40%", lambda r: -r[1]["rec"] if min(r[2]["roi"], r[3]["roi"]) >= 0.40 else 0),
                      ("most profit with drawdown <= 15u", lambda r: -r[1]["profit"] if r[1]["dd"] <= 15 else 0),
-                     ("most profit with drawdown <= 25u", lambda r: -r[1]["profit"] if r[1]["dd"] <= 25 else 0)):
+                     ("most profit with drawdown <= 25u", lambda r: -r[1]["profit"] if r[1]["dd"] <= 25 else 0),
+                     (f"fewest losing days, >= {MINSPD} slips a day, weaker period ROI >= +20%",
+                      lambda r: r[1]["lose"] if r[1]["spd"] >= MINSPD and min(r[2]["roi"], r[3]["roi"]) >= 0.20 else 9.0),
+                     (f"smallest drawdown, >= {MINSPD} slips a day, weaker period ROI >= +20%",
+                      lambda r: r[1]["dd"] if r[1]["spd"] >= MINSPD and min(r[2]["roi"], r[3]["roi"]) >= 0.20 else 1e9)):
         print(f"\n  -- {lab}")
         for r in sorted(rows, key=key)[:8]:
             print("    " + pr(r))
