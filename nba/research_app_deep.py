@@ -225,7 +225,10 @@ def day_families(legs, rows, lists, pay, E):
 
 
 def scope_all():
-    """portfolio scope: the owner's 2-6 picks; flex / dynamic from 3"""
+    """portfolio scope: DP_SCOPE (tags, e.g. 2S,3S,3F,4F) or the owner's 2-6 picks; flex / dynamic from 3"""
+    if os.environ.get("DP_SCOPE"):
+        want = set(os.environ["DP_SCOPE"].split(","))
+        return [j for j, (n, st_) in enumerate(ST) if AF.tag(n, st_) in want]
     return [j for j, (n, st_) in enumerate(ST) if n <= 6 and not (st_ in ("flex", "dynamic") and n < 3)]
 
 
