@@ -449,7 +449,7 @@ def main():
             if any(sig == t for _, _, t in taken):
                 continue
             taken.append((s_, r, sig))
-            if len(taken) == 2:
+            if len(taken) == PER:
                 break
         cand += [(s_, r) for s_, r, _ in taken]
     cand.sort(reverse=True)
