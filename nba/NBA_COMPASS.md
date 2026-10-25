@@ -449,6 +449,22 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    max drawdown 37-53u typical / 58-87u bad (3-4x the backtest), flat spells of 35-50 slates; stake about 0.25% of bankroll a slip.
    First slate 2026-10-25: 3 placed (B3, B4, B5), 3 quote-skipped (one leg - Daniss Jenkins turnovers Over 1.5 - was no longer on
    PrizePicks' board; B has no backups by design).
+183. 🔬 **OTHER APPS - DEEP REVIEW (owner 2026-10-25 15:34 / 16:03 PT; research only, nothing deployed, decision is the owner's).**
+   UNDERDOG (research_app_deep run 40244273778: 122,603 strategies = pool grid + every single line level R/F1-3/B1-3 + the app's own
+   trailing ranks + 20 factor bands + the certified UD compositions, x Standard 2-8 / Flex 3-8, 155 + 156 history slates + 5 this
+   season). The 2026-27 start is NORMAL VARIANCE, not decay: leg calibration this season is on target or better (0.55-0.60 hit .581,
+   0.60-0.65 .636, 0.70+ .757 vs history .570 / .600 / .636); the 60 most robust strategies sit at the median (50th) percentile of
+   their own historical 5-slate windows (2 of 60 below the 10th - 6 expected by chance); live paper P5 at the 25th percentile.
+   HONEST NUMBER: a portfolio chosen on one season and measured on the other drops from +125% to +40..+48% (2024-25 -> 2025-26) and
+   from +96..+129% to +21..+27% (reverse), drawdowns 26-109u at 3.4-6.9 slips a day - plan on ~40% of any in-sample UD edge.
+   Robust shortlist leaders (in-sample): 4 units 3.52/day ROI +72% dd 9.8u; 5 units 4.46/day +73% dd 14.6u; 7 units 5.88/day +84%
+   dd 23.8u (40%-edge season: ROI ~+29..+34%, median +156..+308u, losing season 2%, drawdown median 39-84u).
+   BETR (run 40244276585, 2025-26 halves only, parked): honest holdout +36..+63%, drawdown 43-85u, 61-82% losing days.
+   SLEEPER / FLIFF (research_app_sleeper_fliff run 40241910991): on REAL prices this season (5 slates, 13,346 / 7,368 graded legs)
+   every value band of final_hp x price returned NEGATIVE per pick (Sleeper main p x price >= 1.05: -11.3% on 663 legs; Fliff -6.6% on
+   939) and final_hp ran 4-5 points hot on those boards at 0.55-0.65 - the app prices beat our probability where they disagree. The
+   simulated history (prices modelled from DraftKings / Bovada, R2 0.85-0.88) shows big ROIs but is NOT trusted: no live candidate.
+   The same in-sample caveat applies to PrizePicks B (182: plan on 40-60%).
 
 ---
 
