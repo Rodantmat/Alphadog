@@ -55,7 +55,7 @@ ONLY = {int(x) for x in os.environ.get("L2_ONLY", "").split(",") if x.strip()}
 RNG = np.random.default_rng(29)
 GRID = int(os.environ.get("L2_GRID", "1"))
 PER_STRUCT = os.environ.get("L2_PER_STRUCT", "1") == "1"
-HIST = L1.HIST
+HIST = L1.REAL_HIST          # the real seasons (with L1_AGNOSTIC, L1.HIST becomes the two time halves once Layer 1 has been built)
 GRP = L1.GRP
 POOLS = {"R": ("R",), "G": ("G1", "G2", "G3"), "D": ("D1", "D2", "D3"), "GR": ("R", "G1", "G2", "G3"), "RD": ("R", "D1", "D2", "D3"),
          "GD": ("G1", "G2", "G3", "D1", "D2", "D3"), "ALL": ("R", "G1", "G2", "G3", "D1", "D2", "D3")}
