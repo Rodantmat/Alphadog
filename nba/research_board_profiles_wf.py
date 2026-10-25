@@ -178,6 +178,11 @@ def evaluate_wf(P, strat, reg, hist_ix, hseas, label, name, menu=0):
             cache[key] = np.array(vals)
         null = cache[key]
         p = (1 + np.sum(null >= obs)) / (len(null) + 1)
+        if len(null) > 2:
+            # AUDIT FIX (independent review 2026-10-24): with WF_NULL draws the p floor is 1 / (WF_NULL + 1) and BH over ~430 profiles
+            # could never pass one - the parametric p from the null's mean / sd (means over many slates, ~normal) is used instead
+            from scipy.stats import norm
+            p = float(norm.sf((obs - null.mean()) / max(null.std(ddof=1), 1e-9)))
         seas_n = {s_: int((mask & (hseas == s_)).sum()) for s_ in HIST}
         rows.append((pi, it, len(own), float(np.mean(own)), float(np.mean(glob)), obs, p, float(np.median(null)), best,
                      float(s[best] / n[best]) if best is not None and n[best] else np.nan, int(n[best]) if best is not None else 0, seas_n))
