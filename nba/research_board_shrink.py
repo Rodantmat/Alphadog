@@ -18,11 +18,17 @@ Reads (realized per-leg margin = hit - 0.55 / m, strategy doc 19k; MX_TOPK selec
      systems. Per K; plus calendar-only and board-only profile sets.
 Selectors: the matrix's levels 1-2 (research_board_matrix.selector_matrix: cell x 9 ranks x every cut n 1-30 / 1-40 %, and 24 factor
 bands x cuts 1-20).
-Env: DATABASE_URL, L1_AGNOSTIC, MX_TOPK (default 5), SH_NULL (default 30), SH_K (default 25,50,100,200,400,800,1600,3200).
+Run 1 (40145207059, 30 nulls): the live system with light tilts (K 400 - 3200) beat all 30 shifted-mask systems by +0.3 .. +0.5 pts
+a leg (global +1.88 -> +2.37 at K 1600); per profile (A) nothing beyond chance. Run 2 adds slips per structure (spread / top shapes,
+SH_SLIP_K), per-season and per-third breakdowns, a finer K grid and more nulls.
+Env: DATABASE_URL, L1_AGNOSTIC, MX_TOPK (default 5), SH_NULL (default 30), SH_K (default 25 .. 12800, 13 values),
+SH_SLIP_K (default 400,800,1600,3200,6400), SH_ONLY_B, SH_POOL (default 300).
 """
 import os
 import sys
 import time
+
+from collections import defaultdict
 
 import numpy as np
 import psycopg
@@ -38,7 +44,9 @@ HIST = L1.HIST
 TOPK = int(os.environ.get("MX_TOPK", "5"))
 NULLN = int(os.environ.get("SH_NULL", "30"))
 POOL = int(os.environ.get("SH_POOL", "300"))    # the tilt reorders, on each slate, the POOL best selectors by global evidence before it
-KS = [float(x) for x in os.environ.get("SH_K", "25,50,100,200,400,800,1600,3200").split(",")]
+KS = [float(x) for x in os.environ.get("SH_K", "25,50,100,200,400,800,1200,1600,2400,3200,4800,6400,12800").split(",")]
+ONLY_B = os.environ.get("SH_ONLY_B", "") == "1"     # the live-system read only (skip the per-profile read A)
+SLIP_K = [float(x) for x in os.environ.get("SH_SLIP_K", "400,800,1600,3200,6400").split(",")]   # K values graded as slips too
 WARM = 15
 RNG = np.random.default_rng(53)
 
@@ -132,33 +140,89 @@ def system(run, masks, ks):
     S, D = run.S, run.D
     P = len(masks)
     member = np.array(masks, bool)                       # P x D
+    CHOSEN.clear()
     h = np.zeros((P, S), np.float32); n = np.zeros((P, S), np.float32); be = np.zeros((P, S), np.float32)
     res = {k: [] for k in ks}
-    glob = []
+    glob, tt = [], []
     covered = 0
     for t in range(D):
         ps = np.where(member[:, t])[0]
         if t >= WARM and run.glb[t] is not None:
             g = run.realized(run.gsel[t], t)
             if g == g:
-                glob.append(g)
+                glob.append(g); tt.append(t)
                 if len(ps):
                     covered += 1
                     with np.errstate(invalid="ignore", divide="ignore"):
                         pm = np.where(n[ps] > 0, (h[ps] - be[ps]) / np.maximum(n[ps], 1), 0)
                     dev = np.where(run.gok[t][None, :], pm - run.gmar[t][None, :], 0)
+                CHOSEN.setdefault("glob", []).append(run.gsel[t][np.argsort(-run.glb[t][run.gsel[t]])])
                 for k in ks:
                     if len(ps):
                         tl = ((n[ps] / (n[ps] + k)) * dev).mean(axis=0)
                         sc = run.glb[t] + tl
-                        r = run.realized(np.argpartition(-sc, TOPK)[:TOPK], t)
+                        sel = np.argpartition(-sc, TOPK)[:TOPK]
+                        sel = sel[np.argsort(-sc[sel])]
+                        r = run.realized(sel, t)
                         res[k].append(r if r == r else g)
+                        CHOSEN.setdefault(k, []).append(sel if r == r else CHOSEN["glob"][-1])
                     else:
                         res[k].append(g)                 # the fallback: no profile -> the global choice
+                        CHOSEN.setdefault(k, []).append(CHOSEN["glob"][-1])
         if len(ps):
             h[ps] += run.H[:, t]; n[ps] += run.N[:, t]; be[ps] += run.BE[:, t]
     gl = np.array(glob)
+    SYS_LAST.clear(); SYS_LAST.update({"t": np.array(tt), "diff": {k: np.array(v) - gl for k, v in res.items()}})
     return {k: float(np.mean(np.array(v) - gl)) for k, v in res.items()}, float(np.mean(gl)), {k: float(np.mean(v)) for k, v in res.items()}, covered, len(gl)
+
+
+SYS_LAST = {}             # the last system() call's per-slate differences (for the per-season / per-half breakdown)
+CHOSEN = {}               # the last system() call's chosen selectors per played slate (in score order): K -> [..], "glob" -> [..]
+
+# SLIPS from the chosen selectors (slot 1 = the best-scored selector of the slate): per structure two documented shapes -
+#   spread  one leg per slot in turn (slot 1, 2, 3, 4, 5, 1, ...), the composition the matrix's templates start from
+#   top     every leg from slot 1 (the single best selector)
+# exact legs, no player twice, >= 2 teams, graded on PrizePicks' payouts (build_slip_engine.grade via research_board_matrix_slips)
+STRUCTS = [(2, "power"), (3, "power"), (3, "flex"), (4, "power"), (4, "flex"), (5, "power"), (5, "flex"), (6, "power"), (6, "flex")]
+
+
+def shape(size, kind):
+    if kind == "top":
+        return ((0, size),)
+    c = [0] * TOPK
+    for i in range(size):
+        c[i % TOPK] += 1
+    return tuple((j, x) for j, x in enumerate(c) if x)
+
+
+def slip_reads(days, horder, sels, run, tt, chosen):
+    """-> {(size, st, shape): {key: per-slate ROI array (nan = no slip)}} for key in chosen ('glob', K ...)"""
+    import research_board_matrix_slips as MS
+    from collections import defaultdict
+    out = {}
+    caches = {}
+    for j, t in enumerate(tt):
+        if t not in caches:
+            by = defaultdict(list)
+            for l in days[horder[t]]:
+                if l["hit"] is not None and l["factor"] and l["team_id"] is not None:
+                    by[(l["prop"], l["tier"], l["side"])].append(l)
+            caches[t] = {"_by": by}
+        cache = caches[t]
+        for key, lst in chosen.items():
+            slots = [sels[int(run.U[i])] for i in lst[j]]
+            for size, st in STRUCTS:
+                for kind in ("spread", "top"):
+                    cnt = shape(size, kind)
+                    if any(sl >= len(slots) for sl, _ in cnt):
+                        continue
+                    pk = MS.build((cnt, size, st), slots, cache)
+                    arr = out.setdefault((size, st, kind), {}).setdefault(key, np.full(len(tt), np.nan))
+                    if pk is not None:
+                        arr[j] = MS.grade(pk, st)
+        if j % 50 == 0:
+            caches = {t: caches[t]}                          # keep memory flat
+    return out
 
 
 def main():
@@ -176,6 +240,9 @@ def main():
     del H, N, F, BE
     log(f"candidate pools: top {POOL} a slate by global evidence -> {run.S:,} selectors ever in a pool")
     D = run.D
+    import build_slip_engine as SE
+    SE.flex_alt_tiers(); SE.payout_v3_rules()
+    hseas = seas[hist_ix]
     masks = [it["mask"][hist_ix] for it in reg.items]
     # ---------------- B: the live system, first (the read that matters) ----------------
     print("\n" + "=" * 190 + "\nB - THE LIVE SYSTEM: every slate takes the mean tilt of all its profiles (earlier slates only); no profile -> global "
@@ -187,18 +254,66 @@ def main():
         if not ix:
             continue
         diff, g, own, cov, npl = system(run, [masks[i] for i in ix], KS)
+        real = {"t": SYS_LAST["t"].copy(), "diff": {k: v.copy() for k, v in SYS_LAST["diff"].items()}}
+        sr = slip_reads(days, horder, sels, run, real["t"], {k: list(v) for k, v in CHOSEN.items() if k == "glob" or k in SLIP_K})
         nulls = {k: [] for k in KS}
+        snull = defaultdict(list)                                 # (structure, shape, K) -> null ROI differences
         for _ in range(NULLN):
             dn, _, _, _, _ = system(run, [shifted(masks[i], D) for i in ix], KS)
             for k in KS:
                 nulls[k].append(dn[k])
+            sn = slip_reads(days, horder, sels, run, SYS_LAST["t"], {k: list(v) for k, v in CHOSEN.items() if k == "glob" or k in SLIP_K})
+            for key, d_ in sn.items():
+                for k in SLIP_K:
+                    a, b = d_.get(k), d_.get("glob")
+                    if a is not None and b is not None:
+                        ok_ = ~np.isnan(a) & ~np.isnan(b)
+                        if ok_.sum():
+                            snull[key + (k,)].append(float(np.mean(a[ok_] - b[ok_])))
         print(f"  {nm} ({len(ix)} profiles; {cov} of {npl} played slates in >= 1 profile; global {100 * g:+.2f}):")
         for k in KS:
             nl = np.array(nulls[k])
             p = (1 + np.sum(nl >= diff[k])) / (len(nl) + 1)
             print(f"    K {k:>6g}: system {100 * own[k]:+.2f} | diff {100 * diff[k]:+.2f} (p {p:.3f} vs {NULLN} shifted-mask systems, "
                   f"their median {100 * np.median(nl):+.2f}, p95 {100 * np.percentile(nl, 95):+.2f})")
+            # where the difference comes from: per real season, per third of the history, share of slates it helps / hurts
+            dd, tr = real["diff"][k], real["t"]
+            parts = [f"{s_}: {100 * dd[hseas[tr] == s_].mean():+.2f} ({int((hseas[tr] == s_).sum())} slates)" for s_ in HIST]
+            thirds = np.array_split(np.arange(len(dd)), 3)
+            parts += [f"third {j + 1}: {100 * dd[q].mean():+.2f}" for j, q in enumerate(thirds)]
+            parts.append(f"slates helped {int((dd > 0).sum())} / hurt {int((dd < 0).sum())} / same {int((dd == 0).sum())}")
+            print("              " + " | ".join(parts))
+        # the K is chosen too: the honest p is the best K's difference vs every null system's best K (multiple-K correction)
+        rmax = max(diff.values())
+        nmax = np.array([max(nulls[k][i] for k in KS) for i in range(NULLN)])
+        print(f"    BEST K (corrected for trying {len(KS)} K values): diff {100 * rmax:+.2f}, p {(1 + np.sum(nmax >= rmax)) / (NULLN + 1):.3f} "
+              f"(null systems' best-K median {100 * np.median(nmax):+.2f}, p95 {100 * np.percentile(nmax, 95):+.2f})")
+        print(f"    SLIPS (one slip a structure and shape a slate from the chosen selectors; ROI per slip; diff vs the global choice, p vs the "
+              f"{NULLN} shifted-mask systems):")
+        for size, st in STRUCTS:
+            for kind in ("spread", "top"):
+                d_ = sr.get((size, st, kind))
+                if not d_ or "glob" not in d_:
+                    continue
+                b = d_["glob"]
+                cells = []
+                for k in SLIP_K:
+                    a = d_.get(k)
+                    if a is None:
+                        continue
+                    ok_ = ~np.isnan(a) & ~np.isnan(b)
+                    if ok_.sum() < 20:
+                        continue
+                    df = float(np.mean(a[ok_] - b[ok_]))
+                    nl_ = np.array(snull.get((size, st, kind, k), [np.nan]))
+                    pp = (1 + np.nansum(nl_ >= df)) / (np.sum(~np.isnan(nl_)) + 1)
+                    cells.append(f"K{k:g} {100 * np.mean(a[ok_]):+.0f}% (diff {100 * df:+.0f}, p {pp:.2f})")
+                gb = b[~np.isnan(b)]
+                print(f"      {size}{'F' if st == 'flex' else 'P'} {kind:<6} global {100 * gb.mean():+.0f}% on {len(gb)} slates | " + " | ".join(cells))
         log(f"system {nm} done")
+    if ONLY_B:
+        log("done (SH_ONLY_B)")
+        return
     # ---------------- A: per profile x K ----------------
     rows = []
     for pi, (it, m) in enumerate(zip(reg.items, masks), 1):
