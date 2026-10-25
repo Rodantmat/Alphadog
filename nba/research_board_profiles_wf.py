@@ -174,11 +174,12 @@ def evaluate_wf(P, strat, reg, hist_ix, hseas, label, name, menu=0):
         if len(own) < 10:
             continue
         obs = float(np.mean(own - glob))
-        key = len(dix)
+        key = len(dix) if NULLKIND == "random" else pi
         if key not in cache:
             vals = []
             for _ in range(NULLN):
-                r = np.sort(RNG.choice(D, len(dix), replace=False))
+                r = np.sort(RNG.choice(D, len(dix), replace=False)) if NULLKIND == "random" else \
+                    np.where(np.roll(mask, int(RNG.integers(5, D - 5))))[0]
                 o, g, _, _ = wf.run(r, menu=menu)
                 if len(o) >= 10:
                     vals.append(float(np.mean(o - g)))
