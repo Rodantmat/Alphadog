@@ -22256,8 +22256,8 @@
       "away_team_tricode": "NYK",
       "arena_name": "TD Garden",
       "arena_city": "Boston",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22271,8 +22271,8 @@
       "away_team_tricode": "HOU",
       "arena_name": "Moody Center",
       "arena_city": "Austin",
-      "game_status": 1,
-      "game_status_text": "9:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22286,8 +22286,8 @@
       "away_team_tricode": "ATL",
       "arena_name": "Spectrum Center",
       "arena_city": "Charlotte",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22301,8 +22301,8 @@
       "away_team_tricode": "DAL",
       "arena_name": "Gainbridge Fieldhouse",
       "arena_city": "Indianapolis",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22316,8 +22316,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "Kia Center",
       "arena_city": "Orlando",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22331,8 +22331,8 @@
       "away_team_tricode": "TOR",
       "arena_name": "Capital One Arena",
       "arena_city": "Washington",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22346,8 +22346,8 @@
       "away_team_tricode": "DET",
       "arena_name": "Kaseya Center",
       "arena_city": "Miami",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22361,8 +22361,8 @@
       "away_team_tricode": "CHI",
       "arena_name": "Fiserv Forum",
       "arena_city": "Milwaukee",
-      "game_status": 1,
-      "game_status_text": "4:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22376,8 +22376,8 @@
       "away_team_tricode": "NOP",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "9:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22391,8 +22391,8 @@
       "away_team_tricode": "MEM",
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22406,8 +22406,8 @@
       "away_team_tricode": "LAC",
       "arena_name": "Crypto.com Arena",
       "arena_city": "Los Angeles",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22421,8 +22421,8 @@
       "away_team_tricode": "POR",
       "arena_name": "Golden 1 Center",
       "arena_city": "Sacramento",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22436,8 +22436,8 @@
       "away_team_tricode": "MIA",
       "arena_name": "Spectrum Center",
       "arena_city": "Charlotte",
-      "game_status": 1,
-      "game_status_text": "6:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22451,8 +22451,8 @@
       "away_team_tricode": "BKN",
       "arena_name": "Rocket Arena",
       "arena_city": "Cleveland",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22466,8 +22466,8 @@
       "away_team_tricode": "MIL",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22481,8 +22481,8 @@
       "away_team_tricode": "HOU",
       "arena_name": "State Farm Arena",
       "arena_city": "Atlanta",
-      "game_status": 1,
-      "game_status_text": "8:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22496,8 +22496,8 @@
       "away_team_tricode": "WAS",
       "arena_name": "United Center",
       "arena_city": "Chicago",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22511,8 +22511,8 @@
       "away_team_tricode": "SAS",
       "arena_name": "American Airlines Center",
       "arena_city": "Dallas",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22526,8 +22526,8 @@
       "away_team_tricode": "NOP",
       "arena_name": "Ball Arena",
       "arena_city": "Denver",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": ""
     },
     {
@@ -22541,8 +22541,8 @@
       "away_team_tricode": "GSW",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": ""
     },
     {
