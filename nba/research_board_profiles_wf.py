@@ -45,6 +45,11 @@ MENUS = [int(x) for x in os.environ.get("WF_MENU", "0").split(",") if x]
 # sampled profiles (taken away on the other slates, so only the profile knows), and reports whether the walk-forward finds it (if it cannot find a planted edge, its "nothing" means nothing)
 PLANTS = [float(x) for x in os.environ.get("WF_PLANT", "").split(",") if x]       # one or more planted edges (units a slip)
 PLANT_N = int(os.environ.get("WF_PLANT_N", "40"))
+# RECENCY CONFOUND CONTROLS (2026-10-24 20:00 PT): profile slates come in RUNS of consecutive days, random slate sets do not - so an own
+# choice can win only because it learns from RECENT slates. WF_NULLKIND=shift: the null is the profile's own mask circularly shifted
+# (same size, same runs, wrong boards). WF_GWIN=W: the global picks are chosen on the last W slates only (a recency-matched global).
+NULLKIND = os.environ.get("WF_NULLKIND", "random")
+GWIN = int(os.environ.get("WF_GWIN", "0"))
 
 
 def log(m):
