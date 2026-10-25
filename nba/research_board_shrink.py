@@ -155,7 +155,7 @@ def per_profile(run, dix, ks):
             sc = run.glb[t] + (n / (n + k)) * dev
             r = run.realized(np.argpartition(-sc, TOPK)[:TOPK], t)
             if r == r:
-                out[k][0].append(r); out[k][1].append(g)
+                out[k][0].append(r); out[k][1].append(g); out[k][2].append(t)
     return out
 
 
