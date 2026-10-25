@@ -424,7 +424,14 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    (Brier better by ~0.002 %, top-leg margin unchanged) - profiles do not shift whole cells, they shift which selectors win.
    (5) Slip-level documented compositions with the run-preserving null: a few profiles pass BH (e.g. P008 dem_factor low 6P / 6F,
    P253 board unlike yesterday 6F), but most of it fades against a global choice made on the last 60 slates - recency, tested
-   next as a possible global improvement. NEXT: strict holdout (profiles + trust decided on 2024-25 only, verdict on 2025-26).
+   next as a possible global improvement.
+   **HOLDOUT VERDICT (2026-10-25 00:10 PT):** profiles built on 2024-25 only (L1_FIT), the profiles to trust and their tilt
+   chosen on 2024-25 only, scored on 2025-26 as live (run 40167196945): the 17 trusted (+11 .. +15 pts a leg in 2024-25) made
+   -1.8 pts a leg in 2025-26, 6 of 17 positive; all 258 profiles -0.04. With today's profiles (built on both seasons, trust from
+   2024-25; run 40167198780): 26 trusted, -4.9 pts a leg later, 7 of 26 positive. RECENCY (run 40167200228): the global choice
+   on the last 20 / 40 / 60 / 90 / 120 / 180 slates does not beat all-history (best +0.8, 95 % -1.5 .. +3.4; inconsistent by
+   season). DECISION (unchanged in practice): no per-profile strategy and no recency window go live; the current all-history
+   global logic stays. The per-profile edges seen in-sample were fitted to the slates they were measured on.
 
 ---
 
