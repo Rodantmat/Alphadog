@@ -3,24 +3,23 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-24T20:17:31Z",
+  "fetched_at": "2026-10-25T20:17:36Z",
   "egress": {
-    "ip": "35.151.74.23",
-    "hostname": "syn-035-151-074-023.res.spectrum.com",
-    "city": "Reno",
-    "region": "Nevada",
+    "ip": "175.29.133.165",
+    "city": "Ashburn",
+    "region": "Virginia",
     "country": "US",
-    "loc": "39.5354,-119.8374",
-    "org": "AS20115 Charter Communications LLC",
-    "postal": "89503",
-    "timezone": "America/Los_Angeles",
+    "loc": "39.0437,-77.4875",
+    "org": "AS6079 RCN",
+    "postal": "20147",
+    "timezone": "America/New_York",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 6122,
-  "row_count": 6122,
+  "rows": 6143,
+  "row_count": 6143,
   "total_pages": 1,
-  "future_pickable": 6122,
+  "future_pickable": 6143,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
   "candidates": [
     {
@@ -41,22 +40,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 6992044,
+      "bytes": 7029938,
       "total_pages": 1,
       "ok": true,
-      "rows": 6120,
-      "future_pickable": 6120
+      "rows": 6142,
+      "future_pickable": 6142
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 6994282,
+      "bytes": 7031052,
       "total_pages": 1,
       "ok": true,
-      "rows": 6122,
-      "future_pickable": 6122
+      "rows": 6143,
+      "future_pickable": 6143
     }
   ],
-  "github_run_id": "40129017900"
+  "github_run_id": "40229963551"
 }
