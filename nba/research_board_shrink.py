@@ -288,6 +288,34 @@ def main():
     SE.flex_alt_tiers(); SE.payout_v3_rules()
     hseas = seas[hist_ix]
     masks = [it["mask"][hist_ix] for it in reg.items]
+    if KNN:
+        # ---------------- C: the look-alike tilt (each board's own nearest earlier boards) ----------------
+        F_ = L1.slate_features(conn, days, order)
+        cols = sorted({c for f in F_.values() for c in f})
+        _, Pp = L1.trailing_pct(F_, order, cols)
+        fam = L1.families(cols)
+        X = Pp[:, [cols.index(c) for c in fam["ALL"]]][hist_ix]
+        real, per = knn_system(run, X, KS, KNN)
+        nul = defaultdict(list)
+        for _ in range(NULLN):
+            o_, _ = knn_system(run, X, KS, KNN, rand=True)
+            for key, v in o_.items():
+                nul[key].append(v)
+        print("\n" + "=" * 190 + "\nC - LOOK-ALIKE TILT: each slate tilted by its nn most similar EARLIER slates (ALL family, any season); "
+              f"diff vs the global choice, pts a leg; p vs {NULLN} draws of nn RANDOM earlier slates")
+        best = max(real.values())
+        for key in sorted(real):
+            nl = np.array(nul[key])
+            pp = (1 + np.sum(nl >= real[key])) / (len(nl) + 1)
+            dd = per[key]
+            print(f"  nn {key[0]:>3} K {key[1]:>6g}: diff {100 * real[key]:+.2f} (p {pp:.3f}; random median {100 * np.median(nl):+.2f}, p95 "
+                  f"{100 * np.percentile(nl, 95):+.2f}) | helped {int((dd > 0).sum())} / hurt {int((dd < 0).sum())} slates")
+        nmax = np.array([max(nul[key][i] for key in real) for i in range(NULLN)])
+        print(f"  BEST (corrected for {len(real)} settings): diff {100 * best:+.2f}, p {(1 + np.sum(nmax >= best)) / (NULLN + 1):.3f}")
+        log("look-alike read done")
+        if ONLY_C:
+            log("done (SH_ONLY_C)")
+            return
     # ---------------- B: the live system, first (the read that matters) ----------------
     print("\n" + "=" * 190 + "\nB - THE LIVE SYSTEM: every slate takes the mean tilt of all its profiles (earlier slates only); no profile -> global "
           "(realized margin per leg, pts; diff vs the global choice)")
