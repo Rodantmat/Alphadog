@@ -411,7 +411,7 @@ def main():
                 if any(sig == t for _, t in taken):
                     continue
                 taken.append((s_, sig)); cand_h.append((s_, r))
-                if len(taken) == 2:
+                if len(taken) == PER:
                     break
         cand_h.sort(reverse=True)
         sh = [r for _, r in cand_h[:K]]
