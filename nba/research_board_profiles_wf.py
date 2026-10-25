@@ -133,6 +133,10 @@ def main():
     conn.execute("SET statement_timeout = 0")
     SE.flex_alt_tiers(); SE.payout_v3_rules()
     reg, days, order, seas = L1.build(conn)
+    # the MLB runners terminate connections idle > 2 minutes (selfCleanupAfterPhase): Layer 1 computes for ~25 minutes without a
+    # query, so every later query opens a FRESH connection (runs 40143986272 / 40143332966: AdminShutdown right after Layer 1)
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
     log(f"Layer 1: {len(reg.items)} profiles")
     hist_ix = [i for i, k in enumerate(order) if k[0] in HIST]
     horder = [order[i] for i in hist_ix]
