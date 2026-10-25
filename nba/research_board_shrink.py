@@ -387,7 +387,7 @@ def main():
         print(f"    SLIPS (one slip a structure and shape a slate from the chosen selectors; ROI per slip; diff vs the global choice, p vs the "
               f"{NULLN} shifted-mask systems):")
         for size, st in STRUCTS:
-            for kind in ("spread", "top"):
+            for kind in SHAPES:
                 d_ = sr.get((size, st, kind))
                 if not d_ or "glob" not in d_:
                     continue
