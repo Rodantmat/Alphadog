@@ -391,7 +391,7 @@ def main():
             print(f"  live P5: this season {pl5[C].sum():+.1f}u on {sum(len(r) for j, r in enumerate(p5) if C[j])} slips -> percentile "
                   f"{100 * pct(pl5[H], pl5[C]):.0f} of its historical {nC}-slate windows")
     # ---------------- portfolio ----------------
-    scope = [j for j, (n, st_) in enumerate(ST) if n <= 6 and not (st_ in ("flex", "dynamic") and n < 3)]
+    scope = scope_all()
     cand = []
     for j in scope:
         rr = np.where(robust & (sidx == j))[0]
