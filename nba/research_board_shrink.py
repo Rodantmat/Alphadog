@@ -188,12 +188,14 @@ def knn_system(run, X, ks, nns, rand=False):
     D = run.D
     for nn in nns:
         dif = {k: [] for k in ks}
+        tts = []
         for t in range(D):
             if t < WARM or run.glb[t] is None or t < nn:
                 continue
             g = run.realized(run.gsel[t], t)
             if g != g:
                 continue
+            tts.append(t)
             if rand:
                 nb = RNG.choice(t, nn, replace=False)
             else:
