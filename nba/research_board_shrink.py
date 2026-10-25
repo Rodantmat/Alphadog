@@ -274,11 +274,14 @@ def slip_reads(days, horder, sels, run, tt, chosen):
         for key, lst in chosen.items():
             slots = [sels[int(run.U[i])] for i in lst[j]]
             for size, st in STRUCTS:
-                for kind in ("spread", "top"):
-                    cnt = shape(size, kind)
-                    if any(sl >= len(slots) for sl, _ in cnt):
-                        continue
-                    pk = MS.build((cnt, size, st), slots, cache)
+                for kind in SHAPES:
+                    if kind == "pool":
+                        pk = pool_pick(slots, cache, size)
+                    else:
+                        cnt = shape(size, kind)
+                        if any(sl >= len(slots) for sl, _ in cnt):
+                            continue
+                        pk = MS.build((cnt, size, st), slots, cache)
                     arr = out.setdefault((size, st, kind), {}).setdefault(key, np.full(len(tt), np.nan))
                     if pk is not None:
                         arr[j] = MS.grade(pk, st)
