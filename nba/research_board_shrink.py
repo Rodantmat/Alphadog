@@ -142,8 +142,8 @@ def tilt_profile(run, dix):
 
 
 def per_profile(run, dix, ks):
-    """-> {K: (own realized list, global realized list)} on the profile's slates from its 16th"""
-    out = {k: ([], []) for k in ks}
+    """-> {K: (own realized list, global realized list, slate list)} on the profile's slates from its 16th"""
+    out = {k: ([], [], []) for k in ks}
     for j, (t, n, pm) in enumerate(tilt_profile(run, dix)):
         if j < WARM or run.glb[t] is None:
             continue
