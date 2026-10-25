@@ -391,6 +391,43 @@ def main():
             pl5 = np.array([sum(r) for r in p5])
             print(f"  live P5: this season {pl5[C].sum():+.1f}u on {sum(len(r) for j, r in enumerate(p5) if C[j])} slips -> percentile "
                   f"{100 * pct(pl5[H], pl5[C]):.0f} of its historical {nC}-slate windows")
+    # ---------------- portfolio, honest: everything chosen on one period, measured on the other ----------------
+    print("\n" + "=" * 170 + "\nPORTFOLIO HOLDOUT (shortlist AND subset chosen on one period only, then measured on the other and this season)")
+    for (TRm, TEm, a, b) in ((A, Bm, la, lb_), (Bm, A, lb_, la)):
+        ntr, mutr, _, lbtr = AF.lb_stats(P[:, TRm])
+        ok = (ntr >= AF.MINN) & (lbtr > 0)
+        cand_h = []
+        for j in scope_all():
+            rr = np.where(ok & (sidx == j))[0]
+            sc = sorted(((np.nan_to_num(P[r][TRm]).sum() / max(AF.max_dd(np.nan_to_num(P[r][TRm])), 1.0), r) for r in rr), reverse=True)
+            taken = []
+            for s_, r in sc:
+                sig = tuple(np.round(np.nan_to_num(P[r][TRm]), 3))
+                if any(sig == t for _, t in taken):
+                    continue
+                taken.append((s_, sig)); cand_h.append((s_, r))
+                if len(taken) == 2:
+                    break
+        cand_h.sort(reverse=True)
+        sh = [r for _, r in cand_h[:K]]
+        Zh = np.nan_to_num(P[sh]); Vh = (~np.isnan(P[sh])).astype(float)
+        best = {}
+        for k in range(1, len(sh) + 1):
+            for sub in itertools.combinations(range(len(sh)), k):
+                sub = list(sub)
+                pl = Zh[sub].sum(axis=0); stk = Vh[sub].sum(axis=0)
+                m = RP.metrics(pl, stk, TRm)
+                if m["n"] and m["spd"] >= 1.0:
+                    for lab, val in (("best profit / drawdown", m["rec"]), ("most profit, drawdown <= 15u", m["profit"] if m["dd"] <= 15 else -1e9)):
+                        if lab not in best or val > best[lab][0]:
+                            best[lab] = (val, sub, pl, stk)
+        for lab, (_v, sub, pl, stk) in best.items():
+            mt = RP.metrics(pl, stk, TRm); me = RP.metrics(pl, stk, TEm); mc = RP.metrics(pl, stk, C)
+            print(f"  chosen on {a} ({lab}, {len(sub)} strategies, {mt['spd']:.2f} slips a day): {a} ROI {100 * mt['roi']:+.0f}% dd {mt['dd']:.1f}u -> "
+                  f"{b} ROI {100 * me['roi']:+.0f}% profit {me['profit']:+.0f}u dd {me['dd']:.1f}u losing days {100 * me['lose']:.0f}% | this season "
+                  f"{('%+.0f%% on %d slips' % (100 * mc['roi'], mc['n'])) if mc['n'] else 'none'}")
+            for i in sub:
+                print(f"      {nm(sh[i])}")
     # ---------------- portfolio ----------------
     scope = scope_all()
     cand = []
