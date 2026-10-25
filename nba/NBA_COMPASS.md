@@ -432,6 +432,23 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    on the last 20 / 40 / 60 / 90 / 120 / 180 slates does not beat all-history (best +0.8, 95 % -1.5 .. +3.4; inconsistent by
    season). DECISION (unchanged in practice): no per-profile strategy and no recency window go live; the current all-history
    global logic stays. The per-profile edges seen in-sample were fitted to the slates they were measured on.
+182. 🔑 **PORTFOLIO B IS LIVE (owner 2026-10-25 12:45 PT "best balanced option" -> B; 12:47 "deploy it"; 12:56 "today needs to be in
+   it").** SUPERSEDES the 2-slip portfolio of 180 (P_wrebounds_4flex + P_cal_r70_3power stay as pp_portfolio.fallback only).
+   Final review of every family (research_final_strategies run 40174314973, 144,288 strategies x 309 slates) -> the low-drawdown
+   shortlist -> portfolio study leg by leg (research_portfolio_caps run 40221601395: caps / exposure limits mostly HURT - they cut
+   the strongest slips; dropping overlapping strategies helped) -> starting points + realistic season (research_portfolio_paths run
+   40226300469). B = six units, one slip each a slate, 1 unit each, no caps (nba/portfolio_b.py, live units P_B3_3power, P_B4_4flex,
+   P_B5_3power, P_B6_4flex, P_B7_3power, P_B9_6flex): R final_hp>=0.68 Less 3P; R low-volume trailing-cell rank >=0.62 1/game 4F;
+   R More >=0.62 1/game skip-top 3P; R low-volume low lines 1/game 4F; R low-volume blend >=0.70 2/game skip-top 3P; R+demon
+   low-volume EV >=0.62 2/game skip-top 6F. Certified (audit_portfolio_b_parity run 40228557245): the shared builder = research on
+   309 of 309 slates for all six; B as live builds it (fixed tie order) 3.04 slips a day, ROI +92% (+82 / +101), max drawdown
+   15.0u, losing days 48%; live board vs research legs 137 of 156 unit-slates identical (the live board carries ~5-8% more legs).
+   Trailing cell window live = live_slip_engine.pb_rates (this season's window board graded on the box score + backtest top-up to
+   20 slates). Config pp_portfolio: order = the six, n 6, per_unit 1, leg_cap 99, backups 0, fallback = the previous portfolio
+   (used automatically if B cannot be prepared). EXPECTATION: in-sample selection -> plan on 40-60% of the edge: ROI +37..+56%,
+   max drawdown 37-53u typical / 58-87u bad (3-4x the backtest), flat spells of 35-50 slates; stake about 0.25% of bankroll a slip.
+   First slate 2026-10-25: 3 placed (B3, B4, B5), 3 quote-skipped (one leg - Daniss Jenkins turnovers Over 1.5 - was no longer on
+   PrizePicks' board; B has no backups by design).
 
 ---
 
