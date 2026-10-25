@@ -255,6 +255,9 @@ def main():
     conn.execute("SET statement_timeout = 0")
     SE.flex_alt_tiers(); SE.payout_v3_rules()
     reg, days, order, seas = L1.build(conn)
+    # the MLB runners terminate connections idle > 2 minutes (selfCleanupAfterPhase): fresh connection after Layer 1's compute
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
     nel = sum("ELECTED" in it["info"] for it in reg.items)
     clean = 0
     for _, _, new in reversed(reg.passes):
