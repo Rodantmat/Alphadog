@@ -422,8 +422,10 @@ def main():
                 sub = list(sub)
                 pl = Zh[sub].sum(axis=0); stk = Vh[sub].sum(axis=0)
                 m = RP.metrics(pl, stk, TRm)
-                if m["n"] and m["spd"] >= 1.0:
-                    for lab, val in (("best profit / drawdown", m["rec"]), ("most profit, drawdown <= 15u", m["profit"] if m["dd"] <= 15 else -1e9)):
+                if m["n"] and m["spd"] >= MINSPD:
+                    for lab, val in (("best profit / drawdown", m["rec"]), ("most profit, drawdown <= 15u", m["profit"] if m["dd"] <= 15 else -1e9),
+                                     ("fewest losing days, ROI >= +15%", -m["lose"] if m["roi"] >= 0.15 else -9.0),
+                                     ("smallest drawdown, ROI >= +15%", -m["dd"] if m["roi"] >= 0.15 else -1e9)):
                         if lab not in best or val > best[lab][0]:
                             best[lab] = (val, sub, pl, stk)
         for lab, (_v, sub, pl, stk) in best.items():
