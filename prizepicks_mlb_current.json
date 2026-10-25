@@ -75,6 +75,79 @@
     },
     {
       "type": "projection",
+      "id": "16177875",
+      "attributes": {
+        "adjusted_odds": true,
+        "allowed_wager_types": "over",
+        "board_time": "2026-10-25T00:59:19.869-04:00",
+        "custom_image": null,
+        "description": "TB",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "MLB_game_dZv89GVu41yumbfe3nLpYtlU",
+        "group_key": "197003-232-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "MLB",
+        "line_score": 8.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 2,
+        "refundable": true,
+        "start_time": "2026-10-26T20:00:00.000-04:00",
+        "stat_display_name": "Hits Allowed",
+        "stat_type": "Hits Allowed",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-25T16:33:04.868-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "197250"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "197003"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "232"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "16175122",
       "attributes": {
         "adjusted_odds": true,
@@ -95,7 +168,7 @@
         "line_score": 7.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 2,
+        "rank": 3,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Ks",
@@ -168,7 +241,7 @@
         "line_score": 7.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 3,
+        "rank": 4,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits Allowed",
@@ -200,79 +273,6 @@
           "data": {
             "type": "new_player",
             "id": "331061"
-          }
-        },
-        "projection_type": {
-          "data": {
-            "type": "projection_type",
-            "id": "2"
-          }
-        },
-        "score": {
-          "data": null
-        },
-        "stat_type": {
-          "data": {
-            "type": "stat_type",
-            "id": "232"
-          }
-        }
-      }
-    },
-    {
-      "type": "projection",
-      "id": "16177875",
-      "attributes": {
-        "adjusted_odds": true,
-        "allowed_wager_types": "over",
-        "board_time": "2026-10-25T00:59:19.869-04:00",
-        "custom_image": null,
-        "description": "TB",
-        "end_time": null,
-        "event_type": "team",
-        "flash_sale_line_score": null,
-        "game_id": "MLB_game_dZv89GVu41yumbfe3nLpYtlU",
-        "group_key": "197003-232-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
-        "in_game": false,
-        "is_live": false,
-        "is_live_scored": true,
-        "is_promo": false,
-        "league_ppid": "MLB",
-        "line_score": 7.5,
-        "odds_type": "demon",
-        "projection_type": "Single Stat",
-        "rank": 4,
-        "refundable": true,
-        "start_time": "2026-10-26T20:00:00.000-04:00",
-        "stat_display_name": "Hits Allowed",
-        "stat_type": "Hits Allowed",
-        "status": "pre_game",
-        "tv_channel": null,
-        "updated_at": "2026-10-25T13:03:19.971-04:00"
-      },
-      "relationships": {
-        "duration": {
-          "data": {
-            "type": "duration",
-            "id": "11"
-          }
-        },
-        "game": {
-          "data": {
-            "type": "game",
-            "id": "197250"
-          }
-        },
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "new_player": {
-          "data": {
-            "type": "new_player",
-            "id": "197003"
           }
         },
         "projection_type": {
@@ -686,7 +686,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:27:19.618-04:00"
+        "updated_at": "2026-10-25T18:03:49.474-04:00"
       },
       "relationships": {
         "duration": {
@@ -832,7 +832,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:03:34.956-04:00"
+        "updated_at": "2026-10-25T15:22:34.872-04:00"
       },
       "relationships": {
         "duration": {
@@ -1489,7 +1489,7 @@
         "stat_type": "Hits Allowed",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:03:19.881-04:00"
+        "updated_at": "2026-10-25T15:22:34.876-04:00"
       },
       "relationships": {
         "duration": {
@@ -2000,7 +2000,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.923-04:00"
+        "updated_at": "2026-10-25T18:17:49.723-04:00"
       },
       "relationships": {
         "duration": {
@@ -2292,7 +2292,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:16:34.667-04:00"
+        "updated_at": "2026-10-25T16:26:49.748-04:00"
       },
       "relationships": {
         "duration": {
@@ -2511,7 +2511,7 @@
         "stat_type": "Hits Allowed",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.051-04:00"
+        "updated_at": "2026-10-25T15:45:12.839-04:00"
       },
       "relationships": {
         "duration": {
@@ -3095,7 +3095,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T00:38:34.940-04:00"
+        "updated_at": "2026-10-25T16:47:19.576-04:00"
       },
       "relationships": {
         "duration": {
@@ -3314,7 +3314,7 @@
         "stat_type": "Pitcher Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:28:21.117-04:00"
+        "updated_at": "2026-10-25T18:06:47.617-04:00"
       },
       "relationships": {
         "duration": {
@@ -3387,7 +3387,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:51.059-04:00"
+        "updated_at": "2026-10-25T16:47:49.688-04:00"
       },
       "relationships": {
         "duration": {
@@ -3752,7 +3752,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.447-04:00"
+        "updated_at": "2026-10-25T15:52:17.851-04:00"
       },
       "relationships": {
         "duration": {
@@ -3825,7 +3825,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:51:17.087-04:00"
+        "updated_at": "2026-10-25T15:52:16.989-04:00"
       },
       "relationships": {
         "duration": {
@@ -4117,7 +4117,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.975-04:00"
+        "updated_at": "2026-10-25T18:05:48.615-04:00"
       },
       "relationships": {
         "duration": {
@@ -4190,7 +4190,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.853-04:00"
+        "updated_at": "2026-10-25T18:03:49.622-04:00"
       },
       "relationships": {
         "duration": {
@@ -4263,7 +4263,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:18:50.018-04:00"
+        "updated_at": "2026-10-25T17:40:34.915-04:00"
       },
       "relationships": {
         "duration": {
@@ -4482,7 +4482,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.884-04:00"
+        "updated_at": "2026-10-25T18:03:49.454-04:00"
       },
       "relationships": {
         "duration": {
@@ -4701,7 +4701,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:07:50.199-04:00"
+        "updated_at": "2026-10-25T18:03:34.768-04:00"
       },
       "relationships": {
         "duration": {
@@ -4920,7 +4920,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.812-04:00"
+        "updated_at": "2026-10-25T18:23:05.343-04:00"
       },
       "relationships": {
         "duration": {
@@ -5066,7 +5066,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:28:19.809-04:00"
+        "updated_at": "2026-10-25T18:02:49.609-04:00"
       },
       "relationships": {
         "duration": {
@@ -5285,7 +5285,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.673-04:00"
+        "updated_at": "2026-10-25T18:06:47.613-04:00"
       },
       "relationships": {
         "duration": {
@@ -5723,7 +5723,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:03:34.960-04:00"
+        "updated_at": "2026-10-25T16:20:34.618-04:00"
       },
       "relationships": {
         "duration": {
@@ -5796,7 +5796,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:52:34.863-04:00"
+        "updated_at": "2026-10-25T16:47:19.474-04:00"
       },
       "relationships": {
         "duration": {
@@ -6356,7 +6356,7 @@
       "id": "16174703",
       "attributes": {
         "adjusted_odds": true,
-        "allowed_wager_types": "under_or_over",
+        "allowed_wager_types": "over",
         "board_time": "2026-10-24T23:51:50.575-04:00",
         "custom_image": null,
         "description": "MIL",
@@ -6380,7 +6380,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T05:13:04.800-04:00"
+        "updated_at": "2026-10-25T18:02:04.909-04:00"
       },
       "relationships": {
         "duration": {
@@ -6453,7 +6453,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:09:20.457-04:00"
+        "updated_at": "2026-10-25T16:42:19.690-04:00"
       },
       "relationships": {
         "duration": {
@@ -6526,7 +6526,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:09:04.413-04:00"
+        "updated_at": "2026-10-25T16:24:04.522-04:00"
       },
       "relationships": {
         "duration": {
@@ -6745,7 +6745,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:09:34.914-04:00"
+        "updated_at": "2026-10-25T18:17:49.732-04:00"
       },
       "relationships": {
         "duration": {
@@ -6818,7 +6818,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:42:50.935-04:00"
+        "updated_at": "2026-10-25T15:55:28.459-04:00"
       },
       "relationships": {
         "duration": {
@@ -6964,7 +6964,7 @@
         "stat_type": "Hits Allowed",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:33:03.542-04:00"
+        "updated_at": "2026-10-25T15:33:41.835-04:00"
       },
       "relationships": {
         "duration": {
@@ -7109,6 +7109,7 @@
         "stat_display_name": "Ks",
         "stat_type": "Pitcher Strikeouts",
         "status": "pre_game",
+        "trending_count": 107,
         "tv_channel": null,
         "updated_at": "2026-10-25T12:48:19.701-04:00"
       },
@@ -7183,7 +7184,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:07:50.463-04:00"
+        "updated_at": "2026-10-25T16:33:29.383-04:00"
       },
       "relationships": {
         "duration": {
@@ -7475,7 +7476,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.573-04:00"
+        "updated_at": "2026-10-25T18:05:26.114-04:00"
       },
       "relationships": {
         "duration": {
@@ -7840,7 +7841,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:08:56.241-04:00"
+        "updated_at": "2026-10-25T18:03:49.722-04:00"
       },
       "relationships": {
         "duration": {
@@ -7986,7 +7987,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.875-04:00"
+        "updated_at": "2026-10-25T18:03:49.711-04:00"
       },
       "relationships": {
         "duration": {
@@ -8570,7 +8571,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.750-04:00"
+        "updated_at": "2026-10-25T16:34:19.713-04:00"
       },
       "relationships": {
         "duration": {
@@ -8862,7 +8863,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:58:24.843-04:00"
+        "updated_at": "2026-10-25T18:03:34.857-04:00"
       },
       "relationships": {
         "duration": {
@@ -9008,7 +9009,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:28:49.727-04:00"
+        "updated_at": "2026-10-25T16:22:04.778-04:00"
       },
       "relationships": {
         "duration": {
@@ -9081,7 +9082,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.714-04:00"
+        "updated_at": "2026-10-25T17:28:34.643-04:00"
       },
       "relationships": {
         "duration": {
@@ -9446,7 +9447,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:09:25.763-04:00"
+        "updated_at": "2026-10-25T18:02:04.759-04:00"
       },
       "relationships": {
         "duration": {
@@ -9738,7 +9739,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:09:04.541-04:00"
+        "updated_at": "2026-10-25T18:14:49.692-04:00"
       },
       "relationships": {
         "duration": {
@@ -9811,7 +9812,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.431-04:00"
+        "updated_at": "2026-10-25T18:03:33.147-04:00"
       },
       "relationships": {
         "duration": {
@@ -9884,7 +9885,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.645-04:00"
+        "updated_at": "2026-10-25T18:06:47.589-04:00"
       },
       "relationships": {
         "duration": {
@@ -9957,7 +9958,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.766-04:00"
+        "updated_at": "2026-10-25T17:16:22.409-04:00"
       },
       "relationships": {
         "duration": {
@@ -10030,7 +10031,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.927-04:00"
+        "updated_at": "2026-10-25T18:03:33.133-04:00"
       },
       "relationships": {
         "duration": {
@@ -10103,7 +10104,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.809-04:00"
+        "updated_at": "2026-10-25T18:05:48.364-04:00"
       },
       "relationships": {
         "duration": {
@@ -10176,7 +10177,7 @@
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:29:37.475-04:00"
+        "updated_at": "2026-10-25T16:34:35.271-04:00"
       },
       "relationships": {
         "duration": {
@@ -10395,7 +10396,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.598-04:00"
+        "updated_at": "2026-10-25T18:03:33.127-04:00"
       },
       "relationships": {
         "duration": {
@@ -10468,7 +10469,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T06:52:47.666-04:00"
+        "updated_at": "2026-10-25T18:05:47.876-04:00"
       },
       "relationships": {
         "duration": {
@@ -10614,7 +10615,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.871-04:00"
+        "updated_at": "2026-10-25T16:41:34.630-04:00"
       },
       "relationships": {
         "duration": {
@@ -11052,7 +11053,7 @@
         "stat_type": "Hits Allowed",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:10:34.749-04:00"
+        "updated_at": "2026-10-25T15:31:19.823-04:00"
       },
       "relationships": {
         "duration": {
@@ -11270,7 +11271,7 @@
         "stat_display_name": "Ks",
         "stat_type": "Pitcher Strikeouts",
         "status": "pre_game",
-        "trending_count": 193,
+        "trending_count": 277,
         "tv_channel": null,
         "updated_at": "2026-10-25T13:33:04.578-04:00"
       },
@@ -11564,7 +11565,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:50.179-04:00"
+        "updated_at": "2026-10-25T15:55:29.713-04:00"
       },
       "relationships": {
         "duration": {
@@ -11637,7 +11638,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:21:49.696-04:00"
+        "updated_at": "2026-10-25T17:41:49.330-04:00"
       },
       "relationships": {
         "duration": {
@@ -11683,18 +11684,18 @@
     },
     {
       "type": "projection",
-      "id": "16192323",
+      "id": "16192322",
       "attributes": {
         "adjusted_odds": true,
         "allowed_wager_types": "over",
-        "board_time": "2026-10-25T11:52:19.746-04:00",
+        "board_time": "2026-10-25T11:52:19.744-04:00",
         "custom_image": null,
-        "description": "MIL",
+        "description": "TB",
         "end_time": null,
         "event_type": "team",
         "flash_sale_line_score": null,
         "game_id": "MLB_game_dZv89GVu41yumbfe3nLpYtlU",
-        "group_key": "331059-101-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
+        "group_key": "146602-101-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
         "in_game": false,
         "is_live": false,
         "is_live_scored": true,
@@ -11710,7 +11711,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:21:49.672-04:00"
+        "updated_at": "2026-10-25T18:04:00.233-04:00"
       },
       "relationships": {
         "duration": {
@@ -11734,7 +11735,7 @@
         "new_player": {
           "data": {
             "type": "new_player",
-            "id": "331059"
+            "id": "146602"
           }
         },
         "projection_type": {
@@ -11782,9 +11783,9 @@
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
-        "trending_count": 103,
+        "trending_count": 152,
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:29:37.947-04:00"
+        "updated_at": "2026-10-25T17:16:22.497-04:00"
       },
       "relationships": {
         "duration": {
@@ -11857,7 +11858,7 @@
         "stat_type": "Earned Runs Allowed",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:05:27.524-04:00"
+        "updated_at": "2026-10-25T18:05:47.848-04:00"
       },
       "relationships": {
         "duration": {
@@ -11929,9 +11930,9 @@
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
-        "trending_count": 147,
+        "trending_count": 203,
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:56.444-04:00"
+        "updated_at": "2026-10-25T18:05:47.899-04:00"
       },
       "relationships": {
         "duration": {
@@ -12004,7 +12005,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:09:26.095-04:00"
+        "updated_at": "2026-10-25T18:22:55.758-04:00"
       },
       "relationships": {
         "duration": {
@@ -12076,9 +12077,9 @@
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
-        "trending_count": 667,
+        "trending_count": 1033,
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.773-04:00"
+        "updated_at": "2026-10-25T18:04:15.589-04:00"
       },
       "relationships": {
         "duration": {
@@ -12150,7 +12151,7 @@
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
-        "trending_count": 226,
+        "trending_count": 342,
         "tv_channel": null,
         "updated_at": "2026-10-25T07:09:40.563-04:00"
       },
@@ -12298,7 +12299,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:29:45.443-04:00"
+        "updated_at": "2026-10-25T18:23:05.257-04:00"
       },
       "relationships": {
         "duration": {
@@ -12370,9 +12371,9 @@
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
-        "trending_count": 134,
+        "trending_count": 189,
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:42:50.760-04:00"
+        "updated_at": "2026-10-25T18:05:47.997-04:00"
       },
       "relationships": {
         "duration": {
@@ -12518,7 +12519,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:52:08.281-04:00"
+        "updated_at": "2026-10-25T18:17:49.731-04:00"
       },
       "relationships": {
         "duration": {
@@ -12664,7 +12665,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:08:59.941-04:00"
+        "updated_at": "2026-10-25T18:05:48.608-04:00"
       },
       "relationships": {
         "duration": {
@@ -12737,7 +12738,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:57:34.757-04:00"
+        "updated_at": "2026-10-25T18:05:47.892-04:00"
       },
       "relationships": {
         "duration": {
@@ -12810,7 +12811,7 @@
         "stat_type": "Earned Runs Allowed",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:18:41.575-04:00"
+        "updated_at": "2026-10-25T18:05:26.116-04:00"
       },
       "relationships": {
         "duration": {
@@ -12883,7 +12884,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:56.401-04:00"
+        "updated_at": "2026-10-25T15:52:20.119-04:00"
       },
       "relationships": {
         "duration": {
@@ -12956,7 +12957,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:57:26.671-04:00"
+        "updated_at": "2026-10-25T18:22:55.868-04:00"
       },
       "relationships": {
         "duration": {
@@ -13028,9 +13029,9 @@
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
-        "trending_count": 180,
+        "trending_count": 249,
         "tv_channel": null,
-        "updated_at": "2026-10-25T06:51:45.427-04:00"
+        "updated_at": "2026-10-25T18:05:47.917-04:00"
       },
       "relationships": {
         "duration": {
@@ -13102,9 +13103,9 @@
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
-        "trending_count": 263,
+        "trending_count": 388,
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:16:48.128-04:00"
+        "updated_at": "2026-10-25T18:05:47.921-04:00"
       },
       "relationships": {
         "duration": {
@@ -13323,7 +13324,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:22:55.330-04:00"
+        "updated_at": "2026-10-25T17:42:55.521-04:00"
       },
       "relationships": {
         "duration": {
@@ -13396,7 +13397,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:42:55.208-04:00"
+        "updated_at": "2026-10-25T17:39:04.699-04:00"
       },
       "relationships": {
         "duration": {
@@ -13614,6 +13615,7 @@
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
+        "trending_count": 103,
         "tv_channel": null,
         "updated_at": "2026-10-25T10:01:49.752-04:00"
       },
@@ -13761,7 +13763,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:02:37.140-04:00"
+        "updated_at": "2026-10-25T15:55:27.302-04:00"
       },
       "relationships": {
         "duration": {
@@ -13834,7 +13836,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:47:25.096-04:00"
+        "updated_at": "2026-10-25T18:03:49.672-04:00"
       },
       "relationships": {
         "duration": {
@@ -13980,7 +13982,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:18:34.717-04:00"
+        "updated_at": "2026-10-25T18:04:05.125-04:00"
       },
       "relationships": {
         "duration": {
@@ -14248,7 +14250,7 @@
       "id": "16174584",
       "attributes": {
         "adjusted_odds": true,
-        "allowed_wager_types": "over",
+        "allowed_wager_types": "under_or_over",
         "board_time": "2026-10-24T23:51:50.215-04:00",
         "custom_image": null,
         "description": "TB",
@@ -14272,7 +14274,7 @@
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:18:50.037-04:00"
+        "updated_at": "2026-10-25T16:47:49.578-04:00"
       },
       "relationships": {
         "duration": {
@@ -14417,7 +14419,7 @@
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
-        "trending_count": 354,
+        "trending_count": 542,
         "tv_channel": null,
         "updated_at": "2026-10-25T12:46:42.272-04:00"
       },
@@ -14565,7 +14567,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:22:55.408-04:00"
+        "updated_at": "2026-10-25T16:42:55.856-04:00"
       },
       "relationships": {
         "duration": {
@@ -14711,7 +14713,7 @@
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:18:50.022-04:00"
+        "updated_at": "2026-10-25T18:03:49.704-04:00"
       },
       "relationships": {
         "duration": {
@@ -15368,7 +15370,7 @@
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.797-04:00"
+        "updated_at": "2026-10-25T17:39:04.814-04:00"
       },
       "relationships": {
         "duration": {
@@ -15441,7 +15443,7 @@
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:54:34.870-04:00"
+        "updated_at": "2026-10-25T18:03:49.848-04:00"
       },
       "relationships": {
         "duration": {
@@ -15952,7 +15954,7 @@
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:29:34.672-04:00"
+        "updated_at": "2026-10-25T16:28:09.599-04:00"
       },
       "relationships": {
         "duration": {
@@ -16316,9 +16318,9 @@
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
-        "trending_count": 108,
+        "trending_count": 162,
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:03:04.529-04:00"
+        "updated_at": "2026-10-25T17:16:22.515-04:00"
       },
       "relationships": {
         "duration": {
@@ -16610,7 +16612,7 @@
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:16:30.717-04:00"
+        "updated_at": "2026-10-25T15:22:55.330-04:00"
       },
       "relationships": {
         "duration": {
@@ -16828,9 +16830,9 @@
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
-        "trending_count": 133,
+        "trending_count": 205,
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:18:41.581-04:00"
+        "updated_at": "2026-10-25T18:05:48.189-04:00"
       },
       "relationships": {
         "duration": {
@@ -16976,7 +16978,7 @@
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:02:37.023-04:00"
+        "updated_at": "2026-10-25T17:38:19.991-04:00"
       },
       "relationships": {
         "duration": {
@@ -17195,7 +17197,7 @@
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:09:25.951-04:00"
+        "updated_at": "2026-10-25T16:02:55.363-04:00"
       },
       "relationships": {
         "duration": {
@@ -17779,7 +17781,7 @@
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T06:48:06.590-04:00"
+        "updated_at": "2026-10-25T16:42:55.759-04:00"
       },
       "relationships": {
         "duration": {
@@ -17852,7 +17854,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:36.258-04:00"
+        "updated_at": "2026-10-25T18:03:33.167-04:00"
       },
       "relationships": {
         "duration": {
@@ -17925,7 +17927,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.328-04:00"
+        "updated_at": "2026-10-25T18:05:47.914-04:00"
       },
       "relationships": {
         "duration": {
@@ -18071,7 +18073,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:03:04.743-04:00"
+        "updated_at": "2026-10-25T18:06:47.550-04:00"
       },
       "relationships": {
         "duration": {
@@ -18144,7 +18146,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:03:10.641-04:00"
+        "updated_at": "2026-10-25T18:06:47.571-04:00"
       },
       "relationships": {
         "duration": {
@@ -18217,7 +18219,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.730-04:00"
+        "updated_at": "2026-10-25T18:06:47.704-04:00"
       },
       "relationships": {
         "duration": {
@@ -18290,7 +18292,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.596-04:00"
+        "updated_at": "2026-10-25T18:06:47.571-04:00"
       },
       "relationships": {
         "duration": {
@@ -18363,7 +18365,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.651-04:00"
+        "updated_at": "2026-10-25T18:03:33.218-04:00"
       },
       "relationships": {
         "duration": {
@@ -18509,7 +18511,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.776-04:00"
+        "updated_at": "2026-10-25T18:05:47.875-04:00"
       },
       "relationships": {
         "duration": {
@@ -18582,7 +18584,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.854-04:00"
+        "updated_at": "2026-10-25T17:16:22.488-04:00"
       },
       "relationships": {
         "duration": {
@@ -18728,7 +18730,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.415-04:00"
+        "updated_at": "2026-10-25T17:16:22.443-04:00"
       },
       "relationships": {
         "duration": {
@@ -18801,7 +18803,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:03:04.985-04:00"
+        "updated_at": "2026-10-25T18:05:48.306-04:00"
       },
       "relationships": {
         "duration": {
@@ -18946,8 +18948,9 @@
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
+        "trending_count": 106,
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.866-04:00"
+        "updated_at": "2026-10-25T18:06:47.922-04:00"
       },
       "relationships": {
         "duration": {
@@ -19020,7 +19023,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.930-04:00"
+        "updated_at": "2026-10-25T16:34:34.967-04:00"
       },
       "relationships": {
         "duration": {
@@ -19093,7 +19096,7 @@
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:24:22.147-04:00"
+        "updated_at": "2026-10-25T18:05:47.875-04:00"
       },
       "relationships": {
         "duration": {
@@ -19139,6 +19142,79 @@
     },
     {
       "type": "projection",
+      "id": "16175116",
+      "attributes": {
+        "adjusted_odds": true,
+        "allowed_wager_types": "over",
+        "board_time": "2026-10-24T23:52:50.324-04:00",
+        "custom_image": null,
+        "description": "MIL",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "MLB_game_dZv89GVu41yumbfe3nLpYtlU",
+        "group_key": "162220-640-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "MLB",
+        "line_score": 1.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 263,
+        "refundable": true,
+        "start_time": "2026-10-26T20:00:00.000-04:00",
+        "stat_display_name": "Singles",
+        "stat_type": "Singles",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-25T18:04:47.375-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "197250"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "162220"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "640"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "16175117",
       "attributes": {
         "adjusted_odds": true,
@@ -19159,7 +19235,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 263,
+        "rank": 264,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -19232,7 +19308,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 264,
+        "rank": 265,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -19305,7 +19381,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 265,
+        "rank": 266,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -19378,14 +19454,14 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 266,
+        "rank": 267,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.795-04:00"
+        "updated_at": "2026-10-25T15:45:04.716-04:00"
       },
       "relationships": {
         "duration": {
@@ -19451,14 +19527,14 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 267,
+        "rank": 268,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T05:03:48.083-04:00"
+        "updated_at": "2026-10-25T18:05:48.002-04:00"
       },
       "relationships": {
         "duration": {
@@ -19524,14 +19600,14 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 268,
+        "rank": 269,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:58:13.752-04:00"
+        "updated_at": "2026-10-25T15:52:18.004-04:00"
       },
       "relationships": {
         "duration": {
@@ -19597,14 +19673,14 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 269,
+        "rank": 270,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.605-04:00"
+        "updated_at": "2026-10-25T15:55:30.574-04:00"
       },
       "relationships": {
         "duration": {
@@ -19670,7 +19746,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 270,
+        "rank": 271,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -19743,7 +19819,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 271,
+        "rank": 272,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -19816,14 +19892,14 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 272,
+        "rank": 273,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:50.268-04:00"
+        "updated_at": "2026-10-25T15:52:19.184-04:00"
       },
       "relationships": {
         "duration": {
@@ -19889,7 +19965,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 273,
+        "rank": 274,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
@@ -19962,7 +20038,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 274,
+        "rank": 275,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -20035,7 +20111,7 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 275,
+        "rank": 276,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
@@ -20088,6 +20164,79 @@
     },
     {
       "type": "projection",
+      "id": "16193564",
+      "attributes": {
+        "adjusted_odds": true,
+        "allowed_wager_types": "over",
+        "board_time": "2026-10-25T12:44:00.033-04:00",
+        "custom_image": null,
+        "description": "MIL",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "MLB_game_dZv89GVu41yumbfe3nLpYtlU",
+        "group_key": "309080-58-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "MLB",
+        "line_score": 1.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 277,
+        "refundable": true,
+        "start_time": "2026-10-26T20:00:00.000-04:00",
+        "stat_display_name": "Runs",
+        "stat_type": "Runs",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-25T18:05:48.055-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "197250"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "309080"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "58"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "16174371",
       "attributes": {
         "adjusted_odds": true,
@@ -20108,14 +20257,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 276,
+        "rank": 278,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:29:45.579-04:00"
+        "updated_at": "2026-10-25T18:04:00.067-04:00"
       },
       "relationships": {
         "duration": {
@@ -20181,14 +20330,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 277,
+        "rank": 279,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:00.038-04:00"
+        "updated_at": "2026-10-25T18:05:47.801-04:00"
       },
       "relationships": {
         "duration": {
@@ -20254,14 +20403,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 278,
+        "rank": 280,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:56:16.323-04:00"
+        "updated_at": "2026-10-25T15:55:29.763-04:00"
       },
       "relationships": {
         "duration": {
@@ -20327,14 +20476,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 279,
+        "rank": 281,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:29:45.537-04:00"
+        "updated_at": "2026-10-25T18:03:33.246-04:00"
       },
       "relationships": {
         "duration": {
@@ -20400,7 +20549,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 280,
+        "rank": 282,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
@@ -20473,14 +20622,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 281,
+        "rank": 283,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:59.747-04:00"
+        "updated_at": "2026-10-25T18:05:00.058-04:00"
       },
       "relationships": {
         "duration": {
@@ -20546,14 +20695,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 282,
+        "rank": 284,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:36.130-04:00"
+        "updated_at": "2026-10-25T18:00:59.995-04:00"
       },
       "relationships": {
         "duration": {
@@ -20619,14 +20768,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 283,
+        "rank": 285,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:29:45.348-04:00"
+        "updated_at": "2026-10-25T15:52:21.682-04:00"
       },
       "relationships": {
         "duration": {
@@ -20692,14 +20841,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 284,
+        "rank": 286,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:07:59.846-04:00"
+        "updated_at": "2026-10-25T18:05:00.034-04:00"
       },
       "relationships": {
         "duration": {
@@ -20765,14 +20914,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 285,
+        "rank": 287,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.856-04:00"
+        "updated_at": "2026-10-25T18:06:47.764-04:00"
       },
       "relationships": {
         "duration": {
@@ -20838,7 +20987,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 286,
+        "rank": 288,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
@@ -20911,14 +21060,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 287,
+        "rank": 289,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.483-04:00"
+        "updated_at": "2026-10-25T18:23:59.996-04:00"
       },
       "relationships": {
         "duration": {
@@ -20984,14 +21133,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 288,
+        "rank": 290,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.753-04:00"
+        "updated_at": "2026-10-25T18:03:33.298-04:00"
       },
       "relationships": {
         "duration": {
@@ -21057,7 +21206,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 289,
+        "rank": 291,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
@@ -21130,14 +21279,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 290,
+        "rank": 292,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:56:16.274-04:00"
+        "updated_at": "2026-10-25T15:52:17.841-04:00"
       },
       "relationships": {
         "duration": {
@@ -21203,14 +21352,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 291,
+        "rank": 293,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T05:03:48.979-04:00"
+        "updated_at": "2026-10-25T18:05:47.821-04:00"
       },
       "relationships": {
         "duration": {
@@ -21276,14 +21425,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 292,
+        "rank": 294,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:04:10.691-04:00"
+        "updated_at": "2026-10-25T18:05:48.088-04:00"
       },
       "relationships": {
         "duration": {
@@ -21349,7 +21498,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 293,
+        "rank": 295,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -21422,7 +21571,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 294,
+        "rank": 296,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
@@ -21495,7 +21644,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 295,
+        "rank": 297,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -21568,14 +21717,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 296,
+        "rank": 298,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:21:00.122-04:00"
+        "updated_at": "2026-10-25T15:30:33.966-04:00"
       },
       "relationships": {
         "duration": {
@@ -21641,14 +21790,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 297,
+        "rank": 299,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.869-04:00"
+        "updated_at": "2026-10-25T18:05:00.050-04:00"
       },
       "relationships": {
         "duration": {
@@ -21714,14 +21863,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 298,
+        "rank": 300,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:55:41.399-04:00"
+        "updated_at": "2026-10-25T15:55:29.472-04:00"
       },
       "relationships": {
         "duration": {
@@ -21787,7 +21936,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 299,
+        "rank": 301,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
@@ -21860,7 +22009,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 300,
+        "rank": 302,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -21933,7 +22082,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 301,
+        "rank": 303,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -22006,14 +22155,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 302,
+        "rank": 304,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:46:45.957-04:00"
+        "updated_at": "2026-10-25T18:06:47.717-04:00"
       },
       "relationships": {
         "duration": {
@@ -22079,7 +22228,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 303,
+        "rank": 305,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
@@ -22152,14 +22301,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 304,
+        "rank": 306,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:04:19.648-04:00"
+        "updated_at": "2026-10-25T18:04:47.645-04:00"
       },
       "relationships": {
         "duration": {
@@ -22225,14 +22374,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 305,
+        "rank": 307,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.498-04:00"
+        "updated_at": "2026-10-25T18:04:00.243-04:00"
       },
       "relationships": {
         "duration": {
@@ -22298,14 +22447,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 306,
+        "rank": 308,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.669-04:00"
+        "updated_at": "2026-10-25T15:22:55.407-04:00"
       },
       "relationships": {
         "duration": {
@@ -22371,7 +22520,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 307,
+        "rank": 309,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -22444,7 +22593,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 308,
+        "rank": 310,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -22517,7 +22666,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 309,
+        "rank": 311,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -22590,14 +22739,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 310,
+        "rank": 312,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:29:37.659-04:00"
+        "updated_at": "2026-10-25T15:30:33.932-04:00"
       },
       "relationships": {
         "duration": {
@@ -22663,12 +22812,13 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 311,
+        "rank": 313,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
         "stat_type": "Home Runs",
         "status": "pre_game",
+        "trending_count": 112,
         "tv_channel": null,
         "updated_at": "2026-10-25T09:16:25.809-04:00"
       },
@@ -22736,7 +22886,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 312,
+        "rank": 314,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -22809,7 +22959,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 313,
+        "rank": 315,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
@@ -22882,14 +23032,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 314,
+        "rank": 316,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:03:10.360-04:00"
+        "updated_at": "2026-10-25T17:16:22.708-04:00"
       },
       "relationships": {
         "duration": {
@@ -22955,14 +23105,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 315,
+        "rank": 317,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
         "stat_type": "Home Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:22:55.324-04:00"
+        "updated_at": "2026-10-25T18:22:55.817-04:00"
       },
       "relationships": {
         "duration": {
@@ -23028,14 +23178,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 316,
+        "rank": 318,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:22:49.724-04:00"
+        "updated_at": "2026-10-25T16:39:59.766-04:00"
       },
       "relationships": {
         "duration": {
@@ -23101,14 +23251,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 317,
+        "rank": 319,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:04:59.950-04:00"
+        "updated_at": "2026-10-25T18:05:48.137-04:00"
       },
       "relationships": {
         "duration": {
@@ -23174,14 +23324,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 318,
+        "rank": 320,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T06:58:07.239-04:00"
+        "updated_at": "2026-10-25T18:05:48.455-04:00"
       },
       "relationships": {
         "duration": {
@@ -23247,7 +23397,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 319,
+        "rank": 321,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -23320,7 +23470,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 320,
+        "rank": 322,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
@@ -23393,7 +23543,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 321,
+        "rank": 323,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -23466,14 +23616,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 322,
+        "rank": 324,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:09:47.436-04:00"
+        "updated_at": "2026-10-25T18:04:16.646-04:00"
       },
       "relationships": {
         "duration": {
@@ -23539,7 +23689,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 323,
+        "rank": 325,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -23612,7 +23762,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 324,
+        "rank": 326,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -23685,14 +23835,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 325,
+        "rank": 327,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:15:47.624-04:00"
+        "updated_at": "2026-10-25T18:02:56.050-04:00"
       },
       "relationships": {
         "duration": {
@@ -23758,14 +23908,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 326,
+        "rank": 328,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:20:00.138-04:00"
+        "updated_at": "2026-10-25T18:05:47.995-04:00"
       },
       "relationships": {
         "duration": {
@@ -23831,7 +23981,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 327,
+        "rank": 329,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
@@ -23904,13 +24054,13 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 328,
+        "rank": 330,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
-        "trending_count": 199,
+        "trending_count": 306,
         "tv_channel": null,
         "updated_at": "2026-10-25T07:09:26.074-04:00"
       },
@@ -23978,14 +24128,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 329,
+        "rank": 331,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:20:22.552-04:00"
+        "updated_at": "2026-10-25T15:20:20.279-04:00"
       },
       "relationships": {
         "duration": {
@@ -24051,15 +24201,15 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 330,
+        "rank": 332,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
-        "trending_count": 305,
+        "trending_count": 442,
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:56.369-04:00"
+        "updated_at": "2026-10-25T18:05:48.018-04:00"
       },
       "relationships": {
         "duration": {
@@ -24125,7 +24275,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 331,
+        "rank": 333,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -24198,7 +24348,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 332,
+        "rank": 334,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -24271,14 +24421,15 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 333,
+        "rank": 335,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
+        "trending_count": 110,
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:11:18.000-04:00"
+        "updated_at": "2026-10-25T18:05:47.972-04:00"
       },
       "relationships": {
         "duration": {
@@ -24344,14 +24495,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 334,
+        "rank": 336,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:15:47.734-04:00"
+        "updated_at": "2026-10-25T16:34:08.662-04:00"
       },
       "relationships": {
         "duration": {
@@ -24417,14 +24568,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 335,
+        "rank": 337,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:57:59.914-04:00"
+        "updated_at": "2026-10-25T18:05:47.821-04:00"
       },
       "relationships": {
         "duration": {
@@ -24490,7 +24641,7 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 336,
+        "rank": 338,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
@@ -24563,14 +24714,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 337,
+        "rank": 339,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:03:10.649-04:00"
+        "updated_at": "2026-10-25T16:35:34.609-04:00"
       },
       "relationships": {
         "duration": {
@@ -24636,14 +24787,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 338,
+        "rank": 340,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:45:19.666-04:00"
+        "updated_at": "2026-10-25T18:05:48.031-04:00"
       },
       "relationships": {
         "duration": {
@@ -24709,12 +24860,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 339,
+        "rank": 341,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
+        "trending_count": 131,
         "tv_channel": null,
         "updated_at": "2026-10-25T08:04:10.836-04:00"
       },
@@ -24782,14 +24934,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 340,
+        "rank": 342,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:09:40.545-04:00"
+        "updated_at": "2026-10-25T18:04:00.050-04:00"
       },
       "relationships": {
         "duration": {
@@ -24838,7 +24990,7 @@
       "id": "16174458",
       "attributes": {
         "adjusted_odds": true,
-        "allowed_wager_types": "over",
+        "allowed_wager_types": "under_or_over",
         "board_time": "2026-10-24T23:51:00.538-04:00",
         "custom_image": null,
         "description": "MIL",
@@ -24855,14 +25007,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 341,
+        "rank": 343,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:15:46.756-04:00"
+        "updated_at": "2026-10-25T16:32:25.282-04:00"
       },
       "relationships": {
         "duration": {
@@ -24928,14 +25080,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 342,
+        "rank": 344,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:07:26.360-04:00"
+        "updated_at": "2026-10-25T18:04:47.464-04:00"
       },
       "relationships": {
         "duration": {
@@ -25001,14 +25153,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 343,
+        "rank": 345,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T06:51:45.344-04:00"
+        "updated_at": "2026-10-25T16:33:29.191-04:00"
       },
       "relationships": {
         "duration": {
@@ -25074,14 +25226,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 344,
+        "rank": 346,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T05:03:39.097-04:00"
+        "updated_at": "2026-10-25T18:03:20.090-04:00"
       },
       "relationships": {
         "duration": {
@@ -25147,14 +25299,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 345,
+        "rank": 347,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:52:08.160-04:00"
+        "updated_at": "2026-10-25T18:06:47.904-04:00"
       },
       "relationships": {
         "duration": {
@@ -25220,14 +25372,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 346,
+        "rank": 348,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.508-04:00"
+        "updated_at": "2026-10-25T15:55:31.730-04:00"
       },
       "relationships": {
         "duration": {
@@ -25293,7 +25445,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 347,
+        "rank": 349,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -25366,14 +25518,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 348,
+        "rank": 350,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:09:46.132-04:00"
+        "updated_at": "2026-10-25T16:32:25.269-04:00"
       },
       "relationships": {
         "duration": {
@@ -25439,14 +25591,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 349,
+        "rank": 351,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T06:51:45.385-04:00"
+        "updated_at": "2026-10-25T18:00:36.163-04:00"
       },
       "relationships": {
         "duration": {
@@ -25512,7 +25664,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 350,
+        "rank": 352,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -25585,15 +25737,15 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 351,
+        "rank": 353,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
-        "trending_count": 211,
+        "trending_count": 292,
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:37:11.603-04:00"
+        "updated_at": "2026-10-25T18:05:47.955-04:00"
       },
       "relationships": {
         "duration": {
@@ -25659,7 +25811,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 352,
+        "rank": 354,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -25732,14 +25884,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 353,
+        "rank": 355,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:50.141-04:00"
+        "updated_at": "2026-10-25T18:03:33.453-04:00"
       },
       "relationships": {
         "duration": {
@@ -25805,14 +25957,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 354,
+        "rank": 356,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:04:59.886-04:00"
+        "updated_at": "2026-10-25T16:34:07.386-04:00"
       },
       "relationships": {
         "duration": {
@@ -25878,7 +26030,7 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 355,
+        "rank": 357,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
@@ -25951,14 +26103,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 356,
+        "rank": 358,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:20:00.063-04:00"
+        "updated_at": "2026-10-25T18:05:47.914-04:00"
       },
       "relationships": {
         "duration": {
@@ -26024,7 +26176,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 357,
+        "rank": 359,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -26097,14 +26249,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 358,
+        "rank": 360,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:16:30.822-04:00"
+        "updated_at": "2026-10-25T18:06:47.734-04:00"
       },
       "relationships": {
         "duration": {
@@ -26170,15 +26322,15 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 359,
+        "rank": 361,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
-        "trending_count": 113,
+        "trending_count": 164,
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:15:47.660-04:00"
+        "updated_at": "2026-10-25T18:05:41.263-04:00"
       },
       "relationships": {
         "duration": {
@@ -26244,14 +26396,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 360,
+        "rank": 362,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:49.823-04:00"
+        "updated_at": "2026-10-25T17:16:22.423-04:00"
       },
       "relationships": {
         "duration": {
@@ -26317,14 +26469,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 361,
+        "rank": 363,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:09:46.122-04:00"
+        "updated_at": "2026-10-25T18:04:15.207-04:00"
       },
       "relationships": {
         "duration": {
@@ -26390,7 +26542,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 362,
+        "rank": 364,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -26463,13 +26615,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 363,
+        "rank": 365,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
-        "trending_count": 370,
+        "trending_count": 465,
         "tv_channel": null,
         "updated_at": "2026-10-25T13:50:31.783-04:00"
       },
@@ -26537,7 +26689,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 364,
+        "rank": 366,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -26610,15 +26762,15 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 365,
+        "rank": 367,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
-        "trending_count": 219,
+        "trending_count": 300,
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:56:46.478-04:00"
+        "updated_at": "2026-10-25T15:21:11.756-04:00"
       },
       "relationships": {
         "duration": {
@@ -26684,14 +26836,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 366,
+        "rank": 368,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:00.084-04:00"
+        "updated_at": "2026-10-25T15:52:59.742-04:00"
       },
       "relationships": {
         "duration": {
@@ -26757,14 +26909,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 367,
+        "rank": 369,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:51.118-04:00"
+        "updated_at": "2026-10-25T15:44:53.255-04:00"
       },
       "relationships": {
         "duration": {
@@ -26830,7 +26982,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 368,
+        "rank": 370,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -26903,14 +27055,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 369,
+        "rank": 371,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:56.385-04:00"
+        "updated_at": "2026-10-25T18:22:55.818-04:00"
       },
       "relationships": {
         "duration": {
@@ -26976,7 +27128,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 370,
+        "rank": 372,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -27049,13 +27201,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 371,
+        "rank": 373,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
-        "trending_count": 143,
+        "trending_count": 198,
         "tv_channel": null,
         "updated_at": "2026-10-25T14:36:07.106-04:00"
       },
@@ -27123,7 +27275,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 372,
+        "rank": 374,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27196,7 +27348,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 373,
+        "rank": 375,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27269,7 +27421,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 374,
+        "rank": 376,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27342,14 +27494,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 375,
+        "rank": 377,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
         "stat_type": "Doubles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.400-04:00"
+        "updated_at": "2026-10-25T15:30:34.932-04:00"
       },
       "relationships": {
         "duration": {
@@ -27415,7 +27567,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 376,
+        "rank": 378,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27488,7 +27640,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 377,
+        "rank": 379,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27561,7 +27713,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 378,
+        "rank": 380,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27634,7 +27786,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 379,
+        "rank": 381,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27707,14 +27859,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 380,
+        "rank": 382,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
         "stat_type": "Doubles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:45:19.776-04:00"
+        "updated_at": "2026-10-25T15:55:28.634-04:00"
       },
       "relationships": {
         "duration": {
@@ -27780,7 +27932,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 381,
+        "rank": 383,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -27853,14 +28005,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 382,
+        "rank": 384,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
         "stat_type": "Doubles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.380-04:00"
+        "updated_at": "2026-10-25T15:52:17.064-04:00"
       },
       "relationships": {
         "duration": {
@@ -27926,14 +28078,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 383,
+        "rank": 385,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
         "stat_type": "Doubles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.897-04:00"
+        "updated_at": "2026-10-25T17:16:39.169-04:00"
       },
       "relationships": {
         "duration": {
@@ -27999,7 +28151,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 384,
+        "rank": 386,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -28072,7 +28224,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 385,
+        "rank": 387,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -28145,7 +28297,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 386,
+        "rank": 388,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -28218,14 +28370,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 387,
+        "rank": 389,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
         "stat_type": "Doubles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:02:56.549-04:00"
+        "updated_at": "2026-10-25T18:22:55.873-04:00"
       },
       "relationships": {
         "duration": {
@@ -28291,7 +28443,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 388,
+        "rank": 390,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -28364,14 +28516,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 389,
+        "rank": 391,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
         "stat_type": "Doubles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:39:57.526-04:00"
+        "updated_at": "2026-10-25T15:55:28.622-04:00"
       },
       "relationships": {
         "duration": {
@@ -28437,7 +28589,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 390,
+        "rank": 392,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -28510,7 +28662,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 391,
+        "rank": 393,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -28563,79 +28715,6 @@
     },
     {
       "type": "projection",
-      "id": "16174529",
-      "attributes": {
-        "adjusted_odds": true,
-        "allowed_wager_types": "under_or_over",
-        "board_time": "2026-10-24T23:51:50.009-04:00",
-        "custom_image": null,
-        "description": "MIL",
-        "end_time": null,
-        "event_type": "team",
-        "flash_sale_line_score": null,
-        "game_id": "MLB_game_dZv89GVu41yumbfe3nLpYtlU",
-        "group_key": "162220-640-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
-        "in_game": false,
-        "is_live": false,
-        "is_live_scored": true,
-        "is_promo": false,
-        "league_ppid": "MLB",
-        "line_score": 0.5,
-        "odds_type": "demon",
-        "projection_type": "Single Stat",
-        "rank": 392,
-        "refundable": true,
-        "start_time": "2026-10-26T20:00:00.000-04:00",
-        "stat_display_name": "Singles",
-        "stat_type": "Singles",
-        "status": "pre_game",
-        "tv_channel": null,
-        "updated_at": "2026-10-25T10:45:19.792-04:00"
-      },
-      "relationships": {
-        "duration": {
-          "data": {
-            "type": "duration",
-            "id": "11"
-          }
-        },
-        "game": {
-          "data": {
-            "type": "game",
-            "id": "197250"
-          }
-        },
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "new_player": {
-          "data": {
-            "type": "new_player",
-            "id": "162220"
-          }
-        },
-        "projection_type": {
-          "data": {
-            "type": "projection_type",
-            "id": "2"
-          }
-        },
-        "score": {
-          "data": null
-        },
-        "stat_type": {
-          "data": {
-            "type": "stat_type",
-            "id": "640"
-          }
-        }
-      }
-    },
-    {
-      "type": "projection",
       "id": "16174530",
       "attributes": {
         "adjusted_odds": true,
@@ -28656,7 +28735,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 393,
+        "rank": 394,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -28729,7 +28808,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 394,
+        "rank": 395,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -28802,14 +28881,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 395,
+        "rank": 396,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:20:00.120-04:00"
+        "updated_at": "2026-10-25T18:05:00.047-04:00"
       },
       "relationships": {
         "duration": {
@@ -28875,14 +28954,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 396,
+        "rank": 397,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:34:00.340-04:00"
+        "updated_at": "2026-10-25T18:05:47.974-04:00"
       },
       "relationships": {
         "duration": {
@@ -28948,7 +29027,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 397,
+        "rank": 398,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -29021,14 +29100,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 398,
+        "rank": 399,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:15:59.877-04:00"
+        "updated_at": "2026-10-25T15:55:29.503-04:00"
       },
       "relationships": {
         "duration": {
@@ -29094,12 +29173,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 399,
+        "rank": 400,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
+        "trending_count": 113,
         "tv_channel": null,
         "updated_at": "2026-10-25T07:28:19.779-04:00"
       },
@@ -29167,7 +29247,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 400,
+        "rank": 401,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -29240,7 +29320,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 401,
+        "rank": 402,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
@@ -29313,14 +29393,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 402,
+        "rank": 403,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:35.112-04:00"
+        "updated_at": "2026-10-25T16:32:24.340-04:00"
       },
       "relationships": {
         "duration": {
@@ -29386,7 +29466,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 403,
+        "rank": 404,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
@@ -29459,7 +29539,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 404,
+        "rank": 405,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
@@ -29532,7 +29612,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 405,
+        "rank": 406,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
@@ -29605,7 +29685,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 406,
+        "rank": 407,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
@@ -29678,7 +29758,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 407,
+        "rank": 408,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
@@ -29751,7 +29831,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 408,
+        "rank": 409,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -29824,7 +29904,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 409,
+        "rank": 410,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
@@ -29897,14 +29977,15 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 410,
+        "rank": 411,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
+        "trending_count": 101,
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:39:49.632-04:00"
+        "updated_at": "2026-10-25T18:03:49.465-04:00"
       },
       "relationships": {
         "duration": {
@@ -29970,14 +30051,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 411,
+        "rank": 412,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.814-04:00"
+        "updated_at": "2026-10-25T18:04:34.744-04:00"
       },
       "relationships": {
         "duration": {
@@ -30043,13 +30124,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 412,
+        "rank": 413,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
-        "trending_count": 133,
+        "trending_count": 186,
         "tv_channel": null,
         "updated_at": "2026-10-25T07:09:49.649-04:00"
       },
@@ -30117,14 +30198,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 413,
+        "rank": 414,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:01:49.842-04:00"
+        "updated_at": "2026-10-25T18:02:49.646-04:00"
       },
       "relationships": {
         "duration": {
@@ -30190,14 +30271,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 414,
+        "rank": 415,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T01:02:20.072-04:00"
+        "updated_at": "2026-10-25T18:17:49.832-04:00"
       },
       "relationships": {
         "duration": {
@@ -30263,7 +30344,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 415,
+        "rank": 416,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -30319,7 +30400,7 @@
       "id": "16174629",
       "attributes": {
         "adjusted_odds": true,
-        "allowed_wager_types": "under_or_over",
+        "allowed_wager_types": "over",
         "board_time": "2026-10-24T23:51:50.296-04:00",
         "custom_image": null,
         "description": "MIL",
@@ -30336,14 +30417,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 416,
+        "rank": 417,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T05:03:47.876-04:00"
+        "updated_at": "2026-10-25T18:05:48.628-04:00"
       },
       "relationships": {
         "duration": {
@@ -30409,14 +30490,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 417,
+        "rank": 418,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:34:00.016-04:00"
+        "updated_at": "2026-10-25T18:04:00.188-04:00"
       },
       "relationships": {
         "duration": {
@@ -30482,14 +30563,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 418,
+        "rank": 419,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:23:04.775-04:00"
+        "updated_at": "2026-10-25T15:10:49.787-04:00"
       },
       "relationships": {
         "duration": {
@@ -30555,14 +30636,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 419,
+        "rank": 420,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:05:11.866-04:00"
+        "updated_at": "2026-10-25T18:04:47.439-04:00"
       },
       "relationships": {
         "duration": {
@@ -30628,14 +30709,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 420,
+        "rank": 421,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
         "stat_type": "Runs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:03:31.289-04:00"
+        "updated_at": "2026-10-25T18:05:48.046-04:00"
       },
       "relationships": {
         "duration": {
@@ -30701,12 +30782,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 421,
+        "rank": 422,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
+        "trending_count": 104,
         "tv_channel": null,
         "updated_at": "2026-10-25T08:17:19.800-04:00"
       },
@@ -30774,14 +30856,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 422,
+        "rank": 423,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
         "stat_type": "RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:00.010-04:00"
+        "updated_at": "2026-10-25T18:06:47.869-04:00"
       },
       "relationships": {
         "duration": {
@@ -30847,14 +30929,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 423,
+        "rank": 424,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.779-04:00"
+        "updated_at": "2026-10-25T18:05:47.916-04:00"
       },
       "relationships": {
         "duration": {
@@ -30920,14 +31002,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 424,
+        "rank": 425,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.826-04:00"
+        "updated_at": "2026-10-25T18:06:47.585-04:00"
       },
       "relationships": {
         "duration": {
@@ -30993,14 +31075,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 425,
+        "rank": 426,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:36.338-04:00"
+        "updated_at": "2026-10-25T17:16:22.495-04:00"
       },
       "relationships": {
         "duration": {
@@ -31066,14 +31148,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 426,
+        "rank": 427,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:03:10.648-04:00"
+        "updated_at": "2026-10-25T16:30:33.795-04:00"
       },
       "relationships": {
         "duration": {
@@ -31139,14 +31221,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 427,
+        "rank": 428,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.341-04:00"
+        "updated_at": "2026-10-25T16:33:45.284-04:00"
       },
       "relationships": {
         "duration": {
@@ -31212,14 +31294,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 428,
+        "rank": 429,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:46:43.833-04:00"
+        "updated_at": "2026-10-25T16:34:36.377-04:00"
       },
       "relationships": {
         "duration": {
@@ -31285,14 +31367,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 429,
+        "rank": 430,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:06.804-04:00"
+        "updated_at": "2026-10-25T15:55:29.483-04:00"
       },
       "relationships": {
         "duration": {
@@ -31358,7 +31440,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 430,
+        "rank": 431,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
@@ -31431,14 +31513,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 431,
+        "rank": 432,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:35.328-04:00"
+        "updated_at": "2026-10-25T18:05:47.645-04:00"
       },
       "relationships": {
         "duration": {
@@ -31504,14 +31586,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 432,
+        "rank": 433,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T10:51:16.876-04:00"
+        "updated_at": "2026-10-25T16:30:33.767-04:00"
       },
       "relationships": {
         "duration": {
@@ -31577,14 +31659,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 433,
+        "rank": 434,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T09:18:32.597-04:00"
+        "updated_at": "2026-10-25T18:05:47.780-04:00"
       },
       "relationships": {
         "duration": {
@@ -31650,14 +31732,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 434,
+        "rank": 435,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.146-04:00"
+        "updated_at": "2026-10-25T16:34:00.173-04:00"
       },
       "relationships": {
         "duration": {
@@ -31723,14 +31805,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 435,
+        "rank": 436,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:52:08.306-04:00"
+        "updated_at": "2026-10-25T18:06:47.557-04:00"
       },
       "relationships": {
         "duration": {
@@ -31796,14 +31878,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 436,
+        "rank": 437,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T08:04:10.775-04:00"
+        "updated_at": "2026-10-25T18:03:35.428-04:00"
       },
       "relationships": {
         "duration": {
@@ -31869,7 +31951,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 437,
+        "rank": 438,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
@@ -31942,14 +32024,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 438,
+        "rank": 439,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:33:05.313-04:00"
+        "updated_at": "2026-10-25T18:03:33.085-04:00"
       },
       "relationships": {
         "duration": {
@@ -32015,14 +32097,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 439,
+        "rank": 440,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:31:34.822-04:00"
+        "updated_at": "2026-10-25T16:34:35.057-04:00"
       },
       "relationships": {
         "duration": {
@@ -32088,14 +32170,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 440,
+        "rank": 441,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.715-04:00"
+        "updated_at": "2026-10-25T15:20:17.681-04:00"
       },
       "relationships": {
         "duration": {
@@ -32161,14 +32243,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 441,
+        "rank": 442,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:08:56.289-04:00"
+        "updated_at": "2026-10-25T18:03:20.119-04:00"
       },
       "relationships": {
         "duration": {
@@ -32234,14 +32316,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 442,
+        "rank": 443,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:09:00.036-04:00"
+        "updated_at": "2026-10-25T18:05:47.926-04:00"
       },
       "relationships": {
         "duration": {
@@ -32287,6 +32369,79 @@
     },
     {
       "type": "projection",
+      "id": "16175124",
+      "attributes": {
+        "adjusted_odds": true,
+        "allowed_wager_types": "under_or_over",
+        "board_time": "2026-10-24T23:52:50.324-04:00",
+        "custom_image": null,
+        "description": "MIL",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "MLB_game_dZv89GVu41yumbfe3nLpYtlU",
+        "group_key": "162220-640-MLB_game_dZv89GVu41yumbfe3nLpYtlU-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "MLB",
+        "line_score": 0.5,
+        "odds_type": "standard",
+        "projection_type": "Single Stat",
+        "rank": 444,
+        "refundable": true,
+        "start_time": "2026-10-26T20:00:00.000-04:00",
+        "stat_display_name": "Singles",
+        "stat_type": "Singles",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-25T18:05:47.805-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "197250"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "162220"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "640"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "16175125",
       "attributes": {
         "adjusted_odds": true,
@@ -32307,14 +32462,15 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 443,
+        "rank": 445,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Walks",
         "stat_type": "Walks",
         "status": "pre_game",
+        "trending_count": 143,
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:09:26.106-04:00"
+        "updated_at": "2026-10-25T15:48:49.486-04:00"
       },
       "relationships": {
         "duration": {
@@ -32380,14 +32536,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 444,
+        "rank": 446,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.571-04:00"
+        "updated_at": "2026-10-25T16:34:36.649-04:00"
       },
       "relationships": {
         "duration": {
@@ -32453,14 +32609,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 445,
+        "rank": 447,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:05:00.130-04:00"
+        "updated_at": "2026-10-25T18:04:47.492-04:00"
       },
       "relationships": {
         "duration": {
@@ -32526,14 +32682,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 446,
+        "rank": 448,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:03:04.361-04:00"
+        "updated_at": "2026-10-25T18:05:47.912-04:00"
       },
       "relationships": {
         "duration": {
@@ -32599,14 +32755,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 447,
+        "rank": 449,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:05:56.281-04:00"
+        "updated_at": "2026-10-25T18:05:26.085-04:00"
       },
       "relationships": {
         "duration": {
@@ -32672,14 +32828,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 448,
+        "rank": 450,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T12:08:27.471-04:00"
+        "updated_at": "2026-10-25T16:40:56.222-04:00"
       },
       "relationships": {
         "duration": {
@@ -32745,7 +32901,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 449,
+        "rank": 451,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
@@ -32818,14 +32974,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 450,
+        "rank": 452,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
         "stat_type": "Hits+Runs+RBIs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:30:41.371-04:00"
+        "updated_at": "2026-10-25T18:04:00.158-04:00"
       },
       "relationships": {
         "duration": {
@@ -32891,14 +33047,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 451,
+        "rank": 453,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:11:17.772-04:00"
+        "updated_at": "2026-10-25T18:04:47.433-04:00"
       },
       "relationships": {
         "duration": {
@@ -32964,14 +33120,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 452,
+        "rank": 454,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:52.129-04:00"
+        "updated_at": "2026-10-25T17:17:11.945-04:00"
       },
       "relationships": {
         "duration": {
@@ -33037,14 +33193,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 453,
+        "rank": 455,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.605-04:00"
+        "updated_at": "2026-10-25T18:06:47.559-04:00"
       },
       "relationships": {
         "duration": {
@@ -33110,14 +33266,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 454,
+        "rank": 456,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:05:56.350-04:00"
+        "updated_at": "2026-10-25T18:05:48.024-04:00"
       },
       "relationships": {
         "duration": {
@@ -33183,7 +33339,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 455,
+        "rank": 457,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -33256,7 +33412,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 456,
+        "rank": 458,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Earned Runs Allowed",
@@ -33329,14 +33485,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 457,
+        "rank": 459,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T07:09:25.948-04:00"
+        "updated_at": "2026-10-25T16:42:55.800-04:00"
       },
       "relationships": {
         "duration": {
@@ -33402,7 +33558,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 458,
+        "rank": 460,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -33475,14 +33631,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 459,
+        "rank": 461,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:32:05.652-04:00"
+        "updated_at": "2026-10-25T18:03:33.437-04:00"
       },
       "relationships": {
         "duration": {
@@ -33548,7 +33704,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 460,
+        "rank": 462,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -33621,7 +33777,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 461,
+        "rank": 463,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Earned Runs Allowed",
@@ -33694,14 +33850,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 462,
+        "rank": 464,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T05:03:39.115-04:00"
+        "updated_at": "2026-10-25T18:04:25.557-04:00"
       },
       "relationships": {
         "duration": {
@@ -33767,14 +33923,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 463,
+        "rank": 465,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:52:35.182-04:00"
+        "updated_at": "2026-10-25T16:30:33.554-04:00"
       },
       "relationships": {
         "duration": {
@@ -33840,7 +33996,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 464,
+        "rank": 466,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
@@ -33913,7 +34069,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 465,
+        "rank": 467,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
@@ -33986,14 +34142,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 466,
+        "rank": 468,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "SB",
         "stat_type": "Stolen Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T03:22:41.727-04:00"
+        "updated_at": "2026-10-25T18:03:21.115-04:00"
       },
       "relationships": {
         "duration": {
@@ -34059,14 +34215,14 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 467,
+        "rank": 469,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
         "stat_type": "Total Bases",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T11:51:00.062-04:00"
+        "updated_at": "2026-10-25T18:05:00.000-04:00"
       },
       "relationships": {
         "duration": {
@@ -34132,7 +34288,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 468,
+        "rank": 470,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Doubles",
@@ -34205,7 +34361,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 469,
+        "rank": 471,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -34278,14 +34434,14 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 470,
+        "rank": 472,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:50.174-04:00"
+        "updated_at": "2026-10-25T17:16:22.494-04:00"
       },
       "relationships": {
         "duration": {
@@ -34351,7 +34507,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 471,
+        "rank": 473,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "RBIs",
@@ -34424,7 +34580,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 472,
+        "rank": 474,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Runs",
@@ -34497,7 +34653,7 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 473,
+        "rank": 475,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits",
@@ -34570,7 +34726,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 474,
+        "rank": 476,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hits+Runs+RBIs",
@@ -34643,7 +34799,7 @@
         "line_score": 0.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 475,
+        "rank": 477,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -34716,7 +34872,7 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 476,
+        "rank": 478,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "TB",
@@ -34789,14 +34945,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 477,
+        "rank": 479,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Singles",
         "stat_type": "Singles",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:52.216-04:00"
+        "updated_at": "2026-10-25T15:55:29.628-04:00"
       },
       "relationships": {
         "duration": {
@@ -34862,14 +35018,14 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 478,
+        "rank": 480,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Hitter Ks",
         "stat_type": "Hitter Strikeouts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-10-25T13:00:51.221-04:00"
+        "updated_at": "2026-10-25T15:52:19.336-04:00"
       },
       "relationships": {
         "duration": {
@@ -34935,7 +35091,7 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 479,
+        "rank": 481,
         "refundable": true,
         "start_time": "2026-10-26T20:00:00.000-04:00",
         "stat_display_name": "Home Runs",
@@ -34989,97 +35145,51 @@
   ],
   "included": [
     {
-      "type": "duration",
-      "id": "11",
-      "attributes": {
-        "name": "Full"
-      }
-    },
-    {
       "type": "new_player",
-      "id": "78732",
+      "id": "74159",
       "attributes": {
         "combo": false,
-        "display_name": "Jonathan Aranda",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Jonathan_Aranda_MLB_player_ytvsezyYeyCRu97xWRcSbfAJ-450.webp",
-        "jersey_number": "8",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Jonathan Aranda",
-        "position": "IF",
-        "ppid": "MLB_player_ytvsezyYeyCRu97xWRcSbfAJ",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "projection_type",
-      "id": "2",
-      "attributes": {
-        "name": "Single Stat"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "67504",
-      "attributes": {
-        "combo": false,
-        "display_name": "Yandy Díaz",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Yandy_D%C3%ADaz_MLB_player_Cch3vlbebMU8pRXLKpyAvvED-450.webp",
-        "jersey_number": "2",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Yandy Díaz",
-        "position": "DH",
-        "ppid": "MLB_player_Cch3vlbebMU8pRXLKpyAvvED",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "127196",
-      "attributes": {
-        "combo": false,
-        "display_name": "William Contreras",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/William_Contreras_MLB_player_utOsP58xiT4H1eTJnXgLgfhV-450.webp",
-        "jersey_number": "24",
+        "display_name": "Garrett Mitchell",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Garrett_Mitchell_MLB_player_pKr818qZkrPVIDliSpGPdZQ4-450.webp",
+        "jersey_number": "5",
         "league": "MLB",
         "league_id": 2,
         "market": "Milwaukee",
-        "name": "William Contreras",
-        "position": "C",
-        "ppid": "MLB_player_utOsP58xiT4H1eTJnXgLgfhV",
+        "name": "Garrett Mitchell",
+        "position": "OF",
+        "ppid": "MLB_player_pKr818qZkrPVIDliSpGPdZQ4",
+        "team": "MIL",
+        "team_name": "Brewers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2645"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "127193",
+      "attributes": {
+        "combo": false,
+        "display_name": "Brice Turang",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Second_Base_MLB_player_HhIl6lscwSyYMioGrH3lmpf.webp",
+        "jersey_number": "2",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Milwaukee",
+        "name": "Brice Turang",
+        "position": "IF",
+        "ppid": "MLB_player_HhIl6lscwSyYMioGrH3lmpf",
         "team": "MIL",
         "team_name": "Brewers"
       },
@@ -35163,19 +35273,28 @@
       }
     },
     {
+      "type": "stat_type",
+      "id": "410",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Walks",
+        "rank": 15
+      }
+    },
+    {
       "type": "new_player",
-      "id": "235841",
+      "id": "331061",
       "attributes": {
         "combo": false,
-        "display_name": "Chandler Simpson",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Chandler_Simpson_MLB_player_FKTub2L5snVNM4hhPUL5oBrz-450.webp",
-        "jersey_number": "14",
+        "display_name": "Freddy Peralta",
+        "image_url": "https://static.prizepicks.com/images/manual/Freddy Peralta.png",
+        "jersey_number": "51",
         "league": "MLB",
         "league_id": 2,
         "market": "Tampa Bay",
-        "name": "Chandler Simpson",
-        "position": "OF",
-        "ppid": "MLB_player_FKTub2L5snVNM4hhPUL5oBrz",
+        "name": "Freddy Peralta",
+        "position": "P",
+        "ppid": "MLB_player_lah3WZDoHwb8KhDNo8YhGQ3J",
         "team": "TB",
         "team_name": "Rays"
       },
@@ -35196,18 +35315,50 @@
     },
     {
       "type": "new_player",
-      "id": "249758",
+      "id": "67504",
       "attributes": {
         "combo": false,
-        "display_name": "Nick Fortes",
-        "image_url": "https://static.prizepicks.com/images/manual/Nick_Fortes.png",
-        "jersey_number": "40",
+        "display_name": "Yandy Díaz",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Yandy_D%C3%ADaz_MLB_player_Cch3vlbebMU8pRXLKpyAvvED-450.webp",
+        "jersey_number": "2",
         "league": "MLB",
         "league_id": 2,
         "market": "Tampa Bay",
-        "name": "Nick Fortes",
-        "position": "C",
-        "ppid": "MLB_player_rhamlLt9OQTuDVoPTxd6wMG",
+        "name": "Yandy Díaz",
+        "position": "DH",
+        "ppid": "MLB_player_Cch3vlbebMU8pRXLKpyAvvED",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "309080",
+      "attributes": {
+        "combo": false,
+        "display_name": "Ben Williamson",
+        "image_url": "https://static.prizepicks.com/images/manual/Ben_Williamson-.png",
+        "jersey_number": "15",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Ben Williamson",
+        "position": "IF",
+        "ppid": "MLB_player_Vu2HX67KLwDbhGT2gDmOYQyl",
         "team": "TB",
         "team_name": "Rays"
       },
@@ -35228,43 +35379,32 @@
     },
     {
       "type": "stat_type",
-      "id": "101",
+      "id": "281",
       "attributes": {
         "lfg_ignored_leagues": [],
-        "name": "Hits",
-        "rank": 11
+        "name": "Hitter Strikeouts",
+        "rank": 23
       }
     },
     {
-      "type": "new_player",
-      "id": "162220",
+      "type": "projection_type",
+      "id": "2",
       "attributes": {
-        "combo": false,
-        "display_name": "Junior Caminero",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Junior_Caminero_MLB_player_kMEY3512DjRv76TVQ3JAv1L5-450.webp",
-        "jersey_number": "13",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Junior Caminero",
-        "position": "IF",
-        "ppid": "MLB_player_kMEY3512DjRv76TVQ3JAv1L5",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
+        "name": "Single Stat"
+      }
+    },
+    {
+      "type": "team",
+      "id": "2645",
+      "attributes": {
+        "abbreviation": "MIL",
+        "logo": "https://static.prizepicks.com/production/pgnmrvrwecmsv5cizukimo1s60nv-image%20%2824%29.png",
+        "market": "Milwaukee",
+        "name": "Brewers",
+        "ppid": "MLB_team_2t084dSgqSvzwRPXd3QuBtoR",
+        "primary_color": "11284b",
+        "secondary_color": "ffc62f",
+        "tertiary_color": "FFC52F"
       }
     },
     {
@@ -35310,6 +35450,40 @@
       }
     },
     {
+      "type": "stat_type",
+      "id": "232",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Hits Allowed",
+        "rank": 7
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "58",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Runs",
+        "rank": 12
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "372",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Stolen Bases",
+        "rank": 16
+      }
+    },
+    {
+      "type": "duration",
+      "id": "11",
+      "attributes": {
+        "name": "Full"
+      }
+    },
+    {
       "type": "new_player",
       "id": "197003",
       "attributes": {
@@ -35342,6 +35516,131 @@
       }
     },
     {
+      "type": "stat_type",
+      "id": "231",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Earned Runs Allowed",
+        "rank": 21
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "309082",
+      "attributes": {
+        "combo": false,
+        "display_name": "Ryan Vilade",
+        "image_url": "https://static.prizepicks.com/images/manual/Ryan_Vilade-.png",
+        "jersey_number": "26",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Ryan Vilade",
+        "position": "OF",
+        "ppid": "MLB_player_dEjwRh0ybTD2mu3hGMIInItf",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "69",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "RBIs",
+        "rank": 13
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "320087",
+      "attributes": {
+        "combo": false,
+        "display_name": "Victor Mesa Jr.",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Victor_Mesa_MLB_player_D8UX8MYcd70lJkIVR4WBQVot-450.webp",
+        "jersey_number": "25",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Victor Mesa Jr.",
+        "position": "OF",
+        "ppid": "MLB_player_D8UX8MYcd70lJkIVR4WBQVot",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "311",
+      "attributes": {
+        "lfg_ignored_leagues": [
+          10
+        ],
+        "name": "Pitcher Strikeouts",
+        "rank": 1
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "192925",
+      "attributes": {
+        "combo": false,
+        "display_name": "Jake Bauers",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Jakob_Bauers_MLB_player_8W8DDUI7d70DLlu7HXuu07x1-450.webp",
+        "jersey_number": "9",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Milwaukee",
+        "name": "Jake Bauers",
+        "position": "IF",
+        "ppid": "MLB_player_8W8DDUI7d70DLlu7HXuu07x1",
+        "team": "MIL",
+        "team_name": "Brewers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2645"
+          }
+        }
+      }
+    },
+    {
       "type": "new_player",
       "id": "193538",
       "attributes": {
@@ -35355,143 +35654,6 @@
         "name": "Jackson Chourio",
         "position": "OF",
         "ppid": "MLB_player_Sl90DoV6a5Gc8RtLhi2IlM0Y",
-        "team": "MIL",
-        "team_name": "Brewers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2645"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "231",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Earned Runs Allowed",
-        "rank": 21
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "127193",
-      "attributes": {
-        "combo": false,
-        "display_name": "Brice Turang",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Second_Base_MLB_player_HhIl6lscwSyYMioGrH3lmpf.webp",
-        "jersey_number": "2",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Milwaukee",
-        "name": "Brice Turang",
-        "position": "IF",
-        "ppid": "MLB_player_HhIl6lscwSyYMioGrH3lmpf",
-        "team": "MIL",
-        "team_name": "Brewers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2645"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "58",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Runs",
-        "rank": 12
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "410",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Walks",
-        "rank": 15
-      }
-    },
-    {
-      "type": "team",
-      "id": "2638",
-      "attributes": {
-        "abbreviation": "TB",
-        "logo": "https://static.prizepicks.com/production/4wqaz5ijl32r8j5je1nog454nmlz-image%20%2834%29.png",
-        "market": "Tampa Bay",
-        "name": "Rays",
-        "ppid": "MLB_team_S1snxCKwPzFi87FiVuS1uscP",
-        "primary_color": "90bce6",
-        "secondary_color": "092c5c",
-        "tertiary_color": "092c5c"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "74159",
-      "attributes": {
-        "combo": false,
-        "display_name": "Garrett Mitchell",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Garrett_Mitchell_MLB_player_pKr818qZkrPVIDliSpGPdZQ4-450.webp",
-        "jersey_number": "5",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Milwaukee",
-        "name": "Garrett Mitchell",
-        "position": "OF",
-        "ppid": "MLB_player_pKr818qZkrPVIDliSpGPdZQ4",
-        "team": "MIL",
-        "team_name": "Brewers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2645"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "146602",
-      "attributes": {
-        "combo": false,
-        "display_name": "Sal Frelick",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Salvatore_Frelick_MLB_player_BrPHMsUL8EebaOML04XbI50b-450.webp",
-        "jersey_number": "10",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Milwaukee",
-        "name": "Sal Frelick",
-        "position": "OF",
-        "ppid": "MLB_player_BrPHMsUL8EebaOML04XbI50b",
         "team": "MIL",
         "team_name": "Brewers"
       },
@@ -35544,42 +35706,34 @@
     },
     {
       "type": "stat_type",
-      "id": "372",
+      "id": "640",
       "attributes": {
         "lfg_ignored_leagues": [],
-        "name": "Stolen Bases",
-        "rank": 16
+        "name": "Singles",
+        "rank": 24
       }
     },
     {
       "type": "stat_type",
-      "id": "639",
+      "id": "70",
       "attributes": {
         "lfg_ignored_leagues": [],
-        "name": "Doubles",
-        "rank": 25
+        "name": "Home Runs",
+        "rank": 14
       }
     },
     {
-      "type": "stat_type",
-      "id": "42",
+      "type": "team",
+      "id": "2638",
       "attributes": {
-        "lfg_ignored_leagues": [
-          10
-        ],
-        "name": "Total Bases",
-        "rank": 2
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "311",
-      "attributes": {
-        "lfg_ignored_leagues": [
-          10
-        ],
-        "name": "Pitcher Strikeouts",
-        "rank": 1
+        "abbreviation": "TB",
+        "logo": "https://static.prizepicks.com/production/4wqaz5ijl32r8j5je1nog454nmlz-image%20%2834%29.png",
+        "market": "Tampa Bay",
+        "name": "Rays",
+        "ppid": "MLB_team_S1snxCKwPzFi87FiVuS1uscP",
+        "primary_color": "90bce6",
+        "secondary_color": "092c5c",
+        "tertiary_color": "092c5c"
       }
     },
     {
@@ -35594,28 +35748,235 @@
       }
     },
     {
-      "type": "stat_type",
-      "id": "70",
+      "type": "new_player",
+      "id": "78732",
       "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Home Runs",
-        "rank": 14
+        "combo": false,
+        "display_name": "Jonathan Aranda",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Jonathan_Aranda_MLB_player_ytvsezyYeyCRu97xWRcSbfAJ-450.webp",
+        "jersey_number": "8",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Jonathan Aranda",
+        "position": "IF",
+        "ppid": "MLB_player_ytvsezyYeyCRu97xWRcSbfAJ",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
       }
     },
     {
       "type": "new_player",
-      "id": "320087",
+      "id": "127196",
       "attributes": {
         "combo": false,
-        "display_name": "Victor Mesa Jr.",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Victor_Mesa_MLB_player_D8UX8MYcd70lJkIVR4WBQVot-450.webp",
-        "jersey_number": "25",
+        "display_name": "William Contreras",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/William_Contreras_MLB_player_utOsP58xiT4H1eTJnXgLgfhV-450.webp",
+        "jersey_number": "24",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Milwaukee",
+        "name": "William Contreras",
+        "position": "C",
+        "ppid": "MLB_player_utOsP58xiT4H1eTJnXgLgfhV",
+        "team": "MIL",
+        "team_name": "Brewers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2645"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "146602",
+      "attributes": {
+        "combo": false,
+        "display_name": "Sal Frelick",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Salvatore_Frelick_MLB_player_BrPHMsUL8EebaOML04XbI50b-450.webp",
+        "jersey_number": "10",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Milwaukee",
+        "name": "Sal Frelick",
+        "position": "OF",
+        "ppid": "MLB_player_BrPHMsUL8EebaOML04XbI50b",
+        "team": "MIL",
+        "team_name": "Brewers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2645"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "101",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Hits",
+        "rank": 11
+      }
+    },
+    {
+      "type": "league",
+      "id": "2",
+      "attributes": {
+        "active": true,
+        "f2p_enabled": true,
+        "full_logo": null,
+        "has_live_projections": false,
+        "icon": "baseball",
+        "image_url": "https://static.prizepicks.com/images/leagues/production/161.svg",
+        "last_five_games_enabled": true,
+        "league_icon_id": 161,
+        "logo": null,
+        "name": "MLB",
+        "parent_id": null,
+        "parent_name": null,
+        "player_headshot_fallback": null,
+        "projections_count": 0,
+        "rank": 2,
+        "show_trending": true
+      },
+      "relationships": {
+        "projection_filters": {
+          "data": []
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "162220",
+      "attributes": {
+        "combo": false,
+        "display_name": "Junior Caminero",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Junior_Caminero_MLB_player_kMEY3512DjRv76TVQ3JAv1L5-450.webp",
+        "jersey_number": "13",
         "league": "MLB",
         "league_id": 2,
         "market": "Tampa Bay",
-        "name": "Victor Mesa Jr.",
+        "name": "Junior Caminero",
+        "position": "IF",
+        "ppid": "MLB_player_kMEY3512DjRv76TVQ3JAv1L5",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "42",
+      "attributes": {
+        "lfg_ignored_leagues": [
+          10
+        ],
+        "name": "Total Bases",
+        "rank": 2
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "235841",
+      "attributes": {
+        "combo": false,
+        "display_name": "Chandler Simpson",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Chandler_Simpson_MLB_player_FKTub2L5snVNM4hhPUL5oBrz-450.webp",
+        "jersey_number": "14",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Chandler Simpson",
         "position": "OF",
-        "ppid": "MLB_player_D8UX8MYcd70lJkIVR4WBQVot",
+        "ppid": "MLB_player_FKTub2L5snVNM4hhPUL5oBrz",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "639",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Doubles",
+        "rank": 25
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "196362",
+      "attributes": {
+        "combo": false,
+        "display_name": "Jonny DeLuca",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Jonathan_DeLuca_MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI-450.webp",
+        "jersey_number": "21",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Jonny DeLuca",
+        "position": "OF",
+        "ppid": "MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI",
         "team": "TB",
         "team_name": "Rays"
       },
@@ -35668,146 +36029,18 @@
     },
     {
       "type": "new_player",
-      "id": "309082",
+      "id": "249758",
       "attributes": {
         "combo": false,
-        "display_name": "Ryan Vilade",
-        "image_url": "https://static.prizepicks.com/images/manual/Ryan_Vilade-.png",
-        "jersey_number": "26",
+        "display_name": "Nick Fortes",
+        "image_url": "https://static.prizepicks.com/images/manual/Nick_Fortes.png",
+        "jersey_number": "40",
         "league": "MLB",
         "league_id": 2,
         "market": "Tampa Bay",
-        "name": "Ryan Vilade",
-        "position": "OF",
-        "ppid": "MLB_player_dEjwRh0ybTD2mu3hGMIInItf",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "69",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "RBIs",
-        "rank": 13
-      }
-    },
-    {
-      "type": "team",
-      "id": "2645",
-      "attributes": {
-        "abbreviation": "MIL",
-        "logo": "https://static.prizepicks.com/production/pgnmrvrwecmsv5cizukimo1s60nv-image%20%2824%29.png",
-        "market": "Milwaukee",
-        "name": "Brewers",
-        "ppid": "MLB_team_2t084dSgqSvzwRPXd3QuBtoR",
-        "primary_color": "11284b",
-        "secondary_color": "ffc62f",
-        "tertiary_color": "FFC52F"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "331061",
-      "attributes": {
-        "combo": false,
-        "display_name": "Freddy Peralta",
-        "image_url": "https://static.prizepicks.com/images/manual/Freddy Peralta.png",
-        "jersey_number": "51",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Freddy Peralta",
-        "position": "P",
-        "ppid": "MLB_player_lah3WZDoHwb8KhDNo8YhGQ3J",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "232",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Hits Allowed",
-        "rank": 7
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "192925",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jake Bauers",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Jakob_Bauers_MLB_player_8W8DDUI7d70DLlu7HXuu07x1-450.webp",
-        "jersey_number": "9",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Milwaukee",
-        "name": "Jake Bauers",
-        "position": "IF",
-        "ppid": "MLB_player_8W8DDUI7d70DLlu7HXuu07x1",
-        "team": "MIL",
-        "team_name": "Brewers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2645"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "309080",
-      "attributes": {
-        "combo": false,
-        "display_name": "Ben Williamson",
-        "image_url": "https://static.prizepicks.com/images/manual/Ben_Williamson-.png",
-        "jersey_number": "15",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Ben Williamson",
-        "position": "IF",
-        "ppid": "MLB_player_Vu2HX67KLwDbhGT2gDmOYQyl",
+        "name": "Nick Fortes",
+        "position": "C",
+        "ppid": "MLB_player_rhamlLt9OQTuDVoPTxd6wMG",
         "team": "TB",
         "team_name": "Rays"
       },
@@ -35856,83 +36089,6 @@
             "id": "2638"
           }
         }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "640",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Singles",
-        "rank": 24
-      }
-    },
-    {
-      "type": "league",
-      "id": "2",
-      "attributes": {
-        "active": true,
-        "f2p_enabled": true,
-        "full_logo": null,
-        "has_live_projections": false,
-        "icon": "baseball",
-        "image_url": "https://static.prizepicks.com/images/leagues/production/161.svg",
-        "last_five_games_enabled": true,
-        "league_icon_id": 161,
-        "logo": null,
-        "name": "MLB",
-        "parent_id": null,
-        "parent_name": null,
-        "player_headshot_fallback": null,
-        "projections_count": 0,
-        "rank": 2,
-        "show_trending": true
-      },
-      "relationships": {
-        "projection_filters": {
-          "data": []
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "196362",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jonny DeLuca",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Jonathan_DeLuca_MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI-450.webp",
-        "jersey_number": "21",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Jonny DeLuca",
-        "position": "OF",
-        "ppid": "MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "281",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Hitter Strikeouts",
-        "rank": 23
       }
     }
   ],
