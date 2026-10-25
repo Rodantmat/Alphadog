@@ -27,7 +27,8 @@ READS on every leg of every slate from the 16th (out of sample):
      draws) / random earlier slates for the look-alike; parametric p from the nulls' mean / sd
 Cheap (sums per profile x cell), so hundreds of nulls are affordable.
 Env: DATABASE_URL, L1_AGNOSTIC, LC_K (default 50,100,200,400,800,1600,3200 legs), LC_KG (default 400), LC_NULL (default 200),
-LC_AGG (default mean,sum,pooled,sel), LC_Z (default 2), LC_TOP (default 20), LC_KNN (default 20,40,80).
+LC_AGG (default mean,sum,pooled,sel), LC_Z (default 2), LC_TOP (default 20), LC_KNN (default 20,40,80), LC_HL (half-lives, recency),
+LC_CELL (cell | band), LC_RIDGE (ridge lambdas: context as features), LC_ONLY_RIDGE.
 """
 import os
 import sys
@@ -49,6 +50,12 @@ AGGS = [x for x in os.environ.get("LC_AGG", "mean,sum,pooled,sel").split(",") if
 ZSEL = float(os.environ.get("LC_Z", "2"))
 TOP = int(os.environ.get("LC_TOP", "20"))
 KNN = [int(x) for x in os.environ.get("LC_KNN", "20,40,80").split(",") if x]
+# MORE OF WHAT IS WORTH TRYING (owner 19:47 PT: "get all that worth trying and test all, let simulation, testing and debugging tell it"):
+HLS = [float(x) for x in os.environ.get("LC_HL", "0").split(",") if x]      # recency: half-lives in slates for every sum (0 = none)
+CELLDEF = os.environ.get("LC_CELL", "cell")                                   # "cell" (prop x line type x side) or "band" (x line tercile)
+RIDGE = [float(x) for x in os.environ.get("LC_RIDGE", "").split(",") if x]   # CONTEXT AS FEATURES: ridge lambdas (empty = off)
+ONLY_RIDGE = os.environ.get("LC_ONLY_RIDGE", "") == "1"
+NPC = int(os.environ.get("LC_PC", "20"))                                      # ridge: principal axes of the board features
 WARM = 15
 RNG = np.random.default_rng(61)
 
@@ -59,12 +66,28 @@ def log(m):
 
 def leg_arrays(days, horder):
     """-> per slate: cell index, p, hit, factor arrays; cell names"""
-    cells = sorted({(l["prop"], l["tier"], l["side"]) for k in horder for l in days[k]})
+    if CELLDEF == "band":
+        # line terciles per (prop, line type) on the FIRST 60 historical slates only (no look-ahead into the evaluation)
+        vals = defaultdict(list)
+        for k in horder[:60]:
+            for l in days[k]:
+                vals[(l["prop"], l["tier"])].append(float(l["line"]))
+        cut = {c: np.percentile(v, [33.3, 66.7]) for c, v in vals.items() if len(v) >= 30}
+        for k in horder:
+            for l in days[k]:
+                q = cut.get((l["prop"], l["tier"]))
+                b = "mid" if q is None else ("low" if l["line"] <= q[0] else "high" if l["line"] > q[1] else "mid")
+                l["_cell"] = (l["prop"], l["tier"], l["side"], b)
+    else:
+        for k in horder:
+            for l in days[k]:
+                l["_cell"] = (l["prop"], l["tier"], l["side"])
+    cells = sorted({l["_cell"] for k in horder for l in days[k]})
     ci = {c: i for i, c in enumerate(cells)}
     S = []
     for k in horder:
         ls = [l for l in days[k] if l["hit"] is not None and l["p"] is not None and l["factor"]]
-        S.append((np.array([ci[(l["prop"], l["tier"], l["side"])] for l in ls], np.int32),
+        S.append((np.array([ci[l["_cell"]] for l in ls], np.int32),
                   np.clip(np.array([float(l["p"]) for l in ls]), 0.01, 0.99),
                   np.array([float(l["hit"]) for l in ls]),
                   np.array([float(l["factor"]) for l in ls])))
@@ -92,7 +115,7 @@ def score(S, t, padj):
     return br, ll, mar, len(h)
 
 
-def run_system(S, R, Q, N, masks, aggs, ks):
+def run_system(S, R, Q, N, masks, aggs, ks, hl=0.0):
     """walk-forward over all slates; -> {(agg, K): (brier diff, logloss diff, margin diff)} vs the global-only recalibration, + base"""
     D, C = R.shape
     P = len(masks)
@@ -138,7 +161,10 @@ def run_system(S, R, Q, N, masks, aggs, ks):
                     br, ll, mar, _ = score(S, t, pg + (adj[c] if np.ndim(adj) else 0))
                     a = acc[(agg, k)]
                     a[0] += br - b_br; a[1] += ll - b_ll; a[2] += mar - b_mar
-        # the slate's results enter the sums AFTER it is scored
+        # the slate's results enter the sums AFTER it is scored; recency: older evidence decays (half-life hl slates)
+        if hl > 0:
+            dk = 0.5 ** (1.0 / hl)
+            gR *= dk; gN *= dk; pR *= dk; pQ *= dk; pN *= dk
         gR += R[t]; gN += N[t]
         ps_t = np.where(M[:, t])[0]
         if len(ps_t):
@@ -173,6 +199,49 @@ def knn_run(S, R, Q, N, X, nns, ks, rand=False):
                     br, ll, mar, _ = score(S, t, pg + adj[c])
                     a = acc[(nn, k)]
                     a[0] += br - b_br; a[1] += ll - b_ll; a[2] += mar - b_mar
+        gR += R[t]; gN += N[t]
+    return {key: (1e4 * v[0] / nlegs, 1e4 * v[1] / nlegs, 100 * v[2] / nsl) for key, v in acc.items()}
+
+
+def ridge_run(S, R, N, X, lams, shift=0):
+    """CONTEXT AS FEATURES (Gemini / 'feature, not state'): per cell, the residual is a linear function of the board's features
+    (trailing percentiles, centred), fitted by ridge on all EARLIER slates (sufficient statistics per cell: sum n x x', sum R x);
+    slate t's adjustment = x_t . beta_c. shift > 0: the feature rows are circularly shifted (the null - same features, wrong boards)"""
+    D, C = R.shape
+    Xc = np.nan_to_num(X - 0.5)                                       # trailing percentiles -> centred, missing -> neutral
+    # compress to the top NPC principal axes of the FIRST 60 slates (no look-ahead; keeps the per-cell ridge small and stable)
+    u, sv, vt = np.linalg.svd(Xc[:60] - Xc[:60].mean(axis=0), full_matrices=False)
+    Xc = Xc @ vt[:NPC].T
+    Xc = Xc / max(Xc[:60].std(), 1e-9)
+    if shift:
+        Xc = np.roll(Xc, shift, axis=0)
+    F = Xc.shape[1]
+    A = np.zeros((C, F, F)); B = np.zeros((C, F))
+    gR = np.zeros(C); gN = np.zeros(C)
+    acc = defaultdict(lambda: [0.0, 0.0, 0.0])
+    nlegs = 0; nsl = 0
+    eye = np.eye(F)
+    for t in range(D):
+        if t >= max(WARM, 30):
+            c, p, h, f = S[t]
+            gm = np.where(gN > 0, gR / np.maximum(gN, 1), 0)
+            g = gm * (gN / (gN + KG))
+            pg = p + g[c]
+            b_br, b_ll, b_mar, n = score(S, t, pg)
+            nlegs += n; nsl += 1
+            x = Xc[t]
+            # residual after the global recalibration: fit on (r - gm) implicitly via centred features (the intercept is gm)
+            for lam in lams:
+                beta = np.linalg.solve(A + lam * eye[None, :, :], B[..., None])[..., 0]
+                adj = np.clip(beta @ x, -0.15, 0.15)
+                br, ll, mar, _ = score(S, t, pg + adj[c])
+                a = acc[lam]
+                a[0] += br - b_br; a[1] += ll - b_ll; a[2] += mar - b_mar
+        # sufficient statistics of slate t (after scoring): residual relative to the cell's running mean is what the features explain
+        x = Xc[t]
+        gm_now = np.where(gN > 0, gR / np.maximum(gN, 1), 0)
+        A += N[t][:, None, None] * np.outer(x, x)[None, :, :]
+        B += (R[t] - N[t] * gm_now)[:, None] * x[None, :]
         gR += R[t]; gN += N[t]
     return {key: (1e4 * v[0] / nlegs, 1e4 * v[1] / nlegs, 100 * v[2] / nsl) for key, v in acc.items()}
 
@@ -220,18 +289,35 @@ def main():
     sets = {"ALL PROFILES": list(range(len(masks_all))),
             "BOARD PROFILES": [i for i, it in enumerate(reg.items) if it["tech"] != "calendar"],
             "CALENDAR": [i for i, it in enumerate(reg.items) if it["tech"] == "calendar"]}
-    for nm, ix in sets.items():
+    if RIDGE:
+        F_ = L1.slate_features(conn, days, order)
+        cols = sorted({c for f in F_.values() for c in f})
+        _, Pp = L1.trailing_pct(F_, order, cols)
+        fam = L1.families(cols)
+        Xr = Pp[:, [cols.index(c) for c in fam["ALL"]]][hist_ix]
+        real = ridge_run(S, R, N, Xr, RIDGE)
+        nulls = []
+        for j in range(min(NULLN, 100)):
+            nulls.append(ridge_run(S, R, N, Xr, RIDGE, shift=int(RNG.integers(20, D - 20))))
+        report(f"CONTEXT AS FEATURES - per-cell ridge on the board's {Xr.shape[1]} ALL-family features (trailing percentiles), walk-forward, "
+               f"vs {len(nulls)} feature-row shifts", real, nulls, sorted(real), lambda k: f"ridge lambda {k:g}")
+        log("ridge read done")
+        if ONLY_RIDGE:
+            log("done (LC_ONLY_RIDGE)")
+            return
+    for (nm, ix), hl in [(x, h) for x in sets.items() for h in HLS]:
         masks = [masks_all[i] for i in ix]
-        real, base = run_system(S, R, Q, N, masks, AGGS, KS)
+        real, base = run_system(S, R, Q, N, masks, AGGS, KS, hl)
         nulls = []
         for j in range(NULLN):
             sh = [np.roll(m, int(RNG.integers(1, D))) for m in masks]
-            nulls.append(run_system(S, R, Q, N, sh, AGGS, KS)[0])
+            nulls.append(run_system(S, R, Q, N, sh, AGGS, KS, hl)[0])
             if (j + 1) % 50 == 0:
                 log(f"{nm}: {j + 1} null systems")
-        print(f"\n[{nm}] global-only recalibration baseline: Brier {base[0]:.1f} / log-loss {base[1]:.1f} (x 1e4 per leg), top-{TOP} margin "
+        tag = f"{nm}, half-life {hl:g} slates" if hl else nm
+        print(f"\n[{tag}] global-only recalibration baseline: Brier {base[0]:.1f} / log-loss {base[1]:.1f} (x 1e4 per leg), top-{TOP} margin "
               f"{base[2]:+.2f} pts, on {base[3]:,} legs / {base[4]} slates")
-        report(f"[{nm}] PROFILE CONTEXT AT THE LEG LEVEL vs the global-only recalibration ({NULLN} shifted-mask nulls)", real, nulls,
+        report(f"[{tag}] PROFILE CONTEXT AT THE LEG LEVEL vs the global-only recalibration ({NULLN} shifted-mask nulls)", real, nulls,
                sorted(real), lambda k: f"{k[0]} K {k[1]:g}")
     # look-alike
     F_ = L1.slate_features(conn, days, order)
