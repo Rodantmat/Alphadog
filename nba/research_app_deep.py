@@ -358,6 +358,15 @@ def main():
             x = P[r][H]
             print(f"       {nm(r):<78} {la} {100 * mua[r]:+.0f}% ({int(na[r])}d) | {lb_} {100 * mub[r]:+.0f}% ({int(nb[r])}d) | dd {AF.max_dd(x):.1f}u | "
                   f"this season {('%+.0f%% (%dd)' % (100 * muc[r], nc[r])) if nc[r] else 'none'}")
+        if len(rb):
+            Xr = P[rb][:, H]; pld = ~np.isnan(Xr)
+            lose = np.where(pld, Xr < 0, False).sum(1) / np.maximum(pld.sum(1), 1)
+            dds = np.array([AF.max_dd(x) for x in Xr])
+            for lab, i in (("fewest losing slips", int(np.argmin(lose + 0.001 * dds))), ("smallest drawdown", int(np.argmin(dds + lose))),):
+                r = rb[i]
+                print(f"     safest robust ({lab}): {nm(r)} {la} {100 * mua[r]:+.0f}% | {lb_} {100 * mub[r]:+.0f}% | losing slips "
+                      f"{100 * lose[i]:.0f}% | dd {dds[i]:.1f}u | {int(pld[i].sum())} slips | this season "
+                      f"{('%+.0f%% (%dd)' % (100 * muc[r], nc[r])) if nc[r] else 'none'}")
         for f in ("B2", "TR", "FX", "DOC"):
             rf = rb[famarr[rb] == f]
             if len(rf):
