@@ -492,7 +492,7 @@ def main():
         o = per_profile(run, dix, KS)
         best_k, best = None, -np.inf
         for k in KS:
-            a, b = o[k]
+            a, b = o[k][0], o[k][1]
             if len(a) >= 10:
                 v = float(np.mean(np.array(a) - np.array(b)))
                 if v > best:
