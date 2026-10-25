@@ -21,7 +21,8 @@ FAMILIES (every structure: UD Standard 2-8 + Flex 3-8, Betr Perfect 2-6 + Dynami
 READS: per structure over ALL families - robust count, holdout both ways, walk-forward top-1 / top-5, the best robust with THIS SEASON;
   per family the best robust. THIS-SEASON DIAGNOSIS: (1) leg calibration now vs history (final_hp bins -> hit), (2) for the 60 most
   robust strategies and the live P5: this season's result as a percentile of the same strategy's historical windows of the same
-  number of slates - is the start unusual, or inside normal variance? PORTFOLIO: shortlist (best 2 robust a structure by profit /
+  number of slates - is the start unusual, or inside normal variance? PORTFOLIO HOLDOUT: shortlist and subset chosen on one period
+  only, measured on the other (the honest portfolio number). PORTFOLIO: shortlist (best 2 robust a structure by profit /
   drawdown, 2-6 scope) -> every subset -> leaders with starting points and a realistic season.
 Env: DATABASE_URL, APP, DP_K (12), DP_BOOT (2000), DP_SMOKE (1 = every 6th history slate, a probe run).
 """
