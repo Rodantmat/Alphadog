@@ -377,6 +377,12 @@ def main():
     SE.flex_alt_tiers(); SE.payout_v3_rules()
     hseas = seas[hist_ix]
     masks = [it["mask"][hist_ix] for it in reg.items]
+    if WINS:
+        window_read(run, hseas)
+    if HOLDOUT:
+        holdout_read(run, reg, masks, hseas, D)
+        log("done (SH_HOLDOUT)")
+        return
     if KNN:
         # ---------------- C: the look-alike tilt (each board's own nearest earlier boards) ----------------
         F_ = L1.slate_features(conn, days, order)
