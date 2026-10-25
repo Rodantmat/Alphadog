@@ -224,6 +224,7 @@ CHOSEN = {}               # the last system() call's chosen selectors per played
 #   spread  one leg per slot in turn (slot 1, 2, 3, 4, 5, 1, ...), the composition the matrix's templates start from
 #   top     every leg from slot 1 (the single best selector)
 # exact legs, no player twice, >= 2 teams, graded on PrizePicks' payouts (build_slip_engine.grade via research_board_matrix_slips)
+SHAPES = [x for x in os.environ.get("SH_SHAPES", "pool,spread").split(",") if x]
 STRUCTS = [(2, "power"), (3, "power"), (3, "flex"), (4, "power"), (4, "flex"), (5, "power"), (5, "flex"), (6, "power"), (6, "flex")]
 
 
