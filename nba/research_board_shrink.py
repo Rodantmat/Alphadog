@@ -227,6 +227,27 @@ CHOSEN = {}               # the last system() call's chosen selectors per played
 STRUCTS = [(2, "power"), (3, "power"), (3, "flex"), (4, "power"), (4, "flex"), (5, "power"), (5, "flex"), (6, "power"), (6, "flex")]
 
 
+def pool_pick(slots, cache, size):
+    """POOL: the chosen selectors' legs in slot order (slot 1's legs first), one leg a player, the first `size` of them; if they are
+    all one team, the last is swapped for the next leg of another team (PrizePicks needs >= 2 teams). Builds a slip on nearly every
+    slate, unlike one fixed count per slot (run 40148117129: the spread shape found 6-49 slates of 241)"""
+    import research_board_matrix_slips as MS
+    seen, legs = set(), []
+    for sl in slots:
+        for l in MS.legs_for(sl, cache):
+            if l["player"] not in seen:
+                seen.add(l["player"]); legs.append(l)
+    if len(legs) < size:
+        return None
+    pick = legs[:size]
+    if len({l["team_id"] for l in pick}) < 2:
+        alt = next((l for l in legs[size:] if l["team_id"] != pick[0]["team_id"]), None)
+        if alt is None:
+            return None
+        pick = pick[:-1] + [alt]
+    return pick
+
+
 def shape(size, kind):
     if kind == "top":
         return ((0, size),)
