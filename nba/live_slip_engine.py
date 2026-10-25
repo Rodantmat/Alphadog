@@ -194,6 +194,17 @@ PORTFOLIO_UNITS = {
     # named P_ like every portfolio unit (apply_quote_gate.PORTFOLIO_PREFIX; C_ is the steals-free strategy family's prefix)
     'P_cal_r70_3power':   ('calib:R:p:0.70:2',     3, 'power', ''),
     'P_cal_gr65ev_3power': ('calib:GR:ev:0.65:2',  3, 'power', ''),
+    # PORTFOLIO B (2026-10-25; owner 12:45 PT best balanced option -> B, 12:47 PT "deploy it"). Six strategies of the final review,
+    # one slip each a slate, built by portfolio_b (shared with audit_portfolio_b_parity): research_portfolio_caps run 40221601395
+    # (history 3.04 slips a day, ROI +93% (+81 / +103%), max drawdown 14.6u, no caps beat none) and research_portfolio_paths run
+    # 40226300469 (starting points; realistic season at 40-60% of the edge +37..+56% ROI). Config: order = these six, n 6,
+    # per_unit 1, leg_cap 99 (no caps), backups 0 (one slip a strategy, as measured).
+    'P_B3_3power':        ('pb:B3',                3, 'power', ''),
+    'P_B4_4flex':         ('pb:B4',                4, 'flex',  ''),
+    'P_B5_3power':        ('pb:B5',                3, 'power', ''),
+    'P_B6_4flex':         ('pb:B6',                4, 'flex',  ''),
+    'P_B7_3power':        ('pb:B7',                3, 'power', ''),
+    'P_B9_6flex':         ('pb:B9',                6, 'flex',  ''),
 }
 PORTFOLIO_DEFAULT = {"enabled": False, "n": 2, "leg_cap": 2, "order": list(PORTFOLIO_UNITS),
                      "replaces": ["A_wrebounds_4flex", "C_wstocks_4flex", "A_core_3power", "D_points_3power"]}
