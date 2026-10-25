@@ -48,8 +48,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           UD_EMAIL: ${{ secrets.UD_EMAIL }}
           UD_PASSWORD: ${{ secrets.UD_PASSWORD }}
-          UD_OTP: ${{ github.event.inputs.otp }}
         run: |
-          # the otp input may be the whole Underdog message (iPhone automation, 2026-10-25): mask every digit run in it, never echo the text
-          if [ -n "$UD_OTP" ]; then printf '%s\n' "$UD_OTP" | grep -oE '[0-9]{4,8}' | while read -r c; do echo "::add-mask::$c"; done; fi
+          # the otp (a code, or the whole Underdog message from the owner's iPhone automation) is read by the script from the
+          # dispatch event file - never put in a step env, which GitHub prints in this public log (2026-10-25)
           python nba/underdog_login.py
