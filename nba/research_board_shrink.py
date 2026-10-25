@@ -274,6 +274,105 @@ def knn_system(run, X, ks, nns, rand=False):
     return out, per
 
 
+def holdout_read(run, reg, masks, hseas, D):
+    """STRICT HOLDOUT: per profile, K and 'trust' (train p < 0.05 vs shifted masks) from HOLDOUT-season slates only; verdict on later slates"""
+    from scipy.stats import norm
+
+    def split(oo, k):
+        a, b, t = (np.array(x) for x in oo[k])
+        if not len(t):
+            return np.array([]), np.array([], bool)
+        return a - b, hseas[t.astype(int)] == HOLDOUT
+
+    def best_train(oo):
+        bk, bv = None, -np.inf
+        for k in KS:
+            d, tr = split(oo, k)
+            if tr.sum() >= 8 and d[tr].mean() > bv:
+                bk, bv = k, float(d[tr].mean())
+        return bk, bv
+    rows = []
+    for pi, (it, m) in enumerate(zip(reg.items, masks), 1):
+        dix = np.where(m)[0]
+        if len(dix) < WARM + 10:
+            continue
+        o = per_profile(run, dix, KS)
+        bk, bv = best_train(o)
+        if bk is None:
+            continue
+        d, tr = split(o, bk)
+        te = ~tr
+        if te.sum() < 8:
+            continue
+        tv = float(d[te].mean())
+        ntr, nte = [], []
+        for _ in range(NULLN):
+            on = per_profile(run, np.where(shifted(m, D))[0], KS)
+            k2, v2 = best_train(on)
+            if k2 is not None:
+                ntr.append(v2)
+            d2, tr2 = split(on, bk)
+            if len(d2) and (~tr2).sum() >= 8:
+                nte.append(float(d2[~tr2].mean()))
+        ntr, nte = np.array(ntr), np.array(nte)
+        if len(ntr) < 3 or len(nte) < 3:
+            continue
+        p_tr = float(norm.sf((bv - ntr.mean()) / max(ntr.std(ddof=1), 1e-9)))
+        z_te = float((tv - nte.mean()) / max(nte.std(ddof=1), 1e-9))
+        rows.append((pi, it, bk, bv, p_tr, tv, z_te, int(te.sum())))
+        if pi % 50 == 0:
+            log(f"holdout profiles: {pi}")
+    print("\n" + "=" * 190 + f"\nSTRICT HOLDOUT - K and trust decided on {HOLDOUT} slates only (train p < 0.05 vs shifted masks); verdict on the later "
+          "slates (pts a leg, own tilted choice minus the global choice; z vs the profile's own shifted-mask nulls at the same K)")
+    sel = [r for r in rows if r[4] < 0.05]
+    for r in sel:
+        pi, it, k, bv, ptr, tv, z, n = r
+        print(f"  P{pi:03d} {it['name']} | train K {k:g} {100 * bv:+.2f} (p {ptr:.4f}) -> LATER SLATES {100 * tv:+.2f} on {n} slates (z {z:+.2f})")
+    for lab, grp in (("TRUSTED (train p < 0.05)", sel), ("ALL PROFILES", rows)):
+        if grp:
+            zs = np.array([r[6] for r in grp]); tv = np.array([r[5] for r in grp])
+            print(f"  {lab}: {len(grp)} profiles | later-slate diff mean {100 * tv.mean():+.2f} pts a leg, positive in {int((tv > 0).sum())}; "
+                  f"Stouffer z {zs.sum() / np.sqrt(len(zs)):+.2f} (p {float(norm.sf(zs.sum() / np.sqrt(len(zs)))):.4f}; profiles overlap, so "
+                  f"this p is optimistic)")
+
+
+def window_read(run, hseas):
+    """RECENCY LEAD: the global choice made on the last w slates only vs on all earlier slates; realized per-leg margin"""
+    D = run.D
+    out = {w: [] for w in WINS}
+    base, tt = [], []
+    for t in range(WARM, D):
+        if run.glb[t] is None:
+            continue
+        g = run.realized(run.gsel[t], t)
+        if g != g:
+            continue
+        base.append(g); tt.append(t)
+        for w in WINS:
+            a = max(0, t - w)
+            h = run.H[:, a:t].sum(axis=1); n = run.N[:, a:t].sum(axis=1); be = run.BE[:, a:t].sum(axis=1)
+            d = (run.N[:, a:t] > 0).sum(axis=1)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                hit = h / n
+                lb = (h - be) / n - np.sqrt(np.maximum(hit * (1 - hit), 0.01) / np.maximum(n, 1))
+            lb = np.where((n >= 30) & (d >= 8), lb, -np.inf)
+            r = run.realized(np.argpartition(-lb, TOPK)[:TOPK], t)
+            out[w].append(r if r == r else g)
+    base = np.array(base); tt = np.array(tt)
+    print("\n" + "=" * 190 + f"\nRECENCY LEAD - global choice on the last w slates vs on all earlier slates (all {run.S:,} selectors; realized margin per leg, pts; "
+          f"all-history global {100 * base.mean():+.2f})")
+    rng = np.random.default_rng(71)
+    for w in WINS:
+        dd = np.array(out[w]) - base
+        # moving-block bootstrap (blocks of 10 slates) for the mean difference
+        nb = int(np.ceil(len(dd) / 10))
+        bs = [np.mean(np.concatenate([dd[s_: s_ + 10] for s_ in rng.integers(0, max(len(dd) - 10, 1), nb)])[:len(dd)]) for _ in range(2000)]
+        lo, hi = np.percentile(bs, [2.5, 97.5])
+        parts = " | ".join(f"{s_}: {100 * dd[hseas[tt] == s_].mean():+.2f}" for s_ in HIST)
+        print(f"  last {w:>3} slates: {100 * np.mean(out[w]):+.2f} | diff {100 * dd.mean():+.2f} (95% block-bootstrap {100 * lo:+.2f} .. {100 * hi:+.2f}; "
+              f"P(diff > 0) {np.mean(np.array(bs) > 0):.3f}) | {parts} | helped {int((dd > 0).sum())} / hurt {int((dd < 0).sum())}")
+
+
 SYS_LAST = {}             # the last system() call's per-slate differences (for the per-season / per-half breakdown)
 CHOSEN = {}               # the last system() call's chosen selectors per played slate (in score order): K -> [..], "glob" -> [..]
 
