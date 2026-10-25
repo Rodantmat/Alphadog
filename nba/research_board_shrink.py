@@ -64,6 +64,12 @@ KS = [float(x) for x in os.environ.get("SH_K", "25,50,100,200,400,800,1200,1600,
 ONLY_B = os.environ.get("SH_ONLY_B", "") == "1"     # the live-system read only (skip the per-profile read A)
 KNN = [int(x) for x in os.environ.get("SH_KNN", "").split(",") if x]                  # look-alike sizes (read C); empty = off
 ONLY_C = os.environ.get("SH_ONLY_C", "") == "1"     # only the look-alike read C
+# STRICT HOLDOUT (2026-10-24 22:51 PT): SH_HOLDOUT=2024-25 - which profiles to trust and their K are decided on that season's slates
+# ONLY; the verdict is their result on every LATER slate (2025-26), vs the same profiles' shifted-mask nulls on those slates.
+# Run with L1_FIT=2024-25 so the profiles themselves are also built from 2024-25 only.
+HOLDOUT = os.environ.get("SH_HOLDOUT", "")
+# RECENCY LEAD: SH_WIN=w1,w2,..: the GLOBAL choice made on the last w slates only vs on all earlier slates (every slate, all selectors)
+WINS = [int(x) for x in os.environ.get("SH_WIN", "").split(",") if x]
 SLIP_K = [float(x) for x in os.environ.get("SH_SLIP_K", "400,800,1600,3200,6400").split(",")]   # K values graded as slips too
 WARM = 15
 RNG = np.random.default_rng(53)
