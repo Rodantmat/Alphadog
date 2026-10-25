@@ -253,26 +253,33 @@ def portfolio_select(pools, cmap, broad_day, cfg, extra=0):
             cand[name] = [s_] if s_ else []
         else:
             cand[name] = ENG.build_day_slips(pools.get(fam, pools['']), comp, size, structure, PORTFOLIO_KMAX, cmap, broad_day)
-    n, lcap = int(cfg['n']) + int(extra), int(cfg['leg_cap'])
+    n_main, lcap = int(cfg['n']), int(cfg['leg_cap'])
+    n = n_main + int(extra)
+    # per_unit (2026-10-25, portfolio B): the n main slips take at most per_unit slips of a unit (B = one slip a strategy - a unit
+    # with no slip today leaves its place empty instead of handing it to another unit's k = 2); backups continue the round robin.
+    # Absent = the previous rule (plain round robin), unchanged.
+    per = int(cfg.get('per_unit') or PORTFOLIO_KMAX)
     taken, use, seen = [], defaultdict(int), set()
-    for k in range(PORTFOLIO_KMAX):
-        for name in cfg['order']:
-            if len(taken) >= n:
-                break
-            if k >= len(cand[name]):
-                continue
-            slip = cand[name][k]
-            keys = list(dict.fromkeys((l['player'], l['prop'], l['side'], round(float(l['line']), 1)) for l in slip))
-            size, structure = PORTFOLIO_UNITS[name][1], PORTFOLIO_UNITS[name][2]
-            sig = (size, structure, tuple(sorted(map(str, keys))))
-            if sig in seen or any(use[x] >= lcap for x in keys):
-                continue
-            seen.add(sig)
-            for x in keys:
-                use[x] += 1
-            taken.append((name, k + 1, slip))
-        if len(taken) >= n:
-            break
+
+    def fill(kmax, stop):
+        for k in range(kmax):
+            for name in cfg['order']:
+                if len(taken) >= stop:
+                    return
+                if k >= len(cand[name]):
+                    continue
+                slip = cand[name][k]
+                keys = list(dict.fromkeys((l['player'], l['prop'], l['side'], round(float(l['line']), 1)) for l in slip))
+                size, structure = PORTFOLIO_UNITS[name][1], PORTFOLIO_UNITS[name][2]
+                sig = (size, structure, tuple(sorted(map(str, keys))))
+                if sig in seen or any(use[x] >= lcap for x in keys):
+                    continue
+                seen.add(sig)
+                for x in keys:
+                    use[x] += 1
+                taken.append((name, k + 1, slip))
+    fill(min(per, PORTFOLIO_KMAX), n_main)
+    fill(PORTFOLIO_KMAX, n)
     return taken
 
 
