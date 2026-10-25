@@ -336,8 +336,12 @@ def main():
             nl = np.array(nul[key])
             pp = (1 + np.sum(nl >= real[key])) / (len(nl) + 1)
             dd = per[key]
+            tr = per[("t", key[0])]
+            th = np.array_split(np.arange(len(dd)), 3)
             print(f"  nn {key[0]:>3} K {key[1]:>6g}: diff {100 * real[key]:+.2f} (p {pp:.3f}; random median {100 * np.median(nl):+.2f}, p95 "
-                  f"{100 * np.percentile(nl, 95):+.2f}) | helped {int((dd > 0).sum())} / hurt {int((dd < 0).sum())} slates")
+                  f"{100 * np.percentile(nl, 95):+.2f}) | helped {int((dd > 0).sum())} / hurt {int((dd < 0).sum())} slates | "
+                  + " | ".join(f"{s_}: {100 * dd[hseas[tr] == s_].mean():+.2f}" for s_ in HIST) + " | thirds "
+                  + " / ".join(f"{100 * dd[q].mean():+.2f}" for q in th))
         nmax = np.array([max(nul[key][i] for key in real) for i in range(NULLN)])
         print(f"  BEST (corrected for {len(real)} settings): diff {100 * best:+.2f}, p {(1 + np.sum(nmax >= best)) / (NULLN + 1):.3f}")
         log("look-alike read done")
