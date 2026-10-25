@@ -48,6 +48,8 @@ NULLN = int(os.environ.get("SH_NULL", "30"))
 POOL = int(os.environ.get("SH_POOL", "300"))    # the tilt reorders, on each slate, the POOL best selectors by global evidence before it
 KS = [float(x) for x in os.environ.get("SH_K", "25,50,100,200,400,800,1200,1600,2400,3200,4800,6400,12800").split(",")]
 ONLY_B = os.environ.get("SH_ONLY_B", "") == "1"     # the live-system read only (skip the per-profile read A)
+KNN = [int(x) for x in os.environ.get("SH_KNN", "").split(",") if x]                  # look-alike sizes (read C); empty = off
+ONLY_C = os.environ.get("SH_ONLY_C", "") == "1"     # only the look-alike read C
 SLIP_K = [float(x) for x in os.environ.get("SH_SLIP_K", "400,800,1600,3200,6400").split(",")]   # K values graded as slips too
 WARM = 15
 RNG = np.random.default_rng(53)
