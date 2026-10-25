@@ -1969,7 +1969,10 @@ def build(conn):
     if AGNOSTIC:
         halves = ("H-A", "H-B")
         split = seas.astype(object).copy()
-        hi = [i for i, k in enumerate(order) if k[0] in REAL_HIST]
+        # STRICT HOLDOUT (2026-10-24 22:51 PT): L1_FIT=2024-25 builds the profiles from that season ONLY; every other season's slates
+        # (2025-26, 2026-27) are only ASSIGNED to the profiles, like a live board - a true out-of-sample season for the strategy tests
+        fit = [x for x in os.environ.get("L1_FIT", "").split(",") if x] or list(REAL_HIST)
+        hi = [i for i, k in enumerate(order) if k[0] in fit]
         for j, i in enumerate(hi):
             split[i] = halves[(j // BLOCK) % 2]
         split = split.astype(str)
