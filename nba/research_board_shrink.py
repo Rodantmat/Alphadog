@@ -46,6 +46,20 @@ HIST = L1.REAL_HIST          # the real seasons (with L1_AGNOSTIC, L1.HIST becom
 TOPK = int(os.environ.get("MX_TOPK", "5"))
 NULLN = int(os.environ.get("SH_NULL", "30"))
 POOL = int(os.environ.get("SH_POOL", "300"))    # the tilt reorders, on each slate, the POOL best selectors by global evidence before it
+# AUDIT FIXES (independent review 2026-10-24 19:40 PT, owner 19:13 PT "something wrong you are doing"):
+#  - the global top-POOL restriction hid every profile edge sitting in a selector that is mediocre overall (planted check: 1 of 5 such
+#    selectors ever entered a pool, pooling gain ~0, profile-only +7.8 pts) -> SH_POOL=0 lets the tilt reach EVERY selector; to keep
+#    that affordable SH_COARSE=1 keeps a coarse cut grid (n 1-6, 8, 10, 12, 15, 20, 25, 30; 2, 5, 10, 15, 20, 25, 30, 40 %; factor
+#    cuts 2, 3, 5, 8, 10, 15, 20) instead of every cut (neighbouring cuts of a cell are near-duplicates)
+#  - the live system divided each profile's tilt by the number of profiles on the slate (~120) -> SH_AGG: "pooled" (the member
+#    profiles' evidence combined: sum of n x dev / sum of n, one shrinkage n_tot / (n_tot + K)), "sum", or the old "mean"
+#  - 30-100 null draws cannot pass BH over ~430 profiles (p floor 1 / (N + 1)) -> parametric p from the null's mean / sd as well
+#    (the nulls are means over many slates, ~normal), BH on it, and the excess of nominal p < 0.05 over its binomial expectation
+COARSE = os.environ.get("SH_COARSE", "") == "1"
+TRACK_K = float(os.environ.get("SH_TRACK_K", "100"))
+TRACK_T = float(os.environ.get("SH_TRACK_T", "2"))
+AGGS = [x for x in os.environ.get("SH_AGG", "mean").split(",") if x]
+SETS = [x for x in os.environ.get("SH_SETS", "ALL PROFILES,BOARD PROFILES ONLY,CALENDAR ONLY").split(",") if x]
 KS = [float(x) for x in os.environ.get("SH_K", "25,50,100,200,400,800,1200,1600,2400,3200,4800,6400,12800").split(",")]
 ONLY_B = os.environ.get("SH_ONLY_B", "") == "1"     # the live-system read only (skip the per-profile read A)
 KNN = [int(x) for x in os.environ.get("SH_KNN", "").split(",") if x]                  # look-alike sizes (read C); empty = off
@@ -80,6 +94,11 @@ class Run:
                 self.gok[t] = ok
             h += mat.H[:, t]; n += mat.N[:, t]; be += mat.BE[:, t]; d += (mat.N[:, t] > 0)
         self.gsel = [None if g is None else np.argpartition(-g, TOPK)[:TOPK] for g in self.glb]
+        if POOL <= 0 or POOL >= S:                        # no pool: the tilt can reach every selector
+            self.U = np.arange(S)
+            self.H, self.N, self.BE = mat.H, mat.N, mat.BE
+            self.mat = None
+            return
         # candidate pool per slate (no look-ahead: the slate's own global evidence); the work runs on the union of the pools only
         pools = [None if g is None else np.argpartition(-g, POOL)[:POOL] for g in self.glb]
         U = np.unique(np.concatenate([q for q in pools if q is not None]))
@@ -139,13 +158,17 @@ def shifted(mask, D):
     return np.roll(mask, s)
 
 
-def system(run, masks, ks):
+def system(run, masks, ks, agg="mean"):
     """THE LIVE SYSTEM: per slate the mean tilt of every profile the slate is in (earlier slates only); none -> global"""
     S, D = run.S, run.D
     P = len(masks)
     member = np.array(masks, bool)                       # P x D
     CHOSEN.clear()
     h = np.zeros((P, S), np.float32); n = np.zeros((P, S), np.float32); be = np.zeros((P, S), np.float32)
+    # agg "track": every profile is weighted by its OWN walk-forward record - how much its tilted pick (K = TRACK_K) beat the global
+    # pick on its earlier slates; profiles without a positive record (>= 5 slates) get no say; none -> the global choice. This is how
+    # the live system learns WHICH of a board's ~120 profiles matter, instead of averaging them all
+    rec_s = np.zeros(P); rec_n = np.zeros(P); rec_q = np.zeros(P)
     res = {k: [] for k in ks}
     glob, tt = [], []
     covered = 0
@@ -161,9 +184,34 @@ def system(run, masks, ks):
                         pm = np.where(n[ps] > 0, (h[ps] - be[ps]) / np.maximum(n[ps], 1), 0)
                     dev = np.where(run.gok[t][None, :], pm - run.gmar[t][None, :], 0)
                 CHOSEN.setdefault("glob", []).append(run.gsel[t][np.argsort(-run.glb[t][run.gsel[t]])])
+                if len(ps) and agg == "track":
+                    tk = (n[ps] / (n[ps] + TRACK_K)) * dev
+                    pk_ = np.argpartition(-(run.glb[t][None, :] + tk), TOPK, axis=1)[:, :TOPK]
+                    rp = np.array([run.realized(q, t) for q in pk_])
+                    nr = np.maximum(rec_n[ps], 1)
+                    mu_r = rec_s[ps] / nr
+                    se_r = np.sqrt(np.maximum(rec_q[ps] / nr - mu_r ** 2, 1e-6) / nr)
+                    # weight = how far the record is beyond noise: t-statistic above TRACK_T (a lucky record gets no say)
+                    wts = np.where(rec_n[ps] >= 5, np.maximum(mu_r / se_r - TRACK_T, 0), 0)
+                    ok_r = rp == rp
+                    rec_s[ps[ok_r]] += rp[ok_r] - g; rec_q[ps[ok_r]] += (rp[ok_r] - g) ** 2
+                    rec_n[ps[ok_r]] += 1                                              # the record grows AFTER the slate's decision
+                if len(ps) and agg == "pooled":
+                    ntot = n[ps].sum(axis=0)
+                    devc = (n[ps] * dev).sum(axis=0) / np.maximum(ntot, 1)
                 for k in ks:
                     if len(ps):
-                        tl = ((n[ps] / (n[ps] + k)) * dev).mean(axis=0)
+                        if agg == "track":
+                            if wts.sum() <= 0:
+                                res[k].append(g); CHOSEN.setdefault(k, []).append(CHOSEN["glob"][-1])
+                                continue
+                            tl = (wts[:, None] * (n[ps] / (n[ps] + k)) * dev).sum(axis=0) / wts.sum()
+                        elif agg == "pooled":
+                            tl = (ntot / (ntot + k)) * devc
+                        elif agg == "sum":
+                            tl = ((n[ps] / (n[ps] + k)) * dev).sum(axis=0)
+                        else:
+                            tl = ((n[ps] / (n[ps] + k)) * dev).mean(axis=0)
                         sc = run.glb[t] + tl
                         sel = np.argpartition(-sc, TOPK)[:TOPK]
                         sel = sel[np.argsort(-sc[sel])]
@@ -307,6 +355,13 @@ def main():
     L3.attach_ranks(conn, days)
     MX.leg_features(conn, days, horder)
     sels, H, N, F, BE = MX.selector_matrix(days, horder)
+    if COARSE:
+        cc = {("n", k) for k in (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30)} | {("pct", q) for q in (2, 5, 10, 15, 20, 25, 30, 40)}
+        fc = {2, 3, 5, 8, 10, 15, 20}
+        keep = np.array([i for i, s_ in enumerate(sels) if (s_[0] == "rank" and s_[3] in cc) or (s_[0] == "factor" and s_[3] in fc)])
+        sels = [sels[i] for i in keep]
+        H, N, F, BE = H[keep], N[keep], F[keep], BE[keep]
+        log("coarse cut grid kept")
     log(f"selectors: {len(sels):,}")
     run = Run(MX.Mat(H, N, F, BE))
     del H, N, F, BE
@@ -354,16 +409,18 @@ def main():
     sets = {"ALL PROFILES": list(range(len(masks))),
             "BOARD PROFILES ONLY": [i for i, it in enumerate(reg.items) if it["tech"] != "calendar"],
             "CALENDAR ONLY": [i for i, it in enumerate(reg.items) if it["tech"] == "calendar"]}
-    for nm, ix in sets.items():
+    from scipy.stats import norm
+    for agg, nm in [(a_, n_) for a_ in AGGS for n_ in sets if n_ in SETS]:
+        ix = sets[nm]
         if not ix:
             continue
-        diff, g, own, cov, npl = system(run, [masks[i] for i in ix], KS)
+        diff, g, own, cov, npl = system(run, [masks[i] for i in ix], KS, agg)
         real = {"t": SYS_LAST["t"].copy(), "diff": {k: v.copy() for k, v in SYS_LAST["diff"].items()}}
         sr = slip_reads(days, horder, sels, run, real["t"], {k: list(v) for k, v in CHOSEN.items() if k == "glob" or k in SLIP_K})
         nulls = {k: [] for k in KS}
         snull = defaultdict(list)                                 # (structure, shape, K) -> null ROI differences
         for _ in range(NULLN):
-            dn, _, _, _, _ = system(run, [shifted(masks[i], D) for i in ix], KS)
+            dn, _, _, _, _ = system(run, [shifted(masks[i], D) for i in ix], KS, agg)
             for k in KS:
                 nulls[k].append(dn[k])
             sn = slip_reads(days, horder, sels, run, SYS_LAST["t"], {k: list(v) for k, v in CHOSEN.items() if k == "glob" or k in SLIP_K})
@@ -374,12 +431,13 @@ def main():
                         ok_ = ~np.isnan(a) & ~np.isnan(b)
                         if ok_.sum():
                             snull[key + (k,)].append(float(np.mean(a[ok_] - b[ok_])))
-        print(f"  {nm} ({len(ix)} profiles; {cov} of {npl} played slates in >= 1 profile; global {100 * g:+.2f}):")
+        print(f"  {nm} [tilt {agg}] ({len(ix)} profiles; {cov} of {npl} played slates in >= 1 profile; global {100 * g:+.2f}):")
         for k in KS:
             nl = np.array(nulls[k])
             p = (1 + np.sum(nl >= diff[k])) / (len(nl) + 1)
-            print(f"    K {k:>6g}: system {100 * own[k]:+.2f} | diff {100 * diff[k]:+.2f} (p {p:.3f} vs {NULLN} shifted-mask systems, "
-                  f"their median {100 * np.median(nl):+.2f}, p95 {100 * np.percentile(nl, 95):+.2f})")
+            pz = float(norm.sf((diff[k] - nl.mean()) / max(nl.std(ddof=1), 1e-9))) if len(nl) > 2 else np.nan
+            print(f"    K {k:>6g}: system {100 * own[k]:+.2f} | diff {100 * diff[k]:+.2f} (p {p:.3f}, parametric p {pz:.4f} vs {NULLN} "
+                  f"shifted-mask systems, their median {100 * np.median(nl):+.2f}, p95 {100 * np.percentile(nl, 95):+.2f})")
             # where the difference comes from: per real season, per third of the history, share of slates it helps / hurts
             dd, tr = real["diff"][k], real["t"]
             parts = [f"{s_}: {100 * dd[hseas[tr] == s_].mean():+.2f} ({int((hseas[tr] == s_).sum())} slates)" for s_ in HIST]
@@ -390,8 +448,9 @@ def main():
         # the K is chosen too: the honest p is the best K's difference vs every null system's best K (multiple-K correction)
         rmax = max(diff.values())
         nmax = np.array([max(nulls[k][i] for k in KS) for i in range(NULLN)])
-        print(f"    BEST K (corrected for trying {len(KS)} K values): diff {100 * rmax:+.2f}, p {(1 + np.sum(nmax >= rmax)) / (NULLN + 1):.3f} "
-              f"(null systems' best-K median {100 * np.median(nmax):+.2f}, p95 {100 * np.percentile(nmax, 95):+.2f})")
+        pzm = float(norm.sf((rmax - nmax.mean()) / max(nmax.std(ddof=1), 1e-9)))
+        print(f"    BEST K (corrected for trying {len(KS)} K values): diff {100 * rmax:+.2f}, p {(1 + np.sum(nmax >= rmax)) / (NULLN + 1):.3f}, "
+              f"parametric p {pzm:.4f} (null systems' best-K median {100 * np.median(nmax):+.2f}, p95 {100 * np.percentile(nmax, 95):+.2f})")
         print(f"    SLIPS (one slip a structure and shape a slate from the chosen selectors; ROI per slip; diff vs the global choice, p vs the "
               f"{NULLN} shifted-mask systems):")
         for size, st in STRUCTS:
@@ -414,7 +473,7 @@ def main():
                     cells.append(f"K{k:g} {100 * np.mean(a[ok_]):+.0f}% (diff {100 * df:+.0f}, p {pp:.2f})")
                 gb = b[~np.isnan(b)]
                 print(f"      {size}{'F' if st == 'flex' else 'P'} {kind:<6} global {100 * gb.mean():+.0f}% on {len(gb)} slates | " + " | ".join(cells))
-        log(f"system {nm} done")
+        log(f"system {nm} [{agg}] done")
     if ONLY_B:
         log("done (SH_ONLY_B)")
         return
@@ -443,6 +502,9 @@ def main():
                 nl.append(max(vv))
         nl = np.array(nl)
         p = (1 + np.sum(nl >= best)) / (len(nl) + 1)
+        if len(nl) > 2:                                   # parametric p (BH needs p below 1 / (N + 1))
+            from scipy.stats import norm
+            p = float(norm.sf((best - nl.mean()) / max(nl.std(ddof=1), 1e-9)))
         rows.append((pi, it, len(o[best_k][0]), best_k, best, p, float(np.median(nl)) if len(nl) else np.nan))
         if pi % 50 == 0:
             log(f"profiles: {pi}")
@@ -453,8 +515,10 @@ def main():
         pi, it, npl, k, v, p, med = r
         print(f"  {'*** TILT HELPS (BH q 0.10) *** ' if w else ''}P{pi:03d} {it['name']} ({npl} played) | best K {k:g}: diff {100 * v:+.2f} "
               f"(p {p:.3f}, shifted median {100 * med:+.2f})")
-    print(f"\nA SUMMARY: {int(okb.sum())} of {len(rows)} profiles - the profile tilt helps (BH q 0.10); nominal p < 0.05: "
-          f"{sum(r[5] < 0.05 for r in rows)} (~{0.05 * len(rows):.0f} by chance)")
+    from scipy.stats import binom
+    k05 = sum(r[5] < 0.05 for r in rows)
+    print(f"\nA SUMMARY: {int(okb.sum())} of {len(rows)} profiles - the profile tilt helps (BH q 0.10, parametric p); p < 0.05: {k05} "
+          f"(~{0.05 * len(rows):.0f} by chance; binomial p of that many or more {binom.sf(k05 - 1, len(rows), 0.05):.4f})")
     log("done")
 
 
