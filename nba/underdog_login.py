@@ -76,6 +76,15 @@ def main():
     url = os.environ["DATABASE_URL"]
     proxy = (os.environ.get("PROXY_URL") or "").strip()
     otp = (os.environ.get("UD_OTP") or "").strip()
+    if otp and not otp.isdigit():
+        # 2026-10-25 (owner's iPhone automation): the WHOLE Underdog message may arrive as otp - take the code out of it here
+        # (the first run of 4-8 digits), so the phone needs no text-parsing step. Nothing of the message is printed.
+        import re
+        m = re.search(r"(?<!\d)\d{4,8}(?!\d)", otp)
+        if not m:
+            print("LOGIN_FAIL|the otp input holds no 4-8 digit code")
+            sys.exit(1)
+        otp = m.group(0)
     sess = cr.Session(impersonate="chrome")
     with psycopg.connect(url) as conn:
         dev = cred_get(conn, "underdog_device_id")
