@@ -221,6 +221,11 @@ def day_families(legs, rows, lists, pay, E):
     return o2, o3, o4, o5
 
 
+def scope_all():
+    """portfolio scope: the owner's 2-6 picks; flex / dynamic from 3"""
+    return [j for j, (n, st_) in enumerate(ST) if n <= 6 and not (st_ in ("flex", "dynamic") and n < 3)]
+
+
 def fam_name(fam, c, n, st_):
     t = AF.tag(n, st_)
     if fam == "B1":
