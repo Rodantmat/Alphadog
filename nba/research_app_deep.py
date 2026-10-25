@@ -43,6 +43,8 @@ import research_portfolio_paths as PP                # noqa: E402
 T0 = time.time()
 APP = AF.APP
 K = int(os.environ.get("DP_K") or 12)
+PER = int(os.environ.get("DP_PER") or 2)                 # shortlist strategies a structure
+MINSPD = float(os.environ.get("DP_MINSPD") or 1.0)       # minimum slips a day for the safe portfolio reads
 NB = int(os.environ.get("DP_BOOT") or 2000)
 ST = AF.STRUCTS
 NS = len(ST)
