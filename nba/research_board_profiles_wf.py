@@ -33,7 +33,7 @@ T0 = time.time()
 GRID = int(os.environ.get("WF_GRID", "1"))
 STEP = int(os.environ.get("WF_STEP", "5"))
 NULLN = int(os.environ.get("WF_NULL", "100"))
-HIST = L1.HIST
+HIST = L1.REAL_HIST          # the real seasons (with L1_AGNOSTIC, L1.HIST becomes the two time halves once Layer 1 has been built)
 RNG = np.random.default_rng(37)
 WARM = 15
 
