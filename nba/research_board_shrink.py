@@ -410,7 +410,7 @@ def main():
             "BOARD PROFILES ONLY": [i for i, it in enumerate(reg.items) if it["tech"] != "calendar"],
             "CALENDAR ONLY": [i for i, it in enumerate(reg.items) if it["tech"] == "calendar"]}
     from scipy.stats import norm
-    for agg, nm in [(a_, n_) for a_ in AGGS for n_ in sets if n_ in SETS]:
+    for agg, nm in [(a_, n_) for a_ in AGGS for n_ in sets if any(n_.startswith(x) for x in SETS)]:   # SH_SETS=ALL,BOARD,CALENDAR
         ix = sets[nm]
         if not ix:
             continue
