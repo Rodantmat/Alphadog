@@ -216,6 +216,7 @@ def knn_system(run, X, ks, nns, rand=False):
         for k in ks:
             out[(nn, k)] = float(np.mean(dif[k])) if dif[k] else np.nan
             per[(nn, k)] = np.array(dif[k])
+        per[("t", nn)] = np.array(tts)
     return out, per
 
 
