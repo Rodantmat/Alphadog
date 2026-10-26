@@ -3613,7 +3613,6 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 ### In-place corrections made in this document (T50, 2026-10-26)
 
 - 🔑 **Older database statements the T50 facts supersede** are marked in place with "(superseded by §T50.6)": the `stake_unit` object of the T49 config-keys bullet (now has `auto` and `ud_play`), the 10-16 `external_credentials` key list (more keys named above), the "Opening-night ledger state, 10-16: `live_slips` 0" remark (first live-day record 10-21), and the T49 use of `board_true_hp` for board legs (reference only since 10-23).
-<!-- T50 END MARKER -->
 
 ## 🆕 §T49.6b — **`T49` TRANSCRIPT BATCH: SCHEMA FACTS READ LIVE IN THE TRANSCRIPTS (`10-10`, `10-15`, `10-16`)** *(source: the T49 transcripts' own queries; qualifies `§T49.6`)*
 
