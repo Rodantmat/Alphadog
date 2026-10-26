@@ -143,7 +143,7 @@ class SmallBook(ST.Book):
                 good = [r for r in pool if all(x[1] > 0 for x in r["seas"].values())]
                 print(f"\n== {k}-pick {st.upper()}: {len(pool)} compositions with >= {mn} slips, {len(good)} positive in every season"
                       f" | ROI median {np.median([r['roi'] for r in pool]):+.1f}%, share positive {100 * np.mean([r['roi'] > 0 for r in pool]):.0f}%")
-                for r in sorted(good if not live else pool, key=lambda r: -r["lb"])[:12 if not live else 25]:
+                for r in sorted(good if not live else pool, key=lambda r: -r["lb"])[:12 if not live else (9999 if os.environ.get("ST_ALL") else 25)]:
                     print("   " + fmt(r))
                 # the plain baseline: each source's own order, no filter, 1 slip a slate
                 for r in sorted([r for r in pool if r["key"][1:7] == ("src", 0.0, "any", 99.0, 0, 1)], key=lambda r: r["key"][0]):
