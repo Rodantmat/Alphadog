@@ -330,7 +330,8 @@ function udAdvice(s, bt) {
   if (!bt.unit.udPlay) return { label: "paper (Underdog engine)", play_usd: null };
   if (st.startsWith("stand_down")) return { label: "SKIP - Underdog stand-down (" + st.slice(11) + ")", play_usd: null };
   if (st.startsWith("shadow") || s.portfolio === "P4") return { label: "SKIP - shadow portfolio", play_usd: null };
-  if (bt.udAlarm) return { label: "SKIP - Underdog edge monitor ALARM (stopped)", play_usd: null };
+  // the edge monitor measures P5's certified cells; it stops P5 only (portfolio T, owner 2026-10-25, is not what it measures)
+  if (bt.udAlarm && s.portfolio === "P5") return { label: "SKIP - Underdog edge monitor ALARM (stopped)", play_usd: null };
   const w = Number(s.stake == null ? 1 : s.stake);
   if (!(w > 0)) return { label: "SKIP - not staked", play_usd: null };
   const usd = Math.round(bt.unit.usd * w * 100) / 100;
