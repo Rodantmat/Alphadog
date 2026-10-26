@@ -3503,8 +3503,6 @@ Its own gloss: *"The tie handling comes from PrizePicks' own rule, and the safet
 - 🔑 **Costs stay within the plans:** Cloudflare USD 5 a month and GitHub USD 4 a month; no extra costs. No pipeline runs twice for the same slate and the scheduled tasks are not touched; the approved exceptions are the Underdog 6-hour token refresh and the Sleeper / Fliff renewal (10-25 23:00 PT).
 - 🔑 **No edits to MLB code;** MLB shares the database, so NBA sessions use session-level SET only.
 - 🔑 **Sizing:** the unit starts at USD 1 and is earned (rises +1 at `25x` the next unit, falls -1 at `15x` the unit from the season high, maximum 15); heavy DB research does not wait for games to end but never overlaps the P1/P2/P3 windows.
-<!-- T50 END MARKER -->
-
 ## 🆕 §T49.7b — **`T49` TRANSCRIPT BATCH (main `2026-10-16 20:39Z → 10-17 20:17Z`; subagents `10-10`, `10-15`): FIGURES, TIMELINE AND EVIDENCE THE REAL TRANSCRIPT ADDS TO `§T49.7`** *(source: the T49 main transcript read from 10-16 15:49 PT to its end, checked against `§T49.7`; the dates between 10-10 02:35Z and 10-16 20:39Z remain AS STATED — the main chat for that span does not exist as a transcript)*
 
 - 🔑 **What the transcript confirms.** Every figure `§T49.7` states for the switch matches: EDGE_DELTA −0.0748, independence break-even −6.84, window-only portfolio +46.0% / +79.0%, `slip_engine_slips_wo` 479,002, the ON verdict, Underdog `ud_play`, UI v1.4.7, rehearsal 1,032 legs with 3 PLAY slips, certify 66/0 then 82/0, the 12,455-credit balance. Nothing there is contradicted except the three corrections below.
