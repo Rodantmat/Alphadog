@@ -1,5 +1,7 @@
 # NBA MULTIPLIERS
 
+> 🔗 **Continuation files.** `NBA_MASTER_SUMMARY_V2.md` continues `NBA_MASTER_SUMMARY.md` (chapters `§T49` onward) and `NBA_OPEN_ITEMS_V2.md` continues `NBA_OPEN_ITEMS.md` (T50 addendum onward). Each V1 + V2 pair is ONE document: always read both. New chapters and open items go to V2.
+
 **Scope.** Everything about payout multipliers across every app: what each app exposes, what has been
 proven unavailable and how, the formulas and conversion logic, the tests run, slip examples, and what
 the calibration of a multiplier would require.
