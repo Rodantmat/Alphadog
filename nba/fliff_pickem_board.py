@@ -40,7 +40,12 @@ def main():
         r = g["game_render_data"]
         games[r["id"]] = (f"{r['away_team']['abbreviation']}@{r['home_team']['abbreviation']}", int(r["start_time_stamp_utc_millis"]))
     rows = []
+    today = dt.datetime.now(PT).date()
+    if os.environ.get("FP_ALL") != "1":              # the decision board: today's slate only (the feed also lists tomorrow)
+        games = {g: v for g, v in games.items() if dt.datetime.fromtimestamp(v[1] / 1000, PT).date() == today}
+    print(f"FLIFF_PICKEM|{len(games)} games to read", flush=True)
     for gid, (match, tip) in games.items():
+        print(f"  {match} ...", flush=True)
         for cid, prop in CAT.items():
             st, t = Q.raw(fc, host, {"__object_class_name": "FCM__Skipper_GetCards__Request",
                                      "variables": {"filter": {"league": nba, "games": [gid], "prop_categories": [f"fkey__sk_prop_category__{cid}"]}}})
