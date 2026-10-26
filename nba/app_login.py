@@ -253,7 +253,8 @@ def signed_in(st):
             return True
         if isinstance(v, str) and re.search(r'"(auth_token|token|access_token|refresh_token)"\s*:\s*"[^"]{20,}', v):
             return True
-    return any(TOKENISH.search(c.get("name", "")) and len(str(c.get("value", ""))) > 20 for c in st.get("cookies") or [])
+    return any(TOKENISH.search(c.get("name", "")) and not NOT_AUTH.search(c.get("name", "")) and len(str(c.get("value", ""))) > 20
+               for c in st.get("cookies") or [])
 
 
 def seed(sb, st):
