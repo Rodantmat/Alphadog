@@ -120,6 +120,12 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
     for (let i = 0; i < n; i++) if (hit[i]) prod *= f[i];
     return floor2(base * prod);
   }
+  if (app === "fliff") {
+    // FLIFF PICK'EM (2026-10-26; contest rules v2.0): a Max entry pays the product of the picks' Selection Multipliers (the guaranteed
+    // Contest Score); Flex / SuperFlex reductions are unpublished - not priced
+    if (mode !== "power") return null;
+    return misses === 0 ? f.reduce((a, b) => a * b, 1) : 0;
+  }
   if (app === "sleeper") {
     // SLEEPER'S OWN PRICING (2026-10-26, fitted on 454 of the owner's entries - classification_config['sleeper_payout'].true_pricing):
     // Max = product x size bonus (every leg in a different game); Flex tiers EV-matched at q = 1/m:
