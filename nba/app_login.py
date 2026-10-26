@@ -105,6 +105,7 @@ def form(sb, tag):
                        r"use (a |my )?(password|code|email|phone).*|.*password instead|.*code instead|forgot password\??|email|phone|"
                        r"password|picks|lobby|cancel|close|back|allow|accept|ok|got it|skip|not now|later)$", re.I)
     tells = [w for w in ("verification code", "enter the code", "enter code", "one-time", "we sent", "texted", "check your email",
+                         "sent a code", "sent you", "send a code", "code to", "6 digit", "6-digit", "login code", "magic link",
                          "check your phone", "incorrect", "invalid", "too many", "captcha", "not available in your", "location",
                          "verify it's you", "password") if w in (f.get("text") or "").lower()]
     print(f"  [{tag}] url={f['url'].split('?')[0][:90]} title={f['title'][:50]!r}\n     inputs={[(x['type'], x['label'], x['auto']) for x in f['inputs']]}"
