@@ -139,7 +139,7 @@ def human_type(sb, i, text, enter=False):
 def click_text(sb, pattern):
     """click the first visible button / link whose text matches; returns the text clicked"""
     return sb.execute_script(r"""const re = new RegExp(arguments[0], 'i');
-      const vis = e => { const r = e.getBoundingClientRect(); const s = getComputedStyle(e);
+      const vis = e => { if (e.checkVisibility && !e.checkVisibility({checkOpacity: true, checkVisibilityCSS: true})) return false; if (e.closest('[aria-hidden=true],[inert]')) return false; const r = e.getBoundingClientRect(); const s = getComputedStyle(e);
         return r.width > 2 && r.height > 2 && s.visibility !== 'hidden' && s.display !== 'none'; };
       for (const e of document.querySelectorAll('button,[role=button],a,input[type=submit]')) {
         const t = (e.innerText || e.value || e.getAttribute('aria-label') || '').trim();
