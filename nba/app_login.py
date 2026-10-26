@@ -378,8 +378,11 @@ def login(conn, sb, seen):
                 time.sleep(5)
                 f = form(sb, "code requested")
                 low = (f.get("text") or "").lower()
-    if re.search(r"(verification code|enter (the )?code|one-time|we (sent|texted|emailed)|6-digit|check your (phone|email))", low) or \
-            (pw_gone and any(x["auto"] == "one-time-code" or x["maxlen"] == 1 for x in f["inputs"])):
+    said = re.search(r"(verification code|enter (the )?code|one-time|we (sent|texted|emailed)|6-digit|check your (phone|email)|sent (a|you))", low)
+    if not said and pw_gone:                   # no page says a code was sent: a short wait only (the code field may be a leftover)
+        os.environ["APP_OTP_WAIT_S"] = str(min(int(os.environ.get("APP_OTP_WAIT_S", "900") or "0"), 240))
+        print("  no 'code sent' text on the page - waiting 240 s at most", flush=True)
+    if said or (pw_gone and any(x["auto"] == "one-time-code" or x["maxlen"] == 1 for x in f["inputs"])):
         if not wait_code(conn, sb, seen):
             return False
         f = form(sb, "after code")
