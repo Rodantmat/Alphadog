@@ -99,15 +99,16 @@ def main():
         st, t = raw(fc, host, obj)
         print(f"\nCONTEST {lab}: HTTP {st} {len(t)} chars\n  {t[:6000]}", flush=True)
     st, t = raw(fc, host, {"__object_class_name": "FCM__Skipper_GetLeagues__Request"})
-    j = json.loads(t) if st == 200 else {}
     nba = None
-    for lg in json.dumps(j) and re.findall(r'\{[^{}]*"NBA"[^{}]*\}', t):
-        m = re.search(r'"id":\s*(\d+)', lg)
-        if m and "WNBA" not in lg:
-            nba = int(m.group(1)); break
+    try:
+        for lg in json.loads(t)["result"]["response"]["collections"]["page"]:
+            if str(lg.get("abbreviation")).upper() == "NBA" or str(lg.get("name")).upper() == "NBA":
+                nba = lg["id"]
+    except Exception as exc:  # noqa: BLE001
+        print("leagues parse", type(exc).__name__, t[:400])
     print("NBA league:", nba, flush=True)
     st, t = raw(fc, host, {"__object_class_name": "FCM__Skipper_GetGames__Request", "variables": {"filter": {"league": nba}}})
-    games = [int(x) for x in re.findall(r'"id":\s*(\d+)', t)][:6]
+    games = list(dict.fromkeys(re.findall(r'"(fobj__conflict_event__\d+)"', t)))[:8]
     print("games:", games, flush=True)
     sels = []
     for g in games[:4]:
