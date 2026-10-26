@@ -47,6 +47,15 @@ T0 = time.time()
 OVR = 1.1238
 BONUS_EST = {2: 1.0, 3: 1.0797, 4: 1.102, 5: 1.144, 6: 1.227}
 BONUS_PLAIN = {2: 1.0, 3: 1.0797, 4: 1.102, 5: 1.102, 6: 1.102}
+# 2026-10-26: the 5 / 6-pick bonus BOUNDED from the owner's 10-09 screens (5-pick Max 20.43 on a 10.0365 four-leg product x Brunson
+# LESS 36.5 - Sleeper's board had that leg 1.72-1.85 that night -> bonus 1.10-1.18; 6-pick 39.01 = 5-pick x Cunningham LESS 39.5
+# (1.69-1.72 that night) x bonus step 1.11-1.13): the LOW end is priced as 'max-low' (never above the app)
+BONUS_LOW = {2: 1.0, 3: 1.0797, 4: 1.102, 5: 1.10, 6: 1.135}
+# Flex tiers as a share of the entry's Max, read off the same screens (3: 3.14 / 1.05 of 6.02; 4: 6.09 / 1.52 of 11.06; 5: 9.42 /
+# 1.92 / 0.39 of 20.43; 6: 21.67 / 1.86 / 0.37 of 39.01) - 5 and 6 pay 2 misses (Sleeper's help centre: "two incorrect picks ...
+# only in contests with five or more picks")
+FLEX_FRAC = {3: {3: 3.14 / 6.02, 2: 1.05 / 6.02}, 4: {4: 6.09 / 11.06, 3: 1.52 / 11.06},
+             5: {5: 9.42 / 20.43, 4: 1.92 / 20.43, 3: 0.39 / 20.43}, 6: {6: 21.67 / 39.01, 5: 1.86 / 39.01, 4: 0.37 / 39.01}}
 KS = (2, 3, 4, 5, 6)
 PART = os.environ.get("ST_PART") or "hist_ud"
 APP = os.environ.get("ST_APP") or "sleeper"
