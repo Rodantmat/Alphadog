@@ -362,7 +362,7 @@ def main():
     for key, v in res.items():
         if len(v) >= 3:
             out.append((float(np.mean(v)), len(v), float(np.mean(np.array(v) > 0)), key))
-    out.sort(reverse=True)
+    out.sort(key=lambda x: -x[0])
     print(f"  {len(out):,} rule x size x mode cells with >= 3 slates; ROI over {len(by_slate)} slates (TINY sample - a sanity read, not a selection):")
     for roi, n, won, (rule, sz, mode) in out[:25]:
         src, gate, side, kind, rank = rule
