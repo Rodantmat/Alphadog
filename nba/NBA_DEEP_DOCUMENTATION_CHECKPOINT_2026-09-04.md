@@ -1,5 +1,7 @@
 # NBA System — Complete Documentation Checkpoint (2026-09-04)
 
+> Superseded notice (2026-10-26): lines 104, 331 and 344-345 ("2026-27 starts 2026-10-03 / zero Final games") are stale - preseason began 10-03 and the first regular-season game day was 10-20 (3 games); see NBA_SYSTEM_DESIGN.md §T50.7 and NBA_WORKERS.md §T50.4.
+
 *This is a deep-detail reference checkpoint, not a handoff — the same working chat continues.
 Purpose: any new chat that touches this system, or this same chat after a long gap, should be
 able to read this one file and know exactly what exists, why it exists, what's verified, what
