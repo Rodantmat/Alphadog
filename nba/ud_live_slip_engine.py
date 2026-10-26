@@ -341,7 +341,7 @@ def pick(conn, day):
                 print(f"  {day}: {name} - {'PAPER' if passed else 'SHADOW'} slip of {len(slip)} (postseason verdict {verdict.get(name, 'none')})", flush=True)
     conn.commit()
     print(f"  {day}: {len(legs)//3} Underdog legs scored | stand-down: {sd or 'no'} | teams with 2+ fresh absences: "
-          f"{sum(1 for v in fresh.values() if v >= 2)} | {n_rows} paper slips logged (P5 + P4 shadow)", flush=True)
+          f"{sum(1 for v in fresh.values() if v >= 2)} | {n_rows} slips logged ({'T live, P5 + P4 shadow' if live_pf == 'T' else 'P5 + P4 shadow'})", flush=True)
 
 
 def payout(structure, legs_after_void):
