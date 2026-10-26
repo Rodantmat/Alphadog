@@ -51,6 +51,30 @@ BONUS_PLAIN = {2: 1.0, 3: 1.0797, 4: 1.102, 5: 1.102, 6: 1.102}
 # LESS 36.5 - Sleeper's board had that leg 1.72-1.85 that night -> bonus 1.10-1.18; 6-pick 39.01 = 5-pick x Cunningham LESS 39.5
 # (1.69-1.72 that night) x bonus step 1.11-1.13): the LOW end is priced as 'max-low' (never above the app)
 BONUS_LOW = {2: 1.0, 3: 1.0797, 4: 1.102, 5: 1.10, 6: 1.135}
+# 2026-10-26 - SLEEPER'S OWN NUMBERS (probe_sleeper_payout_fit run 40375790579, 454 of the owner's entries read from Sleeper's API):
+# Max bonus with every leg in a different game (or opposite-side same-game pairs) = 1.0 / 1.0797 / 1.101 / 1.174 / 1.276 for 2-6 picks;
+# Flex tiers are set so the entry's EV at Sleeper's implied chances (q = 1/m) hits a size target, split by size ratios T1/T0, T2/T0
+BONUS_TRUE = {2: 1.0, 3: 1.0797, 4: 1.101, 5: 1.174, 6: 1.276}
+FLEX_EV = {3: 1.0012, 4: 1.0801, 5: 1.148, 6: 1.197}
+FLEX_R = {3: (0.3287, 0.0), 4: (0.2474, 0.0), 5: (0.235, 0.049), 6: (0.096, 0.0193)}
+
+
+def pay_flex_ev(sl):
+    """Flex Sleeper's way: T0 = target / (P(all) + r1 P(1 miss) + r2 P(2 misses)) at q = 1/m; T1 = r1 T0, T2 = r2 T0"""
+    live = [l for l in sl if l["hit"] is not None]
+    n = len(live)
+    if n < 2 or len({l["team"] for l in live}) < 2:
+        return 1.0
+    if n == 2:
+        return float(np.prod([l["m"] for l in live])) if all(l["hit"] for l in live) else 0.0
+    q = [1.0 / l["m"] for l in live]
+    pall = float(np.prod(q))
+    p1 = sum(pall / q[i] * (1 - q[i]) for i in range(n))
+    p2 = sum(pall / (q[i] * q[k]) * (1 - q[i]) * (1 - q[k]) for i, k in itertools.combinations(range(n), 2))
+    r1, r2 = FLEX_R[n]
+    t0 = FLEX_EV[n] / (pall + r1 * p1 + r2 * p2)
+    miss = sum(1 for l in live if not l["hit"])
+    return t0 if miss == 0 else t0 * r1 if miss == 1 else t0 * r2 if miss == 2 else 0.0
 # Flex tiers as a share of the entry's Max, read off the same screens (3: 3.14 / 1.05 of 6.02; 4: 6.09 / 1.52 of 11.06; 5: 9.42 /
 # 1.92 / 0.39 of 20.43; 6: 21.67 / 1.86 / 0.37 of 39.01) - 5 and 6 pay 2 misses (Sleeper's help centre: "two incorrect picks ...
 # only in contests with five or more picks")
