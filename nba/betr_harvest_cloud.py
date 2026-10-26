@@ -18,7 +18,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from seleniumbase import SB
+# (2026-10-26) seleniumbase is imported inside main(): the browser-free board capture (betr_board_direct.py) reuses this
+# module's parser and session renewal without a browser installed.
 
 URL = "https://picks.betr.app/"
 LEAGUE = os.environ.get("BETR_LEAGUE", "NBA").upper()
