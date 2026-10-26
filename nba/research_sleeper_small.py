@@ -132,7 +132,7 @@ class SmallBook(ST.Book):
                     f" | cashed {r['cash']:.0f}% | max dd {r['dd']:.1f}u | losing slates {r['ld']:.0f}%")
 
         live = ST.PART == "live"
-        mn = 5 if live else 150
+        mn = int(os.environ.get("ST_MIN") or 5) if live else 150
         print("=" * 170)
         print(f"SLEEPER SMALL/STEADY | PART {ST.PART} | compositions {len(rows)}")
         for k in ST.KS:
