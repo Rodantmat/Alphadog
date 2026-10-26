@@ -1,0 +1,41 @@
+name: NBA Sleeper Live
+
+# Sleeper live slips (owner 2026-10-26 12:17 PT: "I like the 1 2pick and 1 3pick flex, deploy it") - nba/sleeper_live_slip_engine.py.
+# Manual entry point; the scheduled legs run inside P3 (pick, after the Underdog pick) and P2A (grade). Nothing is sent to Sleeper.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "pick | grade"
+        default: "pick"
+        required: false
+      date:
+        description: "slate date YYYY-MM-DD (pick: blank = today PT; grade: blank = every ungraded slate before today)"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-sleeper-live
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy
+      - name: Sleeper live engine
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SL_MODE: ${{ github.event.inputs.mode }}
+          SL_DATE: ${{ github.event.inputs.date }}
+        run: python -u nba/sleeper_live_slip_engine.py
