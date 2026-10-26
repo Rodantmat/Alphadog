@@ -763,6 +763,20 @@ jobs:
           UDL_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/ud_live_slip_engine.py
 
+      # SLEEPER PICK (owner 2026-10-26 12:17 PT: "I like the 1 2pick and 1 3pick flex, deploy it"): a 2-pick Max and a 3-pick Flex
+      # from Underdog T1's qualified legs at Sleeper's window line and multiplier (nba/sleeper_live_slip_engine.py ->
+      # nba_score.sleeper_live_slips; gate classification_config sleeper_live). Nothing is sent to Sleeper. Soft: never disturbs
+      # the picks above. Graded by P2A.
+      - name: Sleeper pick (2-pick Max + 3-pick Flex)
+        id: soft_slpick
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SL_MODE: "pick"
+          SL_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/sleeper_live_slip_engine.py
+
       # FORWARD PAPER TRACKER (2026-10-20, owner: "anything that's proved positive, we will try"): fixed goblin / demon Less rules
       # (AL_*, sizes 2-6 Power + Flex, ONLY on rungs PrizePicks' window board opened to Less) and the 9 standard-line Flex rules
       # whose bootstrap lower bound is positive in both seasons (SR_*). PAPER: written to nba_score.paper_altless_slips with status
