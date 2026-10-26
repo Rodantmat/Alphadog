@@ -61,6 +61,8 @@ def several(c, k, gc, n):
 
 class SmallBook(ST.Book):
     def day(self, season, d, src, qualified, gc, pricer):
+        if os.environ.get("ST_SPLIT") == "half":         # owner 2026-10-26: how each setup holds early (Oct-Dec) vs late (Jan on) in a season
+            season = f"{season}{'early' if d.month >= 10 else 'late'}"
         sl, seen = [], set()
         for q in qualified:
             x = pricer.leg(q)
