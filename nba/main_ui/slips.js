@@ -182,7 +182,13 @@ async function engineSlips(sql, cfg, slate) {
                                   to_jsonb(s) ->> 'unit_usd' AS unit_usd
                            FROM nba_score.live_slips s WHERE game_date = $1::date AND status NOT IN ('dup') ORDER BY strategy, k`, [slate.date]);
   const ud = await q(sql, `SELECT portfolio, composition, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.ud_live_slips WHERE game_date = $1::date ORDER BY portfolio, composition, size, k`, [slate.date]);
-  return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })) };
+  // SLEEPER (owner 2026-10-26 12:17 PT: "I like the 1 2pick and 1 3pick flex, deploy it") - nba/sleeper_live_slip_engine.py;
+  // the table is created by the engine's first run, so it is looked up first (never breaks the screen before then)
+  let sl = [];
+  const hasSl = (await q(sql, "SELECT to_regclass('nba_score.sleeper_live_slips') IS NOT NULL ok"))[0];
+  if (hasSl && hasSl.ok) sl = await q(sql, `SELECT strategy, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.sleeper_live_slips WHERE game_date = $1::date ORDER BY strategy, k`, [slate.date]);
+  return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })),
+           sl: sl.map(r => ({ ...r, app: "sleeper", track: `Sleeper ${r.size}-pick ${r.structure === "flex" ? "Flex" : "Max"} (Underdog T1 legs)` })) };
 }
 
 // PLACE BY (2026-10-16, owner: "The place by is a good idea"). A slip can be entered until the FIRST of its own legs' games tips,
