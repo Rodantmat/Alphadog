@@ -3,24 +3,25 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-25T20:17:36Z",
+  "fetched_at": "2026-10-26T20:18:33Z",
   "egress": {
-    "ip": "175.29.133.165",
-    "city": "Ashburn",
-    "region": "Virginia",
+    "ip": "173.68.205.189",
+    "hostname": "pool-173-68-205-189.nycmny.fios.verizon.net",
+    "city": "New York City",
+    "region": "New York",
     "country": "US",
-    "loc": "39.0437,-77.4875",
-    "org": "AS6079 RCN",
-    "postal": "20147",
+    "loc": "40.7143,-74.0060",
+    "org": "AS701 Verizon Business",
+    "postal": "10004",
     "timezone": "America/New_York",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 6143,
-  "row_count": 6143,
+  "rows": 7796,
+  "row_count": 7796,
   "total_pages": 1,
-  "future_pickable": 6143,
-  "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
+  "future_pickable": 7796,
+  "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
@@ -40,22 +41,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 7029938,
+      "bytes": 8921317,
       "total_pages": 1,
       "ok": true,
-      "rows": 6142,
-      "future_pickable": 6142
+      "rows": 7796,
+      "future_pickable": 7796
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 7031052,
+      "bytes": 8921295,
       "total_pages": 1,
       "ok": true,
-      "rows": 6143,
-      "future_pickable": 6143
+      "rows": 7796,
+      "future_pickable": 7796
     }
   ],
-  "github_run_id": "40229963551"
+  "github_run_id": "40394125213"
 }
