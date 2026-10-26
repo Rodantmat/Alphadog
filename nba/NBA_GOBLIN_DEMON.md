@@ -944,7 +944,7 @@ built from these must be recomputed cell by cell — tier × prop × side.**
 | T+2 | 21.3% | 2.30× |
 | T+3 | 14.8% | 3.31× |
 
-**Against a ~1.75–1.9× observed ceiling** → **T+2 and T+3 can never clear it.**
+~~**Against a ~1.75–1.9× observed ceiling** → **T+2 and T+3 can never clear it.**~~ -> Superseded: the 1.75-1.9x ceiling was an early-sample (MLB-era) figure. On the system's tier map (910,513 legs) demon prices average D1 1.44x, D2 1.71x, D3 2.43x (maximum 5.76x) and the engine cap is 18.5x on a 2-pick. Whether a deeper demon clears its break-even is decided per cell and per season (rebounds D3: price 2.20x, break-even 0.250, hit 0.307 at n=4, positive in 2025-26 and marginal in 2024-25), not by a fixed ceiling. The break-even factors 1.48x / 2.30x / 3.31x belong to the offset tiers T+1 / T+2 / T+3 only, a different taxonomy from the system tiers D1-D3. (T50 deep pass, 2026-10-26)
 **→ Only demon T+1 is ever worth solving.**
 
 ### 5.4 🔑🔑 **WHERE §5.1 AND §5.2's HIT RATES CAME FROM — the empirical answer, its POPULATION, and a LIVE re-census**
