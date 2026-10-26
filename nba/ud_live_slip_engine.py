@@ -106,6 +106,17 @@ def ud_alt_policy_hide(conn):
     return not (r and r[0] is not None and str(r[0]).lower() in ('false', 'f', '0'))
 
 
+def ud_live_portfolio(conn):
+    """nba_config.classification_config['ud_live_portfolio'].live: 'T' (owner 2026-10-25 20:01 PT) builds portfolio T as the played
+    Underdog portfolio and records P5 / P4 as shadow; anything else (or no row) keeps the P5 / P4 behaviour."""
+    try:
+        r = conn.execute("SELECT config_json->>'live' FROM nba_config.classification_config WHERE config_key='ud_live_portfolio'").fetchone()
+    except Exception:  # noqa: BLE001
+        conn.rollback()
+        return 'P5'
+    return (r[0] if r and r[0] else 'P5')
+
+
 def load_legs(conn, day):
     hide = ud_alt_policy_hide(conn)
     n_flags, n_hide = conn.execute("SELECT count(*), count(*) FILTER (WHERE hide) FROM nba_market.ud_line_flags WHERE game_date=%s AND snapshot_label='window'", (day,)).fetchone()
