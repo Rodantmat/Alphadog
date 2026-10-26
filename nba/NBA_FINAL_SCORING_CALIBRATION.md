@@ -5359,8 +5359,6 @@ the system's edge is not in being more confident than the baseline, it is in the
 - 🔑 **T48 (`10-09/10`, `§T48.3`, `§T48.7`).** PrizePicks' own quote engine closes the Flex-table question; the market term to be flipped with four rows together once books per rung match the history (`2.14 / 2.10 / 1.97 / 1.97`).
 - 🔑 **T49 (`10-09 -> 10-16`, `§T49.5`, `§T49.5b`, `§T49.3`, `§T49.7`).** Honest hit probability: raw `final_hp` shown `74.7%` hit `67.1%`; market anchor (`board_true_hp`, `1,490,056` legs) log-loss `0.6455 -> 0.6297 -> 0.6287`; the board number is NOT the number for a certified slip's legs (they read `4-8` points LOW, raw `5-6` HIGH); PrizePicks Flex grader found wrong for goblin / demon slips; market term switched on the window-only twin (`10-16`); `EDGE_DELTA` re-solved to `-0.0748`.
 
-<!-- T50.12 END MARKER -->
-
 
 
 # 🆕 §T26.11 — ✅✅ **WHY `2025-26`'s CALIBRATION WAS INHERITED: `final_hp` HELD `1` OF `163` DATES. IT NOW HOLDS ALL `163`.**
