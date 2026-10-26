@@ -2398,7 +2398,7 @@ whether `T22`'s `≈2.0/1.25/1.4` is `v1`.**
 | | PrizePicks | Underdog |
 |---|---|---|
 | same player twice | ❌ | ❌ |
-| teams per entry | same-game / same-team **allowed**, no extra pricing on standard Flex/Power | **≥ 2 teams** |
+| teams per entry | same-game / same-team **allowed**, ~~no extra pricing on standard Flex/Power~~ (superseded by §T50.3.4, 2026-10-21: PrizePicks cuts some same-game lineups: Power 2.8 / 5.75, 3-/4-Flex 3/0.75 and 5/1.25) | **≥ 2 teams** |
 | sizes | Flex `3–6`, Power `2–6` | Standard `2–8`, Flex `3–8` |
 | void / tie | the leg drops, the entry shrinks one size (`pp_power_after_voids`) | ties/voids shrink the entry |
 | correlation | — | **"correlated projections can modify your payout"** — a builder-time shift, readable only at placement |
