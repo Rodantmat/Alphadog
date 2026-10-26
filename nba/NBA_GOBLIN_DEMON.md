@@ -935,7 +935,7 @@ built from these must be recomputed cell by cell — tier × prop × side.**
 | T−2 | 68.7% |
 | T−1 | 61.9% |
 
-**But observed payout factors take 40–53%** → **−EV at every tier**.
+~~**But observed payout factors take 40–53%** → **−EV at every tier**.~~ -> Correction: the 40-53% payout cut is not what PrizePicks charges. Measured goblin factors are G1 0.756, G2 0.698, G3 0.661 (cuts of 24%, 30%, 34%; range 0.614-0.934; universe mean 0.724), and the implied-probability x factor product sits at about 0.50 for every goblin. Goblins are priced to p x m about 0.50 per leg, which cannot clear the 0.55 per-leg Power bar (all-goblin 3-pick Power -86.2%); that, not a 40-53% cut, is why they are closed as a standalone leg. (T50 deep pass, 2026-10-26, from the T50 inventory subagent's cross-check of the measured tier map)
 
 ### 5.2 Demons — only T+1 is ever worth solving
 | Tier | Hit rate | Break-even factor needed |
