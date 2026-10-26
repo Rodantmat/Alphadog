@@ -1,0 +1,67 @@
+name: NBA App Login (Sleeper / Fliff session)
+
+# Owner 2026-10-25 22:55 / 23:00 PT: "I'll save my password and user on a secret, same way we did with underdog ... copy the setting
+# from underdog, same pace, same signatures, proxy, location, device ... If a code is needed I'll give to you". One manual run signs
+# in to the app's own web page in a real Chrome (residential proxy, San Diego location, one fixed device per app) and stores ONLY the
+# signed-in session (nba_config.external_credentials '<app>_session_state'). If the app asks for a one-time code the run waits up to
+# 15 min for it (workflow `NBA App OTP`). Passwords come from the GitHub secrets and are never printed or stored. Nothing creates or
+# submits an entry. See nba/app_login.py.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "sleeper | fliff"
+        required: true
+        default: "sleeper"
+
+concurrency:
+  group: nba-app-auth-${{ github.event.inputs.app }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Resolve proxy (credential store)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store"
+          else
+            echo "proxy: none"
+          fi
+      - name: System deps (Chrome fonts + Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2t64 libgbm1 || \
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2 libgbm1
+      - name: Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install seleniumbase "proxy.py" "psycopg[binary]" curl_cffi
+          sbase get chromedriver || true
+      - name: Sign in and store the session
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APP: ${{ github.event.inputs.app }}
+          APP_MODE: login
+          SLEEPER_EMAIL: ${{ secrets.SLEEPER_EMAIL }}
+          SLEEPER_PASSWORD: ${{ secrets.SLEEPER_PASSWORD }}
+          FLIFF_EMAIL: ${{ secrets.FLIFF_EMAIL }}
+          FLIFF_PASSWORD: ${{ secrets.FLIFF_PASSWORD }}
+        run: python nba/app_login.py
