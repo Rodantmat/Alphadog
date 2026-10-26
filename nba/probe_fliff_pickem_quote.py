@@ -90,7 +90,8 @@ def raw(fc, host, obj):
 
 def main():
     fc = FliffClient(proxy=PROXY)
-    bundle(fc)
+    if os.environ.get("FLQ_EXACT") != "1":
+        bundle(fc)
     fc.ping()
     host = fc.ping_data.get("skipper_public_feed_endpoint")
     print("\nskipper host:", host, "| ping keys:", sorted(k for k in fc.ping_data if "endpoint" in k), flush=True)
