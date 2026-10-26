@@ -225,7 +225,9 @@ def wait_code(conn, sb, seen):
             m = re.search(r"(?<!\d)\d{4,8}(?!\d)", code)
             code = m.group(0) if m else code.strip()
             f = form(sb, "code form")
-            boxes = [x for x in f["inputs"] if x["type"] in ("text", "tel", "number") and not x["filled"]]
+            boxes = [x for x in f["inputs"] if x["auto"] == "one-time-code" and not x["filled"]] or \
+                    [x for x in f["inputs"] if x["type"] in ("text", "tel", "number") and not x["filled"]
+                     and not re.search(r"(mail|phone|user)", x["label"] + x["auto"], re.I)]
             if len(boxes) >= len(code) and all(x["maxlen"] == 1 for x in boxes[:len(code)]):
                 for d, b in zip(code, boxes):
                     human_type(sb, b["i"], d)
