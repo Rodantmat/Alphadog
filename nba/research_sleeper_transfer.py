@@ -263,9 +263,17 @@ class Book:
             seen.add(key)
             self.legs[src].append((season, x["m"], x["hit"], x["same_line"], x["pf"]))
         for order, c in (("src", sl), ("sl", sorted(sl, key=lambda x: -x["p"] * x["m"]))):
-            for k in KS:
-                s = pick(c, k, gc)
+            for k in ((1,) + KS if APP == "fliff" else KS):
+                s = pick(c, k, 1 if APP == "fliff" else gc)
                 if s is None:
+                    continue
+                if APP == "fliff":
+                    self.slips[(src, order, k, "single" if k == 1 else "parlay")].append((season, d, pay_parlay(s)))
+                    continue
+                if APP == "betr":
+                    self.slips[(src, order, k, "perfect")].append((season, d, pay_betr(s, False)))
+                    if k >= 3:
+                        self.slips[(src, order, k, "dynamic")].append((season, d, pay_betr(s, True)))
                     continue
                 self.slips[(src, order, k, "max")].append((season, d, pay_max(s, BONUS_EST)))
                 if k >= 5:
