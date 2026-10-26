@@ -213,6 +213,13 @@ def requests_seen(sb, seen):
         if key not in seen:
             seen.add(key)
             print(f"  REQ {key[0]} {key[1][:110]} {op}", flush=True)
+    for rid, g in gql.items():                 # what the app's server answered to each sign-in call (structure only)
+        try:
+            body = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid}).get("body") or ""
+            sh = _shape(json.loads(body))
+        except Exception as exc:  # noqa: BLE001
+            sh = f"(body n/a {type(exc).__name__})"
+        print(f"  ANS {g.get('status')} {g['op'][:80]} => {json.dumps(sh)[:700]}", flush=True)
 
 
 def snapshot(sb):
