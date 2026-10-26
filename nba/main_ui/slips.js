@@ -426,7 +426,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   // on the cap is reported, never silent), and a narrowed load measured no faster (2026-10-14: 7.6 s vs 6.0 s).
   const minScore = Number(cfg.ui.backup_pool.min_score), size = Number(cfg.ui.backup_pool.size);
   const BOARD_CAP = 20000;
-  const board = await loadLegs(sql, cfg, { date: slate.date, mode: slate.mode }, { where: "AND b.app IN ('prizepicks', 'underdog')", limit: BOARD_CAP, withInsight: false, screen: false });
+  const board = await loadLegs(sql, cfg, { date: slate.date, mode: slate.mode }, { where: "AND b.app IN ('prizepicks', 'underdog', 'sleeper')", limit: BOARD_CAP, withInsight: false, screen: false });
   lap("board");
   const pct = new Map();
   // the board is loaded unscreened so every slip leg resolves; unplaceable Underdog legs (ud_hidden) stay out of the percentile and the backup pool
