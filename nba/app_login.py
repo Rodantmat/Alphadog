@@ -153,19 +153,46 @@ def click_text(sb, pattern):
       return null;""", pattern)
 
 
+def _scrub(t):
+    """PUBLIC LOG: no e-mail, phone, id or token can pass - only words"""
+    t = re.sub(r"\S+@\S+", "<email>", str(t))
+    t = re.sub(r"[A-Za-z0-9_\-]{24,}", "<long>", t)
+    return re.sub(r"\d{3,}", "<num>", t)[:120]
+
+
+def _shape(v, d=0):
+    """the answer's structure: keys, value TYPES, booleans and error messages (scrubbed) - never a value"""
+    if isinstance(v, dict):
+        return {k: (_scrub(x) if k in ("message", "code", "reason", "type", "__typename") and isinstance(x, str) else _shape(x, d + 1))
+                for k, x in list(v.items())[:25]} if d < 5 else "{..}"
+    if isinstance(v, list):
+        return [_shape(v[0], d + 1), f"len={len(v)}"] if v else []
+    if isinstance(v, bool) or v is None:
+        return v
+    return type(v).__name__
+
+
 def requests_seen(sb, seen):
     try:
         logs = sb.driver.get_log("performance")
     except Exception:  # noqa: BLE001
         return
+    gql = {}
     for e in logs:
         try:
             m = json.loads(e["message"])["message"]
         except Exception:  # noqa: BLE001
             continue
-        if m.get("method") != "Network.requestWillBeSent":
+        meth, pr = m.get("method"), m.get("params") or {}
+        if meth == "Network.responseReceived" and pr.get("requestId") in gql:
+            gql[pr["requestId"]]["status"] = (pr.get("response") or {}).get("status")
             continue
-        rq = m["params"]["request"]
+        if meth == "Network.loadingFinished" and pr.get("requestId") in gql:
+            gql[pr["requestId"]]["done"] = True
+            continue
+        if meth != "Network.requestWillBeSent":
+            continue
+        rq = pr["request"]
         u = rq.get("url", "")
         if not any(h in u for h in ("sleeper", "getfliff", "fliff")) or re.search(r"\.(js|css|png|svg|webp|woff2?|ico)(\?|$)", u):
             continue
