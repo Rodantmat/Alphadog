@@ -271,6 +271,7 @@ def pick(conn, day):
     fresh = fresh_absences(conn, day)
     teams = leg_team(conn, day, {l['player_id'] for l in legs})
     pool = E.eligible_legs(legs)
+    live_pf = ud_live_portfolio(conn)
     conn.execute("DELETE FROM nba_score.ud_live_slips WHERE game_date=%s", (day,))
     n_rows = 0
     for pf, spec in PORTFOLIOS.items():
