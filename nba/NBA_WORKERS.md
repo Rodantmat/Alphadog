@@ -3917,53 +3917,7 @@ these twelve.**
 - 🔑 **Transcript-batch request at `10-26 00:11 PT`.** The owner asked for all transcripts since the last batch (no instructions, no text, just a zip) so the documentation chat can continue. The last batch was T49 (main `2026-10-16 20:39Z -> 10-17 20:17Z` plus six subagents). T50 was built from the main transcript (post-compaction span) and five subagent transcripts (`10-20 22:08Z`, `10-21 04:48Z`, `10-22 02:52Z` twice, `10-25 02:14Z`); the zip step's outcome is not in the transcript (stopped by a safety classifier at `07:11:33Z`). Gap: the main transcript between `10-17 20:17Z` and `10-26 06:37Z` is not available; that span exists only as the compaction summary. The build chat's stop-hook fired twice on "uncommitted/untracked changes" and was resolved by syncing the clone to the pushed commit each time; every file of the span is committed and hash-verified.
 
 ### T50.4-I. Workflow and operating constraints in force
-- 🔑 **`nba-research-run.yml` ("NBA Research Run (read-only script)").** Dispatch inputs `script` (a file under `nba/`) and `env` (optional KEY=VALUE pairs, space separated); the script name must match `^(research|audit)_[a-z0-9_]+\.py>
-> ### 🚨 **D · DEPLOY AND RUNTIME HAZARDS**
-> | § | what it covers | 🚩 |
-> |---|---|---|
-> | **`0.000`** | 🔴 **Editing a workflow file right after dispatching it CANCELS the run** — and a cancelled run is not a failed one | 🔴 |
-> | **`0.25`** | ⚠ **The pre-commit syntax gate — the only local check before an auto-deploying push** | ⚠ |
-> | **`0.26`** | ⚠ **The deploy-scope anchor — `deployed_sha.txt`, and how it silently drifts** | ⚠ |
-> | **`0.27`** | ⚠ **Dead D1 provisioning still runs on every deploy — including every NBA deploy** | ⚠ |
-> | **`0.28`** | ⚠ **`POST /run` carries NO AUTHENTICATION** — fleet-wide, and NBA inherited it faithfully | ⚠ |
-> | **`0.29`** | ⚠ **The deploy trigger has no path filter — `[skip ci]` is a CONVENTION, not a guard** | ⚠ |
-> | **`0.42`** | ⚠ **Always test v3 before v2 — a rule the project paid for twice** | ⚠ |
->
-> ### ✅ **E · CERTIFICATION, DESTRUCTION AND WHAT THE CHECKS MISS**
-> | § | what it covers | 🚩 |
-> |---|---|---|
-> | **`0.31`** | ⚠ **Certification is a hardcoded ROW-COUNT THRESHOLD — and each worker picks its own** | ⚠ |
-> | **`0.39`** | 🔴 **`ok: certified` — the `ok` field IS the certification verdict, across `18` workers** | 🔴 |
-> | **`0.004-T18`** | 🔴🔴 **THE CERTIFIER CANNOT TELL A FULL SLATE FROM ONE ROW** | 🔴🔴 |
-> | **`6b`** | **EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE — the complete audit** | |
-> | **`6c`** | ⚠ **That audit covers SQL ONLY — workflows can delete files too** | ⚠ |
-> | **`0e`** | ⚠ **The scope-parameter audit** — every mode/scope argument must constrain the WRITE, not the response | ⚠ |
->
-> ### 📋 **F · DATA-QUALITY AND METHOD**
-> | § | what it covers | 🚩 |
-> |---|---|---|
-> | **`0.00`** | ⚠⚠ **The hardcoded-season literal, and the GREP TRAP that hides half of it** | ⚠⚠ |
-> | **`0.23`** | 🔴 **The injury archive changes filename pattern mid-season — and the first backfill silently caught it** | 🔴 |
-> | **`0.24`** | 🔴 **Validate a parser on the RUNNER'S OWN extraction, not on your own** | 🔴 |
-> | **`0.36`** | **`raw_json` is written as a STRING by every static writer — the column is unqueryable** | ⚠ |
-> | **`0.35`** | ⚠ **The design rule the scrapers DISAGREE on — keep every column, or hand-pick and lose signal** | ⚠ |
-> | **`0.38`** | ⚠ **All twelve mandated documents end with a stray tool-payload fragment** | ⚠ |
-> | **`0a`** · **`0d`** | **The investigation methodology** for a large existing system · ⚠⚠ **SYSTEM SELF-KNOWLEDGE — read before assuming anything is "live"** | ⚠⚠ |
-> | **`0.001`** · **`0.003-T18`** · **`0.005-T18`** | The `T15` mechanism-failure census *(came back empty)* · the mechanism strata pinned · the census with its partition closing | |
-> | **`0.002-T18`** + **`-CORRECTION`** | ⚠⚠⚠ **The section overstated its case; the ordering refutes it** — *severity withdrawn, scope narrowed.* **Read the CORRECTION first.** | ⚠⚠⚠ |
->
-> 📌 **HOW TO READ THIS FILE**: ***`A` to find anything; `B` for what a piece of code is; `C`/`D` for
-> why a change is riskier than it looks; `E` for how much a green check is worth; `F` for the traps.***
-
-**Update log**
-| Date | What changed |
-|---|---|
-| 2026-09-20 | Created. Cloudflare workers and static scrapers from T1–T2; engine/board/pipeline scripts from the live session and the journal. |
-| **2026-09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `12` commits that this log never recorded.** *T15–T18 material plus the live audits: **§T15.4c the concurrency-group self-cancellation** · **T18 pass 2: the gap detector passing an entire season as not-a-failure** · **§0.004-T18 the certifier's twelve predicates read from live source** · **§0.005-T18 the mechanism failure census** (43 real results parsed) · **§T18.1 the three pipelines with the owner's explicit cron intent** · **the WORKFLOW → SCRIPT → TABLE wiring map published**, then extended with the mis-wired P3 step 6 and its read edge. **Corrections in place: §0.002-T18 corrected — the gap-audit fallback did not exist · §0.003-T18 corrected by the census — six bridge tool-execution failures · "PIPELINE n OF 3" reconciled with COMPASS fact 107's TWO · P1's cron time qualified 12:00 PDT / 11:00 PST.*** |
-
----
-
-## 🔴🔴 **§T27.1 — THE SHAPE-PARITY BREAK: P2 WOULD HAVE FAILED EVERY IN-SEASON NIGHT FROM THE FIRST DELTA SYNC, CAUGHT AND FIXED THE SAME DAY** *(source, 2026-09-24, from the 2026-09-25 transcript; `0` of the twelve before this entry)*
+- 🔑 **`nba-research-run.yml` ("NBA Research Run (read-only script)").** Dispatch inputs `script` (a file under `nba/`) and `env` (optional KEY=VALUE pairs, space separated); the script name must match `^(research|audit)_[a-z0-9_]+\.py## 🔴🔴 **§T27.1 — THE SHAPE-PARITY BREAK: P2 WOULD HAVE FAILED EVERY IN-SEASON NIGHT FROM THE FIRST DELTA SYNC, CAUGHT AND FIXED THE SAME DAY** *(source, 2026-09-24, from the 2026-09-25 transcript; `0` of the twelve before this entry)*
 
 > 📌 **The season backfill wrote `nba_team_game_log_advanced_<season>.json` in a SLIM shape with no `GAME_DATE`; the certified recipe merges `GAME_DATE` in from the team log. The daily delta sync writes the FULL stats.nba.com shape, WITH `GAME_DATE` already present.** ⚠⚠ ***The first delta sync of the advanced file landed `2026-09-24` — from then on the concatenated `teams_adv` carried its own `GAME_DATE`, the merge produced `GAME_DATE_x`/`GAME_DATE_y`, and every read of `GAME_DATE` failed with `KeyError`.*** This is the parity rule (same object, day-of vs backfill) violated at the SHAPE level, not the value level — and because the delta syncs nightly in season, **P2 would have failed every night from opening night**, with the certifier going red only after the mining had already succeeded.
 >
