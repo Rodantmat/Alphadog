@@ -50,6 +50,11 @@ CFG = {
 TOKENISH = re.compile(r"(token|auth|jwt|bearer|refresh)", re.I)
 NOT_AUTH = re.compile(r"^(statsig|AMP_|_ga|_tt|ttcsid|radar-|AF_|afUserId|@xos|@install|FPC|OptanonConsent|sleeper-anonymous)", re.I)
 PRE = [True]                                   # True until the sign-in steps end
+# LIVE VIEW (owner 2026-10-26 09:09 PT: "let me try to resolve the puzzle and access just like you are doing"): the browser draws on
+# the run's display, which workflow nba-app-login-live.yml shows to the owner through a private password-protected link; the worker
+# types the login, the OWNER solves any challenge and finishes; the worker only waits and stores the session once it is signed in
+LIVE = os.environ.get("LIVE_VIEW") == "1"
+LIVE_WAIT_S = int(os.environ.get("LIVE_WAIT_S") or 1200)
 
 
 def pause(a=0.6, b=1.8):
