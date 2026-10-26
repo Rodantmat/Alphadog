@@ -196,7 +196,7 @@ def requests_seen(sb, seen):
             continue
         rq = pr["request"]
         u = rq.get("url", "")
-        if not any(h in u for h in ("sleeper", "getfliff", "fliff")) or re.search(r"\.(js|css|png|svg|webp|woff2?|ico)(\?|$)", u):
+        if not any(h in u for h in ("sleeper", "getfliff", "fliff", "hcaptcha", "recaptcha")) or re.search(r"\.(js|css|png|svg|webp|woff2?|ico)(\?|$)", u):
             continue
         op, pd = "", rq.get("postData") or ""
         try:
