@@ -1842,7 +1842,7 @@ reproduce from `sim_slip`", never "the strategy works."***
 | 3 Regular + 2 goblins, 5-pick Flex | `+23%` | `24%` |
 ⇒ ***Goblins re-enter as EXTENDERS*** — one top goblin as the fifth leg of a slip already winning on Regular legs; **never a replacement for a Regular, never two.** Standalone, every goblin cell is negative in both seasons (`−$1 … −$26` per `$100`, `§24a`). *This answers the owner's `06:20Z` "i am sure there are positive candidates in goblins": positive against PP's price, yes; payable only as an extender.*
 
-**5 — Under the walk-forward bar** (`§28d`–`§28j`) the demon-only compositions are the **one family independent of the steals anchor** (family B: demon 5-Flex cap 3 OOS `+129%` CI `+55…+219%`; demon 3-Flex cap 1 OOS `+62%`); demon Power rows fail (`−100%`). ✅ **Live**: `B_demon_5flex` and `B_demon_3flex` are in `nba_score.live_strategy_state`, both `paper`.
+**5 — Under the walk-forward bar** (`§28d`–`§28j`) the demon-only compositions are the **one family independent of the steals anchor** (family B: demon 5-Flex cap 3 OOS `+129%` CI `+55…+219%`; demon 3-Flex cap 1 OOS `+62%`); demon Power rows fail (`−100%`). ✅ **Live**: `B_demon_5flex` and `B_demon_3flex` are in `nba_score.live_strategy_state`, both `paper`. (superseded by `§T49.2`: both red, cap 0, from 10-15/10-16; and by `§T50.2`, 2026-10-26: PrizePicks staking is now the portfolio, with one demon unit, `P_B9_6flex`, in Portfolio B)
 
 ---
 
