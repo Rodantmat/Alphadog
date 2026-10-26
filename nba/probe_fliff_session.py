@@ -19,8 +19,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from fliff_client import FliffClient  # noqa: E402
 
 PROXY = os.environ.get("PROXY_URL", "").strip() or None
-CTX = re.compile(r"(refresh_token|grant_type|oauth2?/|/token\b|@refreshToken|tokensRefreshCount|fc_mobile_api_private|refreshToken\(|"
-                 r"access_token|token_type|Authorization|Bearer )")
+CTX = re.compile(r"(\"refresh_token\"|grant_type:\"refresh_token\"|x-dd-refresh-token|coreServerClientId[=:]|coreServerBaseUrl|coreServer[A-Za-z]*Url|"
+                 r"toValidUserFkey[=(]|fc_mobile_api_private|class [A-Za-z_$]+ extends [A-Za-z_$.]+\{static CLASS_NAME=\"FCM__Skipper_Get_Settled_Entries_Report__Request|"
+                 r"FCM__Skipper_Get_Settled_Entries_Report__Request|FCM__Skipper_Get_Active_Entries_Report__Request|FCM__Get_Picks_Report__Request)")
+SECRET = re.compile(r"(?i)(secret[\"']?\s*[:=]\s*[\"'])([^\"']{6,})([\"'])")
 CLS = re.compile(r"FCM__[A-Za-z0-9_]+__(?:Request|Response)")
 KEEP = re.compile(r"(Token|Refresh|Login|Auth|Ticket|History|Activity|Profile|Pick|Skipper|Parlay|Slip|Account|Wager|Bet)", re.I)
 
