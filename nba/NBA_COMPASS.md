@@ -498,6 +498,20 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    312-316 of 316 unit-slates, differences = equal-score ties, -3.7u); audit_ud_t_rollback run 40263326959 ALL PASS (production
    pick -> grade on 3 slates, rolled back). EXPECTATION: honest +27% ROI (chosen on 2024-25, tested on 2025-26), drawdown ~11u,
    losing days ~34%; a bad stretch of 20-35u is normal. 2026-10-25's P5 / P4 rows were set to 'shadow' so the screen shows T only.
+185. 🔬 **SLEEPER DEEP REVIEW - NOT PLAYABLE YET (owner 2026-10-25 20:28 PT "Deep scrutiny, sleeper only first"; research only).**
+   Rules (classification_config sleeper_payout): per-side multipliers, Max = product (+8% / +10% size bonus seen at 3 / 4 picks, never
+   priced), Flex = round robin of the (n-1)-pick products. Real boards 2026-10-20..24 (14,489 graded window legs; research_sleeper_deep
+   run 40265638062, _hist run 40266055713, _lowvol run 40267151081): (1) SLEEPER = FLIFF'S FEED: Fliff's de-vigged chance equals
+   Sleeper's within 1 point on 99% of 7,766 main legs (sd 0.29 pts; DraftKings / Underdog / Bovada sd 1.5-2.2); main pairs carry a
+   flat 12.4% overround (p x m = 0.889 in EVERY prop group and side), the Over-only alternate ladder 17-56% (worse the longer the
+   shot). (2) final_hp is LESS accurate than the market on Sleeper's lines (log loss 0.696 vs 0.686); leave-one-slate-out blends give
+   hp ~10% weight; no value bin of hp, market or blend x m is reliably positive; moves (morning / window / close), market-vs-Sleeper
+   gaps and line gaps carry nothing. (3) Two seasons priced by the law (OVR 1.1238, ladder factors 1.17-1.56): legs positive only at
+   hp x m >= 1.20 (+8% / +12%); slips robust in simulation (low-volume More ranked hp x m, 2-6 Max / Flex, +85..+300%) but on the
+   real slates the 5,786 robust ones run median -49% (24% positive). (4) WHY: the simulated edge is final_hp vs the books on
+   low-volume props, and this opening week final_hp UNDER-states low-volume Overs (blocks 0.5 Over hp 0.308 vs hit 0.390, steals 0.5
+   Over 0.521 vs 0.614; 2024-25's opening week showed the same on blocks, +7 pts) - FLAG for PrizePicks B's low-volume units.
+   Decision is the owner's: paper-track (no screen) for 20-30 slates, or leave Sleeper off. Fliff shares the feed - expect the same.
 
 ---
 
