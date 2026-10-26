@@ -36,7 +36,7 @@ def main():
     s = (j.get("data") or {}).get("__schema")
     if not s:
         return
-    roots = {s["queryType"]["name"]: "QUERY", (s.get("mutationType") or {}).get("name"): "MUTATION"}
+    roots = {s["query_type"]["name"]: "QUERY", (s.get("mutation_type") or {}).get("name"): "MUTATION"}
     for t in s["types"]:
         if t["name"] in roots and t.get("fields"):
             names = [f["name"] for f in t["fields"]]
