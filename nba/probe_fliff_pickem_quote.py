@@ -82,7 +82,7 @@ def raw(fc, host, obj):
     for px in (None, PROXY):
         try:
             r = fc.s.post(url, json=body, headers=hdrs, timeout=60, impersonate="chrome124", proxies={"https": px, "http": px} if px else None)
-            return r.status_code, r.text[:2500]
+            return r.status_code, r.text
         except Exception as exc:  # noqa: BLE001
             last = f"{type(exc).__name__}"
     return None, last
