@@ -90,7 +90,7 @@ const inputs = [...document.querySelectorAll('input,textarea')].filter(vis).map(
 const clk = () => [...document.querySelectorAll('button,[role=button],a,input[type=submit],[tabindex],div,span')].filter(e => e.matches('button,[role=button],a,input[type=submit],[tabindex]') || (e.childElementCount < 4 && getComputedStyle(e).cursor === 'pointer'));
 const buttons = clk().filter(vis)
   .map(e => (e.innerText || e.value || e.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 40)).filter(t => t);
-return {url: location.href, title: document.title, inputs, buttons: [...new Set(buttons)].slice(0, 40),
+return {n: document.querySelectorAll('*').length, tl: (document.body ? document.body.innerText.length : 0), url: location.href, title: document.title, inputs, buttons: [...new Set(buttons)].slice(0, 40),
         text: (document.body ? document.body.innerText : '').replace(/\s+/g, ' ').slice(0, 600),
         hc: {api: typeof window.hcaptcha, re: typeof window.grecaptcha, frames: [...document.querySelectorAll('iframe')].filter(f => /hcaptcha|recaptcha/.test(f.src || ''))
              .map(f => { const r = f.getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); })}};
