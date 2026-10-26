@@ -68,8 +68,8 @@ def day_legs(conn, d):
     hp = {(r[0], r[1], r[2], r[3]): r[4] for r in conn.execute(RSH.FSQL, (d,)).fetchall()}
     tn = {r[0]: r[1] for r in conn.execute("SELECT team_id, full_name FROM nba_ref.teams").fetchall()}
     gl = {}
-    for h, a, sp, tot in conn.execute(GL, (d,)).fetchall():
-        gl[frozenset((h, a))] = (sp, tot)
+    for h, a, sp, tot in conn.execute(GL, (d, d)).fetchall():
+        gl.setdefault(frozenset((h, a)), (sp, tot))
     legs = []
     for (pid, prop), (_sc, line) in main.items():
         b = box.get(pid)
