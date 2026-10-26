@@ -23,6 +23,8 @@ PARITY WITH THE BACKTEST (every choice mirrors the certified build):
 GRADING (Underdog's rules): a DNP or a push VOIDS the pick and the entry shrinks to the remaining picks (< 2 = refund);
   Standard pays base(n') x prod(m) if all remaining hit; Flex pays F_j(n') x prod(m over hits); a Flex left with 2 picks pays
   as a 2-pick Standard.
+PORTFOLIO T (owner 2026-10-25 20:01 PT; NBA_COMPASS 183): with classification_config['ud_live_portfolio'].live = 'T' the played
+  Underdog portfolio is T (ud_portfolio_t: three 2-pick Standards), rows portfolio 'T' status 'live'; P5 / P4 are recorded as shadow.
 Modes: UDL_MODE=pick (P3, after the PrizePicks pick) | grade (P2A). Env: DATABASE_URL, UDL_MODE, UDL_DATE (YYYY-MM-DD), UDL_FORCE.
 """
 import datetime as dt
