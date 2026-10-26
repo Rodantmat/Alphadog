@@ -56,7 +56,7 @@ def bundle(fc):
             q.append(urljoin(base, m if m.startswith("static/") else "static/js/" + m))
         n = 0
         for m in QUOTE.finditer(js):
-            if n >= 12:
+            if n >= 25:
                 break
             out.append((u.rsplit("/", 1)[-1], m.group(0), js[max(0, m.start() - 900):m.start() + 1600].replace("\n", " ")))
             n += 1
