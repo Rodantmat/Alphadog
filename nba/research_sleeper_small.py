@@ -159,8 +159,9 @@ def main():
         import datetime as dt
         today = dt.datetime.now(ST.AF.UDL.PT).date()
         days = [d for d in ST.AF.slate_days(conn) if ST.AF.season_of(d) == "2026-27" and dt.date(2026, 10, 20) <= d < today]
-        conn = ST.run_ud(conn, days, ST.LivePricer, bk)
-        ST.run_pp_live(conn, days, bk, ST.LivePricer)
+        P = ST.LivePricer if ST.APP == "sleeper" else ST.LiveFliffPricer
+        conn = ST.run_ud(conn, days, P, bk)
+        ST.run_pp_live(conn, days, bk, P)
     bk.report()
     ST.log("done")
 
