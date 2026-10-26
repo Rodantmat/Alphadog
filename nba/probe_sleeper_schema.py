@@ -15,7 +15,7 @@ import psycopg
 from curl_cffi import requests
 
 PROXY = (os.environ.get("PROXY_URL") or "").strip() or None
-Q = """query IntrospectionLite { __schema { queryType { name } mutationType { name }
+Q = """query IntrospectionLite { __schema { query_type { name } mutation_type { name }
   types { name kind fields { name args { name } } } } }"""
 PICKY = re.compile(r"(pick|entry|entries|contest|payout|multiplier|bonus|flex|lineup|quote|slip|wager|parlay|prop|line|vs|pool|promo)", re.I)
 
