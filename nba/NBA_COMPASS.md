@@ -574,6 +574,26 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    (95-271 slips). PP-B6 Max 4-6p +71 / +126 / +161%, but 2025-26 only +50 / +19 / +10% - in-sample risk. Max 5-6p cash 3-6% of the
    time (drawdowns 30-64u); Flex cashes 45-64%. NOT PLAYABLE YET: Flex split and same-game rule not exact, 5-6 pick Flex targets
    rest on few entries. Next: guess-and-check on new entries the owner makes.
+   DEPLOYED 2026-10-26 (owner 12:17 PT "I like the 1 2pick and 1 3pick flex, deploy it"): SLEEPER LIVE - nba/sleeper_live_slip_engine.py
+   (P3 soft step after the Underdog pick; P2A grade) -> nba_score.sleeper_live_slips; gate classification_config 'sleeper_live'; true
+   pricing in classification_config['sleeper_payout'].true_pricing. Rule (research_sleeper_small runs 40381488658 / 40381496147): Underdog
+   T1 qualified legs at Sleeper's window main line, ordered by final_hp, multiplier <= 1.85, top leg skipped, one leg per game: 2-pick Max
+   +33.0% (+36 / +30, cashed 44%, dd 13.6u) and 3-pick Flex +24.1% (+28 / +20, cashed 66%, dd 10.0u). First live pair 10-26 (P3 built
+   it 13:30 PT; owner: app multipliers matched, the two Sleeper ones very close - intraday drift). Slips screen v1.4.41 shows Sleeper.
+   FLIFF (owner 14:22 PT chose option 2): online research vs apps - official 2-pick payouts were exact on every app; surprises only at
+   3+ picks and always in the player's favour (Underdog 4-Flex 7.2 vs published 6; Sleeper size bonus unpublished). Fliff Pick'Em
+   official rules v2.0 (getfliff.com/fliff-pickem-contest-rules, 2026-10-05): Max = product of the Selection Multipliers (guaranteed
+   Contest Score, + any leftover-pool share, not counted); Flex / SuperFlex reductions unpublished -> NOT priced. Signed-in automation
+   refused (would need Fliff's private app credentials; the owner's tokens were deleted); the quote is signed-in only ('unknown
+   invocation' on the public path). PROVEN on the owner's entry 10-26 14:55 PT: 1.75 x 1.85 = 3.2375 -> Fliff 3.23x ($2 -> $6.46) =
+   product CUT to 2 decimals. Pick'Em margin on the public board ~9.6% (1/1.85 + 1/1.80). Study (research_sleeper_small ST_APP=fliff runs
+   40397712309 / 40397717134): same T1 rule 2-pick Max +31.8% (+39 / +24, dd 18.6u, 298 slips); with final_hp >= 0.56 +44.0% (+46 / +41,
+   cashed 46%, dd 7.0u, 184 slips), +34.9% (+37 / +32, dd 10.2u) at the 1.096 margin. LIVE: nba/fliff_pickem_board.py (public Pick'Em
+   feed, no login -> nba_market.fliff_pickem_board; option_type 0 = Over verified vs the books, 323 / 326 cards) + nba/fliff_live_slip_engine.py
+   (F_T1_2max, gate classification_config 'fliff_live': floor 0.56, mcap 1.85, skip 1) -> nba_score.fliff_live_slips; P3 soft steps after
+   the Sleeper pick, P2A grade; Slips screen v1.4.42. First slip 10-26 (Derrick White Pts U16.5 1.75 + Brandon Miller Pts+Reb U29.5 1.85).
+   NOTE: the Fliff board captured daily since 10-20 by the existing scraper (board_snapshots bookmaker 'fliff') is Fliff's SPORTSBOOK
+   (ParlayAPI), not Pick'Em; the Pick'Em board is captured from 10-26 on.
 
 ---
 
