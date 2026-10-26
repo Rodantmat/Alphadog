@@ -1,4 +1,6 @@
 # NBA ALPHADOG — DOCUMENTATION WORK ORDER
+
+> Superseded notice (2026-10-26): frozen 2026-09-20 work order; stale now are lines 11 and 407 ("20 transcripts" - transcripts reach T50), 165-173 (pass ledger T1..T20), 344 (season opens 2026-10-03 - preseason began 10-03, the first regular-season day was 10-20), 350 (P2 at 01:00 PT - now P2A cron 13:30 UTC plus P2B; P3 at 1:15 PM PT still matches), 353-358 (09-20 row counts) and 102 (document sizes); current facts are in NBA_WORKERS.md §T50.4, NBA_SYSTEM_DESIGN.md §T50.7 and NBA_OPEN_ITEMS.md §T50.11.
 ### Complete, self-contained. Read every section before starting.
 
 **Created:** 2026-09-20 · **Runner:** Claude Cowork, continuous · **Repo branch:** `main` · **Folder:** `nba/`
