@@ -19,8 +19,8 @@ on:
         default: "25"
 
 concurrency:
-  group: nba-app-auth-${{ github.event.inputs.app }}
-  cancel-in-progress: false
+  group: nba-app-auth-live-${{ github.event.inputs.app }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
