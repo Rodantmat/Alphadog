@@ -4,7 +4,7 @@
 >
 > 📏 **`5` sections · re-derived `2026-10-26`**: `` grep -cE '^(> *)*#{1,6} ' nba/NBA_OPEN_ITEMS_V2.md ``. V1's own stamp reads `1,493` while V1 holds `1,495` headings (the deep pass added `§T50.11-Z1` and `§T50.11-Z2` without a stamp change): the V1 figure is stale by `2` and could not be corrected; the true V1 count is `1,495`. The whole document is V1 plus V2.
 
-> 🧭 **The one pending edit inside V1.** The comment line `T50 Z END MARKER` sits just above the `§T49.10` heading in V1; it marks where the six remaining contradiction bullets of section A below belong. The bullets are stored here instead. Companion chapters for the master summary: `NBA_MASTER_SUMMARY_V2.md`.
+> 🧭 **What moved, and what repeats (`2026-10-26`).** The open items `T50-39` … `T50-48` and their provenance note were moved from V1 to section E below (V1 keeps a pointer under `T50.11-Z1`). Section F repeats the first three bullets of V1's `T50.11-Z2` word for word (the block was split when it was moved) — one set of facts, not two. The `T50 Z END MARKER` comment in V1 was replaced by a pointer to sections A, B and F. Companion chapters for the master summary: `NBA_MASTER_SUMMARY_V2.md` (whose `§T45`–`§T48` mirror V1's — see its header; the same V1 write limit that blocks the master also applies to `NBA_SWEEP_RUN_LOG.md`, whose text is carried by section C).
 
 ## A. Contradictions found by the T50 deep pass (they belong in `§T50.11-Z2`, which holds the first four of ten)
 
