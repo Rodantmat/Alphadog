@@ -150,7 +150,8 @@ def click_text(sb, pattern):
     return sb.execute_script(r"""const re = new RegExp(arguments[0], 'i');
       const vis = e => { if (e.checkVisibility && !e.checkVisibility({checkOpacity: true, checkVisibilityCSS: true})) return false; if (e.closest('[aria-hidden=true],[inert]')) return false; const r = e.getBoundingClientRect(); const s = getComputedStyle(e);
         return r.width > 2 && r.height > 2 && s.visibility !== 'hidden' && s.display !== 'none'; };
-      for (const e of document.querySelectorAll('button,[role=button],a,input[type=submit]')) {
+      const cand = [...document.querySelectorAll('button,[role=button],a,input[type=submit],[tabindex],div,span')].filter(e => e.matches('button,[role=button],a,input[type=submit],[tabindex]') || (e.childElementCount < 4 && getComputedStyle(e).cursor === 'pointer'));
+      for (const e of cand) {
         const t = (e.innerText || e.value || e.getAttribute('aria-label') || '').trim();
         if (t && re.test(t) && vis(e) && !e.disabled) { e.click(); return t.slice(0, 40); } }
       return null;""", pattern)
