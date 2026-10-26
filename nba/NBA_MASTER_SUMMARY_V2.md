@@ -4,7 +4,7 @@
 >
 > 📏 **`64` sections · re-derived `2026-10-26`** (title + `§T45`–`§T48` mirror + `§T49` + `§T50`; the stamp changes with every chapter appended): `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY_V2.md ``. Rule 59: re-derive, never quote. The V1 stamp (`3,345`) counts V1 only; the whole document is V1 plus V2.
 
-> 🧭 **Where things are.** Chapters in this file: `§T49` (below), `§T50` (below). Per-document detail for both is routed in `§T49.3` and `§T50.3`. Open items for both: `NBA_OPEN_ITEMS.md` `§T49.9`–`§T49.10`, `§T50.11`, and the continuation `NBA_OPEN_ITEMS_V2.md` (same rule: one document with V1).
+> 🧭 **Where things are.** Chapters in this file: `§T45`–`§T48` (mirror of V1's, first), `§T49`, `§T50`. Per-document detail for both is routed in `§T49.3` and `§T50.3`. Open items for both: `NBA_OPEN_ITEMS.md` `§T49.9`–`§T49.10`, `§T50.11`, and the continuation `NBA_OPEN_ITEMS_V2.md` (same rule: one document with V1).
 
 # §T45 — `T45` · `2026-10-08-21-04-33-nba-postseason-backfill-full-parity` *(transcripts pack `2026-10-09`)* — 🆕 **THE POSTSEASON WIRED END TO END (P-1…P-6): ON TWO POSTSEASONS OF EVIDENCE NOTHING STAKES — EVERY STRATEGY SHADOW; THE OWNER ASKS FOR FULL PARITY AND THE BACKFILL BEGINS**
 
