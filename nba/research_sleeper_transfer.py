@@ -124,7 +124,8 @@ class HistPricer:
         if not 0.05 < ps < 0.95:
             return None
         b = self.bx.get(pid)
-        return {"pid": pid, "prop": src["prop"], "side": src["side"], "line": line, "m": round(1 / (OVR * ps), 2), "pf": ps,
+        m = round(1 / (OVR * ps), 2) if APP == "sleeper" else round(1 / (OVR_F * ps), 3) if APP == "fliff" else 1.0
+        return {"pid": pid, "prop": src["prop"], "side": src["side"], "line": line, "m": m, "pf": ps,
                 "hit": grade(self.bx, pid, src["prop"], src["side"], line), "team": b["team"] if b else src.get("team_id"),
                 "game": src.get("event_id"), "p": float(src["p"]), "same_line": float(src["line"]) == line}
 
