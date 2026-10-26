@@ -425,7 +425,7 @@ def run_pp_live(conn, days, bk, P):
 def main():
     conn = connect()
     bk = Book()
-    log(f"part {PART}")
+    log(f"app {APP} part {PART}")
     if PART == "hist_ud":
         days = [d for d in AF.slate_days(conn) if AF.season_of(d) != "2026-27"]
         conn = run_ud(conn, days[::8] if SMOKE else days, HistPricer, bk)
