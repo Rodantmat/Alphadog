@@ -527,6 +527,23 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    the two, never both; one user at most 5% of a pool; "ez Pick" (1.0x, minimum entry 1.25x) lets an entry use one team only. The pool
    prize is worth at most 100 / pool size of the entry fee on average (2% at 5,000) and goes to the longest all-hit entries, whose
    base EV is -40% to -60% - not usable unless pools are far smaller than 5,000 (pool fill is visible only in the app).
+   (7) 2026-10-26 - MAPPING STATUS + PART E (other apps' qualified legs replayed; research_sleeper_transfer, two seasons, history
+   priced by the feed law; runs 40285701540 / 40285705115 / 40285709142 sleeper, 40286066549 + 40273861005 betr, 40286069774 /
+   40286081967 fliff). SLEEPER SIGN-IN (nba/app_login.py): the account has NO password (Sleeper's own answer to the e-mail step:
+   has_password false) - it signs in by a 4-digit code only, and the web app asks for that code (request_password_reset mutation)
+   only after an invisible hCaptcha token; from the worker hCaptcha opens a visible challenge (520x570 frame) - NOT solved or routed
+   around (no IP / location cycling). FLIFF web stops at #/verify-location (a location-compliance gate) before any sign-in form - NOT
+   faked. Route agreed for 10-26: the owner hands over a signed-in session token (GitHub secrets SLEEPER_TOKEN / FLIFF_TOKEN), read
+   and quote calls only. SLEEPER 5/6-PICK, bounded from the 10-09 screens: Max bonus 5-pick 1.10-1.18 (priced 1.10), 6-pick >= 1.135
+   (priced); Flex tiers as a share of Max (3: .522/.174; 4: .551/.137; 5: .461/.094/.019; 6: .555/.048/.0095) - 5 and 6 pay with 2
+   misses (help centre: minimum Flex 1.25x). Results (ROI, flat 1u, both seasons positive, >= 100 slips): Sleeper - UD-T1 own order
+   Flex 3p +24% (298), 4p +37% (281), 5p +35% (249); UD-T2 Flex 4p +39%, 5p +47% (131-170); Max 5-6p +50..+110% but 4-8% cashed
+   (+-45% noise). PP-B6 legs show hit .500 exactly because B6 lists BOTH sides (More + Less) - the slip picker keeps one side per
+   player, so its slips are valid; B6 slips +40..+200% but 2025-26 only +2..+60% (vs 2024-25 +50..+300%) - in-sample risk. Betr
+   (verified tables, m = 1): 2p loses (-8..-16%); UD-T Perfect 5-6p +45..+120%, Dynamic 5-6p +18..+78%; PP-B6 Perfect 4p +54%. Fliff
+   (sportsbook prices, 9.0% margin ~ Pick'Em Max): UD-T legs +0.7..+6.5% per leg; single best leg a slate +7..+13% both seasons; UD-T2
+   parlay 4-5p +68..+83%. CAVEATS: history lines = consensus main line, Sleeper / Fliff multipliers from the feed law, not the apps'
+   own boards; the real Sleeper board (5 slates) is too small to judge (2-5 slips per structure). Nothing goes to the slip screen.
 
 ---
 
