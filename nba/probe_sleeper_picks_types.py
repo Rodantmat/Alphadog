@@ -4,7 +4,7 @@ PROBE - THE SHAPE OF SLEEPER'S PICKS READS (2026-10-26). Sleeper's API describes
 entries are 'parlays'; the app loads its Picks setup with query my_picks_init and lists entries with my_parlays / parlay /
 num_pending_parlays; promotions with available_line_promotions; there is no quote call (an entry is placed with mutation create_parlay -
 NEVER called by any worker). This prints, for those READ queries only, their arguments and the full field tree of what they return
-(names and types, 4 levels deep) - type information only, no account data. READ-ONLY (introspection only), session = credential
+(names and types, each type listed once, 2 levels deep) - type information only, no account data. READ-ONLY (introspection only), session = credential
 'sleeper_token' (never printed).
 Env: DATABASE_URL.
 """
