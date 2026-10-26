@@ -15,6 +15,7 @@ from curl_cffi import requests
 
 READS = ("my_picks_init", "my_parlays", "parlay", "num_pending_parlays", "available_line_promotions", "my_squad_parlays",
          "get_user_pools", "my_balances")
+MAXD = int(os.environ.get("TYPES_DEPTH") or 2)          # each type is listed once (no repeats, no cycles)
 TQ = """query T($n: String!) { __type(name: $n) { name kind fields { name args { name type { name kind of_type { name kind of_type { name kind } } } }
   type { name kind of_type { name kind of_type { name kind of_type { name kind } } } } } } }"""
 
