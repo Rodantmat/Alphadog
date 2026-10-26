@@ -1,5 +1,7 @@
 # NBA Enrichment — Mining Sources, Fallbacks, and Backfill Plan (2026-09-09)
 
+> Superseded notice (2026-10-26): line 377 (P2 target cron 09:00 UTC = 01:00 PT) is stale - P2 is now P2A (cron 13:30 UTC) plus P2B; the P3 13:15 cutoff on line 382 still matches; see NBA_WORKERS.md §T50.4.
+
 *Owner rule: every daily factor needs (1) a primary source, (2) a reliable fallback — either a second source of equal
 reliability or a DERIVED version trained on the two seasons and brought as close to perfection as possible — so the
 factor is ALWAYS populated at every run, and (3) a backfill route for 2023-24 → 2025-26 so the final hit-probability /
