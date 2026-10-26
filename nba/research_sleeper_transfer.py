@@ -416,7 +416,7 @@ def run_pp_live(conn, days, bk, P):
         if not lpool:
             continue
         prep = PB.prepare(lpool, L.pb_rates(conn, d))
-        pr = LivePricer(conn, d)
+        pr = P(conn, d)
         for uid, (c, gc) in pp_lists(prep).items():
             bk.day("2026-27", d, "PP-" + uid, c, gc, pr)
         log(f"PP live {d}: {len(prep)} legs")
