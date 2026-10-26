@@ -46,7 +46,9 @@ CFG = {
     "fliff": {"home": "https://sports.getfliff.com/", "login": "https://sports.getfliff.com/", "picks": "https://sports.getfliff.com/",
               "origin": "https://sports.getfliff.com", "sid": "fliffauth1"},
 }[APP]
-TOKENISH = re.compile(r"(token|auth|session|jwt|bearer|refresh)", re.I)
+# 'session' is NOT a sign-in tell (2026-10-26: Sleeper's signed-OUT page carries analytics key statsig.session_id - a false LOGIN_OK)
+TOKENISH = re.compile(r"(token|auth|jwt|bearer|refresh)", re.I)
+NOT_AUTH = re.compile(r"^(statsig|AMP_|_ga|_tt|ttcsid|radar-|AF_|afUserId|@xos|@install|FPC|OptanonConsent|sleeper-anonymous)", re.I)
 PRE = [True]                                   # True until the sign-in steps end
 
 
