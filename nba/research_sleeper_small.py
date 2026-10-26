@@ -107,7 +107,7 @@ class SmallBook(ST.Book):
         rows = []
         for key, v in self.slips.items():
             pays = np.array([x[2] for x in v])
-            if len(pays) < 5:
+            if len(pays) < min(5, int(os.environ.get("ST_MIN") or 5)):
                 continue
             seas = {}
             for sea in sorted({x[0] for x in v}):
