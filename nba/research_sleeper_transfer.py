@@ -302,8 +302,10 @@ class Book:
                 self.slips[(src, order, k, "max")].append((season, d, pay_max(s, BONUS_EST)))
                 if k >= 5:
                     self.slips[(src, order, k, "max-plain")].append((season, d, pay_max(s, BONUS_PLAIN)))
+                    self.slips[(src, order, k, "max-low")].append((season, d, pay_max(s, BONUS_LOW)))
                 if k >= 3:
                     self.slips[(src, order, k, "flex")].append((season, d, pay_flex(s)))
+                    self.slips[(src, order, k, "flex-scr")].append((season, d, pay_flex_scr(s)))
 
     def report(self):
         print("=" * 160)
