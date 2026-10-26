@@ -177,7 +177,7 @@ synthesised key is a joinability constraint downstream.*
 
 ---
 
-## 0f-1. 🔴🔴 **CORRECTION 2026-09-22 (T13 pass 3, §T13.4a) — THERE ARE FIVE BOARD SOURCES, NOT FOUR. THE FIFTH IS BETR.**
+## 0f-1. 🔴🔴 **CORRECTION 2026-09-22 (T13 pass 3, §T13.4a) — THERE ARE FIVE BOARD SOURCES, NOT FOUR. THE FIFTH IS BETR.** *(qualified by §T50.8, 2026-10-19 22:51 PT: Betr is PARKED in production — `p3_betr_wait.enabled=false`, removed from `nba_main_ui.apps`; restore steps in §T50.8 sub-section 5)*
 *§0f below was written 2026-09-21 from T12 and is accurate about the four it names. **T13 built a
 fifth**, and the code says so. **Every claim here is VERIFIED against the worker, the repo and the
 artifacts, pinned 2026-09-22T08:20–08:23Z.** Nothing was run or changed *(rule 1)*.*
