@@ -19,7 +19,14 @@ SLIPS from each source's qualified list (distinct players, the source's game cap
   modelled the same, no bonus on the sub-slips - conservative). A void (DNP / push at Sleeper's line) drops the pick (2-pick void
   = refund), as Sleeper's rules.
 LEGS: every qualified leg alone - hit rate, mean multiplier, return per leg (hit x m - 1).
-Env: DATABASE_URL, ST_PART (hist_ud | hist_pp | live), ST_SMOKE (1 = every 8th slate).
+FLIFF (ST_APP=fliff; owner 22:12 PT "Run the same for fliff and betr in parallel"): a sportsbook - every pick is priced in American
+  odds, a single is a bet of its own, a parlay pays the product of the decimal prices (no bonus). Fliff's own window board this season:
+  main pairs carry 9.0% (median 1/dO + 1/dU = 1.0904 over 5,971 pairs, 2026-10-20..25), so history prices a side at
+  1 / (1.0904 x de-vigged chance); real part = Fliff's own window board. Parlays one pick a game (no same-game parlays assumed).
+BETR (ST_APP=betr; PARKED in production - research only): a flat table (nba_config.pp_slip_rules betr_payout_v1, Betr's own pricing
+  query): Perfect 2-6 = 3 / 6 / 10 / 20 / 35, Dynamic (flex) by hits, an all-LESS entry pays the discounted table. No Betr board
+  history (harvest parked since 10-19): its line = the books' consensus main line (history only).
+Env: DATABASE_URL, ST_APP (sleeper | fliff | betr), ST_PART (hist_ud | hist_pp | live), ST_SMOKE (1 = every 8th slate).
 """
 import datetime as dt
 import itertools
