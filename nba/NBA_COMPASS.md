@@ -556,8 +556,24 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    are sometimes priced down 9-11% (P24 / P28), sometimes not (P30) - depends on the pair (side / team), not mapped yet. FLEX:
    tiers are EV-matched at Sleeper's own implied chances (q = 1/m): 3-pick EV 1.000 (15 entries, 0.998-1.008), 4-pick 1.065-1.083,
    5-pick 1.06-1.10, 6-pick 1.06-1.075 (same-game sets lower / higher); tier split T1/T0 ~ 0.31 (3), 0.25 (4), 0.21-0.26 + T2/T0
-   0.045-0.057 (5), 0.11 + 0.02 (6) - exact split formula NOT yet fitted. Next: fit the split + the same-game rule on all entries
-   (research script on the private data), then guess-and-check on new entries the owner makes.
+   0.045-0.057 (5), 0.11 + 0.02 (6) - exact split formula NOT yet fitted.
+   UPDATE 2026-10-26 (probe_sleeper_payout_fit run 40375790579, 454 of the owner's entries, per-entry rows private in
+   'sleeper_fit_rows'): MAX bonus, all legs in different games = 2: 1.000, 3: 1.0797, 4: 1.1011, 5: 1.1742, 6: 1.2755 (the 6-pick
+   number SUPERSEDES the 1.06-1.12 above, which came from same-game sets). Same-game pairs on OPPOSITE sides keep the full bonus;
+   same-game pairs on the SAME side are priced down, by a varying amount (R down to 0.72-0.81) - formula not mapped. FLEX EV targets
+   at q = 1/m: 3: 1.0012 (26 clean entries), 4: 1.0801 (8), 5: ~1.148 (promo-clean; normal ~1.08-1.15), 6: ~1.197 (ONE clean entry);
+   fixed-ratio model (T1/T0 3: 0.3287, 4: 0.2474, 5: 0.235 + T2/T0 0.049, 6: 0.096 + 0.0193) hits T0 to the cent 19/26 (3-pick) and
+   5/8 (4-pick), T1 21/26 and 7/8 - close, NOT exact (3-pick split correlates -0.80 with the biggest leg). Voids drop out and the
+   entry regrades; a 2-pick void refunds.
+   TRANSFER STUDY at these prices ('max-true' / 'flex-true' in research_sleeper_transfer; runs 40376692215 hist_ud, 40376697475
+   hist_pp; same-side same-game price-down NOT modelled, so same-game slips are priced a little high). Legs on Sleeper: UD-T1 +3.3%
+   per leg (both seasons +2.9 / +3.7), UD-T2 -0.1%, UD-T3 -2.3%; PP-B4 +3.4%, PP-B7 +7.9% (291 legs), PP-B6 shows .500 / -11% (it
+   lists both sides - artifact). Slips, UD-T1 own order (2024-25 / 2025-26): Max 2p +14% (+23 / +6), 3p +40% (+51 / +28), 4p +43%
+   (+78 / +10), 5p +63% (+118 / +13), 6p +60% (+38 / +80); Flex 3p +18% (+19 / +17), 4p +32% (+46 / +18), 5p +42% (+60 / +25), 6p
+   +48% (+35 / +59), 195-306 slips each. UD-T2 own order: Max 2-6p +19 / +27 / +64 / +85 / +122%, Flex 3-6p +15 / +33 / +52 / +84%
+   (95-271 slips). PP-B6 Max 4-6p +71 / +126 / +161%, but 2025-26 only +50 / +19 / +10% - in-sample risk. Max 5-6p cash 3-6% of the
+   time (drawdowns 30-64u); Flex cashes 45-64%. NOT PLAYABLE YET: Flex split and same-game rule not exact, 5-6 pick Flex targets
+   rest on few entries. Next: guess-and-check on new entries the owner makes.
 
 ---
 
