@@ -198,10 +198,32 @@ def main():
                 for sea, rr in r.items():
                     line += f" | {sea} {100 * rr[4]:+.0f}% ({rr[0]})"
                 print(line)
+    print("\n== SAME vs CROSS, rule by rule (ROI with bonus; the gap is what one game's correlation is worth). MARKET-ONLY orders first (no model)")
+    idx = {(x[0], x[1], x[2]): x for x in rows}
+    for grp, ords in (("market-only", ("likely", "even")), ("model-ranked", ("hp",))):
+        print(f"  -- {grp}")
+        for k in KS:
+            gaps = []
+            for rule in rules:
+                if rule[2] not in ords:
+                    continue
+                sm, cr = idx.get((rule, k, "same")), idx.get((rule, k, "cross"))
+                if sm and cr:
+                    gaps.append((sm[3][4] - cr[3][4], rule, sm, cr))
+            if not gaps:
+                continue
+            g = np.array([x[0] for x in gaps])
+            print(f"  k={k}: {len(gaps)} rules | same minus cross ROI: median {100 * np.median(g):+.0f} pts, {int((g > 0).sum())} of {len(g)} positive")
+            for gp, rule, sm, cr in sorted(gaps, key=lambda x: -x[2][3][4])[:5]:
+                print(f"    {rule[0]}-{rule[1]}-{rule[2]}: same {sm[3][0]} slips R {sm[3][1] / sm[3][2]:.2f} ROI {100 * sm[3][4]:+.0f}% "
+                      f"({' / '.join(f'{sea} {100 * rr[4]:+.0f}%' for sea, rr in sm[4].items())}) | cross {cr[3][0]} slips R {cr[3][1] / cr[3][2]:.2f} ROI {100 * cr[3][4]:+.0f}%")
+    nctx = sum(1 for (rule, k, mode), v in rec.items() if mode == "same" for x in v if x[4] == x[4])
+    print(f"\n(rows with closing-line context: {nctx})")
     print("\n== SAME-GAME by game context (k=3..6 Under stacks, all props, most-likely order): ROI with bonus by |spread| and total")
     for k in (3, 4, 5, 6):
         for rule, kk, md, allr, r, a in rows:
-            if kk == k and md == "same" and rule == ("Under", "all", "likely"):
+            if kk == k and md == "same" and rule in (("Under", "all", "likely"), ("Under", "all", "even"), ("teamsplit", "all", "even")):
+                print(f"  {rule[0]}-{rule[1]}-{rule[2]}")
                 for lab, f in (("|spread| < 4", lambda x: x[4] < 4), ("|spread| 4-9", lambda x: 4 <= x[4] < 9), ("|spread| >= 9", lambda x: x[4] >= 9),
                                ("total < 225", lambda x: x[5] < 225), ("total 225-235", lambda x: 225 <= x[5] < 235), ("total >= 235", lambda x: x[5] >= 235)):
                     b = np.array([x for x in a if f(x)])
