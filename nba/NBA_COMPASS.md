@@ -478,6 +478,11 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    3F + 4F ONLY (owner 18:58 PT; run 40256820776): NOT safer than 2-pick Standard. Best in-sample 3.65/day +52% (+54 / +51) dd 13.3u
    but losing days 49%; pair 4F RF-Less ev >=0.60 + 3F weighted:reb_ast_B1_U 1.84/day +45% dd 7.6u losing days 46%. Honest
    holdout +26..+28% with drawdown 29-63u and 54% losing days; the fewest-losing-days Flex sets fell to +8..+11%.
+   LADDER BY LINE SET (owner 19:28 PT "even using the full ladder?"; run 40259299585, DP_LADDER=1; F = easier lines paying 0.8-0.99x,
+   B = harder lines paying 1.01x+): a single rung on its own is weak - B2, B3, F3 have 0 robust strategies in 2S/3S/3F/4F, F1 0-8;
+   honest top-5 of F1/F3/B2/B3 mostly negative. The ladder adds value only MIXED with standard lines: 4F standard + harder (RB) honest
+   +43% / +35% (best honest set of the review; R alone +42 / +26, ALL +40 / +26), best robust RB-Less-lowvol final score >=0.55 4F
+   (+71 / +80, dd 7.2u, 45% losing slips). 2S: ALL +25 / +20, compositions +25 / +54, R +11 / +19. 3S: harder-only (B) +40 / +39.
 
 ---
 
