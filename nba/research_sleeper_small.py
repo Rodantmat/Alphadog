@@ -168,7 +168,8 @@ def main():
         import datetime as dt
         today = dt.datetime.now(ST.AF.UDL.PT).date()
         days = [d for d in ST.AF.slate_days(conn) if ST.AF.season_of(d) == "2026-27" and dt.date(2026, 10, 20) <= d < today]
-        P = ST.LivePricer if ST.APP == "sleeper" else ST.LiveFliffPricer
+        # Betr has no live board (parked): its flat table only needs the line, so it is priced at the books' main line as in history
+        P = ST.LivePricer if ST.APP == "sleeper" else (ST.HistPricer if ST.APP == "betr" else ST.LiveFliffPricer)
         conn = ST.run_ud(conn, days, P, bk)
         ST.run_pp_live(conn, days, bk, P)
     bk.report()
