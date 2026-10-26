@@ -475,6 +475,9 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    combos More final_hp x m >=0.55 skip-top) -> 2025-26 ROI +27%, drawdown 11.3u, losing days 34%; this season +71% on 13 slips.
    Smallest drawdown set: 2S all-lines Less base >=0.60 skip-top + 3F weighted:points_R_U + 2S Less assists base >=0.65 skip-top:
    2.31/day, +39% (+45 / +33), dd 6.5u, losing days 34%. Fewest losing days: three 2S, 2.94/day, +44%, dd 13.1u, 29%.
+   3F + 4F ONLY (owner 18:58 PT; run 40256820776): NOT safer than 2-pick Standard. Best in-sample 3.65/day +52% (+54 / +51) dd 13.3u
+   but losing days 49%; pair 4F RF-Less ev >=0.60 + 3F weighted:reb_ast_B1_U 1.84/day +45% dd 7.6u losing days 46%. Honest
+   holdout +26..+28% with drawdown 29-63u and 54% losing days; the fewest-losing-days Flex sets fell to +8..+11%.
 
 ---
 
