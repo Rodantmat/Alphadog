@@ -91,7 +91,7 @@ const buttons = [...document.querySelectorAll('button,[role=button],a,input[type
   .map(e => (e.innerText || e.value || e.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 40)).filter(t => t);
 return {url: location.href, title: document.title, inputs, buttons: [...new Set(buttons)].slice(0, 40),
         text: (document.body ? document.body.innerText : '').replace(/\s+/g, ' ').slice(0, 600),
-        hc: {api: typeof window.hcaptcha, frames: [...document.querySelectorAll('iframe')].filter(f => /hcaptcha/.test(f.src || ''))
+        hc: {api: typeof window.hcaptcha, re: typeof window.grecaptcha, frames: [...document.querySelectorAll('iframe')].filter(f => /hcaptcha|recaptcha/.test(f.src || ''))
              .map(f => { const r = f.getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); })}};
 """
 
