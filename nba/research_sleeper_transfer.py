@@ -283,7 +283,8 @@ class Book:
 
     def report(self):
         print("=" * 160)
-        print("LEGS: each qualified leg at Sleeper's line and multiplier | hit, mean m, return per leg (hit x m - 1), share at the source's own line")
+        print(f"APP {APP} | PART {PART}")
+        print("LEGS: each qualified leg at the app's line and multiplier (Betr: m = 1, flat table) | hit, mean m, return per leg (hit x m - 1), share at the source's own line")
         for src in sorted(self.legs):
             a = self.legs[src]
             cov = self.cover[src]
