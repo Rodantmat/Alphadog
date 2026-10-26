@@ -1,5 +1,7 @@
 # NBA SWEEP — UNATTENDED RUN LOG
 
+> 🔗 **Continuation (2026-10-26):** this log is frozen at its size (about 5 MB, which the repository bridge cannot write). Its later entries and the T50 sweep record live in `NBA_OPEN_ITEMS_V2.md` (section C, sweep log superseded) and `NBA_MASTER_SUMMARY_V2.md`. Treat those files and this one as one record.
+
 **Read this first.** One file, updated at every transcript closure and at every stop. It carries the
 resume note, what closed, what was found, and every decision taken without the owner.
 
