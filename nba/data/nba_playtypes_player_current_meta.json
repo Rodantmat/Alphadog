@@ -1,7 +1,7 @@
 {
-  "fetched_at": "2026-10-19T19:07:08Z",
+  "fetched_at": "2026-10-26T19:05:15Z",
   "level": "player",
   "method_used": "looped_per_playtype",
-  "record_count": 3364,
-  "error": null
+  "record_count": 161,
+  "error": "suspiciously_low: 161 records via looped_per_playtype, expected 400+"
 }
