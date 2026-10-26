@@ -188,7 +188,15 @@ async function engineSlips(sql, cfg, slate) {
   const hasSl = (await q(sql, "SELECT to_regclass('nba_score.sleeper_live_slips') IS NOT NULL ok"))[0];
   if (hasSl && hasSl.ok) sl = await q(sql, `SELECT strategy, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.sleeper_live_slips WHERE game_date = $1::date ORDER BY strategy, k`, [slate.date]);
   return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })),
-           sl: sl.map(r => ({ ...r, app: "sleeper", track: `Sleeper ${r.size}-pick ${r.structure === "flex" ? "Flex" : "Max"} (Underdog T1 legs)` })) };
+           sl: sl.map(r => ({ ...r, app: "sleeper", track: `Sleeper ${r.size}-pick ${r.structure === "flex" ? "Flex" : "Max"} (Underdog T1 legs)` })),
+           fl: (await fliffLive(sql, slate)).map(r => ({ ...r, app: "fliff", track: `Fliff ${r.size}-pick Max (Underdog T1 legs)` })) };
+}
+// FLIFF PICK'EM (owner 2026-10-26 14:22 PT: Fliff option 2 "deploy that") - nba/fliff_live_slip_engine.py, one 2-pick Max a slate at
+// Fliff Pick'Em's own line and multiplier; the table is created by the engine, so it is looked up first
+async function fliffLive(sql, slate) {
+  const has = (await q(sql, "SELECT to_regclass('nba_score.fliff_live_slips') IS NOT NULL ok"))[0];
+  if (!has || !has.ok) return [];
+  return q(sql, `SELECT strategy, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.fliff_live_slips WHERE game_date = $1::date ORDER BY strategy, k`, [slate.date]);
 }
 
 // PLACE BY (2026-10-16, owner: "The place by is a good idea"). A slip can be entered until the FIRST of its own legs' games tips,
