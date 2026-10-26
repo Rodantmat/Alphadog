@@ -87,7 +87,8 @@ const vis = e => { if (e.checkVisibility && !e.checkVisibility({checkOpacity: tr
 const lab = e => (e.getAttribute('aria-label') || e.getAttribute('placeholder') || e.getAttribute('name') || e.id || '').slice(0, 40);
 const inputs = [...document.querySelectorAll('input,textarea')].filter(vis).map((e, i) => ({i, type: e.type, label: lab(e),
   auto: e.getAttribute('autocomplete') || '', maxlen: e.maxLength, filled: !!e.value}));
-const buttons = [...document.querySelectorAll('button,[role=button],a,input[type=submit]')].filter(vis)
+const clk = () => [...document.querySelectorAll('button,[role=button],a,input[type=submit],[tabindex],div,span')].filter(e => e.matches('button,[role=button],a,input[type=submit],[tabindex]') || (e.childElementCount < 4 && getComputedStyle(e).cursor === 'pointer'));
+const buttons = clk().filter(vis)
   .map(e => (e.innerText || e.value || e.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 40)).filter(t => t);
 return {url: location.href, title: document.title, inputs, buttons: [...new Set(buttons)].slice(0, 40),
         text: (document.body ? document.body.innerText : '').replace(/\s+/g, ' ').slice(0, 600),
