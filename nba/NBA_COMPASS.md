@@ -594,6 +594,21 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    the Sleeper pick, P2A grade; Slips screen v1.4.42. First slip 10-26 (Derrick White Pts U16.5 1.75 + Brandon Miller Pts+Reb U29.5 1.85).
    NOTE: the Fliff board captured daily since 10-20 by the existing scraper (board_snapshots bookmaker 'fliff') is Fliff's SPORTSBOOK
    (ParlayAPI), not Pick'Em; the Pick'Em board is captured from 10-26 on.
+186. 🔑 **BETR BOARD IS BROWSER-FREE WITH THE OWNER'S OWN TOKEN (2026-10-26; owner 16:22 PT "Let's get it fixed ... get token and get
+   it figured out").** SUPERSEDES facts 120 / 147 (SeleniumBase + Xvfb clearing Cloudflare Turnstile) for the board: that browser
+   harvest is RETIRED (not to be re-enabled). PROVEN (probe_betr_token_direct.py, run 40421094133): the stored, self-renewed session
+   token (external_credentials 'betr_session_state', valid to 2026-11-15, Keycloak renewal with the owner's offline token unchanged)
+   sent RAW in `authorization` (the app's own way - the `Bearer ` prefix is what 401s, which is why September's 17 probes failed) gets
+   HTTP 200 on LeagueUpcomingEvents / getUpcomingEventsV2 from a plain request, direct or through the proxy - nothing solved or
+   bypassed. LIVE: nba/betr_board_direct.py (same parser / file format / exit codes as the harvester; read-only board query only)
+   runs in betr-cloud-harvest.yml (no Chrome installed; the P3 dispatch path unchanged). First capture run 40421686230: 3,426 legs
+   (2,471 alt), 124 players, 9 events in ~1 s; archived 3,845 rows 'routine' 2026-10-26. Unmapped Betr stats seen: TWO_POINTERS_MADE,
+   TWO_POINTERS_ATTEMPTS, 1ST_HALF_PRA, TRIPLE_DOUBLE. LINE MATCH (10-26, games not yet started, Betr 23:45Z vs the others' close
+   ~22:37Z, main lines): Betr = PrizePicks on 233 / 328 (71%; 70 off by 0.5, 25 by >= 1), = Sleeper 274 / 331 (83%), = one of
+   Underdog's main lines 230 / 275 (84%; when different Betr sits ~1 point higher on points / PRA / reb+ast). Betr STILL PARKED
+   (classification_config p3_betr_wait false, not in nba_main_ui.apps) - un-parking and any Betr slip engine are the owner's call.
+   Betr payouts were already mapped from Betr's own pricing query on 10-18 (fact 169, pp_slip_rules betr_payout_v1; ALL-LESS entries
+   discounted) - the research studies price Betr flat (no all-Less discount).
 
 ---
 
