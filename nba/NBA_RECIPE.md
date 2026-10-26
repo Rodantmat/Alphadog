@@ -1,5 +1,7 @@
 # NBA RECIPE — how the system was built, step by step
 
+> 🔗 **Continuation files.** `NBA_MASTER_SUMMARY_V2.md` continues `NBA_MASTER_SUMMARY.md` (chapters `§T49` onward) and `NBA_OPEN_ITEMS_V2.md` continues `NBA_OPEN_ITEMS.md` (T50 addendum onward). Each V1 + V2 pair is ONE document: always read both. New chapters and open items go to V2.
+
 **Purpose.** The cake recipe. Every step in the order it happened, so the build could be reproduced or
 audited. Where a step exists because an earlier attempt failed, the failure is part of the recipe —
 that is the useful part.
