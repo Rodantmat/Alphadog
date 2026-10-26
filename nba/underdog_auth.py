@@ -93,8 +93,14 @@ def main():
         except Exception:  # noqa: BLE001 - next route
             continue
     print(f"UD_TOKEN_OK|{how}; access token lifetime {exp} s; signed-in check HTTP {code}" + ("" if code == 200 else f" - {body!r}"))
-    if code not in (200,):
-        sys.exit(1)
+    # 2026-10-26: run 40357854539 refreshed and saved the token, but the check got Cloudflare's HTML wall (HTTP 403) - a block on the
+    # check request, not a verdict on the token. Fail only when Underdog itself answers that the session is bad (401, or a JSON 403).
+    if code == 200:
+        return
+    if code == 403 and body.lstrip().lower().startswith("<!doctype html"):
+        print("UD_TOKEN_WARN|token refreshed and saved; the signed-in check was stopped by a Cloudflare page, so it proves nothing either way")
+        return
+    sys.exit(1)
 
 
 if __name__ == "__main__":
