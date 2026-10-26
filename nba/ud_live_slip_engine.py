@@ -290,6 +290,24 @@ def pick(conn, day):
                 conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
                                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", (day, pf, comp, size, structure, k, json.dumps(legs_json), stake, status, flag))
                 n_rows += 1
+    # PORTFOLIO T (owner 2026-10-25 20:01 PT; NBA_COMPASS 183): three 2-pick Standards, one slip each, 1 unit each, built by the
+    # shared builder the parity audit certified. Stake 0 only where the research had no slate: the final regular-season week and the
+    # postseason (the pre-All-Star week WAS in the research, so T plays it). No half stake (the research staked every slip 1 unit;
+    # the absence flag is recorded for information).
+    if live_pf == 'T':
+        raw = UPT.raw_legs(legs)
+        t_sd = sd if sd in ('final_week', 'postseason') else None
+        for uid in UPT.UNITS:
+            slip = UPT.unit_slip(uid, raw, pool, E)
+            if slip is None:
+                print(f"  {day}: portfolio T {uid} ({UPT.LABEL[uid]}) - no slip (not enough eligible legs)", flush=True)
+                continue
+            flag = any(l['side'] == 'Under' and fresh.get(teams.get(l['player_id']), 0) >= 2 for l in slip)
+            conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                         (day, 'T', f"{uid} {UPT.LABEL[uid]}", UPT.UNITS[uid][2], UPT.UNITS[uid][3], 1, json.dumps(slip),
+                          0.0 if t_sd else 1.0, f"stand_down:{t_sd}" if t_sd else 'live', flag))
+            n_rows += 1
     # PLAYOFF UNDERS on Underdog (§31z, 2026-10-09): on a play-in / playoff slate the postseason-only rule (playoff_unders.py, the
     # same code its certification backtested) builds its slip(s) - one pick per game by Underdog's rule. Paper (stake 1) only with
     # a PASS postseason verdict; otherwise recorded at stake 0 ('shadow_post'). Graded by grade() below like every paper slip.
