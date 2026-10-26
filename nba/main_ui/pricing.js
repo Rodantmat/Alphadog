@@ -123,8 +123,9 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
   if (app === "fliff") {
     // FLIFF PICK'EM (2026-10-26; contest rules v2.0): a Max entry pays the product of the picks' Selection Multipliers (the guaranteed
     // Contest Score); Flex / SuperFlex reductions are unpublished - not priced
+    // shown and paid cut to 2 decimals (owner's entry 2026-10-26: 1.75 x 1.85 = 3.2375 -> Fliff 3.23x, $2 -> $6.46)
     if (mode !== "power") return null;
-    return misses === 0 ? f.reduce((a, b) => a * b, 1) : 0;
+    return misses === 0 ? Math.floor(f.reduce((a, b) => a * b, 1) * 100 + 1e-6) / 100 : 0;
   }
   if (app === "sleeper") {
     // SLEEPER'S OWN PRICING (2026-10-26, fitted on 454 of the owner's entries - classification_config['sleeper_payout'].true_pricing):
