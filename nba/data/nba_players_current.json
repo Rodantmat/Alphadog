@@ -820,6 +820,19 @@
       "team_abbreviation": "CLE"
     },
     {
+      "id": 1641723,
+      "full_name": "Kobe Bufkin",
+      "last_comma_first": "Bufkin, Kobe",
+      "roster_status": 1,
+      "from_year": "2023",
+      "to_year": "2026",
+      "player_code": "kobe_bufkin",
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
+    },
+    {
       "id": 1643415,
       "full_name": "Brayden Burries",
       "last_comma_first": "Burries, Brayden",
@@ -3355,6 +3368,19 @@
       "team_abbreviation": "ATL"
     },
     {
+      "id": 1642261,
+      "full_name": "Dalton Knecht",
+      "last_comma_first": "Knecht, Dalton",
+      "roster_status": 1,
+      "from_year": "2024",
+      "to_year": "2026",
+      "player_code": "dalton_knecht",
+      "team_id": 1610612752,
+      "team_city": "New York",
+      "team_name": "Knicks",
+      "team_abbreviation": "NYK"
+    },
+    {
       "id": 1642851,
       "full_name": "Kon Knueppel",
       "last_comma_first": "Knueppel, Kon",
@@ -4603,19 +4629,6 @@
       "team_abbreviation": "IND"
     },
     {
-      "id": 1642923,
-      "full_name": "Otega Oweh",
-      "last_comma_first": "Oweh, Otega",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "otega_oweh",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
-    },
-    {
       "id": 1627780,
       "full_name": "Gary Payton II",
       "last_comma_first": "Payton II, Gary",
@@ -4640,6 +4653,19 @@
       "team_city": "Phoenix",
       "team_name": "Suns",
       "team_abbreviation": "PHX"
+    },
+    {
+      "id": 1642877,
+      "full_name": "Micah Peavy",
+      "last_comma_first": "Peavy, Micah",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "micah_peavy",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
     },
     {
       "id": 1642951,
