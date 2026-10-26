@@ -277,8 +277,11 @@ def login(conn, sb, seen):
         if pwd:
             break
     low = (f.get("text") or "").lower()
+    # a code step = the page now says so, or the password field is gone while a code field is showing (Sleeper keeps a hidden
+    # 'login-otp' field in its login form from the start - its presence alone is not a code request)
+    pw_gone = not any(x["type"] == "password" and x["auto"] == "current-password" for x in f["inputs"])
     if re.search(r"(verification code|enter (the )?code|one-time|we (sent|texted|emailed)|6-digit|check your (phone|email))", low) or \
-            any(x["auto"] == "one-time-code" or x["maxlen"] == 1 for x in f["inputs"]):
+            (pw_gone and any(x["auto"] == "one-time-code" or x["maxlen"] == 1 for x in f["inputs"])):
         if not wait_code(conn, sb, seen):
             return False
         f = form(sb, "after code")
