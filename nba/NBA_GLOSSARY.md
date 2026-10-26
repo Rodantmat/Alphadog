@@ -2348,7 +2348,7 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **SuperFlex** | Fliff Pick'Em contest type that allows 2 losses (Flex allows 1); payout amounts unknown; a void in one game voids every selection from that game | `NBA_MULTIPLIERS.md` `§T50.3` |
 | **Fliff overround 1.0904** | main-pair overround of the Fliff sportsbook (5,971 pairs), m = 1/(1.0904 p); it prices the sportsbook, not Pick'Em | `NBA_MULTIPLIERS.md` `§T50.3` |
 | **Sleeper overround 1.1238 (OVR)** | main-pair model price m = round(1/(1.1238 p), 2); flat 12.4% overround, p x m = 0.889 in every group and side | `NBA_MULTIPLIERS.md` `§T50.3` |
-| **`BONUS_EST`** | planned Sleeper size-bonus table {2: 1, 3: 1.0797, 4: 1.102, 5: 1.144, 6: 1.227} used in `research_sleeper_transfer.py`; sizes 5 and 6 are estimates, not verified | `NBA_MULTIPLIERS.md` `§T50.3` |
+| **`BONUS_EST`** | planned Sleeper size-bonus table {2: 1, 3: 1.0797, 4: 1.102, 5: 1.144, 6: 1.227} used in `research_sleeper_transfer.py`; ~~sizes 5 and 6 are estimates, not verified~~ -> superseded 10-26: the 454-entry fit gives max bonuses 5: 1.1742 and 6: 1.2755 (4: 1.1011); the 5 and 6 pick Flex targets stay estimates | `NBA_MULTIPLIERS.md` `§T50.3` and `§T50.3-Z7` |
 | **`sleeper_payout`** | `classification_config` row: per-side multipliers, Max = product x size bonus, Flex = round robin of the (n-1)-pick sub-slips | `NBA_DATABASE.md` `§T50.6` |
 | **PicksVS** | the owner's Sleeper variant in California: payout = entry x VS Score plus a pool prize (pools up to 5,000 entries pay 100x to the top VS Score; 20-entry pools pay 3x) | `NBA_MULTIPLIERS.md` `§T50.3` |
 | **VS Score** | product of the per-pick multipliers in PicksVS; ranks entries in a pool | `NBA_MULTIPLIERS.md` `§T50.3` |
