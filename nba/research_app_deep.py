@@ -224,6 +224,51 @@ def day_families(legs, rows, lists, pay, E):
     return o2, o3, o4, o5
 
 
+def pick_sets(P, nm, A, Bm, C, H, seas, hist, la, lb_):
+    """DP_PICK: comma list of strategy names with spaces as '_' (e.g. UD_RB-Less-lowvol-score-p0.55-gc1_4F); DP_SETS: comma list of
+    groups as 1-based digit strings (e.g. 123,4,1234). Each group played together, 1 unit a slip: per period slips a day, ROI,
+    profit, max drawdown, losing days, worst day; day-P/L correlation between the picks; a realistic season at 100 / 60 / 40 %."""
+    want = os.environ["DP_PICK"].split(",")
+    idx = {}
+    for r in range(P.shape[0]):
+        k = nm(r).replace(" ", "_")
+        if k in want and k not in idx:
+            idx[k] = r
+    rows = []
+    for w in want:
+        print(f"  pick {len(rows) + 1}: {w} -> {'row ' + str(idx[w]) if w in idx else 'NOT FOUND'}")
+        rows.append(idx.get(w))
+    if any(r is None for r in rows):
+        return
+    Z = np.nan_to_num(P[rows]); V = (~np.isnan(P[rows])).astype(float)
+    print("\n  day P/L correlation between picks (history, days both played):")
+    for i in range(len(rows)):
+        for j in range(i + 1, len(rows)):
+            both = (V[i] > 0) & (V[j] > 0) & H
+            if both.sum() > 20:
+                print(f"    {i + 1} vs {j + 1}: {np.corrcoef(Z[i][both], Z[j][both])[0, 1]:+.2f} on {int(both.sum())} days")
+    L = int(round(np.mean([np.sum(seas == s) for s in hist])))
+    for g in (os.environ.get("DP_SETS") or "").split(","):
+        sub = [int(ch) - 1 for ch in g if ch.isdigit()]
+        if not sub:
+            continue
+        pl = Z[sub].sum(axis=0); stk = V[sub].sum(axis=0)
+        print(f"\n  == SET {g}: " + " + ".join(want[i] for i in sub))
+        for lab, m in ((la, A), (lb_, Bm), ("both seasons", H), ("this season", C)):
+            mm = RP.metrics(pl, stk, m)
+            if mm["n"]:
+                print(f"    {lab:<14} slips/day {mm['spd']:.2f} | ROI {100 * mm['roi']:+.0f}% | profit {mm['profit']:+.0f}u | dd {mm['dd']:.1f}u | "
+                      f"losing days {100 * mm['lose']:.0f}% | worst day {mm['worst']:+.1f}u | {mm['n']} slips")
+        mh = RP.metrics(pl, stk, H)
+        PP.report("", pl[H], list(range(int(H.sum()))), "any history slate")
+        for kk in (1.0, 0.6, 0.4):
+            R = np.array([PP.boot_season(pl[H], stk[H], stk[H], stk[H], L, kk, mh["roi"]) for _ in range(NB)])
+            prof, dd, fp, uw, _s, ns_ = R.T
+            print(f"    edge {100 * kk:3.0f}% (ROI ~{100 * kk * mh['roi']:+.0f}%): season p10 {np.percentile(prof, 10):+.0f}u | median {np.median(prof):+.0f}u | "
+                  f"p90 {np.percentile(prof, 90):+.0f}u | losing season {100 * np.mean(prof < 0):.0f}% | dd median {np.median(dd):.1f}u, p90 "
+                  f"{np.percentile(dd, 90):.1f}u")
+
+
 def scope_all():
     """portfolio scope: DP_SCOPE (tags, e.g. 2S,3S,3F,4F) or the owner's 2-6 picks; flex / dynamic from 3"""
     if os.environ.get("DP_SCOPE"):
