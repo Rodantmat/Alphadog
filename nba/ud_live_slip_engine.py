@@ -37,6 +37,7 @@ import psycopg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_ud_slip_engine as E   # noqa: E402 - the certified engine (original 14 cells, centers out)
+import ud_portfolio_t as UPT       # noqa: E402 - portfolio T, the shared builder (audit_ud_portfolio_t_parity)
 from live_slip_engine import regular_season_window as _season_window, PT   # noqa: E402 - one season resolver, one clock (cert pass F)
 
 MKT = {'points': 'points', 'rebounds': 'rebounds', 'assists': 'assists', 'threes': 'threes_made', 'steals': 'steals',
