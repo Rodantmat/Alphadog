@@ -1,5 +1,7 @@
 # NBA Project — Standing Log
 
+> Superseded notice (2026-10-26): lines 594-595 (goblins -EV at every tier, demons beyond T1 hopeless) are replaced by NBA_GOBLIN_DEMON.md §T50.2; lines 745-751 (PrizePicks multipliers ruled out / not on any public surface) were solved 09-21 and fully mapped, see NBA_MULTIPLIERS.md §T50.3; line 630 (Sleeper has no alternate lines) is wrong since 10-19, see NBA_MULTIPLIERS.md §T50.3 and NBA_WORKERS.md §T50.4; this log has no entry after about 09-19, the later narrative (T26-T50) is in the twelve main docs.
+
 > # 📑 **INDEX — `NBA_PROJECT_LOG.md`**
 > **The standing chronological log** — one dated entry per important step, decision, issue found and
 > issue fixed, in the order it happened. *This is the only NARRATIVE, time-ordered record of the build;
