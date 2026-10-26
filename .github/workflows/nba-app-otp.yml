@@ -1,0 +1,35 @@
+name: NBA App OTP (one-time code for the Sleeper / Fliff sign-in)
+
+# Owner 2026-10-25 23:00 PT: "If a code is needed I'll give to you and after we setup the rule to get it saved to the system". Stores
+# the code (or the whole message the app sent - the 4-8 digits are taken out) for the `NBA App Login` run that is waiting for it.
+# The code is read from the dispatch event file by nba/app_otp.py - never a step env (GitHub prints those in this public log).
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "sleeper | fliff"
+        required: true
+        default: "sleeper"
+      otp:
+        description: "the code (or the whole message) the app sent"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  otp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Store the code
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/app_otp.py
