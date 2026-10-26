@@ -1,0 +1,78 @@
+name: NBA Doc Maintenance (one-off, markdown only)
+
+# One-off. Edits ONLY nba/NBA_MASTER_SUMMARY.md and nba/NBA_SWEEP_RUN_LOG.md (documentation).
+# Removes chapters T45-T48 from the master after proving every line is present in NBA_MASTER_SUMMARY_V2.md,
+# adds continuation notices, re-derives the heading stamp. Refuses to run if any check fails. No code, no DB, no secrets.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nba-doc-maintenance-once
+  cancel-in-progress: false
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Edit the two markdown files
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re, sys
+          D = chr(36)
+          M = 'nba/NBA_MASTER_SUMMARY.md'
+          V2 = 'nba/NBA_MASTER_SUMMARY_V2.md'
+          LOG = 'nba/NBA_SWEEP_RUN_LOG.md'
+          m = open(M, encoding='utf8').read()
+          v2 = open(V2, encoding='utf8').read()
+          if 'CONTINUED IN `NBA_MASTER_SUMMARY_V2.md`' in m:
+              print('already done'); sys.exit(0)
+          a = m.index('\n# §T45 — `T45` · ') + 1
+          b = m.index('\n# §P2 — PASS 2') + 1
+          block = m[a:b]
+          assert block.startswith('# §T45') and '# §T48 ' in block and '# §T46 ' in block and '# §T47 ' in block
+          assert '# §T49' not in block and '# §P2 ' not in block
+          v2lines = set(v2.split('\n'))
+          miss = [l for l in block.split('\n') if l.strip() and l not in v2lines and l.replace(D + '119', 'USD 119') not in v2lines]
+          assert not miss, miss[:3]
+          nhead = len(re.findall(r'^(?:> *)*#{1,6} ', block, flags=re.M))
+          pointer = ('> ➡️ **`§T45`, `§T46`, `§T47` and `§T48` (all their sub-sections `§T45.0`–`§T45.11`, `§T46.0`–`§T46.9`, `§T47.0`–`§T47.12`, `§T48.0`–`§T48.11`) were moved, complete, on `2026-10-26` into `NBA_MASTER_SUMMARY_V2.md`** — this file had reached the size at which the repository bridge could no longer write to it. The two files are one document; look the chapters up by their section ids in `NBA_MASTER_SUMMARY_V2.md` (the one difference from the text that stood here: the figure written with a dollar sign before `119` in `§T48.0` #3 reads `USD 119` there). The pass chapters `§P2` onward stay here.\n\n---\n\n')
+          m2 = m[:a] + pointer + m[b:]
+          title = '# NBA MASTER SUMMARY — every transcript, message by message\n'
+          assert m2.startswith(title)
+          notice = ('\n> \U0001f517 **THIS FILE IS CONTINUED IN `NBA_MASTER_SUMMARY_V2.md` — THE TWO ARE ONE DOCUMENT. ALWAYS READ AND TREAT BOTH AS A WHOLE.** *(added `2026-10-26`)* This file (\"V1\") holds the START HERE block, the transcript chapters up to `§T44` and the pass chapters `§P2` onward. `NBA_MASTER_SUMMARY_V2.md` holds the chapters `§T45`–`§T48` (moved out of this file on `2026-10-26`; a pointer stands where they were) and every later chapter (`§T49`, `§T50`, `§T51`, …). **New transcript chapters are appended to V2 only.** This file\'s START HERE table and index stamp predate the V2 chapters and are stale by exactly them; the stamp counts this file only.\n')
+          m2 = title + notice + m2[len(title):]
+          old = '\U0001f4cf **`3,345` sections · re-derived `2026-10-14`'
+          assert m2.count(old) == 1
+          new_total = len(re.findall(r'^(?:> *)*#{1,6} ', m2, flags=re.M))
+          assert new_total == 3345 - nhead, (new_total, nhead)
+          m2 = m2.replace(old, '\U0001f4cf **`%s` sections · re-derived `2026-10-26` (−`%d` = `§T45`–`§T48` moved to `NBA_MASTER_SUMMARY_V2.md`, which has its own stamp; the whole document is V1 plus V2)** · ~~`3,345`~~ *(re-derived `2026-10-14`)*' % (format(new_total, ','), nhead), 1)
+          open(M, 'w', encoding='utf8').write(m2)
+          lg = open(LOG, encoding='utf8').read()
+          t = '# NBA SWEEP — UNATTENDED RUN LOG\n'
+          assert lg.startswith(t)
+          if 'Continuation (2026-10-26)' not in lg:
+              lg = t + '\n> \U0001f517 **Continuation (2026-10-26):** this log is frozen at its size (about 5 MB, which the repository bridge cannot write). Its later entries and the T50 sweep record live in `NBA_OPEN_ITEMS_V2.md` (section C, sweep log superseded) and `NBA_MASTER_SUMMARY_V2.md`. Treat those files and this one as one record.\n' + lg[len(t):]
+              open(LOG, 'w', encoding='utf8').write(lg)
+          print('removed bytes', len(block.encode()), 'headings', nhead, 'new total', new_total)
+          PY
+      - name: Commit and push (retry on race)
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/NBA_MASTER_SUMMARY.md nba/NBA_SWEEP_RUN_LOG.md
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "docs: move NBA master summary chapters T45-T48 to V2, add continuation notices [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
