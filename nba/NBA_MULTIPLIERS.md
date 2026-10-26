@@ -1599,7 +1599,7 @@ truth.**
 | T+2 | 21.3% | **2.30×** |
 | T+3 | 14.8% | **3.31×** |
 
-**Observed ceiling ~1.75–1.9×** → **T+2 and T+3 can never clear break-even.**
+**Observed ceiling ~1.75–1.9×** → **T+2 and T+3 can never clear break-even.** **(Superseded by the T50 deep pass, 2026-10-26: ~~about 1.75-1.9x observed ceiling, T+2 and T+3 can never clear~~ -> that was an early-sample figure. On the system's tier map (910,513 legs) demon prices average D1 1.44x, D2 1.71x, D3 2.43x with a maximum of 5.76x, and the engine cap is 18.5x on a 2-pick. Whether a deeper demon clears its break-even is decided per cell and per season (rebounds D3: price 2.20x, break-even 0.250, hit 0.307 at n=4, positive in 2025-26 and marginal in 2024-25), not by a fixed ceiling. The break-even factors 1.48x / 2.30x / 3.31x belong to the offset tiers T+1 / T+2 / T+3 only. Source: subagent re-read of 10-22.)**
 **→ Only demon T+1 is ever worth solving.**
 
 **With real per-leg multipliers these conclusions could be computed exactly rather than bounded.**
