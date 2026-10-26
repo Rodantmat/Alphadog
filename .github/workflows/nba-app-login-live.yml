@@ -109,6 +109,6 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           APP: ${{ github.event.inputs.app }}
         run: |
-          psql "$DATABASE_URL" -q -c "DELETE FROM nba_config.external_credentials WHERE credential_key = '${APP}_live_view'" || true
+          psql "$DATABASE_URL" -q -c "DELETE FROM nba_config.external_credentials WHERE credential_key = '${APP}_live_view_${GITHUB_RUN_ID}'" || true
           pkill -f cloudflared || true
           echo "live view closed"
