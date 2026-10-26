@@ -25,7 +25,7 @@ permissions:
 jobs:
   harvest:
     runs-on: ubuntu-latest
-    timeout-minutes: 30      # three harvest attempts (~5 min each) + pauses + archive
+    timeout-minutes: 15      # three direct-query attempts (seconds each) + pauses + archive
     steps:
       - uses: actions/checkout@v4
         with:
