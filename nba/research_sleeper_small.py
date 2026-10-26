@@ -82,6 +82,13 @@ class SmallBook(ST.Book):
                         continue
                     comp = (src, how, fl, side, mc, sk, ns, k)
                     for s in ss:
+                        if ST.APP == "betr":
+                            # BETR (research only - parked): its flat table (pp_slip_rules betr_payout_v1, Betr's own pricing query):
+                            # Perfect 2-6 = 3 / 6 / 10 / 20 / 35, Dynamic (3+) by hits; history prices Betr's line as the books' main line
+                            self.slips[comp + ("max",)].append((season, d, ST.pay_betr(s, False)))
+                            if k >= 3:
+                                self.slips[comp + ("flex",)].append((season, d, ST.pay_betr(s, True)))
+                            continue
                         if ST.APP == "fliff":
                             # FLIFF PICK'EM (official rules v2.0, 2026-10-05, getfliff.com/fliff-pickem-contest-rules): Max pays the
                             # product of the picks' multipliers (the guaranteed Contest Score; any extra pool share is NOT counted);
