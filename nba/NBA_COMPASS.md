@@ -512,6 +512,21 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    low-volume props, and this opening week final_hp UNDER-states low-volume Overs (blocks 0.5 Over hp 0.308 vs hit 0.390, steals 0.5
    Over 0.521 vs 0.614; 2024-25's opening week showed the same on blocks, +7 pts) - FLAG for PrizePicks B's low-volume units.
    Decision is the owner's: paper-track (no screen) for 20-30 slates, or leave Sleeper off. Fliff shares the feed - expect the same.
+   (5) PART D, SAME-GAME STACKS (owner 21:29 PT "be sure that there is nothing useful"; research_sleeper_stack run 40270451554, two
+   seasons, ~2,300 games per rule, 54 rules x 2-8 picks, size bonus applied): market-chosen stacks (no model) lose at every size,
+   best -5% (6 low-volume Unders nearest 50/50), typically -15% to -30%; a same-game stack is NOT better than the same rule spread
+   over different games (median gap -3 to -7 pts, 13-16 of 36 rules positive = noise). Sleeper's product payout is not exploitable
+   by correlation; the 2026-10-20..24 Under-pair ratio 1.09-1.10 was the books' own Under lean (it shows across games too, R 1.1-1.3).
+   Model-ranked (final_hp x m) stacks are hugely positive in history (+17..+157%) but even MORE positive across games, i.e. the edge is
+   final_hp's leg picks, not correlation - and that edge did not show on Sleeper's real board this season (point 2-3). One lead only:
+   low-volume Unders nearest 50/50 across DIFFERENT games +10% / +14% at 4-6 picks (234-282 slips, one a slate) - thin, and Sleeper's
+   real low-volume prices are unverified against it; paper-track only.
+   (6) THE OWNER'S SLEEPER IS PicksVS (California; support article "Sleeper Player Picks Rules", 2026-02-13): guaranteed payout =
+   entry x VS Score (the multiplier product), plus a pool prize - Regular pools up to 5,000 entries pay 100x to the top VS Score
+   (even if nobody is fully correct, "ignoring incorrect picks"), Intermediate / Beginner pools 20 entries pay 3x (max $1); higher of
+   the two, never both; one user at most 5% of a pool; "ez Pick" (1.0x, minimum entry 1.25x) lets an entry use one team only. The pool
+   prize is worth at most 100 / pool size of the entry fee on average (2% at 5,000) and goes to the longest all-hit entries, whose
+   base EV is -40% to -60% - not usable unless pools are far smaller than 5,000 (pool fill is visible only in the app).
 
 ---
 
