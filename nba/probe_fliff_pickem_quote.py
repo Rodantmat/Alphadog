@@ -21,7 +21,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from fliff_client import UA, FliffClient  # noqa: E402
 
 PROXY = os.environ.get("PROXY_URL", "").strip() or None
-QUOTE = re.compile(r"(Skipper_Get_Parlay_Plus_Quote|Get_Parlay_Plus_Quote_V2|ParlayPlusQuote|parlay_plus_quote|SuperFlex|super_flex|flex_multiplier|max_multiplier)")
+QUOTE = re.compile(r"(SuperFlex|super_flex|superFlex|flex_multiplier|flexMultiplier|max_multiplier|maxMultiplier|payout_type|payoutType|"
+                   r"losing_selections|losingSelections|max_losses|maxLosses|contest_multiplier|contestMultiplier|entry_type|entryType|"
+                   r"SkipperGetContestResponseSchema=|GetContest__Request|pick_type|pickType|selection_multiplier|selectionMultiplier)")
 NEVER = ("Place_", "Cashout", "Withdraw", "Deposit", "CopyActivity")
 
 
