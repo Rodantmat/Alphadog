@@ -196,12 +196,19 @@ def requests_seen(sb, seen):
         u = rq.get("url", "")
         if not any(h in u for h in ("sleeper", "getfliff", "fliff")) or re.search(r"\.(js|css|png|svg|webp|woff2?|ico)(\?|$)", u):
             continue
-        op = ""
+        op, pd = "", rq.get("postData") or ""
         try:
-            op = json.loads(rq.get("postData") or "{}").get("operationName") or ""
+            j = json.loads(pd or "{}")
+            q = j.get("query") or ""
+            mm = re.search(r"\b(query|mutation)\s*(\w*)[^{]*\{\s*(\w+)", q)
+            op = j.get("operationName") or (f"{mm.group(1)} {mm.group(2) or '-'} -> {mm.group(3)}" if mm else "")
+            if q:
+                op += f" vars={sorted((j.get('variables') or {}).keys())}"
         except Exception:  # noqa: BLE001
-            m2 = re.search(r'"__object_class_name"\s*:\s*"(F[A-Z]+__[A-Za-z_]+)"', rq.get("postData") or "")
+            m2 = re.search(r'"__object_class_name"\s*:\s*"(F[A-Z]+__[A-Za-z_]+)"', pd)
             op = m2.group(1) if m2 else ""
+        if "graphql" in u and rq.get("method") == "POST":
+            gql[pr.get("requestId")] = {"op": op}
         key = (rq.get("method"), u.split("?")[0], op)
         if key not in seen:
             seen.add(key)
