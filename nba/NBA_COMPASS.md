@@ -483,6 +483,10 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    honest top-5 of F1/F3/B2/B3 mostly negative. The ladder adds value only MIXED with standard lines: 4F standard + harder (RB) honest
    +43% / +35% (best honest set of the review; R alone +42 / +26, ALL +40 / +26), best robust RB-Less-lowvol final score >=0.55 4F
    (+71 / +80, dd 7.2u, 45% losing slips). 2S: ALL +25 / +20, compositions +25 / +54, R +11 / +19. 3S: harder-only (B) +40 / +39.
+   T + 4F TOGETHER (owner 19:46 PT; run 40260781540, DP_PICK): T alone 2.81/day ROI +44% (+59 / +27), dd 11.3u, losing days 24%
+   (15% / 34%), this season +71% on 13; the 4F plays only 0.32/day (+76%, 45% losing). T + 4F: 3.13/day ROI +47% (+61 / +33), dd
+   14.4u, losing days 29%, this season +50% on 16. Day P/L correlation: T's three picks -0.06..0.00 (why its losing days are low);
+   4F vs T picks +0.02..+0.26. 40%-edge season: T median +82u dd 18.6u -> T+4F median +95u dd 22.4u.
 
 ---
 
