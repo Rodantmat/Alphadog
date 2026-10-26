@@ -406,7 +406,7 @@ def run_pp_hist(conn, bk):
     return conn
 
 
-def run_pp_live(conn, days, bk):
+def run_pp_live(conn, days, bk, P):
     import live_slip_engine as L
     import portfolio_b as PB
     for d in days:
