@@ -3947,7 +3947,17 @@ these twelve.**
 - 🔑 **Sleeper transfer design (10-25).** Sources are PrizePicks portfolio B and Underdog portfolio T; each leg is re-priced at the app's line; environment `ST_APP` (sleeper, fliff, betr), `ST_PART` (hist_ud, hist_pp, live), `ST_SMOKE`; pricers for historical consensus main line, Sleeper's real board and the Fliff sportsbook; payouts for max, flex (round robin of n minus 1 times an estimated size bonus), parlay and Betr. Seven runs were triggered at `10-25 22:22 PT` and were not yet read at `00:11 PT`.
 - 🔑 **Login, social and documentation files.** `probe_app_login_flows.py`, `app_login.py`, `app_otp.py`, `nba-app-login.yml`, `nba-app-otp.yml`, `nba-app-token-refresh.yml` (10-25 22:56-23:05), `probe_sleeper_login_ops.py` (10-26 00:00): see T50.4-G. `social-demo-assets.yml` (10-19 16:28) social-account work only, downloads headshots, logos and licensed photos into `social/demo_assets`, touches nothing in `nba/`. `NBA_BOARD_LEARNINGS.md` (10-22 19:46) the running findings log.
 
-<!-- T50 END MARKER -->
+### T50.4-K. Operational gaps and owed (status at `10-26 00:11 PT`; AS STATED from the build chat's files and the T50 transcripts; nothing here is a fix)
+- ⏳ **Window snapshot versus pick time.** The historical window snapshot is taken at about 14:40 PT while the live pick runs at about 13:15 PT (T50.4-C); backtests see about 85 minutes more news than the live pick. Recorded, not closed.
+- ⏳ **Held player and early first tip.** On `10-23` the pick ran at 12:47 PT, before the 13:00 PT first game, and a 4-Flex held a player from that game; the pick checks only the slate's first tip, not each leg's own tip (T50.4-C). The fix is open.
+- ⏳ **Market refresh of `final_hp` limit.** The soft step stopped at its 8-minute limit after 9 of 12 props on `10-23`; raising it to 15 minutes awaited the owner's decision at the time of the ledger.
+- ⏳ **`build_confidence_v3` parity.** The refit speed change has live evidence (P2B `10-22`, 7/7) but the formal parity proof is still owed (T50.4-D).
+- ⏳ **Sleeper login.** The code-only login path was failing at `10-26 00:11 PT` (no code received; the root cause, including the captcha hypothesis, is unconfirmed; T50.4-G/H). Fliff login has not been attempted. Quote probes for Sleeper and Fliff are not written; the 7 `research_sleeper_transfer` runs and the Fliff live run were not read in the transcripts.
+- ⏳ **Odds API.** The paid key is deactivated and the owner declined renewal; game lines run on the free key (T50.4-A).
+- ⏳ **Overview.** Switched off (`nba_main_ui.overview.enabled` false) with the database-side slowness unexplained (T50.4-E).
+- ⏳ **Betr.** Parked since `10-19 22:51 PT`; restore steps are in T50.4-C. Superseding note: the earlier statement in this file that the Betr harvester is the live harvester is superseded for production by the park (`§T50.4`, `10-19`).
+- ⏳ **Fliff props.** Superseding note: the earlier line "Fliff, 0 player props parsed" is superseded by `§T50.4` (Fliff posted NBA player props, 860 legs and 41 players for `10-20`; the build-285 refusal was fixed on `10-22`).
+- ⏳ **Pre-publish live-board recheck** of the Portfolio T and B boards was still owed at the end of the transcript.
 
 ## 🆕 §T49.4b — **`T49` TRANSCRIPT BATCH: PIPELINE FINDINGS OF THE `10-15` FULL-PASS AGENTS, THE MORNING MONITOR, PARLAYAPI HISTORY AND BOARD STATE (PT)** *(source: subagents `ae5a74c` pipelines and `a86ad1d` boards, reports `10-15 12:41–12:46 PT`; the main transcript `10-16 15:49 PT` onward; this section qualifies `§T49.4`)*
 
