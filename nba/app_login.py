@@ -427,6 +427,8 @@ def main():
     os.environ["BETR_SESSION_ID"] = CFG["sid"]          # sticky residential session id, fixed per app (same exit every run)
     lp, proxy_arg = H.start_local_proxy()
     kw = dict(uc=True, xvfb=not LIVE, locale="en-US", log_cdp_events=True)   # live view: the run's own Xvfb :99 (DISPLAY)
+    if LIVE:
+        kw["headed"] = True                                 # SeleniumBase on Linux draws nowhere visible unless told headed
     if proxy_arg:
         kw["proxy"] = proxy_arg
     seen = set()
