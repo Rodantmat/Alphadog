@@ -452,7 +452,7 @@ export async function apiHighHit(sql, cfg, url, version) {
     pid: x.player_id ? String(x.player_id) : null, name: x.player_id ? null : String(x.player || "").toLowerCase() }))));
   lap("place_by");
   // display names for legs keyed by a normalised name only (the Underdog backtest stores e.g. "craigporter")
-  const nameKeys = [...new Set([...eng.pp, ...eng.ud].flatMap(s => ljOf(s).filter(x => !x.player_id && x.player).map(x => norm(x.player))))];
+  const nameKeys = [...new Set([...eng.pp, ...eng.ud, ...eng.sl].flatMap(s => ljOf(s).filter(x => !x.player_id && x.player).map(x => norm(x.player))))];
   const fullName = new Map(nameKeys.length ? (await q(sql, `SELECT DISTINCT ON (m.norm_name) m.norm_name, p.full_name FROM nba_ref.player_name_map m
       JOIN nba_ref.players p ON p.nba_player_id::text = m.player_id::text WHERE m.norm_name = ANY($1::text[]) ORDER BY m.norm_name, p.active DESC NULLS LAST`,
       [pgArr(nameKeys)])).map(r => [r.norm_name, r.full_name]) : []);
