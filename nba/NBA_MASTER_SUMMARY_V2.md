@@ -185,4 +185,67 @@
 63. **Contradictions fixed in place by this pass.** Listed in `NBA_OPEN_ITEMS.md` `§T50.11-Z2` and in §T50.9 below.
 64. **Open items.** `T50-1` … `T50-48` (`T50-1` … `T50-38` from the first intake, `T50-39` … `T50-48` added by the deep pass in `§T50.11-Z1`). The ones the sign-in touches: `T50-14`, `T50-42`.
 
+## §T50.1 — OWNER MESSAGES (verbatim; real human messages only; PT)
+*In the main transcript only THREE owner messages carry a timestamp (the file starts after the compaction). The earlier messages exist only as the compaction summary's list, quoted verbatim and marked untimed; the documents place some of them (`10-25 22:05` and `22:24 PT`: the multiplier-mapping rule; `22:55` and `23:00 PT`: the login rule). The summary is TRANSCRIPT of the build chat's own words, not of the owner's raw blocks.*
+
+**A. Timed messages (in the span).**
+- `10-25 23:45 PT` — *"Still nothing here"*
+- `10-25 23:56 PT` — *"Nothing here"*
+- `10-26 00:11 PT` — *"Besides of what you are doing I need all the transcripts since the last batch given so the documentation chat can keep working on documentation."* / *"No instructions, no text, just a zip with all transcripts since the last one given."* / *"This is the message the documentation chat gave me when I asked which was the last one:"* followed by the documentation chat's reply (T49 main `2026-10-16 20:39Z → 2026-10-17 20:17Z` = `10-16 1:39 PM PT → 10-17 1:17 PM PT`; subagents `10-10 03:31Z` payout mapping, interrupted with no report, `10-15 15:53Z` honest hit-probability audit, four full-pass audits `10-15 19:29Z → 19:48Z`; the main conversation `10-10 02:35Z → 10-16 20:39Z` never given; T48 ended `10-10 02:35Z` = `7:35 PM PT` `10-09`; "Nothing newer has come in since T49").
+
+**B. Untimed messages of `10-25` evening (from the compaction summary, in its order).**
+1. *"I still believe you are bot looking everywhere possible, use Gemini for insight, what about qualified legs in the other apps through deep backtest and just repeat them? If they are strong on the other apps, very likely they will on the not scoring apps"*
+2. *"Be sure you are treating the multipliers right, connect to the apps like you did to UD and be sure you have the right multiplier for all slip structure and per leg"*
+3. *"Run the same for fliff and betr in parallel"*
+4. *"The first thing is be sure you have the proper multipliers per leg and per slip structure, otherwise you will never be able to price it properly"*
+5. *"You need to get in the app/web, build slips and get the multipliers, as many as need to map it properly, if there is any doubt, means you don't have it properly. Once you are sure you have it right, do the guess exercise, build slips with the numbers you think is right, multiples, then go on the app and add them and check, if fails is because you still don't have it, for all remaining apps"*
+6. (Rejected the browser-extension tool use.) *"No, trough actions and workers like you have done before"*
+7. *"You may not even need the credentials, if you do we will work it out"*
+8. *"So I'll save my password and user on a secret, same way we did with underdog, if it needs a code by email or phone we create a rule to do so, for each app"*
+9. *"Both there, copy the setting from underdog, same pace, same signatures, proxy, location, device, all same proven safe configs for both. If a code is needed I'll give to you and after we setup the rule to get it saved to the system. Create the same auto renew token for both"*
+10. *"Great, no code so far"*
+11. *"No code so far, not in email, not in txt"*
+12. *"Here, still nothing"*
+
+**C. The owner's wording of `10-17 → 10-25` quoted by the ledger and the documents (AS STATED; each is in the document named).** Examples with times: `10-17 17:20 PT` the clumped-probabilities report; `17:44` *"focus on fix your issues, deeper pass"*; `17:47` header "Script error."; `10-20 20:37 PT` *"grade it manually with live results and ..."*; `10-25 23:18 PT` the Sleeper "ALT STAT" screenshot. The full list sits in `NBA_SYSTEM_DESIGN.md` `§T50.7` and the ledger headings `10-17 … 10-25`.
+
+## §T50.2 — PROCESS FACTS
+- **Main transcript (TRANSCRIPT).** Span `2026-10-26 06:37:38Z → 07:11:41Z` = `10-25 23:37 PT → 10-26 00:11 PT` (34 minutes). `316` jsonl lines; `165` text blocks; `66` tool results; `15` assistant texts.
+- **Tool calls: `67`.** Bash `26`, github_patch_file `12`, get_workflow_run_log `10`, list_workflow_runs `5`, trigger_workflow `3`, ToolSearch `3`, Read `3`, WebSearch `2`, put_file `1`, call_gemini `1`, Write `1`.
+- **User-role events: `16`.** One compaction summary, six task notifications, two stop-hook feedbacks, three timezone reminders, one safety-classifier notice, three real owner messages.
+- **Compaction.** Boundary `10-25 23:38:35 PT`; trigger automatic; `786,046 → 18,667` tokens; `34,661,247` cumulative dropped tokens; `56` s.
+- **The end.** The last user-role event (`07:11:33Z`) is a safety-classifier notice that the response was stopped; the Bash call at `07:11:41Z` has no result.
+- **Subagents (five).**
+
+| Agent | Span (PT) | Text blocks | jsonl lines | Tool calls |
+|---|---|---|---|---|
+| `abd52` | `10-20 15:08:10 → 15:10:39` | 88 | 156 | 43 (25 Read, 18 Bash) |
+| `a269a` | `10-20 21:48:14 → 21:50:34` | 72 | 99 | 35 (17 WebSearch, 18 WebFetch) |
+| `a8e07` | `10-21 19:52:32 → 19:55:48` | 70 | 127 | 34 (30 Bash, 4 Read) |
+| `aefba` | `10-21 19:52:40 → 19:55:30` | 82 | 159 | 40 (30 Bash, 9 Read, 1 Grep) |
+| `a1686` | `10-24 19:14:22 → 19:20:04` | 40 | 80 | 19 (9 Read, 9 Bash, 1 Grep) |
+
+- **Grades.** The five subagent reports and the main span are TRANSCRIPT; the `10-17 → 10-25` decisions and figures in §T50.0 groups A–H come from the compaction summary (TRANSCRIPT of the build chat's summary) and the ledger and COMPASS (AS STATED).
+
+## §T50.3 — ROUTED BY THIS PASS
+| Part | Document | Section |
+|---|---|---|
+| Strategy and portfolio decisions `10-17 → 10-25`, owner wording, online research of `10-21` | `NBA_SYSTEM_DESIGN.md` | `§T50.7`, `-Z1` … `-Z12` |
+| Workers, workflows, Sleeper / Fliff login machinery, engine and research scripts | `NBA_WORKERS.md` | `§T50.4`, `-A` … `-K`, `-Z1` … `-Z8` |
+| Tables, rules, config keys, research and simulator tables | `NBA_DATABASE.md` | `§T50.6`, `-Z1` … `-Z4` |
+| Payout laws (PrizePicks, Underdog, Sleeper, Fliff, Betr), help-centre statements | `NBA_MULTIPLIERS.md` | `§T50.3`, `-Z1` … `-Z7` |
+| Goblin / demon price claims, Less pricing, final-HP cell ledger | `NBA_GOBLIN_DEMON.md` | `§T50.2`, `-Z1` … `-Z3` |
+| Calibration, board profiles, derived props, audit F1–F5 | `NBA_BASELINE_CALIBRATION.md` | `§T50.5`, `-Z1` … `-Z4` |
+| Architecture sub-sections | `NBA_SYSTEM_ARCHITECTURE.md` | `§T50.8`, `-Z1`, `-Z2` |
+| Scoring timeline T27–T49 | `NBA_FINAL_SCORING_CALIBRATION.md` | `§T50.12` |
+| Open items `T50-1` … `T50-48`, T49 items checked, contradictions | `NBA_OPEN_ITEMS.md` and `NBA_OPEN_ITEMS_V2.md` | `§T50.11`, `-Z1`, `-Z2`; V2 sections A–C |
+| Recipe steps and glossary terms | `NBA_RECIPE.md` and `NBA_GLOSSARY.md` | steps 114–134; about `500` term rows appended |
+
+## §T50.4 — THE FIVE SUBAGENT TRANSCRIPTS (TRANSCRIPT; times PT)
+1. **`abd52` — `10-20 15:08 → 15:10`.** *Asked:* read-only inventory of what the project had already tested and concluded about PrizePicks slip strategies and payouts (strategy ledger sections 29–31, multipliers, payout findings, goblin/demon, COMPASS, certification ledger, `build_slip_engine.py`), report ~1,200–1,800 words so an exhaustive new search does not repeat work. *Found:* grader v3 (`10-18`): all-standard slips pay the base table exactly (Power 3 / 6 / 10 / 20 / 37.5; Flex 2-pick 2/0.5 … 6-pick 25/2/0.4; `64/64` quotes on the `10-20` board); Power with goblins/demons `grid_down(b_n × fp^a_n)` fitted on `393` quotes (`277` NBA, `116` WNBA; mean `0.95` of the quote); Flex with alternates uses the lower envelope of `917` quote tiers plus `40` all-demon probes; same-game cuts only on all-standard 3- and 4-Flex (3/0.75, 5/1.25); six strategies staked on paper (steals / defensive Regular family plus one points strategy), demon families off. Detail: `NBA_MULTIPLIERS.md` `§T50.3-Z1`, `NBA_GOBLIN_DEMON.md` `§T50.2`.
+2. **`a269a` — `10-20 21:48 → 21:50`.** *Asked:* sourced web research (search plus fetch, under ~900 words, no files) on exposure / Kelly for repeated legs, leg correlation, PrizePicks / Underdog rules for correlated picks, minutes risk, and shrinking model probabilities toward the market. *Found:* no standard max-exposure number (Stokastic, FanGraphs, Footballguys give examples only); simultaneous Kelly (MacLean, Thorp, Ziemba): half Kelly keeps `75%` of the growth rate, 2x Kelly drives growth to zero, edge-estimate errors cost about `20` times covariance errors; no published NBA player-prop correlation coefficients; same-game picks are priced lower and DNPs shrink the lineup; the agent's own (untested) rules: cap a leg at about `30–35%` of daily slips, at most `2` legs per game per slip, stake `10–25%` of Kelly. Detail: `NBA_SYSTEM_DESIGN.md` `§T50.7-Z4`; open item `T50-43`.
+3. **`a8e07` — `10-21 19:52 → 19:55`.** *Asked:* read-only map of every place the Underdog payout is computed (files, lines, table values, how the per-pick modifier m is applied, where values come from, prediction-market legs), given the proven facts (Standard 3.5 / 6.5 / 12 / 20 / 35; Flex 4-pick `7.2` / `1.4`). *Found:* every Underdog path used 4-pick Flex `6.0` and none floored to two decimals; no path priced prediction-market picks differently; only the probe script had `7.2`; the live engine pays a Flex left with two picks as a 2-pick Standard and refunds below two. The paths were unified on `10-21` (four files now `7.2`). Detail: `NBA_MULTIPLIERS.md` `§T50.3-Z4`; `T50-5`, `T50-9`, `T50-40`.
+4. **`aefba` — `10-21 19:52 → 19:55`.** *Asked:* the same map for PrizePicks, Sleeper and Fliff payouts (tables, goblin / demon effect, same-game rule, DB tunables). *Found:* the PrizePicks rules live in `nba_config.pp_slip_rules`, not `classification_config`; the listed same-game over-estimates (4-Flex `1.20x`, 3-Flex one miss `1.33x`, 3-Power `1.043x`) were measured with the grader's same-game rule switched off (`research_payout_proof.py` lines `51–57` build legs with no `event_id`), and `6/5 = 1.20`, `1/0.75 = 1.33` equal what `flex_same_game_v3` pays with the flag on; no same-game Power rule exists anywhere. Detail: `NBA_MULTIPLIERS.md` `§T50.3-Z3`; `T50-4`.
+5. **`a1686` — `10-24 19:14 → 19:20`.** *Asked:* audit the board-profile research code (`research_board_profiles_wf.py`, `research_board_shrink.py`, `research_board_matrix.py` and support modules) for bugs or design flaws that bias the tests AGAINST profile-specific choices; do not edit or run anything. *Found:* five problems, ranked: (1) HIGH, the Benjamini-Hochberg step cannot flag any profile with so few null draws (`100` / `60` / `30` nulls, about `424` profiles; it needs about `43` / `70` / `136` profiles at the floor p); (2) HIGH, partial pooling can only reorder the global top `300` selectors (the rest set to minus infinity); and three more (F3–F5; detail in `NBA_BASELINE_CALIBRATION.md` `§T50.5-Z1`). Index alignment, walk-forward timing and the season-agnostic wiring checked out. Open items `T50-29`, `T50-45`.
+
 <!-- V2-NEXT-PART -->
