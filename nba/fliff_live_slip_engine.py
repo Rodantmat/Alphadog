@@ -36,6 +36,12 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_score.fliff_live_slips (
 STRATEGY = "F_T1_2max"
 
 
+def floor2(x):
+    """Fliff shows (and pays) the Max multiplier cut to 2 decimals: owner's entry 2026-10-26 14:55 PT, 1.75 x 1.85 = 3.2375 -> 3.23x,
+    $2 -> $6.46"""
+    return int(x * 100 + 1e-6) / 100.0
+
+
 def board(conn, day):
     last = conn.execute("SELECT max(snapshot_ts) FROM nba_market.fliff_pickem_board WHERE game_date = %s", (day,)).fetchone()[0]
     if last is None:
