@@ -63,9 +63,9 @@ def main():
         classes |= {c for c in CLS.findall(js) if KEEP.search(c)}
         n = 0
         for m in CTX.finditer(js):
-            if n >= 12:
+            if n >= 20:
                 break
-            ctx.append((u.rsplit("/", 1)[-1], m.group(0), js[max(0, m.start() - 600):m.start() + 900].replace("\n", " ")))
+            ctx.append((u.rsplit("/", 1)[-1], m.group(0), SECRET.sub(lambda g: g.group(1) + "<hidden>" + g.group(3), js[max(0, m.start() - 900):m.start() + 1200]).replace("\n", " ")))
             n += 1
         time.sleep(0.1)
     print(f"bundle: {len(seen)} files, {len(ctx)} token-code mentions, {len(classes)} signed-in-looking classes", flush=True)
