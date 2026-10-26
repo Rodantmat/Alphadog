@@ -299,6 +299,28 @@ def login(conn, sb, seen):
     # a code step = the page now says so, or the password field is gone while a code field is showing (Sleeper keeps a hidden
     # 'login-otp' field in its login form from the start - its presence alone is not a code request)
     pw_gone = typed_ident and not any(x["type"] == "password" and x["auto"] == "current-password" for x in f["inputs"])
+    if pw_gone and any(x["auto"] == "one-time-code" for x in f["inputs"]):
+        t = click_text(sb, r"^((log ?in|sign ?in) with (a )?password|use (a |my )?password.*|.*password instead|enter (your )?password)$")
+        if t:                                  # the password route is preferred (the unattended renew can use it)
+            print(f"  code step offers a password route - clicked {t!r}", flush=True)
+            time.sleep(5)
+            f = form(sb, "password route")
+            pwd = [x for x in f["inputs"] if x["type"] == "password" and not x["filled"]]
+            if pwd:
+                human_type(sb, pwd[0]["i"], pw, enter=True)
+                print("  typed the password and submitted the form", flush=True)
+                time.sleep(7)
+                requests_seen(sb, seen)
+                f = form(sb, "after password")
+                low = (f.get("text") or "").lower()
+                pw_gone = False
+        else:
+            t = click_text(sb, r"^(send( (a |the )?code)?|get( a)? code|text me.*|email me.*)$")
+            if t:
+                print(f"  clicked {t!r} to have the code sent", flush=True)
+                time.sleep(5)
+                f = form(sb, "code requested")
+                low = (f.get("text") or "").lower()
     if re.search(r"(verification code|enter (the )?code|one-time|we (sent|texted|emailed)|6-digit|check your (phone|email))", low) or \
             (pw_gone and any(x["auto"] == "one-time-code" or x["maxlen"] == 1 for x in f["inputs"])):
         if not wait_code(conn, sb, seen):
