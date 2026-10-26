@@ -544,6 +544,20 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    (sportsbook prices, 9.0% margin ~ Pick'Em Max): UD-T legs +0.7..+6.5% per leg; single best leg a slate +7..+13% both seasons; UD-T2
    parlay 4-5p +68..+83%. CAVEATS: history lines = consensus main line, Sleeper / Fliff multipliers from the feed law, not the apps'
    own boards; the real Sleeper board (5 slates) is too small to judge (2-5 slips per structure). Nothing goes to the slip screen.
+   (8) 2026-10-26 - SLEEPER MAPPED FROM SLEEPER ITSELF. The owner signed in on his own browser (Sleeper's hCaptcha challenges the
+   worker even when he solves it - no stealth used) and handed over the session: nba_config.external_credentials 'sleeper_token'
+   (JWT, sent as a plain 'authorization' header; valid to 2027-10; the web app keeps it in localStorage 'token' + 'user_id').
+   Sleeper Picks is app-only (sleeper.com/picks = landing page); its GraphQL API describes itself (snake_case introspection; 245
+   queries / 356 mutations): entries are 'parlays' (placing = mutation create_parlay - NEVER called), my_parlays returns each entry's
+   legs (Line.payout_multiplier), max_multiplier and Flex tiers possible_multipliers {lost0, lost1, lost2}. Read-only probes
+   probe_sleeper_parlays (owner's 200 entries 2026-07-02..10-25, mostly MLB; details kept ONLY in the private credential
+   'sleeper_probe_out', never in the public log). MAX (all legs in different games): 2 = product, 3 = product x 1.0797, 4 = x 1.102,
+   5 = x 1.174 (two entries, 1.1735 / 1.174), 6 = x 1.06-1.12 observed but every 6-pick seen had same-game legs; same-game pairs
+   are sometimes priced down 9-11% (P24 / P28), sometimes not (P30) - depends on the pair (side / team), not mapped yet. FLEX:
+   tiers are EV-matched at Sleeper's own implied chances (q = 1/m): 3-pick EV 1.000 (15 entries, 0.998-1.008), 4-pick 1.065-1.083,
+   5-pick 1.06-1.10, 6-pick 1.06-1.075 (same-game sets lower / higher); tier split T1/T0 ~ 0.31 (3), 0.25 (4), 0.21-0.26 + T2/T0
+   0.045-0.057 (5), 0.11 + 0.02 (6) - exact split formula NOT yet fitted. Next: fit the split + the same-game rule on all entries
+   (research script on the private data), then guess-and-check on new entries the owner makes.
 
 ---
 
