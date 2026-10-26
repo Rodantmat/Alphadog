@@ -22,6 +22,8 @@ PROXY = os.environ.get("PROXY_URL", "").strip() or None
 CTX = re.compile(r"(\"refresh_token\"|grant_type:\"refresh_token\"|x-dd-refresh-token|coreServerClientId[=:]|coreServerBaseUrl|coreServer[A-Za-z]*Url|"
                  r"toValidUserFkey[=(]|fc_mobile_api_private|class [A-Za-z_$]+ extends [A-Za-z_$.]+\{static CLASS_NAME=\"FCM__Skipper_Get_Settled_Entries_Report__Request|"
                  r"FCM__Skipper_Get_Settled_Entries_Report__Request|FCM__Skipper_Get_Active_Entries_Report__Request|FCM__Get_Picks_Report__Request)")
+if os.environ.get("FL_CTX"):                       # 2026-10-26: a narrower public-code search (e.g. the Pick'Em quote request's shape)
+    CTX = re.compile(os.environ["FL_CTX"])
 SECRET = re.compile(r"(?i)(secret[\"']?\s*[:=]\s*[\"'])([^\"']{6,})([\"'])")
 CLS = re.compile(r"FCM__[A-Za-z0-9_]+__(?:Request|Response)")
 KEEP = re.compile(r"(Token|Refresh|Login|Auth|Ticket|History|Activity|Profile|Pick|Skipper|Parlay|Slip|Account|Wager|Bet)", re.I)
