@@ -339,6 +339,19 @@ def login(conn, sb, seen):
         f = form(sb, f"after step {step + 1}")
         if pwd:
             break
+        if typed_ident and not any(x["type"] == "password" for x in f["inputs"]) and not re.search(
+                r"(we sent|sent (a|you)|enter (the )?code|verification|check your)", (f.get("text") or "").lower()):
+            # Enter did not move the form on: press the form's own submit button (the one inside the login form, not the header)
+            t = sb.execute_script(r"""const i = [...document.querySelectorAll('input[autocomplete=username]')].pop();
+              const fm = i && (i.closest('form') || i.parentElement.parentElement.parentElement);
+              if (!fm) return null;
+              const b = [...fm.querySelectorAll('button,[role=button],input[type=submit]')].filter(e => !e.disabled).pop();
+              if (!b) return null; b.click(); return (b.innerText || b.value || b.getAttribute('aria-label') || '<icon>').trim().slice(0, 25);""")
+            print(f"  form did not advance - pressed the login form's own button {_scrub(t) if t else None!r}", flush=True)
+            if t:
+                time.sleep(7)
+                requests_seen(sb, seen)
+                f = form(sb, f"after form button {step + 1}")
     low = (f.get("text") or "").lower()
     # a code step = the page now says so, or the password field is gone while a code field is showing (Sleeper keeps a hidden
     # 'login-otp' field in its login form from the start - its presence alone is not a code request)
