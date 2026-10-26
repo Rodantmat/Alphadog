@@ -84,7 +84,7 @@ jobs:
           [ -n "$URL" ] || { echo "tunnel did not come up"; exit 1; }
           echo "::add-mask::$URL"
           VAL="{\"url\": \"$URL/vnc.html?autoconnect=1&resize=scale\", \"password\": \"$PW\"}"
-          psql "$DATABASE_URL" -q -v k="${APP}_live_view" -v v="$VAL" <<'SQL'
+          psql "$DATABASE_URL" -q -v k="${APP}_live_view_${GITHUB_RUN_ID}" -v v="$VAL" <<'SQL'
           DELETE FROM nba_config.external_credentials WHERE credential_key = :'k';
           INSERT INTO nba_config.external_credentials (credential_key, credential_value_encrypted, updated_at) VALUES (:'k', :'v', now());
           SQL
