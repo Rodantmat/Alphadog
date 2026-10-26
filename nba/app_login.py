@@ -247,6 +247,8 @@ def snapshot(sb):
 def signed_in(st):
     """the app keeps its signed-in token in localStorage or a cookie - True when a token-shaped entry is present"""
     for k, v in (st.get("localStorage") or {}).items():
+        if NOT_AUTH.search(k):
+            continue
         if TOKENISH.search(k) and v and len(str(v)) > 20:
             return True
         if isinstance(v, str) and re.search(r'"(auth_token|token|access_token|refresh_token)"\s*:\s*"[^"]{20,}', v):
