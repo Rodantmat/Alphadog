@@ -256,10 +256,13 @@ def login(conn, sb, seen):
         print(f"  opened the sign-in form via {t!r}", flush=True)
         time.sleep(5)
         f = form(sb, "sign-in form")
+    typed_ident = False
     for step in range(4):                      # identifier -> (continue) -> password -> submit, whatever order the app uses
-        ident = [x for x in f["inputs"] if x["type"] in ("email", "text", "tel") and not x["filled"]
-                 and re.search(r"(mail|phone|user|login|account|identifier)", x["label"] + x["auto"], re.I)]
         pwd = [x for x in f["inputs"] if x["type"] == "password" and not x["filled"]]
+        if typed_ident and not pwd and any(x["auto"] == "one-time-code" for x in f["inputs"]):
+            break                              # the app answered the login with a code step (Sleeper: login -> code), no password
+        ident = [] if typed_ident else [x for x in f["inputs"] if x["type"] in ("email", "text", "tel") and not x["filled"]
+                                         and re.search(r"(mail|phone|user|login|account|identifier)", x["label"] + x["auto"], re.I)]
         if ident and not pwd:                  # a two-step form (Sleeper): the login first, Enter, then the password page
             human_type(sb, ident[0]["i"], email, enter=True)
             print(f"  typed the login into field {ident[0]['label']!r} and pressed Enter", flush=True)
