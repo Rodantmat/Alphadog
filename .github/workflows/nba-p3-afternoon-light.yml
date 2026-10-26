@@ -860,6 +860,7 @@ jobs:
           [ "${{ steps.soft_betr.outcome }}" = "failure" ] && L="$L betr-dispatch"
           [ "${{ steps.soft_slipq.outcome }}" = "failure" ] && L="$L pp-slip-quotes-dispatch"
           [ "${{ steps.soft_udpick.outcome }}" = "failure" ] && L="$L underdog-pick"
+          [ "${{ steps.soft_slpick.outcome }}" = "failure" ] && L="$L sleeper-pick"
           [ "${{ steps.soft_paper_al.outcome }}" = "failure" ] && L="$L paper-tracker"
           [ "${{ steps.soft_psl.outcome }}" = "failure" ] && L="$L price-shop-ledger"
           [ "${{ steps.soft_mahp.outcome }}" = "failure" ] && L="$L market-anchored-hp"
