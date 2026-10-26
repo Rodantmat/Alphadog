@@ -117,9 +117,13 @@ def nth_input(sb, i):
       return [...document.querySelectorAll('input,textarea')].filter(vis)[arguments[0]];""", i)
 
 
-def human_type(sb, i, text):
+def human_type(sb, i, text, enter=False):
     el = nth_input(sb, i)
-    el.click(); pause(0.3, 0.8)
+    try:
+        el.click()
+    except Exception:  # noqa: BLE001 - a floating label / overlay takes the click (Sleeper's password field): focus it instead
+        sb.execute_script("arguments[0].scrollIntoView({block: 'center'}); arguments[0].focus();", el)
+    pause(0.3, 0.8)
     try:
         el.clear()
     except Exception:  # noqa: BLE001
@@ -128,6 +132,8 @@ def human_type(sb, i, text):
         el.send_keys(ch)
         time.sleep(random.uniform(0.05, 0.19))
     pause()
+    if enter:                                  # submit the form the field belongs to (a header 'LOG IN' link is not the form)
+        el.send_keys("\n")
 
 
 def click_text(sb, pattern):
