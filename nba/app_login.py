@@ -100,8 +100,10 @@ def form(sb, tag):
         print(f"  [{tag}] form read failed {type(exc).__name__}", flush=True); return {"inputs": [], "buttons": [], "text": "", "url": ""}
     # PUBLIC LOG (the repo is public): no page text and no free button text is printed - only the app's own control words and
     # the tell-tale words found on the page (a name, an e-mail or a balance can never reach the log)
-    words = re.compile(r"^(log ?in|sign ?in|login|sign ?up|register|continue|next|submit|verify|confirm|resend.*|send code|"
-                       r"use password|forgot password\??|email|phone|password|picks|lobby|cancel|close|back|allow|accept)$", re.I)
+    words = re.compile(r"^(log ?in|sign ?in|login|sign ?up|register|continue|next|submit|verify|confirm|resend.*|send( (a |the )?code)?|"
+                       r"get( a)? code|text me.*|email me.*|call me.*|(log ?in|sign ?in) with (a )?(password|code|email|phone|text)|"
+                       r"use (a |my )?(password|code|email|phone).*|.*password instead|.*code instead|forgot password\??|email|phone|"
+                       r"password|picks|lobby|cancel|close|back|allow|accept|ok|got it|skip|not now|later)$", re.I)
     tells = [w for w in ("verification code", "enter the code", "enter code", "one-time", "we sent", "texted", "check your email",
                          "check your phone", "incorrect", "invalid", "too many", "captcha", "not available in your", "location",
                          "verify it's you", "password") if w in (f.get("text") or "").lower()]
