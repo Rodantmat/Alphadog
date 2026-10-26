@@ -117,6 +117,8 @@ def form(sb, tag):
           f"\n     tells={tells} captcha={f.get('hc')} page={f.get('n')} elements / {f.get('tl')} text chars", flush=True)
     if PRE[0]:                                 # before sign-in the form holds no personal data: list every button (scrubbed)
         print(f"     all buttons={[_scrub(b)[:25] for b in f['buttons']]}", flush=True)
+        if len(f.get("text") or "") < 400:     # a near-empty signed-out page (Fliff's location gate): show what it says (scrubbed)
+            print(f"     page text={_scrub(f.get('text') or '')!r}", flush=True)
     return f
 
 
