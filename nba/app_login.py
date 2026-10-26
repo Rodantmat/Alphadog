@@ -81,7 +81,7 @@ def setup_browser(sb):
 
 
 FORM_JS = r"""
-const vis = e => { const r = e.getBoundingClientRect(); const s = getComputedStyle(e);
+const vis = e => { if (e.checkVisibility && !e.checkVisibility({checkOpacity: true, checkVisibilityCSS: true})) return false; if (e.closest('[aria-hidden=true],[inert]')) return false; const r = e.getBoundingClientRect(); const s = getComputedStyle(e);
   return r.width > 2 && r.height > 2 && s.visibility !== 'hidden' && s.display !== 'none'; };
 const lab = e => (e.getAttribute('aria-label') || e.getAttribute('placeholder') || e.getAttribute('name') || e.id || '').slice(0, 40);
 const inputs = [...document.querySelectorAll('input,textarea')].filter(vis).map((e, i) => ({i, type: e.type, label: lab(e),
