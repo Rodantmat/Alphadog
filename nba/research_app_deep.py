@@ -335,6 +335,10 @@ def main():
         f, c = fams[r]
         n, st_ = ST[sidx[r]]
         return fam_name(f, c, n, st_)
+    if os.environ.get("DP_PICK"):
+        pick_sets(P, nm, A, Bm, C, H, seas, hist, la, lb_)
+        log("done")
+        return
     na, mua, _, lba = AF.lb_stats(P[:, A]); nb, mub, _, lbb = AF.lb_stats(P[:, Bm]); nc, muc, _, _ = AF.lb_stats(P[:, C])
     robust = (na >= AF.MINN) & (nb >= AF.MINN) & (lba > 0) & (lbb > 0)
     weak = np.where(robust, np.minimum(mua, mub), -np.inf)
