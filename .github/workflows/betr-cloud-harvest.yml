@@ -95,7 +95,7 @@ jobs:
           set +e
           rc=1; pause=20
           for t in a b c; do
-            BETR_SESSION_ID="betr${GITHUB_RUN_ID}${t}" python nba/betr_harvest_cloud.py; rc=$?
+            python nba/betr_board_direct.py; rc=$?
             if [ $rc -eq 0 ] || [ $rc -eq 3 ] || [ "$t" = "c" ]; then break; fi
             echo "::warning::harvest attempt ${t} exited ${rc} - retrying on a fresh proxy session"
             sleep $(( pause + RANDOM % 20 )); pause=$(( pause * 2 ))
