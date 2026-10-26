@@ -264,12 +264,13 @@ def login(conn, sb, seen):
             human_type(sb, ident[0]["i"], email)
             print(f"  typed the login into field {ident[0]['label']!r}", flush=True)
         if pwd:
-            human_type(sb, pwd[0]["i"], pw)
-            print("  typed the password", flush=True)
+            human_type(sb, pwd[0]["i"], pw, enter=True)
+            print("  typed the password and submitted the form", flush=True)
         if not ident and not pwd:
             break
-        t = click_text(sb, r"^(log ?in|sign ?in|login|continue|next|submit)$")
-        print(f"  clicked {t!r}", flush=True)
+        if not pwd:
+            t = click_text(sb, r"^(continue|next|submit|log ?in|sign ?in|login)$")
+            print(f"  clicked {t!r}", flush=True)
         time.sleep(7)
         requests_seen(sb, seen)
         f = form(sb, f"after step {step + 1}")
