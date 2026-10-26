@@ -407,6 +407,17 @@ jobs:
           SL_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
         run: python -u nba/sleeper_live_slip_engine.py
 
+      # FLIFF GRADE (2026-10-26): every slate before today with an ungraded Fliff slip - Max pays the product of the two multipliers cut
+      # to 2 decimals (Fliff's own screen, owner's entry 2026-10-26); a void leaves < 2 picks = refund. Soft.
+      - name: Fliff grade
+        id: soft_flgrade
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FL_MODE: "grade"
+          FL_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
+        run: python -u nba/fliff_live_slip_engine.py
+
       # FORWARD PAPER TRACKER GRADE (2026-10-20): every ungraded paper slip of a finished slate (AL_* goblin / demon Less, SR_*
       # standard Flex) from the box scores this run loaded - waits while a game is not final or a team's box score is missing.
       # Paper only: continue-on-error, never disturbs the grades above.
