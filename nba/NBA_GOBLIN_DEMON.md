@@ -1969,7 +1969,6 @@ reproduce from `sim_slip`", never "the strategy works."***
 - 🔑 **Not derivable:** dunks and two-player combos. Two-player combos and quarters are graded from 10-22 (`grade_board_outcomes.py`).
 - 🔑 **Anchor status.** The market anchor is UNCERTIFIED against the 5-point sub-group bar (DraftKings only: worst -7.4 / +7.0 points on Under assists / Under threes; log-loss 0.633 -> 0.617 and 0.667 -> 0.649); it does not change a goblin or demon price, which comes from the rung ladder.
 
-<!-- T50 END MARKER -->
 
 ## 🆕 §T49.2b — **`T49` TRANSCRIPT BATCH: DEMON AND GOBLIN FACTS FROM THE `10-15` FULL-PASS AGENTS AND THE `10-16` TRANSCRIPT** *(qualifies `§T49.2`)*
 
