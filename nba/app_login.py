@@ -429,7 +429,9 @@ def main():
                 if not ok:
                     if MODE == "refresh" and os.environ.get("GITHUB_EVENT_NAME") == "schedule" and not os.environ.get(f"{APP.upper()}_PASSWORD"):
                         print("LOGIN_FAIL|signed out and no password secret", flush=True); sys.exit(1)
-                    if login(conn, sb, seen):
+                    signed = login(conn, sb, seen)
+                    PRE[0] = False
+                    if signed:
                         H.open_alive(sb, CFG["picks"], "after login")
                         time.sleep(8)
                         requests_seen(sb, seen)
