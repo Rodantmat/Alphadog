@@ -413,7 +413,7 @@ inning pills**.*
 | **Underdog** | ✅ **ours** *(scraper v3)* | 🔴 **two blind probe rounds TRIPPED CLOUDFLARE** — *"never burst-probe it"* — **and the owner's own *"copy as curl"* capture exposed the lobby-content API.** **Result: 854 lines / 100 players** · **0 of the twelve** |
 | **Fliff** | ⚠ **ParlayAPI** *(not ours, as of T12)* | **the web app WAS reverse-engineered but is UNFINISHED** — see the owner action in `NBA_OPEN_ITEMS.md` · **0 of the twelve** · 🔴 **AND READ THE NARROWING BELOW BEFORE USING THIS ROW** |
 
-> ### 🔴 NARROWING, added 2026-09-21 by §T12.5c — **FLIFF IS NOT A PICK'EM BOARD, and my own framing overstated the stakes**
+> ### 🔴 NARROWING, added 2026-09-21 by §T12.5c — **FLIFF IS NOT A PICK'EM BOARD, and my own framing overstated the stakes** ~~Fliff is not a pick'em board~~ *(superseded by §T50.8 sub-section 6, 2026-10-21/25: Fliff has a Pick'Em product with a public "skipper" feed and public per-selection multipliers; the sportsbook feed is still what the scrapers read)*
 > *The answer to owner segment 47 was in this transcript all along, at segment 48, and the pass that
 > wrote the row above did not read it. **Rule 6, self-applied.***
 >
