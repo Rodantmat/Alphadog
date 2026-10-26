@@ -377,6 +377,32 @@ def main():
     print("\n" + "=" * 170 + "\nSUMMARY (structure: robust | walk-forward top-1 / top-5 | best robust)")
     for t, nr, a1, a5, b in summ:
         print(f"  {t}: {nr} robust | WF {100 * a1:+.0f}% / {100 * a5:+.0f}% | {b}")
+    # ---------------- by line set (the ladder): every pool / level on its own, honest both ways ----------------
+    if os.environ.get("DP_LADDER") == "1":
+        print("\n" + "=" * 170 + "\nBY LINE SET (R standard, F cheaper rungs, B pricier rungs; single levels; honest: top 5 chosen on one season -> the other)")
+        lset = np.array([("lvl " + c[0]) if f == "B2" else ("DOC" if f == "DOC" else c[0]) for f, c in fams])
+        for j in scope_all():
+            n, st_ = ST[j]
+            print(f"\n  {AF.tag(n, st_)}")
+            for ls in sorted(set(lset)):
+                rr = np.where((sidx == j) & (lset == ls))[0]
+                if not len(rr):
+                    continue
+                outs = []
+                for (TRm, TEm) in ((A, Bm), (Bm, A)):
+                    ntr, _, _, lbtr = AF.lb_stats(P[rr][:, TRm]); nte, mute, _, _ = AF.lb_stats(P[rr][:, TEm])
+                    ok = (ntr >= AF.MINN) & (nte >= 10)
+                    top = [i for i in np.argsort(-np.where(ok, lbtr, -np.inf))[:5] if ok[i]]
+                    outs.append(np.nanmean(mute[top]) if top else np.nan)
+                rb = rr[robust[rr]]
+                lose = ""
+                if len(rb):
+                    b = rb[np.argmax(weak[rb])]
+                    x = P[b][H]; pl_ = x[~np.isnan(x)]
+                    lose = (f" | best robust {nm(b)} {100 * mua[b]:+.0f}% / {100 * mub[b]:+.0f}%, losing slips {100 * np.mean(pl_ < 0):.0f}%, "
+                            f"dd {AF.max_dd(x):.1f}u, this season {('%+.0f%% (%dd)' % (100 * muc[b], nc[b])) if nc[b] else 'none'}")
+                print(f"    {ls:<7} {len(rr):5d} strategies, robust {len(rb):4d} | honest top-5 {la}->{lb_} {100 * outs[0]:+.0f}%, "
+                      f"{lb_}->{la} {100 * outs[1]:+.0f}%{lose}")
     # ---------------- this-season diagnosis ----------------
     print("\n" + "=" * 170 + "\nTHIS-SEASON DIAGNOSIS")
     lr = np.array([(1 if s == "2026-27" else 0, p, h) for s, p, h, t in leg_rec], dtype=float)
