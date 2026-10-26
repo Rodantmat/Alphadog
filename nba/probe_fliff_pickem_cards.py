@@ -38,7 +38,7 @@ def main():
     for pk in packs:
         print("\nPACK (no cards):", json.dumps({k: v for k, v in pk.items() if k != "cards"}, default=str)[:1500], flush=True)
         for cd in pk.get("cards") or []:
-            print("\nCARD:", json.dumps(cd, default=str)[:3000], flush=True)
+            print("\nCARD:", json.dumps({k: v for k, v in cd.items() if k not in ("game_render_data", "inplay_game_progress")}, default=str)[:3500], flush=True)
             n += 1
             if n >= 3:
                 break
