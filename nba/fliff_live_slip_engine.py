@@ -101,7 +101,7 @@ def pick(conn, day):
         return
     lj = [{"player": l["player"], "player_id": l["pid"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": l["m"],
            "p": round(l["p"], 4), "team": l["team"], "event_id": l["game"], "matchup": l["match"], "tier": "R", "ud_line": l["ud_line"]} for l in s]
-    mult = s[0]["m"] * s[1]["m"]
+    mult = floor2(s[0]["m"] * s[1]["m"])
     conn.execute("""INSERT INTO nba_score.fliff_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
                     VALUES (%s, %s, 2, 'max', 1, %s, 1, 'live', %s, %s)
                     ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, model_multiplier = EXCLUDED.model_multiplier,
