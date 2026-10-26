@@ -94,6 +94,10 @@ def main():
     fc.ping()
     host = fc.ping_data.get("skipper_public_feed_endpoint")
     print("\nskipper host:", host, "| ping keys:", sorted(k for k in fc.ping_data if "endpoint" in k), flush=True)
+    for lab, obj in (("GetContest bare", {"__object_class_name": "FCM__Skipper_GetContest__Request"}),
+                     ("GetContest v{}", {"__object_class_name": "FCM__Skipper_GetContest__Request", "variables": {}})):
+        st, t = raw(fc, host, obj)
+        print(f"\nCONTEST {lab}: HTTP {st} {len(t)} chars\n  {t[:6000]}", flush=True)
     st, t = raw(fc, host, {"__object_class_name": "FCM__Skipper_GetLeagues__Request"})
     j = json.loads(t) if st == 200 else {}
     nba = None
