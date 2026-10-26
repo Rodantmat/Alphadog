@@ -49,7 +49,8 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 >
 > | if you need… | go to |
 > |---|---|
-> | 🔴🔴🔴 **whether the model actually beats the book** *(`1.08 M` legs)* | **`§0.14-T23`** ⚠ *newest; read first* |
+> | 🆕🔑 **the scoring and calibration state on `2026-10-26` — board-centred `final_hp` (one number, two layers, `2026-10-23 00:52 PT`), grader v3, the `0.95` quote gate, the market anchor, `375` profiles, `83` checks `0` FAIL — and a map of where `T27`–`T49` live** | **`§T50.12`** ⚠ *newest; placed in the late `🆕` block directly before `§T26.11`* |
+> | 🔴🔴🔴 **whether the model actually beats the book** *(`1.08 M` legs)* | **`§0.14-T23`** ⚠ *newest of the old block; read `§T50.12` first for anything after `2026-10-17`* |
 > | 🔴🔴🔴 **WHICH THRESHOLD AND PICK COUNT ACTUALLY PAY** — the full `3 × 5 × 2` `ROI` grid | **`§0.16-F2`** ⚠ *newest; the numbers `§0.14-T23`'s verdict was drawn from* |
 > | ✅✅ **is the backtest edge just stale pre-move lines?** — the leakage control, and it holds | **`§0.16-F2` §3** |
 > | 🔴 **the only LOSING cell in the grid** *(2-pick, 2024-25, thresholds `1.20`/`1.30`)* | **`§0.16-F2` §2** |
