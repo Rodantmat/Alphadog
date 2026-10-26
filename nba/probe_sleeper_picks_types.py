@@ -39,7 +39,7 @@ def main():
         tok = c.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'sleeper_token'").fetchone()[0].strip()
     qroot = post(tok, "query { __schema { query_type { name } } }", {})["data"]["__schema"]["query_type"]["name"]
     root = post(tok, TQ, {"n": qroot})["data"]["__type"]
-    cache = {}
+    cache, done = {}, set()
 
     def fields(name):
         if name not in cache:
