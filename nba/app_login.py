@@ -265,9 +265,11 @@ def login(conn, sb, seen):
                                          and re.search(r"(mail|phone|user|login|account|identifier)", x["label"] + x["auto"], re.I)]
         if ident and not pwd:                  # a two-step form (Sleeper): the login first, Enter, then the password page
             human_type(sb, ident[0]["i"], email, enter=True)
+            typed_ident = True
             print(f"  typed the login into field {ident[0]['label']!r} and pressed Enter", flush=True)
         elif ident:
             human_type(sb, ident[0]["i"], email)
+            typed_ident = True
             print(f"  typed the login into field {ident[0]['label']!r}", flush=True)
         if pwd:
             try:
