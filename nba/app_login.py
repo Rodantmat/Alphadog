@@ -260,17 +260,26 @@ def login(conn, sb, seen):
         ident = [x for x in f["inputs"] if x["type"] in ("email", "text", "tel") and not x["filled"]
                  and re.search(r"(mail|phone|user|login|account|identifier)", x["label"] + x["auto"], re.I)]
         pwd = [x for x in f["inputs"] if x["type"] == "password" and not x["filled"]]
-        if ident:
+        if ident and not pwd:                  # a two-step form (Sleeper): the login first, Enter, then the password page
+            human_type(sb, ident[0]["i"], email, enter=True)
+            print(f"  typed the login into field {ident[0]['label']!r} and pressed Enter", flush=True)
+        elif ident:
             human_type(sb, ident[0]["i"], email)
             print(f"  typed the login into field {ident[0]['label']!r}", flush=True)
         if pwd:
-            human_type(sb, pwd[0]["i"], pw, enter=True)
-            print("  typed the password and submitted the form", flush=True)
+            try:
+                human_type(sb, pwd[0]["i"], pw, enter=True)
+                print("  typed the password and submitted the form", flush=True)
+            except Exception as exc:  # noqa: BLE001 - the password page is not up yet: submit the login step and look again
+                print(f"  password field not ready ({type(exc).__name__}) - submitting the login step first", flush=True)
+                pwd = []
+                if ident:
+                    try:
+                        nth_input(sb, ident[0]["i"]).send_keys("\n")
+                    except Exception:  # noqa: BLE001
+                        click_text(sb, r"^(continue|next)$")
         if not ident and not pwd:
             break
-        if not pwd:
-            t = click_text(sb, r"^(continue|next|submit|log ?in|sign ?in|login)$")
-            print(f"  clicked {t!r}", flush=True)
         time.sleep(7)
         requests_seen(sb, seen)
         f = form(sb, f"after step {step + 1}")
