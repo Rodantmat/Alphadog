@@ -47,6 +47,7 @@ CFG = {
               "origin": "https://sports.getfliff.com", "sid": "fliffauth1"},
 }[APP]
 TOKENISH = re.compile(r"(token|auth|session|jwt|bearer|refresh)", re.I)
+PRE = [True]                                   # True until the sign-in steps end
 
 
 def pause(a=0.6, b=1.8):
