@@ -395,6 +395,18 @@ jobs:
           UDL_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
         run: python -u nba/ud_live_slip_engine.py
 
+      # SLEEPER GRADE (2026-10-26): every slate before today with ungraded Sleeper slips, by Sleeper's rules (void drops the pick;
+      # < 2 live picks or one team = refund; Max = product x size bonus; Flex = EV-matched tiers - sleeper_payout.true_pricing).
+      # Soft: continue-on-error, never disturbs the grades above.
+      - name: Sleeper grade
+        id: soft_slgrade
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SL_MODE: "grade"
+          SL_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
+        run: python -u nba/sleeper_live_slip_engine.py
+
       # FORWARD PAPER TRACKER GRADE (2026-10-20): every ungraded paper slip of a finished slate (AL_* goblin / demon Less, SR_*
       # standard Flex) from the box scores this run loaded - waits while a game is not final or a team's box score is missing.
       # Paper only: continue-on-error, never disturbs the grades above.
