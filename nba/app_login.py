@@ -112,6 +112,8 @@ def form(sb, tag):
     print(f"  [{tag}] url={f['url'].split('?')[0][:90]} title={f['title'][:50]!r}\n     inputs={[(x['type'], x['label'], x['auto']) for x in f['inputs']]}"
           f"\n     controls={[b for b in f['buttons'] if words.match(b)][:25]} (+{sum(1 for b in f['buttons'] if not words.match(b))} other)"
           f"\n     tells={tells}", flush=True)
+    if PRE[0]:                                 # before sign-in the form holds no personal data: list every button (scrubbed)
+        print(f"     all buttons={[_scrub(b)[:25] for b in f['buttons']]}", flush=True)
     return f
 
 
