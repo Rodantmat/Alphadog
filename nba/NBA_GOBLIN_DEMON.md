@@ -1341,10 +1341,10 @@ cell-specific *multiplier*. **§7f warns that a statistical *fit* commits the sa
 and that **the validation metric will not tell you.** A calibration curve fit across all rungs can
 beat its baseline overall and be wrong at **T−3 and T+3 specifically**, which are exactly the cells
 this document says decide the layer's EV:
-- **goblins hit 74.1 / 68.7 / 61.9% at T−3 / −2 / −1** but observed factors pay 40–53% → **−EV at
-  every tier**
+- **goblins hit 74.1 / 68.7 / 61.9% at T−3 / −2 / −1** but ~~observed factors pay 40–53% → **−EV at
+  every tier**~~ (corrected in `§5.1` above and `§T50.2-Z1`: measured goblin factors are 0.756 / 0.698 / 0.661, p x m about 0.50)
 - **demons hit 32.9 / 21.3 / 14.8% at T+1 / +2 / +3**, needing **1.48 / 2.30 / 3.31×** against a
-  **~1.75–1.9× ceiling** → **only demon T1 is ever worth solving**
+  ~~**~1.75–1.9× ceiling** → **only demon T1 is ever worth solving**~~ (superseded in `§5.2` above and `§T50.2-Z1`: the ceiling was an early-sample figure; D1 1.44x, D2 1.71x, D3 2.43x on the system tier map) (T50 deep pass, 2026-10-26)
 
 **A pooled calibration check cannot distinguish "the ladder is calibrated" from "the ladder is
 calibrated in the middle and wrong in the tails"** — and **T8 nominated the tails as *"the #1 area
