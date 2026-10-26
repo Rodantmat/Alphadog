@@ -248,4 +248,41 @@
 4. **`aefba` — `10-21 19:52 → 19:55`.** *Asked:* the same map for PrizePicks, Sleeper and Fliff payouts (tables, goblin / demon effect, same-game rule, DB tunables). *Found:* the PrizePicks rules live in `nba_config.pp_slip_rules`, not `classification_config`; the listed same-game over-estimates (4-Flex `1.20x`, 3-Flex one miss `1.33x`, 3-Power `1.043x`) were measured with the grader's same-game rule switched off (`research_payout_proof.py` lines `51–57` build legs with no `event_id`), and `6/5 = 1.20`, `1/0.75 = 1.33` equal what `flex_same_game_v3` pays with the flag on; no same-game Power rule exists anywhere. Detail: `NBA_MULTIPLIERS.md` `§T50.3-Z3`; `T50-4`.
 5. **`a1686` — `10-24 19:14 → 19:20`.** *Asked:* audit the board-profile research code (`research_board_profiles_wf.py`, `research_board_shrink.py`, `research_board_matrix.py` and support modules) for bugs or design flaws that bias the tests AGAINST profile-specific choices; do not edit or run anything. *Found:* five problems, ranked: (1) HIGH, the Benjamini-Hochberg step cannot flag any profile with so few null draws (`100` / `60` / `30` nulls, about `424` profiles; it needs about `43` / `70` / `136` profiles at the floor p); (2) HIGH, partial pooling can only reorder the global top `300` selectors (the rest set to minus infinity); and three more (F3–F5; detail in `NBA_BASELINE_CALIBRATION.md` `§T50.5-Z1`). Index alignment, walk-forward timing and the season-agnostic wiring checked out. Open items `T50-29`, `T50-45`.
 
-<!-- V2-NEXT-PART -->
+## §T50.9 - DEEP-PASS NOTE (2026-10-26)
+- **What happened.** The first intake read truncated copies of the transcripts. A full re-read of the complete files followed. It added a section named Z1.. to each document, appended after the first-intake sections.
+- **The sections added.**
+  - `NBA_SYSTEM_DESIGN.md`: `§T50.7-Z1` … `§T50.7-Z12` (the `10-24` code audit; board-profile scripts and Layers 1–3; the `10-21` online research source by source; the Underdog portfolio and twin; the slip engine and correlation map; the certified ledger and qualification boundary; gate sets, walk-forward tables, hurdle simulation; launch columns and edge-monitor research; star-line and All-Star tables; Playoff Unders gates and paper replays; Z12 the Sleeper live slips of `10-26`).
+  - `NBA_WORKERS.md`: `§T50.4-Z1` … `§T50.4-Z8` (Sleeper login probe and log retrieval; engine cells and compositions; slip-builder rules and live-engine tunables; pricing tools and certifier checks; the `fliff_probe/` module; Underdog engine, validator and probes; board-profile research scripts; Z8 the post-`00:11` Sleeper work and the 13 undocumented scripts and workflows).
+  - `NBA_DATABASE.md`: `§T50.6-Z1` … `§T50.6-Z4` (PrizePicks engine, certification and payout twin; Underdog tables, config shapes, edge monitor; research and simulator tables, `prop_universe`, placeability; Z4 `sleeper_live_slips`).
+  - `NBA_MULTIPLIERS.md`: `§T50.3-Z1` … `§T50.3-Z7` (PrizePicks tables and price model; help-centre rules and table reconciliation; pricing tools and UI path; Underdog consumers and source of m; market-free twin and cross-app value program; Betr rule ids, Sleeper help-centre statement, Fliff probe; Z7 the Sleeper 454-entry payout fit and live slips).
+  - `NBA_GOBLIN_DEMON.md`: `§T50.2-Z1` … `§T50.2-Z3` (corrections to old goblin / demon price claims and the extender table; final-HP cell ledger and Less pricing basis).
+  - `NBA_BASELINE_CALIBRATION.md`: `§T50.5-Z1` … `§T50.5-Z4` (audit F1–F5; derived box-score props and why past hit-rate ranks fail; whole-number, rookie and distance-aware calibration).
+  - `NBA_SYSTEM_ARCHITECTURE.md`: `§T50.8-Z1`, `§T50.8-Z2`.
+  - `NBA_FINAL_SCORING_CALIBRATION.md`: `§T50.12` (the T27–T49 scoring timeline, 19 sub-headings, index rows).
+  - `NBA_OPEN_ITEMS.md`: `§T50.11-Z1` (new items `T50-39` … `T50-48`) and `§T50.11-Z2` (contradictions, four of ten bullets; the other six are in `NBA_OPEN_ITEMS_V2.md` section A).
+  - The rebuild recipe: steps `114`–`134`; the glossary: about `500` term rows appended in all.
+- **Corrections made** (`NBA_OPEN_ITEMS.md` `§T50.11-Z1`, `§T50.11-Z2`, `NBA_OPEN_ITEMS_V2.md`):
+  - Which Sleeper run pressed the form's own button: run 2 clicked nothing; run 3 was the first.
+  - "2-pick Flex is not a PrizePicks product" is wrong: all-standard 2-pick Flex pays 2x / 0.5x; only the goblin / demon 2-pick Flex has no quote tier.
+  - `T50-29` "F1 to F3 corrected" is overstated: F1 is fixed only in `research_board_shrink.py` and `research_board_profiles_wf.py`, not in `research_board_matrix.py`.
+  - `NBA_MULTIPLIERS.md` `§T32.3` Flex-versus-Power break-even was wrong; correct values Power `0.577 / 0.550 / 0.562 / 0.549 / 0.547` and Flex `0.618 / 0.577 / 0.550 / 0.543 / 0.542`.
+  - Leg cap factor: `0.5 / 0.072 = 6.94`, not `6.17`.
+  - Goblin floor `0.6333` versus `0.614` reconciled.
+  - Older Underdog 4-pick Flex "6" statements superseded by `7.2`.
+  - Betr is parked, not live.
+  - The "no pick'em table" Fliff statement is wrong.
+  - The Sleeper `14.6x` versus `17.8x` line is superseded.
+- **Independent review bullets.**
+  - Reviewer 1 checked `150` figures; `141` matched; nine corrections: `T50-2` factor `0.93`; exposure-cap ROI range `-13` to `-28` points in 2025-26 and `-9` in 2024-25; four `10-19` dates in `NBA_DATABASE.md` `§T50.6`; Perfect ladder sizes `2–10`; the glossary `flex_same_game_v3` row; a duplicate recipe step number (the old `114` is now `129`); the `APP_MODE` name in recipe step `124`. The Underdog refresh cron facts were confirmed from the workflow file.
+  - Reviewer 2 checked `170` figures; `160` matched; eight corrections: `flex_alt_tiers` probe-point count `22`; `B_demon_3flex` rebased `-16` / `+31`; date and app of the owner's typed multipliers (`10-21`, the 6-pick Flex is an Underdog slip); three more `10-19` dates; `pp_portfolio` step count (four); clumped-probabilities date (the owner's report `10-17 17:20 PT`); rehearsal date in `NBA_SYSTEM_DESIGN.md` (`10-19`).
+  - A duplicate block of about `3,900` lines in `NBA_WORKERS.md`, caused by a patch-tool dollar-sequence expansion, was removed.
+- **Still owed.** Verification sweeps of the new T50 sections (sweep count reset to `0`); the `T49` events and the `10-17 → 10-25` main chat remain AS STATED, not read from a transcript.
+
+## §T50.10 — THE `10-26` WORK AFTER THE TRANSCRIPT SPAN (AS STATED from the build chat's own files up to `10-26 13:16 PT`; no transcript)
+- **Where the detail is.** `NBA_WORKERS.md` `§T50.4-Z8` (the Sleeper work after `00:11 PT`, the 13 scripts and workflows no document named), `NBA_MULTIPLIERS.md` `§T50.3-Z7` (the 454-entry Sleeper payout fit: max bonuses `2: 1.000`, `3: 1.0797`, `4: 1.1011`, `5: 1.1742`, `6: 1.2755`; the 5- and 6-pick Flex targets are estimates), `NBA_DATABASE.md` `§T50.6-Z4` (`nba_score.sleeper_live_slips`, config `sleeper_live`, `sleeper_payout.true_pricing`), `NBA_SYSTEM_DESIGN.md` `§T50.7-Z12` and `NBA_SYSTEM_ARCHITECTURE.md` `§T50.8-Z2` (Sleeper live slips `S_T1_2max`, 2-pick Max, replay `+33.0%` over `306` slips, and `S_T1_3flex`, 3-pick Flex, replay `+24.1%` over `294` slips, deployed `10-26 12:17–12:28 PT`; the ROIs are replays at the fitted prices, not live results).
+- **The owner's token hand-over of `10-26` (`09:54–10:06 PT`)** gave the system Sleeper read access: the sign-in was bypassed, not solved (`T50-14`, `T50-42`).
+- **Not covered:** anything the build chat pushed after `10-26 13:16 PT`; the next transcript batch continues in chapter `§T51` (to be appended below).
+
+---
+> 📍 **APPEND NEW TRANSCRIPT CHAPTERS (`§T51`, `§T52`, …) BELOW THIS LINE, IN THIS FILE.** Do not edit the chapters above except to correct a fact in place (mark the old text struck, never silently overwrite).
+
