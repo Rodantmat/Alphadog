@@ -380,7 +380,8 @@ def login(conn, sb, seen):
                 time.sleep(5)
                 f = form(sb, "code requested")
                 low = (f.get("text") or "").lower()
-    said = re.search(r"(verification code|enter (the )?code|one-time|we (sent|texted|emailed)|6-digit|check your (phone|email)|sent (a|you))", low)
+    said = re.search(r"(verification code|enter (the )?code|one-time|we (sent|texted|emailed)|6-digit|check your (phone|email)|sent (a|you))", low) or \
+        any(re.search(r"(password_reset|otp|login_code)", k[2], re.I) for k in seen)   # the app's own send-code request went out
     if not said and pw_gone:                   # no page says a code was sent: a short wait only (the code field may be a leftover)
         os.environ["APP_OTP_WAIT_S"] = str(min(int(os.environ.get("APP_OTP_WAIT_S", "900") or "0"), 240))
         print("  no 'code sent' text on the page - waiting 240 s at most", flush=True)
