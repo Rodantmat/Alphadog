@@ -43,7 +43,7 @@ def log(m):
 
 BOX = """SELECT nba_player_id::text, team_id, pts, reb, ast, fg3m, stl, blk, tov, min FROM nba_stats.player_game_log WHERE game_date=%s"""
 GL = """SELECT home_team, away_team, avg(home_spread)::float, avg(total_line)::float FROM nba_market.game_lines_closing
-        WHERE game_date=%s GROUP BY 1, 2"""
+        WHERE game_date IN (%s, %s::date + 1) GROUP BY 1, 2"""          # the lines table is keyed by the UTC date: a PT evening game sits on d + 1
 
 
 def day_legs(conn, d):
