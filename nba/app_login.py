@@ -398,6 +398,17 @@ def login(conn, sb, seen):
         if not wait_code(conn, sb, seen):
             return False
         f = form(sb, "after code")
+    if LIVE:                                   # the owner finishes the sign-in himself in the live view (he solves any challenge)
+        print(f"LIVE_VIEW|waiting up to {LIVE_WAIT_S} s for the owner to finish the sign-in in the live view", flush=True)
+        limit = time.time() + LIVE_WAIT_S
+        while time.time() < limit:
+            time.sleep(10)
+            if signed_in(snapshot(sb)):
+                print("LIVE_VIEW|signed in", flush=True)
+                time.sleep(5)
+                return True
+        print("LIVE_VIEW|no sign-in within the wait", flush=True)
+        return False
     time.sleep(5)
     return True
 
