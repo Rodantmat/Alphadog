@@ -155,6 +155,59 @@ class LivePricer:
                 "game": src.get("event_id") or l.get("event_id"), "p": float(src["p"]), "same_line": float(src["line"]) == float(l["line"])}
 
 
+class LiveFliffPricer:
+    """Fliff's own window board: per (player, stat, side) the main line nearest an even price, its decimal price"""
+    def __init__(self, conn, d):
+        q = defaultdict(dict)
+        for bk, pn, pid, mk, side, line, price, e in conn.execute(RSH.HSQL, (d, ["fliff"], RSH.MKALL)).fetchall():
+            if mk.endswith("_alternate") or price is None or abs(price) < 100:
+                continue
+            q[(str(pid), RSH.MK[mk], float(line))][side] = (RSH.american(price), e)
+        self.by = {}
+        for (pid, prop, line), s in q.items():
+            if "Over" not in s or "Under" not in s:
+                continue
+            po = (1 / s["Over"][0]) / (1 / s["Over"][0] + 1 / s["Under"][0])
+            for side in ("Over", "Under"):
+                k = (pid, prop, side)
+                if k not in self.by or abs(po - .5) < self.by[k][0]:
+                    self.by[k] = (abs(po - .5), line, s[side][0], s[side][1])
+        self.bx = box(conn, d)
+
+    def leg(self, src):
+        pid = str(src["player_id"]) if src.get("player_id") is not None else None
+        x = self.by.get((pid, src["prop"], src["side"]))
+        if x is None:
+            return None
+        _d, line, dec, ev = x
+        b = self.bx.get(pid)
+        return {"pid": pid, "prop": src["prop"], "side": src["side"], "line": line, "m": round(dec, 3), "pf": None,
+                "hit": grade(self.bx, pid, src["prop"], src["side"], line), "team": b["team"] if b else src.get("team_id"),
+                "game": src.get("event_id") or ev, "p": float(src["p"]), "same_line": float(src["line"]) == line}
+
+
+def pay_parlay(sl):
+    """Fliff: product of the decimal prices of the live picks; a void pick drops out (sportsbook rule); all void = refund"""
+    live = [l for l in sl if l["hit"] is not None]
+    if not live:
+        return 1.0
+    if not all(l["hit"] for l in live):
+        return 0.0
+    return float(np.prod([l["m"] for l in live]))
+
+
+def pay_betr(sl, flex):
+    live = [l for l in sl if l["hit"] is not None]
+    n = len(live)
+    if n < 2 or len({l["team"] for l in live}) < 2:
+        return 1.0
+    less = all(l["side"] == "Under" for l in live)
+    h = sum(l["hit"] for l in live)
+    if not flex or n == 2:
+        return (BETR_PERFECT_LESS if less else BETR_PERFECT)[n] if h == n else 0.0
+    return (BETR_DYN_LESS if less else BETR_DYN)[n].get(h, 0.0)
+
+
 def pick(cands, k, gc):
     out, pl, gm = [], set(), defaultdict(int)
     for l in cands:
@@ -163,7 +216,7 @@ def pick(cands, k, gc):
         out.append(l); pl.add(l["pid"]); gm[l["game"]] += 1
         if len(out) == k:
             break
-    if len(out) < k or len({l["team"] for l in out}) < 2:
+    if len(out) < k or (k >= 2 and APP != "fliff" and len({l["team"] for l in out}) < 2):
         return None
     return out
 
