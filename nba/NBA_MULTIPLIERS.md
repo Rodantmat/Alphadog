@@ -396,7 +396,7 @@ right for Flex and, on this observation, not applicable to Power."*~~
 
 ⇒ ✅ **THE CORRECT STATEMENT: same-game slips are discounted on POWER *and* on FLEX partials.** *The
 `6×`-retained observation is a real data point about ONE `3`-pick and does not generalise; the `3.0 →
-2.9` power cut is recorded independently in two places.*
+2.9` power cut is recorded independently in two places.* **(Refined by §T50.3.4, 2026-10-21: all-standard same-game Power IS cut, but only on some lineups (flag `power_adj`): 2-pick 3.0 x28 / 2.9 x6 / 2.8 x1 and 3-pick 6.0 x23 / 5.75 x4 of 37 quotes; 4-6 picks never; rule `power_same_game_v3` = 2.8 / 5.75. The 10-18 statement "Power never adjusted" is superseded.)**
 
 🔑🔑 ***I wrote a conclusion into the very section that already refuted it, four hundred lines below
 the refutation.*** **That is `§F7.9`'s defect experienced from the inside for the third time this
