@@ -112,7 +112,7 @@ def form(sb, tag):
 
 
 def nth_input(sb, i):
-    return sb.execute_script("""const vis = e => { const r = e.getBoundingClientRect(); const s = getComputedStyle(e);
+    return sb.execute_script("""const vis = e => { if (e.checkVisibility && !e.checkVisibility({checkOpacity: true, checkVisibilityCSS: true})) return false; if (e.closest('[aria-hidden=true],[inert]')) return false; const r = e.getBoundingClientRect(); const s = getComputedStyle(e);
       return r.width > 2 && r.height > 2 && s.visibility !== 'hidden' && s.display !== 'none'; };
       return [...document.querySelectorAll('input,textarea')].filter(vis)[arguments[0]];""", i)
 
