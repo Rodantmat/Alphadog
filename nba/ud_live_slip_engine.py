@@ -284,7 +284,7 @@ def pick(conn, day):
                 seen.add(key)
                 flag = any(l['side'] == 'Under' and fresh.get(teams.get(l['player_id']), 0) >= 2 for l in slip)
                 stake = 0.0 if sd else (0.5 if flag else 1.0)
-                status = f"stand_down:{sd}" if sd else 'paper'
+                status = f"stand_down:{sd}" if sd else ('shadow' if live_pf == 'T' else 'paper')
                 legs_json = [{'cell': l['cell'], 'player': l['player'], 'player_id': l['player_id'], 'prop': l['prop'], 'tier': l['tier'],
                               'side': l['side'], 'line': l['line'], 'factor': l['factor'], 'event_id': l['event_id']} for l in slip]
                 conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
