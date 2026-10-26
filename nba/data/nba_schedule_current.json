@@ -22542,7 +22542,7 @@
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
       "game_status": 3,
-      "game_status_text": "Final/OT",
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22556,8 +22556,8 @@
       "away_team_tricode": "LAL",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "5:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22571,8 +22571,8 @@
       "away_team_tricode": "IND",
       "arena_name": "Barclays Center",
       "arena_city": "Brooklyn",
-      "game_status": 1,
-      "game_status_text": "6:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22586,8 +22586,8 @@
       "away_team_tricode": "ORL",
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22601,8 +22601,8 @@
       "away_team_tricode": "TOR",
       "arena_name": "Target Center",
       "arena_city": "Minneapolis",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22616,8 +22616,8 @@
       "away_team_tricode": "LAC",
       "arena_name": "Paycom Center",
       "arena_city": "Oklahoma City",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22631,8 +22631,8 @@
       "away_team_tricode": "DET",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -22646,8 +22646,8 @@
       "away_team_tricode": "MEM",
       "arena_name": "Golden 1 Center",
       "arena_city": "Sacramento",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
