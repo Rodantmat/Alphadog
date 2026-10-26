@@ -470,6 +470,11 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    (+53 / +51), max drawdown 7.3u, losing days 38%; three 2-pick Standards: 2.94/day, +44%, dd 13.1u, losing days 29%. Honest
    holdout of the small-slip safe sets: +6..+25% ROI, drawdown 11-30u at 1.6-2.9 slips a day. Lowest-risk singles: 3F standard
    both base >=0.65 (31% losing slips, dd 4.6u, +30 / +16%), 2S Less assists base >=0.65 skip-top (dd 4.0u, +51 / +44%).
+   2S + 3F ONLY (owner 16:58 PT; run 40247150334): best honest result of the whole review = three 2-pick Standards chosen on
+   2024-25 alone (rebounds-weighted composition; standard+pricier lines both sides final_hp x m >=0.60 skip-top; standard+pricier
+   combos More final_hp x m >=0.55 skip-top) -> 2025-26 ROI +27%, drawdown 11.3u, losing days 34%; this season +71% on 13 slips.
+   Smallest drawdown set: 2S all-lines Less base >=0.60 skip-top + 3F weighted:points_R_U + 2S Less assists base >=0.65 skip-top:
+   2.31/day, +39% (+45 / +33), dd 6.5u, losing days 34%. Fewest losing days: three 2S, 2.94/day, +44%, dd 13.1u, 29%.
 
 ---
 
