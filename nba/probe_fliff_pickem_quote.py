@@ -58,7 +58,7 @@ def bundle(fc):
         for m in QUOTE.finditer(js):
             if n >= 25:
                 break
-            out.append((u.rsplit("/", 1)[-1], m.group(0), js[max(0, m.start() - 900):m.start() + 1600].replace("\n", " ")))
+            out.append((u.rsplit("/", 1)[-1], m.group(0), js[max(0, m.start() - 500):m.start() + 900].replace("\n", " ")))
             n += 1
         time.sleep(0.15)
     print(f"bundle: {len(seen)} chunks, {len(out)} quote mentions", flush=True)
