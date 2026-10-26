@@ -253,6 +253,18 @@ def pay_flex(sl):
     return float(np.mean([np.prod([l["m"] for l in s]) * BONUS_EST[n - 1] if all(l["hit"] for l in s) else 0.0 for s in subs]))
 
 
+def pay_flex_scr(sl):
+    """Flex as the screens show it: the entry's Max (product x the LOW size bonus) x the tier share for the hits"""
+    live = [l for l in sl if l["hit"] is not None]
+    n = len(live)
+    if n < 2 or len({l["team"] for l in live}) < 2:
+        return 1.0
+    if n == 2:
+        return pay_max(live, BONUS_LOW)
+    hits = sum(1 for l in live if l["hit"])
+    return float(np.prod([l["m"] for l in live])) * BONUS_LOW[n] * FLEX_FRAC[n].get(hits, 0.0)
+
+
 class Book:
     def __init__(self):
         self.slips = defaultdict(list)                   # (src, order, k, struct) -> [(season, day, payout)]
