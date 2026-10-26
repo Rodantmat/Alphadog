@@ -1,5 +1,7 @@
 # NBA GOBLIN / DEMON IDENTIFICATION
 
+> 🔗 **Continuation files.** `NBA_MASTER_SUMMARY_V2.md` continues `NBA_MASTER_SUMMARY.md` (chapters `§T49` onward) and `NBA_OPEN_ITEMS_V2.md` continues `NBA_OPEN_ITEMS.md` (T50 addendum onward). Each V1 + V2 pair is ONE document: always read both. New chapters and open items go to V2.
+
 **Scope.** Everything about goblin and demon ingestion for PrizePicks: parsing, anchors, **invisible
 anchors / switch points**, standard-line anchors, **more and less above and below the anchor**,
 ladders, tier signs, and the taxonomy change that made v1 obsolete.
