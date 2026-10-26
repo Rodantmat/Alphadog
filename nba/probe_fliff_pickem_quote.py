@@ -152,7 +152,19 @@ def main():
             ("V2 picks", {"__object_class_name": "FCM__Get_Parlay_Plus_Quote_V2__Request", "picks": p}),
             ("V1 picks", {"__object_class_name": "FCM__Get_Parlay_Plus_Quote__Request", "picks": p}),
         ]
-    for host_lab, h in (("skipper", host), ("ping", "https://m-c2.app.getfliff.com/")):
+    hosts = (("skipper", host), ("ping", "https://m-c2.app.getfliff.com/"))
+    if os.environ.get("FLQ_EXACT") == "1":
+        # 2026-10-26 (probe_fliff_quote_shape run 40393564565, Fliff's own web code): the app asks the Pick'Em quote as
+        # {proposal_fkeys: [...], proposal_fkey_to_conflict_fkey: {proposal: game}, mode: 70002} - sent ONCE per size, no account
+        shapes = []
+        for n in (2, 3):
+            shapes.append((f"APP SHAPE {n} picks", {"__object_class_name": "FCM__Skipper_Get_Parlay_Plus_Quote__Request",
+                                                    "proposal_fkeys": [x["o"].get("proposal_fkey") for x in picks[:n]],
+                                                    "proposal_fkey_to_conflict_fkey": {x["o"].get("proposal_fkey"): x["game"] for x in picks[:n]},
+                                                    "mode": 70002}))
+            print(f"APP SHAPE {n} picks - the picks' own decimal multipliers: {[x['o'].get('eu_odds') for x in picks[:n]]}", flush=True)
+        hosts = hosts[:1]
+    for host_lab, h in hosts:
         for lab, obj in shapes:
             st, t = raw(fc, h, obj)
             print(f"\nQUOTE [{host_lab}] {lab} ({len(obj.get('picks') or (obj.get('variables') or {}).get('selections') or [])} picks): HTTP {st}\n  {t[:1500]}", flush=True)
