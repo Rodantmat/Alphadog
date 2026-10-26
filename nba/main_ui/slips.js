@@ -632,7 +632,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   // regular substitute; ties keep the board order (score, then player / prop / line / side), reproducible from the DB
   const inSlip = new Set(slips.flatMap(s => s.legs.map(l => l.board_row_id)));
   const pool = [];
-  for (const app of ["prizepicks", "underdog"]) {
+  for (const app of ["prizepicks", "underdog", "sleeper"]) {
     const cand = board.filter(l => l.source_key === app && !l.ud_hidden && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore
                                    && Number(l.edge_0_100) > 0)
       .sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100));
