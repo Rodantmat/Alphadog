@@ -79,6 +79,14 @@ class SmallBook(ST.Book):
                         continue
                     comp = (src, how, fl, side, mc, sk, ns, k)
                     for s in ss:
+                        if ST.APP == "fliff":
+                            # FLIFF PICK'EM (official rules v2.0, 2026-10-05, getfliff.com/fliff-pickem-contest-rules): Max pays the
+                            # product of the picks' multipliers (the guaranteed Contest Score; any extra pool share is NOT counted);
+                            # a void drops the pick, < 2 live picks = refund. Flex reduction unpublished - not priced.
+                            live = [l for l in s if l["hit"] is not None]
+                            pay = 1.0 if len(live) < 2 else (float(np.prod([l["m"] for l in live])) if all(l["hit"] for l in live) else 0.0)
+                            self.slips[comp + ("max",)].append((season, d, pay))
+                            continue
                         self.slips[comp + ("max",)].append((season, d, ST.pay_max(s, ST.BONUS_TRUE)))
                         if k >= 3:
                             self.slips[comp + ("flex",)].append((season, d, ST.pay_flex_ev(s)))
