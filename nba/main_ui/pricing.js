@@ -121,6 +121,23 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
     return floor2(base * prod);
   }
   if (app === "sleeper") {
+    // SLEEPER'S OWN PRICING (2026-10-26, fitted on 454 of the owner's entries - classification_config['sleeper_payout'].true_pricing):
+    // Max = product x size bonus (every leg in a different game); Flex tiers EV-matched at q = 1/m:
+    // T0 = flex_ev[n] / (P(all) + r1 P(1 miss) + r2 P(2 misses)), T1 = r1 T0, T2 = r2 T0 - the twin of sleeper_live_slip_engine.flex_tiers.
+    const tp = (pricing.sleeper || {}).true_pricing;
+    if (tp && tp.max_bonus) {
+      const prod = f.reduce((a, b) => a * b, 1);
+      if (mode === "power" || n < 3) return misses === 0 ? prod * Number(tp.max_bonus[String(n)] || 1) : 0;
+      const ev = Number((tp.flex_ev || {})[String(n)]), rr = (tp.flex_ratio || {})[String(n)];
+      if (!(ev > 0) || !rr) return null;
+      const qv = f.map(x => 1 / x);
+      const pall = qv.reduce((a, b) => a * b, 1);
+      let p1 = 0, p2 = 0;
+      for (let i = 0; i < n; i++) p1 += pall / qv[i] * (1 - qv[i]);
+      for (let i = 0; i < n; i++) for (let k = i + 1; k < n; k++) p2 += pall / (qv[i] * qv[k]) * (1 - qv[i]) * (1 - qv[k]);
+      const t0 = ev / (pall + Number(rr[0]) * p1 + Number(rr[1]) * p2);
+      return misses === 0 ? t0 : misses === 1 ? t0 * Number(rr[0]) : misses === 2 ? t0 * Number(rr[1]) : 0;
+    }
     if (mode === "power" || n < 3) return misses === 0 ? f.reduce((a, b) => a * b, 1) : 0;
     if (misses === 0) {
       let s = 0;
