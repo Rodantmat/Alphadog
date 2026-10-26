@@ -64,7 +64,7 @@ def bundle(fc):
     print(f"bundle: {len(seen)} chunks, {len(out)} quote mentions", flush=True)
     done = set()
     for name, kw, ctx in out:
-        k = ctx[850:1000]
+        k = ctx[450:600]
         if k in done:
             continue
         done.add(k)
