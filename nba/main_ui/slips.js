@@ -322,7 +322,14 @@ async function backtestContext(sql, cfg, names) {
     udAlarm = !!((await q(sql, `SELECT bool_or(decision = 'ALARM') a FROM nba_score.ud_edge_monitor
                                 WHERE season_start = (SELECT max(season_start) FROM nba_score.ud_edge_monitor)`))[0] || {}).a;
   } catch (_e) { udAlarm = false; }
-  return { cellRate, certHit, record, suffix, stateOf, unit, udAlarm };
+  // SLEEPER PLAY GATE (2026-10-26): classification_config['sleeper_live'].play - false returns Sleeper to paper (recorded, not shown)
+  let slPlay = false;
+  try {
+    const r = (await q(sql, "SELECT config_json, now() AS read_at FROM nba_config.classification_config WHERE config_key = 'sleeper_live'"))[0];
+    const c = r ? (typeof r.config_json === "string" ? JSON.parse(r.config_json) : r.config_json) : {};
+    slPlay = c.enabled === true && c.play === true;
+  } catch (_e) { slPlay = false; }
+  return { cellRate, certHit, record, suffix, stateOf, unit, udAlarm, slPlay };
 }
 
 // PLAY OR SKIP, AND HOW MUCH (2026-10-15). Until today the label read only 'shadow' from the status, so a slip the engine recorded
