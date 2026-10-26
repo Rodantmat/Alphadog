@@ -627,7 +627,7 @@ time. **One session produces both the per-leg factor and the confirmation.**
 
 **So every EV conclusion in `NBA_GOBLIN_DEMON.md` §5 rests on the exact assumption that overturned
 multiple fully-vetted MLB findings.** The observed 40–53% goblin factors and the ~1.75–1.9× demon
-ceiling are **inferred**, not read from a slip.
+ceiling are **inferred**, not read from a slip. **(Both figures corrected by the T50 deep pass, 2026-10-26: ~~goblin factors take 40-53%; demon ceiling about 1.75-1.9x~~ -> measured goblin factors are G1 0.756, G2 0.698, G3 0.661 (cuts of 24%, 30%, 34%; range 0.614-0.934; universe mean 0.724) and the implied-probability times factor product sits at about 0.50 for every goblin, so goblins are closed as a standalone leg because p x m is about 0.50 per leg, below the 0.55 per-leg bar of a 3-pick Power (all-goblin 3-pick Power: minus 86.2%), not because of a 40-53% cut. Demon prices average D1 1.44x, D2 1.71x, D3 2.43x, maximum 5.76x; see the note under the T+2 / T+3 line further down. Source: subagent re-read of 10-22.)**
 
 **This does not invalidate the work** — the directional conclusions are robust to a wide range of
 factors, and the ladder's *calibration* (the honesty property) does not depend on multipliers at all.
