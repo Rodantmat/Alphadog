@@ -1,4 +1,4 @@
--- DUMP OF THE NBA DATABASE FUNCTIONS (2026-10-21, nba/dump_db_sql.py). The database is the running copy; this file is the
+-- DUMP OF THE NBA DATABASE FUNCTIONS (2026-10-26, nba/dump_db_sql.py). The database is the running copy; this file is the
 -- record (round-2 P3#16: critical-path SQL must be certifiable from source and recoverable from git).
 -- Do not hand-edit: change the database (or the hand-maintained source files in this folder), then re-dump.
 
@@ -438,6 +438,12 @@ BEGIN
   IF p_structure = 'power' THEN
     IF p_hits <> p_n THEN RETURN 0; END IF;
     IF NOT coalesce(p_alt, false) THEN
+      -- same-game all-standard 2 / 3-pick Power (2026-10-21, pp_slip_rules power_same_game_v3, conservative)
+      IF coalesce(p_same_game, false) AND p_n IN (2, 3) THEN
+        SELECT (rule_json->>(p_n::text))::float8 INTO base FROM nba_config.pp_slip_rules WHERE rule_key = 'power_same_game_v3';
+        IF base IS NULL THEN RAISE EXCEPTION 'pp_slip_rules power_same_game_v3 has no size % - never guessed', p_n; END IF;
+        RETURN base;
+      END IF;
       RETURN CASE p_n WHEN 2 THEN 3.0 WHEN 3 THEN 6.0 WHEN 4 THEN 10.0 WHEN 5 THEN 20.0 WHEN 6 THEN 37.5 ELSE 0 END;
     END IF;
     IF p_n = 2 THEN
