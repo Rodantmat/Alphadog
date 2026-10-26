@@ -487,6 +487,17 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    (15% / 34%), this season +71% on 13; the 4F plays only 0.32/day (+76%, 45% losing). T + 4F: 3.13/day ROI +47% (+61 / +33), dd
    14.4u, losing days 29%, this season +50% on 16. Day P/L correlation: T's three picks -0.06..0.00 (why its losing days are low);
    4F vs T picks +0.02..+0.26. 40%-edge season: T median +82u dd 18.6u -> T+4F median +95u dd 22.4u.
+184. 🔑 **UNDERDOG PORTFOLIO T IS LIVE from 2026-10-26 (owner 2026-10-25 20:01 PT: "go with the T alone").** SUPERSEDES P5 as the
+   played Underdog portfolio (P5 / P4 still built, recorded status 'shadow', not shown; the edge monitor keeps measuring P5 as
+   information and its ALARM now stops P5 only - slips.js). T = three 2-pick Standards, one slip each, 1 unit ($2) each
+   (nba/ud_portfolio_t.py, shared by the live pick and the audit): T1 composition weighted:rebounds_B1_U; T2 standard + harder lines
+   both sides ranked final_hp x factor >= 0.60 skip-top 1/game; T3 standard + harder lines More combos final_hp x factor >= 0.55
+   skip-top 1/game. Config: classification_config ud_live_portfolio.live = 'T' (any other value = back to P5); stake_unit.ud_play =
+   true. Stake 0 only on the final regular-season week and postseason (the research included the pre-All-Star week); no half stake.
+   Certified: audit_ud_portfolio_t_parity run 40262325134 PASS (research reproduced +381.1u on 874 slips; shared builder identical on
+   312-316 of 316 unit-slates, differences = equal-score ties, -3.7u); audit_ud_t_rollback run 40263326959 ALL PASS (production
+   pick -> grade on 3 slates, rolled back). EXPECTATION: honest +27% ROI (chosen on 2024-25, tested on 2025-26), drawdown ~11u,
+   losing days ~34%; a bad stretch of 20-35u is normal. 2026-10-25's P5 / P4 rows were set to 'shadow' so the screen shows T only.
 
 ---
 
