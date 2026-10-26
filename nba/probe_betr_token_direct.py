@@ -71,7 +71,7 @@ def main():
                 j = r.json()
                 ev = ((j.get("data") or {}).get("getUpcomingEventsV2")) or []
                 if ev:
-                    legs = sum(len(p.get("projections") or []) for e in ev for p in (e.get("players") or []))
+                    legs = sum(len(p.get("projections") or []) for e in ev for t in (e.get("teams") or []) for p in (t.get("players") or []))
                     note = f"ANSWERED: {len(ev)} NBA events, {legs} projections"
                 else:
                     errs = j.get("errors") or []
