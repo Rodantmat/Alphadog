@@ -237,8 +237,11 @@ def pay_flex(sl):
         return 1.0
     if n == 2:
         return pay_max(live, BONUS_EST)
+    # round robin of the (n-1)-pick sub-slips, EACH at its own size's Max bonus: owner's 10-09 no-submit 4-pick Flex screen
+    # 4/4 = 6.09 = round robin 5.639 x 1.0797 (the 3-pick bonus), 3/4 = 1.52 = a 3-pick sub-product x 1.0797 / 4; 3-pick Flex
+    # 3/3 = 3.14 (2-pick subs, no bonus). 5- and 6-pick Flex pay 2 misses too (5: 9.42 / 1.92 / 0.39) - NOT this shape: unverified
     subs = list(itertools.combinations(live, n - 1))
-    return float(np.mean([np.prod([l["m"] for l in s]) if all(l["hit"] for l in s) else 0.0 for s in subs]))
+    return float(np.mean([np.prod([l["m"] for l in s]) * BONUS_EST[n - 1] if all(l["hit"] for l in s) else 0.0 for s in subs]))
 
 
 class Book:
