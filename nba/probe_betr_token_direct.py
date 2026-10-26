@@ -19,8 +19,10 @@ from curl_cffi import requests
 GQL = "https://api.fantasy.betr.app/graphql"
 PROXY = os.environ.get("PROXY_URL", "").strip()
 JWT_RE = re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}")
-Q = ('query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) '
-     '{ ...on TeamVersusEvent { id date players { id projections { key value } } __typename } __typename } }')
+Q = ("query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) { id date status sport league name competitionType "
+     "... on TeamVersusEvent { teams { id name fullName players { id firstName lastName position projections { marketId marketStatus isLive "
+     "type label name key order value nonRegularPercentage nonRegularValue currentValue allowedOptions { marketOptionId outcome } } } } } } }")
+# (the query the admin worker's betr_board_pull sent successfully on 2026-09-10 - 1,684 MLB legs, HTTP 200)
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
 
