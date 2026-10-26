@@ -410,6 +410,7 @@ def where(sb, tag):
 
 
 def main():
+    from seleniumbase import SB
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
     lobby_only = None   # a board-shaped answer without projections for this league (lobby), kept as evidence
