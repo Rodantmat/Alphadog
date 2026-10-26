@@ -47,8 +47,9 @@ def main():
         return cache[name].get("fields") or []
 
     def walk(name, depth, pad):
-        if depth > 4:
+        if depth > MAXD or name in done:
             return
+        done.add(name)
         for f in fields(name):
             lab, base, kind = tname(f["type"])
             print(f"{pad}{f['name']}: {lab}", flush=True)
