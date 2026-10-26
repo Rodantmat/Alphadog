@@ -619,8 +619,8 @@ export async function apiHighHit(sql, cfg, url, version) {
   slips.length = 0; slips.push(...ord.map(([x]) => x));
   const plays = slips.filter(x => x.play_usd != null);
   if (eng.source === "live" && slips.length) {
-    const byApp = ["prizepicks", "underdog", "sleeper"].map(a => [a, plays.filter(x => x.source_key === a)]).filter(([, xs]) => xs.length)
-      .map(([a, xs]) => xs.length + ({ prizepicks: " PrizePicks", underdog: " Underdog", sleeper: " Sleeper" })[a] + " slip(s) $" + xs.reduce((t, x) => t + x.play_usd, 0).toFixed(2));
+    const byApp = ["prizepicks", "underdog", "sleeper", "fliff"].map(a => [a, plays.filter(x => x.source_key === a)]).filter(([, xs]) => xs.length)
+      .map(([a, xs]) => xs.length + ({ prizepicks: " PrizePicks", underdog: " Underdog", sleeper: " Sleeper", fliff: " Fliff" })[a] + " slip(s) $" + xs.reduce((t, x) => t + x.play_usd, 0).toFixed(2));
     notes.push("To play today: " + (byApp.length ? byApp.join(" + ") : "0 slips") + " (total $" + plays.reduce((a, x) => a + x.play_usd, 0).toFixed(2) + ") at $" + bt.unit.usd.toFixed(2) + " per unit - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).");
   }
   if (eng.source === "live" && plays.length) {
