@@ -430,7 +430,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   lap("board");
   const pct = new Map();
   // the board is loaded unscreened so every slip leg resolves; unplaceable Underdog legs (ud_hidden) stay out of the percentile and the backup pool
-  for (const app of ["prizepicks", "underdog"]) pct.set(app, board.filter(l => l.source_key === app && !l.ud_hidden).map(l => Number(l.score_0_100)).sort((a, b) => a - b));
+  for (const app of ["prizepicks", "underdog", "sleeper"]) pct.set(app, board.filter(l => l.source_key === app && !l.ud_hidden).map(l => Number(l.score_0_100)).sort((a, b) => a - b));
   const percentile = (app, s) => { const arr = pct.get(app) || []; if (!arr.length) return null; let lo = 0; while (lo < arr.length && arr[lo] <= s) lo++; return r1(100 * lo / arr.length); };
   const byKey = new Map();
   const norm = normName;
