@@ -3891,6 +3891,3936 @@ these twelve.**
 - 🔑 **Market anchor books.** `build_market_anchor.py` gained config/env `MA_BOOKS` (default draftkings, unchanged) and the market-anchor workflow a `books` input (`10-20 15:53 PT`).
 - 🔑 **Slip-quote and pricing probe scripts.** `probe_app_slip_pricing.py` (read-only, public web pages in a real Chrome, `10-18 19:51 PT`); `research_ud_payout_probe.py` (`10-21 15:41 PT`); `probe_sleeper_pricing.py` and `probe_sleeper_bundles.py` (`10-25 22:07` and `22:27 PT`); `probe_fliff_pickem_quote.py` (`10-25 22:35 PT`). The owner's standing rule (`10-25`): before pricing any pick'em app, map its per-leg and per-slip multipliers by building slips in the app or web itself through Actions, then predict many slips and check; any mismatch means not mapped yet. The owner rejected use of his own Chrome; all app probing runs in Actions.
 
+### T50.4-G. The Sleeper / Fliff login machinery (AS STATED + TRANSCRIPT of `10-25 23:37 PT -> 10-26 00:11 PT`; nothing printed: no values, no addresses, no codes)
+- 🔑 **Owner decision (10-25 22:55 PT and 23:00 PT).** Save the app login in GitHub secrets "the same way we did with Underdog"; if a code is needed by email or phone, create a rule to relay it, per app. At `23:00 PT`: copy Underdog's setting to both Sleeper and Fliff (same pace, signatures, proxy, location, device, "all same proven safe configs"); if a code is needed the owner supplies it and a rule saves it to the system; "create the same auto renew token for both". This is the second approved exception to "do not mess with the schedule tasks" (the first is the Underdog refresh).
+- 🔑 **Files added `10-25 22:56-23:05 PT`.** `nba/probe_app_login_flows.py` (22:56, how Sleeper and Fliff sign a user in from their own web apps), `nba/app_login.py` (23:04, sign-in to stored session), `nba/app_otp.py` (23:04, one-time code relay), workflows `nba-app-login.yml`, `nba-app-otp.yml` (23:04) and `nba-app-token-refresh.yml` (23:05). `nba/probe_sleeper_login_ops.py` followed at `10-26 00:00 PT`.
+- 🔑 **`nba/app_login.py`.** Environment `APP` is `sleeper` or `fliff`; `APP_MODE` is `login` or `refresh`. It runs real Chrome through SeleniumBase undetected mode (UC) with Xvfb, the same chain as the Betr harvest; the proxy comes from `betr_harvest_cloud.start_local_proxy`; locale en-US; CDP event logging on. It sets `BETR_SESSION_ID` to a per-app sticky session id named after the app (`sleeperauth1` or `fliffauth1`), so every run leaves the same residential exit. Geolocation, timezone and device are copied from Underdog: geolocation set to San Diego, timezone `America/Los_Angeles`, locale en-US, CDP geolocation/timezone/locale and permission grants; one persistent device per app (device id and the app's device keys live in the stored session and are seeded back each run). Human pacing: random pauses, key-by-key typing (JS focus when a click is intercepted), submit by Enter; scheduled runs add 0-300 s of start jitter. Start pages: Sleeper login and picks pages on its own site; Fliff on its sports site.
+- 🔑 **Secrets and storage (names only).** GitHub secrets `SLEEPER_EMAIL`, `SLEEPER_PASSWORD`, `FLIFF_EMAIL`, `FLIFF_PASSWORD`. Stored session: `nba_config.external_credentials` key `<app>_session_state` (localStorage, cookies, saved_at). OTP relay key: `<app>_otp` (row deleted as soon as it is read; the code is never printed). A stored-session check ends in `SESSION_OK`; if signed out the login path runs; refresh mode on a scheduled run with no password secret ends in `LOGIN_FAIL` "signed out and no password secret".
+- 🔑 **`nba/app_otp.py` and `nba-app-otp.yml`.** Inputs `app` and `otp`. The script reads them from the event file (`GITHUB_EVENT_PATH`), never from step environment, extracts 4 to 8 digits and upserts `<app>_otp`; the job limit is 5 minutes. Logging rule for all login work: never print page text, names, emails, balances or codes; the code is read from the event file or the database, never from step env.
+- 🔑 **`nba-app-login.yml`.** Dispatch input `app`; installs SeleniumBase dependencies; `APP_MODE=login`; job limit 30 minutes. `wait_code` polls `<app>_otp` for `APP_OTP_WAIT_S` (default 900 s) and types the code into one-time-code fields; the messages are `LOGIN_CODE_SENT`, then `LOGIN_FAIL` "no code arrived in time" after the timeout. After a change at about `10-25 23:5x PT`: if the page does not say a code was sent and no password field exists, the wait is capped at 240 s; if the app's own send-code request was seen (password_reset, otp or login_code in the request keys) the full wait applies.
+- 🔑 **`nba-app-token-refresh.yml` (auto-renew).** Cron `47 3,9,15,21 * * *` UTC = 20:47, 02:47, 08:47 and 14:47 PT; matrix `sleeper`, `fliff` with `max-parallel` 1; `APP_MODE=refresh`; `APP_OTP_WAIT_S` "0" (no code wait on refresh); job limit 40 minutes; scheduled start jitter up to 5 minutes after the slot. It replays the stored session and saves the renewed state. After the first successful code login the stored session carries everything, so the six-hour renewal needs no code each cycle (Claude's statement at `10-26 00:00 PT`; the lifetime of Sleeper's token is unverified). Compare Underdog: cron `41 3,9,15,21` UTC, random start up to 20 minutes, job limit 30.
+- 🔑 **Logging helpers (added `10-25 23:48 PT`).** `_scrub` (email to a tag, strings of 24 or more characters to a tag, runs of 3 or more digits to a tag), `_shape` (keys and value types only), REQ lines (method, path, GraphQL operation name and variable names), ANS lines (status and response shape), an "all buttons" list printed before sign-in only, hCaptcha state (the window object's type and iframe sizes) printed with each form snapshot, and requests to hcaptcha and recaptcha hosts listed.
+- 🔑 **Sleeper web login flow (read from live ANS lines and the public bundle, `10-25 23:55 PT` run and `10-26 00:02 PT` probe).** Host: Sleeper's GraphQL API; web pages come from its CDN chunks; bodies are query plus variables with no operation name. Step 1 is `login_context_by_email_or_phone_or_username`, which returns user id, avatar, display name, real name, `has_email`, `has_password`, `has_passkeys`, `has_phone`, masked email and masked phone. The front end then goes to "validate-password" if `has_password`, else "validate-otp". The login query takes the identifier, a password and a captcha token and returns a token; for an OTP account the one-time code is sent as the password argument together with the hCaptcha token. Entering validate-otp auto-fires a mutation (identifier plus captcha) that returns a masked device: that is the code-send call. Step names: validate-identifier, validate-password, validate-otp, success. Sleeper's login uses hCaptcha; Fliff's web login uses Google reCAPTCHA v3. Both are invisible captchas, which is why a real browser is used.
+- 🔑 **Finding for the owner's account.** `has_password` false, `has_passkeys` false, `has_email` true, `has_phone` true: a code-only account. The earlier assumption of a password route was wrong. Sleeper's Picks pricing is not in the public web JS (bundle probes found only localization strings); it needs a login, which is why the login work exists.
+- 🔑 **Error and fix chain before the four counted runs (all `10-25` evening).** ElementClickIntercepted on the password field led to JS focus; "password not interactable" (two-step form) led to a stricter visibility check (opacity, not aria-hidden or inert, size above 2), Enter after the login and a fallback; after the email step the page shows login-otp with no password, which led to typed-identifier and code-step detection restricted to one-time-code; the next run reached `LOGIN_CODE_SENT` but the owner got nothing, which added password-route and send-code clicks and more control words.
+
+### T50.4-H. The Sleeper login incident timeline (PT) and status at `10-26 00:11 PT`
+- 🔑 **`10-25 23:22 PT` run 2 queued; it started about `23:38 PT`** (with the password-route and send-code clicks): same inputs (username field, login-otp one-time-code field), controls PICKS, LOG IN, SIGN UP, no tells, no click happened, 967 s, `LOGIN_FAIL` at about `23:53 PT`.
+- 🔑 **Run 1 finished about `23:35 PT`:** `LOGIN_CODE_SENT`, 15-minute wait, the owner received NO code.
+- 🔑 **Owner reports.** After the first attempts: "Great, no code so far", "No code so far, not in email, not in txt", "Here, still nothing". `23:45 PT`: "Still nothing here". `23:56 PT`: "Nothing here" (reply to the `23:53 PT` run). Automatic compaction of the build chat occurred at `23:38 PT` (786,046 tokens down to 18,667).
+- 🔑 **`23:46 PT` Gemini (gemini-2.5-pro) was consulted** on the Sleeper flow; its operation names were guesses (a password login and a send-code mutation, "Enter may not be the submit"); the real names came from the bundle probe. Web searches for Sleeper OTP issues returned nothing relevant.
+- 🔑 **Run 3 (dispatched about `23:53 PT`, form-button press, answer logging).** ANS 200 for the login-context query was shown at about `23:55 PT`; the page showed no "code sent" text so the wait was capped at 240 s; `LOGIN_FAIL` about `23:59 PT`.
+- 🔑 **`00:00 PT` `probe_sleeper_login_ops.py` ran and succeeded.** Read-only; downloads only Sleeper's public static JavaScript through `nba-browser-probe.yml`; reuses the bundle-probe helpers; `PB_MAX` default 900 chunks; prints OP and CTX lines for login, otp, code, verify, passkey, sms, auth, token, session and password operations.
+- 🔑 **Root-cause hypothesis (as of `00:00 PT`, NOT confirmed).** The worker never asked Sleeper to send the code: the code-send is an automatic request from the validate-otp screen that needs an hCaptcha token, and the "hidden button" pressed earlier was "Send reset code" (password reset), which sent nothing useful. Whether hCaptcha loads or is blocked under the proxy is the open question.
+- 🔑 **Run 4 (diagnostic, started `00:07 PT`).** Prints hCaptcha state and applies the full wait once the app's own send-code request is seen; still waiting at the code step at `00:11 PT`. Fallback if the bot check blocks: lay out other routes with what each involves (passkey is not available; owner relays a code by hand through `nba-app-otp`; phone versus email delivery).
+- 🔑 **Status at `10-26 00:11 PT`.** Sleeper login NOT working; no code received in any attempt; the account is code-only. Fliff login NOT attempted. The keys `sleeper_session_state` and `fliff_session_state` are not yet stored, so the auto-renew workflow exists but cannot renew until a first login succeeds.
+- 🔑 **Transcript-batch request at `10-26 00:11 PT`.** The owner asked for all transcripts since the last batch (no instructions, no text, just a zip) so the documentation chat can continue. The last batch was T49 (main `2026-10-16 20:39Z -> 10-17 20:17Z` plus six subagents). T50 was built from the main transcript (post-compaction span) and five subagent transcripts (`10-20 22:08Z`, `10-21 04:48Z`, `10-22 02:52Z` twice, `10-25 02:14Z`); the zip step's outcome is not in the transcript (stopped by a safety classifier at `07:11:33Z`). Gap: the main transcript between `10-17 20:17Z` and `10-26 06:37Z` is not available; that span exists only as the compaction summary. The build chat's stop-hook fired twice on "uncommitted/untracked changes" and was resolved by syncing the clone to the pushed commit each time; every file of the span is committed and hash-verified.
+
+### T50.4-I. Workflow and operating constraints in force
+- 🔑 **`nba-research-run.yml` ("NBA Research Run (read-only script)").** Dispatch inputs `script` (a file under `nba/`) and `env` (optional KEY=VALUE pairs, space separated); the script name must match `^(research|audit)_[a-z0-9_]+\.py# NBA WORKERS — every worker, scraper and script
+
+**Purpose.** What each piece of code is, where it lives, what it does, what it needs, and what it
+writes. Grouped by role.
+
+---
+
+> # 📑 **INDEX — `NBA_WORKERS.md`**
+> **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
+> fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
+> 🆕 **`§P2.4` ADDED `2026-10-10` (pass 2)** — **seven files the build chat wrote in `T39`–`T45` that no section named: the depth-change verifier, the deep-rung test workflow, `nba/sql/refresh_board_rung_keys.sql`, three probes, the injury-report trigger.** *(End of file.)*
+> 🆕🔴 **`§T48.4` ADDED `2026-10-10`** — **`T48`: the Underdog market-free twin, `capture_parlay_props.py` (live sportsbook props), the Betr harvester for Betr's new app with a self-renewing key, `net_retry.py` (one retry policy), three capture moments.** *(End of file.)*
+> 🆕🔴 **`§T47.4` ADDED `2026-10-10`** — **`T47`: Playoff Unders `stake_mode` and parity probe, the multiplier value program (`research_multiplier_value.py`), the price-shop ledger's `m_star` columns, PrizePicks payout mining back on the NBA board.** *(End of file.)*
+> 🆕🔴 **`§T46.4` ADDED `2026-10-10`** — **`T46`: parity fills, the postseason research program (`research_postseason_program.py`), the postseason game-key fix, and the first Playoff Unders code (`playoff_unders.py`, `research_playoff_unders.py`).** *(End of file.)*
+> 🆕🔴 **`§T45.4` ADDED `2026-10-10`** — **`T45`: the postseason certifiers (`certify_candidates_postseason.py`, `certify_postseason_strategies.py`, `build_tier_map_legs_postseason.py`), slip-engine test-source options, `pick_postseason` in the live engine, scheduler v2.3.0, `slate_games` in every pipeline, parity backfill scripts.** *(End of file.)*
+> 🆕🔴 **`§T44.4` ADDED `2026-10-10`** — **`T44`: price-shopping ledger, retention scripts (model-parameter snapshots, DB-ledger and history archives), four readers moved off a table nothing wrote, referee capture log, prune guard, NBA board gap repair, and the postseason miners / loaders / builders (P-1…P-4 code).** *(End of file.)*
+> 🆕🔴 **`§T43.4` ADDED `2026-10-10`** — **`T43` (round 2 closure): neighbour pricing in `build_final_hp` / `build_whole_number_hp`, the one slate predicate in every reader, P4 reset confirmation, post-tip refusal, Underdog scraper budget, NBA-owned PrizePicks producer, `dump_db_sql.py`, `bt_table()`, two opening-night crash fixes in the builders.** *(End of file.)*
+> 🆕🔴 **`§T42.4` ADDED `2026-10-10`** — **`T42` (certification round 1 close + round 2 start): sticky red, guard unit, Underdog season key and clock, soft-step collector (`pipeline_claim.py`), twelve P1 scrapers that wrote before checking, Betr lobby rejection, P3 capture resilience, sandbox guard, proxy resolver + `probe_proxy_health.py`, `ensure_season_files.py`, gap audit vs the schedule, Underdog/Sleeper tip dating, `broad_day` in the live pick.** *(End of file.)*
+> 🆕🔴 **`§T41.4` ADDED `2026-10-10`** — **`T41` (certification round 1): grader 404 crash (P2A failed 10-04→10-07), scheduler v2.2.0 dead-claim recovery, DARKO rewrite, `git_push_retry.sh`, `verify_static_loads` every-table check, referee capture that never worked, injury-report proxy preflight, live grading void reversion.** *(End of file.)*
+> 🆕🆕 **`§T40.4` ADDED `2026-10-10`** — **`T40`: G2 routing (`build_final_hp.py`, `score_board_legs.py`), `fit_wn_selection.py` + `whole_number_legs()` in the live engine, `build_tier_map_sel.py` (P5 step 1b), `COMBO_DEPTH` in `nba/baseline/build_combos_*`, `EDGE_DELTA −0.0916`.** *(End of file.)*
+> 🆕🆕 **`§T39.4` ADDED `2026-10-10`** — **`T39`: `integration_test_rollback.py`, `sync_current_rosters.py` (+ P2B roster steps), the builder's current-roster rule, `build_whole_number_hp.py` / `fit_whole_number_recal.py` (+ P2A/P2B whole-number steps), `build_recalibration_map.py` v2, the UD edge monitor in P2A, the gap-program research tools.** *(End of file.)*
+> 🆕🆕 **`§T38.4` ADDED `2026-10-10`** — **`T38`: `sim_slate.py` (sandboxed slate rehearsal), `edge_monitor_research.py` / `validate_edge_monitor.py` + `LS_MODE=edge` in P2A, `roi_curve.py`, the star-Under test; `LS_MIN_BOARD` 179 / `UDL_MIN_BOARD` 178; `stake_weight`.** *(End of file.)*
+> 🆕🆕 **`§T37.4` ADDED `2026-10-10`** — **`T37`: thirteen Underdog-program / parity scripts (`build_ud_*`, `certify_ud_candidates`, `validate_ud_slip_strategies`, `ud_live_slip_engine`, `parity_pp_leg_source`, …), all `workflow_dispatch`; UD paper pick in P3, UD paper grade in P2A, name-map refresh + morning DFS snapshot in P2B; close capture via the scheduler.** *(End of file.)*
+> 🆕🔴 **`§T36.4` ADDED `2026-10-10`** — **`T36`: the Cloudflare worker `alphadog-v2-nba-scheduler` (every-minute; P2A/P2B/P3 times follow each day's first tip), `nba/pipeline_claim.py` (run-once), P2 retired → `nba-p2a-results.yml` + `nba-p2b-slate.yml`, `capture_game_lines_morning.py`, `live_monitor.sql`, `SE_LOWFOUL`, `LS_ALLSTAR_PLAN`, `LIVE_MAX_DAILY_STAKE`.** *(End of file.)*
+> 🆕🆕 **`§T35.4` ADDED `2026-10-10`** — **`T35`: `TM_DELTA`/`SE_DELTA` (delta mode, proven exact), `SE_DIVERSIFY` on, the slip PICK as P3's last step, the GRADE as P2's (today P2A's), P5 as P1's last job; P4/P5 manual-only.** *(End of file.)*
+> 🆕🆕 **`§T34.4` ADDED `2026-10-10`** — **THE `T34` SET: `build_cand_signal_matrix.py`, `certify_candidates.py`, `certify_slip_system.py` (the frozen invariant list), `build_slip_engine.py` (`SE_EXCLUDE_CELLS` / `SE_TABLE_SUFFIX` / `SE_MAX_PER_CELL`), `validate_slip_strategies.py` (the MLB bar, `SV_*`), `live_slip_engine.py` (P4: pick / grade / replay / calibrate) + `nba-p5-weekly-requal.yml`.** ⚠ T34 designed P4 and P5 on cron; ✅ today P4 is dispatch-only and P5 is `workflow_call` + dispatch. *(End of file.)*
+> 🆕🆕 **`§T33.4` ADDED `2026-10-10`** — **THE `T33` SET: `build_slip_config_sweep.py` (the harness, v2→v4, `CS_*` env), `build_slip_matrix.py` (the matrix engine — its `nba_score.slip_leg_features` table does NOT exist now), `build_tier_map_bands.py` (the owner's every-n/every-% sweep); three manual-dispatch workflows.** *Body at the end of this file, after `§T32.1`.*
+> 🆕🆕 **`§T32.1` ADDED `2026-10-10`** — **THE `T32` SCRIPT AND WORKFLOW SET (`2026-09-28/29`): THE BETR PATH-C AND CLOUD HARVESTERS, THEIR PROBES AND EXPORTER, THE FIRST SLIP-PROGRAM BUILDERS — AND `nba_score.rank_foundation`, DESIGNED AND NEVER BUILT.** *Source `T32` (recovered from the owner's export — see `NBA_MASTER_SUMMARY.md` `§T32`), every row live-verified. Three of these files were never named in the twelve (`betr_run_and_commit.py`, `probe_betr_cloud.py`, `betr-cloud-test.yml`).* **Body at the end of this file.**
+> 🆕🔴🔴 **`§T28.1` ADDED `2026-09-28`** — **THE GRADER COVERED ONLY `12` MARKETS: FANTASY, EVERY DERIVED PROP AND EVERY PERIOD MARKET GRADED `no_stat` FOREVER, INVISIBLE TO THE CALIBRATION AND THE PAPER LOG.** *Source: a `2026-09-28` build-chat transcript (`2026-09-28-03-09-57-nba-pipeline-closure-sept-2026.txt`), fix dated `2026-09-25`. Live-verified `grade_board_outcomes.py:48-53,145-183,304-311` — fantasy now grades from the official `nba_fantasy_pts` field, period markets from P2's daily quarter logs, and every file read is local-first (fixing the same stale-CDN 404 risk documented elsewhere for the delta). A different defect from the pre-existing "INNER JOIN drops non-participants" grader-risk item in `NBA_OPEN_ITEMS.md` — that one is JOIN semantics, this one is market coverage.*
+> 🆕⚠ **`§T27.7` ADDED `2026-09-28`** — **`archive_live_boards.py` DATES EVERY LEG BY ITS OWN GAME, NOT BY THE CAPTURE CLOCK.** *Source: a `2026-09-28` build-chat session (`2026-09-28-05-24-16-nba-sleeper-capture-session.txt`), fix dated `2026-09-24`. Every row was originally stamped with the capture date rather than the game's own date — usually harmless in-season, but PrizePicks posts opening-night lines weeks early, so the first PP NBA board ever captured (`2026-09-24`) carried a game with `commence_time` `2026-10-20T19:10Z` and would have been filed under the wrong slate, invisible to everything downstream that keys on `game_date` (scorer, tier build, grader, paper log). **Fix, live-verified `archive_live_boards.py:386-397`**: `game_date` is now re-derived per row from its own `commence_time`, converted to America/New_York (opening night `2026-10-20` holds a game at `2026-10-21T01:30Z` whose ET `game_date` is still `2026-10-20`), falling back to the capture date only when no tip time exists; the run logs how many legs moved and to which dates.*
+> 🆕⚠ **`§T27.5` ADDED `2026-09-28`** — **`score_prop_reliability.py` CLOSED ITS DATABASE CONNECTION BEFORE ITS OWN LATE WRITE, LOSING A TWO-HOUR RUN ON THE LAST LINE — FOUND WITHOUT A LOG, FIXED WITH A HEARTBEAT ROW.** *Source: a `2026-09-28` build-chat session (`2026-09-28-05-24-16-nba-sleeper-capture-session.txt`). The script's original shape closed its Postgres connection right after the per-prop grading loop and only printed its result afterward — so a two-hour reliability-audit run crashed on its own final write, with no error surfaced until the connection was already gone. The maintenance run's own log was unreachable (buried under this documentation sweep's own commit volume), so the failure was found by checking the database directly for whether the run had written anything at all. **Fix, live-verified in `score_prop_reliability.py:148-155`**: the connection now stays open through the write (`conn.commit()` immediately after each per-prop insert, not deferred to a final close), and each iteration writes a heartbeat row to `nba_config.classification_config` (`config_key='prop_reliability_audit_progress'`) recording `season`/`prop`/`done`/`n`/`ECE_pp` — so a maintenance run's position is now visible from the database even when its log cannot be read.*
+> 🆕⚠ **`§T27.4` ADDED `2026-09-28`** — **THE MANUAL STATIC-TABLE LOAD, MEASURED: `255` PLAYERS CHANGED, `1,858` ALIASES WRITTEN.** *Supplements `§T26.61`/`T26-8` and `§T26.79` (not a new defect — the root cause and its scheduling fix are already on file). P1 scrapes and commits static JSON, but only `build_defender_ratings.py` and `build_static_context.py` touch `DATABASE_URL`; every other static table's writer worker is a Cloudflare `POST /run` endpoint with no auth, invoked by hand. Measured `2026-09-24`: P1 had run green and committed, yet every static table still read `08-31`–`09-08`. Loading them by hand that day wrote `255` changed players and `1,858` aliases — a month of roster movement the system did not have.*
+> 🆕🔴🔴🔴 **`§T27.3` ADDED `2026-09-28`** — **THE DOCUMENTED "HARD GAP — NO PRIZEPICKS PRODUCER" CLOSES: `main.py` PARAMETERISED FOR NBA, PLUS A SILENT-JOIN BUG THAT WOULD HAVE DROPPED ~44% OF THE BOARD.** *Live-verified `nba-p3-afternoon-light.yml:191-219` and `archive_live_boards.py:69-87`. `main.py` (the MLB producer, hardcoded `league_id=2`) is now opt-in NBA via `PRIZEPICKS_LEAGUE_ID=7`/`PRIZEPICKS_SPORT=nba`/`PRIZEPICKS_OUT_DIR=boards`, MLB defaults unchanged. Separately, `archive_live_boards.py` was joining PrizePicks' own raw stat labels (`3-pt_made`, `pts+rebs`, `blocked_shots`, …) with no normalisation — combos are ~44% of the board and every consumer expects the Odds-API convention (`player_threes`, `player_points_rebounds`, …), so those legs would have joined to nothing, silently. Fixed with an explicit `PP_STAT_MAP`, live in the file. ⚠ **This is a DIFFERENT bug from the already-documented "44% of the board" items** (`NBA_OPEN_ITEMS.md`'s `norm_market()`/`market_key→prop` findings, which are about the historical/Odds-API-sourced pipeline, not this live PrizePicks capture path) — same magnitude because combos are structurally ~44% of any NBA board, not the same defect. ✅✅ **Staleness RECONCILED `2026-09-28`**: `NBA_OPEN_ITEMS.md`'s "BUG-OPEN · PrizePicks is NOT wired for NBA in the live pipeline" section is now patched — the stale `nba/scrape_prizepicks_nba_board.py` mitigation claim is struck through and replaced with the live `main.py` parameterisation, cross-referencing this section (`§T27.3`).*
+> 🆕⚠ **`§T27.2` ADDED `2026-09-28`** — **P3's CUTOFF GATE HAD A DST BUG THE COMMENT ITSELF DENIED, SELF-CAUGHT AND FIXED `2026-09-24`.** *`21:15 UTC` was hardcoded and commented `"13:15 PT during DST"` — wrong by an hour; `21:15 UTC` is `14:15 PDT`, not `13:15`. Under PDT the gate let P3 run a full hour later than intended. Fixed with `zoneinfo`-based `America/Los_Angeles` conversion so the rule holds across the `2026-11-01` DST change. **Live-verified `nba-p3-afternoon-light.yml:130-134`, single `cron: '15 21 * * *'`** — confirms the owner's same-transcript correction of an invented three-cron design back to the one `§T18.1` specifies.*
+> 🆕🔴🔴 **`§T27.1` ADDED `2026-09-28`** — **THE SHAPE-PARITY BREAK IN THE BASELINE PATCHERS: THE DAILY DELTA SYNC CARRIES `GAME_DATE`, THE TWO-SEASON BACKFILL DOES NOT, AND FROM `2026-09-24` EVERY NIGHT WOULD HAVE KILLED P2.** *Found and fixed the same day; full defect record is `PP_PAYOUT_FINDINGS.md` `§0d` (a build-chat file, cited here not duplicated). `nba/baseline/build_baseline_ladder.py` and `build_periods_ladder.py` now drop the delta sync's `GAME_DATE` before the merge; the season backfill still supplies it downstream. No output changed — proven by the replay rebuilding singles, combos and periods clean.*
+>
+> ✅✅✅ **`§T26.79` ADDED `2026-09-26` — THE DISPATCH CENSUS RE-RUN: `11` UNREACHABLE WORKERS BECAME `2` IN A SINGLE MORNING.** *`§T26.61` handed over a CLOSED LIST and said each of the `11` needed one of three words — cron it, fold it, or delete it. Between `09:39` and `09:40` PT the build chat did exactly that, **citing `T26-8` by name in three commits**: `ae4ac367` (P1 +`player-tracking`, `weekly-differential`, `officials`, `arenas`), `816cf447` (P1 scrapes the officials register weekly — *"its scraper and loader were both unscheduled"*), `0556199f` (P2 + a five-worker loop: `daily-delta`, `starter-status`, `game-officials`, **`schedule`**, `measure-types`).* ⇒ ✅✅ **`19` schedule-reachable, `2` not — and the two are exactly the two `§T26.61` said should be: `nba-baseline-ladder` (superseded dead code, `to_regclass` → `NULL`) and `nba-static-backfill` (a historical backfill).** 🔑 **`T26-8` CLOSES, and with it `T26-5`** *(the schedule loader is now in P2 — the `0012600067 UTA @ DEN` drift closes on the next run)*, **`§T26.63`'s officials half** *(both halves now scheduled)* and **`§T26.52`** *(`player_tracking_profile`'s writer is in P1's loop)*; `T8`'s differential worker, idle since `2026-09-02`, is dispatched again. ✅ *The fix also carries a guard the sweep asked for elsewhere: P2's new step is followed by **"Verify the daily loads by data"**, whose comment states the principle in the sweep's own words — **"an acknowledgement is not a row"**. That is `T26-9`'s shape answered for this surface; `T26-9` itself stays open for the board scrapers' `*_meta.json`.* ⚠ *And the commits record two measured facts the sweep did not have: `nba_stats.player_game_log` last written `2026-09-08` and `nba_calendar.games` — "the table every gate reads" — `2026-09-02`: **`18` and `24` days of drift, the concrete cost of the gap `§T26.61` measured structurally**.*
+>
+> 🆕🔴🔴 **`§T26.76` ADDED `2026-09-26`** — **`§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` HARDCODED, AND **ALL `13` HAVE NO `cron`**.** ✅✅ *First the good news, and it re-derives `T20-4`'s closure independently: **the three cron'd pipelines carry `0` sites between them** — the nightly path is clean and the hazard MIGRATED to the manual surface, where it had never been counted.* 🔴🔴🔴 **THE CONCENTRATION IS THE FINDING**: *`nba-absence-panel.yml` holds **`47` of the `103`** in `28` python steps that carry the model-fitting surface and is one of only TWO workflows that write `final_hp` — **and it exposes a `seasons` input that `36` of its `47` sites cannot see**.* ⇒ ***running it with `seasons: 2026-27` yields a MIXED-SEASON FIT — `11` steps on the season you asked for, `36` on `2024-25`/`2025-26` — and reports success. Strictly worse than a workflow with no input at all.*** *(`2026-27` appears `0` times in it; `cron = 0`, so it runs only when a person runs it — **and the occasion is the new season**.)* ⇒ **`T26-12`.** ⚠ *Two smaller new shapes: ① **`SEASON_BOUNDS` appears `0` times in the twelve** — `8` scripts carry a season-keyed bounds dict, `7` lack a `2026-27` key, and ✅ **the one that has it is the only one on a cron'd path** (`export_market_spreads.py`, fixed deliberately, its comment recording the failure mode). A missing dict KEY is a third species the literal-grep cannot see. ② **Three generations of one orphan** — `build_absence_panel.py`/`_v2`/`_v3`, referenced by **nothing** on two vocabularies; bears on `F6-2`, which asks whether to BUILD an absence control.* ⚠ *`1` of the `103` was cited in the twelve before this entry.*
+>
+> 🆕🆕🆕 **`§T26.63` ADDED `2026-09-26`** — 🔴🔴🔴 **`T26-1` RE-RATED, AND THE BOARD LAYER MEASURED APP BY APP: FOUR OF THE FIVE DFS BOARDS ARE GENUINELY EMPTY AND *NOT* BROKEN — BETR IS BROKEN, PICK6 DOES NOT EXIST, AND NOTHING IN THE SYSTEM CAN TELL THOSE THREE STATES APART.** ✅ *`T26-1` is TRUE — `board_tiers_v2` covers `prizepicks` only (`2,199,354` rows, `99.98%` of its archive) and `0` for the other `13` bookmakers across `24,760,117` rows (`91.8%`) — **but smaller than it looks**: ten of the thirteen are sportsbooks frozen at `2026-04-12`, so tiering them would tier a dead archive. The restriction is ONE env value (`BT2_APPS`) and the script is already app-parameterised. ⇒ **the fix is config, and its moment is the day the DFS boards open, not today.*** ✅✅ *And the `2026-09-12` archive cutoff that looks like a breakage **is not one**: all four DFS metas ran TODAY with `ok: true` — `underdog` found `3` matches and `0` lines, `fliff`'s feed returned content with `0` NBA events, `sleeper` `0` legs — **the apps have not opened NBA markets; PrizePicks posts weeks early.** `RULE 61`'s cleanest case yet.* 🔴🔴 *`betr` IS broken and the repo cannot fix it: board `16` days stale, **`ls nba/scrape_betr*` → no such file**, and its meta carries `token_expires_at: 2026-10-10` — **ten days BEFORE opening night**. `pick6` is in no scraper, no board file and no `ARCHIVE_APPS`.* 🔴🔴🔴 **AND THE DEFECT THAT OUTLIVES ALL OF IT — `T26-9`**: *`archive_live_boards.py` logs `0 rows parsed` and exits green; `certify_pipeline.py`'s ONLY board gate is an aggregate `count(*) > 0` with **no `bookmaker` breakdown**, so PrizePicks alone satisfies it; **and the meta files already carry `ok`, `fetched_at`, `legs` and `token_expires_at` while `grep` finds ZERO consumers among the certifier, `check_*` and `verify_*`.*** ⚠ *`RULE 58` on my own pass-22 work: **`11` workflows carry a `cron`, not `6`** — three DFS board scrapers live in workflows with no `nba-` prefix. `§T26.61`'s census is unaffected (it grepped the whole directory).*
+>
+> 🆕🆕🆕 **`§T26.61` ADDED `2026-09-26`** — 🔴🔴🔴🔴 **THE DISPATCH CENSUS, CLOSED: `11` OF `21` NBA WRITER WORKERS ARE REACHABLE FROM NO SCHEDULE, AND `26` OF THE `41` TABLES THEY WRITE HAVE NO SCHEDULED WRITER AT ALL.** *P1 dispatches exactly `10`, in a shell loop at `nba-p1-weekly-static.yml:190-192`; `nba-daily-delta`'s only caller is a workflow with no `cron`; the other `10` are referenced by nothing.* 🔑🔑 **THIS NAMES THE ROOT CAUSE OF THREE EARLIER FINDINGS AT ONCE**: *`§T26.52`'s orphaned `player_tracking_profile`, `§T26.57`'s orphaned schedule loader (**`1` of `10`, not a one-off**), and `T8`'s differential worker idle since `2026-09-02`.* ⚠⚠ ***And it corrects `§T26.54`'s reassurance: `21`/`21` DOCUMENTED is not `21`/`21` DISPATCHED.*** 🔴 **Triage groups: the slate (`nba_calendar.games`) · the `A5` starter model's own input (`player_game_starter_status`, `97,079` rows) · the officials layer, where SCRAPER AND LOADER ARE BOTH UNSCHEDULED · the weekly differential set · the game-log backfill (correctly manual) · tracking.** ⚠ *`RULE 58` mattered: the first vocabulary — worker FILENAMES — returned `0` of `21`, which was a claim about the query, not the system. `RULE 57` then caught a false orphan (`nba_ref.players` has two dispatched writers) before publication.* ⚠ *One of the eleven, `nba-baseline-ladder`, is **superseded dead code**: the ladder path is entirely Python, and `to_regclass('nba_score.baseline_ladder')` is **`NULL`** — its target table no longer exists.*
+>
+> 📏 **`219` sections · re-derived `2026-10-17` (T49 transcript batch, RUN, `+1` = `§T49.4b`)** · ~~`218` (T49 intake, `+1` = `§T49.4`)~~ · ~~`217` (pass 2, `+1`, `§P2.4`)~~ · ~~`216` (T48 pass 1, `+1`, `§T48.4`)~~ · ~~`215` (T47 pass 1, `+1`, `§T47.4`)~~ · ~~`214` (T46 pass 1, `+1`, `§T46.4`)~~ · ~~`213` (T45 pass 1, `+1`, `§T45.4`)~~ · ~~`212` (T44 pass 1, `+1`, `§T44.4`)~~ · ~~`211` (T43 pass 1, `+1`, `§T43.4`)~~ · ~~`210` (T42 pass 1, `+1`, `§T42.4`)~~ · ~~`209` (T41 pass 1, `+1`, `§T41.4`)~~ · ~~`208` (T40 pass 1, `+1`, `§T40.4`)~~ · ~~`207` (T39 pass 1, RUN — `+1`, `§T39.4`)~~ · ~~`206` (T38 pass 1, RUN — `+1`, `§T38.4`)~~ · ~~`205` (T37 pass 1, RUN — `+1`, `§T37.4`)~~ · ~~`204` (T36 pass 1, RUN — `+1`, `§T36.4`)~~ · ~~`203` (T35 pass 1, RUN — `+1`, `§T35.4`)~~ · ~~`202` (T34 pass 1, RUN — `+1`, `§T34.4`)~~ · ~~`201` (T33 pass 1, RUN — `+1`, `§T33.4`)~~ · ~~`200` (T32 pass 1, RUN — `+1`, `§T32.1`'s body heading; the duplicated `▶ FIND IT FAST` heading pre-dates this pass)** · ~~**`199` sections · re-derived `2026-09-28` (T27/T28 pass 1, RUN)**~~ *(`198` before `§T28.1`'s body heading, `+1`; `186` at T26 close carried `6` of pre-existing drift, unrelated to this pass)*:* **`RULE 59` — re-derive AND RUN, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
+> ⚠ *This stamp read `167` for four minutes — **the heading that restored a table header in the block below moved it.** `RULE 59` demonstrating itself: **a self-describing figure goes stale on the edit that publishes it.***
+>
+> 🆕🆕 **SECTIONS ADDED `2026-09-25` — `6` NEW, AND FIVE OF THEM ARE ONE FAILURE CLASS.** *Anchors are heading text; search the label.*
+> | § | what it is |
+> |---|---|
+> | 🔴🔴🔴 **`§T26.28`** | **THE FROZEN STATIC LAYER'S ROOT CAUSE — P1 died on `ModuleNotFoundError: scipy` EVERY MONDAY, before its COMMIT step**, *"so the whole week's scraping was thrown away uncommitted… **while the cron ran fine every week**"*. ⇒ **ranked item `B` diagnosed and half-closed** |
+> | 🔴🔴🔴 **`§T26.26`** | **THE REFEREE ARC** — *a decision taken, **rejected by the owner in the next turn**, conceded as a logical error, then dissolved by the documentation (**in production the crew is KNOWN, not predicted**) — uncovering the cron bug that left `referee_assignments` at `0` rows and moved P2 to the morning* |
+> | 🔴🔴🔴 **`§T26.35`** | **FOUR MORE DEFECTS FROM THE COMMIT STREAM** — *P3's "board tiers" step ran a one-off index job on `25.7M` rows and **NEVER BUILT TIERS** (= **`T20-7`, now CLOSED**) · the `120`-minute deadline · P1's silent-zero rollover · P2's `KeyError` on a no-game day.* 🔑 *Also: **the entire compute path scores `91,405` legs in under `20` SECONDS*** |
+> | 🔴🔴🔴 **`§T26.19`** | **P2 BUILT `41,174` PERIOD ROWS A NIGHT THAT NEVER REACHED THE DATABASE** — *`~43` min, a third of the pipeline; closed, **and fixing it is what created `§T26.17`'s key collision*** |
+> | 🔑🔑🔑 **`§T26.43`** | **`check_factor_freshness.py` — THE INSTRUMENT THAT CLOSES THE SILENT-FALLBACK CLASS, AND IT HAS NO CRON** ⇒ item **`T26-2`** |
+> | ✅✅✅ **`§T26.34`** | **THE CERTIFIER CAUGHT THE `final_hp` LOSS, LOUDLY** *(run `35917049251`)* — **the corpus's only recorded instance of it working** |
+>
+> ⚠⚠ **READ `§T26.19`, `§T26.26`, `§T26.28`, `§T26.35`① AND `T20-17` TOGETHER: they are FIVE instances of ONE class — *work performed, work not persisted, every liveness signal green.*** 🔑 **`RULE 37`'s silent category finally has its mechanism: the gap is always between DOING and COMMITTING.**
+>
+> ## ▶ FIND IT FAST
+> | if you need… | go to |
+> |---|---|
+> | ✅✅✅ ~~🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve**~~ **CLOSED `2026-09-26`, `§T26.54`** | **`§F5.5`** ▶ **RE-DERIVED ACROSS EVERY ARTEFACT TYPE: `36`/`36` NBA workflows · `21`/`21` JS workers · `124`/`127` Python scripts named in ≥`1` of the twelve** — *and **the only `3` absent are `probe_pp_*.py`, OUT OF SCOPE by standing constraint***. 🔑 *`§T26.45` found the last three (`load_injury_report` · `verify_static_loads` · `refresh_board_rung_keys`) and `§T26.50` put them in the glossary, which is what closed it.* ⚠ **`6` of the `36` workflows carry a cron** — *`P1` `0 19 * * 1` · `P2` `45 15 * * *` · `P3` `15 21 * * *` · `nba-referees` `30 15 * * *` · `nba-scrape` `0 9 * * 1` · `nba-pp-payout-map` `15 */6 * * *` (the build chat's)*; **the other `30` are dispatch-only by design.** |
+> | 🔴🔴 **the scripts behind every T15 factor verdict** *(`fit_*`, `measure_*`, `retest_*`)* | **`§F5.5` §2** — *mapping also in `NBA_FINAL_SCORING_CALIBRATION.md` §3* |
+> | 🔴 **the FOUR workflow files that were named nowhere in the twelve** *(`nba-backtest`, `nba-grader`, `nba-measure-types`, `nba-score-history`)* | **`§F2.16`** |
+> | 🔴🔴🔴 **the grader workflow — and `T20-5`'s stale `2026-04-12` window, a SECOND and THIRD time** | **`§F2.16` §1** |
+> | ✅ **`nba-score-history.yml`'s two-job pipeline** *(`AC_K=400`, 8-way score matrix, "refuses to write an empty build")* | **`§F2.16` §2** |
+> | 📊 **`continue-on-error` across all 40 workflows** — `11` files, `48` occurrences | **`§F2.16` §3** |
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
+> 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
+> 🔴🔴 **THE `§0.x` NUMBERING IS DENSE, DEEP AND OUT OF ORDER.** *The file runs `0.00000`, `0.0000`,
+> `0.000`, `0.001`, `0.00`, `0.0`, `0`, `0.14`, `0.15`, `0.2`, `0.23`–`0.31`, then `0.42`, `0.41`,
+> `0.39`, `0.36`, `0.37`, `0.38`, `0.35`, `0.34`, `0.33`, `0.32`, `0.3`, `0.4`, `0.5` — **the `0.3x`
+> and `0.4x` blocks run BACKWARDS**.* ⇒ ***Do not navigate by number. Use this index.***
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🗺️ **which workflow runs which script and writes which table** | **`§0.00000` — THE WIRING MAP** |
+> | 🔴 **the three pipelines and the owner's explicit cron instruction** | **`§0.0000`** |
+> | ⚠ **the complete schedule surface** *(seven scheduled workflows touch `nba/`, not four)* | **`§0.0`** |
+> | **what a specific piece of code IS** | Cloudflare writers **`§1`** · static scrapers **`§2`** · board scrapers **`§3`** · baseline engine **`§4`** · scoring engine **`§5`** · verifiers **`§6`** · workflows **`§7`** |
+> | 🔴 **what CERTIFIES, and whether the check means anything** | **`§0.31`** *(hardcoded row-count thresholds)* · **`§0.39`** *(`ok: certified` across 18 workers)* · 🔴 **`§0.004-T18`** *(the certifier cannot tell a full slate from one row)* |
+> | 🔴 **every destructive statement in the codebase** | **`§6b`** · ⚠ **`§6c`** *(SQL only — workflows can delete files too)* |
+> | ⚠⚠ **the hardcoded-season literal, and the grep trap that hides half of it** | **`§0.00`** |
+> | ⚠ **why `[skip ci]` is a convention, not a guard** | **`§0.29`** |
+> | ⚠ **`POST /run` carries no authentication** | **`§0.28`** |
+> | ⚠ **how `deployed_sha.txt` silently drifts** | **`§0.26`** |
+> | 🔴 **editing a workflow right after dispatching it CANCELS the run** | **`§0.000`** |
+> | ⚠⚠ **before assuming anything is "live"** | **`§0d` — SYSTEM SELF-KNOWLEDGE** |
+> | **the four-step wiring pattern, and its blast radii** | **`§0`** · **`§0.2`** · **`§0.37`** |
+> | ⚠ **the design rule the scrapers DISAGREE on** *(keep every column vs hand-pick)* | **`§0.35`** |
+> | 🔁 **DO NOT QUOTE THE WORKFLOW COUNTS — RE-DERIVE THEM.** *The owner's standing rule made operational: three one-line commands that regenerate the totals and every ACTIVE cron, so the figure cannot go stale.* | **`§0.0`** *(recipe)* · **`§T22.29`** *(why)* |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🗺️ **A · THE MAPS — start here**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.00000`** | 🗺️🗺️ **THE WIRING MAP — WORKFLOW → SCRIPT → TABLE** *(`T20` pass 34, ~~`§T20.3x`~~ `§T20.39` — corrected `2026-10-14`, additional sweep `1` pass 180: the section's own heading and `NBA_MASTER_SUMMARY.md` `§T20.39` read `.39`)* | 🗺️ |
+> | **`0.0000`** | 🔴 **The three pipelines, and the owner's explicit cron instruction — SET IT ON ONE, NOT ON ALL** | 🔴 |
+> | **`0.0`** | ⚠ **The complete schedule surface — SEVEN scheduled workflows touch `nba/`, not four** | ⚠ |
+> | **`0.4`** | **The two registries — and the count that proves the isolation held** | |
+>
+> ### 🧱 **B · THE CODE, BY ROLE**
+> | § | what it covers |
+> |---|---|
+> | **`1`** | **CLOUDFLARE WORKERS — Postgres writers** |
+> | **`4b`** | **Cloudflare writer workers built `T3`–`T9`** |
+> | **`2`** | **STATIC SCRAPERS** — GitHub Actions, `nba/data/` |
+> | **`3`** | **BOARD SCRAPERS** |
+> | **`4`** | **BASELINE ENGINE** |
+> | **`5`** | **SCORING ENGINE** |
+> | **`6`** | **VERIFIERS** |
+> | **`7`** | **WORKFLOWS** — *incl.* **`§0.41`** *why there are so many `nba-*.yml`, a stated principle recovered from code* |
+>
+> ### ⚙️ **C · THE WIRING PATTERN AND ITS HAZARDS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0`** | **The four-step wiring pattern** *(established `T2`)* | |
+> | **`0.2`** | ⚠ **The four wiring steps have different DEPLOY BLAST RADII** | ⚠ |
+> | **`0.37`** | **A fifth hand-maintained edit site per new static entity — with the widest blast radius** | ⚠ |
+> | **`0.14`** · **`0.15`** | ⚠ The shared dispatch path's unstated invariant · the dispatch enum and the second per-worker mode | ⚠ |
+> | **`0.30`** | **The service-binding deploy order — a real bug, and the permanent fix** | |
+> | **`0.32`** | **The five static writers are COPIES of one worker** — *incl. a self-identifying User-Agent* | |
+> | **`0.33`** | **Two GitHub read paths now exist — and which one a worker uses is invisible from its name** | ⚠ |
+> | **`0.34`** | **The `scope_lock` declaration** — a worker that states every table it may write | |
+> | **`0.3`** | ⚠ **Every worker's operating constants are HARDCODED — the founding rule is not holding** | ⚠ |
+> | **`0.5`** | ⚠ **The worker architecture was a NON-GOAL before it was a design** | ⚠ |
+>
+> ### 🚨 **D · DEPLOY AND RUNTIME HAZARDS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.000`** | 🔴 **Editing a workflow file right after dispatching it CANCELS the run** — and a cancelled run is not a failed one | 🔴 |
+> | **`0.25`** | ⚠ **The pre-commit syntax gate — the only local check before an auto-deploying push** | ⚠ |
+> | **`0.26`** | ⚠ **The deploy-scope anchor — `deployed_sha.txt`, and how it silently drifts** | ⚠ |
+> | **`0.27`** | ⚠ **Dead D1 provisioning still runs on every deploy — including every NBA deploy** | ⚠ |
+> | **`0.28`** | ⚠ **`POST /run` carries NO AUTHENTICATION** — fleet-wide, and NBA inherited it faithfully | ⚠ |
+> | **`0.29`** | ⚠ **The deploy trigger has no path filter — `[skip ci]` is a CONVENTION, not a guard** | ⚠ |
+> | **`0.42`** | ⚠ **Always test v3 before v2 — a rule the project paid for twice** | ⚠ |
+>
+> ### ✅ **E · CERTIFICATION, DESTRUCTION AND WHAT THE CHECKS MISS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.31`** | ⚠ **Certification is a hardcoded ROW-COUNT THRESHOLD — and each worker picks its own** | ⚠ |
+> | **`0.39`** | 🔴 **`ok: certified` — the `ok` field IS the certification verdict, across `18` workers** | 🔴 |
+> | **`0.004-T18`** | 🔴🔴 **THE CERTIFIER CANNOT TELL A FULL SLATE FROM ONE ROW** | 🔴🔴 |
+> | **`6b`** | **EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE — the complete audit** | |
+> | **`6c`** | ⚠ **That audit covers SQL ONLY — workflows can delete files too** | ⚠ |
+> | **`0e`** | ⚠ **The scope-parameter audit** — every mode/scope argument must constrain the WRITE, not the response | ⚠ |
+>
+> ### 📋 **F · DATA-QUALITY AND METHOD**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.00`** | ⚠⚠ **The hardcoded-season literal, and the GREP TRAP that hides half of it** | ⚠⚠ |
+> | **`0.23`** | 🔴 **The injury archive changes filename pattern mid-season — and the first backfill silently caught it** | 🔴 |
+> | **`0.24`** | 🔴 **Validate a parser on the RUNNER'S OWN extraction, not on your own** | 🔴 |
+> | **`0.36`** | **`raw_json` is written as a STRING by every static writer — the column is unqueryable** | ⚠ |
+> | **`0.35`** | ⚠ **The design rule the scrapers DISAGREE on — keep every column, or hand-pick and lose signal** | ⚠ |
+> | **`0.38`** | ⚠ **All twelve mandated documents end with a stray tool-payload fragment** | ⚠ |
+> | **`0a`** · **`0d`** | **The investigation methodology** for a large existing system · ⚠⚠ **SYSTEM SELF-KNOWLEDGE — read before assuming anything is "live"** | ⚠⚠ |
+> | **`0.001`** · **`0.003-T18`** · **`0.005-T18`** | The `T15` mechanism-failure census *(came back empty)* · the mechanism strata pinned · the census with its partition closing | |
+> | **`0.002-T18`** + **`-CORRECTION`** | ⚠⚠⚠ **The section overstated its case; the ordering refutes it** — *severity withdrawn, scope narrowed.* **Read the CORRECTION first.** | ⚠⚠⚠ |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` to find anything; `B` for what a piece of code is; `C`/`D` for
+> why a change is riskier than it looks; `E` for how much a green check is worth; `F` for the traps.***
+
+**Update log**
+| Date | What changed |
+|---|---|
+| 2026-09-20 | Created. Cloudflare workers and static scrapers from T1–T2; engine/board/pipeline scripts from the live session and the journal. |
+| **2026-09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `12` commits that this log never recorded.** *T15–T18 material plus the live audits: **§T15.4c the concurrency-group self-cancellation** · **T18 pass 2: the gap detector passing an entire season as not-a-failure** · **§0.004-T18 the certifier's twelve predicates read from live source** · **§0.005-T18 the mechanism failure census** (43 real results parsed) · **§T18.1 the three pipelines with the owner's explicit cron intent** · **the WORKFLOW → SCRIPT → TABLE wiring map published**, then extended with the mis-wired P3 step 6 and its read edge. **Corrections in place: §0.002-T18 corrected — the gap-audit fallback did not exist · §0.003-T18 corrected by the census — six bridge tool-execution failures · "PIPELINE n OF 3" reconciled with COMPASS fact 107's TWO · P1's cron time qualified 12:00 PDT / 11:00 PST.*** |
+
+---
+
+## 🔴🔴 **§T27.1 — THE SHAPE-PARITY BREAK: P2 WOULD HAVE FAILED EVERY IN-SEASON NIGHT FROM THE FIRST DELTA SYNC, CAUGHT AND FIXED THE SAME DAY** *(source, 2026-09-24, from the 2026-09-25 transcript; `0` of the twelve before this entry)*
+
+> 📌 **The season backfill wrote `nba_team_game_log_advanced_<season>.json` in a SLIM shape with no `GAME_DATE`; the certified recipe merges `GAME_DATE` in from the team log. The daily delta sync writes the FULL stats.nba.com shape, WITH `GAME_DATE` already present.** ⚠⚠ ***The first delta sync of the advanced file landed `2026-09-24` — from then on the concatenated `teams_adv` carried its own `GAME_DATE`, the merge produced `GAME_DATE_x`/`GAME_DATE_y`, and every read of `GAME_DATE` failed with `KeyError`.*** This is the parity rule (same object, day-of vs backfill) violated at the SHAPE level, not the value level — and because the delta syncs nightly in season, **P2 would have failed every night from opening night**, with the certifier going red only after the mining had already succeeded.
+>
+> 🔧 **Fix**: `teams_adv.drop(columns=["GAME_DATE"], errors="ignore")` immediately before the merge, in both `nba/baseline/build_baseline_ladder.py` and `nba/baseline/build_periods_ladder.py` — the merge still supplies `GAME_DATE` from `teams` either way, so no number changes. Proven by compiling both patched recipes locally and by the replay building all singles pairs, combos and periods clean. **Full defect record, including a caught mid-fix slip (a `rep()` split that left a dangling module-level block): `PP_PAYOUT_FINDINGS.md` `§0d`** — a build-chat file, cited here for cross-reference only; not duplicated or edited.
+
+---
+
+## 🔴🔴🔴 **§T27.3 — THE DOCUMENTED "HARD GAP" CLOSES: PRIZEPICKS NBA BOARD NOW CAPTURED, AND A SEPARATE SILENT-JOIN BUG WOULD HAVE DROPPED ~44% OF ITS LEGS** *(source + live verify, 2026-09-24/28; `0` of the twelve before this entry)*
+
+> 📌 **Before this fix**: `nba-p3-afternoon-light.yml`'s own comment documented the gap directly — *"PRIZEPICKS IS NOT WIRED FOR NBA YET — this is a HARD GAP, not a configuration detail. `main.py` at the repo root is the MLB producer and it is HARDCODED: `league_id=2` appears as a literal in all four URLs… There is NO environment variable."* Every P3 run logged `"prizepicks: no board file"` and `nba_market.board_snapshots` held zero PrizePicks rows. PrizePicks legs reached the board only via the Odds API feed, which carries the standard markets but not the DFS-only ones (fantasy score, period props) or the goblin/demon multipliers.
+>
+> 🔧 **Fix 1 — the producer.** `main.py` is now opt-in NBA via three env vars (`PRIZEPICKS_LEAGUE_ID=7`, `PRIZEPICKS_SPORT=nba`, `PRIZEPICKS_OUT_DIR=boards`), with no env set it behaves exactly as before (MLB, `league_id=2`, `prizepicks_mlb_current.json`) — purely additive. **Live-verified `nba-p3-afternoon-light.yml:191-219`**, wired as the first board scrape, ahead of the others.
+>
+> 🔧 **Fix 2 — a second, separate bug the first fix exposed.** `archive_live_boards.py` was joining PrizePicks' own raw stat labels (`3-pt_made`, `pts+rebs`, `pts+rebs+asts`, `blocked_shots`, …) with **no normalisation** — every consumer (`nba_score.paper_prop_map`, the scorer, the grader, the slip engine) expects the Odds-API convention (`player_threes`, `player_points_rebounds`, `player_points_rebounds_assists`, `player_blocks`, …). Only points/rebounds/assists happened to match by coincidence. Combos are ~44% of the board, so on opening night those legs would have joined to nothing — **no error, no empty-result warning, just a board that quietly lost almost half itself.** Fixed with an explicit `PP_STAT_MAP` (unmapped stat types print a visible warning instead of vanishing). **Live-verified `archive_live_boards.py:69-87`.**
+>
+> ⚠ **Not the same bug as the corpus's other "44% of the board" findings.** `NBA_OPEN_ITEMS.md` already documents a `norm_market()`/`market_key→prop` defect at the same `44%` magnitude, but that one is in the historical/Odds-API-sourced pipeline (`naive replace('player_','')`), a different file and a different code path than this live-capture normaliser. The magnitude matches because combos are structurally ~44% of any NBA board — coincidence of proportion, not the same defect. Recorded separately to avoid the two being merged into one.
+>
+> ✅✅ **Reconciled `2026-09-28`**: `NBA_OPEN_ITEMS.md`'s stale mitigation reference (the separate script `nba/scrape_prizepicks_nba_board.py`) is now patched in place — struck through and replaced with the live `main.py` parameterisation described above, cross-referencing this section. No script or workflow changed; doc-only.
+>
+> → 🆕 *`2026-10-14`: the first live board's size (`228` legs, `6` players, `3` games), the `16` of `18` keys matching history and the malformed rows kept beside the canonical ones — `NBA_MASTER_SUMMARY.md` `§T27.9`.*
+
+---
+
+## ⚠ **§T27.2 — P3's CUTOFF GATE HAD A DST BUG ITS OWN COMMENT DENIED, SELF-CAUGHT AND FIXED, AND THE SAME TRANSCRIPT CONFIRMS THE GATE IS BACK ON ONE CRON** *(source + live verify, 2026-09-24/28; `0` of the twelve before this entry)*
+
+> 📌 **The gate hardcoded `latest = 21:15 UTC` with a comment claiming that was `"13:15 PT during DST"`. It was not** — `21:15 UTC` is `14:15 PDT`, an hour later than the comment's own claim. Under PDT this let a scheduled P3 run start a full hour past the intended `13:15 PT` cutoff, silently, because the comment and the code agreed with each other while both were wrong about the clock. Found and fixed in the same session (`2026-09-24`) that introduced it.
+>
+> 🔧 **Fix**: replaced the hardcoded UTC literal with `zoneinfo`'s `America/Los_Angeles`, computing `latest` from a real `13:15` local time and converting — `datetime.fromisoformat(f"{slate}T13:15:00").replace(tzinfo=PT).astimezone(timezone.utc)`. This holds across the `2026-11-01` DST boundary without another hardcoded literal.
+>
+> ✅ **Live-verified against `main`, `2026-09-28`**: `.github/workflows/nba-p3-afternoon-light.yml:130-134` carries exactly this fix, and the workflow's own trigger is a single `cron: '15 21 * * *'` (line 35) — **one cron, not three.** ⚠ *Earlier in the same transcript the assistant had drifted into describing a three-cron design for P3 to chase DST and early tips; the owner caught it directly — "we're saying three crowns for p3. i never said three crowns. i said just one" — and it was reverted to the single window `§T18.1` specifies. The live file confirms the revert held.*
+>
+> ✅ **ADDENDUM, same pass** — the cron value took two more turns after the DST fix, in this same transcript, before landing on the live `21:15 UTC`: it was moved to `22:45 UTC`, reasoning from the owner's stated slip-timing habit (`NBA_SYSTEM_DESIGN.md` `§0z-7`, owner `2026-09-19`, COMPASS fact 107 — *"after 2:30 we run the last piece of pipeline… I'm going to put my slips around 3, 3:30"*), then reverted BACK to `21:15 UTC` on the grounds that `§4`'s original spec already states the target directly: *"Target cron at season start: `15 21 * * *` = 1:15 PM PST (2:15 PDT, still 105 min before the earliest 4 PM PT tip)."* ⚠ **The two times encode two different, non-interchangeable cutoffs, both documented**: `§1`'s `1:15 PM PT` is the EARLIEST the slate is fully known (the game-day injury report window, Pacific clubs last at 1:00 PM PT); `§0z-7`'s `2:30/3:00 PM` is when the owner actually places slips, later and for convenience, not correctness. The 22:45 UTC attempt was reasoned correctly on its own terms and still reverted — **`§4`'s documented spec value won over inferring a new one from conversational context**, and the current live cron matches `§4`, not `§0z-7`. **Not yet closed**: no commit in this transcript records WHY `§4`'s spec was chosen over `§0z-7`'s — the revert's own comment states the spec, not the reason for preferring it. Flagged for the next pass; not guessed here.
+
+---
+
+## ⚠ **§T27.4 — THE MANUAL STATIC-TABLE LOAD, MEASURED: `255` PLAYERS CHANGED, `1,858` ALIASES WRITTEN** *(source, 2026-09-24, from the 2026-09-25 transcript; supplements `§T26.61`/`T26-8` and `§T26.79`, `0` of the twelve before this entry)*
+
+> 📌 **Not a new defect.** `§T26.61` already names the root cause (`T26-8`: `11` of `21` NBA writer workers reachable from no schedule) and `§T26.79` already closes most of it by cron. This entry adds the one concrete measurement neither section carries: what a manual load of the neglected static layer actually changed, the same day this transcript's session ran it by hand. *P1 scrapes and commits static JSON for every table, but only `build_defender_ratings.py` and `build_static_context.py` touch `DATABASE_URL` — every other static table (teams, players, bio, team stats, on/off, play types, tracking, DARKO, shot quality, lineups) is committed and never loaded, because the writer workers that read that committed JSON are Cloudflare `POST /run` endpoints with no auth (only their own outbound GitHub fetch is authenticated), invoked by hand rather than by any schedule.*
+>
+> ⚠ **Measured `2026-09-24`: P1 had run green and committed, yet every static table still read `08-31` to `09-08`.** Loading them by hand that day wrote **`255` changed players and `1,858` aliases** — a month of roster movement (signings, team changes, rookies) the system did not have. 🔑 *Same failure family as the officials, starter-status and injury backfills this corpus already documents: mining works, landing does not.* ⚠ *Whether these specific tables are among the ones `§T26.79`'s cron additions now cover is not established by this transcript — flagged, not guessed.*
+>
+> 🔎 **Cross-check, live-verified `verify_static_loads.py:38`**: a code comment there records a DIFFERENT, smaller `2026-09-24` run — `aliases_written=1868` on just `3` changed players, `team_aliases=155` on `0` changed teams — close to but not identical to this entry's `255`/`1,858` figures. **Reconciled, not a contradiction**: the alias table is rewritten in full on every run (the comment's own point — "the two dictionary workers... rewrite their aliases every run"), so `aliases_written` is a full-table count, not a delta keyed to that run's changed-row count; the two entries are two different runs on the same day, not the same measurement told twice.
+
+🆕 *(additional sweep `8`, pass 499, `§P499` T27 `16:54Z`–`20:15Z`, AS STATED)* The same hand-load's per-table counts and the first unattended dispatch's two facts. The counts the hand load wrote besides the players and aliases: **`3,364` play-type rows, `4,652` tracking rows, `2,267` shot-quality buckets, `530` impact ratings, `8,000` lineup rows**; `teams` kept its `08-31` stamp because all `30` rows were unchanged (nothing written; its aliases did update); only `build_defender_ratings.py` and `build_static_context.py` had moved, the two scripts that touch `DATABASE_URL` directly. A single worker, tested through the bridge, answered in `16.2s` and picked up the file P1 had committed minutes earlier (`594` players, `3` newly written). The step P1 then gained calls **all ten writers after its commit**, with retries, and fails loudly if any table is left out of step; its first run exposed two facts, stated as lessons: *(1)* the workers need no authentication — a plain `POST /run`, the only `Authorization` header in the worker being its own outbound call to GitHub — so the "only two repository secrets" claim (drawn from the NBA pipeline workflows alone) was wrong and no new secret was needed; *(2)* **an HTTP acknowledgement is not a row** — the shot-quality worker completed and wrote twice (`17:41` and `17:46`) while both `curl`s timed out with zero bytes, so the retry fired a second write; the step was then changed to record its start time, shorten the wait (the worker finishes whether or not the reply arrives) and hand unacknowledged workers to the verifier, which reads the load step's outputs (`id: load`) and confirms by data. Nine of the ten had already landed in the previous attempt, in loop order, watched from the database. One break of the author's own on the way: a multi-line Python block inside a command substitution inside a YAML scalar made the whole workflow unreadable to GitHub (no dispatch trigger visible); repaired, the dispatch accepted. Result stated at `20:15Z`: P1 certified end to end, loading its own data unattended for the first time — all ten workers, unacknowledged loads confirmed by data.
+
+---
+
+## ⚠ **§T27.5 — `score_prop_reliability.py` CLOSED ITS DATABASE CONNECTION BEFORE ITS OWN LATE WRITE, LOSING A TWO-HOUR RUN ON THE LAST LINE — FOUND WITHOUT A LOG, FIXED WITH A HEARTBEAT ROW** *(source, 2026-09-26, from the 2026-09-28 build-chat session; `0` of the twelve before this entry)*
+
+> 📌 **The script's original shape closed its Postgres connection right after the per-prop grading loop and only printed its result afterward** — so a two-hour reliability-audit run crashed on its own final write, with no error surfaced until the connection was already gone. The maintenance run's own log was unreachable at the time (buried under this documentation sweep's own commit volume), so the failure was found by checking the database directly for whether the run had written anything at all, rather than from a log.
+>
+> 🔧 **Fix, live-verified `score_prop_reliability.py:148-155`**: the connection now stays open through the write (`conn.commit()` runs immediately after each per-prop insert rather than being deferred to a final close), and each iteration also writes a heartbeat row to `nba_config.classification_config` (`config_key='prop_reliability_audit_progress'`) recording `season`/`prop`/`done`/`n`/`ECE_pp` — so a maintenance run's position is now visible from the database even when its log cannot be read. The re-run this fix enabled produced `§T27.6`'s PrizePicks-scoped calibration measurement, in `NBA_BASELINE_CALIBRATION.md`.
+
+---
+
+## ⚠ **§T27.7 — `archive_live_boards.py` DATES EVERY LEG BY ITS OWN GAME, NOT BY THE CAPTURE CLOCK: PRIZEPICKS' OPENING-NIGHT LINES POSTED WEEKS EARLY WOULD HAVE BEEN FILED UNDER THE WRONG SLATE** *(source, fixed 2026-09-24, from the 2026-09-28 build-chat session; `0` of the twelve before this entry)*
+
+> 📌 **Every row was originally stamped with the capture date, not the game's own date.** In season the two usually coincide, so the bug hid — but PrizePicks posts opening-night lines weeks early: captured `2026-09-24`, the first PP NBA board ever stored carried `commence_time` `2026-10-20T19:10Z` and was filed under `2026-09-24`. Everything downstream keys on `game_date` (the scorer, the tier build, the grader, the paper log), so those legs would have been invisible on the day they matter and would have polluted a slate that has no games that day.
+>
+> 🔧 **Fix, live-verified `archive_live_boards.py:386-397`**: after parsing, each row's `game_date` is re-derived from its own `commence_time` (falling back to the capture date only when no tip time is available, which is rare and app-dependent). **The convention is Eastern, not UTC** — verified against `nba_calendar.games`: opening night `2026-10-20` holds a game at `2026-10-21T01:30Z` whose `game_date` is still `2026-10-20`, the ET date. The run also logs how many legs moved and to which dates, so a future re-date is visible in the job's own output rather than silent.
+
+---
+
+## 🔴🔴 **§T28.1 — THE GRADER SCORED ONLY `12` OF THE MARKETS P3 PRODUCES: FANTASY, EVERY DERIVED PROP, AND EVERY PERIOD MARKET WERE GRADED `no_stat` — NEVER IN THE CALIBRATION, NEVER IN THE PAPER LOG** *(source + live verify, fixed 2026-09-25, from the 2026-09-28-03-09-57 build-chat transcript; a different defect from `NBA_OPEN_ITEMS.md`'s pre-existing "INNER JOIN drops non-participants" grader-risk item — that one is about JOIN semantics, this one is about market COVERAGE; `0` of the twelve before this entry)*
+
+> 📌 **`grade_board_outcomes.py` only ever knew how to grade `12` markets.** Every leg P3 could score but this file could not grade — fantasy, every derived prop, and every period market (`1Q`/`1H`/`2H`/`4Q` variants) — came out the other end marked `no_stat`: never checked against the box score, so never present in the calibration or the paper log. This is a coverage gap, silent in the sense that a `no_stat` leg looks like a legitimately absent stat, not like a missing feature.
+>
+> 🔧 **Fix, live-verified `grade_board_outcomes.py:48-53,145-183,304-311`** (comment dated `COMPLETED 2026-09-25`): the grader now covers the full stat set. **Fantasy** grades from the official `nba_fantasy_pts` field (the NBA's own 2017 standard, which PrizePicks uses) rather than deriving it, with the formula (`pts + 1.2·reb + 1.5·ast + 3·stl + 3·blk − tov`) kept only as a fallback. **Period markets** grade from the quarter logs P2 already mines daily (`H1 = Q1+Q2`, `H2 = Q3+Q4`); a player-date missing a quarter row raises `KeyError`, caught and graded `no_stat` explicitly rather than crashing or silently passing. **File reads are local-first** (`_read_json`, `grade_board_outcomes.py:145-153`): the grader previously fetched season logs from the raw GitHub CDN, the same stale-cache defect as the delta's — a 404 minutes after a same-day file is committed. It now reads the runner's own committed JSON first, HTTP only as fallback.
+
+> → 🆕 *`2026-10-10`: the scorer's half of the period chain (archiver map, vocabulary, the `FULL`-only join) and the zero-calibration-shift boundary for period legs are in `NBA_MASTER_SUMMARY.md` `§T28.2`.*
+
+🆕 *(additional sweep `8`, pass 500, `§P500` T28 `20:22Z` on `2026-09-25` and `06:17Z`–`07:41Z` on `2026-09-26`, AS STATED)* Three facts the grader's chain and the closure list carry without their figures. **`T20-13` closed**: the build chat's reading is that the item's *"22 vs 30 props"* **counted period rows as props**; *"with the period dimension separated it's `21` full-game props on every date including last opening night; the certifier gates at `20`."* **The grader's offline test** on the real logs (`06:15Z`–`06:17Z`): *Jaren Jackson Jr on Jan 15 — `30` points, `H1` `23` + `H2` `7` (quarters reconcile to the game exactly), `Q1` `8`, fantasy `43.1`*; the grader was also changed to read every file local-first, because it had the same raw-CDN-by-season-file defect as the delta (a stale cache, and a `404` on October 21 minutes after the delta creates the new season's file). **The reliability audit's per-app cross-check** (`07:41Z`): a first check that gave `5.7` pp was the author's own name-based join pairing rows wrongly; joined to the box score directly, *"the per-app numbers are `1.2`–`3.5` pp"* (the audit itself reconciled against the independent day-of record at `1,391` of `1,391` legs, on file). The period stat forms the build chat expected PrizePicks to post, from its API shape and third-party market maps: `"1Q Points"`, `"1H Points"`, `"1H 3-Pointers Made"`.
+
+🆕 *(additional sweep `9`, pass 550, `§P550` T28 `06:34Z` on `2026-09-26` and `20:22Z` on `2026-09-25`, AS STATED)* Two figures the profile-snapshot closure and the first rehearsal carry without their counts. **Ledger item `#9`, closed as an ingredient-preservation problem, not a research nicety** (`06:34Z`): the build chat reclassified it from the earlier *"research-parity item, not production"* — six profile tables (the DARKO impact table, the play types, shot quality and its delta, shot zones, tracking detail) are single-snapshot with no season or as-of, and every Monday's writer workers rewrote them: *"last week's profiles were simply gone, and the first run after opening night would have replaced a full season's profiles with a week of samples"*; under the owner's rule they are ingredients. *"P1 now copies each into a dated `_asof` table before the loads, without touching the six workers, and I seeded it today with the complete 2025-26 profiles — `530` / `3,282` / `2,285` / `582` / `4,656` / `4,652` rows."* It was verified beforehand that the certified recipe reads none of these, so production was never at risk; the research layer's history was. (The later extended snapshot set is in the weekly-static workflow note; the as-of tracking history's `23,260` rows are on file.) **The first combined rehearsal's slate** (`20:22Z` on `2026-09-25`, mining on, real slate `2026-01-15`) *"started before the components fix, so its slate loaded without `proj_min` (`6,126` NULL)"* — the load that landed (`79,437` rows) is on file; the `6,126` is the NULL count the fix removed.
+
+---
+
+## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
+
+> 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
+
+### ✅✅ **FIRST, THE GOOD NEWS, AND IT CONFIRMS `T20-4`'s CLOSURE FROM A NEW DIRECTION**
+
+> 🔑 **The three cron'd pipelines carry `0` season-literal sites between them.** *`nba-p1-weekly-static.yml`, `nba-p2-overnight-heavy.yml` and `nba-p3-afternoon-light.yml` do not appear in the census below at all* — ***which is `T20-4`'s closure ("`grep -c '2025-26'` on all three returns `0`·`0`·`0`") re-derived independently, `3` days later, by a census that was not looking for it.*** ⇒ **the nightly path is clean. The hazard did not disappear; it MIGRATED to the manual surface, and that is where it has never been counted.**
+
+### 🔴 **THE CLOSED TOTAL — every `nba-*.yml` line containing `2024-25` or `2025-26`**
+
+> | workflow | sites | overridable by an input | 🔴 **HARDCODED** | `cron` |
+> |---|---|---|---|---|
+> | 🔴🔴 **`nba-absence-panel.yml`** | **`47`** | `11` | 🔴🔴 **`36`** | **`0`** |
+> | `nba-backtest.yml` | `16` | `0` | `16` | `0` |
+> | `nba-board-maintenance.yml` | `7` | `2` | `5` | `0` |
+> | `nba-engine-test.yml` | `7` | `0` | `7` | `0` |
+> | `nba-maintenance.yml` | `6` | `0` | `6` | `0` |
+> | `nba-baseline-history.yml` | `5` | `1` | `4` | `0` |
+> | `nba-backfill.yml` | `3` | `0` | `3` | `0` |
+> | `nba-combos-history.yml` | `3` | `1` | `2` | `0` |
+> | `nba-periods-history.yml` | `3` | `1` | `2` | `0` |
+> | `nba-market-spreads.yml` · `nba-pairs.yml` | `2` each | `1` each | `1` each | `0` |
+> | `nba-game-officials.yml` · `nba-starter-status.yml` | `1` each | `0` | `1` each | `0` |
+> | **TOTAL** | **`103`** | `18` | 🔴 **`85`** | 🔴 **`0` — every one manual** |
+>
+> ⇒ ⚠⚠ **`1` of the `103` is cited in the twelve** *(`nba-absence-panel.yml:136`)*. **`RULE 17`'s floor was `7`; the total at this layer is `103`.**
+
+### 🔴🔴🔴 **AND THE CONCENTRATION IS THE FINDING: `nba-absence-panel.yml` EXPOSES A `seasons` INPUT THAT `36` OF ITS `47` SITES IGNORE**
+
+> *That workflow is not peripheral — it is **`28` python steps carrying the model-fitting surface** (`fit_minutes_allocator`, `fit_rate_response`, `fit_b4_*`, `fit_a5_projected_lineups`, `fit_m1_defender_level`, `fit_n1_granular`, `apply_ladder_calibration`, `calibrate_all_props`, `build_blowout_model`, `build_matchup_model`, `build_mondrian_confidence`, `build_asof_calibration`, `gate_remaining_factors`, **`build_final_hp`**), and this corpus already records it as **one of only TWO workflows that write `final_hp` at all**.*
+>
+> 🔑 **It takes an input that looks like it parameterises the run:**
+> ```yaml
+> seasons:
+>   description: "comma-separated (2023-24 has no injury archive)"
+>   default: "2024-25,2025-26"
+> ```
+> ⚠⚠⚠ **AND `36` OF ITS `47` SITES CANNOT SEE IT.** *`11` read `${{ github.event.inputs.seasons || … }}`; the other `36` are literal — `RATE_TRAIN_SEASON: "2024-25"`, `B4_TEST_SEASON: "2025-26"`, `N1_SEASONS: "2024-25,2025-26"`, `EB_SEASONS`, `BM_SEASONS`, `BS_SEASONS`, `TM_SEASONS`, `SC_SEASONS`, `MC_SEASONS`, `CV_SEASONS`, `AC_SEASONS`, `CC_TRAIN`/`CC_TEST`, `LC_TRAIN`/`LC_TEST`, `RF_TRAIN`/`RF_TEST`, `M1_*`, `RIM_*`, `RT_*`, `UA_*`, `FN_*`, `N1_TRAIN`/`N1_TEST` …*
+>
+> ⇒ 🔴🔴🔴 ***RUNNING IT WITH `seasons: 2026-27` DOES NOT REFIT ON `2026-27`. IT PRODUCES A MIXED-SEASON FIT — `11` steps on the season you asked for and `36` on `2024-25`/`2025-26` — AND NOTHING SAYS SO.*** 🔑 **That is strictly worse than either honest alternative**: *a workflow with no input would be refused or edited; a workflow whose input worked would be correct. **One that accepts the input and half-ignores it produces a model fitted across two different season definitions and reports success.*** ⚠ *`2026-27` appears **`0` times** in the file.*
+>
+> ⚠⚠ **AND THE TIMING IS THE WHOLE POINT**: *`cron = 0` means this only runs when a person runs it — **and the occasion to run it is precisely the new season**. The defect is dormant until the exact moment it matters, in a workflow the owner has stated runs **"not monitored"** (`§T26.70`).* ⇒ **`T26-12`.**
+
+### ⚠ **TWO SMALLER SHAPES FROM THE SAME STRATUM, BOTH GENUINELY NEW**
+
+> ① 🔴 **THE SEASON-KEYED BOUNDS DICT IS A THIRD SPECIES, AND `SEASON_BOUNDS` APPEARS `0` TIMES IN THE TWELVE.** *`8` scripts carry a `SEASON_BOUNDS = {` / `BOUNDS = {` keyed by season; **`7` have no `2026-27` entry**.* ✅ ***The one that DOES — `export_market_spreads.py` — is the only one of the eight on a cron'd path (`P2` and `P3`), and its own comment records the fix and the exact failure mode***: *it "had NO `2026-27` row" and "from `2026-27` both pipelines would have re-exported two stale seasons and produced no market [data]".* ⇒ **the live path was fixed deliberately; the other `7` (`build_absence_panel`, `_v2`, `_v3`, `build_redistribution_factors`, `build_redistribution_panel`, `fit_minutes_allocator`, `scrape_nba_pairs`) are all manual.** 🔑 *A missing dict KEY is not a wrong literal — it raises or silently falls through — so `§T20.34`'s literal-grep could never have found it.*
+> ② 🔴 **THREE GENERATIONS OF ONE ORPHAN.** *`build_absence_panel.py` (`14,331` B), `_v2.py` (`11,897` B), `_v3.py` (`11,913` B), dated `2026-09-11`/`09-11`/`09-12* — **and `grep -rlw` across every `.py` and every workflow finds NOTHING referencing any of the three** *(two vocabularies: workflow files and python imports/invocations)*. ⇒ *`§T26.61`'s orphan census found `11` undispatched workers; this is a new shape — **not one orphan but three versions of the same one**, and the newest is not the largest, so it is not obvious which was meant to win.* ⚠ *Bears on `F6-2`, which asks whether to BUILD an absence control — **three unreferenced attempts already exist**.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59` — one definition, run consistently: a "site" is a line containing `2024-25` or `2025-26`)*:
+> ```bash
+> for w in .github/workflows/nba-*.yml; do t=$(grep -cE "2024-25|2025-26" $w); [ "$t" -eq 0 ] && continue
+>   o=$(grep -nE "2024-25|2025-26" $w | grep -c "inputs\.")
+>   printf "%-32s sites=%-3s overridable=%-3s hardcoded=%-3s cron=%s\n" "$(basename $w)" "$t" "$o" "$((t-o))" "$(grep -c cron: $w)"; done
+> # 13 workflows · 103 sites · 85 hardcoded · every cron=0
+> grep -c "2026-27" .github/workflows/nba-absence-panel.yml          # 0
+> grep -rln "SEASON_BOUNDS\s*=\s*{\|^BOUNDS\s*=\s*{" nba/*.py        # 8 scripts
+> ```
+
+## 🔴🔴🔴 **§T26.63 — `T26-1` RE-RATED AND THE BOARD LAYER MEASURED APP BY APP: FOUR OF THE FIVE DFS BOARDS ARE GENUINELY EMPTY AND *NOT* BROKEN — BETR IS BROKEN, PICK6 DOES NOT EXIST, AND NOTHING IN THE SYSTEM CAN TELL THOSE THREE STATES APART** *(source + `SELECT` + the committed meta files, 2026-09-26; the app-by-app split is `0` of the twelve)*
+
+> 📌 **`T26-1` said "board tiers are PrizePicks-only". Measuring it turned up something the item did not ask about: the archive itself stops on `2026-09-12` for every DFS app but PrizePicks, which reads exactly like a breakage — and for three of them it is not one.** ⚠⚠ ***`24` days to the opener, this distinction is the whole ball game: an app that has not opened its NBA market needs nothing, and a scraper that has died needs fixing now. This section separates them.***
+
+### ✅ **`T26-1` RE-MEASURED — THE CLAIM IS TRUE, AND SMALLER THAN IT LOOKS**
+
+> | bookmaker | archive rows | dates | last date | `board_tiers_v2` rows |
+> |---|---|---|---|---|
+> | `prizepicks` | `2,199,810` | `379` | ✅ **`2026-10-20`** *(the opener — advance boards)* | ✅ **`2,199,354`** *(`99.98%`)* |
+> | `fanduel` | `6,697,790` | `379` | `2026-04-12` | 🔴 `0` |
+> | `draftkings` | `3,652,647` | `379` | `2026-04-12` | 🔴 `0` |
+> | `betonlineag` | `3,362,604` | `378` | `2026-04-12` | 🔴 `0` |
+> | `bovada` | `2,416,074` | `377` | `2026-04-12` | 🔴 `0` |
+> | `betmgm` | `1,865,497` | `375` | `2026-04-12` | 🔴 `0` |
+> | `williamhill_us` | `1,857,248` | `371` | `2026-04-12` | 🔴 `0` |
+> | `fanatics` | `1,666,106` | `270` | `2026-04-12` | 🔴 `0` |
+> | `betrivers` | `1,093,209` | `378` | `2026-04-12` | 🔴 `0` |
+> | `underdog` | `939,719` | `380` | `2026-09-12` | 🔴 `0` |
+> | `betr_us_dfs` | `780,765` | `131` | `2026-04-12` | 🔴 `0` |
+> | `pick6` | `534,188` | `176` | `2026-04-12` | 🔴 `0` |
+> | `fliff` | `1,394` | 🔴 **`1`** | `2026-09-13` | 🔴 `0` |
+> | `sleeper` | `1,276` | 🔴 **`1`** | `2026-09-12` | 🔴 `0` |
+>
+> ⇒ **`14` bookmakers, `26,959,927` archive rows. Tiers exist for ONE: `0` rows for the other `13` across `24,760,117` rows — `91.8%` of the archive.** ✅ **The restriction is ONE env value**: `BT2_APPS: "prizepicks"` at `nba-p3-afternoon-light.yml`, matching the script's own default; `build_board_tiers_v2.py` is already app-parameterised — `WHERE bookmaker = ANY(%(apps)s)` — so widening it is a config change, not code. ⚠⚠ **BUT THE RE-RATING MATTERS**: *ten of the thirteen are SPORTSBOOKS frozen at `2026-04-12`, the end of the regular season — **tiering them would tier a dead archive**, and the goblin/demon taxonomy `build_board_tiers_v2.py` implements describes DFS rungs, not book prices. The live question is the DFS apps, and **until they post boards there is nothing to tier.*** ⇒ ***`T26-1`'s fix is one env value and its correct moment is the day the DFS boards open, not today.*** *That moves it off the pre-opener critical path without closing it.*
+
+### ✅✅ **THE FOUR EMPTY DFS BOARDS ARE EMPTY, NOT BROKEN — AND THE PROOF IS ALREADY COMMITTED IN THE REPO**
+
+> 🔑 **Every DFS scraper writes a `*_nba_current_meta.json` beside its board, and all four ran TODAY and reported success:**
+>
+> | app | board file | legs | meta `ok` | meta `fetched_at` | what the meta proves |
+> |---|---|---|---|---|---|
+> | `prizepicks` | `365,552` B | ✅ **`192` props** | `true` | `2026-09-26` | *posting advance boards; archive reaches `2026-10-20`* |
+> | `underdog` | `23,794` B | `3` | `true` | `2026-09-26T05:27:45Z` | 🔑 ***`match_grouped_lines[core]: 3` — MATCHES FOUND, `lines[match=…]: 0` — the app lists NBA games and has posted no lines*** |
+> | `sleeper` | `331` B | `0` | `true` | `2026-09-26T04:57:03Z` | *endpoint answered; `legs: 0`, `unknown_players: 0` — nothing available* |
+> | `fliff` | `757` B | `0` | `true` | `2026-09-26T00:50:28Z` | 🔑 ***`errors: []` and `channels_seen: {452: 129, 753: 70, 43005: 40, …}` — the feed RETURNED CONTENT and `events: 0`, `markets: 0` of it was NBA*** |
+>
+> ✅ **And their scrapers are properly cron'd, every two hours, deliberately staggered**: `sleeper-board.yml` `:15`, `underdog-board.yml` `:25`, `fliff-board.yml` `:35`, plus `scrape.yml` at `:00` — *`12` refreshes a day each, which is why every board file above is hours old.* ⚠ **`RULE 58`, ON MY OWN PASS-22 WORK**: *these three live in workflows with NO `nba-` prefix, so a `.github/workflows/nba-*.yml` glob does not see them. **`11` workflows in this repo carry a `cron`, not the `6` an `nba-`-scoped glob reports.** `§T26.61`'s worker/table census is unaffected — it grepped the whole directory — but the correction is recorded here because the next person to count crons will make the same mistake.*
+>
+> ⇒ 📜 **`RULE 61` AGAIN, AND THIS IS ITS CLEANEST CASE YET: the `2026-09-12` archive cutoff is not a stale store and not a broken scraper — IT IS THE LAST DAY THOSE APPS HAD AN NBA BOARD TO CAPTURE.** *PrizePicks is the exception because PrizePicks posts weeks early, which `nba-p3-afternoon-light.yml` already documents in its own comment.*
+
+### 🔴🔴 **BETR *IS* BROKEN, AND THE REPO CANNOT FIX IT: THERE IS NO BETR SCRAPER**
+
+> 🔴 **`boards/betr_nba_current.json` carries `legs: 0` and its meta reads `fetched_at: 2026-09-10T06:18:28Z` — `16` days stale, while the other four refresh every two hours.** ⚠⚠ **AND `ls nba/scrape_betr*` RETURNS NOTHING.** *`betr` appears in `archive_live_boards.py` (the READER), three builders, and two workflows' `ARCHIVE_APPS` — **and in no scraper.** Whatever produced that file is not in this repo, which is exactly why nothing refreshes it.*
+>
+> 🔴🔴🔴 **AND THE DATE THE META ITSELF CARRIES**: `token_expires_at: 2026-10-10T06:10:56Z` — ***the Betr token expires TEN DAYS BEFORE OPENING NIGHT (`2026-10-20`).*** *`T20-14` flagged the token; this adds the half that makes it actionable: **even a fresh token would not help, because nothing in the repo fetches a Betr board.*** ⇒ **`betr` sits in `ARCHIVE_APPS` on the cron'd P3 path as a permanent no-op.**
+
+> 📌 **UPDATE `2026-09-28` — THIS SUBSECTION'S HEADLINE CLAIM IS NOW FALSE, LIVE-VERIFIED.** *A real Betr scraper exists: `.github/workflows/betr-cloud-harvest.yml` (cron `2x`/day) runs `nba/betr_harvest_cloud.py` on a `ubuntu-latest` runner — SeleniumBase UC Mode past Cloudflare Turnstile, a proxy relay for the residential IP, a `BETR_SESSION_STATE` secret seeding a logged-in session, an in-page geolocation pick — and commits the board itself. Live-verified: `boards/betr_wnba_current_meta.json`, `source: "github-runner uc+proxy picks.betr.app"`, `1,281` legs / `514` alt, `fetched_at: 2026-09-28T05:08:47Z`. Already wired into `archive_live_boards.py::rows_betr` and the daily P3 archiver run; auto-switches to NBA `2026-10-20`. Two minor caveats remain (alt-multiplier field unparsed; the seeded session needs periodic re-export) — neither reopens this finding. Full mechanism and sourcing in `NBA_OPEN_ITEMS.md`'s `T20-14` (CLOSED `2026-09-28`, this same pass) — not duplicated here. `pick6` below is unaffected by this update; it remains exactly as described.*
+
+### 🔴 **AND `pick6` IS NOT ANYWHERE: NO SCRAPER, NO BOARD FILE, NOT IN `ARCHIVE_APPS`**
+
+> *The owner's target set is six DFS apps — PrizePicks, Underdog, Sleeper, Fliff, Betr, pick6. `ARCHIVE_APPS` lists **five** (`prizepicks,underdog,sleeper,fliff,betr`) on both the cron'd P3 path and `nba-board-archive.yml`.* 🔴 **`pick6` has no `scrape_*` script, no `boards/pick6_nba_current.json`, and no entry in either list — it exists only as `534,188` rows / `176` dates ending `2026-04-12`.** ⇒ ***of the six target apps, ONE is live, THREE are waiting on the apps themselves, and TWO — Betr and pick6 — have no working path into the archive at all.***
+
+### 🔴🔴🔴 **THE DEFECT THAT OUTLIVES ALL OF THE ABOVE: THE SIGNAL THAT TELLS THESE STATES APART EXISTS, IS COMMITTED, AND NOTHING READS IT**
+
+> ① ⚠ **`archive_live_boards.py` treats an empty board as a successful capture**: `if not rows: print(f"{app}: 0 rows parsed"); continue` — *a log line in a job that exits green. Its only hard guard, `if not doc: print(f"{app}: no board file")`, catches a MISSING file, never an EMPTY one.*
+> ② 🔴 **`certify_pipeline.py` has exactly ONE board gate, and it is an aggregate**: `check("board archived today", "SELECT count(*) FROM nba_market.board_snapshots WHERE game_date = %s", …, lambda v: v and int(v) > 0, "board legs captured")`. **No `bookmaker` breakdown, and the threshold is `> 0`.** ⇒ ***PrizePicks alone satisfies it. The day the other apps open their boards, a per-app scraper failure will be invisible to certification exactly as Betr's `16`-day silence is invisible now.***
+> ③ 🔴🔴 **AND THE MISSING PIECE IS ALREADY ON DISK.** *The meta files carry precisely what a gate needs — `ok`, `fetched_at`, `legs`, and for Betr a dated `token_expires_at` — and* `grep -rn "_current_meta|token_expires" nba/certify_pipeline.py nba/check_*.py nba/verify_*.py` *returns* **NOTHING**. ⚠⚠ ***A credential expiry that lands ten days before opening night is sitting in a committed file, in ISO-8601, and no gate, checker or verifier in this repo reads it.***
+> ⇒ ***the cheap fix is not a new scraper: it is a per-app freshness assertion over the five meta files — `ok`, `fetched_at` within N hours, and `token_expires_at` in the future — which turns three indistinguishable states into three distinct ones.*** ⇒ **`T26-9`.**
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — every figure was RUN)*:
+> ```sql
+> SELECT b.bookmaker, count(*), count(DISTINCT b.game_date), max(b.game_date),
+>        (SELECT count(*) FROM nba_market.board_tiers_v2 t WHERE t.bookmaker=b.bookmaker)
+> FROM nba_market.board_snapshots b GROUP BY 1 ORDER BY 2 DESC;
+> ```
+> ```bash
+> for f in boards/*_nba_current_meta.json; do echo "$f"; python3 -c "import json;print(json.load(open('$f')))"; done
+> grep -l "cron:" .github/workflows/*.yml | wc -l          # 11, NOT the 6 an nba-*.yml glob reports
+> ls nba/scrape_betr*                                      # No such file
+> grep -rn "_current_meta|token_expires" nba/certify_pipeline.py nba/check_*.py nba/verify_*.py   # nothing
+> ```
+
+## ✅✅✅ **§T26.79 — THE DISPATCH CENSUS RE-RUN: `11` UNREACHABLE WORKERS BECAME `2` IN A SINGLE MORNING, AND THE TWO THAT REMAIN ARE THE TWO THAT SHOULD. `T26-8` AND `T26-5` CLOSE** *(source census re-run, 2026-09-26; `§T26.61`'s method, unchanged)*
+
+> 📌 **`§T26.61` handed over a CLOSED LIST of `11` workers reachable from no schedule and said each needed one of three words — cron it, fold it, or delete it.** ⚠⚠ ***Between `09:39` and `09:40` PT the build chat did exactly that, citing `T26-8` by name in three commit messages. Re-running the same census is how the sweep confirms it rather than assuming it.***
+
+### ✅ **THE RE-RUN — SAME COMMAND, SAME DAY, DIFFERENT SYSTEM**
+
+> | | `§T26.61` *(earlier today)* | **now** |
+> |---|---|---|
+> | schedule-reachable | `10` | ✅✅ **`19`** |
+> | 🔴 reachable from no schedule | 🔴 **`11`** | ✅ **`2`** |
+>
+> ▶ **WHAT MOVED, AND WHO MOVED IT:**
+> | commit | time | workers newly dispatched |
+> |---|---|---|
+> | `ae4ac367` *(P1, "…that ran on no schedule … **(T26-8)**")* | `09:39` | `nba-static-player-tracking` · `nba-weekly-differential` · `nba-static-officials` · `nba-static-arenas` |
+> | `816cf447` *(P1, "scrape the officials register weekly — **its scraper and loader were both unscheduled (T26-8)**")* | `09:39` | *the officials SCRAPER half — see below* |
+> | `0556199f` *(P2, "load the day's mined data … **(2026-09-26, T26-8)**")* | `09:40` | `nba-daily-delta` · `nba-static-starter-status` · `nba-static-game-officials` · **`nba-static-schedule`** · `nba-static-measure-types` |
+>
+> *P1's loop went from `10` names to `14`; P2 gained a five-worker loop it did not have.*
+
+### ✅✅ **AND THE TWO THAT REMAIN ARE EXACTLY THE TWO `§T26.61` SAID SHOULD**
+
+> | worker | why it is correctly unreachable |
+> |---|---|
+> | `nba-baseline-ladder` | ✅ **superseded dead code** — *`§T26.61` proved the ladder path is entirely Python and `to_regclass('nba_score.baseline_ladder')` is **`NULL`**; its first statement would fail. The third word, "delete it", is the one it needs.* |
+> | `nba-static-backfill` | ✅ **a historical backfill** — *`§T26.61` listed its `12`-table game-log/measure-type group as **"correctly manual — a backfill should be"**.* |
+>
+> ⇒ 🔑🔑 ***THE CLOSED LIST RESOLVED COMPLETELY: `9` cron'd, `1` dead, `1` correctly manual. `T26-8` CLOSES.***
+
+### ✅✅✅ **AND THREE OTHER ITEMS CLOSE WITH IT**
+
+> ▶ **`T26-5` — THE SCHEDULE LOADER** *(`§T26.57`, ranked as the day's opening headline, later re-rated down by `§T26.70`)*: **`nba-static-schedule` is now dispatched by P2 daily.** *The measured drift — JSON `2,667` vs table `2,666`, the missing `0012600067 UTA @ DEN` on `2026-10-04` — will close on the next P2 run.* ⇒ **CLOSED.**
+> ▶ **`§T26.63`'s OFFICIALS HALF** — *I found that the officials layer had **neither** half scheduled: `scrape_nba_game_officials.py` dispatched only by two cron-less workflows, and the loader worker by nothing.* ✅ **`816cf447` scrapes the officials register weekly in P1 and `0556199f` dispatches `nba-static-game-officials` in P2** — *both halves, and the commit message names the finding: "its scraper and loader were both unscheduled".* ⇒ **CLOSED.**
+> ▶ **`§T26.52`'s ORPHANED `player_tracking_profile`** — *the table `§T26.52` found "persisted and no longer produced". **Its writer is now in P1's loop.*** ⇒ **CLOSED.**
+> ▶ ⚠ **AND `T8`'s DIFFERENTIAL WORKER, IDLE SINCE `2026-09-02`** — *`nba-weekly-differential` is now in P1's loop.* ⇒ **the cause `§T26.61` named is removed.**
+
+### 🔑🔑 **AND THE FIX CARRIES A GUARD THE SWEEP ASKED FOR IN A DIFFERENT ITEM**
+
+> *P2's new step is `Load the mined data into Postgres (writer workers)` **followed by `Verify the daily loads by data`**, and its comment states the principle in the sweep's own terms:* **"Same dispatch-then-verify-by-data pattern as P1's loop (**an acknowledgement is not a row**)."** ⇒ 🔑 ***That is `T26-9`'s shape — "nothing distinguishes a green job from a job that did nothing" — answered for this surface: the workers are checked against Postgres, not against their own HTTP `200`.*** ⚠ *`T26-9` itself stays OPEN: it is about the BOARD scrapers' `*_meta.json`, a different surface with no such verifier.*
+
+> ⚠ **AND THE COMMIT RECORDS TWO MEASURED FACTS THE SWEEP DID NOT HAVE** *(quoted, not derived)*: *`nba_stats.player_game_log` "was last written `2026-09-08`" and `nba_calendar.games` — **"the table every gate reads"** — `2026-09-02`. **Those are `24` and `18` days of drift on the two tables the pipelines depend on most**, and they are the concrete cost of the `11`-worker gap that `§T26.61` measured structurally.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59` — `§T26.61`'s command, unchanged)*:
+> ```bash
+> for f in nba/alphadog-v2-nba-*.js; do b=$(basename $f .js | sed 's/^alphadog-v2-//')
+>   wf=$(grep -rlw "$b" .github/workflows/ | xargs -n1 basename | tr '\n' ' '); crond=""
+>   for w in $wf; do [ "$(grep -c 'cron:' .github/workflows/$w)" -gt 0 ] && crond="$crond$w "; done
+>   printf "%s %-30s %s\n" "$([ -n "$crond" ] && echo ✅ || echo 🔴)" "$b" "${crond:-NONE}"; done
+> # 19 schedule-reachable, 2 not (was 10 / 11)
+> ```
+
+> 📌 **UPDATE `2026-09-28` — THE "`2` CORRECTLY LEFT UNREACHABLE" VERDICT WAS HALF RIGHT.** *`nba-baseline-ladder` is correctly dead (its target table doesn't exist). But `nba-static-backfill` is NOT purely historical: on `2026-09-08` it gained a `mode: "weekly"` input (see the worker's own code comment) specifically so `nba_stats.player_career_season_totals`, `nba_stats.player_splits` and `nba_team.team_splits` — all three fed by `nba/scrape_nba_career_totals.py`/`scrape_nba_splits.py`, which `nba-scrape.yml` re-runs weekly — would NOT go stale. That weekly mode is real, cheap (~6s per the code comment), and never wired into `nba-p1-weekly-static.yml`'s dispatch loop or anywhere in `alphadog-v2-orchestrator.js` (zero references to `NBA_STATIC_BACKFILL_WORKER` there). ▶ **LIVE-VERIFIED**: all three tables frozen at `max(updated_at) = 2026-09-08T08:18` — the exact day the weekly mode was built, meaning it ran once (manually) and never again — `20` days stale as of today, while the source JSON refreshed `2026-09-14`–`09-21`. This also corrects `NBA_OPEN_ITEMS.md`'s own T7 gap table, which called this same gap "✅ CLOSED in T7" — the capability was built, the dispatch wiring was not. **RELABELLED `2026-09-29`: `T26-12` was a collision — that ID was already taken by the `nba-absence-panel.yml` season-input finding (`§T26.76`). This finding is now `T26-14`.** See `T26-14`.*
+
+## 🔴🔴🔴🔴 **§T26.61 — THE DISPATCH CENSUS, CLOSED AND COMPLETE: `11` OF `21` NBA WRITER WORKERS ARE REACHABLE FROM NO SCHEDULE, AND `26` OF THE `41` TABLES THEY WRITE HAVE NO SCHEDULED WRITER AT ALL** *(source census + `SELECT`, 2026-09-26; the closed list is `0` of the twelve)*
+
+> 📌 **WHY THIS PASS EXISTS.** *`§T26.52` found ONE orphaned table. `§T26.57` found ONE orphaned worker. `§T26.54` reported `21`/`21` workers **documented** and read that as reassurance.* ⚠⚠ ***Three findings, one shape, and nobody had asked the question closed-form: WHICH workers are invoked by something that runs on its own?*** 🔑 **`§T20.34`'s lesson applies exactly — an owner handed a FLOOR cannot plan; an owner handed a CLOSED LIST can fix it in an afternoon.** *This is the closed list.*
+
+### ⚠⚠ **FIRST, THE VOCABULARY — AND THE FIRST ANSWER WAS `0` OF `21`, WHICH WAS A CLAIM ABOUT MY QUERY** *(`RULE 58`)*
+
+> ① **FILENAME** — `grep -rl "alphadog-v2-nba-static-schedule" .github/workflows/` → **`0` of `21` workers matched.** 🔴 *Published as-is this would have said "no worker is dispatched at all", which is false: the static layer demonstrably refreshes.* ⇒ **wrong vocabulary.**
+> ② **SHORT NAME** — P1 dispatches over HTTP by the worker's name minus the `alphadog-v2-` prefix, in a literal shell loop at `nba-p1-weekly-static.yml:190-192` against `WORKER_HOST` *(`vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev'`)*. **This is the real dispatch surface.**
+> ③ **MANIFEST AND WRANGLER** — `nba/worker_manifest_nba.json` lists all `21` and **carries no schedule of any kind**: it is a DEPLOY manifest, consumed by `generate_wrangler_configs.py`. ⚠ *And **no NBA wrangler config is committed at all** — `wrangler.alphadog-v2-nba-static-teams.jsonc` is absent exactly like the orphans', though that worker demonstrably works — so **the Cloudflare-cron surface does not discriminate** and cannot be used either way.* ✅ *`RULE 20` satisfied on three vocabularies before any absence below is asserted.*
+
+### 🔴 **THE CLOSED LIST — `10` WORKERS DISPATCHED, `11` NOT**
+
+> ✅ **DISPATCHED — the ten in P1's loop** *(Mondays `19:00Z`)*: `nba-static-teams` · `nba-static-players` · `nba-static-player-bio` · `nba-static-team-stats` · `nba-static-onoff` · `nba-static-playtypes` · `nba-static-tracking-detail` · `nba-static-darko` · `nba-static-shotquality` · `nba-static-lineups`.
+>
+> | worker | referenced by | schedule-reachable? |
+> |---|---|---|
+> | `nba-daily-delta` | `nba-daily-delta.yml` | 🔴 **NO — that workflow has no `cron`** |
+> | `nba-static-schedule` | — | 🔴 **NO** *(`§T26.57`; drift already measured)* |
+> | `nba-static-player-tracking` | — | 🔴 **NO** *(`§T26.52`'s orphaned table — **root cause named here**)* |
+> | `nba-weekly-differential` | — | 🔴 **NO** *(**this is why `T8` found it idle since `2026-09-02`**)* |
+> | `nba-static-starter-status` | — | 🔴 **NO** |
+> | `nba-static-backfill` | — | 🔴 **NO** |
+> | `nba-static-measure-types` | — | 🔴 **NO** |
+> | `nba-static-game-officials` | — | 🔴 **NO** |
+> | `nba-static-officials` | — | 🔴 **NO** |
+> | `nba-static-arenas` | — | 🔴 **NO** |
+> | `nba-baseline-ladder` | — | 🔴 **NO — and SUPERSEDED, see below** |
+>
+> ⇒ 🔴🔴 **`11` OF `21` — `52.4%` — ARE NOT REACHABLE FROM ANY SCHEDULE IN THIS REPO.**
+
+### 🔴🔴 **AND THE CONSEQUENCE AT TABLE LEVEL, WHICH IS THE PART AN OWNER CAN ACT ON: `26` OF `41`**
+
+> *Every `INSERT`/`UPDATE`/`DELETE` target across all `21` workers, classified by whether **any** of that table's writers is dispatched:*
+>
+> | | count |
+> |---|---|
+> | tables written by the `21` workers | **`41`** |
+> | ✅ have at least one DISPATCHED writer | **`15`** |
+> | 🔴 **every writer undispatched — no scheduled writer at all** | 🔴🔴 **`26`** |
+>
+> ⚠ **`RULE 57` CAUGHT AN ERROR IN THIS TABLE BEFORE PUBLICATION.** *A first pass attributed `nba_ref.players` to `nba-weekly-differential` and called it orphaned. **It is not**: `nba-static-players` and `nba-static-player-bio` also write it and both are in P1's loop — which is exactly why `§T26.52` measured it refreshed `2026-09-24` at `713` rows. **A table with two writers is orphaned only if ALL of them are**, and the census was rebuilt on that rule before anything was written here.*
+>
+> 🔑 **THE `26`, GROUPED BY WHAT THEY FEED** *(so the owner can triage rather than read a list)*:
+> | group | tables | why it matters before the opener |
+> |---|---|---|
+> | 🔴🔴🔴 **THE SLATE** | `nba_calendar.games` | **`§T26.57` — drift already real: `0012600067` UTA @ DEN, `2026-10-04`.** ⇒ `T26-5` |
+> | 🔴🔴🔴 **THE `A5` STARTER MODEL'S OWN INPUT** | `nba_stats.player_game_starter_status` *(`97,079` rows live)* | *`§T26.39` retracted two sections over this model's validation. **Its input table has no scheduled writer**, and the only Python file that names it — `check_factor_freshness.py` — READS it.* |
+> | 🔴🔴 **THE OFFICIALS LAYER, BOTH HALVES** | `nba_ref.officials` *(`80`)* · `nba_ref.arenas` · `nba_stats.game_officials` *(`11,062`)* | ⚠⚠ ***The scrape is unscheduled too**: `scrape_nba_game_officials.py` is dispatched only by `nba-pergame-backfill.yml` and `nba-game-officials.yml`, **and neither has a `cron`**. Scraper AND loader are both manual.* ✅ *The cron'd `nba-referees.yml` (`15:30Z`) writes only `nba_ref.referee_assignments` — a DIFFERENT table; it does not cover these.* |
+> | 🔴🔴 **THE WEEKLY DIFFERENTIAL SET** | `nba_ref.official_differential_log` · `nba_ref.official_roster_snapshot` · `nba_ref.team_differential_log` · `nba_ref.team_roster_snapshot` · `nba_stats.player_differential_log` · `nba_stats.player_roster_snapshot` | *`T8` proved this worker had not run since `2026-09-02` and recorded it as a fact without a cause. **The cause is that nothing dispatches it.*** |
+> | 🔴 **THE GAME-LOG AND MEASURE-TYPE BACKFILL** | `nba_stats.player_game_log` · `_advanced` · `_scoring` · `_usage` · `nba_stats.player_career_season_totals` · `nba_stats.player_splits` · `nba_team.team_game_log` · `_advanced` · `_four_factors` · `_scoring` · `nba_team.team_splits` · `nba_team.defense_vs_position` | *Historical stores — **correctly** manual for a backfill. Listed for completeness, not as a defect.* |
+> | 🔴 **TRACKING** | `nba_stats.player_tracking_profile` *(`582`)* | *`§T26.52`, root cause now named.* |
+> | ⚠ **SUPERSEDED, NOT MERELY ORPHANED** | `nba_score.baseline_ladder` · `nba_score.baseline_ladder_runs` | **see below** |
+
+### ⚠⚠ **ONE OF THE ELEVEN IS DEAD CODE POINTING AT A TABLE THAT NO LONGER EXISTS — AND PROVING IT ALSO PROVES THE CENSUS IS READING THE RIGHT THING**
+
+> 🔑 **`nba-baseline-ladder` is not an oversight; it was REPLACED, and P2's own steps say so.** *The live ladder path is entirely Python:* `nba/baseline/build_baseline_ladder.py` *(per-pair, `BT_SAVE_COMPONENTS=1 BT_PROPS=$pair`)* → *a merge step writing* `nba_baseline_ladder_<asof>.json` *and* `_latest.json` → *`git commit` (**the loader fetches the artefact over HTTP from the repo, so the commit must precede the load**)* → `nba/load_baseline_ladder.py` *at `nba-p2-overnight-heavy.yml:325`.* **The JS worker appears nowhere in it.**
+>
+> 🔴🔴 **AND ITS TARGET IS GONE**: `SELECT to_regclass('nba_score.baseline_ladder')` → **`NULL`** — *the table does not exist*, while `to_regclass('nba_score.baseline_ladder_runs')` resolves. ⇒ **the worker's very first statement would fail.** ✅ *`baseline_ladder_runs` therefore still HAS a scheduled writer — `load_baseline_ladder.py`, which writes it and `nba_score.baseline_history` — so of the two tables in this group only `baseline_ladder` is truly writerless, and it is writerless because it was deliberately retired.* 🔑 **THE CLASSIFICATION LESSON: "undispatched" and "needed" are independent axes. `10` of the `11` are undispatched writers of live stores; this one is a retired writer of a dropped store. A census that could not tell them apart would be worthless to an owner.**
+
+### ⚠ **WHAT IS *NOT* ESTABLISHED, STATED PLAINLY** *(`RULE 6`)*
+
+> 🔴 **NOT RECORDED: how `nba_stats.game_officials` and `nba_stats.player_game_starter_status` received writes on `2026-09-23`.** *Both are in the `26` — every writer undispatched — yet `pg_stat_all_tables` shows `last_autoanalyze 2026-09-23` with `7,381` and `64,900` inserts since the stats reset, so **they were written after that reset**, not before it.* ⇒ *Two readings and this pass cannot separate them: **(a)** someone ran the manual workflows or hit the workers by hand around `2026-09-23`; **(b)** a writer outside this repo. ⚠ **The run history could settle it and currently cannot be read**: `github_list_workflow_runs` at `30` deep returns nothing but `pages build and deployment`.* 🔑 *If they are manual, the finding is `T26-2`'s shape at scale — **a needed job that only runs when a person remembers** — and that is the reading to test first.*
+>
+> ⚠ **AND AN OPERATIONAL COST THIS SWEEP IMPOSES ON ITSELF, WORTH ONE LINE**: *`[skip ci]` suppresses this repo's own workflows but **not GitHub Pages**, which is a built-in. `~30` `pages build and deployment` runs fired from this session's documentation commits, each cancelled by the next — **which is what made the run history unreadable above.** Not a defect; a diagnostic cost of a long documentation pass, and the reason to read run history BEFORE writing, not after.*
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — each figure below came from running the line beside it)*:
+> ```bash
+> ls nba/alphadog-v2-nba-*.js | wc -l                                    # 21
+> sed -n '190,192p' .github/workflows/nba-p1-weekly-static.yml           # the 10-worker dispatch loop
+> for f in nba/alphadog-v2-nba-*.js; do b=$(basename $f .js | sed 's/^alphadog-v2-//'); \
+>   printf "%-40s %s\n" "$b" "$(grep -rlw "$b" .github/workflows/ | xargs -n1 basename | tr '\n' ' ')"; done
+> ```
+> ```sql
+> SELECT to_regclass('nba_score.baseline_ladder');   -- NULL: the table does not exist
+> ```
+> *The `41`/`15`/`26` table split is the same worker scan, grouping each worker's `INSERT INTO|UPDATE|DELETE FROM <schema>.<table>` targets and marking a table dispatched if **any** writer is in P1's ten.*
+
+## 0.00000 🗺️🗺️ **THE WIRING MAP — WORKFLOW → SCRIPT → TABLE** *(published 2026-09-22, T20 pass 34, §T20.39)*
+
+> 🔑🔑 **WHY THIS SECTION EXISTS.** *This document has described every SCRIPT and
+> `NBA_DATABASE.md` every TABLE, and until now nothing described the EDGE between them.*
+> **Five consecutive T20 passes each found a defect, and every one lived on an edge** — a season
+> constant between a workflow and a script *(T20-4)*, a date window between a script and a table
+> *(T20-5)*, a certifier check between an assertion and a writer *(T20-6)*. ***The map below is the
+> missing view, written down so the blind spot that produced all three closes.***
+> **POPULATIONS, pinned 2026-09-22T15:52:31Z** *(rebuildable: `scratchpad/t20/wiring.py`; the
+> invocation pattern matches SUBDIRECTORY paths — `nba/baseline/*.py` was lost to a root-only pattern
+> once already)*: **`39` workflow files** *(all 40 less `nba-pp-payout-map.yml`, the concurrent
+> session's)* · **`119` distinct script invocations** · **`33` distinct tables written.**
+> ⚠ **Every cell below was opened against its source (rule 48). Rows that RESTATE an open item are
+> marked; the map does not republish old findings as new ones.**
+
+### A · THE THREE PIPELINES IN STEP ORDER
+
+> ⚠⚠ **A NOTE ON "THREE", ADDED 2026-09-22 (§T20.43) — AND IT RESOLVES A MIS-CITATION IN THE SYSTEM.**
+> **All three workflow files open with `# PIPELINE n OF 3 (COMPASS fact 107)`.**
+> 🔴 **COMPASS fact 107 is headed *"TWO PIPELINES, CUTOFF 1:15 PM PT — AND THE SCENARIO SIMULATOR IS
+> DROPPED"* and reads *"ARCHITECTURE: **(1) heavy overnight pipeline** … **and (2) a light 1:15 PM PT
+> pipeline**"*, explicitly *"supersedes the three-phase design in facts 41 and 68"*.**
+> ⇒ ***Each of the three files cites, as its authority for being one of THREE, a fact whose headline
+> is TWO and which explicitly retired a three-phase design.***
+> ✅ **THE RECONCILIATION, stated here because it appears nowhere else in the corpus**: **fact 107
+> describes the DAILY architecture. P1 is WEEKLY** *(cron `0 19 * * 1`, Mondays)* **and sits outside
+> what 107 addresses.** ⇒ **"Three" counts a layer the fact does not discuss; the two are compatible,
+> and neither the workflows nor the twelve had ever said so.**
+> ⚠ **Recorded, not fixed in the system (rule 1): the workflow headers are the SYSTEM's text.**
+
+**P1 — `nba-p1-weekly-static.yml` · 14 invocations · cron `0 19 * * 1` (Mondays **12:00 PDT / 11:00 PST** — *qualified 2026-09-22, §T20.49 / T20-11: `19:00 UTC` is 12:00 PT only while DST is in effect; from **2026-11-01 to 2027-03-14**, i.e. **133 of the season's first 145 days**, P1 fires at **11:00 PT**. The workflow's own comment at `:28` has PDT and PST swapped*)**
+
+| step | script | writes |
+|---|---|---|
+| 1–11 | `scrape_nba_stats_teams` · `_arenas` · `_players` · `player_bio` · `season_tables` · `team_stats` · `onoff` · `playtypes` · `player_tracking` · `darko` · `shotquality` | **— nothing to the DB** |
+| 12 | `build_defender_ratings.py` | `nba_ref.defender_ratings` |
+| 13 | `build_static_context.py` | **— nothing to the DB** · 🆕 *(additional sweep `6`, pass `386`, `§P386` — `T14` `2026-09-11 20:17Z`–`20:29Z`; ✅ read in code and in the files)*: it writes JSON under `nba/data/` — `nba_coach_changes_parsed_names.json` (names only, from the Wikipedia season pages, "cross-check against the verified dated set") and `nba_static_context_todo.json`. The dated coach changes are hand-verified, not scraped: `nba/data/nba_coach_changes_backfill.json` holds `8` in-season changes for `2023-24` / `2024-25` (MIL ×2, WAS, BKN; SAS, SAC, MEM, DEN), confidence `5` high / `2` medium / `1` low, its rule "effective_date is the first date the NEW coach is in charge. Games strictly before it belong to the outgoing coach"; `2025-26`'s two (POR, NOP) are dated in `nba/data/nba_coach_changes.json`. `T14`: *for Brooklyn I used Feb 22 (Ollie's first game) rather than Feb 19 (the announcement)*. |
+| 14 | `certify_pipeline.py` `PIPE=p1` | *(asserts only)* |
+
+🔑 ***Eleven of P1's fourteen scripts write NO database row.*** **They emit JSON that is committed to
+the repo, and a separate loader must pick it up — the two-hop architecture.** ⚠ **This is exactly the
+shape of T11's headline finding (2): *the second hop is missing for a whole family.* The map makes
+the exposure countable rather than anecdotal.**
+
+**P2 — `nba-p2-overnight-heavy.yml` · 19 invocations · ✅ CRON `45 15 * * *` LIVE (added 2026-09-23)** ⚠ ***IT RUNS IN THE MORNING, NOT OVERNIGHT*** — *`08:45 PT` (PDT) / `07:45` (PST), moved there because D1 referee assignments publish `~6–7 AM PT` and are never archived. **The filename is historical.*** *(`§T26.1`)*
+
+| step | script | writes |
+|---|---|---|
+| 1–3 | `scrape_nba_daily_delta` · `_per_game_delta` · `_injury_report` | — |
+| 4 | `scrape_referee_assignments.py` | `nba_ref.referee_assignments` ⚠ **live count `0`** |
+| 5–8 | `scrape_nba_matchups_pergame` · `sync_season_files_from_delta` · `scrape_nba_periods` · `scrape_nba_schedule` | — |
+| 9 | `check_delta_gaps.py` | — *(audit; 🔴 `GAP_SEASON` default `"2025-26"` — T20-4)* |
+| 10 | `grade_board_outcomes.py` | `nba_market.board_outcomes` 🔴 *(window ends `2026-04-12` — T20-5)* |
+| 11 | `export_market_spreads.py` | **— nothing to the DB** *(a FILE producer despite the name)* |
+| 12–14 | `baseline/build_baseline_ladder.py` · `baseline/build_combos_ladder.py` · `baseline/build_periods_ladder.py` | **— nothing to the DB** *(they emit the ladder artefacts)* |
+| 15 | `load_baseline_ladder.py` | **`nba_score.baseline_ladder`** ~~*(live `206,237`)*~~ 🔴 *(pass-3 live re-check `2026-10-10`: **the table does not exist** — dropped by `F6-1`'s consolidation `2026-09-25`, see the ⚠ SUPERSEDED block above; `baseline_ladder_runs` still resolves)* · `nba_score.baseline_ladder_runs` *(latest `asof` **2026-03-15**)* |
+| 16 | `build_asof_calibration.py` | `nba_score.ladder_calibration_asof` |
+| 17 | `build_blowout_model.py` | `nba_score.blowout_model` |
+| 18 | `build_confidence_v3.py` | `nba_score.confidence_model` · `nba_score.confidence_verification` |
+| 19 | `certify_pipeline.py` `PIPE=p2` | *(asserts only)* |
+
+> ### 🆕 §T26.14 — 🔴 **`P1` WAS CERTIFYING RED EVERY MONDAY, OUT OF SEASON — *"exactly how a team learns to ignore red builds"***
+>
+> *`T26`, ~~`2026-09-24`~~ `2026-09-23` `21:53Z` (date corrected `2026-10-10`, pass 113 → `NBA_MASTER_SUMMARY.md` `§T26.R2`). **Fixed the same day.***
+>
+> 🔴 **The mechanism.** *`P1`'s certifier demands `nba_ref.defender_ratings` be **under `8` days old**.
+> Out of season nothing refreshes it — it was stamped `2026-04-09` — so **every weekly run went red on
+> a freshness check that could not pass until games resume.***
+>
+> ⇒ 🔑🔑 ***A guard that cannot pass out of season is not a guard; it is a training exercise in
+> ignoring the alarm.*** **This is the same reasoning the `P2` header gives for withholding its cron
+> until the season** *("a scheduled job failing nightly against an empty schedule trains everyone to
+> ignore red builds")* — ***and `P1` had been doing precisely that, weekly, the whole time.***
+>
+> ✅ **Fixed: the certifier is now SEASON-AWARE.** *Out of season a run certifies with "no games
+> scheduled" and stays green rather than red.* ⚠ **The freshness check is NOT removed — it becomes
+> binding again once games start**, *which is when an `8`-day-old defender rating would actually be a
+> defect.*
+>
+> 📌 ***The pattern to carry: every freshness gate needs a season predicate, or it inverts out of
+> season — asserting failure when the correct state is "nothing to do".***
+>
+> → 🆕 *`2026-10-10`: this fix was corrected the same evening (`23:36Z`) — the gate counted games scheduled within ±30 days, so the preseason ramp read as "in season"; it now judges games played. See `NBA_MASTER_SUMMARY.md` `§T26.R5`; the note above was true when written.*
+
+> ### 🆕 §T26.6 — ✅✅ **`P3`: `22` MINUTES → `~2`. IT WAS SCRAPING EVERY SPORT THE APPS OFFER AND THROWING THE REST AWAY.**
+>
+> *`T26`, `2026-09-24`. **Measured from the run log, not inferred** — run `35956077197`, `04:32:23`
+> start, next job queued by `04:34:52`.*
+>
+> 🔴 **THE CAUSE.** *One run logged* **`mlb: 1,707 legs across 30 categories`** *beside* **`nba: 3 legs`**;
+> *Fliff logged* **`mlb: events=18, markets=604, legs=4451`**. **The archive step filters to NBA
+> AFTERWARDS (`ARCHIVE_SPORT: nba`), so every one of those calls was paid for and discarded —
+> roughly `20` of the `22` minutes.**
+>
+> 🔑🔑 **WHY IT SURVIVED: THE FILTER VARIABLES ARE NOT UNIFORM, AND NEITHER IS THEIR CASING.**
+> *Sleeper was already scoped; Underdog and Fliff were not.* **Verified in the live file:**
+> `PRIZEPICKS_SPORT: "nba"` · `SLEEPER_SPORTS: "nba"` · **`UNDERDOG_SPORTS: "NBA"` (UPPER)** ·
+> **`FLIFF_SPORTS: "nba"` (lower)** · `ARCHIVE_SPORT: "nba"`.
+> ⚠ ***Five variables, four different names, two different cases. A generic `SPORT` does nothing.***
+> **Both were read from source before being set** — *the only safe way to set them.*
+>
+> ✅ **AND THE REST OF THE PIPELINE WAS NEVER THE PROBLEM**: *archive `2s` · board tiers `23s` ·
+> market + rung market `9s` · commit `8s` · certify `1s`.* 🔑 **On a real slate the compute path
+> scored `91,405` legs in under `20` seconds.** ⇒ ***The "heavy" pipeline was `91%` waste fetch.***
+>
+> ✅ **TWO GUARDS ADDED FOR UNATTENDED RUNNING** *(live in the file)*: **each board capped —
+> `timeout --signal=TERM --kill-after=30s 300`** *(`420` for the PrizePicks step)* — **and
+> `timeout-minutes: 25` on the job.**
+
+**P3 — `nba-p3-afternoon-light.yml` · 11 invocations · ✅ CRON `15 21 * * *` LIVE** *(`1:15 PM PST` / `2:15 PDT`)* ⚠ **the file's line `13` still reads "NO CRON YET" — its own `on:` block contradicts it; trust the `on:` block** *(`§T26.1` §4)*
+
+| step | script | writes |
+|---|---|---|
+| 1–4 | `scrape_nba_injury_report` · `scrape_sleeper_board` · `scrape_underdog_board` · `scrape_fliff_board` | — ⚠ *no PrizePicks producer — the documented HARD GAP* |
+| 5 | `archive_live_boards.py` | `nba_market.board_snapshots` |
+| 6 | 🔴🔴🔴 `maintenance_shrink_board_index.py` | **— nothing. SEE BELOW: this step is MIS-WIRED** |
+| 7 | `export_market_spreads.py` | — |
+| 8 | `build_rung_market.py` | `nba_market.rung_market` 🔴 *(window ends `2026-04` — T20-5)* |
+| 9 | `build_availability_delta.py` | `nba_score.availability_delta` *(live `4,274`)* 🔴 *(season default; returns 0 silently — T20-4)* |
+| 10 | `score_board_legs.py` | **`nba_score.board_scored`** — **P3's PRIMARY OUTPUT** |
+| 10b | *(inline block)* | `nba_score.paper_picks` *(live `0`)* |
+| 11 | `certify_pipeline.py` `PIPE=p3` | *(asserts only)* |
+
+### A2 · 🔴🔴🔴 **P3's STEP 6 IS MIS-WIRED, AND `nba_market.board_tiers` HAS NO WRITER** *(added 2026-09-22, §T20.40)*
+
+| | |
+|---|---|
+| **P3 step 6 is NAMED** | *"Board tiers (goblin / standard / demon)"* |
+| **and COMMENTED** | *"Classify every board leg as standard / goblin / demon with its tier and anchor. **The score and the slip engine both need this** — a rung's break-even depends on which variation it is."* |
+| **and RUNS** | `python nba/maintenance_shrink_board_index.py` |
+| **whose own docstring says** | *"**One-off maintenance**: shrink `nba_market.board_snapshots` by replacing the 7-column primary key (5.6 GB on 25.7M rows) with a compact unique expression index on an md5→uuid leg key (~1 GB)."* |
+| **whose only table operation is** | `ALTER TABLE nba_market.board_snapshots DROP CONSTRAINT IF EXISTS board_snapshots_pkey` |
+
+✅ **The script that ACTUALLY builds board tiers is `nba/build_board_tiers_v2.py`** *(`TRUNCATE` +
+`INSERT INTO nba_market.board_tiers_v2`, "four-way taxonomy, both anchor cases")* — **and it is
+invoked by `nba-engine-test.yml` ALONE.**
+
+> 🔴🔴🔴 **`nba_market.board_tiers` — `2,199,354` rows, `378` dates, `2024-10-22 → 2026-04-12` — IS
+> READ BY FOUR SCRIPTS AND WRITTEN BY NONE.** *Readers: `apply_ladder_calibration.py` ·
+> `backtest_tier_selection_value.py` · **`build_confidence_v3.py` (P2 step 18)** ·
+> **`build_rung_market.py` (P3 step 8)**. Writers, probed as `INSERT INTO` · `CREATE TABLE` ·
+> `TRUNCATE` · `COPY` · `UPDATE` across every `.py` in `nba/` and `nba/baseline/`: **ZERO**.*
+
+⇒ ***The tier classification P3's own comment says "the score and the slip engine both need" is
+produced by nothing on the game-day path; `board_tiers` is a frozen historical snapshot and P2 and P3
+read it on every run.*** ⚠ **P3 also runs a script documented as ONE-OFF MAINTENANCE on every game
+day** — *its safety rules are sound (new unique index first, old PK dropped only after `indisvalid`,
+row counts compared), so the risk is **waste and wrong-step, not destruction**.*
+📌 **Open item T20-7 carries the decision. ⚠ RECORDED, NOT FIXED (rule 1).**
+
+### A3 · ✅ THE READ EDGE — *no dead ends, and the blast radii*
+
+> **`116` scripts · `41` tables seen — `33` written, `41` read** *(2026-09-22T15:58:08Z;
+> `scratchpad/t20/readedge.py`)*.
+> ✅✅ **WRITTEN BUT NEVER READ: `0`.** ***Every table this pipeline computes is consumed — the graph
+> has no dead ends.***
+
+**Read fan-out of the six tables `nba-engine-test.yml` co-writes** *(how far an overwrite reaches)*:
+
+| table | readers |
+|---|---|
+| 🔴 `nba_score.final_hp` | **8** — `build_asof_calibration` · `build_confidence_v2`/`v3` · `build_final_hp` · `build_mondrian_confidence` · `certify_pipeline` … |
+| `nba_score.confidence_model` · `confidence_verification` | **4** each |
+| `nba_score.board_scored` · `availability_delta` · `conformal_confidence` | **2** each |
+
+⚠ **NOT dangling inputs, recorded so a later pass does not re-flag them**: a SQL `FROM` probe
+catches Python `from X import Y` — `build_availability_delta`, `nba_asof`, `scipy.sparse`,
+`urllib.parse`, `build_baseline_history`, `classification_ladder_v12` are **imports, not tables**.
+✅ `nba_config.external_credentials` has no programmatic writer **by design** — it is
+manually maintained.
+
+### B · 🔴 THE CERTIFIER IS ONE TABLE OFF FROM WHAT THE PIPELINES WRITE
+
+| certifier check | asserts | the pipeline actually writes |
+|---|---|---|
+| 🔴 **P2** `baseline_history has today` *(+2 more)* | `nba_score.baseline_history` — **written by `load_baseline_history.py`, which P2 does NOT invoke** | ✅ **`nba_score.baseline_ladder`** *(206,237 rows, via `load_baseline_ladder.py`, step 15)* 🔴 *(pass-3 live re-check `2026-10-10`: table no longer exists — `F6-1`, `2026-09-25`; the check now reads `baseline_history`, `T20-6`)* |
+| 🔴 **P3** `final_hp has today` *(+2 more)* | `nba_score.final_hp` — **written by `build_final_hp.py`, which P3 does NOT invoke** | ✅ **`nba_score.board_scored`** *(via `score_board_legs.py`, step 10)* |
+| ⚠ **P1** `player name map populated` | `nba_ref.player_name_map` — written by `check_baseline_board_coverage.py`, not P1 | *(legitimately an INPUT check)* |
+
+🔑🔑 ***The certifier is not checking nothing — it is checking the SIBLING. P2 produces
+`baseline_ladder` and is asked about `baseline_history`; P3 produces `board_scored` and is asked
+about `final_hp`.*** ⚠ **That is a sharper statement than "the check has no writer", and it changes
+the fix: the question is whether the pipeline should also build the asserted table, or whether the
+assertion should name the table the pipeline builds.** 📌 **Open item T20-6 carries the decision.**
+
+### C · 🔴 THE `17` TABLES WITH MORE THAN ONE WRITING WORKFLOW
+
+| writers | table | workflows |
+|---|---|---|
+| **4** | `nba_market.board_snapshots` | `nba-board-archive` · `nba-board-backfill` · `nba-boards-market` · **P3** |
+| **3** | `nba_score.ladder_calibration_asof` | `nba-absence-panel` · **P2** · `nba-score-history` |
+| **3** | `nba_score.baseline_history` | `nba-baseline-history` · `nba-combos-history` · `nba-periods-history` |
+| **3** | `nba_score.confidence_verification` | `nba-absence-panel` · `nba-engine-test` · **P2** |
+| **3** | `nba_market.rung_market` | `nba-board-maintenance` · `nba-boards-market` · **P3** |
+| **2** | `final_hp` · `conformal_confidence` | `nba-absence-panel` · `nba-engine-test` |
+| **2** | `board_scored` · `availability_delta` | `nba-engine-test` · **P3** |
+| **2** | `confidence_model` | `nba-engine-test` · **P2** |
+| **2** | `board_outcomes` | `nba-grader` · **P2** |
+| **2** | `baseline_ladder` · `baseline_ladder_runs` | `nba-overnight-queue` · **P2** |
+| **2** | `blowout_model` | `nba-absence-panel` · **P2** |
+| **2** | `defender_ratings` | `nba-absence-panel` · **P1** |
+| **2** | `referee_assignments` | **P2** · `nba-referees` |
+| **2** | `player_name_map` | `nba-board-maintenance` · `nba-overnight-queue` |
+
+⚠⚠ **THE RISK IS NOT THEORETICAL.** *The storage-diet plan's first rule is **"execute only when no
+build is running — the loaders delete-and-rewrite under an advisory lock"**, and P2's own comment
+records the consequence: **"Passing one season made the builder delete EVERY season and rebuild one;
+on 2026-09-20 03:24 UTC that wiped the whole calibration history."*** 🔑 ***That was
+`ladder_calibration_asof` — a THREE-writer table.***
+🔴🔴 **AND `nba-engine-test.yml` IS A CO-WRITER OF SIX OF THEM** *(`final_hp`, `board_scored`,
+`confidence_model`, `availability_delta`, `conformal_confidence`, `confidence_verification`)* **and
+also invokes `run_storage_diet.py`.** ⚠ *Whether that path is gated inside the script is NOT
+RECORDED — the invocation was read, not the guard.*
+
+### D · ✅ NOT ORPHANS — *recorded so a later pass does not re-flag them*
+
+**Libraries, imported rather than invoked**: `nba_names.py` *(imported by **27** scripts)* ·
+`nba_season.py` *(**19**)* · `nba_asof.py` *(**3**)*.
+**Invoked from a working directory, not the repo root**: `build_training_data.py` ·
+`train_models.py` · `validate_factor_coefficients.py` — **all three exist in `gbdt_training/`** and
+`gbdt-training.yml` `cd`s before calling them.
+**Deliberately unwired**: `build_absence_panel.py` / `_v2` / `_v3` *(their tables were dropped —
+§T20.29)* · six `probe_*.py` diagnostics · two `load_pp_*.py` *(the concurrent session's)*.
+
+### E · ⚠ MLB RESIDUE VISIBLE IN THE MAP
+
+**`gbdt-training.yml`** — *"AlphaDog v2 GBDT Model Training"*, **`cron: "0 9 * * 0"` (Sundays 09:00
+UTC), `seasons` default `'2025,2026'`** — **enabled and firing, on a repo whose NBA P2 and P3 have
+no cron at all.** 📌 *Read beside open item T20-3's two enabled MLB rows in `config.scheduled_jobs`.*
+
+---
+
+## 0.0000 🔴🔴🔴 **THE THREE PIPELINES, AND THE OWNER'S EXPLICIT CRON INSTRUCTION — *SET IT ON ONE, NOT ON THE OTHER TWO*** *(T18 pass 0, §T18.1, owner, 2026-09-19)*
+
+⚠⚠ **This is an operational instruction with a deadline attached, and it is the opposite of what a
+reader would assume from "the pipelines are built".**
+
+| # | Pipeline | Schedule | **CRON?** |
+|---|---|---|---|
+| **1** | **WEEKLY STATIC** — *"already configured, not running yet"*; catches **team changes** | *"once a week… maybe **12 every Monday**"*, chosen so it **does not clash with the daily heavy run** | ✅ ***"You can already SET THE CRON."*** |
+| **2** | **HEAVY OVERNIGHT DELTA** — mines the game logs daily, then the classification and baseline calculations | **from 1 a.m.** *(the owner's "good wiggle room" against the Monday weekly run)* | 🔴 ***"DO NOT schedule cron just yet, because it's not going to have data to run until the beginning of the season."*** |
+| **3** | **LIGHT EARLY-AFTERNOON** — daily mining, daily factors, final scoring engine, final HP, confidence, score | **1:15–1:30 PM PT** *(§0z-7 of `NBA_SYSTEM_DESIGN.md`)* | 🔴 ***"And it's going to be the same for pipeline 3."*** |
+
+🔑🔑 **THE DELTA CONSTRAINT ON PIPELINE 2, IN HIS WORDS**: ***"remember that it's a DELTA SETUP, so
+it's a COMPLEMENT day by day. And **CANNOT HAVE GAPS — has to cover ALL teams, ALL players, ALL
+games**."*** ⚠ **A delta pipeline with a gap silently under-reports forever, because nothing
+re-derives the missing day.**
+
+⚠ **AND BOTH DAILY PIPELINES CARRY THE FULL SET, NOT A SPLIT**: *"for BOTH of the pipelines, you
+understand that you have to put **ALL the mining steps PLUS all the scoring steps, the calculation
+steps, for BOTH of them**."* 🔑 **Plus the coverage audit he orders**: *"**identify in the
+documentation EVERY SINGLE FACTOR** for the baseline pipeline and **every single factor** for the
+final scoring engine pipeline. **Be sure that you have a WORKER THAT MINES EACH ONE**… they are ready
+for when the season comes up, **nothing missing, all the calculation steps there.**"*
+
+✅ **VERIFICATION IS SPECIFIED AS A PARITY TEST, NOT A SMOKE TEST**: *"get a game day that's coming up
+on the new schedule and simulate it… **you can also get one day from the PAST that we already have a
+baseline calculation and also the final scoring calculation, and run it END TO END and see if it
+MATCHES the data that we already have — BECAUSE IT NEEDS TO.**"* ⚠ *(open item **T18-3**: NOT RECORDED
+whether it was run.)*
+
+### 🔴 **A SEPARATE NBA SCRAPER — "NOTHING INTERTWINED WITH MLB"**
+
+> ***"Create a NEW scraper for NBA, use the same structure proven to work. **Create a SEPARATED WORKER
+> for all boards and market as well — NOTHING INTERTWINED WITH MLB.**"***
+>
+> ***"Look at the MLB scraper and be sure the system is ready for the **goblins and demons, MORE and
+> LESS, UNDER and OVER the anchor, the VISIBLE REGULAR LINE ANCHOR and the INVISIBLE ANCHOR SWITCH
+> LINE**, plus all the ladder — also the same for all apps. **You have done this work already! It must
+> all be in the history, transcripts and documentation.**"***
+
+⚠⚠ **THE ISOLATION REQUIREMENT IS THE INSTRUCTION, and it is stated twice.** 🔑 **And the owner's
+remedy for the rebuild is the transcript archive**: *"**you already did the whole work, it's in the
+transcripts — you just need to wire NBA with exactly the same logic**"* and *"**find the proper
+transcript. We cannot waste all the time we already did on this! All the work is pretty much
+done.**"* ⚠ *Recorded because it is the same instruction that produced this documentation sweep
+(`NBA_SYSTEM_DESIGN.md` §0z-7) — **the owner treats the transcripts as the system's authoritative
+memory, and asks for re-derivation from them rather than re-invention.***
+
+---
+
+## 0.000 🔴 **EDITING A WORKFLOW FILE RIGHT AFTER DISPATCHING IT CANCELS THE RUN — and a CANCELLED run is not a FAILED one** *(T15 pass 3, §T15.4c, from the 2026-09-12/13 transcript)*
+
+*Verbatim from the transcript, and it is the operator diagnosing himself:*
+
+> 🔴 ***"I CANCELLED MY OWN JOB. Editing the workflow TWICE right after dispatching it tripped the
+> CONCURRENCY GROUP and killed the run. The fix is trivial — FINISH EDITS, THEN DISPATCH — but it
+> cost a cycle."***
+>
+> ***"…was CANCELLED at 07:42, NOT FAILED — my two rapid workflow edits triggered the concurrency
+> group and killed the run I'd just dispatched. My own edits RACED THE JOB."***
+
+⚠⚠ **THE READING TRAP, AND IT IS WHY THIS IS RECORDED**: **a self-cancelled run appears in the run
+list with a non-success conclusion**, so **an operator reading only the conclusion column diagnoses a
+broken job and re-debugs code that was never the problem.** 🔑 **The distinguishing evidence is the
+CONCLUSION VALUE — `cancelled`, not `failure` — and the timestamp's proximity to the workflow-file
+commits.** *Probed 2026-09-22: **0 of the twelve and 0 of the thirty** carry this distinction.*
+→ 🆕 *`2026-10-10`: the build chat's later statement of the rule for a run already in progress — an edit does not cancel it; a concurrency group holds one pending run, and a third dispatch cancels the pending one — is in `NBA_MASTER_SUMMARY.md` `§T28.2` (`2026-09-25`).*
+
+✅ **Concurrency groups themselves are well documented here** *(9 of the thirty, 8 of the twelve —
+including `nba-engine-test.yml` having its own group)*. **What was missing is the FAILURE MODE they
+create**: *the group exists to stop two runs colliding, and a dispatch followed immediately by an edit
+to the same workflow file is exactly two runs colliding — with the operator on both sides of it.*
+
+🔑 **THE RULE, in the transcript's own words: FINISH THE EDITS, THEN DISPATCH.**
+
+---
+
+## 0.001 ✅ **THE MECHANISM FAILURE CENSUS FOR T15 CAME BACK EMPTY AGAINST THE PROSE** *(T15 pass 3, §T15.4c — the first time in this sweep)*
+
+*The mechanism strata are **868 of T15's 1,098 segments (79%) — the largest share in the corpus**.
+The census's question was §T14.3b's: **what failed here that the prose did not record?***
+
+| # | Failure signature in the mechanism strata | Recorded in the prose? |
+|---|---|---|
+| 1 | **`NOT NULL` violation on the board archive** — *"Failing row contains (2026-09-12, **null**, routine, …, underdog, player_total_runs, LAD @ MIA Total Runs O/U, Over, 8.5, −118, …)"*, `exit code 1` @ 2026-09-12T23:21:54Z | ✅ **YES** — *"`event_id` is not null and live boards have no odds-api event id. Synthesising a stable one."* |
+| 2 | **`ValueError: could not convert string to float: ''`**, `exit code 1` @ 23:26:18Z | ✅ **YES** — the Fliff empty-line bug *(`NBA_SYSTEM_ARCHITECTURE.md` §0f-4)* |
+| 3 | **Postgres cast error** — *"HINT: You will need to rewrite or cast the expression"*, `exit code 1` @ 2026-09-13T00:48:56Z | ✅ **YES** — *"Fliff sends `event_start_utc` as epoch MILLISECONDS while the column expects a timestamp."* |
+| 4 | **`KeyError: 'Column not found: dreb36'`**, `exit code 1` @ 2026-09-13T01:33:57Z | ✅ **YES** — *"the `g` groupby was created BEFORE `dreb36` existed, so it can't see the column. Rebinding it."* |
+| 5 | **the self-cancelled run** *(§0.000 above)* | ✅ **YES**, and diagnosed in full |
+
+✅✅ **FIVE FAILURES, FIVE PROSE ENTRIES — T15's account of its own mechanism is COMPLETE.** ⚠ **That
+is the INVERSE of T14's census result**, and it is a finding about the transcript rather than about
+the system: *T15 is the candid one.* 🔑 **The failure that matters is therefore NOT in this table** —
+**it is the class §T15.3a opened: a write that SUCCEEDED and lost something.** *The census cannot see
+those (§T14.3b), and `exit code 1` is precisely the signal they do not produce.* ⚠ **Pinned
+2026-09-22: `##[error]Process completed with exit code [1-9]` = **8 raw occurrences → 4 distinct
+causes**; `Killed` = 15, of which **2 are the self-cancellation** and the rest quote T14's OOM
+incident as context, not new failures.** *All four distinct causes are Fliff-or-archetype work; none
+is unexplained.*
+
+---
+
+## 0.00 ⚠⚠ THE HARDCODED-SEASON LITERAL, AND THE GREP TRAP THAT HIDES HALF OF IT
+*`[LIVE-AUDIT]` 2026-09-21 (T7 pass 28).*
+
+**Seven NBA workers carry a hardcoded `2025-26`, and the quote style predicts the defect exactly:**
+
+| Quote style | Workers | Meta-season fallback |
+|---|---|---|
+| **`'2025-26'`** (single) | `alphadog-v2-nba-static-onoff.js` · `-player-bio.js` · `-player-tracking.js` · `-team-stats.js` | **NONE — all four** |
+| **`"2025-26"`** (double) | `-backfill.js` · `-game-officials.js` · `-starter-status.js` | **present — all three** |
+
+⚠ **The trap**: a grep for `'2025-26'` returns **exactly the four broken workers**; a grep for
+`"2025-26"` returns **exactly the three fixed ones**. **Either single-style grep gives a clean,
+complete-looking answer that is wrong by construction.** **Search for both quote styles — or for
+`20[0-9][0-9]-[0-9][0-9]` — whenever re-auditing this.**
+
+✅ **The four with no fallback are the ones that matter**: their targets
+(`player_onoff_profile`, `nba_ref.players`, `player_tracking_profile`, `nba_team.season_profile`)
+have **no season in the primary key**, so from 2026-10-01 they stamp `'2025-26'` onto whatever the
+scraper fetched for an empty `2026-27` and **upsert it over last season's real row** —
+`NBA_OPEN_ITEMS.md` **O4**.
+
+## 0.0 ⚠ THE COMPLETE SCHEDULE SURFACE — **seven scheduled workflows touch `nba/`, not four**
+*`[LIVE-AUDIT]` 2026-09-21 (T7 pass 24). Enumerated from the workflows directory — the authority —
+not from the `nba-` filename prefix, which is what produced the wrong count in the first place.*
+
+**~~39~~ → `40` workflows exist; ~~33~~ → `34` are `nba-`-prefixed; seven scheduled ones touch `nba/`:**
+
+> 🔁 **RE-DERIVE, DO NOT QUOTE** *(added `2026-09-23`, `§T22.29` — the owner's standing rule: publish
+> only figures that stay true, or that carry their own date and a one-line recipe)*:
+> ```bash
+> ls .github/workflows/*.yml | wc -l                 # total
+> ls .github/workflows/nba-*.yml | wc -l             # nba-prefixed
+> grep -l "^ *- *cron:" .github/workflows/*.yml      # every ACTIVE cron, by file
+> ```
+> 📊 **Last re-derived `2026-09-23`: `40` total · `34` `nba-`-prefixed · `9` files carry an active
+> `cron:` line** *(the seven below plus `gbdt-training.yml` and `scrape.yml`, neither of which touches
+> `nba/`)*. ✅ **The seven-row table below reproduced exactly, cron for cron.** ⚠ *The totals moved
+> `+1` each in two days; **the table did not move at all.** 🔑 **The composition is stable and the
+> COUNT is not — which is why the count now carries a command and the table does not need one.***
+
+| Workflow | Cron (UTC) | Cadence |
+|---|---|---|
+| `nba-scrape.yml` | `0 9 * * 1` | **Mondays 09:00** — the weekly static scrape |
+| `nba-p1-weekly-static.yml` | `0 19 * * 1` | **Mondays 19:00** — the weekly static layer |
+| `nba-referees.yml` | `30 15 * * *` | daily 15:30 |
+| **`fliff-board.yml`** | **`35 */2 * * *`** | **every 2 hours** — runs `nba/scrape_fliff_board.py` |
+| **`sleeper-board.yml`** | **`15 */2 * * *`** | **every 2 hours** — runs `nba/scrape_sleeper_board.py` |
+| **`underdog-board.yml`** | **`25 */2 * * *`** | **every 2 hours** — runs `nba/scrape_underdog_board.py` |
+| *`nba-pp-payout-map.yml`* | *`15 */6 * * *`* | *concurrent session — **out of scope*** |
+
+⚠ **The three board workflows are documented as workflows in several files; their every-two-hours
+cadence is recorded in none of the thirty.** They are also **not `nba-`-prefixed**, which is why a
+prefix-based enumeration misses them — *the fifth single-pattern count in this sweep.*
+✅ **None of the three imports the season helper** (verified), so they are outside the
+`active_stats_season()` rollover exposure (`NBA_OPEN_ITEMS.md`, O4).
+
+## 0. THE FOUR-STEP WIRING PATTERN *(established T2)*
+
+Every Cloudflare worker must be registered in four places or it will not deploy or run:
+1. `nba/worker_manifest_nba.json`
+2. `generate_wrangler_configs.py` — the isolated NBA branch
+3. `alphadog-v2-admin-sql.js` — **bindingMap + dispatch branch + tool-schema enum** (all three)
+4. `nba_config.worker_definitions` — a registry row
+
+**`admin-sql` must deploy LAST** (the fleet deploys alphabetically from the file diff).
+
+---
+
+## 0.14 ⚠ THE SHARED DISPATCH PATH CARRIES AN UNSTATED INVARIANT
+*Recorded 2026-09-20 (T1 pass 87). **VERIFIED** by live grep of the deployed
+`alphadog-v2-admin-sql.js`.*
+
+The bridge's dispatch chooses its HTTP method on one line, **shared by every target, MLB included**:
+```js
+const method = body === null ? "GET" : "POST";
+```
+**That line was added by T1 for one NBA job mode** — `job === "probe-sources"`, the read-only GET
+diagnostic. **✅ It is safe today, and verifiably so**: `body = null` occurs **exactly once in the
+file, at line 683**, inside the NBA branch; **all eleven MLB branches assign an object.**
+⚠ **The safety is an invariant nobody wrote down**: *no MLB branch may ever set `body = null`.*
+**If one does, that target silently becomes a GET with no body.** → `NBA_OPEN_ITEMS.md`
+*FROM T1 PASS 87*.
+
+---
+
+## 0.15 ⚠ THE DISPATCH ENUM AND THE SECOND PER-WORKER MODE
+*Recorded 2026-09-20 (T1 pass 46). **VERIFIED by grep of the live `alphadog-v2-admin-sql.js`.***
+
+**The bridge routes 21 NBA bindings directly** — `NBA_STATIC_TEAMS_WORKER`,
+`NBA_STATIC_PLAYERS_WORKER`, `NBA_STATIC_ARENAS_WORKER`, `NBA_STATIC_OFFICIALS_WORKER`,
+`NBA_STATIC_PLAYER_BIO_WORKER`, `NBA_STATIC_PLAYER_TRACKING_WORKER`, `NBA_STATIC_TEAM_STATS_WORKER`,
+`NBA_STATIC_ONOFF_WORKER`, `NBA_STATIC_DARKO_WORKER`, `NBA_STATIC_WEEKLY_DIFFERENTIAL_WORKER`,
+`NBA_STATIC_SCHEDULE_WORKER`, `NBA_STATIC_PLAYTYPES_WORKER`, `NBA_STATIC_TRACKING_DETAIL_WORKER`,
+`NBA_STATIC_SHOTQUALITY_WORKER`, `NBA_STATIC_BACKFILL_WORKER`, `NBA_STATIC_STARTER_STATUS_WORKER`,
+`NBA_STATIC_GAME_OFFICIALS_WORKER`, `NBA_STATIC_LINEUPS_WORKER`, `NBA_DAILY_DELTA_WORKER`,
+`NBA_STATIC_MEASURE_TYPES_WORKER`, `NBA_BASELINE_LADDER_WORKER`.
+
+**The code's own note on that branch** — the no-orchestrator rule, implemented:
+> *"NBA expansion (additive only). Same direct-call pattern as `BASE_HITTER_GAME_LOGS_WORKER` —
+> **bypasses `control_job_queue` + orchestrator entirely (NBA has no orchestrator by design)**."*
+
+**⚠ Every one of the 21 accepts a second mode this document's mode-dispatch table does not list:**
+| `job` | Route |
+|---|---|
+| **`probe-sources`** | **`https://internal/probe-sources`** |
+| anything else (e.g. `run`) | the worker's default run path |
+
+**`run_job` also carries 14 non-dispatch job modes** — a diagnostic and ingestion surface including
+**`worker_invocation_logs`**, the only tool that can tell a worker that *failed* from one *never
+invoked* from one **Cloudflare killed**. Full table: `NBA_SYSTEM_ARCHITECTURE.md` §3b.
+⚠ **`nba/NBA_AVAILABLE_TOOLS.md` still lists the pre-wiring enum — 12 MLB targets, zero NBA.**
+
+---
+
+## 0.2 ⚠ THE FOUR WIRING STEPS HAVE DIFFERENT DEPLOY BLAST RADII
+*Recorded 2026-09-20 (T1 pass 44). **VERIFIED by grep of the live `generate_wrangler_configs.py`.***
+
+§0's four-step pattern is performed for **every** new NBA worker. **The four edits are not
+equivalent in cost:**
+
+| Edit | Blast radius |
+|---|---|
+| any file in **`GLOBAL_REDEPLOY_FILES`** | **full-fleet redeploy — 140+ workers** |
+| **`generate_wrangler_configs.py`** | **deliberately excluded** from that set → only the affected worker(s) |
+| **`worker_manifest.json`** (via `TARGETED_EXTRA_FILES`) | targeted: the new worker **+ the orchestrator** |
+
+The generator says so in its own comment:
+> *"`generate_wrangler_configs.py` is **intentionally NOT** in `GLOBAL_REDEPLOY_FILES`. It gets
+> edited routinely just to register a single new worker … and that should only redeploy the
+> worker(s) actually affected — **not force a full-fleet redeploy of 140+ workers every time.**"*
+
+**140+ is the fleet size** — recorded nowhere else in the twelve documents.
+⚠ **Why this matters for NBA specifically**: an edit that lands in `GLOBAL_REDEPLOY_FILES` by
+accident **redeploys the entire MLB fleet** — the loudest possible violation of the owner's *"must
+not edit anything from the mlb system."*
+
+### ⚠ And the generator carries an NBA-only path special-case, with a named failure
+Live, lines 45–51:
+> *"The generated config for an NBA worker is written to `nba/wrangler.<worker>.jsonc` … `"main"`
+> relative to that same `nba/` directory — **it must NOT be re-prefixed with `nba/` here or wrangler
+> looks for `nba/nba/<worker>.js` and fails (`"entry-point file … not found"`).**"*
+
+**The `startswith("alphadog-v2-nba-")` guard does two jobs**: MLB isolation (recorded elsewhere) and
+**path resolution** (recorded here for the first time). **Any future edit to it risks both.**
+
+---
+
+## 0.23 🔴 THE INJURY ARCHIVE CHANGES FILENAME PATTERN MID-SEASON — and the first backfill silently captured only the later half
+*Added 2026-09-21 from T11 (§T11.3c). **Past bug with its fix; the shape is the one that keeps
+recurring.*** ⚠ **Novelty corrected 2026-09-21 by §T11.6a: this is NOT new across the thirty —
+`NBA_PROJECT_LOG.md` line 502 already records it, fix and all. It is new to the TWELVE, which is why
+the entry stays here.**
+
+🔴 **What happened**: the run produced **266,049 rows and 2,218 snapshots — but only from
+22 December onward.**
+
+**Cause**: **before ~2025-12-22** *(corrected 2026-09-21 by §T11.6a — this read 2026-12-22, a year
+out; the season is 2025-26 and `NBA_PROJECT_LOG.md` line 502 gives the date)* **the NBA's
+injury-report archive used an HOURLY filename with no
+minutes** — `06pm`, `12pm`, even `12am` — **and the true publish time appears only in the document
+header** (*"Injury Report: 11/24/25 12:30 PM"*). **The 15-minute filename pattern begins 22 December.**
+A scraper written against the 15-minute pattern therefore finds nothing before that date **and
+reports success.**
+
+✅ **The fix, three parts**: **probe BOTH filename patterns** · take the snapshot timestamp from the
+**document header**, not the filename · **drop consecutive duplicate documents by content hash.**
+
+🔑 **And the volume it revealed**: **the league republishes the report 10–27 distinct times per day** —
+genuine intra-day snapshots, *"excellent for the enrichment cutoffs"* — which pushed the single
+season file to **98 MB** and forced the **monthly-shard-with-index** layout this document already
+describes. *The as-of loader and both builders read the shards; the workflow size-guards commits.*
+
+⚠⚠ **The recurring shape, stated plainly: a run that finds inputs, writes a quarter of a million rows
+and reports success can still be missing an entire half of the range.** ***A healthy row count is not
+coverage — only a date-range check is.***
+
+---
+
+## 0.24 🔴 VALIDATE A PARSER ON **THE RUNNER'S OWN EXTRACTION**, NOT ON YOUR OWN
+*Added 2026-09-21 from T11 (§T11.2c). **The transcript states the lesson; no document carried it.***
+
+🔴 **What happened**: the injury-report backfill **scanned all 176 days, found every PDF, and wrote
+ZERO rows.** Two diagnostic runs on the runner pinned it — **the CDN serves the files correctly (200,
+PDF, S3, with or without the proxy), and `pdfplumber` ON THE RUNNER drops the spaces inside cells**:
+
+```
+detroitpistons cunningham,cade questionable
+injury/illness-rightknee;surgery
+```
+
+**So the team-name regex failed on every row**, and the job reported success with nothing written —
+**the silent-failure shape this documentation set names again and again.**
+
+⚠⚠ **Why the self-test missed it, and this is the transferable part**: *"my self-test had passed on
+text extracted by a **different tool**."* ***A parser validated against one extractor is validated
+against that extractor, not against the file.*** **Every NBA parser runs on a GitHub Actions runner
+whose library versions are not the ones a local check uses.**
+
+✅ **The fix, verified on both text shapes — 10 rows from the collapsed text, 24 from the spaced
+fixture**: a **space-insensitive team regex with canonical names**, a **tolerant header regex**, and
+**`split_camel()`** to recover the dropped spaces.
+✅ **And it produced the diagnostic this document already describes**: **`injury mode=probe`** — CDN
+status, `pdfplumber` text, parsed row count, extracted table. *📌 The probe mode is in three of the
+twelve; **the bug that caused it was in none of them** until this entry.*
+
+**Operative form: a parser's fixture comes from the runner, through the same library the job will
+use — and a run that finds its inputs and writes zero rows is a parser failure until proven otherwise.**
+
+---
+
+## 0.25 ⚠ THE PRE-COMMIT SYNTAX GATE — the only local check before an auto-deploying push
+*Recorded 2026-09-20 (T1 pass 38). **VERIFIED** from T1's own `bash_tool` history.*
+
+| Language | Gate |
+|---|---|
+| Worker JS | **`node --check <file>.js && echo SYNTAX_OK`** |
+| Scraper Python | **`python3 -m py_compile <file>.py && echo SYNTAX_OK`** |
+
+Run immediately before the commit. **A push to `main` auto-deploys and there is no staging
+environment**, so this is the last cheap point. **It catches syntax only** — not a missing binding,
+not a wrong column name, not an unwired dispatch branch, which are what §0's four-step pattern
+exists to prevent. *(`NBA_RECIPE.md` had recorded only the `node --check` half.)*
+
+### ⚠ EXTENDED 2026-09-21 (T3 pass 4) — a stronger gate exists and was used once
+**T3 ran a second check the others do not**: after `py_compile`, it executed the scraper's real
+extraction function **against a captured HTML fixture** and asserted on a known value —
+
+```
+python3 -m py_compile scrape_nba_darko_v2.py && echo SYNTAX_OK
+python3 -c "... players = extract_players(html); print([p for p in players if p['nba_id']==203999])"
+```
+
+— `203999` being Jokić's real NBA person ID. **That is a functional test against real captured data,
+run before the commit that auto-deploys**, and it is why the DARKO extraction shipped working on its
+first live run after two failed pagination attempts.
+
+**It was used for this one scraper and is not part of the standing pattern.** The gate for every
+other worker remains syntax-only. *The ingredient that made it cheap was already on disk: the
+scraper's own committed debug artifact (see `NBA_OPEN_ITEMS.md` FROM T3 PASS 2) is the fixture.
+Any scraper that commits its raw source page can be tested this way for the cost of one command.*
+
+---
+
+## 0.26 ⚠ THE DEPLOY-SCOPE ANCHOR — `deployed_sha.txt`, and how it silently drifts
+*Recorded 2026-09-20 (T1 pass 88). **VERIFIED** by direct read of
+`.github/workflows/alphadog-v2-github-auto-deploy.yml` (lines 7–16, 55, 87–116) and
+`github_mobile_deploy_workers.py`, both live on `main` today.*
+
+**`git_changed_files()` does not diff against `HEAD~1`.** It diffs against the SHA stored in
+`deployed_sha.txt` — **the last commit that actually finished a successful deploy.** Deploy scope
+is therefore **cumulative since the last success**, not per-commit. Three consecutive failed
+deploys followed by a successful one deploy everything touched across all four.
+
+**The writer** is the workflow's last step:
+
+```yaml
+- name: Record last successful deploy marker
+  if: success()
+  run: |
+    git rev-parse HEAD > deployed_sha.txt
+    git add deployed_sha.txt
+    git commit -m "Auto: record last successful deploy marker [skip ci]" || true
+    git push || true
+```
+
+**`if: success()` is correct** — the marker only advances on a real success, which is exactly what
+makes it an honest anchor. **`git push || true` is the problem.** The deploy workflow pushes to
+`main` at the same time as every other bot job in this repo. **If that push is rejected, the marker
+stays at the older SHA, the step still reports success, and the NEXT deploy silently widens its
+scope to everything since that older commit.** No error, no log line, nothing in the run summary.
+The failure mode is a deploy that is quietly *larger* than intended — the same class of surprise as
+the `GLOBAL_REDEPLOY_FILES` full-fleet trigger, but with no marker in the code to warn you.
+
+**The same repo already contains the correct pattern.** `nba-scrape.yml`'s commit step (lines
+151–161) retries the push **five times**, with `git fetch origin main`, `git rebase origin/main`,
+a jittered `sleep $((RANDOM % 5 + 2))` between attempts, and a hard `exit 1` if all five fail —
+which is also why its checkout needs `fetch-depth: 0` and `persist-credentials: true`. **Two
+workflows in one repo with opposite push-failure discipline, and the one that swallows is the one
+
+> 🔴🔴 **AND A THIRD WORKFLOW SWALLOWS TOO — `nba-daily-delta.yml`, `T20-10`, and this page named `daily-delta` only as a job.** *Added here T20 pass 78 (§T20.83), 2026-09-22.* ▶ **`.github/workflows/nba-daily-delta.yml:52–54`, verbatim:**
+> ```
+> python nba/sync_season_files_from_delta.py || echo "season-file sync failed"
+> python nba/scrape_nba_periods.py           || echo "periods refresh failed"
+> python nba/scrape_nba_schedule.py          || echo "schedule refresh failed"
+> ```
+> 🔴 ***Three steps, three swallows: the workflow can produce nothing and still report success — `SILENT`, and no certifier covers it.*** ⚠ **Note which scripts these are: `scrape_nba_schedule.py` is the refresher for `nba_calendar.games`, the table recorded as **not refreshed since the day it was built** — *a silent failure here is exactly how that state persists unnoticed*. **NOT RECORDED whether it is the cause** (rule 6).** ▶ **Full item: `T20-10` in `NBA_OPEN_ITEMS.md`; re-derived and HELD at §T20.75, `2026-09-22T19:25Z`.** ⚠ *Documented, not fixed (rule 1).*
+whose failure corrupts deploy scope.** *Not fixed — recorded per the sweep's read-only rule.*
+
+### The manual override nobody has written down
+`workflow_dispatch` on the deploy workflow takes a **required** `deploy_scope` input, `type: choice`,
+default `changed`, options **`changed` · `all` · `control-room` · `orchestrator`**, threaded through
+as `DEPLOY_SCOPE: ${{ github.event.inputs.deploy_scope || 'changed' }}` and passed to
+`python github_mobile_deploy_workers.py --scope "$DEPLOY_SCOPE"`.
+
+**A push always gets `changed`.** `all` is reachable *only* by dispatching the workflow by hand.
+**This is the escape hatch for exactly the drift described above** — and it appears in none of the
+twelve documents, so anyone hitting a stale anchor would have had no idea it existed.
+
+---
+
+## 0.27 ⚠ DEAD D1 PROVISIONING STILL RUNS ON EVERY DEPLOY — including every NBA deploy
+*Recorded 2026-09-20 (T1 pass 88). **VERIFIED** against live `main`: workflow lines 87–99 and
+`generate_wrangler_configs.py` lines 13–22, 84.*
+
+Every deploy — NBA ones included — runs two ungated steps before anything is deployed:
+
+1. **`Ensure Scoring DB exists (idempotent, real D1 provisioning)`** → `python ensure_scoring_db.py`
+2. a commit step that `git add`s `cloudflare_d1_bindings.json` and `scoring_db_debug.log`, commits
+   them `[skip ci]`, `git push || true`, then `rm -f scoring_db_binding_changed.flag`
+
+**Nothing reads the output.** `generate_wrangler_configs.py` line 13 is `D1_BINDINGS = []`, carrying
+the 2026-08-12 note that **all twelve D1 databases were confirmed deleted by direct query**
+(`CONTROL_DB … SCORING_DB` all return *"D1 database has been deleted"*). Line 22 — the
+`json.loads(Path("cloudflare_d1_bindings.json")…)` that once populated it — **is commented out.**
+Line 84 gives every generated config `"d1_databases": []` unconditionally.
+
+So the pipeline provisions a D1 database, writes a bindings file, commits it and pushes it to `main`,
+and **the generator ignores all of it.** Cost per deploy: one dead provisioning call and one junk
+commit. **No correctness impact on NBA workers** — they are Hyperdrive/Postgres only and get an
+empty `d1_databases` like everything else — but it is live dead weight in the path every NBA deploy
+goes through, and it is one of the bot commits the scrape workflow's retry ladder is racing against.
+
+**Each successful deploy therefore adds up to TWO bot commits to `main`** (scoring-DB artifacts +
+the deploy marker), both `[skip ci]`, both `git push || true`. That is the background commit traffic
+that makes §0.26's silent-drift scenario a real possibility rather than a theoretical one.
+
+---
+
+## 0.28 ⚠ `POST /run` CARRIES NO AUTHENTICATION — fleet-wide, and NBA inherited it faithfully
+*Recorded 2026-09-20 (T1 judgment pass, pass 88). **VERIFIED** by grep of both live worker files.*
+
+`nba/alphadog-v2-nba-static-teams.js` line 426:
+
+```js
+if (method === "POST" && path === "/run") {
+  const input = await readJsonSafe(request);
+  try { return jsonResponse(await runStaticTeams(input, env)); }
+```
+
+**There is no token check before it.** `ADMIN_TOKEN` and `INTERNAL_TOKEN` appear **zero times** in the
+file; the only `Authorization` header in it is the *outbound* one this worker sends to the GitHub
+contents API (line 122). An unauthenticated `POST` with an empty body runs the full job — 30 rows
+into `nba_ref.teams`, 157 into `nba_ref.team_aliases`.
+
+**This is the house pattern, not an NBA defect.** MLB's `alphadog-v2-static-teams.js` line 412 is
+byte-for-byte the same shape, also with no token check (its only other `POST` route is
+`/diagnostic`, equally open). **Recorded here so nobody reads the NBA worker in isolation and
+concludes NBA skipped a check MLB performs — it does not.** The four-step wiring pattern in §0.2
+does not include an auth step because no worker has one.
+
+**What this documentation can and cannot say.** **VERIFIED**: neither worker authenticates `/run`.
+**NOT VERIFIED**: whether the `*.workers.dev` hostnames are actually reachable from the public
+internet. T1 recorded the live URL
+`https://alphadog-v2-nba-static-teams.rodolfoaamattos.workers.dev` after a successful deploy, but
+whether that route is enabled, and whether any Cloudflare Access / WAF rule sits in front of it, is
+an account-dashboard setting **this session has no read path to** — the MCP bridge exposes SQL,
+GitHub and worker dispatch, not Cloudflare account configuration. **So the exposure is conditional:
+if those routes are public, every writer worker in the fleet is an open write endpoint; if they are
+not, the service bindings are the only path and this is a non-issue.**
+
+**The owner is the only one who can close that question**, in the Cloudflare dashboard, per worker.
+It is worth closing before the season opens on **2026-10-20** *(corrected 2026-09-21, §T10.18b — this
+line read 2026-10-03, which is preseason opening night; the regular season opens 10-20)*, because the same shape will be on every
+NBA writer built between now and then. *Not fixed — recorded per the sweep's read-only rule.*
+
+---
+
+## 0.29 ⚠ THE DEPLOY TRIGGER HAS NO PATH FILTER — `[skip ci]` is a convention, not a guard
+*Recorded 2026-09-21 (T2 pass 1). **VERIFIED** by direct read of
+`.github/workflows/alphadog-v2-github-auto-deploy.yml` on live `main`.*
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+```
+
+**There is no `paths:` filter.** Every push to `main` — a worker edit, a scraper's data commit, a
+one-line documentation fix — matches this trigger. T2 noticed the symptom and reasoned it out
+correctly at the time: *"the auto-deploy workflow likely fired because it triggers on any push to
+main, not just worker file changes — so the scraper's data commit landing on main pushed it to run,
+even though it'll find no worker targets changed in scope."*
+
+**What actually stops the storm is `[skip ci]` in the commit message**, and that is a convention
+typed by whoever writes the commit, not a rule the workflow enforces. The repo's own bot commits all
+carry it — `"Auto: Scoring DB provisioning attempt … [skip ci]"`, `"Auto: record last successful
+deploy marker [skip ci]"`, `"Update NBA teams JSON [skip ci]"` — which is what keeps the pipeline
+from recursing into itself. **One forgotten `[skip ci]` is one full deploy run.** This is the
+mechanical reason behind the standing instruction that every documentation sync carries it.
+
+**Blast radius when it does fire** is set by §0.26: scope comes from `deployed_sha.txt`, so a stray
+push deploys everything changed since the last *successful* deploy, not just that commit.
+
+### A step-condition asymmetry worth knowing
+| Step | Condition | Consequence |
+|---|---|---|
+| `Commit Scoring DB binding/debug log` | **`if: always()`** | the dead D1 artifact from §0.27 is committed **even when the deploy failed** |
+| `Record last successful deploy marker` | **`if: success()`** | the scope anchor advances only on real success — correct |
+| `Remove generated secret file` | **`if: always()`** | `.alphadog_worker_secrets.json` is always cleaned up — correct |
+
+**So a failing deploy still writes one junk commit to `main`.** *This sharpens §0.27, which recorded
+the dead step but assumed it ran only on the success path.*
+
+---
+
+## 0.30 THE SERVICE-BINDING DEPLOY ORDER — a real bug, and the permanent fix
+*Recorded 2026-09-21 (T2 pass 1), from T2's own diagnosis and fix.*
+
+**Cloudflare requires the target worker to exist before another worker can bind to it.** T2 hit this
+when `alphadog-v2-admin-sql` deployed with a fresh service binding to `alphadog-v2-nba-static-players`
+— a worker that had not been created yet. The deploy failed on a bootstrapping order problem, not a
+code error.
+
+**The fix was structural, not a retry**: `alphadog-v2-admin-sql` moves to the **end** of the deploy
+target list, because it is the worker with **outgoing** service-binding dependencies on everything
+else. Dependencies deploy first; the binder deploys last. T2 recorded it as *"a real, permanent fix
+for every future NBA worker."*
+
+**Why it matters for every new NBA worker**: §0.2's four wiring steps add a binding to admin-sql in
+the same commit that adds the new worker's `.js`. Without the ordering fix, that commit is
+self-blocking — admin-sql tries to bind a worker the same run has not deployed yet. *The targets
+order otherwise follows git's diff output, which is alphabetical-ish, and `alphadog-v2-admin-sql`
+sorts near the front.*
+
+---
+
+## 0.31 ⚠ CERTIFICATION IS A HARDCODED ROW-COUNT THRESHOLD — and each worker picks its own
+*Recorded 2026-09-21 (T2 pass 2). **VERIFIED** on live `main`:
+`nba/alphadog-v2-nba-static-player-bio.js` line 86.*
+
+```js
+const certified = seasonWritten >= 400;
+```
+
+**A worker's `ok` / `certified` flag — the thing every caller reads to decide whether a run
+succeeded — is a magic number compiled into the worker.** Not a config row, not a var, not derived
+from the source. `400` is roughly two-thirds of the 582-player roster, chosen as "enough players
+came back", and the only way to change it is an edit-and-deploy.
+
+**Compare the pattern across the static writers:** the teams worker certifies on
+`activeNbaTeams === 30` — an exact count with a real invariant behind it — while player-bio uses an
+inequality against a round number. **Both are hardcoded; only one is anchored to a fact about the
+world.** A roster that legitimately shrank below 400 would be reported as a failed certification,
+and a scrape that silently returned 401 rows would certify.
+
+**This is §0.3's founding-rule violation with a sharper edge**: §0.3 records that operating constants
+are hardcoded; this one decides whether the system believes its own data. *Not fixed — recorded per
+the sweep's read-only rule. It belongs in `nba_config.system_settings` with the rest.*
+
+**Extended 2026-09-21 (T3 pass 3) — a third threshold, a third arbitrary number:**
+
+| Worker | Certification test | Anchored to a real invariant? |
+|---|---|---|
+| teams | `activeNbaTeams === 30` | **yes** — the league has 30 teams |
+| **arenas** *(T2)* | **`nba_ref_arenas_rows === 30`** | **yes** — one arena per team *(VERIFIED live, line 140)* |
+| player bio | `seasonWritten >= 400` | no — ~⅔ of a 582 roster, rounded |
+| **schedule** *(T3)* | **`written >= 1000`** | **no** — a season is 1,230 regular-season games, so this passes on a scrape missing up to 19% of them, and **passed on 2,666 rows spanning two seasons** |
+| **tracking detail** *(T3)* | **`written >= 4000`** | **no** — the observed run wrote 4,652, so the margin is ~14%, and the scraper's own per-measure-type failure list is the real signal |
+
+*Four workers, four unrelated numbers (2026-09-21, T3 pass 5). **The tracking-detail case is the
+clearest waste**: that scraper already reports `per_type` counts and a `failed_types` list, so it
+knows exactly which of its measure types came back empty — and the certification flag ignores all of
+it in favour of one total.*
+
+### ⚠ TWO DO IT PROPERLY, AND ONE CHECKS DATA QUALITY *(added 2026-09-21, T2 depth re-read)*
+***VERIFIED** on live `main`, `nba/alphadog-v2-nba-static-players.js` line 253:*
+
+```js
+const certified = finalCounts.active_nba_players >= 400
+               && finalCounts.active_players_missing_team_id < finalCounts.active_nba_players * 0.05;
+```
+
+**A row floor AND a <5% missing-team-id ratio.** This is the only certification in the NBA fleet that
+asks whether the data is *usable*, not just whether there is enough of it. **A scrape returning 582
+players with half their team IDs null passes every other worker's check and fails this one.**
+
+*That materially softens this section's framing: the thresholds are not uniformly bare margins. Two
+of the eight are anchored to real invariants (teams, arenas at `=== 30`), and two are compound —
+this one on quality, the play-types writer on errors-plus-per-level floors. **The bare-margin
+criticism applies to the remaining four**, and the counter-examples are all already in the codebase.*
+
+### ⚠ AND ONE WORKER DELIBERATELY HAS NO FALLBACK, for a stated reason
+The teams worker carries a certified 30-team static fallback. **The players worker deliberately
+does not**, and says why:
+
+> *"no hardcoded fallback for players (unlike the 30-team list) — a 450+ player roster changes too
+> often and is too large to safely hand-maintain as a certified fallback. **If the real source
+> fails, this worker fails honestly rather than silently writing stale/wrong data.**"*
+
+**The principle is worth stating generally: a fallback is only safe where the data is small,
+stable, and verifiable by hand.** 30 teams qualify; 582 players do not. *A hand-maintained player
+fallback would decay silently between edits and be indistinguishable from a good scrape — which is
+the failure mode the whole certification layer exists to catch.*
+
+### ⚠ ONE WORKER DOES IT PROPERLY — the play-types writer *(added T3 pass 8)*
+```js
+const certified = errors.length === 0 && playerWritten >= 1000 && teamWritten >= 200;
+```
+**It gates on three things: no errors, and a floor per level.** Compare the other four, which gate on
+a single total and therefore cannot tell a clean short run from a half-failed full one.
+
+**This is the pattern the rest should follow**, and it already exists in the codebase — so the fix
+for §0.31 is not a design question, it is copying a line from a sibling. *The play-types writer is
+also the one whose scraper checks both levels before exiting non-zero (FROM T3 PASS 6), so the
+discipline is consistent end to end for this one entity and absent for the others.*
+
+**Three workers, three unrelated numbers, none in config.** The schedule case is the weakest: the
+same constant has to serve a single-season scrape and a two-season one, so it was set low enough
+that neither fails — which means it cannot detect a materially short scrape of either.
+
+---
+
+## ⚠ 0.42 ALWAYS TEST v3 BEFORE v2 — a rule the project paid for twice
+*Recorded 2026-09-21, T7 re-sweep pass 3. Stated in T7, in no document until now.*
+
+> *"**Always test v3 before v2** for any per-game stats.nba.com endpoint. This cost real time twice
+> in a row — starter status, then officials — before the pattern was recognized and applied
+> proactively for officials."*
+
+**Both failures are documented individually; the rule extracted from them was not.**
+`boxscoretraditionalv2` served HTTP 200 with zero player rows for historical games (799 rows across
+31 of 1,230); `boxscoresummaryv2` carries an upstream warning about data availability after
+**2025-04-10**. **v3 worked in both cases.** *(nba_api's own changelog flags the v2 cutoff — checking
+the client's release notes before choosing a version is the cheap version of this rule.)*
+
+⚠ **And the second time it was applied proactively** — the officials build tested v3 first, on a
+sample, before committing to ~1,230 calls. **The discipline is in the code; only the rule was
+missing from the documents.**
+
+## 0.41 WHY THERE ARE SO MANY `nba-*.yml` WORKFLOWS — a stated principle, recovered from code
+*Recorded 2026-09-21, T5 re-sweep pass 2. The rule was in a workflow header and in no document.*
+
+`.github/workflows/nba-starter-status.yml`, in its own comment:
+> *"standalone, targeted workflow — **deliberately not added as another step in `nba-backfill.yml`,
+> which would force re-running all its earlier steps** (career totals…)"*
+
+**In a workflow whose steps are expensive and sequential, adding a step is not free — it re-runs
+everything before it.** `nba-backfill.yml`'s earlier steps include a 582-call career-totals scrape
+and two full-season bulk pulls; appending a 1,230-call job would have meant paying all of that on
+every retry. **So the job got its own workflow and its own trigger file.**
+
+**This explains the file count** — **32 in-scope `nba-*.yml` workflows** (33 on disk; one,
+`nba-pp-payout-map.yml`, belongs to a concurrent session and is out of scope). The proliferation is
+**deliberate granularity, not sprawl.** Apply the same rule when adding future jobs: a new expensive
+step belongs in its own workflow unless it genuinely shares the earlier steps' inputs.
+
+## 🔴 0.39 `ok: certified` — THE `ok` FIELD IS THE CERTIFICATION VERDICT, ACROSS 18 WORKERS
+*Recorded 2026-09-21, T2 pass 16. **`[LIVE-AUDIT]` VERIFIED** by grep of the worker sources.*
+
+```js
+return { ok: certified, status: certified ? "completed" : "completed_with_warning", ... }
+```
+**18 workers**: `static-teams` · `-players` · `-arenas` · `-officials` · `-player-bio` ·
+`-player-tracking` · `-team-stats` · `-onoff` · `-darko` · `-schedule` · `-playtypes` ·
+`-tracking-detail` · `-shotquality` · `-lineups` · `-game-officials` · `-starter-status` ·
+`-backfill` · `daily-delta`.
+
+**`ok` does not mean "the request succeeded"** — a run that fetched, parsed and wrote perfectly but
+missed its threshold returns `ok: false`, **and no field means "the call worked."** ⚠ Only **7 of the
+18** use `completed_with_warning`; the other 11 have no warning-status vocabulary.
+
+⚠⚠ **And for teams it is circular**: §0.31 records the certification as
+`active_nba_teams === 30 && aliases >= 100`; **the hardcoded fallback is a 30-team list, so serving
+the fallback satisfies the check by construction.** The fallback trigger (`teams.length !== 30`) and
+the certification (`=== 30`) share the same magic number and fail together. **Full entry:
+`NBA_OPEN_ITEMS.md` (🔴🔴).**
+
+## 0.36 `raw_json` IS WRITTEN AS A STRING BY EVERY STATIC WRITER — the column is unqueryable
+*Recorded 2026-09-21, T2 re-read pass 11. **`[LIVE-AUDIT]` VERIFIED** across 1,306 rows / 6 tables.*
+
+Every writer binds `${JSON.stringify(x).slice(0, N)}` into a JSONB column, producing a **double-encoded
+JSON scalar string** rather than an object. `jsonb_typeof(raw_json)` = `string` everywhere. Slice
+widths differ with no stated policy: `players` 5000 · `player_season_profile` 2000 · `arenas` 2000 ·
+`player_tracking_profile` 2000 · `officials` **1000** — and a payload exceeding its width truncates
+**mid-JSON**, leaving a string unparseable even after the encoding is corrected.
+
+**This is a second, independent defect from §0.35's hand-picking problem.** §0.35 is about *what the
+writer chose to keep*; this is about *how what it kept was stored*. `nba_ref.arenas` has both: `owner`
+and `year_founded` are hand-picked away at the INSERT **and** the `raw_json` that would have preserved
+them is a string holding only four keys. **Full entry and remedy: `NBA_OPEN_ITEMS.md` (🔴🔴).**
+
+## 0.37 A FIFTH HAND-MAINTAINED EDIT SITE PER NEW STATIC ENTITY — with the widest blast radius
+*Recorded 2026-09-21, T2 re-read pass 10.*
+
+Four sites wire a new **worker** (`admin-sql`'s `z.enum`, its `bindingMap`, its `else if` chain, and
+`generate_wrangler_configs.py`). A fifth wires the new **scraper**: the explicit file list in
+`nba-scrape.yml`'s commit step, which grew by two paths per scraper across four successive patches.
+
+⚠ **Its failure mode is not "the new entity is missing" but "the commit dies for everyone."** A
+`git add` naming a file the scrape step never produced **hard-fails the commit step**, taking down the
+commit for every scraper that *did* succeed — the same blast radius as the git-push race, different
+cause. **Superseded** (T2, 2026-09-01) by an existence-checking `for f in nba/data/…; do` loop, which
+also removed the per-scraper maintenance. *Recorded at §T2.4 as a bug fix; the maintenance-site
+framing is new.*
+
+## ⚠ 0.38 ALL TWELVE MANDATED DOCUMENTS END WITH A STRAY TOOL-PAYLOAD FRAGMENT
+*Found 2026-09-21 during the T2 re-read. **Not fixed**, per the owner's standing instruction that
+issues are documented now and fixed after the sweep.*
+
+Every one of the twelve ends with two lines that are **not content** — the closing tags of the
+`github_put_file` call that wrote the file, captured into the file body:
+```
+</content>
+<parameter name="message">docs: …
+```
+**VERIFIED** by grep against `origin/main`: the fragment sits on the **second-to-last line of all
+twelve** — `NBA_MASTER_SUMMARY.md`, `NBA_OPEN_ITEMS.md`, `NBA_WORKERS.md`, `NBA_DATABASE.md`,
+`NBA_SYSTEM_ARCHITECTURE.md`, `NBA_FINAL_SCORING_CALIBRATION.md`, `NBA_BASELINE_CALIBRATION.md`,
+`NBA_SYSTEM_DESIGN.md`, `NBA_MULTIPLIERS.md`, `NBA_GOBLIN_DEMON.md`, `NBA_GLOSSARY.md`,
+`NBA_RECIPE.md`.
+
+✅ **CAUSE FOUND AND FIXED 2026-09-21.** `git log -S'</content>'` per document names the introducing
+commit: **twelve separate `github_put_file` calls on 2026-09-19 and 2026-09-20**, each landing as
+*"Update nba/NBA_*.md via Claude MCP bridge"* — the generic message, meaning `message` was never
+passed because **the tool call's closing tags were typed into the `content` argument**, taking the
+real message with them.
+
+**No live write helper is appending it.** `github_put_file` writes exactly the string given;
+`github_patch_file` never touches the tail. **Cause established before stripping**, so the strip is
+permanent. Removed from all twelve, verified zero remaining outside the two code fences that document
+the defect.
+
+⚠ **Recurrence risk**: a future full `github_put_file` of one of these documents can reproduce the
+slip. **Prefer `github_patch_file` for the twelve** — also what their size demands.
+
+## ⚠ 0.35 THE DESIGN RULE THE SCRAPERS DISAGREE ON — keep every column, or hand-pick and lose signal
+*Recorded 2026-09-21 (T3). **This is one finding, not three** — the pattern is the point.*
+
+**Three scrapers were built in a single session, 2026-09-02, against three sources. They made
+opposite choices about the same question, and the two that hand-picked both lost data that maps onto
+certified props.**
+
+| Scraper | Choice | Result |
+|---|---|---|
+| **tracking detail** | **keep every column returned**, as a generic `metrics` JSONB blob per player per measure type | **nothing lost** |
+| play types | hand-pick 10 of 18 source columns | **8 dropped** — `ft_poss_pct`, `tov_poss_pct`, `sf_poss_pct`, `plusone_poss_pct`, `score_poss_pct`, `fgm`, `fga`, `fgmx` |
+| DARKO | hand-pick 9 of 24 payload fields | **15 dropped** — incl. **`x_minutes`**, `x_pts_100`, `x_ast_100`, `x_fg_pct`, `x_fg3_pct`, `x_ft_pct`, `x_pace`, `career_game_num` |
+
+**The tracking-detail scraper stated the rule explicitly, and was right:**
+
+> *"each measure type returns a different, not-fully-predictable set of columns — rather than
+> hand-picking fields and **risking silently dropping something valuable**, this stores every real
+> column returned as a generic JSONB metrics blob per player per type, **so nothing gets silently
+> dropped**."*
+
+**Neither of the other two is recoverable without a re-scrape.** Both workers store
+`JSON.stringify(record).slice(0, N)` of the **already-reduced** record — ***VERIFIED**: 0 of 3,282
+play-type rows and 0 of 530 impact rows contain any dropped field; max `raw_json` lengths 213 and
+187 characters.* **A `raw_json` column that holds the transform's output rather than the source's
+row is not a safety net; it just looks like one.**
+
+**What was actually lost, stated once:** per-play-type **turnover and shooting-foul rates** (the
+mechanism behind the certified FTA and FTM props), per-play-type **shot volume** (`FGA`), and
+**DARKO's own daily projected minutes** — while factor A2 was being built to predict minutes through
+five retracted attempts.
+
+**The rule for every future scraper**: *store the source row, transform on read.* The JSONB pattern
+already exists in this codebase and costs one column. *Not applied retroactively — per the sweep's
+read-only rule.*
+
+---
+
+## 0.34 THE `scope_lock` DECLARATION — a worker that states, in its own response, every table it may write
+*Recorded 2026-09-21 (T3 pass 8). Appears in none of the thirty documents.*
+
+`alphadog-v2-nba-weekly-differential` returns a `scope_lock` object from **`GET /`** and
+**`GET /health`**, not just from a run:
+
+```
+writes_only: [ nba_stats.player_roster_snapshot,  nba_stats.player_differential_log,
+               nba_ref.team_roster_snapshot,      nba_ref.team_differential_log,
+               nba_ref.official_roster_snapshot,  nba_ref.official_differential_log,
+               "nba_ref.players (active flag only, for departed players)" ]
+no_mlb_table_access: true   no_scoring: true   no_board_mutation: true
+```
+
+**The last entry is the one that matters.** Six of the seven are tables this worker owns outright;
+**the seventh is a shared reference table it writes one column of.** That is a real, narrow
+exception to "the differential worker only touches its own snapshots", declared rather than
+discovered — *and it is the mechanism by which a departed player actually becomes inactive, since
+the snapshot tables alone would record the event without changing the roster anyone queries.*
+
+**Why the pattern is worth keeping**: a worker's write scope is otherwise only discoverable by
+reading its whole body, and the NBA/MLB isolation guarantee (§0.2, and the founding instruction that
+nothing is shared) is exactly the kind of claim that needs to be checkable without a code review.
+**`curl` the health endpoint and the worker tells you.**
+
+⚠ **CORRECTED 2026-09-21 (T2 re-read): this entry originally said "no other NBA worker does this."
+Wrong.** ***VERIFIED** on live `main`: `nba/alphadog-v2-nba-static-arenas.js` line 101 declares
+`scope_lock: { writes_only: ["POSTGRES.nba_ref.arenas"], no_mlb_table_access: true, … }` and
+returns it from `/run` at line 156.* **The convention predates the differential worker — it came
+from the teams worker in T1 and was carried into arenas in T2.**
+
+**What is distinctive about the differential worker's version is its CONTENT, not its existence**:
+it is the only one whose `writes_only` list names **seven** tables, and the only one declaring a
+write to a table it does not own (`nba_ref.players`, active flag). **A single-table `scope_lock`
+restates the worker's name; a seven-table one with a stated exception is the case where the
+declaration earns its keep.** *This correction is exactly why T2 was reopened — the shallow first
+pass recorded the pattern's existence without checking how far it extended.*
+
+### The schema placement is inconsistent, and the declaration makes it visible
+**Player snapshots live in `nba_stats`; team and official snapshots live in `nba_ref`.** Same worker,
+same purpose, three entities, two schemas. *Nothing breaks — but a reader looking for
+`nba_stats.official_roster_snapshot` by analogy will not find it.*
+
+---
+
+## 0.33 TWO GITHUB READ PATHS NOW EXIST — and which one a worker uses is invisible from its name
+*Recorded 2026-09-21 (T3 pass 3).*
+
+§0.32 records that `fetchFromGithub()` is copy-pasted across the static writers. **T3 forked it.**
+After the 1 MB contents-API failure on the schedule file (see `NBA_OPEN_ITEMS.md` FROM T3 PASS 1),
+the large-data workers got a second helper:
+
+| Helper | URL | Response handling | Limit |
+|---|---|---|---|
+| `fetchFromGithub` | `api.github.com/repos/…/contents/…` | `JSON.parse(atob(json.content))` — base64 envelope | **~1 MB, fails silently with empty content** |
+| **`fetchFromGithubRaw`** *(T3)* | `raw.githubusercontent.com/…` | `await resp.json()` — direct | **none** |
+
+**The raw variant also drops the `Accept: application/vnd.github+json` header**, since there is no
+envelope to negotiate. T3 applied it proactively to play types after being bitten once on schedule —
+*"used raw.githubusercontent.com from the start instead of waiting to hit the same 1mb file-size
+limit again."*
+
+**The hazard is that nothing about a worker announces which helper it carries.** A worker built by
+copying an older sibling inherits the contents-API version and works fine until its data file crosses
+1 MB, at which point it fails with `unexpected end of JSON input` and nothing points at the cause.
+**`nba/data/nba_schedule_current.json` is 1,225,505 bytes today** *(VERIFIED 2026-09-21)*, so the
+threshold is not hypothetical for this dataset family.
+
+---
+
+## 0.32 THE FIVE STATIC WRITERS ARE COPIES OF ONE WORKER — including a self-identifying User-Agent each
+*Recorded 2026-09-21 (T2 pass 2). **VERIFIED**: `Alphadog-NBA-StaticPlayerBio` at
+`nba/alphadog-v2-nba-static-player-bio.js` line 20.*
+
+T2 built five writers in one session — players, arenas, officials, player-bio, player-tracking,
+team-stats, on/off — by copying the teams worker. **`fetchFromGithub()` is duplicated verbatim in
+each**, with exactly one line differing: the User-Agent it sends to the GitHub contents API.
+
+| Worker | User-Agent |
+|---|---|
+| teams | `Alphadog-NBA-StaticTeams` |
+| players | `Alphadog-NBA-StaticPlayers` |
+| officials | `Alphadog-NBA-StaticOfficials` |
+| player bio | `Alphadog-NBA-StaticPlayerBio` |
+| player tracking | `Alphadog-NBA-StaticPlayerTracking` |
+| team stats | `Alphadog-NBA-StaticTeamStats` |
+| on/off | `Alphadog-NBA-StaticOnOff` |
+| schedule *(T3)* | `Alphadog-NBA-StaticSchedule` |
+| DARKO *(T3)* | `Alphadog-NBA-StaticDarko` |
+| weekly differential *(T3)* | `Alphadog-NBA-WeeklyDifferential` |
+
+*Extended 2026-09-21 from seven to **ten** when T3's pass 2 reached the schedule, DARKO and
+differential workers. **The duplication cost scales with the table**: a fix to the shared GitHub read
+path is now a ten-place edit, and `Alphadog-NBA-WeeklyDifferential` is the one copy that diverged —
+its `meta.error` throw includes the failing path (`last committed scrape failed for ${path}`) because
+it reads three files in one run, where the others read one.*
+
+**Two consequences worth holding together.** The good one: **GitHub API traffic is attributable per
+worker** — a rate-limit or audit question can be answered by worker name without adding logging.
+*(T1 pass 84 recorded this property for the teams worker alone; it is a deliberate convention across
+all seven.)* The cost: **there is no shared module**, so a fix to the GitHub read path — auth, error
+handling, the base64 decode, the `meta.error` check — must be made seven times, and a worker that is
+missed fails in a way no other worker exhibits.
+
+**The route surface is copied too**: `GET /`, `GET /health` (returning `vars_present`), `POST /run`,
+404 otherwise. **So §0.28's finding — `POST /run` carries no authentication — holds for all seven,
+not just the one it was measured on.**
+
+---
+
+## 0.3 ⚠ EVERY WORKER'S OPERATING CONSTANTS ARE HARDCODED — the founding rule is not holding
+*VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
+
+**The owner's founding rule named the exact quantities this document is a catalogue of:**
+> *"any future variable numbers must reside on the database, not hard coded — … or **system variables
+> like, TIMEOUTS, RETRIES, CHUNK SIZE**, for example, **so all these are easily changed by SQL command
+> instead of coding and deploys.**"*
+
+**What the workers actually do:**
+| Quantity | Where it lives today |
+|---|---|
+| HTTP timeouts | Python literals — `timeout=30` (`scrape_nba_onoff`, `scrape_nba_darko`, `scrape_nba_career_totals`, `scrape_nba_officials`), `timeout=60` (`scrape_nba_lineups`, `scrape_nba_backfill_2025_26`), `timeout=90` (`scrape_fliff_board`, `scrape_nba_pairs`), `timeout=300` (the `fetch()` helpers) |
+| Retry counts | literal loop bounds — `range(1, 3)`, `range(3)`, `range(1, 4)`, `range(4)` |
+| Chunk / batch sizes | Python constants |
+| Per-prop model constants | the hardcoded `PROPS` dict in `backtest/classification_ladder_v12.py` |
+
+**And `nba_config.system_settings` seeds `nba_default_chunk_size = 200`** — **read by nothing.**
+
+> ⚠⚠ **AND THE OTHER HALF OF THE MECHANISM** *(recorded 2026-09-20, T1 pass 80, **VERIFIED** from `generate_wrangler_configs.py` and a live `check_bindings`)*. **An NBA worker is given six vars and none of them is an operating constant**: `SYSTEM_ENV`, `SYSTEM_TIMEZONE`, `ACTIVE_SPORT`, `NBA_STATS_API_BASE_URL`, `WORKER_SAFE_MODE`, `DEBUG_MODE`. **MLB's shared `VARS` carries the caps** — `MAX_TICK_MS`, `MAX_API_CALLS_PER_TICK`, `MAX_ROWS_PER_TICK`, `LOCK_STALE_MINUTES` and 16 more — and the generator deliberately gives NBA *"its own vars, never the shared MLB VARS dict"*. **✅ The isolation is real. ⚠ The consequence is that an NBA worker has nowhere to read a timeout, retry count, chunk size or row cap from** — the database table exists and is read by nothing, and the vars block carries no constant. **The rule did not fail through neglect: the plumbing was never built on either side.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 80*.
+**VERIFIED**: the strings `system_settings`, `chunk_size`, `stat_decay_config`, `role_tiers`,
+`factor_registry`, `classification_config` appear **zero times** in the codebase. The only config
+table any worker reads is **`nba_config.external_credentials`**, for API keys.
+
+**⚠ One documented exception is real and worth noting**: `scrape_prizepicks_nba_board.py` reads
+**`PP_NBA_RETRY_SLEEP_SECONDS`** from the environment with a default of `8` (proxy) or `60` (direct).
+**That is env-configurable, not deploy-bound — but it is still not the database**, and it is the only
+retry parameter in the fleet that can be changed without editing code.
+> 🆕 (additional sweep `5`, pass 373, `§P373` — the two PrizePicks producers' env namespaces, which `S3`'s P3 audit names, `2026-10-08 06:25Z`: *Two producers write boards/prizepicks_nba_current.json with different env namespaces/defaults (PRIZEPICKS_MIN_FUTURE_ROWS 50 etc.).*; ✅ read in code `2026-10-15`; the italics around this bracket removed in the same pass, the quotation inside them having nested): the MLB producer `main.py` reads `PRIZEPICKS_MIN_FUTURE_ROWS` (default `50`). The NBA producer, `nba/scrape_prizepicks_nba_board.py` — P3's, P2B's morning and the close capture's since round 2 (`P3#10`) — reads its own `PP_NBA_*` namespace beside `PP_NBA_RETRY_SLEEP_SECONDS`: `PP_NBA_TIMEOUT_SECONDS` (`35` with the proxy, `45` direct), `PP_NBA_ATTEMPTS` (`4` / `3`), `PP_NBA_CAPTCHA_COOLDOWN_SECONDS` (twice the sleep), `PP_NBA_MIN_FUTURE_ROWS` (code default `20`; P3, P2B and the close capture set `50`, main.py's gate), `PP_NBA_BUDGET_S` (`270`) and `PP_NBA_OUT_DIR` (`boards`). So this paragraph's "only retry parameter" no longer holds: the scraper's attempts, timeout and budget are env-set too, and from `T48` ~~every networked script reads~~ the networked scripts moved onto `nba/net_retry.py` read (strike-correction, same pass: the module's callers, not every script) `NET_RETRY_TRIES` / `NET_RETRY_BASE` / `NET_RETRY_CAP` (`NBA_SYSTEM_ARCHITECTURE.md` `§T48.8`).
+
+**Consequence for this document**: **the operating constants listed per worker below are code facts,
+not config facts.** Changing one requires a code edit, a commit and a deploy — the loop the rule was
+written to avoid, and the loop that is most expensive for an owner with **no terminal**
+(`NBA_SYSTEM_ARCHITECTURE.md` §1a). Full entry: `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 36*.
+
+---
+
+## 0.4 THE TWO REGISTRIES — and the count that proves the isolation held
+*Recorded 2026-09-20 (T1 pass 35). **VERIFIED by live query.***
+
+| Registry | Rows | NBA rows |
+|---|---|---|
+| **`config.worker_definitions`** — MLB's shared registry | **116** | **0** |
+| **`nba_config.worker_definitions`** — NBA's own | — | all of them |
+
+Plus NBA's own run bookkeeping: **`nba_control.job_runs`** and **`nba_control.worker_run_log`**.
+
+**Two things follow, both previously unrecorded:**
+1. **The blueprint's shared-queue contention question is moot** — NBA never joined the queue. It was
+   posed in §0 as *"a genuine, concrete thing worth checking directly against the live system"* and
+   had never been answered. `NBA_SYSTEM_ARCHITECTURE.md` §1a0.
+2. **116 is the same count T1's Phase 1 banner recorded on 2026-08-31.** Twenty days and a full NBA
+   build later it is unchanged, with **zero NBA rows** — **direct live evidence that the *"additive
+   only, no MLB-system side effects"* constraint held.** It is the registry-level counterpart to the
+   `startswith("alphadog-v2-nba-")` guard on the deploy scripts.
+
+**⚠ This is also the four-step wiring pattern's blast radius.** §0 above requires every worker to be
+registered in four places. **All four are NBA-owned** — `nba/worker_manifest_nba.json`, the
+`nba_config` registry, the bridge's dispatch branch, and the generator's NBA list. **No step touches
+an MLB table.**
+
+---
+
+## 0.5 ⚠ THE WORKER ARCHITECTURE WAS A NON-GOAL BEFORE IT WAS A DESIGN
+*Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§6**, first non-goal. Recorded 2026-09-20
+(T1 pass 31) — the dead-stub fact was already in these documents; **the instruction it produced was
+not.***
+
+> *"**Don't build a per-prop 'one worker per prop' architecture** — MLB tried this, abandoned it in
+> favour of a unified scoring engine, and **left 19 DEAD STUB FILES behind as evidence**. **Build the
+> unified version from the start.**"*
+
+**This is why there is no `nba-score-points.js`, no `nba-score-rebounds.js`, and why the entire
+scoring layer is one script** — `nba/build_final_hp.py` (§5) — **with props as a parameter
+(`FE_PROPS`), not as files.** The 28 props in `nba_ref.prop_taxonomy` produce **one engine**, not 28
+workers.
+
+**The split that does exist is by DOMAIN, not by prop** — `static-teams`, `static-players`,
+`static-officials`, `daily-delta`, `weekly-differential`. **That is the blueprint's "phase file"
+pattern** (`NBA_FINAL_SCORING_CALIBRATION.md` §7i), and it is orthogonal to the non-goal: a phase is
+a **stage of the pipeline**, a prop is a **row in a taxonomy**. **One worker per stage: yes. One
+worker per prop: never.**
+
+**The evidence that made it a rule is quantified**: MLB's abandoned attempt left **19 dead stub
+files**, which remained in the repo long enough to be counted during T1's recon and are recorded in
+`NBA_OPEN_ITEMS.md`. **NBA paid none of that cost** — **VERIFIED**: no per-prop worker appears in
+`nba/worker_manifest_nba.json` or anywhere in `nba/`.
+
+---
+
+## 0a. THE INVESTIGATION METHODOLOGY — for understanding a large existing system
+*⚠ **Provenance, recorded 2026-09-20 (T1 pass 39)**: this method was **the only option available**,
+not a chosen technique — T1's own `view` calls target `/dev/null` and state *"no direct file view tool
+for remote repo; use `github_get_file` range instead."* Recorded so it is not mistaken for a
+preference.*
+
+*Source: T1, blueprint §6b — worked out for "a genuinely huge (1MB+) orchestrator file, worth reusing
+directly rather than reading the whole file top to bottom." Recorded 2026-09-20.*
+
+| # | Step | Why |
+|---|---|---|
+| **1** | **Query the structured job/worker REGISTRY TABLES first** | *"**cheap, structured, and AUTHORITATIVE for 'what jobs and workers currently exist' — BEFORE TOUCHING ANY CODE.**"* |
+| **2** | **Targeted code search for SPECIFIC PATTERNS** — job_key strings, stage-array variable names, function names | *"rather than reading entire large files — **cheap and precise**"* |
+| **3** | **Only read a FULL physical file when a targeted search shows it's genuinely SMALL, or when a SPECIFIC CLAIM needs full-context confirmation** | *"**reserve full reads for when they're actually necessary**"* |
+| **4** | **CROSS-CHECK every claim about 'what SHOULD happen' against REAL, LIVE EXECUTION HISTORY** — the job queue's run log, actual table row counts | *"**a registry or config table describes INTENT, not necessarily current real behaviour, and THE TWO CAN AND DO DRIFT APART.**"* |
+
+> ⚠ **THE THRESHOLD IS MEASURED, NOT RHETORICAL** *(recorded 2026-09-20, T1 pass 64 — **VERIFIED**
+> by parsing all 20 raw transcript exports)*. Step 3's *"reserve full reads for when they're actually
+> necessary"* has a hard number behind it: **a `github_get_file` result above roughly 65,503
+> characters (64 KiB) is cut in the displayed copy**, and **above a larger threshold the result is not
+> returned at all** — replaced by a 212-character stub reading *"Tool result too large for context,
+> stored at `/mnt/user-data/tool_results/…`"*, a spill path that **does not survive the session**.
+> **Six such results across T2–T4 total 5.5 MB of text that is absent from the exports.** Step 2
+> (targeted search) is therefore not merely cheaper than step 3 — **above ~64 KiB it is the only step
+> that returns anything durable.** See `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 64*.
+
+> ⚠ **AND THE METHOD'S ONE BLIND SPOT, MEASURED** *(recorded 2026-09-20, T1 pass 78)*. The four steps optimise for **answering a question**; **there is no step for *"has this already been solved in this repo?"*** **MEASURED**: T1 opened **nine MLB files** out of **372 at the repo root alone** (140 `.js` workers, 11 `.py`, 41 `.md`), plus 6 MLB workflows and `gbdt_training/`'s 28 files — **and `gbdt_training/d1_client.py`, which already contained T1's central discovery, was never opened** (pass 40). **The nine were the right nine for the task and the method is why the work was fast**; the cost is that **prior art is only found by looking for it.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 78*.
+
+**✅ This documentation effort has followed exactly this order**, which is why the findings hold:
+- **Step 1** → `worker_definitions`, `factor_registry`, `classification_config`, `role_tiers` queried
+  before any code was read
+- **Step 2** → `github_grep_file` on `dud|mixture|p_dud`, `p_ot|overtime`, `round\(`, `MIN_RATIO`,
+  `NOT yet|CERTIFIED`
+- **Step 3** → full reads reserved for the workflow files and targeted recipe sections
+- **Step 4** → the live SQL checks: `arenas` 30/0/0/19, the differential logs 0/0/0/582, the config
+  tables, `prop_taxonomy` 28
+
+**Step 4 is what produced every VERIFIED finding**, and step 4's own warning —
+***"a config table describes INTENT, not current real behaviour, and the two DO drift"*** — **is
+`minutes_mixture` exactly**: the config specifies `dud_lognormal`, `tiered_inelastic` and a per-team
+blowout term; **the code implements none of them.**
+
+**⚠ And it names the limit of step 1**: the registry is authoritative for *what exists*, **not for
+what runs.** The differential worker is in the registry and has never executed.
+
+---
+
+*Source: T1, blueprint §6a. Recorded 2026-09-20.*
+
+### 1. THE EXACT-PAIRING SAFETY CHECK
+> *"**Where MLB reuses ONE PHYSICAL WORKER FILE for MULTIPLE LOGICAL ROLES, the dispatch code NEVER
+> TRUSTS `job_key` ALONE — it requires A GUARD FUNCTION CHECKING THAT `job_key` AND `worker_name`
+> MATCH TOGETHER AS A SPECIFIC, KNOWN PAIR before routing a job to that worker.**
+> **This is precisely what PREVENTS A JOB FOR ONE LOGICAL ROLE FROM EVER BEING SILENTLY ROUTED TO THE
+> WRONG PHYSICAL FILE.**
+> **If any NBA worker ends up serving MORE THAN ONE LOGICAL ROLE — plausible for shared,
+> sport-agnostic-shaped workers — APPLY THE SAME EXACT-PAIRING CHECK.**"*
+
+**⚠ NBA has multi-role workers already** (§0d.1): the backfill worker (`mode`), the measure-types
+writer (`file_prefix`), the injury scraper (`INJURY_MODE`), the season-tables scraper (`MODE`).
+
+**And the precondition for mis-routing already occurred**: T6 records that
+**`DAILY_DELTA_RUNNER_WORKER` already exists as a shared/MLB binding**, so an NBA-specific name was
+chosen *"to avoid any conflict"* — **the hazard caught by naming discipline, not by a pairing guard.**
+
+**The bridge's `run_job` takes a `target` ENUM with hard client-side validation — one field, not a
+pair.** Whether a `job_key` + `worker_name` guard exists is not recorded.
+
+### 2. LOGICAL NAME vs DEPLOYED SLOT
+> *"**MLB's dispatch config EXPLICITLY DISTINGUISHES a job's *LOGICAL* (conceptual) worker name from
+> its *DEPLOYED* (actual physical file) SLOT, specifically to MAKE WORKER-REUSE LEGI[BLE].**"*
+
+**Two names per job, deliberately** — "which concept is this?" and "which file runs it?" as separate
+questions, **instead of one name silently meaning both.**
+
+**NBA's surfaces**: `nba_config.worker_definitions` carries `worker_name`, `job_key`, `worker_group`,
+`phase_key`; the bridge carries a **binding name** and a **service name**. **No explicit
+logical-vs-deployed distinction is recorded.**
+
+**Most relevant to the patcher pattern**, which is worker reuse in its purest form:
+`build_baseline_ladder.py` **is** `classification_ladder_v12.py`, transformed. **The logical job and
+the deployed artefact are genuinely different things**, and the anchor assertions keep that
+relationship honest.
+
+---
+
+## 0d. ⚠⚠ SYSTEM SELF-KNOWLEDGE — read before assuming anything is "live"
+*Source: T1, blueprint §6 — **"file names, job_key names, and 'is this worker active' assumptions are
+FREQUENTLY WRONG, and this cost real debugging time more than once."*** Recorded 2026-09-20.
+
+### 1. One physical file can serve MANY unrelated logical roles
+> *"**A single physical worker file can serve MANY UNRELATED LOGICAL ROLES, selected AT RUNTIME by a
+> `mode` PARAMETER, not by which file it is.** MLB's most extreme case: **ONE 700 KB+ FILE SERVES ~24
+> DIFFERENT LOGICAL FUNCTIONS across multiple job_key aliases.**
+> **NEVER ASSUME 'ONE FILE = ONE JOB.'**
+> If you're tempted to reuse an existing file for a new purpose via a mode switch, **that's CONSISTENT
+> WITH THE ESTABLISHED PATTERN — but DOCUMENT THE MODE DISPATCH TABLE EXPLICITLY IN ONE PLACE, don't
+> let it become IMPLICIT.**"*
+
+**⚠ NBA uses mode switches throughout, and the dispatch table is NOT documented in one place.**
+| File | Modes |
+|---|---|
+| `scrape_nba_injury_report.py` | **`INJURY_MODE`** = `daily` / `probe` / backfill *(with `INJURY_FROM`/`TO`)* |
+| The backfill worker | **`mode`** = default / **`weekly`** (splits + career totals only) |
+| The measure-types writer | **`file_prefix`** — backfill vs delta files |
+| `scrape_nba_season_tables.py` | **`MODE`** = `season`, plus `SEASONS_N` |
+| The certifiers | **`PIPE`** = `p1` / `p2` / `p3` |
+| P2 itself | **`skip_mining`**, **`asof`**, **`season`** — replay vs live |
+| The recipe | **`BT_CARRY`**, `BT_PROPS`, `BT_CUTOFF`, `BT_REPLAY`, `BT_TRAIN`/`BT_TEST`, `BT_PLAYER_L0`, `BT_SHIFT_LAMBDA`, `BT_LADDER_STEPS`, `BT_SAVE_COMPONENTS` |
+
+**The table above IS the missing dispatch documentation**, assembled here for the first time.
+**Note `INJURY_MODE` specifically**: the workflow comment records *"**`INJURY_MODE`, not `IR_MODE`
+(verified in the script; MY FIRST GUESS WAS WRONG)**" — the exact cost this lesson describes.
+
+### 2. A file name can be a complete DEAD STUB
+> *"**A worker's own literal file name can be A COMPLETE DEAD STUB** while **ALL ITS REAL WORK HAPPENS
+> UNDER OTHER job_key/mode ALIASES that have NOTHING TO DO WITH THE FILE'S NAME.**
+> **Don't trust a file name as a description of current behaviour.**"*
+
+**NBA's live instance of the inverse**: `classification_ladder_v12.py` **is at v18** — the file name
+under-describes it by six versions. **And T7's three-generation trap is this lesson exactly**:
+`alphadog-v2-base-classification-v5.js` is dead and says so; the live logic is a **function name**,
+`runClassificationBaselineV6ToPostgres`.
+
+### 3. "WIRED BUT NOT IMPLEMENTED" is a recurring shape
+> *"**A dispatch guard function AND CALL SITE CAN EXIST and route to A HANDLER FUNCTION THAT WAS NEVER
+> ACTUALLY WRITTEN**, causing **A CRASH ONLY WHEN THAT SPECIFIC PATH IS FINALLY EXERCISED.**
+> **When wiring a new NBA worker into any dispatch table, VERIFY THE HANDLER FUNCTION ACTUALLY EXISTS
+> — don't just verify THE ROUTING COMPILES.**"*
+
+**This is §4h's called-but-undefined risk seen from the dispatch side**, and it is why NBA's wiring is
+**four edits** rather than three — each is a place the routing can exist without the destination.
+
+### 4. A batch of stubs can look entirely real from outside
+> *"**A large batch of NEAR-IDENTICAL PLACEHOLDER/STUB FILES can look REAL FROM THE OUTSIDE** —
+> **plausible file sizes, real-looking names** — **while being 100% UNIMPLEMENTED DUMMIES that were
+> SCAFFOLDED EARLY AND ABANDONED when the design changed.**
+> **MLB has 19 such per-prop 'SCORE' WORKERS, ALL RETURNING A HARDCODED
+> `DUMMY_READY` / `DUMMY_ONLY_NOT_REAL_DATA` RESPONSE, NEVER ONCE INVOKED.**"*
+
+**✅ Already recorded in this documentation**: *"MLB ~130 workers deployed vs 116 registry rows — **~19
+are dead stubs at ~5.3 KB, still `enabled=1`**."* **This is the same 19**, and the detail now has its
+source: they return a hardcoded dummy response and **were never once invoked.**
+
+**The NBA-side implication**: `nba/worker_manifest_nba.json` lists workers by name and size. **Neither
+signal distinguishes a real worker from a stub** — only invocation history does.
+
+**✅ And the explicit instruction was followed**:
+> *"**If NBA's design also considers 'ONE WORKER PER PROP', LEARN FROM MLB'S ABANDONMENT OF THAT IDEA
+> IN FAVOUR OF A UNIFIED SCORING ENGINE — BUILD THE UNIFIED VERSION FIRST.**"*
+
+**NBA has exactly one scoring path** — `classification_ladder_v12.py` with a `PROPS` config, plus
+`combos_ladder_v1.py` — **not a worker per prop.** The 19 abandoned MLB stubs are what that
+instruction exists to prevent, and NBA never created their equivalent.
+
+*(⚠ The one place NBA did split is singles vs combos — two certified recipes rather than one. That is
+a two-way split, not a per-prop one, but it carries the duplication cost recorded in OPEN_ITEMS.)*
+
+### 5. ⚠ CHECK EXECUTION HISTORY, NOT THE `enabled` FLAG
+> *"**Before assuming ANY schedule/cron is LIVE or DORMANT, CHECK THE ACTUAL JOB-QUEUE EXECUTION
+> HISTORY DIRECTLY** (`control.control_job_queue` or equivalent) — **NOT the `enabled` flag alone, and
+> NOT a note/comment in the config row.**
+> MLB found **a real case of a cron flag and its own explanatory note DIRECTLY CONTRADICTING each
+> other**, and separately found **'LONG DORMANT' job types that STILL HAD LIVE, WIRED UI BUTTONS
+> DESPITE MONTHS OF ZERO REAL INVOCATIONS.**"*
+
+**Three unreliable signals named**: the `enabled` flag, the config note, and a wired UI button.
+**Only execution history is trusted.**
+
+**✅ This is the method that caught NBA's differential worker** — the conclusion came from querying
+the **output tables** (all three logs empty, snapshot frozen **2026-09-02 19:47 UTC** — *date corrected
+2026-09-21 by §T9.35a; 09-03 belongs to `nba_ref.players`, a different table*), not from reading configs.
+
+**⚠ And it reinforces the never-fire-cron caveat**: a `crons: ["0 0 30 2 *"]` entry **and** an
+`enabled=1` flag can both be present and neither tells you whether the worker runs. **The MLB
+observation that such crons kept firing twice despite the fix makes execution history the only
+reliable answer in both directions.**
+
+**NBA's equivalent sources**: `control.job_runs` / `control.job_queue` (shared, bookkeeping-only),
+**GitHub Actions run history**, and — most directly — **the output tables' own row counts and
+`updated_at`/`loaded_at` timestamps.**
+
+---
+
+*Source: T1, blueprint §5b — "a powerful, generalizable warning." Recorded 2026-09-20.*
+
+> *"MLB found **MULTIPLE STATIC JSON MANIFEST FILES in its own repo that LOOKED AUTHORITATIVE** —
+> structured, comprehensive, **one-worker-to-one-job mappings** — but **turned out to describe the
+> system exactly as it was *ORIGINALLY SCAFFOLDED*, before extensive JOB-MULTIPLEXING was layered on
+> top over time.** These files **were NEVER UPDATED as the real architecture evolved**, and **by the
+> time they were checked, THEY DIRECTLY CONTRADICTED WHAT THE LIVE DISPATCH CODE ACTUALLY DID FOR A
+> MAJORITY OF THE WORKERS INVOLVED.**
+> **Any static 'WORKER → JOB' or 'FILE → FUNCTION' mapping document, HOWEVER OFFICIAL-LOOKING OR
+> COMPREHENSIVE, SHOULD NEVER BE TRUSTED AS GROUND TRUTH for what a system CURRENTLY does — ONLY THE
+> LIVE DISPATCH CODE (and, EVEN THEN, CROSS-CHECKED AGAINST LIVE EXECUTION HISTORY, since EVEN
+> DATABASE CONFIG TABLES CAN DRIFT from what the code actually enforces) reflects current reality.**"*
+
+### ⚠ NBA has exactly such a manifest
+**`nba/worker_manifest_nba.json`** — created in T1, a **worker list** consumed by the deploy pipeline.
+**By this warning it is a snapshot, not truth**, and it should be re-verified against the live
+dispatch branch in `admin-sql` before being relied on.
+
+**And the three-place wiring makes drift structurally possible**: a worker exists in the **manifest**,
+the **bridge binding map + dispatch branch + tool enum**, and the **generator**. **Four surfaces that
+must agree, with nothing asserting they do.**
+
+### ⚠⚠ THIS WARNING APPLIES TO THIS DOCUMENTATION ITSELF
+**`NBA_WORKERS.md`, `NBA_SYSTEM_DESIGN.md` and `NBA_DATABASE.md` are exactly the kind of
+"official-looking, comprehensive mapping document"** this describes. **They are snapshots dated
+2026-09-20.**
+
+**The rule's own hierarchy of trust, applied here:**
+| Source | Trust |
+|---|---|
+| **Live execution history** | highest — e.g. the differential logs being empty |
+| **Live dispatch code / workflow files** | e.g. P1's actual step list, the recipe's `ROLE_TIERS` |
+| **Database config tables** | ⚠ *"even database config tables can DRIFT from what the code actually enforces"* — **and `minutes_mixture` HAS** |
+| **Static manifests and these documents** | lowest — snapshots |
+
+**The `minutes_mixture` drift is this warning confirmed inside NBA**: the config table specifies three
+components the code does not implement. **The config was trusted as describing the system; it
+described the design.**
+
+**Consequence for readers of these files**: entries marked **VERIFIED** (live SQL or a direct grep)
+sit in the top two tiers. Everything else is a snapshot. *(See the confidence-tier header in
+`NBA_OPEN_ITEMS.md`.)*
+
+---
+
+*Source: T1, blueprint §4m. Recorded 2026-09-20.*
+
+### ⚠ A syntax validator will NOT catch JS embedded in a server-side template literal
+> *"**A basic script-syntax validator WILL NOT CATCH AN ERROR IN CLIENT-SIDE JAVASCRIPT EMBEDDED
+> INSIDE A SERVER-SIDE TEMPLATE LITERAL** — **that code needs to be EXTRACTED AND VALIDATED
+> SEPARATELY**, since **a generic top-level syntax check treats THE WHOLE TEMPLATE LITERAL AS AN
+> OPAQUE STRING.**"*
+
+**Relevant wherever a Worker returns HTML or embeds a script** — the health-check and diagnostics
+responses on `admin-sql` are that pattern. **A worker can deploy cleanly with broken embedded JS.**
+
+### ⚠⚠ AFTER ANY RENAME, GREP THE WHOLE CODEBASE FOR THE OLD NAME
+> *"**After renaming ANY shared constant or function, EXPLICITLY SEARCH THE WHOLE CODEBASE FOR THE OLD
+> NAME BEFORE CONSIDERING THE RENAME COMPLETE** — **a reference to a renamed identifier LIVING INSIDE
+> A STRING TEMPLATE WILL NOT FAIL UNTIL THAT SPECIFIC CODE PATH ACTUALLY EXECUTES AT RUNTIME**, not at
+> deploy or parse time, **so a STALE REFERENCE CAN SIT INVISIBLE FOR A LONG TIME.**
+> **MLB found SIX SUCH STALE REFERENCES IN A SINGLE SESSION, all traceable to THE SAME ROOT CAUSE.**"*
+
+**Six from one rename**, each failing only on the path that uses it — **so the common path working
+proves nothing**, the same property as the called-but-undefined-function risk (§4h).
+
+**⚠ NBA is exposed through the PATCHER PATTERN specifically.** The production builders are **string
+transformers** over the certified recipes — **any rename inside `classification_ladder_v12.py` is a
+rename inside the patcher's search strings.**
+
+**The record shows this failing and being caught by design:**
+- *"The anchor check did exactly its job — **it failed loudly**"*
+- *"**Verify all five anchors against the repo harness BEFORE re-triggering**"*
+- *"The patch didn't apply (**third anchor mismatch**) — **that run was unchanged v17**"*
+- 🆕 *(additional sweep `8`, pass 483, `§P483` — `T9`, `2026-09-09` `19:58Z`, the production ladder builder's first Actions build)* **The cause of that anchor failure, AS STATED**: *"the repo copy of the harness has a trailing comment on the walk-forward line that my working copy didn't."* Fixed by verifying all five anchors against the repo harness programmatically before the re-trigger.
+
+**The anchor assertions convert a silent stale reference into a loud failure. That is the mitigation
+the rest of the codebase lacks.**
+
+| Surface where an identifier lives in a string | Protected? |
+|---|---|
+| The patcher's anchor strings | ✅ **asserted** |
+| `run_job`'s `target` enum ↔ bridge binding map ↔ generator | ⚠ **three places must agree** |
+| `MARKET_TO_PROP` / `norm_market()` board keys | ⚠ string literals |
+| `INJURY_MODE`, `BT_PROPS`, `GAP_SEASON` env names | ⚠ matched at runtime |
+| Workflow `run:` lines naming scripts | ⚠ fails only when that step runs |
+
+---
+
+## 0e. ⚠ THE SCOPE-PARAMETER AUDIT — every mode/scope argument must constrain the WRITE, not the response
+*Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` **§7g**. Recorded 2026-09-20 (T1 pass 29) —
+previously unswept.*
+
+> *"MLB found a function whose **'which props to touch' input parameter correctly filtered its own
+> RESPONSE SUMMARY, but the underlying WRITE LOGIC IGNORED THAT FILTER ENTIRELY** and touched every
+> eligible row regardless — **invisible except by noticing unrelated timestamps had also updated.**"*
+
+**The standing rule, stated for NBA directly:**
+> *"**When adding any 'limit to these specific items' parameter to an NBA worker, VERIFY IT CONSTRAINS
+> THE ACTUAL WRITE PATH, not just what gets echoed back in the response.**"*
+
+**This document is the inventory of exactly the parameters at risk.** Every scoping env var recorded
+in the tables below is a candidate:
+
+| Worker / script | Scope parameters recorded here |
+|---|---|
+| `nba/build_final_hp.py` | `FE_SEASONS`, `FE_PROPS`, **`FE_DATE`** (*"scopes to one slate: seconds vs ~90 min"* — a large claimed selectivity) |
+| `nba/backtest/classification_ladder_v12.py` and its patchers | `BT_REPLAY`, `BT_INJURY`, `BT_LADDER_STEPS`, `BT_SAVE_COMPONENTS`, `BT_TRAIN` / `BT_TEST` |
+| `nba/certify_pipeline.py` | `PIPE=p1\|p2\|p3` |
+| every static scraper | season / date-range arguments |
+| every Cloudflare writer worker | the mode-dispatch branch it is invoked through |
+
+**NOT RECORDED as audited — none of these has been checked against the §7g rule.**
+**The cheap test is named in the source**: the detection signal was *unrelated timestamps also
+updating*, so **a `SELECT max(updated_at)` on rows OUTSIDE the requested scope, before and after a
+scoped run, settles it per worker.** Logged in `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*.
+
+**⚠ Why this matters more here than it did for MLB.** In MLB's instance the bug was *"not unsafe —
+every write, filtered or not, passed the same validation gate."* **NBA's `FE_DATE` claim is a
+performance claim (`seconds vs ~90 min`) as well as a scope claim**, so a write path ignoring it would
+show up as a timing anomaly too — **but only if someone is watching the runtime.**
+
+---
+
+## 1. CLOUDFLARE WORKERS — Postgres writers
+Pattern: read the GitHub-committed JSON → upsert into Postgres.
+
+> ⚠⚠ **CORRECTION — they do NOT log to `nba_control`** *(2026-09-20, T1 pass 68; this line previously read … → **log to `nba_control`**)*. **VERIFIED three ways**: **(1)** `nba_control.job_runs` and `nba_control.worker_run_log` hold **0 rows each**; **(2)** the string `nba_control` appears in **no non-markdown file anywhere in the repo** — not one worker, scraper, workflow or config; **(3)** every file that does use `worker_run_log` or `job_runs` is an **MLB** file at the repo root (`alphadog-v2-orchestrator.js`, `alphadog-v2-control-room.js`, `alphadog-v2-score-audit.js`, …). **NBA inherited the tables from MLB's design and never inherited the wiring.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 68*.
+They do **not** fetch from nba.com; they cannot (Cloudflare is blocked).
+
+| Worker | job_key | Writes | Source file |
+|---|---|---|---|
+| `nba/alphadog-v2-nba-static-teams.js` | `nba-static-teams` | `nba_ref.teams`, `team_aliases` | `nba_teams_current.json` |
+| `nba/alphadog-v2-nba-static-players.js` | `nba-static-players` | `nba_ref.players`, `player_aliases` | `nba_players_current.json` |
+| `nba/alphadog-v2-nba-static-arenas.js` | `nba-static-arenas` | `nba_ref.arenas` | `nba_arenas_current.json` |
+| `nba/alphadog-v2-nba-static-officials.js` | `nba-static-officials` | `nba_ref.officials` | `nba_officials_current.json` |
+
+Each has `EXPECTED_VARS = [SYSTEM_ENV, SYSTEM_TIMEZONE, NBA_STATS_API_BASE_URL, WORKER_SAFE_MODE,
+DEBUG_MODE]` and a `/debug-fetch` diagnostic route. Teams also carries a **certified static 30-team
+fallback** with real stats.nba.com TEAM_IDs.
+
+**`alphadog-v2-admin-sql.js`** (repo root, shared) — the MCP bridge. Every tool the assistant has.
+**Touching it triggers a full-fleet redeploy.**
+
+---
+
+## 2. STATIC SCRAPERS — GitHub Actions, `nba/data/`
+
+> ### ⚠ EVERY SCRAPER'S OUTPUT SHOULD HAVE A `*_meta.json` SIDECAR — about one in five does
+> *Recorded 2026-09-20 (T1 pass 45). **VERIFIED on the live repo**: `nba/data/` holds **223 files,
+> 41 of them `*_meta.json`.***
+>
+> ```json
+> { "fetched_at": "2026-09-14T15:49:33Z",
+>   "source_url": "https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2026-27…",
+>   "http_status": 200, "team_count": 30, "error": null }
+> ```
+>
+> **This is the provenance layer that makes the standing discipline checkable** — *read the committed
+> file, not the scraper's own meta claim* — because it records **when, from where, what status, how
+> many rows, and whether it errored.**
+> **⚠ For the ~180 files without one there is no committed record of fetch time or success**, and the
+> workflow logs that would answer it **expire** (§0.25's sibling finding, `NBA_OPEN_ITEMS.md` FROM
+> T1 PASS 40). **Whether the gap is deliberate is NOT RECORDED.**
+All use **`curl_cffi` with browser impersonation** except where noted.
+
+| Script | Endpoint | Output |
+|---|---|---|
+| `scrape_nba_stats_teams.py` | `leaguestandingsv3` | `nba_teams_current.json` + `_meta` |
+| `scrape_nba_stats_players.py` | `commonallplayers` | `nba_players_current.json` |
+| `scrape_nba_stats_arenas.py` | **`teamdetails` → `TeamBackground`** | `nba_arenas_current.json` |
+| `scrape_nba_officials.py` | **Wikipedia — plain `requests`** | `nba_officials_current.json` |
+| `scrape_nba_player_bio.py` | `leaguedashplayerbiostats` | one call, whole league |
+| `scrape_nba_player_tracking.py` | `leaguedashptstats` | one call |
+| `scrape_nba_team_stats.py` | team stats | |
+| `scrape_nba_onoff.py` | on/off splits | |
+| `scrape_nba_playtypes.py` | `synergyplaytypes` | 3,364 player + 630 team |
+| `scrape_nba_darko.py` | DARKO | SvelteKit hydration, 530/530 |
+| `scrape_nba_shotquality.py` | shot quality | |
+| `scrape_nba_schedule.py` | `scheduleleaguev2` | 2,666 games |
+| `scrape_nba_periods.py` | quarter/half splits | |
+| `scrape_nba_season_tables.py` | weekly as-of tables | pt_defend, hustle, clutch, coaches. 🆕 (additional sweep 6, pass 384, `§P384` — the build's tables and their endpoints by name; `T10` `2026-09-09 21:16Z`–`22:16Z` names `leagueseasonmatchups` and the five tables; ✅ read in code): `matchups` (`leagueseasonmatchups` — offense player × defense player: matchup minutes, partial possessions, points, attempts, shooting fouls; ~~*~140,000 offense → defense pairings per season*~~ *~140,000 offense × defense pairings per season* (strike-correction, same pass: the quotation checked in the shell after writing — the transcript's sign is ×), which has no date filter, so the parity path is the per-game `scrape_nba_matchups_pergame.py`), `pt_defend` (`leaguedashptdefend`, defended FG% against normal), `hustle` (`leaguehustlestatsplayer` — contested shots, deflections, charges, screen assists, loose balls, box-outs), `clutch` (`leaguedashplayerclutch`, last five minutes within five points), `preseason_logs` (`playergamelogs` with `SeasonType=Pre Season`, the opening prior for rookies and new arrivals), plus `all_players` (`commonallplayers`) and `coaches` (`commonteamroster`); `TABLES` picks them (default all), `SEASONS_N` the seasons (default `3`); the weekly as-of mode needs a table with `DateTo`. |
+| `scrape_nba_matchups_pergame.py` | matchup shards | feeds M1 |
+| `scrape_nba_injury_report.py` | NBA injury PDFs | **`INJURY_MODE`** = daily / probe / backfill |
+| `scrape_referee_assignments.py` | referee assignments | ~6–7 AM PT |
+| `scrape_nba_daily_delta.py` | bulk current-season | the delta |
+| `scrape_nba_per_game_delta.py` | starters + officials | per new game |
+| `sync_season_files_from_delta.py` | — | rebuilds season files |
+
+---
+
+## 3. BOARD SCRAPERS
+| Script | App | Notes |
+|---|---|---|
+| `nba/scrape_prizepicks_nba_board.py` | PrizePicks | **`league_id=7`**, own env `PP_NBA_*`, output `boards/prizepicks_nba_current.json`. **Separate from MLB's `main.py`.** 4 candidate URLs; selects on **future-pickable rows**, not size. Live-tested: 192 projections, 104 demons / 52 goblins / 36 standard |
+| `main.py` (root) | PrizePicks **MLB** | `league_id=2` hardcoded, output fixed. **Never use for NBA.** |
+| `nba/scrape_underdog_board.py` | Underdog | `alternate_projections` = the full ladder with both sides' multipliers. `UNDERDOG_PXID`, `UNDERDOG_STATE_CONFIG`, `UNDERDOG_OUT_DIR`, `UNDERDOG_DEVICE_ID` |
+| `nba/scrape_sleeper_board.py` | Sleeper | **`SLEEPER_SPORTS` defaults to `mlb,nba`** and **`SLEEPER_OUT_DIR` defaults to `.`** — both must be set |
+| `nba/scrape_fliff_board.py` | Fliff | reverse-engineered from web bundles |
+| Betr | Betr | bridge job, owner's Keycloak token |
+| `nba/archive_live_boards.py` | all | normalises every app into `nba_market.board_snapshots`. **`ARCHIVE_LABEL` defaults to `routine`** — the decision pull must set `window` |
+
+---
+
+## 4. BASELINE ENGINE
+
+### `nba/backtest/classification_ladder_v12.py` — THE CERTIFIED RECIPE *(now v18)*
+**The single source of truth.** 60,176 bytes, 759 lines. Every production builder is a **patcher** over
+it, with **anchor assertions** so a drifted patch fails loudly instead of writing silently.
+
+> ⚠ **The anchor assertion's SCOPE, recorded 2026-09-21 (§T9.32b) — it is cited in eight documents as
+> the model to copy, and what it covers was stated in none of them.** The guarantee is one line:
+> `def rep(s, old, new): assert old in s; return s.replace(old, new)`. **It asserts that the anchor
+> TEXT still exists in the harness**, so it catches the certified recipe drifting under the patch —
+> loudly, exactly as described. ⚠ **It does not and cannot catch configuration introduced by the
+> replacement.** `LADDER_STEPS = 6` is replaced with `int(os.environ.get("BT_LADDER_STEPS", "10"))`;
+> **the assertion passes**, and the measured 20-prop `LADDER_DEPTH` table is flattened to one number
+> with nothing raised anywhere (**O5**, §T9.27b). 📌 **And the replacement source is invisible to
+> static analysis** — three env vars (`BT_REPLAY`, `BT_INJURY`, `BT_CUTOFF`) exist only inside these
+> triple-quoted strings and are string literals to `ast.parse` (§T9.31a). *Harness drift: covered.
+> Config drift: not covered.*
+
+**Constants** (full table and the calibration logic: see `NBA_BASELINE_CALIBRATION.md`):
+`MAX_TIERS=24` · `MIN_PER_TIER=15` · `TIER_BLEND_K=5` · `LADDER_STEPS=6` ·
+`BLOWOUT_MARGIN=20` / `COMPETITIVE_MARGIN=15` · `ROLE_TIERS` (6 bands) ·
+`P_BLOWOUT_BINS=[0,2,4,6,8,10,12,15,99]` · `SHIFT_LAMBDA` per prop · `PLAYER_L0` **off (rejected)**.
+
+**Env**: `BT_ASOF` · `BT_PROPS` · `BT_CUTOFF` · `BT_REPLAY` · `BT_INJURY` · `BT_LADDER_STEPS` ·
+`BT_SAVE_COMPONENTS` · `BT_TRAIN`/`BT_TEST` · **`BT_CARRY` (default "1" — without it October produces
+NOTHING)** · `BT_SHIFT_LAMBDA` · `BT_PLAYER_L0`.
+
+> # 🔴🔴🔴 **THE MODE DISPATCH TABLE — `§0d.1`'s T1 PRESCRIPTION, DISCHARGED** *(written 2026-09-22, T20 pass 96, §T20.101)*
+> *`§0d.1`, the MLB lesson recorded at T1:* ***"NEVER ASSUME 'ONE FILE = ONE JOB.' … DOCUMENT THE MODE
+> DISPATCH TABLE EXPLICITLY IN ONE PLACE, don't let it become IMPLICIT."*** **The list above names the
+> knobs. It has never said which combination selects which JOB. This does.**
+> ▶ **Read from `nba/baseline/build_baseline_ladder.py` in full, `2026-09-22T22:00:44Z`. Nothing was
+> run.** ⚠ **`build_baseline_ladder.py` is `152` lines and is a PATCHER, not a builder**: it reads
+> `nba/backtest/classification_ladder_v12.py`, applies **eight anchor-asserted `rep()` string
+> patches**, sets `BT_TAG` if unset, and `exec()`s the result. ***So a flag's behaviour depends on
+> whether the patch that reads it survives — and one of them does not.***
+>
+> | flag | default | where it is read | what it does in the PRODUCTION ladder |
+> |---|---|---|---|
+> | **`BT_ASOF`** | **today** | patch `:42` | the slate date — and it also selects the season *(`_season_of`)* and the output filename |
+> | **`BT_PROPS`** | unset | patch `:143` **and** the harness | **here it is the output filename TAG only** *(`nba_baseline_ladder_<ASOF>_<pair>.json`)*; the per-prop restriction is the harness's job |
+> | **`BT_REPLAY`** | `"0"` | patch `:54` | `=1` lets games with `game_status == 3` **(final)** form a virtual slate ⇒ **replay a past day** |
+> | **`BT_INJURY`** | `"1"` — **ON** | patch `:78` | applies the day-before report at the cutoff; **requires a non-empty virtual slate** |
+> | **`BT_CUTOFF`** | `"baseline"` | patch `:83` | picks `BASELINE` / `PHASE1` / `PHASE2_CUTOFF_LOCAL` from `nba/nba_asof.py` |
+> | **`BT_LADDER_STEPS`** | 🔴 **`"10"` in production — the certified recipe's own constant is `6`** | patch `:39` | ladder depth ±N. *`P2` deliberately does not set it* **(PRIOR — recorded above)** |
+> | **`BT_SAVE_COMPONENTS`** | unset | 🔴 **NOT read by this file at all** — consumed by the harness and `combos_ladder_v1.py` | ***this is the flag that makes `P2` step 12 a different job from step 11*** |
+> | **`BT_TRAIN` / `BT_TEST`** | — | 🔴🔴 **INERT HERE** | **the anchor line that reads them is REPLACED** *(patch `:40–49`)* **by season auto-detection from the files on disk.** ⚠ *They remain load-bearing in the HISTORY builders — COMPASS fact 66: **"BT_TRAIN must be explicit … or the test season lands in its own training set (leak + OOM)"** — which is a statement about `build_*_history.py`, not about this script.* |
+> | **`BT_TAG`** | **`"prod"`, set by the script itself** *(`:151`)* | `:151` | 🔴 **named in ZERO of the twelve before this entry** *(it is listed once in `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md`, one of the THIRTY — see the block below)* |
+>
+> ## 🔴🔴 **AND FOUR MORE FLAGS REACH PRODUCTION THROUGH THE `exec`, EACH DEFAULTED IN CODE, NAMED IN NONE OF THE TWELVE**
+> *`build_baseline_ladder.py` `exec`s the patched harness **in the same environment**, so every flag
+> `nba/backtest/classification_ladder_v12.py` reads is live in the production ladder. **Four of them
+> the twelve have never named**, and each carries a model-shaping default:*
+>
+> | flag | default, as coded | what it selects |
+> |---|---|---|
+> | **`BT_BAND_CELLS`** | **`"rebounds"`** *(`:53`; the harness's own docstring says `props\|all\|0`)* | which variation-band cells are built |
+> | **`BT_SHIFT_MODE`** | **`"threes_made,blocks,steals,ftm"`** *(`:58`)* | the prop set that uses shift mode |
+> | **`BT_KCELL_3PM`** | **`"100"`** *(`:55` — `K_CELL_BY_PROP = {"threes_made": …}`)* | the cell-blend constant for threes |
+> | **`BT_PHASE`** | **`"1"`** *(`:528`)* | a phase gate inside the harness |
+>
+> ⚠ **All four are listed in `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` — a document of the
+> THIRTY, not of the twelve.** ⇒ ***The twelve's env list was a SUBSET of what the code reads, and the
+> remainder survived only in a checkpoint file that the twelve do not route to.*** 🔑 *This is
+> `§T20.90`'s orphan problem in the other direction: not a finding nothing points at, but a fact that
+> lives outside the documents meant to carry it.* ⚠ **Recorded, not changed (rule 1).**
+>
+> ## ⚠⚠ TWO SILENT FAILURES THE TABLE MAKES VISIBLE
+> **① 🔴 THE INJURY STEP CANNOT FAIL THE BUILD.** *The whole day-before enrichment block sits inside
+> `try: … except Exception as _exc: print("injury report step skipped:", _exc)`* ⇒ ***the report can be
+> missing, unparseable or name-unmatched and the ladder still builds, and `P2` still certifies green***
+> *(its four checks count rows and props, never enrichment — `§T20.94`)*. **The only trace is one line
+> of build log.**
+> **② 🔴 A TYPO IN `BT_CUTOFF` IS SILENT.** *`{"baseline":…, "phase1":…, "phase2":…}.get(_cut_name,
+> BASELINE_CUTOFF_LOCAL)` — **an unrecognised value falls back to `baseline` with no warning**, so
+> `BT_CUTOFF=phase-1` produces a baseline-cutoff ladder that looks like a phase-1 one.*
+> ⚠ **Both recorded, neither fixed (rule 1).** 📌 **Pointer: `NBA_RECIPE.md` `STEP 9` for where the two
+> invocations sit in `P2`.**
+
+### `nba/backtest/combos_ladder_v1.py`
+Certified combos recipe — **its own `LADDER_STEPS`**. Joint simulation over calibrated marginals with
+**per-player covariance**. **Requires `BT_SAVE_COMPONENTS=1` singles pickled first.**
+
+### `nba/backtest/minutes_model_v1.py` *(T8)*
+The first harness. Established the derived spread (r=0.46), `P(blowout|spread)`, the DataStreak
+reproduction (5.4 vs 5.8) and team-specific starter pull (0.81 Orlando → 1.10 Dallas).
+
+### `nba/backtest/bandfit.py` *(T8)* — the band-cell fitter.
+
+### Production builders — the PATCHER PATTERN
+> *"**The backtest harness on a PAST day is already the production computation** — every feature is
+> `shift(1)`-based, so the only difference for today is the slate."*
+
+| Script | Role |
+|---|---|
+| `nba/baseline/build_baseline_ladder.py` | patcher → today's slate. **Reproduces the ladder exactly** (173 players, 4,498 rows) |
+| `nba/baseline/build_combos_ladder.py` | daily combos |
+| `nba/baseline/build_periods_ladder.py` | daily periods |
+| `nba/baseline/build_baseline_history.py` | season backfill (singles) |
+| `nba/baseline/build_combos_history.py` · `build_periods_history.py` | season backfill |
+| `nba/load_baseline_ladder.py` | **fetches over HTTP from the repo**; **refuses a singles-only slate** |
+| `nba/load_baseline_history.py` | bulk history loader → 🆕 `2026-10-15` (additional sweep `4`, pass 300): loads board-scoped by default; `HISTORY_SCOPE=full` writes the whole ladder and skips the `board_rung_keys` check, and no workflow sets it — `NBA_OPEN_ITEMS.md` → `🧭 CHAT-TRACK CONTINUATION OF NBA_MASTER_SUMMARY.md`, `§T28.5` |
+| `nba/nba_asof.py` | cutoffs — `PHASE1_CUTOFF_LOCAL = "16:00"` (1 PM PT) |
+| `nba/nba_season.py` | **`current_season()` vs `active_stats_season()`** — the season-hardcoding fix; both honour `NBA_SEASON`. ⚠ Oct 1–2 edge case |
+
+**A change must be applied to BOTH certified recipes** — singles and combos are separate files, each
+with its own constants.
+
+---
+
+## 4b. CLOUDFLARE WRITER WORKERS BUILT T3–T9
+All follow the same shape: **fetch the committed JSON from `raw.githubusercontent.com`** (never the
+Contents API — it **silently returns empty above 1 MB**), **batched upsert through Hyperdrive**, run
+summary to a `*_runs` table.
+
+| Worker | Writes | Notes |
+|---|---|---|
+| `alphadog-v2-nba-static-players` / `-teams` / `-arenas` / `-officials` | `nba_ref.*` | the four-step wiring pattern |
+| **the weekly differential worker** | `nba_stats.player_differential_log`, `nba_ref.team_differential_log`, `official_differential_log` + their 3 snapshot tables | 🔴 **`[LIVE-AUDIT]` 2026-09-21 (T8 pass 12) — CONFIRMED AND DATED: it has not completed a run since 2026-09-02.** All three logs are **0 rows** and all three snapshots read **`snapshot_taken_at` = 2026-09-02 19:47**, while the worker **unconditionally** `DELETE`s each snapshot and re-`INSERT`s it with `now()` (lines 98/102, 152/156, 194/197) — **so a stale timestamp is proof of no run, not evidence that nothing changed.** *This retires the "correctly empty — detection starts on the second run" verdict elsewhere: there has been no second run.* **⚠ NEVER SCHEDULED.** Flagged unwired when built (T3); owner said *"leave like this for now"*; **P1 does not call it.** Verified empty 2026-09-20 |
+| the measure-types writer | `player_game_log_usage` / `_scoring`, `team_game_log_four_factors` / `_scoring` | **`file_prefix`** input so one worker loads both backfill and delta files. Bug: the **team advanced table has no `usg_pct`/`reb_pct`** — the mapper wrote nonexistent columns |
+| the starter-status writer | `player_game_starter_status` | **hardcoded `_2025_26`** until T7 — *"would silently keep loading last season's file in October."* `fetchFromGithubRaw` returns `{file, meta}`, so season is `.file.season` |
+| the officials writer | `nba_stats.game_officials` | same season fix |
+| the backfill worker | splits + career totals | gained a **`mode: "weekly"`** input — *"loads only those two in ~6 s instead of re-touching 79k rows"* |
+| the daily-delta worker | game logs + **the DvP recompute** (210 rows = 30 × 7, current season) | **PRE-FLIGHT completeness check**: calendar Final count vs logged count, **`GAME_ID` prefix `002`**. Persists a **`known_empty_games` skip list** — without it the 3 permanently-empty games would be re-fetched *"every single day forever"* |
+| **`alphadog-v2-nba-baseline-ladder` v0.1.0** | `nba_score.baseline_ladder` + `baseline_ladder_runs` | `POST /run {"asof":"YYYY-MM-DD"}`; idempotent on PK `(asof, player_id, game_id, prop, period, ot_rule, line)` |
+
+**Registration is four edits**: bridge **binding map + direct-call list + tool enum**, plus the
+**config generator** for the service binding. **NBA workers use DIRECT dispatch** (the
+`BASE_HITTER_GAME_LOGS_WORKER` pattern), bypassing the queue — deliberate, per the no-orchestrator rule.
+
+### ✅ **ALL TWENTY-ONE, AND EVERY OBJECT EACH ONE WRITES** *(T20 pass 111, `§T20.116`, 2026-09-22)*
+
+*The prose table above names **8** of the 21 by name and groups the rest. This is the complete map,
+extracted from `INSERT INTO` / `UPDATE` / `DELETE FROM` / `CREATE TABLE IF NOT EXISTS` in each file.*
+**Population pinned `2026-09-22T23:32:08Z`: `ls -1 nba/*.js` ⇒ `21`, and
+`nba/worker_manifest_nba.json` ⇒ `21`, with `IN MANIFEST, NO .js` = `[]` and `HAS .js, NOT IN
+MANIFEST` = `[]` — an exact match, no orphan and no phantom.**
+
+| worker (`alphadog-v2-nba-…`) | writes |
+|---|---|
+| `baseline-ladder` | 🔑 `nba_score.baseline_ladder` · `nba_score.baseline_ladder_runs` |
+| `daily-delta` | `nba_stats.player_game_log` · `player_game_log_advanced` · `nba_team.team_game_log` · `team_game_log_advanced` · `nba_team.defense_vs_position` |
+| `static-backfill` | `nba_stats.player_game_log` · `player_game_log_advanced` · `player_splits` · `player_career_season_totals` · `nba_team.team_game_log` · `team_game_log_advanced` · `team_splits` |
+| `static-measure-types` | `nba_stats.player_game_log_scoring` · `player_game_log_usage` · `nba_team.team_game_log_four_factors` · `team_game_log_scoring` |
+| `static-shotquality` | `nba_stats.player_shot_quality` · `player_shot_quality_delta` · `player_shot_zone_profile` |
+| `weekly-differential` | `nba_stats.player_differential_log` · `player_roster_snapshot` · `nba_ref.team_differential_log` · `team_roster_snapshot` · `official_differential_log` · `official_roster_snapshot` · `nba_ref.players` |
+| `static-players` | `nba_ref.players` · `nba_ref.player_aliases` |
+| `static-teams` | `nba_ref.teams` · `nba_ref.team_aliases` |
+| `static-player-bio` | `nba_ref.players` · `nba_stats.player_season_profile` |
+| `static-playtypes` | `nba_stats.player_playtype_profile` · `nba_team.playtype_profile` |
+| `static-schedule` | `nba_calendar.games` |
+| `static-arenas` | `nba_ref.arenas` |
+| `static-officials` | `nba_ref.officials` |
+| `static-game-officials` | `nba_stats.game_officials` |
+| `static-darko` | `nba_stats.player_impact_rating` |
+| `static-lineups` | `nba_team.lineup_profile` |
+| `static-onoff` | `nba_stats.player_onoff_profile` |
+| `static-player-tracking` | `nba_stats.player_tracking_profile` |
+| `static-tracking-detail` | `nba_stats.player_tracking_detail` |
+| `static-starter-status` | `nba_stats.player_game_starter_status` |
+| `static-team-stats` | `nba_team.season_profile` |
+
+✅✅ **AND THE ANSWER TO "IS THE ARCHITECTURE ACTUALLY SEPARATED?" IS YES.** **41 distinct objects
+written by the Workers · 13 by the 40 called Python scripts · intersection exactly TWO** —
+**`nba_score.baseline_ladder` and `nba_score.baseline_ladder_runs`.** ⇒ **`39` of `41` and `11` of
+`13` are single-writer. The Workers own `nba_ref`, `nba_stats`, `nba_team` and `nba_calendar`; the
+scripts own `nba_score`.**
+
+🔴 **The two shared objects are the one seam, and their two writers DISAGREE** — `UPSERT` with no
+stale-row removal and last-wins dedupe on the Worker side, atomic `DELETE`+`INSERT` with
+smallest-offset dedupe and a combo-props abort on the Python side, plus four smaller column
+differences. ▶ **Full comparison: `§T20.116`; item `T20-21` (`MEDIUM, STRUCTURAL, LATENT`).**
+⚠ **And no column in either table records which writer wrote the row** — a provenance discriminator
+was built from `team_id` and `recipe_version` and **run live: both came back dead** *(`team_id=''` 0,
+`team_id IS NULL` 0, `max(length(recipe_version))` 76 against a 200-char cut)*.
+
+📌 **Dated state, not a verdict** *(live `max(updated_at)`, 2026-09-22)*: `nba_calendar.games`
+**2026-09-02** *(2,666)* · `nba_ref.players` **2026-09-03** *(582)* · `nba_stats.player_impact_rating`
+**2026-09-02** *(530)* · `nba_stats.player_game_log` **2026-09-08** *(79,358)*. **The Workers do run.
+The most recent Worker write is fourteen days old, against a 2026-10-03 preseason and a 2026-10-20
+opener; whether that is correct for the off-season is NOT RECORDED.**
+**⚠ Use NBA-specific binding names** — `DAILY_DELTA_RUNNER_WORKER` already exists as a shared/MLB
+binding.
+
+### ⚠ THE GENERATOR IS THE ONLY PLACE THAT PERSISTS
+> *"**The GitHub workflow REGENERATES wrangler files before deploy, so this binding must live in the
+> GENERATOR or it will be ERASED before Wrangler deploys.**"*
+
+**Hand-edited `wrangler.json` changes do not survive a deploy.**
+
+> ⚠⚠ **AND THE REAL FAILURE MODE IS WORSE THAN "YOUR EDIT VANISHES"** *(recorded 2026-09-20, T1 pass 69, from the generator's own source)*: *"earlier manual edits to the `wrangler.*.jsonc` files directly were **silently erased by this exact script on the very next deploy, which is why production kept serving the old D1 code despite the repo's `.js` files already being correctly rewritten**."* **Production serves stale code while the repository looks correct** — a divergence code review cannot catch, because the reviewed artefact and the deployed artefact are different things. ⚠ **It lands harder on NBA**: **121 MLB wrangler configs are committed at the repo root and 0 NBA ones are**, so for an NBA worker there is no committed config to compare against. → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 69*. Service bindings,
+`compatibility_flags`, cron triggers and vars all belong in `generate_wrangler_configs.py`.
+**This is why it is four edits, not three.**
+
+### ⚠ THE NEVER-FIRE CRON IDIOM — and the platform gotcha that defeats it
+```python
+cfg["triggers"] = {"crons": ["0 0 30 2 *"]}   # February 30th — cannot occur
+```
+Used on **8 MLB workers** to **disable a schedule while keeping the worker deployed and callable**.
+**Before concluding any worker is scheduled, check its cron for this pattern.**
+
+**⚠⚠ BUT T1 RECORDS THAT THIS DOES NOT RELIABLY WORK:**
+> *"**A specific, real Cloudflare Workers gotcha worth knowing in advance: A SCHEDULED CRON TRIGGER
+> CAN PERSIST AND KEEP FIRING EVEN AFTER A SOURCE-LEVEL ATTEMPT TO RETIRE IT** — e.g. **setting an
+> intentionally-invalid cron expression** — **MLB CONFIRMED THIS HAPPENING TWICE DESPITE A DEPLOYED
+> FIX.**
+> **If NBA hits the same platform behaviour, the RELIABLE FIX is to make THE SCHEDULED HANDLER ITSELF
+> A GUARANTEED NO-OP (log and exit)** rather than continuing to fight the [platform]."*
+
+**So the February-30th idiom is the *attempted* fix, and it was observed to fail twice.** The
+**reliable** fix is a **no-op `scheduled()` handler**.
+
+**Two consequences for auditing NBA:**
+1. **A never-fire cron does not prove a worker is not running.** The only reliable evidence is
+   whether the handler itself is a no-op, or observable writes.
+2. **Conversely, a worker with a valid-looking cron may still be dormant** if its handler exits early.
+
+**Directly relevant to the differential worker**: its schedule status was inferred from P1's workflow
+steps and from empty tables. **Neither method is affected by this gotcha** — the tables are empty, so
+it is genuinely not writing — **but any future "is this scheduled?" audit must check the handler, not
+just the cron.**
+| `nba/backtest/combos_ladder_v1.py` | the certified combos recipe — **its own `LADDER_STEPS`** |
+| *(duplicate block removed 2026-09-20 — see §4 and §4b above)* |
+
+**The patcher pattern:** production builders are string-transformers over the certified recipes, so the
+certified file is never forked. A change must be applied to **both** recipes — singles and combos are
+separate certified files each with its own constant.
+
+---
+
+## 5. SCORING ENGINE
+| Script | Writes |
+|---|---|
+| `nba/build_final_hp.py` | `nba_score.final_hp` — the full chain. `FE_SEASONS`, `FE_PROPS`, `FE_WRITE`, **⚠ `FE_DATE` — see the warning below. It scopes the READ only.** |
+| `nba/build_asof_calibration.py` | `ladder_calibration_asof` — weekly refits, strictly-before, prior-season inheritance |
+| `nba/build_confidence_v3.py` | `confidence_model` — measured deductions |
+| `nba/score_board_legs.py` | `nba_score.board_scored` — **board-scoped**, `MARKET_TO_PROP` mapping, log-odds interpolation for off-ladder rungs |
+| `nba/build_availability_delta.py` | `availability_delta` — P2-view vs P3-view diff, minutes reallocation |
+| `nba/build_board_tiers_v2.py` | `board_tiers_v2` — **four-way taxonomy** |
+| `nba/build_blowout_model.py` | `blowout_model` — on the real market spread |
+| `nba/build_rung_market.py` | `rung_market` — de-vigged book probability at DFS rungs, monthly blocks |
+| `nba/export_market_spreads.py` | market spreads/totals |
+| `nba/build_defender_ratings.py` | `nba_ref.defender_ratings` — two-way ridge |
+| `nba/grade_board_outcomes.py` | `board_outcomes` — 6.9M legs |
+| `nba/fit_n1_model.py` | availability model, AUC 0.630 |
+| `nba/build_scenario_calibration.py` | `scenario_realised` — **no longer daily** |
+
+---
+
+### ⚠⚠ `FE_DATE` IS A READ FILTER, NOT A WRITE SCOPE — **confirmed destructive**
+*Found 2026-09-20 (T1 pass 33) by running §0e's scope-parameter audit against the first parameter on
+the list. **VERIFIED by grep of `nba/build_final_hp.py` and by live SQL.***
+
+**The read is scoped:**
+```sql
+FROM nba_score.baseline_history
+WHERE season=%s AND prop=%s AND (%s = '' OR game_date = NULLIF(%s,'')::date)
+```
+**The write is not:**
+```sql
+DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s    -- no game_date
+```
+**A slate-scoped run with `FE_WRITE=1` replaces the entire season × prop partition with that one
+slate.** Measured damage, live 2026-09-20: **the 2025-26 partition of `nba_score.final_hp` holds one
+date and 140,130 rows against a documented 38.7M-row table.** Full entry at the top of
+`NBA_OPEN_ITEMS.md`; row counts in `NBA_DATABASE.md`.
+
+**⚠ The previous description in the table above was inherited from a comment in the source file that
+is itself wrong.** The comment reads *"P3 sets it so the afternoon pipeline rescores only today's
+legs."* **VERIFIED: P3 does not set `FE_DATE`, and P3 does not run `build_final_hp.py`** — its scoring
+step is `python nba/score_board_legs.py`. The only repo caller that sets `FE_DATE` is
+`.github/workflows/nba-engine-test.yml`, **with `FE_WRITE: '0'`**.
+
+**This is §0e's audit finding its first hit on its first candidate.** The remaining scope parameters
+in that table — `BT_*`, `PIPE`, the scraper date ranges, the writer-worker mode branches — **are still
+NOT AUDITED.**
+
+---
+
+## 6. VERIFIERS
+| Script | Asserts |
+|---|---|
+| `nba/certify_pipeline.py` | per-pipeline artefacts present and fresh — **`PIPE=p1\|p2\|p3`**, exits non-zero |
+| `nba/check_delta_gaps.py` | **no silent delta hole** — dates, games, both teams, roster rate, freshness |
+| `nba/check_baseline_board_coverage.py` | board legs covered by the ladder |
+| `nba/check_season_coverage.py` | season-wide coverage (89.6% of the real PP board) |
+| `nba/find_delta_test_date.py` | finds dates that exercise the reallocation branch |
+| `nba/measure_report_cutoff.py` | empirical cutoff measurement |
+| `nba/run_storage_diet.py` | VACUUM + index audit, **row-count guards** |
+| `nba/nba_names.py` | shared name resolution — `nba_ref.player_name_map`, 5,212 players |
+
+---
+
+## 6b. EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE — the complete audit
+*Recorded 2026-09-20 (T1 pass 34). **VERIFIED** by grep of all 190 `.py`/`.js` files in `nba/`
+(including `backtest/` and `workflows/`) for `DELETE FROM` and `TRUNCATE`. **24 statements.**
+This is blueprint §9's **whole-universe comparison** applied to the write path: audit every member of
+a universe at once, not the one currently suspected.*
+
+### ✅ Correctly scoped — the delete matches exactly what the run rewrites
+
+> ⚠ **TEN SCRIPTS ARE LISTED BELOW. THERE IS AN ELEVENTH, AND IT IS THE ONE THAT IS *NOT* SCOPED: `build_final_hp.py`.** *Back-pointer added T20 pass 79 (§T20.84) — **the defect is already documented fifty lines above, at `### ⚠⚠ FE_DATE IS A READ FILTER, NOT A WRITE SCOPE — confirmed destructive`**, and in `NBA_GLOSSARY.md` under `FE_DATE`. **This heading is sound; a reader who lands on the table alone should not have to take its green check as covering every writer.*** ▶ *`DELETE FROM nba_score.final_hp WHERE season AND prop` carries **no date predicate**, so a slate-scoped run replaces the whole season × prop partition — **CONFIRMED FIRED**: 2025-26 holds one date and `140,130` rows.*
+| Script | Statement | Scope |
+|---|---|---|
+| `score_board_legs.py` | `DELETE FROM nba_score.board_scored WHERE game_date = %s` | one slate — **the P3 scorer** |
+| `build_availability_delta.py` | `DELETE FROM nba_score.availability_delta WHERE game_date = %s` | one slate |
+| `build_rung_market.py` | `DELETE FROM nba_market.rung_market WHERE game_date >= %(d0)s AND game_date < %(d1)s` | a date range |
+| `load_baseline_ladder.py` | `DELETE FROM nba_score.baseline_ladder WHERE asof = %s` · `… baseline_ladder_runs WHERE asof = %s` | one as-of |
+| `load_baseline_history.py` | `DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)` | matches its full-season input |
+| `gate_remaining_factors.py` | `DELETE FROM nba_score.factor_gate_results WHERE slice='remaining_factors'` | own partition |
+| `fit_n1_model.py` | `DELETE FROM nba_score.factor_gate_results WHERE slice = 'n1_ablation'` | own partition |
+| `build_confidence_v3.py` | `DELETE FROM nba_score.confidence_verification WHERE tier='v3'` *(×2)* | own partition |
+| `build_confidence_v2.py` | `DELETE … confidence_verification WHERE tier IN ('v2','high_vs_low')` | own partition |
+| `build_mondrian_confidence.py` | `DELETE … confidence_verification WHERE check_type='mondrian_quintile'` | own partition |
+
+**The convention is unambiguous: scope the delete to exactly what this run rewrites.**
+
+### ✅ Whole-table rebuilds that are correct BY DESIGN — single writer, small table, full recompute
+`build_blowout_model.py` → `blowout_model` (35 rows) · `build_scenario_calibration.py` →
+`scenario_calibration` · `build_mondrian_confidence.py` → `conformal_confidence` ·
+`build_confidence_v3.py` → `confidence_model` · `build_asof_calibration.py` →
+`ladder_calibration_asof` · `build_board_tiers_v2.py` → **`TRUNCATE`** `board_tiers_v2` (▶ the builder before `d7f66e649`, `2026-09-23`: since then the default rebuild is one slate × app in one transaction, `TRUNCATE` only under `BT2_ALL=1` — `NBA_OPEN_ITEMS.md` `§T42.15`) ·
+`alphadog-v2-nba-weekly-differential.js` → `player_roster_snapshot`, `team_roster_snapshot`,
+`official_roster_snapshot` *(the documented snapshot replace-in-full design)*.
+**Recorded so a future audit does not re-flag them.**
+
+### ❌ The three that are wrong — full entries in `NBA_OPEN_ITEMS.md`
+| Script | Statement | Defect |
+|---|---|---|
+| **`build_final_hp.py`** | `DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s` | **the read is `FE_DATE`-scoped and this is not** — a slate-scoped run replaces the whole season × prop partition. **CONFIRMED FIRED: 2025-26 holds one date, 140,130 rows.** |
+| **`verify_confidence.py`** | `DELETE FROM nba_score.confidence_verification` | **whole table, while three sibling writers scope theirs** — running it erases P2's nightly `v3` rows and the mondrian rows. **Not yet fired** *(re-verified live 2026-09-21, §T9.46a: **34 · 5 · 21** rows, all `run_at` values **UTC**)*: the live table holds three generations coexisting (2026-09-17 18:16, 2026-09-17 23:31, 2026-09-20 03:30). |
+| **`calibrate_all_props.py`** | `CREATE TABLE IF NOT EXISTS … ladder_calibration; DELETE …; INSERT …` | **recreates a table that was deliberately DROPPED as a parity violation.** VERIFIED absent from `information_schema`. Nothing reads it, so it pollutes the schema without changing a number — **today.** |
+
+**⚠ The pattern worth carrying forward**: in all three cases the statement is **correct in
+isolation** and wrong **relative to its caller** — a scoped read, a shared table, a dropped table.
+**None of them errors.** This is why blueprint §9 prescribes auditing the whole universe rather than
+the suspect.
+
+---
+
+## 6c. ⚠ THE DESTRUCTIVE AUDIT ABOVE COVERS SQL ONLY — workflows can delete files too
+*Recorded 2026-09-20 (T1 pass 70). **VERIFIED** on the live clone.*
+
+§6b is titled *"every destructive statement in the codebase."* **It enumerates SQL.**
+**`.github/workflows/nba-pairs.yml` deletes committed repository files with a shell command**, gated
+on a `workflow_dispatch` input:
+```yaml
+if [ "${PAIRS_REBUILD}" = "1" ]; then
+  for s in $(echo "$PAIRS_SEASONS" | tr ',' ' '); do
+    slug=$(echo "$s" | tr '-' '_')
+    rm -f nba/data/nba_pairs_${slug}_*.json
+```
+**Default `0`, manual-only — it cannot fire by accident.** Its stated purpose: the first run used a
+league-wide call capped at 2,000 rows, and *"those files must be removed before rebuilding, since the
+scraper skips snapshots that already exist."*
+⚠ **Only this one workflow was examined closely. Whether any of the other 31 `nba-*.yml` files
+carries a destructive shell step is NOT RECORDED.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 70*.
+
+---
+
+## 7. WORKFLOWS
+| Workflow | Trigger |
+|---|---|
+| `nba-p1-weekly-static.yml` | **cron Mondays 12:00 PT** |
+| `nba-p2-overnight-heavy.yml` | dispatch (cron at season start: 01:00 PT) |
+| `nba-p3-afternoon-light.yml` | dispatch (cron at season start: 1:15 PM PT) |
+| `nba-boards-market.yml` | dispatch — own concurrency group, never queues behind MLB |
+| `nba-engine-test.yml` | dispatch — **read-only, own queue**, so a 4-min test never waits on a 45-min write |
+| `nba-scrape.yml` | push to `nba/TRIGGER_NBA_SCRAPE.txt` |
+| `nba-probe.yml` | push to `nba/TRIGGER_NBA_PROBE.txt` (`script: <name>.py`) |
+| `nba-baseline-history.yml` / `nba-combos-history.yml` / `nba-periods-history.yml` | dispatch, per prop pair per season |
+| `nba-daily-delta.yml` · `nba-overnight-queue.yml` · `nba-season-tables.yml` | dispatch |
+
+**Every workflow:** `persist-credentials: true`, **retry-with-rebase on push**, and **no
+`|| echo failed`**.
+
+---
+
+## §0.002-T18-CORRECTION — ⚠⚠⚠ THE SECTION BELOW OVERSTATED ITS CASE; THE ORDERING REFUTES IT
+*(written 2026-09-22, same pass, on reading further into the same stratum — **the SECOND such
+retraction in this pass**, and the reason `RULE 39` exists. Recorded in place, per the §0w precedent.)*
+
+### WHAT THE SECTION BELOW GOT WRONG
+
+It says: *"the fallback exists and is correctly argued — and on 2025-26 it was ALSO empty"*, and flags
+*"NOT RECORDED: why the team-log witness was empty for 2025-26 while 2024-25's was not."*
+🔴 ***BOTH ARE WRONG, AND THE CAUSE IS AN ORDERING ERROR: THE FALLBACK DID NOT YET EXIST WHEN THE
+2025-26 RUN EXECUTED.***
+
+### ✅ THE ACTUAL SEQUENCE, FROM THE `tool_use`/`tool_result` ORDER
+
+| # | seg | what happened |
+|---|---|---|
+| 1 | **624–628** | `check_delta_gaps.py` is **written**, and its `if not expected:` branch is terminal: *"nothing to audit — this is expected in the off-season. not a failure."* → `sys.exit(0)`. **No fallback.** |
+| 2 | **639** | dispatched `task=gaps`, **season 2025-26** |
+| 3 | **run `35466211139`, 20:04:19** | *"No COMPLETED games in the schedule for 2025-26 … Nothing to audit … Not a failure."* **exit 0** — ***on the no-fallback version*** |
+| 4 | **647** | 🔑 **the author IMMEDIATELY PATCHES IN the team-game-log fallback**, with the diagnosis in the patch's own comment: *"`nba_schedule_current.json` only carries the UPCOMING season, so in the off-season — or when auditing a past season — it has nothing to compare against."* |
+| 5 | **649** | dispatched again, **season 2024-25** |
+| 6 | **run `35466481270`, 20:09:34** | *"falling back to the team game log as the independent witness"* → **"gaps found: 2 truncated team-games"**, `0022401178` TOR |
+
+⇒ 🔑 ***The blind spot was real, was found by running it, and was FIXED WITHIN FIVE MINUTES BY THE
+AUTHOR HIMSELF.*** **It is not a standing defect of the shipped code** *(the fallback is present in
+live source at `check_delta_gaps.py` lines 77–80, verified 2026-09-22)*.
+
+### ⇒ WHAT SURVIVES, RESTATED AT THE RIGHT STRENGTH
+
+| below | verdict |
+|---|---|
+| *"THE GAP DETECTOR PASSED AN ENTIRE SEASON AS 'NOT A FAILURE'"* | ⚠ **TRUE OF THE VERSION THAT RAN, FOR FIVE MINUTES.** **Retitle it: *a green exit on an empty expected-set, caught and fixed in-session.*** The 🔴🔴🔴 severity is withdrawn. |
+| *"the fallback … on 2025-26 it was ALSO empty"* | ❌ **WITHDRAWN** — the fallback did not exist yet |
+| *"NOT RECORDED: why the team-log witness was empty for 2025-26"* | ❌ **WITHDRAWN** — it was never consulted for 2025-26 |
+| *"the prose's claim … is TRUE OF 2024-25 AND OF NOTHING ELSE"* | ✅ **STANDS, and is now the section's real finding** |
+| the `[LIVE-AUDIT]` schedule table, rule 37 framing, the *"green run with an empty table"* quotation | ✅ **STAND** |
+| the consequence for **T18-6** *(the 0.5% threshold's 2025-26 numerator and its missing denominator)* | ✅ **STANDS UNCHANGED** |
+
+### 🔴 AND THE FINDING THAT REPLACES IT — *the fix was never verified on the season that exposed it*
+
+**After the fallback was added, `check_delta_gaps.py` was re-run on 2024-25 and worked.**
+🔴 ***It was never re-run on 2025-26.*** **No `tool_result` in the 860 mechanism segments shows a
+2025-26 gap audit executing against the team-log witness.**
+⇒ **The season that exposed the blind spot is the one season the fix has not been demonstrated on**,
+and it is the season holding **19,611,626** scored legs. **Severity: MEDIUM** — one dispatch settles
+it. *Open item T18-12. Documented, not fixed.*
+⚠⚠ **FIGURE DATED — T20 pass 75 (§T20.80), 2026-09-22: live `nba_score.final_hp` holds **`140,130`** legs for `2025-26` (`19,075,070` for `2024-25`).** *The `19,611,626` was true when written — `19,075,070 + 19,611,626` = the old `38.7M` total §T20.8 corrected — and the table has since been rebuilt.* ✅ **`T18-12` STANDS: the season was still never audited. **Severity is if anything LOWER**, because the unaudited season is now small.** ▶ **Second site of this figure dated at `:1866`; both carry the correction (rule 10 — a correction reaches every copy).** **Original kept, per rule 40.**
+
+🔑 **This is a general shape worth naming and it is not rule 37**: ***a fix written in response to a
+failing run is verified by re-running the case that failed — not by running a different case that
+was already passing.*** *2024-25 had a populated `nba_schedule_current.json` path available; it was
+never the case in doubt.*
+
+---
+
+## §0.002-T18 — ⚠ SEVERITY WITHDRAWN AND SCOPE NARROWED BY THE CORRECTION ABOVE *(2026-09-22)*
+### a green exit on an empty expected-set — caught and fixed in-session, five minutes apart
+*(T18 pass 2, mechanism strata, written 2026-09-22. **Rule 38**: this is the causal layer — what was
+actually RUN and what it RETURNED. The prose credits this component; only the `tool_result` shows what
+it was credited FOR.)*
+
+### THE TWO RUNS, FIVE MINUTES APART, SAME SCRIPT — *both quoted from the executed log*
+
+| when *(executed, in-log)* | season | what `check_delta_gaps.py` printed | exit |
+|---|---|---|---|
+| **2026-09-19 20:04:19** | **2025-26** | *"No COMPLETED games in the schedule for 2025-26 in range [start .. end]."* → ***"Nothing to audit — this is expected in the off-season. Not a failure."*** | **0 — GREEN** |
+| **2026-09-19 20:09:34** | **2024-25** | *"newest completed slate in schedule: 2025-04-13 / newest slate in the delta: 2025-04-13 OK"* → ***"gaps found: 2 truncated team-games"***, naming **`0022401178` TOR, only 7 players** | **non-zero — RED** |
+
+🔑🔑 ***The prose's claim is "gap detector — ran on a full season, caught 2 real anomalies." That is
+TRUE OF 2024-25 AND OF NOTHING ELSE.*** **The 2025-26 season — the season for which
+`nba_score.final_hp` holds 19,611,626 legs — was never audited, and the audit reported that as a
+pass.**
+
+> ⚠⚠ **FIGURE DATED, NOT RETRACTED — T20 pass 75 (§T20.80), 2026-09-22T19:50Z. RE-DERIVED LIVE: `nba_score.final_hp` holds **`19,075,070`** legs for `2024-25` and **`140,130`** for `2025-26`.** 🔴 ***The `19,611,626` is off by a factor of `140` TODAY, and it inverts this sentence's emphasis: 2025-26 is the THIN season in `final_hp`, not the large one.*** ✅ **AND IT WAS TRUE WHEN WRITTEN, PROVEN BY ARITHMETIC: `19,075,070 + 19,611,626 = 38,686,696` — the old **`38.7M`** total that **§T20.8** corrected to `19,215,200`. The table was rebuilt underneath the figure.** 🔴🔴 ***§T20.8's correction reached the TOTAL and never reached this PER-SEASON figure — and rule 40's propagation instrument could not have found it, because nothing here was ever struck.*** ⚠⚠ **AND THE MOVEMENT WAS ALREADY ON FILE — read those first, they carry the analysis this note does not**: **`NBA_OPEN_ITEMS.md:292` · `:362` · `:377`**, a `[LIVE-AUDIT]` item stating *"2025-26 was 19,611,626 six days ago and is 0.7% of that today, while the other season is byte-exact"*, plus **`NBA_FINAL_SCORING_CALIBRATION.md:240`/`:1569`** and **`NBA_MASTER_SUMMARY.md:27268`**. 🔑 ***So the defect this note repairs is PROPAGATION, not discovery: three documents carried the current figure while `NBA_WORKERS.md` carried the superseded one at two sites, un-dated. §T20.80 first published this as a new finding and withdrew that claim in the same pass.*** 📌 ***A correction recorded by ADDING the new figure in another document is invisible to an instrument that starts from strikethroughs.*** ⚠ **THE FINDING ITSELF IS UNAFFECTED**: *2025-26 was still never audited, the audit still reported that as a pass, and open item **T18-12** still stands. **Only the magnitude that made it sound urgent has moved** — and on today's figures the unaudited season is small, which LOWERS the exposure rather than raising it.* **Original kept, per rule 40.**
+
+### ✅ THE CAUSE IS VERIFIED IN SOURCE, NOT INFERRED FROM LIVE STATE *(rule 6)*
+
+**`nba/check_delta_gaps.py`, read directly 2026-09-22** *(9,182 B, 195 lines)*:
+- **line 49** — the expected set is built from **`fetch("nba_schedule_current.json")`**, a repo file, **not** from Postgres.
+- **line 67** — `if "final" not in status: continue` — ***"only completed games can be in the logs."***
+- **lines 77–80** — the script's own comment states the limitation: ***"`nba_schedule_current.json` only carries the UPCOMING season, so in the off-season — or WHEN AUDITING A PAST SEASON — it has nothing to compare against."***
+- It then **falls back to an independent witness**, the **TEAM game log**, with the reasoning recorded: *"a SEPARATE pull from the player game log, so using it as the expected set is a genuine cross-check, not a circular one."*
+
+⇒ **The fallback exists and is correctly argued — and on 2025-26 it was ALSO empty**, because the
+executed run reached the terminal `sys.exit(0)` message rather than the team-log audit.
+⚠ **NOT RECORDED: why the team-log witness was empty for 2025-26 while 2024-25's was not.** *Rule 6 —
+no swept transcript explains it, and this sweep does not explain it from live state.*
+
+### ⚠ `[LIVE-AUDIT]` 2026-09-22 — *what the schedule holds now, recorded as fact, not as cause*
+
+**`nba_market.schedule_norm`** *(read-only `SELECT`, bucketed on `game_date` — the table has only
+`game_id`, `game_date`, `home`, `away`; it carries **no** season or status column)*:
+
+| bucket | games | first | last |
+|---|---|---|---|
+| 2024-25 | **1,230** | 2024-10-22 | 2025-04-13 |
+| **2025-26** | **1,230** | 2025-10-21 | **2026-04-12** |
+
+**So a full 1,230-game 2025-26 schedule exists in Postgres, ending five months before the audit
+ran.** ⚠⚠ **Stated at the strength the evidence supports: this table is a SCHEDULE and carries no
+status column, so it is evidence that the games were SCHEDULED, never that they were played or
+captured.** *The 19.6M scored legs are the evidence for that, and they are recorded elsewhere.* 🔑
+**And it is NOT the table the audit reads** — the audit reads a repo JSON file, so this row count
+does not contradict the audit; it measures the distance between what the system knows and what the
+audit can see.
+
+### 🔑 THIS IS RULE 37's THIRD OUTCOME, IN ITS PUREST FORM
+
+**Rule 37**: *a failure census has three outcomes — RECORDED · ATTRIBUTED-BUT-UNDIAGNOSED · SILENT.*
+**A green exit on an empty expected-set is the SILENT outcome**, and here the silence is *worded as
+reassurance*: **"Not a failure."**
+
+⚠⚠ **And the transcript contains its own refutation, written by the same author about a different
+component in the same session**: ***"it asserts legs actually landed, because A GREEN RUN WITH AN
+EMPTY TABLE IS THE FAILURE THAT HIDES BEST."*** 🔑 **He wrote that assertion into the board scorer and
+did not write it into the gap audit.** *(Rule 18's pattern: the refutation was in hand before the
+claim was made.)*
+
+### ⚠ CONSEQUENCE FOR THE 0.5% THRESHOLD — *open item T18-6, now upgraded*
+
+The recalibration comment states the threshold was *"calibrated on measured data: 2024-25 had 2 of
+~2,460 (0.08%) and 2025-26 had 7."* 🔴 **Of that pair, only the 2024-25 half was produced by an
+executed run in this transcript** *(20:09:34, `gaps found: 2`)*. **The 2025-26 "7" was produced by a
+DIFFERENT invocation — the P2 replay scoped to 2026-01-15 — not by the season-wide audit, which on
+2025-26 returned nothing at all. Its denominator is stated nowhere.** ⇒ **The threshold's calibration
+rests on one measured season and one unmeasured figure.** *Documented, not fixed.*
+
+---
+
+## §0.003-T18 — ✅ THE MECHANISM STRATA, PINNED AND ACCOUNTED FOR
+*(rules 17/21/25 · population pinned 2026-09-22T11:08:21Z from `sweep_coverage.segments`)*
+
+**T18 = 1,205 segments, and the partition CLOSES**: `tool_use` **463** + `tool_result` **397** +
+assistant text **254** + human **57** + `thinking` **34** = **1,205** ✅.
+**Mechanism strata = 860 = 71.4%**, **597,662 chars** *(`tool_use` 241,732 + `tool_result` 355,930)*.
+
+**Tool census — the whole of `tool_use`, and it closes to 463** ✅:
+
+| tool | calls |
+|---|---|
+| `github_patch_file` | **113** |
+| `github_put_file` | **87** |
+| `bash_tool` | **75** |
+| `run_sql_postgres` | **65** |
+| `github_grep_file` | **53** |
+| `github_trigger_workflow` | **37** |
+| `github_get_workflow_run_log` | **31** |
+| `web_search` | **2** |
+
+🔑 **`github_trigger_workflow` 37 is the number behind "nineteen defects, every one found by
+execution"** — *thirty-seven dispatched runs is what "running it" cost.*
+🔑 **`github_put_file` 87 against `github_patch_file` 113** — **87 whole-file writes in one session**,
+against a sweep standing rule that forbids `put_file` on its own documents.
+
+**⚠ READING RESOLUTION, DECLARED (rule 25).** All 860 were passed through a classifier and **every one
+is accounted for**: **618 SUBSTANTIVE**, read; **242 BOILERPLATE**, counted and characterised —
+**102** `github_patch_file` 200-OK receipts *(`{ok, status 200, commit_sha, file_sha, note}`, < 300
+chars, no other content)*, **54** `sleep N; echo ok` waits, **47** `github_list_workflow_runs` result
+polls, **39** `workflow_dispatch` 204 receipts. **618 + 102 + 54 + 47 + 39 = 860** ✅. *Nothing was
+skipped silently; the boilerplate classes are stated so the omission is auditable.*
+
+## §0.005-T18 — THE MECHANISM FAILURE CENSUS (RULE 37), WITH ITS PARTITION CLOSING
+*(T18 pass 5, 2026-09-22 · **predicate fixed BEFORE the pass so it could not be widened to fit**:
+every `tool_result` whose payload carries `"conclusion": "failure"`, `"ok": false`, a 4xx/5xx
+`status`, `Traceback`, `Error`, `error occurred during tool execution`, or a tool-unavailability
+notice)*
+
+### ✅ RULE 22 POSITIVE CONTROL RAN FIRST — *all seven patterns fired on a known-positive string*
+*Before any zero is trusted. T16's census produced false positives from the sweep's own grep
+patterns, and this very pass produced five more (below).*
+
+### THE CENSUS — **397 `tool_result` · 48 signal hits (12.1%) · 5 FALSE POSITIVES · 43 REAL**
+
+🔴 **THE FIVE FALSE POSITIVES, NAMED, BECAUSE THE CLASS RECURS** — *in every one, the word `error`
+is part of the CONTENT being read, not a failure of the read*:
+**SEG 176** the `board_payout_conversion_rules` config, which contains *"trial and error"* and *"a
+units error"* · **SEG 440** COMPASS fact 102's text, *"a measurement error worth remembering"* ·
+**SEG 590** `nba-daily-delta.yml`, which literally contains `continue-on-error: true` · **SEG 1103**
+a grep returning the code fragment `error" or ""` · **SEG 1160** a bash line reading *"error, not a
+product"*.
+🔑 ***A census on a tool's OUTPUT cannot distinguish the tool failing from the tool successfully
+returning a document about failure.*** *(Rule 15's shape: a pattern tuned elsewhere mis-measures, and
+the wrong number is not always zero — here it was five too high.)*
+
+### ✅ THE 43 REAL RESULTS, PARTITIONED — **and the partition CLOSES**
+
+| group | n | segments |
+|---|---|---|
+| **Workflow runs concluding `failure`** | **19** | 190·192·199·416·531·533·642·643·652·654·762·764·787·789·923·925·928·1188·1190 |
+| **`github_get_workflow_run_log` — job list `not found` (404)** | **7** | 122·410·616·919·987·1003·1202 |
+| **Bridge `error occurred during tool execution`** | **6** | 81·83·328·330·332·460 |
+| **SQL relation / column does not exist** | **4** | 922·944·1187·1200 |
+| **`github_get_workflow_run_log` — *"could not fetch log text (link may have expired, or run is too old)"*** | **3** | 778·796·810 |
+| **`github_grep_file` 404 — file does not exist** | **2** | 164·1164 |
+| **Bridge tool unavailable for a whole turn** | **1** | 150 |
+| **PrizePicks `HTTP Error 403: Forbidden` inside a run log** | **1** | 201 |
+| **TOTAL** | **43** ✅ | *6+1+7+3+2+4+19+1 = 43* |
+
+### 🔑 RULE 37's THREE OUTCOMES, AND THE ONE THAT MATTERS
+
+**RECORDED** — the transcript names the failure AND its cause, and the twelve carry it: the six
+bridge errors and the one outage *(§0.003-T18)*; the probe's `can't find '__main__' module`
+*(diagnosed and fixed in-session)*; `ModuleNotFoundError: pandas` *(T18-11)*; `VACUUM FULL` defeated
+by the disk pressure that made it necessary *(`NBA_OPEN_ITEMS` §CAVEAT)*; the gap audit's **intended**
+red *(§0.002-T18 — a failure that is the component working)*; the DataDome 403s *(§0.7-T18)*.
+
+🔴🔴 **ATTRIBUTED-BUT-UNDIAGNOSED — the ten log-read failures, and they are the mechanism behind the
+transcript's most consequential gap.** **Seven 404s on the job list and three *"link may have
+expired, or run is too old"*, two of the three on the SAME job id `105963684307`.** *The prose
+attributes this — **"it aged off the recent list before I could read its result"** — and never
+diagnoses it.* ⇒ ***This is WHY T18-8 exists: the P2 end-to-end run's outcome, and the 140,130-leg /
+0.930-confidence comparison the author called "the real test", were never read because the log could
+not be fetched.*** **The failure was not in the pipeline. It was in the instrument used to observe
+it.** 🔑 **Rule 37's middle outcome, doing exactly the work it was written for.**
+
+**SILENT — none found.** *Every one of the 43 surfaces in the transcript itself. The census's job was
+to find failures the transcript does not show, and in T18 there are none: the author read and
+reported his failures, which is the opposite of the pattern rule 37 was born from.*
+
+### ✅ THE FOUR SQL "DOES NOT EXIST" ERRORS RESOLVED AGAINST LIVE STATE — *and they are NOT defects*
+**SEG 922** `relation "nba_score.board_scored" does not exist` · **SEG 944** `column "built_at" does
+not exist` · **SEG 1187 & 1200** `relation "nba_market.board_tiers_v2" does not exist` — **and 1187
+and 1200 are the LAST two SQL failures in a 1,205-segment transcript**, i.e. ***T18 ENDS with the
+four-way tier rebuild dispatched and its table not yet confirmed.***
+✅ **`[LIVE-AUDIT]` 2026-09-22 settles it**: **`nba_market.board_tiers_v2` = 2,199,354 rows —
+EXACTLY equal to `nba_market.board_tiers`** · **`nba_score.board_scored` = 12,818,715 rows** · and a
+**`nba_score.board_scored_snapshot_20260920`** at 110,955 rows. ⇒ **Both tables landed, and the
+snapshot's date says the work completed the same day the transcript ends.** ⚠ **Rule 6: the sweep
+records that they exist and match; it does not claim which run created them, because no swept
+transcript says.**
+
+### ⚠ THE RUN LEDGER — *the number behind "nineteen defects, every one found by execution"*
+**135 distinct workflow run ids appear in T18**: **74 success · 23 CANCELLED · 20 pending/other ·
+18 failure.** **Restricted to `nba*`-named runs — the ones this session dispatched — 33 distinct:
+15 success · 11 pending/other · 7 failure.**
+🔑 **So roughly ONE IN THREE of the session's own NBA runs failed**, and **23 cancelled runs** are the
+self-cancelling auto-deploys already recorded at §0.000. ***The failure rate IS the method: thirty-
+seven dispatches and a one-in-three failure rate is what "found by running it, not by reading it"
+costs.***
+
+---
+
+## §0.004-T18 — 🔴🔴 THE CERTIFIER CANNOT TELL A FULL SLATE FROM ONE ROW
+*(T18 pass 2 · `certify_pipeline.py` written in-session at `tool_use` SEG 601–605, and **re-read from
+LIVE SOURCE 2026-09-22 — 5,920 B, 129 lines, UNCHANGED in structure**. This is a claim about what the
+code CHECKS, verified by reading the code, not an inference about a sequence of runs.)*
+
+**The certifier is the system's answer to its own worst memory**, and it says so: *"a missing 44% of
+the board (the combos ladder) went unnoticed for two days because steps were written `|| echo
+failed`, and four jobs failed silently for an hour while row counts alone looked stable… a pipeline
+that cannot fail loudly is a pipeline you cannot trust unattended — and these three run unattended
+every day."* **`CERT_STRICT=1` by default; any failed check `sys.exit(1)`.**
+
+> 🔴🔴🔴 **AND THAT IS WHAT FIRES `T20-13`, THE BRIEF'S NUMBER-ONE ITEM — TWELVE RED NIGHTS FROM OPENING NIGHT.** *(🔴 **CORRECTED 2026-09-23, §T20.135**: `T20-13` is ranked **second**, after `A`, not first — see the live ranked string; and the mechanism fires only once `T20-6` is resolved, because `certify_pipeline.py`'s first `p2` check — `baseline_history has today` — **fails earlier and every night**. `CERT_STRICT=1` remains exactly as described below; what is corrected is WHICH check trips and FOR HOW LONG.)* *Added here T20 pass 78 (§T20.83), 2026-09-22: **this page gave the MECHANISM (`CERT_STRICT=1` → `sys.exit(1)`) and not the GATE that trips it**, and a person working on the certifier reads this page.* ▶ **P2's check requires `>= 25` distinct props in `baseline_history`.** **Live, both prior seasons: OCTOBER carries `22` distinct props; NOVEMBER carries `30`** *(re-derived `2026-09-22T19:16Z`, §T20.74 — `892,599` and `3,281,336` rows)*. 🔴 ***So from opening night `2026-10-20` through `2026-10-31` the gate cannot be met — **twelve consecutive red nights**, and with `CERT_STRICT=1` each one exits non-zero.*** 🔴🔴 **CORRECTED 2026-09-23 (T20 pass 130, §T20.135) — SIBLING OF THE SAME ERROR IN `NBA_RECIPE.md`.** *The `>= 25` prop gate is the SECOND `p2` check. The FIRST — `baseline_history has today > 0` — **fails first and fails every night**, because **no pipeline step writes `nba_score.baseline_history`** (`T20-6`, `§T20.134`).* ⇒ ***Red does not stop on `2026-11-01`; it continues all season, and the prop gate is never the binding check.*** 🔑 **`T20-13` is CONDITIONAL on `T20-6` being resolved first** — *the same prerequisite argument the brief already makes for item `A`, applied to a second prerequisite it never named.* ⚠ **Those same twelve nights are inside `T20-12`'s PDT window, where `p3_cut` is an hour late.** ▶ **Full item: `T20-13` in `NBA_OPEN_ITEMS.md` (§T20.52), ranked FIRST on the OPENING-DAY BRIEF; re-derived and HELD at §T20.74.** ⚠ *Documented, not fixed (rule 1).*
+
+### ✅ ALL TWELVE CHECKS, WITH THEIR ACTUAL PREDICATES *(live source, verbatim `lambda`s)*
+
+| pipe | check | predicate | is it a PLAUSIBILITY gate? |
+|---|---|---|---|
+| **P1** | `defender_ratings refreshed` | `(today − max(as_of_date)).days <= 8` | ✅ freshness |
+| **P1** | `defender_ratings rows` | `int(v) > 10000` | ✅ **magnitude** |
+| **P1** | `player name map populated` | `int(v) > 400` | ✅ **magnitude** |
+| **P2** | `baseline_history has today` | `int(v) > 0` | ❌ |
+| **P2** | `baseline props for today` | `int(v) >= 25` | ⚠ **magnitude — but on DISTINCT PROPS, not rows** |
+| **P2** | `no invalid probabilities today` | `int(v or 0) == 0` | ❌ *vacuous on a small population* |
+| **P2** | `as-of calibration available` | `int(v) > 0` | ❌ |
+| **P3** | `final_hp has today` | `int(v) > 0` | ❌ |
+| **P3** | `confidence populated` | `count(NULL) == 0` | ❌ *vacuous* |
+| **P3** | `score in range 0-100` | `count(out of range) == 0` | ❌ *vacuous* |
+| **P3** | `confidence model loaded` | `int(v) > 0` | ❌ |
+| **P3** | `board archived today` | `int(v) > 0` | ❌ |
+
+### ⇒ 🔴🔴 **P3 HAS NO MAGNITUDE CHECK AT ALL, AND P3 IS THE PIPELINE THAT RUNS EVERY GAME DAY**
+
+> 🔴🔴🔴 **AND P3 IS STILL HARDCODED TO *LAST* SEASON — `T20-4`, the brief's HIGHEST-ranked pure-P3 item.** *Added here T20 pass 78 (§T20.83), 2026-09-22: **this document names P3 fourteen times and never mentioned `BS_SEASON`**, and a person working on P3 reads this page.* ▶ **`.github/workflows/nba-p3-afternoon-light.yml`** — `:38` `default: "2025-26"` and `:205` `BS_SEASON: ${{ github.event.inputs.season || '2025-26' }}`. 🔴 ***The 2026-27 regular season opens `2026-10-20`. Unless the input is supplied by hand every run, P3 scores the wrong season.*** ▶ **Full item: `T20-4` in `NBA_OPEN_ITEMS.md`; re-derived and HELD at §T20.75, `2026-09-22T19:25Z`.** ⚠ **`VALIDATABLE NOW`** — *it is workflow text; the fix and its proof need no live board data (§T20.75).* ⚠ *Documented, not fixed (rule 1).*
+
+***A P3 run that scores ONE leg passes all five checks***: one row makes `count(*) > 0` true; among
+one row there are zero NULL confidences and zero out-of-range scores, so both `== 0` checks pass
+**vacuously**; the confidence model is a standing table; and one archived board leg satisfies the
+fifth. ⇒ **"5/5 checks passed. Pipeline certified."**
+
+⚠ **And P2's one gate is on `count(DISTINCT prop)`, not rows** — so P2 also certifies on **25 props ×
+one row each**, twenty-five legs standing in for a full slate.
+
+🔑🔑 **THE TRANSCRIPT CONTAINS ITS OWN INDICTMENT, WRITTEN BY THE SAME AUTHOR IN THE SAME SESSION.**
+Of the board scorer he wrote: ***"it asserts legs actually landed, because A GREEN RUN WITH AN EMPTY
+TABLE IS THE FAILURE THAT HIDES BEST."*** **He built that assertion into the scorer and did not build
+it into the certifier — the component whose entire purpose is to make that assertion.**
+⚠ **Stated at evidence strength**: the certifier is **not** empty-table-blind — `> 0` does catch a
+truly empty table, which is the failure its docstring names. **What it cannot catch is a
+PARTIAL slate**, which is the failure the 44%-combos-gap actually was. *The component is built
+against the remembered symptom rather than the remembered cause.*
+
+⚠ **The fix is one line per check and the system already knows the right shape** — P1's `> 10000` and
+`> 400` are exactly it, and P2's own gap audit computes a **rate** for the same reason
+*(§0.002-T18)*. **Documented, not fixed.** *Open item T18-14.*
+
+---
+
+### 🔴 THE BRIDGE FAILED THREE TIMES IN-SESSION — *the executed evidence for a claim the sweep already carries*
+
+| seg | what came back |
+|---|---|
+| **81**, **83**, **328**, **330**, **332**, **460** | `{"error": "error occurred during tool execution", "request_id": …}` — **SIX** queries against `nba_score.final_hp` ⚠ **CORRECTED 2026-09-22 (pass 5's census): this row first said FIVE and omitted SEG 460**, an `EXPLAIN (ANALYZE, BUFFERS, TIMING OFF)` on the `final_hp ⋈ baseline_history` join. *Found by the mechanical census, not by re-reading — which is the argument for running one.* |
+| **150** | ***"tool 'mcp_alphadog_bridge_run_sql_postgres' is not available in this turn, nor is any other 'mcp_alphadog_bridge_' tool."*** — a hard tool outage, not a query error |
+
+🔑 **This is the executed evidence behind the author's prose claim — recorded by this sweep at T17 as
+the reason an incomplete replication pass went unverified — that *"the SQL bridge is timing out on the
+large aggregates."*** ⚠ **Language at evidence strength**: the results show **failures**, and one of
+them is an availability outage rather than a timeout. **The transcript does not print a timeout
+message**, so *"timing out"* remains the author's characterisation, not a verified diagnosis. **What
+IS verified: five aggregate queries against `final_hp` failed, and the whole bridge was unavailable
+for one turn.**
+
+---
+
+# §F2.16 — 🔴 **FOUR WORKFLOW FILES ARE NAMED NOWHERE IN THE TWELVE, AND ONE OF THEM HOLDS A SEASON-CRITICAL DEFECT**
+
+*Added 2026-09-23 by the transcript re-sweep, direction (b). **Found by an instrument, not by
+reading**: extract every identifier from the `~12,686` uncovered-substantive segments, rank by
+mentions × spread, keep the ones absent from all twelve. **`285` identifiers seen · `121` absent** —
+and once the Python-traceback noise was discarded *(`stats.norm`, `stats.nbinom`, `base.py`,
+`cursor.py` and the rest are **scipy and site-packages frames**, not this system)*, **what survived
+was workflow filenames.**
+
+**Re-derived from the authority** *(`.github/workflows/` listing, 2026-09-23, `40` files, each
+filename grepped across all twelve)*:
+
+| workflow | mentions in transcripts | transcripts | in the twelve |
+|---|---|---|---|
+| 🔴 **`nba-backtest.yml`** | 17 | 5 *(`T8`,`T9`,`T10`,`T12`,`T18`)* | ❌ **`0` of 12** |
+| 🔴 **`nba-grader.yml`** | 11 | 3 *(`T13`,`T14`,`T18`)* | ❌ **`0` of 12** |
+| 🔴 **`nba-measure-types.yml`** | 6 | 5 *(`T7`,`T9`,`T10`,`T12`,`T18`)* | ❌ **`0` of 12** |
+| 🔴 **`nba-score-history.yml`** | 9 | 1 *(`T23`)* | ❌ **`0` of 12** |
+
+**The other `36` are all named at least once** *(`nba-p3-afternoon-light.yml` `8` documents,
+`nba-p1`/`nba-p2` `7`, `nba-engine-test.yml` and `nba-referees.yml` `6`…)*. ⇒ ***`4` of `40`, and
+they are not obscure: three of the four are named in five separate transcripts each.***
+
+## 1 · 🔴🔴🔴 `nba-grader.yml` — **`name: NBA Outcome Grader`** — and it holds `T20-5`'s defect a second time
+
+| | |
+|---|---|
+| triggers | **`workflow_dispatch:` only — no `schedule:`** *(consistent with `T20-3` ④)* |
+| timeout | **`330` minutes** |
+| runs | `python nba/grade_board_outcomes.py` |
+| inputs | `start` *(default **`2024-10-22`**)* · 🔴 `end` *(default **`2026-04-12`**)* · `limit_dates` *(default `0`, "use a small number for a smoke test")* |
+| `env:` | `DATABASE_URL` · `GRADE_START: ${{ inputs.start \|\| '2024-10-22' }}` · 🔴 `GRADE_END: ${{ inputs.end \|\| '2026-04-12' }}` · `GRADE_LIMIT_DATES` |
+
+🔴🔴🔴 ***`T20-5` locates the stale `2026-04-12` window in `grade_board_outcomes.py:167–168`. It is
+ALSO here — twice — and the workflow passes `GRADE_END` EXPLICITLY.*** **So a corrected script
+receives the stale date from the workflow and behaves exactly as before. Three sites must change,
+not one.** *Filed onto `T20-5`; the item's severity is unchanged and its REMEDY is.*
+
+## 2 · `nba-score-history.yml` — **`name: NBA Score History`** — a two-job pipeline with no record in the twelve
+
+**Its own header comment states the purpose:** *"Scores the model over PAST dates into
+`nba_score.board_scored`, point-in-time (`nba/score_history.py`), so the model has a scored history
+to compare against PrizePicks' prices."* ⚠ *That comment cites `nba/PP_PAYOUT_FINDINGS.md, pending
+item 1` — **but this workflow is NOT on the concurrent session's exclusion list** (only
+`nba-pp-payout-map.yml` is), so it is recorded here.*
+
+| job | what it runs | env |
+|---|---|---|
+| **`calibrate`** | `nba/build_asof_calibration.py` — *"rebuild the as-of calibration, every season in `final_hp`, oldest first"* | **`AC_K: '400'`** · **`AC_CADENCE_DAYS: '7'`** |
+| **`score`** *(`needs: calibrate`)* | `nba/score_history.py`, an **8-way matrix** — *"Score chunk N of 8"* | `SH_FROM` · `SH_TO` · `SH_CHUNK` · **`SH_CHUNKS: '8'`** · `SH_SKIP_BUILT_AFTER` |
+
+✅ **Safety properties, quoted from the file:** *"oldest first; **refuses to write an empty build**"*
+· *"**Manual only**"* · *"**Re-running is safe: a date is replaced whole**."* 🔑 **A
+refuses-to-write-empty guard is the opposite of the silent-failure class this corpus tracks — worth
+recording as a POSITIVE control on the codebase's habits.**
+
+## 3 · `nba-backtest.yml` and `nba-measure-types.yml` — **file-triggered, and both use the forbidden idiom**
+
+**Both fire on `workflow_dispatch: {}` AND on `push:` with a `paths:` filter** — the trigger-file
+pattern this corpus documents. `nba-backtest.yml` *(`name: NBA Backtest`)* runs
+`nba/backtest/minutes_model_v1.py` among others; `nba-measure-types.yml` *(`name: NBA Measure Types
+Backfill`)* runs `nba/scrape_nba_backfill_measure_types.py` with `PROXY_URL`.
+
+🔪 **`continue-on-error: true` — KILLED under rules 26/28, with the count recorded.** *Both use it,
+and so do nine other workflows. **Re-derived 2026-09-23: `11` of `40` workflows, `48` occurrences**
+— `nba-scrape.yml` **15** · `nba-backtest.yml` **12** · `nba-backfill.yml` **4** ·
+`nba-boards-market.yml` **4** · `nba-daily-delta.yml` **3** · `nba-diagnostic.yml` **3** ·
+`nba-pergame-backfill.yml` **2** · `nba-season-tables.yml` **2** · `nba-game-officials.yml`,
+`nba-measure-types.yml`, `nba-starter-status.yml` **1** each.* **The IDIOM and its rationale are
+thoroughly on file** *(`§T2.10a`; *"15 of 16 scrape steps"*; `T20-10` for `nba-daily-delta.yml`)*
+⇒ **not a new finding. The corpus-wide COUNT is the only new part, and it is recorded here rather
+than filed as an item.**
+
+⚠ **RULE 54.** *The gap scan ranks identifiers by mentions and spread; it cannot see a workflow
+discussed only by its `name:` (`"NBA Outcome Grader"`) rather than its filename, and it discards
+anything the segmenter's normalisation mangles.* ***"`4` of `40` filenames are absent", never "these
+are the only undocumented workflows."***
+
+---
+
+# §F5.5 — 🔴🔴 **THE FILE CENSUS: `7` of `21` WORKERS and `27` SCRIPTS ARE NAMED IN ZERO OF THE TWELVE**
+
+*Added 2026-09-23. **Found from the other side**: every `path:` written by `github_put_file` /
+`github_patch_file` / `github_append` / `create_file` across all 24 transcripts was extracted —
+**`306` distinct paths, `2,047` write calls** — then re-derived directly from the repo, which is the
+authority, and it is that re-derivation which is published here.*
+
+## 1 · 🔴 SEVEN STATIC WORKERS, UNDOCUMENTED — `7` of the `21` that exist
+
+*`nba/alphadog-v2-nba-*.js` → **21 files**; `nba_config.worker_definitions` → **21 rows**
+(`[LIVE-AUDIT]` 2026-09-23). **The register is complete; the documentation is not.***
+
+| worker | writes to |
+|---|---|
+| 🔴 **`alphadog-v2-nba-static-schedule.js`** | **`nba_calendar.games`** |
+| 🔴 **`alphadog-v2-nba-static-measure-types.js`** | `nba_stats.player_game_log_scoring` · `player_game_log_usage` · `nba_team.team_game_log_four_factors` |
+| 🔴 **`alphadog-v2-nba-static-shotquality.js`** | `nba_stats.player_shot_quality` · `player_shot_quality_delta` · `player_shot_zone_profile` |
+| 🔴 **`alphadog-v2-nba-static-playtypes.js`** | `nba_stats.player_playtype_profile` · `nba_team.playtype_profile` |
+| 🔴 **`alphadog-v2-nba-static-tracking-detail.js`** | `nba_stats.player_tracking_detail` |
+| 🔴 **`alphadog-v2-nba-static-lineups.js`** | `nba_team.lineup_profile` |
+| 🔴 **`alphadog-v2-nba-static-team-stats.js`** | `nba_team.season_profile` |
+
+🔑 **Several write tables the corpus documents in detail** — *`player_playtype_profile` has its own
+`[LIVE-AUDIT]` block (`3,282` rows, all `Offensive`); `player_shot_quality` and
+`player_tracking_detail` sit in the table registers; **`nba_calendar.games` is the `2,666`-row
+schedule table cited across six documents.*** ⇒ ***the corpus knows what is IN these tables and,
+for these seven, not what PUTS it there.***
+
+## 2 · 🔴 TWENTY-SEVEN SCRIPTS — *and they are the apparatus behind the factor verdicts*
+
+*`nba/*.py` → **123 files**; **30** named in `0` of the twelve; **3** are `probe_pp_*.py`,
+**excluded by standing rule** as the concurrent session's ⇒ **`27` in scope.***
+
+**🔴 The factor-fitting set — every one produced a verdict the twelve record in full:**
+
+| script | its own header |
+|---|---|
+| **`fit_b4_opponent.py`** | *"FACTOR B4 — OPPONENT AVAILABILITY, fitted and gated exactly like A2"* |
+| **`fit_b4_defender_quality.py`** | *"FACTOR B4 v2 — OPPONENT AVAILABILITY VIA EXPECTED DEFENDER QUALITY"* |
+| **`fit_b4_rim_protection.py`** | *"B4 SUB-CASE — BLOCKS-AGAINST VULNERABILITY (rim protection specifically)"* |
+| **`fit_m1_defender_level.py`** | *"FACTOR M1 — PRIMARY DEFENDER QUALITY as a BASELINE-STAGE factor"* |
+| **`fit_n1_granular.py`** | *"N1 v2 — GRANULAR P(plays \| Questionable) … per-player assertiveness, not a flat 55%"* |
+| **`measure_n1_status_resolution.py`** | *"FACTOR N1 — P(plays \| status) MEASURED FROM OUR OWN ARCHIVE, at the 2:30 PM PT decision cutoff"* |
+| **`fit_usage_allocation.py`** | *"A2 USAGE ALLOCATION — FITTED, replacing the assumption"* |
+| **`fit_rate_response.py`** | *"RATE RESPONSE — the second half of factor A2, and the end-to-end test that it helps"* |
+| **`retest_defender_factors.py`** | *"M1 / B4 RE-TEST with PROPER defender ratings, and WITH INTERACTIONS"* |
+
+🔴🔴 ***`NBA_FINAL_SCORING_CALIBRATION.md` carries the T15 verdict table — `A2` SHIPPED · `A2 rate
+response` REJECTED · `B4 v1`/`v2` REJECTED · `B4 v3` COMMISSIONED · `M1` NOT TESTED · `N1` MEASURED
+· `A5` REJECTED — with populations and figures. It names none of the nine scripts that produced
+them.*** **A reader who wants to re-run or check a verdict cannot reach the code from the
+documentation.** 📌 ***`RULE 55` at its largest scale yet: not a table missing under a conclusion,
+but the entire APPARATUS missing under a table.***
+
+**🔴 The test suite** — `test_a2_novelty.py` *("A2 SHARPENED — NOVELTY-WEIGHTED absence
+redistribution")* · `test_a2_per_prop.py` · `test_a2_window_information.py` *("the factor's TRUE
+value, not its upper bound")* · `test_component_application.py` *("re-derive the mean, do not
+re-scale it")* · `test_factors_on_baseline.py` *("INTEGRATION TEST — factors on top of the CERTIFIED
+BASELINE, not beside it")* · `test_funnel_leg_level.py` *("the funnel, and LEG-LEVEL scoring instead
+of MAE")* · `test_oreb_basis_mean.py` · `test_oreb_rate_estimator.py` *("the RATE ESTIMATOR, which
+the band-bias table says is the real defect")* · `test_oreb_opportunity_model.py`.
+
+**🔴 The rest** — `build_matchup_model.py` *("TEAM MATCHUP v2 — the market total as the
+game-environment input. **NON-NEGOTIABLE FACTOR**")* · `build_market_derived.py` ·
+`backtest_edge_vs_board.py` *("where the certified baseline disagrees with the PrizePicks board")* ·
+`validate_blowout_upgrade.py` *("SAMPLE VALIDATION before any full rebuild")* ·
+`scrape_nba_backfill_2025_26.py` · `scrape_nba_lineups.py` *("multi-player lineup synergy data")* ·
+`scrape_nba_tracking_detail.py` · `load_pp_mined_legs.py` · `load_pp_quotes.py`.
+
+## 3 · ✅ What the census CLEARS
+
+**`161` of the `250` repo paths ever written are both present in the repo and named in the twelve.**
+*And the apparent "`44` written then deleted and never documented" is a **case-normalisation
+artifact** — the segmenter lowercases, so `nba/nba_master_summary.md` is `NBA_MASTER_SUMMARY.md` and
+`nba/trigger_nba_scrape.txt` is `TRIGGER_NBA_SCRAPE.txt`.* **Checked, not assumed: `0` real
+deletions were hiding there.**
+
+⚠ **RULE 54.** *Presence is tested by FILENAME. A worker described only by its job key, or a script
+described only by what it does, would score as absent; one named inside a code fence would score as
+present without being explained.* ***"`7` and `27` FILENAMES are absent", never "these are
+undocumented in substance" — and the converse is weaker still: **being named is not being
+documented**.***
+
+---
+
+## 🔴🔴🔴 **§T26.19 — P2 SPENT A THIRD OF EVERY NIGHT BUILDING ROWS THAT NEVER REACHED THE DATABASE, FOR THE WHOLE LIFE OF THE PIPELINE** *(T26 seg736, ASSISTANT OUTPUT; `0` of the twelve before this entry)*
+
+> 🔑🔑🔑 ***"confirmed: **zero period rows have ever reached the database**. not for this slate, not
+> for any date. **p2 spends ~43 minutes a night — a third of the pipeline — building 41,174 period
+> rows that are then dropped on the floor**, because the merge step doesn't pick them up and the
+> loader 404s looking for them. **that single finding is worth more than any speed tuning: either
+> those props matter, in which case they've been missing from scoring entirely, or they don't, in
+> which case p2 has been paying 43 minutes a night for nothing.**"***
+
+### ⚠ **THE FORK IS THE POINT, AND BOTH BRANCHES ARE SEVERE**
+
+| if the period props MATTER | if they DO NOT |
+|---|---|
+| 🔴 **they have been missing from scoring ENTIRELY** — every Q1/Q4/H1/H2 leg the apps posted was priced against nothing | 🔴 **P2 has burned `~43` minutes a night, `~33%` of the pipeline, for nothing** |
+
+🔑 **Two failure points, not one**: *the **merge step** does not pick the rows up, **and** the
+**loader `404`s** looking for them. **Either alone would have hidden the other.***
+
+### ✅✅ **CLOSED — RE-DERIVED LIVE `2026-09-25T18:17Z`**
+
+```sql
+SELECT period, count(*), count(DISTINCT game_date), count(DISTINCT season)
+  FROM nba_score.baseline_history GROUP BY period ORDER BY 2 DESC;
+```
+▶ | `FULL` **`4,410,672`** / `325` dates | `Q1` **`1,854,284`** / `303` | `Q4` **`1,086,807`** / `303`
+| `H1` **`673,860`** / `303` | `H2` **`670,682`** / `303` | — **all four period props present across
+BOTH seasons.** ✅ ***"zero period rows have ever reached the database" is now FALSE, and it was fixed
+AND BACKFILLED*** — `4,285,633` period rows, **`49.28%`** of the table.
+
+⚠ **`FULL` covers `325` dates against the periods' `303` — a `22`-date gap.** *NOT diagnosed; recorded
+under `RULE 6` as an observation, not a defect.*
+
+### 🔴🔴 **AND FIXING IT IS WHAT CREATED THE `final_hp` PERIOD-KEY COLLISION — THE TWO FINDINGS ARE ONE CHAIN**
+
+🔑🔑 ***The moment period rows started reaching the database, they started reaching `final_hp` too —
+and `final_hp` has no `period` column.*** *(`§T26.17`)* ⇒ **The period rungs landed wearing FULL-GAME
+keys, and where a period line coincided with a full-game line the upsert let the last one win.**
+⚠⚠ **The timeline is mechanical**: *seg736 sits inside T26's window (`2026-09-23T19:07` →
+`2026-09-24T04:37`); the period filter that stops the collision is commit **`0cba9a19`,
+`2026-09-24T11:18-07:00`** — **seven hours after the transcript ends.*** ⇒ ***A repair on one worker
+opened a silent corruption in the next one downstream, and the second fix followed the first by
+hours.*** 🔑 **This is the sweep's standing lesson in its strongest form: `41,174` rows a night that
+had never arrived were not inert — they were load-bearing on a key the destination could not
+represent.**
+
+---
+
+## 🔴🔴🔴 **§T26.26 — THE REFEREE ARC: A DECISION TAKEN, REJECTED BY THE OWNER, CONCEDED AS A LOGICAL ERROR, AND THEN DISSOLVED — REVEALING THE SCHEDULING BUG THAT MOVED P2's CRON** *(T26 seg786→seg798 + `SELECT`/workflow reads 2026-09-25)*
+
+**This is the single most instructive exchange in the corpus, and the sweep recorded only its first
+move.** *`§T26.23`'s `D1` entry is corrected by this section.*
+
+### ① **THE DECISION** *(seg786)*
+> ***"referee crew `D1` — decided: keep 'factor zero plus confidence penalty', **don't build a
+> predictor**… a predictor for an unpredictable assignment worth under 2% isn't worth the failure
+> surface."***
+
+### ② 🔴 **THE OWNER REJECTS IT — IN THE VERY NEXT OWNER TURN** *(seg788)*
+> ***"on the predictor — it's okay IF there is no way to make a predictor that's reliable, **which I do
+> think that we can and I would prefer that**. then **you need to be careful with the penalties — we
+> don't want to over-penalize a leg because there is no data**. you should research and I'm sure you
+> find a way to make a decent predictor. **you're being lazy again.**"***
+
+### ③ ✅✅ **THE AUTHOR CONCEDES A LOGICAL ERROR, NOT A PREFERENCE** *(seg789)*
+> 🔑🔑🔑 ***"fair — **I measured the effect size and used it to dismiss the predictor, which are
+> different questions.** and the penalty point is sharper: **if a missing factor costs more confidence
+> than the factor is worth, we lose twice.**"***
+
+⚠⚠ **THAT IS THE LESSON, AND IT GENERALISES TO EVERY "NOT WORTH BUILDING" DECISION IN THIS CORPUS**:
+***a small effect size argues that the FACTOR is cheap to lose. It says nothing about whether the
+PENALTY for lacking it is correctly sized.*** 🔑 **`§T26.20`'s `307,000`-leg "don't build it" survives
+this test** *(it measured the outcome, not the effect size)*; **decisions that dismissed a feature on
+effect size ALONE should be re-read against it.**
+
+### ④ 🔑🔑 **AND THEN THE DOCUMENTATION DISSOLVES THE QUESTION ENTIRELY** *(seg792, seg795)*
+> ***"the documentation reframes this: **crew assignments post at ~9 AM ET, before both cutoffs — so in
+> production the crew is KNOWN, not predicted.**"***
+> *The parity doc's rule:* ***"`D1` is class B live-only: not archived, so the live capture must
+> accumulate it, and box-score officials are **post-hoc truth — usable as the TARGET of a prediction,
+> never as an INPUT to a past day**."***
+
+⇒ ✅ **NEITHER SIDE WAS RIGHT: there was no predictor to build, because there is nothing to predict.**
+🔑 **The owner was right that the decision was premature; the author was right that a predictor wasn't
+worth it — and the documentation the owner had insisted on settled it in one read.** ⚠ ***That is the
+owner's "religious rule" (seg743 — "no guessing, look at the damn documentation") paying out on the
+same page it was demanded.***
+
+### ⑤ 🔴🔴🔴 **WHAT THE EXCHANGE ACTUALLY UNCOVERED — A LIVE BUG WITH A MEASURED CASUALTY** *(seg795, seg798)*
+
+> ***"p2's target cron is `01:00 PT` — hours before assignments post. **so p2's referee step would
+> scrape nothing**… the dedicated job already exists and is correctly timed: `cron: '30 15 *'` —
+> `08:30 PT`, after the morning posting… **p2's referee step at `01:00 PT` runs 7½ hours too early —
+> it can only ever scrape an empty page. That's redundant work masquerading as coverage.**"***
+
+✅✅ **VERIFIED LIVE `2026-09-25` — AND THE WORKFLOW NOW DOCUMENTS ITS OWN FIX:**
+
+| | |
+|---|---|
+| `.github/workflows/nba-referees.yml` | **`cron: '30 15 * * *'`** — *"`08:30` PT, after the morning posting"* |
+| `.github/workflows/nba-p2-overnight-heavy.yml` | **`cron: '45 15 * * *'`** — **`15` minutes later** |
+| **the casualty, in the workflow's own words** | ***"the old target of `09:00 UTC` = `01:00 PT` was five to six hours too early, **which is exactly why `nba_ref.referee_assignments` held `0` rows while the step ran nightly**"*** |
+
+🔑🔑 **SO THE CRON `§T26.1` VERIFIED AS "LIVE" HAS ITS *WHY* HERE**, *and it is the owner's — seg844:*
+***"we do not redo it… we just run it, give it a wiggle room. if it's like 9 a.m., it started at 9:30…
+we keep the same logic, we keep things as it was. **we just change the running times.**"***
+⇒ ⚠⚠ **A TIMING FIX CHOSEN OVER A REBUILD, EXPLICITLY** — *and the owner reached it after catching an
+arithmetic error in the author's own account (seg802).*
+
+### ✅ **AND THE WORKFLOW HANDLES THE DST CROSSING THE CORPUS FLAGS AS UNHANDLED**
+
+> ***"GitHub cron is UTC and does not shift with daylight time, and the season crosses the change
+> (PDT → PST on `2026-11-01`), so the local hour drifts by one: `15:45 UTC` = **`08:45 PT` during PDT**
+> = **`07:45 PT` during PST**. **Both land AFTER the 6-7 AM PT posting with wiggle room**, and both
+> leave the pipeline finishing around `10:40` / `09:40` PT against **P3's `13:15` PT cutoff — roughly
+> three hours of slack for a retry.**"***
+
+🔑 **`T20-12` records *"zero DST-aware Python in the NBA scripts"* — TRUE, and this shows the drift was
+handled by choosing a slot that is correct in BOTH offsets rather than by making the code DST-aware.**
+⚠ *A different solution to the same problem; `T20-12` stands for the Python, not for this cron.*
+
+### 🔴🔴 **THE STATE TODAY — THE FIX IS IN PLACE AND HAS NEVER BEEN EXERCISED**
+
+| table | rows | what it is |
+|---|---|---|
+| `nba_stats.game_officials` | **`11,062`** | ✅ historical crews — *post-hoc truth, `§T26.12`'s closed load gap* |
+| `nba_ref.officials` / `official_roster_snapshot` | `80` / `80` | ✅ the roster |
+| `nba_ref.official_tendency` | **`78`** | ✅ **the shrunk tendencies (`k=112`) `§T26.23` records SHIPPED — `78` of `80` officials** |
+| 🔴 **`nba_ref.referee_assignments`** | **`0`** | 🔴 **STILL EMPTY, `2026-09-25`** |
+| `nba_ref.official_differential_log` | `0` | — |
+
+⚠⚠ **THE EMPTINESS IS NOW EXPECTED — THERE ARE NO GAMES — BUT IT MEANS THE REMEDY IS UNPROVEN.**
+*The table whose `0` rows diagnosed the bug is the same table that must fill to demonstrate the fix,
+and it cannot fill until **preseason, `2026-10-03`**.* 🔑🔑 ***And because box-score officials are
+"never an input to a past day", `game_officials`' `11,062` rows CANNOT substitute*** — ⇒ **the `D1`
+factor has never once fired with a known crew in production; what has actually run, every time, is the
+confidence penalty for its absence.** 🔴 **Which is precisely the over-penalisation the owner warned
+about at ② — and it has been the live behaviour all along.**
+
+📌 **FIRST THING TO CHECK ON `2026-10-03`**: `` SELECT count(*) FROM nba_ref.referee_assignments; ``
+**A non-zero result is the first evidence the arc above produced a working factor.**
+
+### ⑥ ✅✅ **AND AN OWNER-ORDERED FULL BACKFILL WAS AVOIDED BY THE TIMING FIX — RECORDED BECAUSE IT IS STILL ON HIS LIST** *(seg807 → seg822 → seg844)*
+
+**Before the timing fix was found, the owner ordered the structural alternative — twice.**
+
+> **seg807**: ***"of course, if that information only comes at that time, **we need to move that shit to
+> P3, not P2**."***
+> **seg822**: ***"you have to put on your list that **we have to redo the whole fucking back data**,
+> because now we're moving the referee from the BASELINE to the FINAL pipeline. so that needs to be
+> done. **but first, finish everything**, because you may come up with some more shit."***
+
+⚠ **That is a stage reassignment plus a full historical rebuild** — *`D1` out of P2's baseline stage
+and into P3, and every stored baseline recomputed behind it.*
+
+✅✅ **NEITHER HAPPENED, AND THE REASON IS SOUND**: *seg833 — **"before you change anything, what time
+does the referee data come up for pacific time?"*** — the owner asked for the arithmetic **before**
+authorising the rebuild, and when it showed the data posts at `6-7 AM PT` against a pipeline that
+could simply start later, he cancelled the structural change himself at seg844: ***"so yes, fine, **we
+do not redo it**… we keep the same logic, we keep things as it was. **we just change the running
+times.**"***
+
+🔑🔑 ***A STAGE REASSIGNMENT AND A TWO-SEASON BACKFILL WERE REPLACED BY A FIFTEEN-MINUTE CRON OFFSET,
+AND THE THING THAT DECIDED IT WAS ONE CLOCK CALCULATION.*** ⚠⚠ **`D1` REMAINS A BASELINE-STAGE FACTOR
+IN P2** *(workflow line `141`, "Referee assignments and per-game matchups (baseline-stage factors)")*,
+**which is what the parity doc's stage table says it should be** — ⇒ ***the instruction at seg807/822
+is SUPERSEDED, not outstanding.*** 🆕 *(pass 113: the certified recipe has no referee input at all, so the rebuild would not have changed a stored number → `NBA_MASTER_SUMMARY.md` `§T26.R2`.)*
+
+🔴 **RECORDED EXPLICITLY BECAUSE THE OWNER SAID *"put it on your list"* AND NO LIST ENTRY WAS EVER
+MADE.** *A future reader finding seg807/seg822 without seg844 would re-open a rebuild the owner
+himself called off three turns later.* 🔑 **This is `RULE 40`'s reason stated as a live hazard: the
+cancellation is worthless if it is not stored beside the order.**
+
+---
+
+## 🔴🔴🔴 **§T26.28 — THE FROZEN STATIC LAYER HAS A ROOT CAUSE, IT IS WRITTEN IN P1's OWN WORKFLOW, AND THE CORPUS RECORDS ONLY THE SYMPTOM** *(workflow read + `SELECT` 2026-09-25; the diagnosis is `0` of the twelve)*
+
+**Ranked item `B` of the opening-day brief — *"the frozen static layer"* — has been carried through
+this entire sweep as a MEASUREMENT with no explanation**: *`nba_ref.defender_ratings`
+`max(as_of_date) = 2026-04-09`, `111,768` rows, P1's certifier check RED.* ⚠ **`§T20.56` states the
+symptom, `§T20.83` calls the table dead, the brief re-derives it every pass — and no entry says WHY.**
+
+### ✅✅ **THE CAUSE IS A CODE COMMENT IN `.github/workflows/nba-p1-weekly-static.yml`, LINES 52–55**
+
+> 🔑🔑🔑 ***"step died with `ModuleNotFoundError` EVERY Monday — and because it dies mid-pipeline, the
+> three steps after it (static context, COMMIT, certify) were skipped, **so the whole week's scraping
+> was thrown away uncommitted and never reached Postgres**. That is why the static layer's timestamps
+> sat at `2026-09-03` and `defender_ratings` at `2026-04-09` **while the cron ran fine every week**."***
+
+⚠⚠ **READ THE LAST CLAUSE TWICE.** ***The cron ran fine every week.*** 🔑 **So every check that asks
+*"is P1 scheduled?"* or *"did P1 run?"* answered YES, correctly, for the entire period in which P1
+produced nothing.** ⇒ ***A green schedule and a green run, with a mid-pipeline death between the
+scraping and the COMMIT, is indistinguishable from success at every level the sweep was measuring.***
+
+📌 **AND IT IS THE SAME SHAPE AS `§T26.19`** *(P2 built `41,174` period rows a night that the merge
+never picked up)* **and `§T26.26`** *(P2's referee step scraped an empty page for months)*. ⇒ 🔑🔑 **THREE
+INDEPENDENT INSTANCES OF ONE FAILURE CLASS IN ONE TRANSCRIPT'S WORTH OF WORK: *work performed,
+work not persisted, and every liveness signal green throughout.*** ⚠ **`RULE 37`'s silent category has
+a mechanism, and this is it — the gap is always between DOING and COMMITTING.**
+
+### 🔑🔑 **AND IT SPLITS RANKED ITEM `B` INTO TWO ITEMS WITH DIFFERENT ANSWERS**
+
+*The corpus treats "the frozen static layer" as one fact. **It is two, and only one was ever a bug.***
+
+| layer | live state `2026-09-25` | verdict |
+|---|---|---|
+| ✅ **IDENTITY** — `nba_ref.players` *(rosters, trades, two-way call-ups)* | **`713` rows, written `2026-09-24T19:47Z`** | ✅ **NO LONGER FROZEN** — *the fix reached Postgres* |
+| ⚠ **AS-OF** — `nba_ref.defender_ratings` | **`111,768` rows, `max(as_of_date) = 2026-04-09`** | ⚠⚠ **CORRECTED BELOW — I FIRST WROTE "correctly frozen, NOT a defect". THAT WAS WRONG.** |
+
+### 🔴🔴🔴 **CORRECTION, SAME DAY — THE MISSING MODULE WAS `scipy`, AND THE SCRIPT IT KILLED WAS `build_defender_ratings.py` ITSELF**
+
+*`T26`'s `tool_use` stratum names it exactly* — **seg703**:
+> ***"nba p1: **install scipy — `build_defender_ratings` imports it, so the step has been failing every
+> week**."***
+
+✅ **VERIFIED IN SOURCE**: `build_defender_ratings.py:46-47` — `` from scipy import sparse `` and
+`` from scipy.sparse.linalg import lsqr `` — **and it is the ONLY one of P1's `15` scripts that
+imports scipy.** ▶ P1's install line now reads `` pip install … numpy scipy curl_cffi … ``.
+
+⚠⚠ ***So the as-of layer was not merely waiting for games. The builder that produces it was CRASHING
+ON A MISSING DEPENDENCY, every Monday, for months.*** 🔑 **I attributed the freeze to the out-of-season
+condition because `§T26.14` had made that explanation available and it FIT. It fits both ways — and
+the `2026-04-09` stamp cannot discriminate between them, because a builder that ran would also have
+produced nothing without games.** ⇒ ***What discriminates is the IDENTITY layer, and it is
+unambiguous: `nba_ref.players` was stuck at `2026-09-03` while the cron ran green weekly. No absence of
+games explains that.***
+
+📜 **`RULE 62` again, one level up**: *I re-derived the SYMPTOM (`max(as_of_date)`) and reasoned about
+the cause. **The cause was a `pip install` line, and only the commit stream said so.***
+
+### ✅✅ **AND THE REPAIR WAS TWO COMMITS, NOT ONE — THE SECOND IS THE STRUCTURAL ONE**
+
+| | commit | what it does |
+|---|---|---|
+| **①** | **seg703** | `pip install … scipy` ⇒ *the step stops crashing* |
+| **②** | **seg708** | ***"commit and certify run even when a build step fails — a mid-pipeline error no longer discards the week's scrape"*** |
+
+✅ **VERIFIED**: P1's commit, load and certify steps now carry **`if: always()`**, with the workflow's
+own reasoning — ***"Committing on `always()` preserves the data; the job still goes red because the
+failed step failed"*** and ***"a late failure must not discard the load."***
+
+🔑🔑🔑 **① FIXES THIS BUG. ② FIXES THE CLASS.** *Without ②, the next unrelated mid-pipeline error would
+have silently discarded another week — and nobody would have known, because **the cron would still run
+fine every week**.* ⚠ **`§T26.19`, `§T26.26`, `§T26.28`, `T20-17`: four instances of work performed and
+not persisted, and ② is the first fix that addresses the SHAPE rather than one instance of it.**
+
+⚠⚠ **A CONVERGENCE WORTH NOTING**: ***`build_defender_ratings.py` is ALSO the single unguarded
+`CREATE INDEX IF NOT EXISTS` script left in any pipeline*** *(`§T26.32`)*. 🔑 **One script carries both
+of P1's remaining known hazards.**
+| ⚠ **SCHEDULE** — `nba_calendar.games` | `2,666` rows, `updated_at` still **`2026-09-02T20:25`** | ⚠ *unchanged, but it holds **`1,266` games for `2026-27`** — loaded once, and correct until games move* |
+| — | `nba_ref.officials` `80` rows, `2026-09-01` | ✅ static roster |
+
+⇒ ✅✅ ***The half of item `B` that was a real defect is FIXED. The half that remains red is the
+out-of-season condition `§T26.14` already explains, and it clears itself when games resume.***
+🔑 **What the brief should carry is not "the static layer is frozen" but "P1 discarded its own work
+for weeks; that is fixed, and `defender_ratings` stays stale until opening night by design."**
+
+### ⚠⚠ **BUT THE FIX IS NOT YET PROVEN ON THE PATH THAT MATTERS**
+
+🔴 **`2026-09-24` WAS A THURSDAY. P1's cron is `'0 19 * * 1'` — MONDAYS.** ⇒ ***The `players` write
+that demonstrates the fix came from the `T26` session's own manual P1 work, NOT from a scheduled
+run.*** ⚠ **The last scheduled Monday was `2026-09-21`; nothing in the static layer carries that
+date.**
+
+📌 **THE TEST IS DATED AND CHEAP** — **Monday `2026-09-28`**:
+```sql
+SELECT max(updated_at) FROM nba_ref.players;   -- must advance to 2026-09-28
+```
+🔑 **A value that advances proves the scheduled path commits. A value still reading `2026-09-24` means
+the fix works only when a human runs it — which is the same failure, one level up**, *and there are
+`3` scheduled Mondays before the opener.*
+
+### ⚠ **A SMALLER CORRECTION IN THE SAME FILE — THE OWNER'S BELIEF ABOUT P1's SLOT IS WRONG, AND HE FLAGGED IT HIMSELF**
+
+> **T26 seg617, owner**: ***"the P1 is weekly. **if I'm not wrong, it's running every Monday at 12:15,
+> early morning. I'm not totally sure**, but it should be working every week… one week is not stale,
+> because it is weekly."***
+
+▶ **LIVE**: `cron: '0 19 * * 1'` — ***Mondays `19:00` UTC = `12:00` NOON PT*** 🔴🔴 **AND THE PARENTHESIS
+IN THAT WORKFLOW COMMENT IS INVERTED — WHICH IS OPEN ITEM `T20-11`, AND I QUOTED IT AS FACT HERE ON
+`2026-09-25`** *(corrected `2026-09-26`)*: *the comment reads* `# 19:00 UTC = 12:00 PT (11:00 PT during PDT)`,
+*but* **`19:00` UTC is `12:00` during PDT (UTC−7) and `11:00` during PST (UTC−8)** — ***so `12:00` IS the
+PDT value and `11:00` is the PST value; the label is exactly backwards.*** ⚠ **It matters today**: *late
+September is PDT, so **P1 runs at `12:00` noon PT right now**; a reader trusting the parenthesis would
+expect `11:00`, and would be an hour wrong in both seasons.* ✅ *`NBA_RECIPE.md`'s cron table already
+flagged this correctly — **the recipe had it right and this section had it wrong**, which is `RULE 53` in
+reverse: I propagated a defect the corpus had already caught.*
+⚠ *Original text, kept under `RULE 40`:* ~~*`12:00` NOON PT (`11:00` PT during PDT)*~~,
+**not `12:15` AM.** *The workflow gives the reason: **"deliberately far from the overnight pipeline
+(P2, daily 01:00 PT) so the two can never contend for the database or the repo."*** ⚠ **That rationale
+is itself now stale — P2 moved to the morning (`08:45` PT, `§T26.26`), so the separation is `3¼` hours,
+not `11`.** ✅ *Still comfortably clear, and P1 is not cutoff-sensitive by its own charter.*
+🔑 **The owner's substantive point — *a weekly job one week old is not stale* — is CORRECT and is the
+reasoning `§T26.14`'s season-aware certifier implements.**
+
+---
+
+## ✅✅✅ **§T26.34 — THE CERTIFIER CAUGHT THE `final_hp` LOSS, LOUDLY, WITH THE RIGHT CHECK NAME — THE CORPUS HAS NO OTHER INSTANCE OF IT WORKING** *(T26 seg249, a `RESULTS RETURNED` receipt: GitHub run `35917049251`, `2026-09-23T20:38Z`)*
+
+**The corpus catalogues the certifier's failures at length** — *`T20-6`'s "`7` of `12` checks assert
+tables their pipeline never writes", `NBA_WORKERS.md:2059`'s "❌ vacuous" date-scoped range check,
+`§T26.14`'s P1 going red every Monday on a check that could not pass, `§T26.23`'s checks reading a
+sibling table's backfill.* ⚠⚠ **What it does NOT contain is a single recorded instance of the certifier
+CORRECTLY STOPPING A REAL DEFECT.** ✅ **Here is one, and it is executed evidence, not prose.**
+
+### 🔑 **THE RECEIPT**
+
+| | |
+|---|---|
+| run | **`35917049251`**, job `afternoon` *(P3)*, `2026-09-23T20:38:05Z` |
+| slate | **`2026-04-10`** *(a replay)* |
+| conclusion | 🔴 **`failure`** |
+| the failing step | **`certify p3`** — *every other step `success` or `skipped`* |
+| the failing check | 🔑 **`fail  final_hp has today  0 scored legs for today`** |
+| tally | **`5/6 checks passed` · `failed checks: final_hp has today`** |
+| exit | ***"produce what it promised. Failing the job so it is visible."*** ⇒ **`Process completed with exit code 1`** |
+
+✅ **AND THE STEPS AROUND IT BEHAVED CORRECTLY TOO**: *`availability delta` ✅ · `score the board (all
+apps, all rungs, both directions)` ✅ · `log paper-trading picks` ✅ **`72` picks** — while the six
+day-of steps (`day-of injury report`, `other board scrapers`, `archive boards into postgres`,
+`board tiers`, `market snapshot and rung market`, `commit day-of data`) correctly **SKIPPED**, because
+a replay of a past date has no live board to capture.* 🔑 **A pipeline that knows which of its own
+steps do not apply to a replay is a well-built pipeline, and that is worth recording as much as the
+catch.**
+
+### 🔑🔑 **WHY THIS MATTERS TO `T16-7` AND `T20-6` SPECIFICALLY**
+
+⚠⚠ ***The check that fired is precisely the KIND of check `T20-6` said the certifier lacked*** — **it
+asks the pipeline about ITS OWN output on THIS slate**, not about a sibling table's backfill. ⇒ **`0`
+scored legs for the slate is exactly the `final_hp` hole `T16-7` records**, *and on `2026-09-23` the
+system was detecting it, failing loudly and refusing to report success* — **one day before `T26`'s
+restore (`§T26.15`) filled it.**
+
+🔑🔑🔑 **SO THE TIMELINE READS DIFFERENTLY THAN THE CORPUS IMPLIES.** *`T16-7` was raised
+`2026-09-22` as an OWNER DECISION on the grounds that **"the sweep cannot tell 'in flight' from
+'lost'."*** ⚠ ***The system could. It was saying so, in a failing build, the next day.***
+⇒ 📌 **A READ-ONLY SWEEP THAT NEVER LOOKS AT RUN LOGS IS BLIND TO THE ONE SOURCE THAT DISTINGUISHES
+THE TWO** — *a table `SELECT` shows a hole; only the run log says whether something is complaining
+about it.* 🔑 **`RULE 32` sends a pass to the mechanism strata for what prose cannot say. This entry is
+the argument for extending that to the LIVE workflow logs, which are a stratum the sweep has barely
+read.**
+
+### ✅ **WHAT THIS DOES AND DOES NOT CLOSE**
+
+✅ **It closes the question of whether the certifier can work: it can, and did.** ⚠ **It does NOT
+retract `T20-6`** *(`§T26.30` closes that on the source, separately)* — *one check firing correctly
+says nothing about the other seventeen.* 🔑 **Recorded as the corpus's single positive control on the
+certifier**, *and as the reason `§T26.30`'s re-pointing is believable rather than merely asserted.*
+
+---
+
+## 🔴🔴🔴 **§T26.35 — FOUR MORE DEFECTS FROM T26's COMMIT STREAM, INCLUDING A P3 STEP THAT RAN THE WRONG SCRIPT FOR ITS ENTIRE LIFE** *(T26 `tool_use` stratum, `81` distinct commit messages; all four confirmed in repo history and verified in source)*
+
+**METHOD NOTE.** *`T26`'s `446` `tool_use` segments carry **`81` distinct commit messages** — a complete
+change-log of the session. **Four of them name defects that appear in `0` of the twelve.*** 🔑 *The
+commit message is a stratum of its own: it states what was wrong in the author's words at the moment
+he fixed it, and it survives even when no prose segment ever explains it.*
+
+### ① ✅✅✅ **P3's "BOARD TIERS" STEP NEVER BUILT BOARD TIERS — THIS IS `T20-7`, RANKED `2nd` IN THE BRIEF, AND IT IS NOW FIXED**
+
+> ⚠⚠ **NOVELTY CORRECTION (`RULE 28`), same day.** *I first wrote this as `0` of the twelve. **It is
+> not new — it is open item `T20-7`**, ranked **2nd** on the opening-day brief and marked 🔴🔴 **SILENT**
+> *("the step succeeds; it classifies nothing")*, re-derived `2026-09-22`: **"P3 `:143–147` 'Board tiers
+> (goblin / standard / demon)' runs `maintenance_shrink_board_index.py`; `build_board_tiers_v2.py` only
+> in `nba-engine-test.yml:66`."*** 🔑 **What IS new is that it has been FIXED, and that the workflow now
+> carries its own post-mortem.** *The sweep found this defect; `T26` repaired it; neither knew about the
+> other until now.*
+
+*Commit `NBA P3: the board tiers step ran a one-off index-maintenance script and never built tiers`.
+The workflow now carries the post-mortem in place* **(`nba-p3-afternoon-light.yml:290-294`)**:
+
+> 🔑🔑🔑 ***"🔴 FIXED 2026-09-23: this step ran `nba/maintenance_shrink_board_index.py` — a ONE-OFF
+> maintenance job (it replaces `board_snapshots`' 7-column primary key with a compact expression index
+> on **25.7M rows**). **So tiers were NEVER built for the decision-moment board**, and **a heavy index
+> rebuild ran on the critical path at the cutoff, against the table the scorer reads next.**"***
+
+⚠⚠ **TWO SEPARATE HARMS FROM ONE MIS-WIRED STEP**: ***(a)* the classification the scorer depends on was
+never produced** — *and the comment states why it matters: **"the score and the slip engine both need
+this — a rung's break-even depends on which variation it is"*** — ***(b)* a `25.7M`-row index rebuild
+ran at the decision cutoff, on the table read next.** 🔑 **The step's NAME was right, so every audit
+that checked "does P3 build board tiers?" answered yes.** 📌 ***Fifth instance of the day's dominant
+class*** *(`§T26.19`, `§T26.26`, `§T26.28`, `T20-17`, this)* — **and the first where the work was not
+merely lost but REPLACED by unrelated work under the same label.**
+
+✅ **FIXED**: the step now runs `python nba/build_board_tiers_v2.py` *(line `323`)* — *"the real builder
+(four-way taxonomy, signed by position vs anchor)."*
+🔴 **RESIDUAL, STATED IN THE WORKFLOW ITSELF**: ***"`BT2_APPS` is prizepicks only — that is the
+script's own default and the only app whose goblin/demon rungs this taxonomy describes. **Tiers for the
+other archived apps are NOT built here.**"*** ⚠ *Read against `§T18.1`, the owner's own coverage
+complaint — **"our system should be covering the APP LADDER"** — and `§T26.27`'s* ***"all apps, all
+ladder variations."*** 🔑 **Board tiers are PrizePicks-only, by default, today.**
+
+### ② ⏱ **P3's JOB DEADLINE WAS `120` MINUTES FOR A PIPELINE THAT MUST FINISH BEFORE FIRST TIP — NOW `25`**
+
+> ***"⏱ DEADLINE, NOT A CEILING (2026-09-24). This was 120 minutes, which is **meaningless for a
+> pipeline whose whole purpose is to be finished BEFORE the first tip**: **a hung scraper could burn
+> two hours and sail past every game while the job still counted as "running"**."***
+
+🔑🔑 **AND THE MEASURED SHAPE OF A REAL RUN IS THE ENTRY'S REAL VALUE:**
+
+| phase | time |
+|---|---|
+| setup + pip | `~90s` |
+| 🔑 **the ENTIRE compute path** — *availability delta + scoring **`91,405` legs** + paper log + certify* | ✅ **under `20` SECONDS** |
+| everything else | **network** |
+
+⇒ ***P3 is not a compute pipeline with a network step. It is a network pipeline with a `20`-second
+compute step.*** ⚠ **Every optimisation instinct aimed at the scoring maths is aimed at `<1%` of the
+wall clock** — *which is exactly what `§T26.6` found when P3 went `22` min → `2` min by scoping the
+scrapers to NBA.* ✅ **`timeout-minutes: 25`, plus per-board caps**: *"if it is not done by then
+something is wrong, and **a visible failure beats a late slate**."*
+
+#### ✅ **AND THE SAME `20` SECONDS RETIRES A DESIGN THE PARITY DOC STILL PRESCRIBES — RECORDED SO IT IS NOT READ AS A DIVERGENCE**
+
+*`nba/NBA_DAILY_PARITY_AND_BACKFILL.md` §8 specifies a two-phase day:* ***"Phase 2 (final, 2:30 → first
+tip) does exactly four things: pull the board, apply the 2:30 report and projected-lineup delta, read
+the 2:45 market, **rescore ONLY the legs touched by those deltas**. Everything else carries its phase-1
+value forward."***
+
+▶ **THE CODE DOES SOMETHING ELSE**: `score_board_legs.py:184` reads the **whole slate** —
+`` FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL' `` — and applies the
+availability delta as **step 3 of its chain** *(line `232`)*, rather than restricting the rescore to
+delta-touched legs.
+
+✅✅ **THIS IS NOT A DEFECT, AND THE REASON IS THE `20` SECONDS ABOVE.** *"Rescore only the touched
+legs" is a PERFORMANCE optimisation, written when the phase-2 window was the binding constraint.*
+⇒ 🔑 **Scoring the entire board costs a fraction of `20` seconds, so the optimisation now saves nothing
+and costs a class of bug** — *a leg that should have been rescored but was not classified as "touched"
+silently carries a stale value forward.* ⚠ **Scoring everything is strictly safer at no measurable
+price.**
+
+📌 **RECORDED BECAUSE A READER COMPARING THE PARITY DOC TO THE CODE WILL FIND THIS AND FLAG IT.** *The
+parity doc is an unswept sibling that `6` of the twelve cite (`§T25.4`), its §8 is dated `2026-09-13`,
+and the architecture moved underneath it: **P2 now runs in the MORNING (`§T26.26`) and P3 scores once at
+the cutoff, so there is no "phase 1 at ~1 PM / phase 2 at 2:30" split left to optimise.*** 🔑 **The
+divergence is the doc being superseded, not the code being wrong.**
+
+### ③ 🔴 **P1's 2026-27 ROLLOVER WOULD HAVE PRODUCED *ZERO* WEEKLY SNAPSHOTS, SILENTLY**
+
+*Commit `e95164b4`: **"NBA P1 rollover: derive the as-of window for unplayed seasons — 2026-27 would
+have silently produced zero weekly snapshots."*** 🔑 **Same class as `T23-2` and as `§T26.30`'s grader
+ceiling**: *a window derived from seasons already played has no row for the season about to start, so
+it computes an empty range and succeeds.* ⚠ ***Third instance of "a date-bounded default that returns
+NOTHING and exits green" found in this corpus*** *(grader `GRADE_END`, `build_rung_market` `RUNG_TO`,
+and this)* — 📌 **the pattern is worth a standing check: every default derived from HISTORICAL data is
+a silent-zero risk at a season boundary.**
+
+### ④ ⚠ **P2's BASELINE BUILDER CRASHED WITH `KeyError: GAME_DATE` ON A NO-GAME DAY**
+
+*Commit `fd477228`: **"NBA P2: detect an empty slate up front — the baseline builder crashes with
+KeyError GAME_DATE on a no-game day."*** 🔑 **This is the concrete failure behind the
+empty-slate campaign**: *`~15` commits in `T26` add no-game-day skips across P2 and P3 (`seg900`–`912`,
+`947`–`949`, `1094`–`1100`).* ⚠ **It is NOT the same as `§T26.10`'s preseason gating** *(which decides
+whether a preseason date counts as a slate)* — **this is what happened on any zero-game date at all,
+and until the opener EVERY date is one.** ✅ *Now: a slate is detected up front, and the ladder,
+components, combos, periods, merge, commit, load, refits and `final_hp` all skip — with `§T26.14`'s
+season-aware certifier keeping the run GREEN rather than red.*
+
+---
+
+## 🔑🔑🔑 **§T26.43 — `check_factor_freshness.py`: THE INSTRUMENT BUILT TO CLOSE THE SILENT-FALLBACK CLASS — AND IT HAS NO CRON** *(source read + `SELECT` 2026-09-25; `0` of the twelve before this entry)*
+
+**This sweep has now catalogued the same failure class six times** — *`§T26.19` (P2's `41,174` period
+rows a night), `§T26.26` (P2's referee step scraping an empty page), `§T26.28` (P1 discarding its week
+before COMMIT), `§T26.30`/`T20-17` (the lost injury shard), `§T26.35` ① (board tiers never built).*
+✅✅ **`nba/check_factor_freshness.py` is the instrument built to make that class impossible to miss, and
+its docstring names the class better than the corpus does:**
+
+> 🔑🔑🔑 ***"WHY THIS EXISTS. Two owner rules meet here: **everything mined must be stored** (so nothing
+> needs backfilling later), and **every factor needs a working fallback**. Both were true on paper and
+> **neither was checked at runtime**. **The failure mode is not a crash — it is SILENCE**:
+> `nba_ref.referee_assignments` sat EMPTY while P2 ran its scraper nightly, so D1's documented fallback
+> would have **carried every game day with nothing saying so**."***
+
+📌 **Those two owner rules are `§T26.27` ③ verbatim** — *"everything that's mined… needs to be stored"*
+and *"each one of the individual factors needs to have a fallback"* — ⇒ ***this script is the owner's
+directive turned into a runtime assertion, and it is the first artefact in the corpus that tests
+whether a FALLBACK is silently load-bearing.***
+
+### ✅ **THE DESIGN — THREE SEVERITIES, AND THE MIDDLE ONE IS THE NEW IDEA**
+
+| severity | meaning | behaviour |
+|---|---|---|
+| **BINDING** | *the slate cannot be scored honestly without it* | 🔴 **exit non-zero, job goes RED** |
+| 🔑 **FALLBACK** | *a MEASURED fallback exists and takes over* | ⚠ **reported LOUDLY, job stays GREEN** |
+| **WEEKLY** | *refreshed by P1, not per slate* | judged on an `8`-day age |
+
+🔑🔑 ***"Reported loudly, job stays green" is the category the system lacked.*** *A missing factor with a
+working fallback is neither a failure nor a non-event — and treating it as either is how
+`referee_assignments` sat empty for months.*
+
+### 📋 **THE `14` CHECKS, AND WHAT EACH ONE GATES**
+
+| factor | severity | fallback named in the check |
+|---|---|---|
+| injury report snapshots | **BINDING** | *`A1`/`N1`/`N2`/`A6`/`A9`. Fallback: `nba_score.availability_p_plays` (derived, Brier `0.0441` OOS)* |
+| board snapshots (any app) · rung market · baseline history · **`final_hp`** · board scored | **BINDING** | — *`final_hp` noted as "the headline output; **P2 owns it since 2026-09-23**"* |
+| **board tiers v2** | **BINDING** | *"goblin/standard/demon — **the pricing and slip engines read it**"* |
+| market game lines | **BINDING** | *`B1`/`B2`. Fallback: our derived spread (`r=0.46`), factor delta → `0` + penalty* |
+| **referee assignments** | ⚠ **FALLBACK** | *"published only on game morning and never archived → **empty out of season is EXPECTED**. Fallback: factor zero + confidence penalty (crew is tertiary by design)"* |
+| starter status · game officials (truth) | ⚠ **FALLBACK** | — |
+| defender ratings · as-of calibration · availability prior | **WEEKLY** | *the last one checks the derived `P(plays)` model **EXISTS at all** — "or the fallback has nothing to fall back to"* |
+
+✅ **AND IT IS SEASON-AWARE, for `§T26.14`'s reason, stated in its own words**: ***"Out of season there
+are no games, no boards and no assignments, and that is not a defect… **judging it would train everyone
+to ignore red builds**."***
+
+✅ **THE `board_tiers_v2` CHECK IS THE GUARD THAT WOULD HAVE CAUGHT `§T26.35` ①** — *the step that ran
+an index job instead of building tiers.* ▶ **Live: `2,199,354` rows across `378` dates**, and
+`availability_prior` holds **`699`** non-null `p_plays` cells.
+
+### 🔴🔴 **AND HERE IS THE DEFECT: THE DETECTOR OF SILENCE IS ITSELF SILENT**
+
+▶ **`check_factor_freshness.py` is wired into exactly one place — `.github/workflows/nba-maintenance.yml:67` — and that workflow has NO CRON.**
+
+```yaml
+on:
+  workflow_dispatch:          # ← the entire trigger block
+    inputs:
+      task:  { default: "freshness" }
+```
+
+⚠⚠⚠ ***An instrument whose stated purpose is to surface a failure mode nobody notices runs ONLY when
+somebody remembers to run it.*** 🔑 **The class it detects is precisely the class of thing you do not
+think to go looking for** — *that is the definition in its own docstring* — ⇒ ***a manual trigger is
+the one delivery mechanism guaranteed not to fire for it.***
+
+📌 **This is not an argument for scheduling it blindly**: *out of season it correctly reports nothing,
+and a daily green report is its own kind of noise.* 🔑 **But it should run on the days it can say
+something — i.e. in season, after P3 — and nothing currently makes that happen.**
+🔴 **RECORDED AS AN OWNER / BUILD-CHAT ACTION** *(adding a cron is a write to a live workflow, outside
+this sweep)*, **and it is cheap: one `schedule:` block.**
+
+### ⚠ **TWO SMALLER DEFECTS IN THE SAME WORKFLOW**
+
+① **Its header carries a PRE-RESTORE premise that is now false**: ***"`final_hp` covers 2024-25
+completely (162 dates) but **only 1 of 163 dates in 2025-26***" — *`§T26.15` restored it; live it holds
+`163` dates.* ② **`season` input defaults to a hardcoded `"2025-26"`** — *the `T20-4` class, surviving in
+a maintenance workflow after `§T26.30` cleared it from all three pipelines.* 🔑 **Neither is a blocker;
+both are the kind of stale scaffolding `RULE 59` exists to catch, and both are source edits outside
+these twelve.**
+
+---
+
+## 🆕🆕 **§T32.1 — THE `T32` SCRIPT AND WORKFLOW SET (`2026-09-28/29`), AS BUILT THEN — LIVE-VERIFIED `2026-10-10`** *(source `T32`, `NBA_MASTER_SUMMARY.md` `§T32.1`–`§T32.11`; ⚠ later changes are marked, not merged — `RULE 6`)*
+
+| path | what it is | env / inputs | wiring + schedule *as of `T32`* | live `2026-10-10` |
+|---|---|---|---|---|
+| `nba/betr_harvest.py` | **Path C** — the owner-PC harvester: SeleniumBase **UC Mode** past Cloudflare Turnstile, a **persistent Chrome profile** (one manual login incl. SMS, then reused), **passive CDP capture** of the app's own `getUpcomingEventsV2` response (an injected `fetch` is blocked by the page's CSP), auto-clicks the league tab, parses stat=`key` / tier=`type` / `MORE`/`LESS` / alt=`nonRegularValue>0` → `boards/betr_<league>_current.json` + `_meta` | `BETR_LEAGUE` (default `NBA`) · `BETR_LOGIN=1` (first run) · `BETR_PROFILE_DIR` · `BETR_WATCH` (`90`s) · `BETR_OUT_DIR` | **none — kept as fallback** | ✅ exists |
+| `nba/betr_run_and_commit.py` | Path-C wrapper for **Windows Task Scheduler**: harvest, then push the board file to the repo | `BETR_LEAGUE` · `BETR_REPO` · `BETR_BRANCH` · `BETR_GH_TOKEN` | **never scheduled** — owner `03:25Z`: *"i wont set it up right now"* | ✅ exists |
+| `nba/betr_export_session.py` | one-time exporter: logged-in profile → `betr_session_state.json` (`20` cookies + `43` localStorage keys, `~290 KB`) **and a slim file (`10,688` B, `5` auth keys) because GitHub secrets cap at `48 KB`** → secret `BETR_SESSION_STATE` | `BETR_PROFILE_DIR` · `BETR_OUT_DIR` | run by hand on the owner's PC; re-run when the seeded session lapses | ✅ exists |
+| `nba/probe_betr_cloud.py` + `.github/workflows/betr-cloud-test.yml` | the **no-commit diagnostic** that proved the cloud chain: UC + **Xvfb** clears Turnstile on `ubuntu-latest`; a **local unauthenticated forward proxy** (`proxy.py --plugins proxy.plugin.ProxyPoolPlugin`) relays to the authenticated US-sticky residential proxy; in-page US-state pick clears the geolocation gate | inputs `league` (WNBA default), `noproxy`; env `PROXY_URL`, `BETR_NOPROXY`, `BETR_SESSION_STATE` | `workflow_dispatch` only | ✅ both exist |
+| `nba/betr_harvest_cloud.py` + `.github/workflows/betr-cloud-harvest.yml` | the **live** harvester (same chain, commits the board) | league resolved by date: **WNBA until `2026-10-20`, then NBA** (override input) | **cron `2x`/day `17:45`/`20:15` UTC, `contents: write`** | ✅ exist — ⚠ **crons REMOVED `2026-10-09` (`f7c768a5`): P3 now dispatches it at the window**; proxy now from `nba_config.external_credentials` (`cb8bfb44`) — `T44`–`T48` |
+| `nba/probe_chalkboard_web.py` (+ `nba/TRIGGER_NBA_PROBE.txt`) | does Chalkboard have a browser-playable host? — **no** (all app subdomains NXDOMAIN) | — | fired through **`.github/workflows/nba-probe.yml`**, which runs on a **push to `nba/TRIGGER_NBA_PROBE.txt`** and executes the `script:` named inside it | ✅ exist |
+| `nba/archive_live_boards.py` | **`rows_betr` rewritten** to the real shape (key map incl. both `assists_rebounds` orders, `1st_quarter_`/`1st_half_` → `_q1`/`_h1`, non-REGULAR tiers and alt rungs → `_alternate`); **`rows_sleeper` combo normaliser** (`_and_`/`+` dropped) | — | P3 archive step | ✅ `:226–233`, `:320–372` |
+| `.github/workflows/nba-p3-afternoon-light.yml` — *Commit day-of data* | `rebase -X theirs` + abort-and-merge fallback, `6` retries, warn-not-fail — after a concurrent Betr/Underdog push failed P3 | — | P3 | ⚠ **SUPERSEDED `2026-10-08`** — now `bash nba/git_push_retry.sh …` (`:493–499`), whose comment says the `T32` comment had the side backwards |
+| `nba/build_recalibration_map.py` | the **overconfidence correction**: realized hit by prop × side × kind × role_tier × model_p bucket, as-of per season, shrunk `n/(n+K)`, monotone → `nba_score.recalibration_map` | `RC_WRITE` (write only if its gate passes) · `RC_SHRINK_K` (`200`) | report mode in `T32` | ✅ exists; **table first written `2026-10-06`** (`8,818` rows) |
+| `nba/build_rank_foundation.py` | the Phase-1 rank **substrate** — one row per graded standard leg with as-of `cal_p`, `pm`, `hit`, `role_tier`, `season_phase`, LEFT-joined HP/score | `RF_WRITE` · `RF_K` (`200`) · `RF_MIN_PRIOR` (`50`) | report mode; *"`RF_WRITE=1` path is staged; build body added after report-mode review"* (`:92`) | 🔴 **`nba_score.rank_foundation` DOES NOT EXIST** — designed, owner-gated, never built |
+| `nba/build_slip_meta_model.py` | L2-regularised logistic **meta-model** over validated game-day-replicable features (model_p, market edge, trailing 3/10, consistency, line z, tier, side), train `2024-25` → test `2025-26` | `MM_TRAIN_SEASON` · `MM_TEST_SEASON` · `MM_WRITE=0` (a write would persist `nba_score.slip_meta_p`) | report only | ✅ exists; `nba_score.slip_meta_p` never mentioned in the twelve before this row |
+
+🔑 **The pattern across the set**: every slip-program builder born in `T32` is **report-mode by default with an explicit write flag** — the owner's phase-4.5 review gate written into the code. ⇒ ***A builder's existence is not evidence its table exists***; `rank_foundation` is the proof.
+
+## 🆕 **§T33.4 — THE `T33` SET (`2026-09-29/30`): THE CONFIG-SWEEP HARNESS, THE MATRIX ENGINE, THE TIER-MAP BUILDER** *(source `T33`, `NBA_MASTER_SUMMARY.md` `§T33`; every file live-verified `2026-10-10`; all three workflows are `workflow_dispatch` only — none is on a schedule)*
+
+| path | what it is | env / inputs | output | live `2026-10-10` |
+|---|---|---|---|---|
+| `nba/build_slip_config_sweep.py` + `.github/workflows/nba-slip-config-sweep.yml` | **the harness** — exhaustive real-slip backtest over driver (`cal_p` / `blend` / later `raw`) × threshold × cell set (`all`/`peripheral`/`points`/`other_core`/`cells`) × side × depth `2–6` × Power/Flex. v2: daily walk-forward calibration (v1 dropped all of `2024-25`); v3: day-clustered bootstrap, **Gate 1 = S2 P5 > 0**, season-effect check, one-slip-a-day series; v4: **the pool IS the PrizePicks window board** (`CS_BOARD=1`), cap-1 series | `CS_REAL_ONLY` (default `1` — added after the simulated-line finding) · `CS_BOARD` (`1`) · `CS_SEASONS` · `CS_HAIRCUT` (`0.95`) · `CS_MIN_N` (`60`) · `CS_FLOOR` (`0.56`) · `CS_BOOT` (`2000`) · `CS_SWAP` (pick on S2, score on S1) · `CS_S1_FROM` (drop warm-up days) · `CS_PROBE` (named configs) | **report only** — log output; runs `36537528798`, `36538031809`, `36597062900`, `36597714003`, `36597727511`, `36598907869`, `36638900519`, `36641234301` | ✅ exists, last change `2026-09-29` |
+| `nba/build_slip_matrix.py` + `.github/workflows/nba-slip-matrix.yml` | **the matrix engine** (owner: *"all strategies, all signals, on all legs, on all backdates"*): stage 1 persists every real PP window-board leg with every walk-forward signal (`raw_p`, `cal_p`, `mkt_edge`, `t3/t5/t10`, `line_rate`, `player_rate`, `role_tier`, `rest_days`, `phase`, `line_class`, `peripheral`); stage 2 ranks STRATEGIES = eligibility × filter × pool × side × depth × structure × cap, gated *"positive in BOTH seasons AND S2 bootstrap P5 > 0 AND ≥ 40 days in each season"*, sorted by the **weaker** season | `ME_STAGE` (`features`/`matrix`/`both`) · `ME_HAIRCUT` (`0.95`) · `ME_BOOT` (`1000`) · `ME_TOP` (`30`) | stage 1 → **`nba_score.slip_leg_features`** | ✅ script exists · 🔴 **`nba_score.slip_leg_features` DOES NOT EXIST now** (`to_regclass` NULL) — first-run insert of `~800k` rows was still in progress at `23:51Z`; when the table went is not yet located (`RULE 6`) |
+| `nba/build_tier_map_bands.py` + `.github/workflows/nba-tier-map-bands.yml` | **the owner's every-n / every-% sweep** (`00:51Z` / `00:56Z` rulings): for each `(rank_key, window, prop, tier)` cell, the day-by-day top-cut hit rate and real multiplier at **every n = 1…25 and every top-pct = 1…30%**; break-even per tier from its multiplier | `TM_RANK` (default `final_hp`) · `TM_NMAX` (`25`) · `TM_PCTMAX` (`30`) · `TM_BE` (`0.55`) · workflow input `rebuild` (*"rebuild tier_map_legs from pp_leg_price (system tier + current per-line price)"* — a `T34` addition) | reads `nba_score.tier_map_legs`; writes **`tier_map_bands`**, **`tier_map_summary`** | ✅ exists (last change `2026-10-01`, i.e. `T34`); tables `30,411` / `990` rows |
+
+⚠ **Read the harness runs as a sequence, not a menu**: each version invalidated the last one's ROI LEVEL (`v2` → simulated lines `§14a`; `v3` → the window-board contamination `§17b`; `v4` → the calibrated-cell eligibility that starved `2024-25`, `§18c`). *The method improvements stand; only the last run's numbers are the program's state at `T33`'s close.*
+
+---
+
+## 🆕 **§T34.4 — THE `T34` SET (`2026-09-30 → 10-01`): MATRIX, TWO CERTIFIERS, THE SLIP ENGINE, THE VALIDATOR, AND THE LIVE ENGINE (P4/P5)** *(source `T34`, `NBA_MASTER_SUMMARY.md` `§T34`; every file live-verified `2026-10-10` in the repo; strategy `§` AS STATED)*
+
+| script (`nba/`) | workflow (`.github/workflows/`) | trigger today ✅ | what it does (as built in `T34`) | env knobs |
+|---|---|---|---|---|
+| `build_tier_map_bands.py` *(T33, extended)* | `nba-tier-map-bands.yml` | `workflow_dispatch` | **stage 0** (`§19m`): rebuilds `tier_map_legs` from `pp_leg_price` (system tier, current per-line price; dedupe keep-first **before** ranking — the `§24` defect #3 fix); then every n `1…25` / pct `1…30%` per (rank, window, prop, tier) → `tier_map_bands`, `tier_map_summary` | `TM_RANK`, `TM_REBUILD=1`, `TM_PCTMAX` |
+| `build_cand_signal_matrix.py` | `nba-cand-signal-matrix.yml` | `workflow_dispatch` | `24` cells × side × `3` ranks × `11` cuts × `21` signal bands, stacks to depth `5` → `cand_leg_features` (`440,679` legs), `cand_signal_matrix` (`116,527` rows at `T34`'s last run) | — |
+| `certify_candidates.py` | `nba-certify-candidates.yml` | `workflow_dispatch` | per candidate config, per day: `board_snapshots` (PP window, pre-tip) → `prop_universe` outcome → `pp_leg_price` → `nba_score.final_hp` ranks → `cand_certified` *(no intermediate table)* | — |
+| `certify_slip_system.py` | `nba-certify-slip-system.yml` | `workflow_dispatch` | **the frozen invariant list** L0 raw board … L11 slips (`52` → `54` → `66` in `T34`) → `certification_log`; certified when three consecutive runs pass with no code change | — |
+| `build_slip_engine.py` | `nba-slip-engine.yml` | `workflow_dispatch` | real slips day by day: `26` compositions × `2–6` picks × Power/Flex × caps; app rules (no player twice, `≥ 2` teams), pair-correlation ban `≤ −0.08`, `≤ 2` legs per cell family, cross-game-first, compression pricing, `final7` flag → `slip_engine_slips` / `slip_engine_legs` | **`SE_EXCLUDE_CELLS`** (family C), **`SE_TABLE_SUFFIX`** (writes `…_<suffix>`, never the certified tables), **`SE_MAX_PER_CELL`** (default `2`) |
+| `validate_slip_strategies.py` | `nba-validate-slips.yml` | `workflow_dispatch` | the MLB bar translated (`§28c`): V1 walk-forward (select `2024-25`, score `2025-26`), V2 `10k` day-blocked bootstrap, V3 whole-board tier-rate null, V4 monotonicity, V5 decomposition, V6 teammate ban → `slip_validation`. 🆕 (additional sweep 5, pass 374, `§P374` — V4's method; `S4`'s audit names its hard-coded `CELL_EDGE` constants, `2026-10-08 06:39Z`; ✅ read in code): V4 takes the out-of-sample season's slips, scores each by the sum of its legs' certified cell edges from the constant `CELL_EDGE` (`14` entries, from `steals_R_U` `0.691` to `goblin` `0.560`; a cell not in it counts `0.55`), sorts them into five equal-volume bins, and counts the bins whose ROI falls below the bin before (inversions); fewer than `100` slips gives no verdict. `validate_ud_slip_strategies.py` carries its own `CELL_EDGE`. | `SV_TOPK` (30), `SV_BOOT` (10000), `SV_NULL` (200), **`SV_TABLE_SUFFIX`** |
+| `live_slip_engine.py` | `nba-p4-live-slips.yml` | **`workflow_dispatch` only** | **P4** (`§29a`): `pick` (today's scored window board through the certified rules **imported from `build_slip_engine`**, nothing re-derived → `live_slips`, `live_pool`), `grade` (yesterday's slips vs real outcomes → hurdle machine → `live_strategy_state`), `replay` (`LS_FROM`/`LS_TO` → `live_state_history`), `calibrate` (MC95 drawdown / streak, CUSUM `h` → `live_strategy_calib`) | `LS_MODE`, `LS_DATE`, `LS_FROM`, `LS_TO`, `LS_BOOT` (10000 live / 500 replay) |
+| *(orchestration)* | `nba-p5-weekly-requal.yml` | **`workflow_call` + `workflow_dispatch`** | **P5** (`§29b`): map + bands → certifier → capped engine → frozen certification (**any FAIL stops**) → validation → verdict per live strategy → `weekly_requal`; a FAIL sets the strategy `red` | — |
+
+⚠ **The design as `T34` wrote it vs the repo today**: `§29a` gave P4 **two scheduled legs** (PICK `21:45 UTC`, GRADE `16:30 UTC`) and `§29b` gave P5 **a Monday `20:00 UTC` cron after P1**. ✅ Live, neither workflow carries a `schedule:` — P4 is dispatch-only (last commit `1c4db9a8` `2026-10-08`), P5 is callable (`29a011cb` `2026-10-09`). *The change belongs to a later transcript (RULE 6).* → ✅ **resolved by `T35` (`2026-10-01 19:44Z`) — see `§T35.4` below.** `live_slip_engine.py` was `15,529` bytes at its first commit (`e5528634`, `2026-10-01`) and is **`118,512`** bytes today.
+🔑 **Two safety rails built into the engine** (✅ in code today): `build_slip_engine.py` **refuses** (`SystemExit("REFUSED: …")`) to write a test leg source or a star-Under test into the unsuffixed certified tables; P5 **never** stakes, adds or replaces strategies, or overrides a red (*"by design"*, `§29b`).
+🔴 **Performance rule learned in `§24`** (standing for every join in this system): **`norm_name()` inside a join defeats every index** — a one-day `EXPLAIN` showed a full sequential scan + sort of `451k` universe rows per day; the certifier ran `38` min without finishing. Fix: precompute normalized keys into indexed temp tables (`~4` min).
+
+---
+
+## 🆕 **§T35.4 — `T35` (`2026-10-01`): DELTA KNOBS, THE SLIP LAYER INSIDE P1/P2/P3, AND THE ENGINE'S NEW MODES** *(source `T35`, `NBA_MASTER_SUMMARY.md` `§T35`; ✅ = in the repo `2026-10-10`)*
+| where | change in `T35` | ✅ today |
+|---|---|---|
+| `nba/build_tier_map_bands.py` | **`TM_DELTA=1`** / **`TM_SINCE`** — only days past the table's high-water mark; season windows **data-driven** (the hardcoded two-season list would have silently excluded 2026-27) | lines `98`–`103` |
+| `nba/build_slip_engine.py` | **`SE_DELTA=1`** / **`SE_SINCE`** — all legs loaded, only new days built; **`SE_DIVERSIFY`** default **on** (`§29k` pass 6); the report SQL's `full` column renamed (reserved word — every run had ended `failure` after committing) | `SE_DIVERSIFY` line `52` (`'1'`), delta lines `376`–`380` |
+| `nba/live_slip_engine.py` | day-blocked H1/H7 (z on `sd_daily_hit`); **shadow slips** (`placed_shadow` / `graded_shadow`); **`dup`**; **`EXCLUDE_BY_FAMILY`**; week-2 paper record from the steals-excluded pool + low-event tilt; replay mode simulates P5's Monday PASS; `LS_BOOT` | `EXCLUDE_BY_FAMILY` line `120`; `placed_shadow`, `dup`, week-2 logic present (the file has grown to `118,512` bytes since) |
+| `nba-p3-afternoon-light.yml` | **final step = the slip PICK** (`LS_MODE: "pick"`) on P3's resolved slate | line `580` |
+| `nba-p2-overnight-heavy.yml` | **final step = the slip GRADE** | ⚠ **moved**: today the grade is in **`nba-p2a-results.yml`** line `334` (`LS_MODE: "grade"`; an `edge` step at `347`) — the P2A/P2B split is later (RULE 6) |
+| `nba-p1-weekly-static.yml` | **final job = P5** via `workflow_call`, `needs: weekly` | line `290` `uses: ./.github/workflows/nba-p5-weekly-requal.yml` |
+| `nba-p4-live-slips.yml` | schedules **removed**; manual only (pick/grade on a date, `replay`, `calibrate`); default mode `pick` | `workflow_dispatch` only |
+| `nba-p5-weekly-requal.yml` | schedule **removed**; `workflow_call` + `workflow_dispatch`; weekly precision `SV_BOOT=2000`, `SV_NULL=30` set in the step env (a dispatch input and a repository-variable route were both tried and dropped while GitHub refused the file) | `workflow_call` + `workflow_dispatch` |
+**Measured cost** (build chat, `18:48Z`): P4 pick `< 1 min`; P4 grade `2–6 min` (the 10k bootstrap per strategy grows with the ledger); P5 full `~2 h`, delta `~70 min`, delta + weekly precision **`~30 min`**.
+🔑 **Process rule adopted in `T35`** (after the owner's `21:28Z` frustration): a **local state-machine simulator** (*"runs the full season of real daily hit series in under a second"*) is *"the required test before any hurdle change ships"* — hour-long replays are for confirmation only.
+
+---
+
+## 🆕🔴 **§T36.4 — `T36` (`2026-10-02/03`): THE SCHEDULER WORKER, THE CLAIM SCRIPT, P2A/P2B, AND THE ENGINE'S LAUNCH KNOBS** *(source `T36`, `NBA_MASTER_SUMMARY.md` `§T36`; architecture in `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8`; ✅ = in the repo `2026-10-10`)*
+| file | role | trigger ✅ today |
+|---|---|---|
+| **`nba/alphadog-v2-nba-scheduler.js`** (Cloudflare worker `alphadog-v2-nba-scheduler`) | every-minute cron → computes the day's plan from the first tip → dispatches P2A / P2B / P3 / P1 (and later `CLOSE`), with watchdogs; heartbeat (`last_tick`), on/off switch, `/simulate` dry run, a test slot that may only fire the audit workflow | Cloudflare cron `* * * * *` (in `generate_wrangler_configs.py`; registered in `nba/worker_manifest_nba.json`); **`v2.3.0`** |
+| **`nba/pipeline_claim.py`** | the run-once guard: `claim` / `finish` against `nba_control.pipeline_runs`; `force` for recovery | first/last job of P1, P2A, P2B, P3 |
+| `.github/workflows/nba-schedule-audit.yml` | diagnostic: every scheduled run's start delay from GitHub's API (the measurement behind the worker) | `workflow_dispatch` |
+| `.github/workflows/nba-p2a-results.yml` | P2A — last night's results, grading, `final_hp` rebuild, **slip grade** (`LS_MODE: "grade"`) and `edge` | scheduler + **late fallback cron `30 13 * * *`** |
+| `.github/workflows/nba-p2b-slate.yml` | P2B — injury report, referee crews (polled → D1 fallback), **`nba/capture_game_lines_morning.py`** (new — the live 08:00 PT morning line), market export, refits, baseline, `final_hp`, certify | scheduler only (no GitHub schedule) |
+| `.github/workflows/nba-p2-overnight-heavy.yml` | **RETIRED stub** — `workflow_dispatch` only, refuses to run | — |
+| `.github/workflows/nba-p3-afternoon-light.yml` | P3 — board, scoring, certify, **slip pick** | scheduler only (no GitHub schedule) |
+| `.github/workflows/nba-p1-weekly-static.yml` | P1 — weekly static + P5 | ✅ `workflow_dispatch` only (the scheduler fires it Mondays 19:00 UTC) |
+| `nba/live_monitor.sql` | the first-21-days monitor (seven cumulative checks) — run by hand | — |
+| `nba/scrape_underdog_board.py` / `nba/archive_live_boards.py` | **fixed in `§30h`**: the scraper now keeps the fantasy price/probability, the displayed price and the payout modifier; the archiver stores `price` = displayed price, `multiplier` = payout modifier | (inside the board pipelines) |
+**Engine knobs introduced in `T36`** (✅ in code): `SE_LOWFOUL` default **`1`** (size ≥ 4; `build_slip_engine.py` line `55`) · `SE_SAMETEAM` default `0` — ✅ its own comment now reads *"REJECTED by its side-table rebuild (kept for the record)"* · `LS_ALLSTAR_PLAN` default **`B`** (`live_slip_engine.py` line `110`) · **`LIVE_MAX_DAILY_STAKE` default `36`** (line ~~`132`~~ `137` — *re-read sweep pass 26; lines shifted by the build chat's `2026-10-10 05:37Z` commits*) · `LS_MODE=reset` (clean ledger before the first live pick) · `LS_MODE=late_pick` (record-only) — ✅ **today prints *"late_pick is retired (§31p)"*** (a later transcript).
+**Two launch-blocking install gaps fixed in `T36`**: `pdfplumber` missing from P2's and P3's `pip install` lines (commits `56a4dc18`, `1d344694`, `2026-10-03 00:08Z`); a systematic check of **all `62` scripts the four pipelines run** (following local imports) against each workflow's install line then found no other gap (`§29y`).
+
+---
+
+## 🆕 **§T37.4 — `T37` (`2026-10-03/04`): THE UNDERDOG PROGRAM'S SCRIPTS, THE PARITY TOOLS, AND THE TWO NEW PIPELINE STEPS** *(source `T37`, `NBA_MASTER_SUMMARY.md` `§T37`; ✅ every file present and every workflow `workflow_dispatch` only, checked `2026-10-10`)*
+| script (`nba/`) | workflow | does |
+|---|---|---|
+| `build_ud_tier_map_bands.py` | `nba-ud-tier-map-bands.yml` | UD tier map (modifier bands) + every-n/every-% sweep; `TM_SOURCE` / `TM_SUFFIX` for the repriced builds |
+| `certify_ud_candidates.py` | `nba-ud-certify-candidates.yml` | raw-source certifier (board → grader's stat → `final_hp`), grid per cell → `ud_cand_certified(_curr / _dlt)` |
+| `build_ud_signal_matrix.py` | `nba-ud-signal-matrix.yml` | UD signal matrix (a diffable transform of the PP matrix + the low-foul key) |
+| `build_ud_retest_failed.py` | `nba-ud-retest-failed.yml` | every PP-rejected idea re-tested on UD legs (`ud_cand_leg_features_x`, `ud_failed_signal_matrix`) |
+| `build_ud_slip_engine.py` | `nba-ud-slip-engine.yml` | UD slip engine on the PP skeleton; knobs `UD_EXCL_CENTER`, `UD_EXCL_HOTFORM`, `UD_EXCL_FRESH`, `UD_MIN_NV`, `UD_LEGS_TABLE`, `UD_HC_MAIN` / `UD_HC_ALT`, `UD_CELLS_JSON` (with `_core`); position from `nba_ref.players`. 🆕 *(additional sweep `5`, pass 370, `§P370` — the rest of its switches by their own names; `T48` prints the script's header and settings block, `2026-10-09` `20:22Z`; ✅ read in code)*: `UD_CAP` (default `5` slips per composition × size × structure per day), `UD_SIZES` (default `2,3,4,5,6,7,8`), `UD_MAX_PER_CELL` (default `2`), `UD_TABLE_SUFFIX` (blank = the base build; a suffix writes a side table), `UD_CORE` (a comma list overriding the core cells, used when `UD_CELLS_JSON` gives no `_core`), and the two candidate rules `UD_MINRISE_OUT` / `UD_MINFALL_PREF` (each tested only as its own side table). |
+| `validate_ud_slip_strategies.py` | `nba-ud-validate-strategies.yml` | the PP falsification battery + **reverse walk-forward** → `ud_slip_validation*` |
+| `build_ud_reprice.py` | `nba-ud-reprice.yml` | historical legs repriced to today's logic — scenarios `min` (strict, superseded), `cur`, `narrow`, **`delta`** (balanced, adopted) → `ud_window_legs_curr` |
+| `probe_ud_feed_vs_app.py` | `nba-probe-ud-feed.yml` | the Odds-API-vs-app probe (feed faithful) |
+| `simulate_ud_bankroll.py` | `nba-ud-bankroll-sim.yml` | 10,000-season bankroll / drawdown / Kelly / stop-rule / CUSUM simulator (debugged on synthetic days first) |
+| `drought_regime_analysis.py` | `nba-drought-regime-analysis.yml` | both apps: block-bootstrap recalibration, line movement, window-time predictors, team micro-regimes |
+| `research_angles.py` | `nba-research-angles.yml` | travel/circadian, public Over bias, count skew, parlay liability |
+| **`ud_live_slip_engine.py`** | `nba-ud-live.yml` (manual) | **the UD paper engine** (imports `build_ud_slip_engine`); ledger `ud_live_slips`. 🆕 *(additional sweep `5`, pass 370, `§P370` — its switches by their own names; `T48` prints its edge-monitor code, `2026-10-09` `20:22Z`; ✅ read in code; *the same words first written as a bulleted list, which broke this table row — joined onto the row in the same pass, nothing removed)*: `UDL_MODE` — `pick` (the default; P3, after the PrizePicks pick), `grade` (P2A) or `edge` (the break-even monitor) · `UDL_DATE` — `YYYY-MM-DD`; with no date, `grade` catches up every ungraded slate and `edge` reads yesterday on the Pacific clock · `UDL_FORCE=1` — rebuilds a day already logged, where otherwise the first log wins · `UDL_MIN_BOARD` — default `178`; a thinner board builds nothing · `UDL_EDGE_DELTA` / `UDL_EDGE_CONFIRM_Z` / `UDL_EDGE_ALARM_Z` — code defaults `−0.1084` / `2.48` / `−2.95`; the DB tunable overrides the code defaults, and an env value overrides both (for tests) · `UDL_EDGE_REBUILD=1` — rebuilds `ud_edge_monitor_ref`; the reference is also rebuilt whenever it was built from another backtest table than the tunable now names. |
+| `parity_pp_leg_source.py` | `nba-pp-parity.yml` | old (`prop_universe`) vs new (live) PP leg source — every leg, field, slip and grade |
+| *(name map)* | `nba-name-map-refresh.yml` | on-demand player-name-map refresh (the daily one is a P2B step) |
+| *(close)* | `nba-close-capture.yml` | the close board (PP + UD, label `close`), input-free; fired by the scheduler (**v2.1.0** `decideClose`, first tip − 25 min) |
+**New steps inside the daily pipelines** (✅ in the YAML): **P3** — *"Underdog paper pick (P5 + P4 shadow)"* after the PrizePicks slip pick, `continue-on-error`; **P2A** — *"Underdog paper grade"* after the PrizePicks grade (every ungraded slate before today), `continue-on-error`; **P2B** — the daily **player-name-map refresh** (before anything that resolves names) and the **`morning` DFS board snapshot** (PP + UD, gated on `has_games`, `continue-on-error`, each board capped at 5 min). **`live_slip_engine.py`**: `LS_LEG_SOURCE` default **`live`** (line `216`), `universe` for parity.
+**A timing harness** (`§31f`): *"exact copy of the scorer with only the output table redirected to a scratch table; dropped after"* — the P3 scorer measured at **20 s** on a 38,551-leg board without touching `board_scored`.
+
+---
+
+## 🆕 **§T38.4 — `T38` (`2026-10-04`): THE SLATE SANDBOX, THE EDGE MONITOR, THE ROI CURVE, THE STAR-UNDER TEST** *(source `T38`, `NBA_MASTER_SUMMARY.md` `§T38`; ✅ files present, all workflows `workflow_dispatch`, `2026-10-10`)*
+| script (`nba/`) | workflow | does |
+|---|---|---|
+| `sim_slate.py` | `nba-sim-slate.yml` | **sandboxed future-slate rehearsal**: model built with writes to scratch `nba_score._sim_*`, reads on production; the real `pick()` with commits suppressed, rolled back; refuses if production holds the slate; final step drops scratch and **fails unless production holds `0` rows** for it |
+| `edge_monitor_research.py` | `nba-edge-monitor-research.yml` | read-only research: exact expected payouts, break-even solve, confidence sequences vs group-sequential, bootstrap-calibrated boundaries, power |
+| `validate_edge_monitor.py` | `nba-edge-monitor-validate.yml` | the production edge-monitor code on real 2024-25 / 2025-26 data |
+| `roi_curve.py` | `nba-roi-curve.yml` | read-only: the portfolio's exact expected ROI vs uniform leg-hit deficit |
+| *(test builds)* | `nba-star-under-test.yml` | 8 sequential builds (control + 3 thresholds × main / steals-free), comparison, test tables dropped |
+**Code added to `live_slip_engine.py`** (✅): `LS_MODE=edge` (break-even monitor; `LS_EDGE_CONFIRM_Z` `3.28`, `LS_EDGE_ALARM_Z` `−3.09`, `LS_EDGE_REBUILD`); **`MIN_BOARD_LEGS` / `LS_MIN_BOARD` `179`** (line `133`); **`STAR_UNDER_LINES`** + `star_under_weight()` (line `137`) → `live_slips.stake_weight`; the live loader's **team rule** (board-named teams, else the game-log/roster team that plays that day). **`ud_live_slip_engine.py`**: `UDL_MIN_BOARD` `178`. **`build_slip_engine.py`**: `SE_EXCL_STAR_UNDER` (test only, refuses without a table suffix; thresholds `SE_STAR_POINTS` / `SE_STAR_PRA` / `SE_STAR_COMBO`). **P2A**: *"Edge monitor (break-even, group-sequential)"* after the PrizePicks grade, before the Underdog grade, `continue-on-error`. 🆕 *(pass 460, `2026-10-15`, `T38`'s `04:16Z`, `04:56Z`, `07:51Z` and `08:22Z` replies, AS STATED — the run times and footprints; the transcript prints each range without its dash)* The sandboxed simulation's wait: *"The morning build takes 50–80 minutes on a full slate, so expect roughly 30–60 minutes in total"*, and later *"That's within P2B's normal 50–80 minute range, so it's consistent with a ladder build rather than a hang."* The star-Under test's builds: *"All 16 test tables are dropped at the end, since the database is already over its storage plan"*; *"Faster than estimated: two builds finished in about 8 minutes (4 each, 148 MB per table), and the third is underway."* And, on the archiver's date handling in the same `04:56Z` reply (the sentence's subject is in the transcript's omitted tool output): *"That's harmless on game day, since all window rows share one date. It only means the routine history keeps one copy per capture day."*
+*Later Underdog counterparts present today* — `nba-ud-edge-monitor-research.yml`, `nba-ud-edge-monitor-validate.yml` — are `T39` material. → ✅ `§T39.4` below.
+
+---
+
+## 🆕 **§T39.4 — `T39` (`2026-10-04/07`): MONITORS, ROSTERS, THE ROLLED-BACK INTEGRATION TEST, AND THE GAP-PROGRAM TOOLS** *(source `T39`, `NBA_MASTER_SUMMARY.md` `§T39`; ✅ every script present and every workflow present, `2026-10-10`)*
+| script (`nba/`) | workflow | does |
+|---|---|---|
+| `ud_edge_monitor_research.py` | `nba-ud-edge-monitor-research.yml` / `-validate.yml` | UD break-even by thinning, group-sequential calibration; production-code validation |
+| `pp_breakeven_crosscheck.py` | `nba-pp-breakeven-crosscheck.yml` | PP thinning vs independence (rule fixed before the run: switch if > 1.0 pp) → `LS_EDGE_DELTA = −0.0899` |
+| **`integration_test_rollback.py`** | `nba-integration-test.yml` | **end-to-end on real slates in ONE transaction, rolled back**: PP pick → grade → edge; UD pick → grade → edge; asserts and restores `0 / 0 / 0 / 0` |
+| `roster_coverage_audit.py` | `nba-roster-coverage-audit.yml` | board player-days the builder could not project |
+| **`sync_current_rosters.py`** | `nba-roster-sync.yml` (dry-run default) | applies the same-morning `commonallplayers` scrape to `nba_ref.players` — team changes, new players; never deactivates; refuses a failed / `< 300`-player scrape. 🆕 *(additional sweep `5`, pass 361, `§P361`)* The dry-run switch is the env var **`ROSTER_SYNC_DRY`**. The build chat added it in `T39` (`2026-10-05` `05:53Z`): *"Adding a dry-run mode (ROSTER_SYNC_DRY=1: perform every change, print it, then roll back), so the first run against production can be reviewed before anything is written"*. ✅ Code today: the script rolls back when `ROSTER_SYNC_DRY == "1"` and commits otherwise, and its summary line then reads "DRY RUN - ROLLED BACK". `nba-roster-sync.yml` maps its `dry` input (default `"1"`) onto the switch. P2B's own roster step (`nba-p2b-slate.yml`) runs the script without it, so P2B applies. Commit `13927f4c9`. |
+| `validate_roster_replay.py` | `nba-roster-replay-validate.yml` | the real builder replayed with a proxy roster — coverage old vs new |
+| `integer_line_research.py` | `nba-integer-line-research.yml` | G1 gate 1 / 1b (whole-number derivation, calibration, ties) |
+| `build_tier_map_wi.py` (+ `wi2` later) | `nba-tier-map-wi.yml` / `-wi2.yml` | G1 gate-2 test leg table (`tier_map_legs_wi`, dropped) |
+| `gate2_compare.py` | `nba-gate2-backtest.yml` | control vs test slip builds per strategy and portfolio |
+| **`fit_whole_number_recal.py`** | `nba-wn-recal-fit.yml` (dry-run default) | stores the whole-number recalibration in `nba_config.classification_config` |
+| **`build_whole_number_hp.py`** | `nba-wn-build.yml` (dry-run default) | → `nba_score.final_hp_derived` (`whole_number`) — history cross-fit, live pooled. 🆕 (additional sweep 5, pass 374, `§P374` — its switches by their own names; `S4`'s audit names `WN_DATE` among the date inputs P2A sets, `2026-10-08 06:39Z`; ✅ read in code): `WN_WRITE=1` writes (otherwise a dry run that only counts keys and priced legs); `WN_DATE` prices one date — P2A sets it to yesterday for the re-price after the prune; without it, `WN_FROM` / `WN_TO` price every date in that range that has a whole-number `FULL` key in `board_rung_keys`; it refuses to run without `classification_config['whole_number_recalibration']`. |
+| `ladder_depth_audit.py` | `nba-ladder-depth-audit.yml` | G2: unscored half-point board legs beyond the ladder |
+| *(research copies of both builders)* | `nba-ladder-tail-research.yml` | G2: the real builders at depth 24, reliability frame dumped before exit |
+| `rookie_prior_research.py` / `rookie_pricing_research.py` / `rookie_early_games_research.py` | `nba-rookie-pricing-research.yml`, `nba-rookie-early-research.yml` | G3 decided by evidence |
+| `distance_calibration_research.py` | `nba-distance-calibration.yml` | distance-aware calibration (adds nothing OOS) |
+| **`build_recalibration_map.py`** (v2) | `nba-recalibration-map.yml` (report default, gated write) | → `nba_score.recalibration_map` + `calibrated_p()` |
+**Production code changed in `T39`** (✅): `build_baseline_ladder.py` — **current-roster rule** (per-game roster = recent last-3 participants still on the team ∪ every current-roster player with history; missing file → old behaviour); `build_final_hp.py` — **`score_and_edge()`** at module level (bitwise-identical on 200,000 cases); `live_slip_engine.py` — `LS_EDGE_DELTA` fixed `−0.0899`, status filter `LIKE 'graded%' AND k < 100`, `late_pick` **removed** (prints its retirement reason); `ud_live_slip_engine.py` — per-leg outcomes in `legs_json`, `UDL_MODE=edge`, `UDL_EDGE_DELTA` `−10.84`; `archive_live_boards.py` — **explicit Underdog → canonical market-key table** (G4); `build_slip_engine.py` — **`SE_LEGS_TABLE`** (a non-default source requires a suffix) and a **tie-aware `grade()`** (identical to the old grade on `5,000` / `5,000` tie-free slips).
+**Pipeline steps added** (✅): **P2B** *"Refresh today's rosters (commonallplayers)"* (line `161`) and *"Apply today's rosters to nba_ref.players"* (`173`) — before the name map, injury report, ladder and `final_hp`; **P2B** *"Price whole-number board lines (final_hp_derived)"* (`476`, after `final_hp`, isolated); **P2A** *"Re-price yesterday's whole-number board lines"* (`308`) and *"Underdog edge monitor (break-even, group-sequential)"* (`363`).
+
+---
+
+## 🆕 **§T40.4 — `T40` (`2026-10-07`): ROUTING, GATE 2B, THE SELECTION LEG TABLE** *(source `T40`, `NBA_MASTER_SUMMARY.md` `§T40`; ✅ `2026-10-10`)*
+| script | workflow | does |
+|---|---|---|
+| `nba/verify_g2_routing.py` | `nba-g2-routing-verify.yml` | real builder, unrouted → routed → restored; column-by-column diff |
+| `nba/verify_board_routing.py` | `nba-board-routing-verify.yml` | the real scorer run twice per date **inside rolled-back transactions**, vs an independent re-derivation |
+| `nba/build_tier_map_wi2.py` | `nba-tier-map-wi2.yml` | gate-2b test table (refactored into shared functions used by `build_tier_map_sel.py`) |
+| **`nba/fit_wn_selection.py`** | `nba-wn-selection-fit.yml` | stores the currency maps (`wn_currency_map`) and the SE table + the selection config |
+| **`nba/build_tier_map_sel.py`** | `nba-tier-map-sel.yml` *(and P5 step 1b)* | the production selection leg table `tier_map_legs_sel` |
+| `nba/g2_deep_stage.py`, `nba/build_tier_map_deep.py` | `nba-g2-deep-gate.yml`, `nba-combos-history-depth-verify.yml`, `nba-combos-depth-verify.yml` | G2 gate 2 (scratch tables only) and the depth-parity checks |
+**Production code changed** (✅): `build_final_hp.py` — G2 routing in-transaction + deterministic `conf_tier` cutpoints; `score_board_legs.py` — whole-number and beyond-depth routing out of `board_scored`; `build_whole_number_hp.py` — adjacent rungs include routed rows; **`nba/baseline/build_combos_ladder.py`** and **`nba/baseline/build_combos_history.py`** — `COMBO_DEPTH = {pra 24, pts_reb 21, pts_ast 21}` (note the **`nba/baseline/`** path); `live_slip_engine.py` — `whole_number_legs()`, the board query as a template (half-point text byte-identical), `EDGE_DELTA` default **`−0.0916`** (line `1391`), tie-void in `calibrate` and the edge reference; `build_slip_engine.py` — `tier_map_legs_sel` admitted as a production leg source; `certify_slip_system.py` L11 tie-aware payout; `nba-slip-engine.yml` input `legs_table` (default `tier_map_legs_sel`); **P5** step *"1b. Selection leg table"* and steps 3 / 3b on it; `parity_pp_leg_source.py` compares half-point legs only.
+
+---
+
+## 🆕🔴 **§T41.4 — `T41` (`2026-10-07`): THE WORKERS THE FIRST CERTIFICATION PASS FIXED** *(source `T41`; AS STATED from the build chat's ledger passes A–C, F-1…F-3; ✅ = in the repo `2026-10-10`)*
+| file | defect found | fix |
+|---|---|---|
+| `nba/grade_board_outcomes.py` | **crashed P2A four nights running** on a 404 for the not-yet-existing `2026_27` game-log file | 404 → empty log set, *"loud line"*, dates grade as `dates_without_boxscore`; other HTTP errors still raise; `load_players` reads the repo file first, CDN as fallback |
+| `nba/alphadog-v2-nba-scheduler.js` | a dead claim was never recovered | **v2.2.0** stale-claim recovery (`NBA_SYSTEM_ARCHITECTURE.md` `§T41.8`) |
+| `nba/scrape_nba_darko.py` | darko.app redesign → **0 players**, and the scraper **overwrote the good file with an empty array** | primary `__data.json` + a devalue decoder; legacy HTML as fallback; **< 400 players = failure, previous file untouched** |
+| **`nba/git_push_retry.sh`** *(new)* | concurrent commits lost a run's files | conflict-safe commit + push (six attempts) |
+| `nba/verify_static_loads.py` | checked one table per worker | checks every table; re-invokes a partial worker synchronously |
+| `nba/scrape_referee_assignments.py` | **never captured a crew** (date format `MM/DD/YYYY` → empty; parser looked for the wrong keys) | ISO date first; reads `nba.Table.rows[]` with `official1..4` (4 = alternate); stores `game_id`, `official_code` |
+| `nba/scrape_nba_injury_report.py` | a dead proxy → **silent 0 rows** for the binding availability input | proxy preflight on a known PDF, direct fallback |
+| `nba/live_slip_engine.py` | voids pruned before the payout engine; points-Under cap global; week-2 play on every strategy | voids passed to `ENG.grade` as `hit=None`; `MAX_LINE_BY_STRATEGY = {'D_points_3power': ('points','Under',22.5)}`; week-2 play stakes only `A_*` / `C_*` (others shadow) |
+| `nba/build_slip_engine.py` / `certify_slip_system.py` | single survivor refunded | single survivor pays `compress(1.5 × factor)` on a hit for ANY original size; L11 recompute follows |
+| `nba/ud_live_slip_engine.py` | whole-number Underdog legs dropped silently | counted daily; a WARNING if any appear |
+**Probing pattern**: `.github/workflows/nba-probe.yml` + a trigger file `nba/TRIGGER_NBA_PROBE.txt` (the script to run is written into it, then restored) — a runner-side end-to-end test of a scraper without a pipeline run (e.g. DARKO: *"530 players via __data.json"*; injury preflight: *"proxy 407, direct OK"*).
+
+## 🆕🔴 **§T42.4 — `T42` (`2026-10-07 18:36Z → 10-08 07:11Z`): THE WORKERS CERTIFICATION ROUND 1 CLOSED AND ROUND 2 OPENED** *(source `T42`; AS STATED from the build chat's ledger `F-4`…`F-9`, `G-1`…`G-7`, `E-2`, `A-8` and round 2's first fixes; ✅ = file present in the repo `2026-10-10`)*
+| file | defect found | fix |
+|---|---|---|
+| `nba/live_slip_engine.py` | red not sticky through week-2/final-7 or when P5 set it; guard counted rank-key rows ÷ 3; no grade catch-up; clean days double-counted; the certified `broad_day` flag never passed | `RED_STICKY` evaluated first, released only by a PASS `REQUAL`; H5 two-yellows-stay-yellow in 21 days; `n_board` = unique half-point legs; grade mode without `LS_DATE` loops every ungraded slate `< today`, oldest first; `CLEAN` once per slate; `broad_day` computed in `pick()` as the backtest does |
+| `nba/ud_live_slip_engine.py` | edge-monitor season from a 250-day window (→ last season's start); fixed UTC−8; an empty box score voided every leg and marked the slate graded | imports `regular_season_window` and the PT clock from the PrizePicks engine; empty stats → skip, `graded_at` stays NULL |
+| `.github/workflows/nba-p5-weekly-requal.yml` | a PASS released a red on frozen two-season data | release only when the live season's walk-forward lower bound > 0, else `REQUAL 'HOLD <date>'` |
+| `nba/pipeline_claim.py` + P2A / P2B / P3 workflows | soft-step failures left no trace | ids on soft steps, a collector step, `soft_failed` → `SOFT_FAILED` → the row's `note` + `::warning::` |
+| `nba-p1-weekly-static.yml` · `nba-scrape.yml` · `nba-referees.yml` | weekly scrape ran twice; P1 loaded files it never scraped; referee scrape ran twice daily | P1 gains a *"Lineups and tracking detail"* step; the two legacy crons retired |
+| `scrape_nba_{stats_teams,stats_players,stats_arenas,officials,player_bio,team_stats,onoff,playtypes,player_tracking,shotquality,lineups,tracking_detail}.py` (P1; names per the commit messages) | wrote the data file **before** checking for failure → empty file committed and loaded | data file written only on a clean / accepted-partial scrape; meta records the error; exit 1 |
+| `nba/betr_harvest_cloud.py` | took the first `getUpcomingEventsV2` response — the lobby's, without projections | a response is the board only if it flattens to legs; `lobby_only` kept as evidence; re-nudge; 120 s; exit 3 with the lobby's counts; provider-aware sticky-US username |
+| `nba-p3-afternoon-light.yml` | one dead app skipped every later step | both captures soft; captured-board list → archive labels only those `window`; Underdog pick `if: !cancelled()` |
+| `nba-sim-slate.yml` | sandbox broke with `final_hp_derived` and let a production `DELETE` through | guard + redirect + scratch `LIKE … INCLUDING ALL` + post-run production check; also runs `ensure_season_files.py` like P2B |
+| **`nba/probe_proxy_health.py`** *(new)* | — | runner-side proxy health: exit IP/geo, the real stats.nba.com request ×3, PrizePicks endpoints, body snippet on error; **never prints credentials** (masks the resolved URL); reads the proxy the way the pipelines do |
+| **`nba/ensure_season_files.py`** *(new)* | opening day would be modelled as a late-2025-26 game (the builders pick TEST = the newest season **file**) | creates the six empty current-season input files before the ladder build (P2B and the sim) |
+| `nba/check_delta_gaps.py` | read keys the schedule file does not have → always the team-log fallback (*"the scrape audited itself"*) | reads `sched["games"]`, `game_status == 3`, `002` ids; local file first — re-run: *"schedule says 1,230 completed games over 164 dates … dates missing SOME games: 0"* |
+| `nba/scrape_nba_daily_delta.py` | never exited non-zero | `sys.exit(1)` when any of the 8 pulls fails |
+| `nba/certify_pipeline.py` | P1's forced run failed in the certifier (slate predicate; result-derived freshness due on preseason days) | the pipelines' regular-season predicate; result freshness due only after regular-season games |
+| `nba/build_defender_ratings.py` · `build_confidence_v3.py` · `export_market_spreads.py` · `build_asof_calibration.py` · `build_blowout_model.py` | season literals `2024-25,2025-26`; two-season confidence fit halves at the rollover; morning line unmapped for unplayed games and blended with the window; CDN-first reads | `stats_seasons(…)`; confidence on three seasons; schedule + nickname mapping, morning-only; repo file first, CDN fallback |
+| `nba/scrape_nba_injury_report.py` | an unreachable archive returned a dead session → an empty report written over a good one | no session → exit 1, file untouched; step soft in P2B and P3 |
+| `nba/archive_live_boards.py` · `nba/scrape_sleeper_board.py` | Underdog and Sleeper legs never dated by tip (every future leg landed in today's `window`); Underdog team markets archived as player legs | Underdog tip from `game_start` / the `games` store; Sleeper scraper ships a `games` map from Sleeper's public schedule and stamps each leg's game date; team markets filtered (appearance type, stat key, `" @ "` names); a date-only commence value is the game date |
+**Probe runs used here:** proxy health (old provider 407 ×2; new provider 200), Sleeper schedule endpoint (`nba/probe_sleeper_schedule.py`).
+
+## 🆕🔴 **§T43.4 — `T43` (`2026-10-08 07:13Z → 10:59Z`): THE WORKERS ROUND 2 CLOSED** *(source `T43`; AS STATED from the ledger's ROUND 2 and the commit messages; ✅ = in the repo `2026-10-10`)*
+| file | change |
+|---|---|
+| `nba/build_final_hp.py` · `nba/build_whole_number_hp.py` · DB `nba_market.refresh_board_rung_keys` | whole-number neighbours kept (`src 'wn_neighbor'`), priced into `final_hp_derived` only; derivation per source (`whole_number` / **`whole_number_nb`**); one set per day across both derivations; whole-number DDL only when the table or index is missing |
+| `nba/live_slip_engine.py` | `schedule_dates`, slate size and teams-playing from the one slate predicate; reset needs `LS_RESET_CONFIRM=RESET`, refused in season; `pick()` refuses after the first tip; `bt_table()` routes simulate_p5 / calibrate / edge reference / anchor reference through `live_backtest_suffix`; tie order `score DESC, player, side, line`; docstring = the hurdles as implemented |
+| `nba/ud_live_slip_engine.py` | stand-down from the one predicate; post-tip refusal; `fresh_absences` in the stamp convention; deterministic `n_rank` tie order |
+| `nba/alphadog-v2-nba-scheduler.js` | **v2.2.1** — a recovered predecessor blocks successors; first tip from the one predicate; label regex dropped |
+| `nba/certify_pipeline.py` | slate / played-recently from the predicate; **P3 proves the window board was captured, priced and scored by this run** (3 h), replay-aware; real Pacific clock |
+| `nba/grade_board_outcomes.py` | `team_as_of`; `dnp` only when the player's team has a box score that day, else `game_not_found`; daily roster tops up the weekly register |
+| `nba/sync_season_files_from_delta.py` · `nba/scrape_nba_schedule.py` · `nba/nba_season.py` | refuse a delta file of another season · write only on success (a published season coming back empty is a failure) · opening-day guard by game-id prefix in any pre-opener month, cached per process |
+| `nba/scrape_underdog_board.py` | budget, SIGTERM-safe partial write, thread pool, today first; meta records target date, budget, elapsed, partial cut |
+| `nba/scrape_prizepicks_nba_board.py` | walks every page; `row_count` / `total_pages` in meta — now the producer for P3, P2B morning and the close capture |
+| `nba/score_board_legs.py` | reads the snapshot label; advance captures not scored once a window board exists; score/edge through `build_final_hp.score_and_edge` with a constants assertion; Pacific clock |
+| `nba/build_availability_delta.py` | current roster resolves the team (game log second); "P2 view" cutoff from `nba_asof.BASELINE_CUTOFF_LOCAL`; Pacific clock |
+| `nba/baseline/build_baseline_ladder.py` · `build_periods_ladder.py` | injury names also through the daily roster; players on no roster leave the slate (**live only**); `§31r` roster rule in periods; **empty season placeholders dropped from every concat** (the float-id regression); **an opening slate with no period test set writes an empty period ladder and exits 0** |
+| `nba/build_asof_calibration.py` | daily roster tops up the register; one outcome per leg across standard/alternate keys — measured, **switch `AC_DEDUP` default off** (round-3 chain) |
+| `nba/scrape_nba_injury_report.py` | zero snapshots on a slate day is a failed scan (`INJURY_EXPECT`), bounded 600 s in P2B and P3 |
+| **`nba/dump_db_sql.py`** + `.github/workflows/nba-db-sql-dump.yml` *(new)* | weekly + on-demand dump of every NBA function and view into `nba/sql/` |
+| `nba-p2a-results.yml` · `nba-p2b-slate.yml` · `nba-p3-afternoon-light.yml` · `nba-p4-live-slips.yml` · `nba-p5-weekly-requal.yml` · `nba-close-capture.yml` | replay `asof` plumbing; matchup shards soft; predicate-based `has_games`; crew poll bounded by the build budget, timeout 300; gzipped dated ladder; late runs skip delta/score/paper/certify/picks; P3 commits via `git_push_retry.sh`; P4 `confirm` and `edge_rebuild` inputs; P5 steps 3c (twin rebuild + both twin engines, delta) and 5c (twin validations), suffix-aware verdicts and release gate |
+**Probes**: Underdog timing (`nba/probe_underdog_timing.py`), PrizePicks producer equivalence (`nba/probe_pp_producers.py` — ~~a **probe of producers**, not the out-of-scope payout probes~~ *corrected `2026-10-10`: the file matches the out-of-scope `probe_pp_*.py` pattern — cross-reference only; its result is the ledger's `R2-P3` #10*).
+
+## 🆕🔴 **§T44.4 — `T44` (`2026-10-08 11:01Z → 21:03Z`): MEASUREMENT, RETENTION AND THE FIRST POSTSEASON CODE** *(source `T44`; AS STATED from the ledger and the commit messages; ✅ = in the repo / DB `2026-10-10`; MLB files out of scope and not listed)*
+| file | what it does |
+|---|---|
+| **`nba/build_price_shop_ledger.py`** *(new; P3 soft step `soft_psl` after both picks)* | per selected leg × app: listed, same line / nearest line and gap, displayed `m`, per-leg `m_eff` (Underdog modifier × `ud_ref_per_leg`), p (`final_hp`; whole numbers from `final_hp_derived`), `p × m_eff`, `gate_pass`; `PSL_SOURCE=backtest` replays a certified slate; tunables `classification_config['price_shop_ledger']`. Fixes on the way: `final_hp.player_id` is text (cast); Underdog's number is a modifier, not a price |
+| **`nba/snapshot_model_params.py`** *(new)* | copies any table's rows as JSON into append-only `nba_score.model_params_history (as_of_date, source_table, row_md5, row)`; P2B snapshots the blowout / confidence / confidence-verification tables and the as-of fit the slate reads; P5 snapshots `slip_validation*`, `cand_certified`, `tier_map_summary` |
+| `nba/live_slip_engine.py` | every daily grade records post-grade states (`record_state_history`); a replay without `LS_RESUME` is refused in season when live slips exist (`LS_RESET_FORCE=1` overrides) |
+| `nba/build_rung_market.py` · `build_confidence_v3.py` · `apply_ladder_calibration.py` · `backtest_tier_selection_value.py` | read `board_tiers_v2` (R-1); confidence v3's expression index moved with it |
+| `nba-p1-weekly-static.yml` | `_asof` snapshots for six more weekly-overwritten profile tables + `nba_ref.players` (first: Monday 10-12) |
+| `nba/scrape_referee_assignments.py` | every capture also appended to `nba_ref.referee_assignments_log` (created on first capture — ✅ **not yet created `2026-10-10`**: no capture since `10-07 17:48Z`) |
+| `nba-p2b-slate.yml` · `nba-close-capture.yml` | P2B loads the day-before injury snapshots; Sleeper + Fliff captured and archived at morning and close (bounded, archived only on exit 0) |
+| `nba/prune_baseline_to_board.py` · `nba-p2a-results.yml` | a live-season date is pruned only if its full ladder file is in the checkout; held dates retried |
+| **`nba/dump_db_ledgers.py`** *(new; in `nba-db-sql-dump.yml`)* | weekly git archive of 23 DB-only ledgers (never credentials) |
+| **`nba/dump_db_history.py`** + **`nba-db-history-archive.yml`** *(new)* | per-season CSV.GZ of the big ingredient tables → GitHub Release assets (monthly 1st + on demand); the two game_id-keyed tables dropped from the list (their raw JSON lives in the repo) |
+| **`nba/repair_board_gaps.py`** *(new)* | re-resolves re-keyed event ids and retries empty / 404 snapshots at nearby timestamps (tip−40, tip−2h, tip−60) |
+| `nba/backfill_game_line_snapshots.py` | hard-coded off-season skip removed (it excluded the 2025 playoffs) |
+| **`nba/scrape_nba_postseason.py`** + `nba-postseason-mine.yml` *(new, P-1)* | play-in + playoff game logs, advanced, measure types, quarters, per-game starters / officials → `*_postseason_<slug>` files |
+| **`nba/load_postseason_logs.py`** *(new, P-1)* | loads them into separate `*_postseason` twin tables (regular-season tables untouched) |
+| `nba/grade_board_outcomes.py` (P-2) | merges postseason box scores and quarter logs |
+| **`nba/baseline/build_baseline_history_postseason.py`** · **`build_combos_history_postseason.py`** · **`nba/export_market_spreads_postseason.py`** · `nba-baseline-history-postseason.yml` *(new, P-3)* | the certified recipe + history patches + postseason data; emit only 004/005 games; `load_baseline_history.py` replaces only postseason rows (guarded) |
+| `nba/build_final_hp.py` · `build_asof_calibration.py` · `score_board_legs.py` (P-4) | `FE_POSTSEASON` scope; phase `5_postseason` by game id, fallback `4_push`; postseason confidence phase factor; every delete scoped to 004/005; as-of calibration fits `5_postseason` cells; scoring uses them on a postseason slate |
+| `nba-injury-report.yml` | backfill loop counts only days inside the requested range (postseason injury backfill) |
+
+## 🆕🔴 **§T45.4 — `T45` (`2026-10-08 21:04Z → 10-09 02:49Z`): THE POSTSEASON CERTIFIERS AND THE LIVE POSTSEASON PATH** *(source `T45`; AS STATED from the commit messages and `§31w` AS BUILT; ✅ = in the repo / DB `2026-10-10`)*
+| file | what it does |
+|---|---|
+| **`nba/build_tier_map_legs_postseason.py`** *(new, P-5)* | → `nba_score.tier_map_legs_post`: PP window legs × current price × `board_outcomes` grade × postseason `final_hp`; `final_score` rescored **market-free** as live scores it; deterministic `n_rank` tie-break; team / event / pf20 self-contained (pf20 over regular + postseason games); later in the window: half-point legs staged before ranking and **whole-number legs priced exactly as live** (`wn_selection → wn_price → wn_score`). ✅ `359,301` rows. *(Its `event_id` was NULL on every row — found and fixed `10-09`, later transcript.)* |
+| **`nba/certify_candidates_postseason.py`** *(new)* | measures the engine's own cells (`eligible_legs` imported) on postseason nights and weighs them against the certified p.m → `cand_certified_post`, `cell_postseason_eligibility`; grade is per leg (`board_outcomes` carries no bookmaker / label) |
+| **`nba/certify_postseason_strategies.py`** *(new)* | per-strategy postseason gate (day-blocked bootstrap on postseason nights, k = 1, both postseasons positive, ≥ 30 days) + the postseason board floor → `postseason_strategy_verdict` |
+| `nba/build_slip_engine.py` | **test-source options** `SE_LEGS_SELF=1` (self-contained leg SQL) and `SE_PHASE` (pins the phase label) for the postseason backtest → `slip_engine_slips_post` / `_post_nosteals` (✅ `62,042` slips) — *certified path unchanged* |
+| `.github/workflows/nba-postseason-certify.yml` *(new)* | tier map → cells → slip engine `_post` → strategy gate + floor → validator record; the backtest excludes the cells live excludes |
+| `nba/live_slip_engine.py` (nine-part patch + three) | postseason-aware trailing-10 steals and pf20; board team fallback, post-tip and slate size from `slate_games`; `postseason_slate()`; **`pick_postseason`**; grading of postseason slips into `graded_post*`; box-score outcomes include the postseason twin |
+| `nba/ud_live_slip_engine.py` | postseason slates → `stand_down:postseason` (stake 0) |
+| `nba/alphadog-v2-nba-scheduler.js` | **v2.3.0**: first tip from `slate_games` (✅ deployed) |
+| `nba-p2b-slate.yml` · `nba-p3-afternoon-light.yml` · `nba-p4-live-slips.yml` · `nba/prune_baseline_to_board.py` · `nba/certify_pipeline.py` | slate gate / referee poll / slate checks on `slate_games` |
+| `nba-p2a-results.yml` | postseason delta on play-in / playoff days (soft, own soft-failure entry) + postseason gap audit |
+| `nba/baseline/build_baseline_ladder.py` | the live ladder carries the season's postseason box scores when the files exist |
+| `nba-p5-weekly-requal.yml` | step 7: weekly postseason certification refresh in play-in / playoff weeks |
+| `nba/build_final_hp.py` · `nba-final-hp-postseason.yml` *(new)* | unpublished `5_postseason` cell → `4_push`; postseason scope copies April–June keys only; matrix max-parallel 3 |
+| `nba/export_market_spreads_postseason.py` | Postgres has no `count(DISTINCT) OVER` — the unused windowed count dropped |
+| **`nba/probe_pick_postseason.py`** *(new)* | live postseason pick on past nights, commit disabled + rollback |
+| `nba/dump_db_ledgers.py` · `nba/dump_db_history.py` | postseason certification tables join the weekly ledger archive (and paid MLB mirror tables the monthly history archive — MLB, out of scope) |
+| **Parity backfill (owner `19:08 PT`)**: `build_confidence_v3.py` (fit on regular-season legs only) · `build_market_derived.py` (event map / schedule cover every season present) · `build_scenario_calibration.py` (postseason games, own phase) · `scrape_nba_matchups_pergame.py` (postseason mode, own shards) · `score_board_legs.py` · **`nba-postseason-backfill.yml`** *(new)* | the fills whose results are `T46` |
+
+## 🆕🔴 **§T46.4 — `T46` (`2026-10-09 02:50Z → 07:06Z`): PARITY FILLS, THE PLAYOFF RESEARCH PROGRAM AND THE FIRST PLAYOFF-UNDERS CODE** *(source `T46`; AS STATED from the commit messages; ✅ = in the repo `2026-10-10`)*
+| file | what it does |
+|---|---|
+| `nba/build_ud_tier_map_bands.py` · `nba-postseason-certify.yml` | `TM_MIN_DAYS` (default 60, unchanged) so the Underdog postseason record can be built; certification step 4b = the Underdog postseason record |
+| `nba-p2a-results.yml` | the postseason step also scrapes last night's per-game matchups (`MATCHUPS_POSTSEASON=1`) |
+| `nba-final-hp-postseason.yml` · `nba-baseline-history-postseason.yml` | default groups include dreb / oreb / fgm / fta |
+| `nba/build_tier_map_legs_postseason.py` | **event_id resolved from game_id** (was NULL — every pair same-game in the postseason backtest) |
+| **`nba/research_postseason_program.py`** + **`nba-postseason-program.yml`** *(new, `§31y`)* | the playoffs through the whole regular-season method: cells, signals, compositions, train-only discovery, honest walk-forward with nulls permuted within (night, prop, tier, side), CI-only survivors, a leg-level walk-forward stage; PrizePicks 2-pick Flex (2× / 0.5×) included |
+| **`nba/playoff_unders.py`** *(new, `§31z`)* | the shared Playoff Unders selection — research, certification and live use the same code; per-app rule + strategy helpers; `final_score` on its 0–100 scale; whole-number legs in the pool as certified (a `half_only` option for research sensitivity) |
+| **`nba/research_playoff_unders.py`** + **`nba-playoff-unders-research.yml`** *(new)* | gates + stress (grid, walk-forward under two selection rules with nulls, envelopes, decay, correlation, regular-season stress) |
+| `nba/certify_postseason_strategies.py` | Playoff Unders backtest + verdict through the same gate |
+| `nba/live_slip_engine.py` · `nba/ud_live_slip_engine.py` | Playoff Unders on postseason slates (shared rule); the Underdog grader reads postseason box scores too |
+
+## 🆕🔴 **§T47.4 — `T47` (`2026-10-09 07:07Z → 19:02Z`): PLAYOFF UNDERS FINISHED, THE MULTIPLIER PROGRAM, THE LEDGER'S NEW COLUMNS** *(source `T47`; AS STATED from the commit messages; ✅ = in the repo / DB `2026-10-10`)*
+| file | what it does |
+|---|---|
+| `nba/research_playoff_unders.py` | half-line propsets, `half_only` in variants and finalists; the deployed rule is chosen **before** the stress loop |
+| `nba/playoff_unders.py` | **`stake_mode`** tunable (`gate` \| `shadow`) |
+| `nba/live_slip_engine.py` · `nba/ud_live_slip_engine.py` | Playoff Unders honour `stake_mode` (shadow = never staked / stake 0) |
+| `nba/probe_pick_postseason.py` | Playoff Unders live slip must equal the certified backtest slip (parity); **market-free rescoring** of past nights (the first probe compared against market-inclusive scores); accent-insensitive names; an Underdog parity replay per night; the no-slip message corrected (*"a one-game night, not missing coverage"*) |
+| **`nba/research_multiplier_value.py`** + **`nba-multiplier-value.yml`** *(new, `§31aa`)* | stages law → calib → gate → udsim → xapp → layer; tables `nba_score.mvp_*`; the UD sim and cross-app slips exclude the final week (the certified convention) |
+| `nba/build_price_shop_ledger.py` | the backtest-hit-rate gate — `cell`, `p_cell`, `m_star`, `v_cell`, `gate_cell`; Underdog root = 2-pick `3.5^0.5` |
+| `nba/TRIGGER_NBA_PP_MAP.txt` | PrizePicks payout mining pointed back at the NBA board (it was on the WNBA) — ⛔ *the payout-map track is out of scope; cross-reference only* |
+
+## 🆕🔴 **§T48.4 — `T48` (`2026-10-09 18:48Z → 10-10 02:35Z`): ROUND 3, THE LIVE PROPS FEED, BETR'S NEW APP, ONE RETRY POLICY** *(source `T48`; AS STATED from the ledger; ✅ = in the repo `2026-10-10`; payout-map files out of scope)*
+| file | what it does |
+|---|---|
+| DB `nba_score.build_ud_tier_map_legs_curr_mf()` + `nba/sql/build_ud_tier_map_legs_curr_mf.sql` | the Underdog market-free twin (round 3 #4) |
+| `nba/ud_live_slip_engine.py` | `market_free_score()` (identity on a live day, faithful in a replay); `ud_bt_table()` reads `live_backtest_suffix.ud_table / ud_legs_table`; `ud_edge_cfg()` reads `classification_config['ud_edge_monitor']`; the edge reference records and rebuilds on its source |
+| `verify_ud_live_parity` · `validate_ud_edge_monitor` · `ud_edge_monitor_research` | read the tunable; `EM_TABLE` / `SV_SNAPSHOT` inputs |
+| **`nba/capture_parlay_props.py`** *(new)* | ParlayAPI live NBA props → `parlay_props_captures` + `board_snapshots` (certified book set; mis-tag guard; quarantine). 🆕 *(additional sweep `5`, pass 370, `§P370` — its switches by their own names, named in `T48`'s listed sentences; ✅ read in code)*: `CP_MODE` — `probe` (the default for a bare run: fetch, a raw capture labelled `probe_<label>` and an inventory of books / keys / lines, nothing into `board_snapshots`) or `capture` (probe plus normalisation into `board_snapshots`; P3 sets it explicitly) · `CP_LABEL` — `window` (default) / `morning` / `close` · `CP_DATE` — the slate's Eastern date (default today ET) · `CP_FORCE=1` — re-captures a slot that already has a capture (otherwise one set per day per label) · `CP_SPORT` — default `basketball_nba`. P3's step sets `CP_MODE: capture`, `CP_LABEL: window` and `CP_DATE` from its slate date. |
+| `nba-p3-afternoon-light.yml` | soft step *"Live sportsbook props"* (in the soft collector) → `build_rung_market` → gated *"Market refresh of final_hp"*; dispatches the Betr harvest at the window (`actions: write`, retried 3×) |
+| `nba/betr_harvest_cloud.py` · `betr-cloud-harvest.yml` | league filter; CDP mouse press on the league chip; in-page navigation; `open_alive`; exit codes 2 / 3 / 4; self-renewing Keycloak session persisted to the credential store; crons removed (P3 dispatches); auto WNBA → NBA on 10-20. 🆕 (additional sweep 5, pass 370, `§P370` — the workflow's retries as `T48` states them, 10-10 02:35Z: *"Now the Betr workflow: no crons, a label input, self-archive for NBA, retry on 2 and 4, conflict-safe push."*; ✅ read in the workflow, commit `f7c768a53`, 2026-10-10 02:19Z): up to three harvester runs, each on a new sticky proxy session (`BETR_SESSION_ID`, a new one per attempt) after a growing pause — exit 4 (the proxy carried no Betr traffic) and exit 2 (no authenticated traffic: "a dropped auth call through a bad exit IP looks the same as an expired session; a real expiry fails every try") are retried, as is any other non-zero exit; exit 3 (Betr has not opened the league) is not; the job's timeout is 30 min; the NBA board's archive step (`ARCHIVE_APPS` `betr`, `ARCHIVE_LABEL` from the dispatch, default `routine`) makes up to three attempts and then fails the run. The one-retry-on-exit-4 rule before it is `1595901c0` (10-10 00:32Z). |
+| **`nba/net_retry.py`** *(new)* | the one retry policy (applied in 22 scripts — see `NBA_SYSTEM_ARCHITECTURE.md` `§T48.8`) |
+| **`nba/probe_net_retry_live.py`** · **`.github/workflows/nba-browser-probe.yml`** *(new)* | live retry probe (5 / 5); real-Chrome probes with no commit |
+| the Sleeper / Underdog / Fliff board workflows | NBA half removed from the two-hourly schedules (MLB cadence unchanged) |
+| `build_defender_ratings.py` | reads the matchup files from the checkout first |
+
+---
+
+## 🆕 **§P2.4 — PASS 2 (`2026-10-10`): FILES THE BUILD CHAT WROTE IN `T32`–`T48` THAT THE TWELVE NEVER NAMED** *(method: every path written through `github_put_file` / `github_patch_file` / `git add` in each transcript, checked by basename against the twelve; out-of-scope PrizePicks-payout and MLB files excluded; ✅ = live `2026-10-10`, last commit shown)*
+| file | written in | what it is *(AS STATED + read from the file header)* |
+|---|---|---|
+| `.github/workflows/nba-depth-change-verify.yml` | `T39` (`2026-10-06 02:58Z`) | **sample-first verification of a `LADDER_DEPTH` change (`§31s` G2)**: checks out the repo at two commits (`ref_before`, `ref_after`), runs the **real** baseline builder for one replayed slate (`BT_REPLAY=1`, `BT_ASOF` default `2026-01-10`, props default `points,rebounds`) and compares row by row — PASS = every shared row identical, nothing disappears, the only new rows are the intended prop/offsets. Runner files only. ✅ `80dba9e0` `2026-10-05` |
+| `.github/workflows/nba-tier-map-deep.yml` | `T40` (`2026-10-07 05:15Z`) | runs `nba/build_tier_map_deep.py` → **`nba_score.tier_map_legs_dp`** = certified legs (untouched) + PP window legs on deep combo rungs priced by the production formula (scratch `nba_score._g2_deep_der`) — G2 gate-2 test legs, read-only on the certified tables. ✅ workflow `1a98c1dc` `2026-10-06`; ⚠ **both scratch tables are gone today** (`to_regclass` NULL) — a test artefact, not a product |
+| `nba/sql/refresh_board_rung_keys.sql` | `T43` (`07:19Z`, `a24b4549`) | **source of record for `nba_market.refresh_board_rung_keys(d1, d2)`** (round-2 P3#16 — critical-path SQL that lived only in the DB; *"the version in the database must equal this file"*); the `wn_neighbor` source (round-2 P2A#6). ✅ function present and its definition carries `wn_neighbor` |
+| `nba/probe_odds_api_credits.py` | `T44` (`18:57Z`) | probe, no writes: The Odds API credits remaining on both keys (the free `/sports` call) and whether ParlayAPI's historical closing-odds answers a 2025 playoff date — *"Prints headers only, never keys"* (reads key **names** from `nba_config.external_credentials`). ✅ `8708f79a` |
+| `nba/probe_repair_board_gaps.py` | `T44` (`20:04Z`) | probe wrapper: installs `requests` (absent from the probe image) and runs `repair_board_gaps.main()` through `TRIGGER_NBA_PROBE.txt`. ✅ `f4f506db` |
+| `nba/probe_price_shop_ledger.py` | `T44` | probe: the price-shop ledger (`§31v`) in replay mode — `PSL_SOURCE=backtest`, `PSL_DATE` default `2026-04-10` (a full late-season slate with PrizePicks, Underdog and Betr window archives); installs `pandas`/`numpy`. ✅ `ec1bd1df` |
+| `nba/TRIGGER_NBA_INJURY_REPORT.txt` | `T44`–`T45` | the trigger file for `nba-injury-report.yml` (mode / from / to / slug); ✅ last content: `backfill 2026-04-14 → 2026-06-14`, slug `2025_26`, *"§31w P-1 - 2025-26 postseason injury reports … 2024-25 postseason completed 21:38Z (71/71 days)"* — the trigger-file convention again (the file is already cited in `T26`) |
+| 🆕 *(pass 4)* `.github/workflows/nba-ud-live-parity.yml` | `T37` (dispatched `4×`), `T48` (`2×`) | `§31f`, read-only — runs `nba/verify_ud_live_parity.py`: *"the Underdog live engine's own selection + settlement vs the backtest over every 2025-26 slate"*. ✅ `b2ac027a` `2026-10-03` |
+| 🆕 *(pass 4)* `.github/workflows/nba-p3-scoring-timing.yml` | `T37` (`2×`) | `§31f` scratch timing: runs an exact copy of `score_board_legs.py` whose **only** change is the output table (`board_scored` → `_timing_board_scored`, dropped after) on a full historical board (`date` default `2026-01-10`) — *"times score_board_legs.py on a FULL historical board without touching real data"*. ✅ `d6e36285` `2026-10-03` |
+| 🆕 *(pass 4)* **`nba/refresh_player_name_map.py`** | `T37` (`§31b`) | **the daily player-name-map refresh** run by **P2B** (`nba-p2b-slate.yml:189`) and by `nba-name-map-refresh.yml` on demand — *"fix for blocker 2 of the 2026-10-03 wiring audit"*: the map was built from a manually refreshed register, and on `2026-10-03` **`44` of `629` active players did not resolve** (*"every leg on them would have been silently dropped on both apps"*). Incremental and collision-safe: absent name → insert; name on an INACTIVE player → repoint to the active one; name on a DIFFERENT ACTIVE player → no change, logged `CONFLICT`; nothing deleted. ✅ `ad3d8d0d` `2026-10-03` |
+| 🆕 *(pass 4)* `nba/star_under_compare.py` | `T38` (`§31n`) | read-only comparison for `nba-star-under-test.yml`: control vs half-stake vs exclude (three thresholds) for star-line balanced Unders, per strategy and portfolio, each season — adoption bar *"positive in BOTH seasons at the portfolio level, at all three thresholds"*. ✅ `222f9654` `2026-10-04` |
+| 🆕 *(pass 4)* `nba/probe_betr_token_refresh.py` | `T48` | probe: can the Betr cloud session renew itself (owner `2026-10-09`: *"make the system auto-update it"*) — prints only the session's **anatomy** (cookie/key names, value shapes, JWT `exp`/`iat`/`aud`) and tests a Keycloak refresh; *"NEVER prints a token, a cookie value or a secret"*. ✅ `f17e1172` |
+| 🆕 *(pass 4)* `nba/probe_sleeper_payout_config.py` | `T48` | probe (public, read-only, no credentials): where Sleeper states how an entry's payout is formed — lines endpoints, candidate config endpoints, the web app's JS bundles grepped for payout constants. ✅ `f4a7950b` |
+| 🆕 *(pass 4)* `nba/probe_capture_props_live.py` | `T48` | probe: the live market term end to end on today's slate — `capture_parlay_props` (capture mode) → `build_rung_market` → read back books-per-rung vs the certified history; writes exactly what P3's two steps write. ✅ `b75c9254` |
+*Pass-4 note: pass 2's file check read only the first `800` characters after each write call, so a `path` that followed a long `content` was missed; the check was re-run over the whole call and these rows are what it added (`nba/validate_ud_edge_monitor.py` was already named).*
+*Globbed data outputs (`nba/data/nba_baseline_ladder_*.json`, `nba_injury_report_*.json`, the season-table / matchup / hustle / clutch / coaches files) are named by prefix elsewhere in this file and are not listed again. `nba/sql/sleeper_slip_payout.sql` and `nba/sql/pp_flex_alt_payout.sql` exist live (`2026-10-09`) but appear in **no** transcript of the corpus — left for the transcript that carries them (`NBA_OPEN_ITEMS.md` `T48-9`).* ⚠ (pass `394`, `§P394`): what the two functions do — Sleeper's verified payout rule and PrizePicks' Flex-with-alternates tiers — is now recorded AS STATED from the read-only `NBA_COMPASS.md` facts `150`–`151` in `NBA_OPEN_ITEMS.md` `T48-9`'s pass-394 update; the transcript is still awaited.
+
+## 🆕 §T50.4 — **`T50` (`2026-10-17 -> 10-26`): PIPELINES, SCHEDULER, WORKFLOWS AND SCRIPTS OF THE OPENING WEEK, THE LOGIN MACHINERY AND THE OPERATIONAL GAPS STILL OWED** *(source `T50`: AS STATED from the build chat's own files (certification ledger, COMPASS facts 166-185, NBA_BOARD_LEARNINGS, the new-files list) for `10-17 -> 10-25`; TRANSCRIPT where the T50 transcripts show it (main `10-25 23:37 PT -> 10-26 00:11 PT`; subagents `10-20`, `10-21`, `10-22`, `10-25`); the build chat's main conversation `10-17 13:17 PT -> 10-25 23:37 PT` is NOT a transcript, only its compaction summary is transcript-grade; all times PT; code bodies, run ids, commit ids, credential values and addresses are deliberately not documented)*
+
+### T50.4-A. Opening-day readiness probes (10-19) and what they changed
+- 🔑 **Why the probes ran.** On `10-19 13:15 PT` the owner said one day remained to opening day and asked that every source be probed so the real first run would work. The first NBA game day was `10-20` (3 games: BOS@DET 12:00 PT, PHI@NYK 16:00 PT, OKC@SAS 18:30 PT). `nba/probe_opening_day.py` (`10-19 12:29 PT`) is the read-only source probe: proxy, schedule, injury report, referee crews, PrizePicks, ParlayAPI, Odds API and database state; it writes nothing.
+- 🔑 **Scheduler state read on 10-19.** The scheduler was alive (last tick every minute, version 2.4.0). P2A fires at 03:30 PT, P2B at 08:05 PT (referee crews waited for until 09:25 PT, which is P3 minus a 125-minute budget), P3 at 11:31 PT on `10-20` (= min(13:15, first tip minus 30) plus 1 minute). The P3 deadline for waiting on P2B is 11:30 PT. The scheduler's `/simulate` path is not used in production.
+- 🔑 **P3 timing kept (COMPASS fact 168, 10-18 12:53 PT).** The build chat measured `nba_daily.injury_report_snapshots` (2024-25 and 2025-26, every team-game tipping between 9:00 AM and 12:30 PM PT: 344 team-games over 87 days). Between tip minus 75 and tip minus 30 minutes, 260 of about 1,800 listed players changed status (120 became Out); between tip minus 30 and tip only 43 changed (24 Out). An earlier P3 would take staler boards, sportsbook lines and availability delta; on a 7:30 AM tip P2A could start before the prior night's box scores are final. Decision: P3 stays at min(13:15, first tip minus 30) plus 1; no pipeline change. See the sibling system-design section for the slip-screen consequence (early games first, late legs substituted).
+- 🔑 **Paid Odds API key deactivated, owner declined renewal.** `nba/probe_odds_keys.py` (`10-19 13:19 PT`) showed `odds_api_key_nba` answering 401 DEACTIVATED_KEY (cancellation or a failed payment); the free `odds_api_key` (500 credits a month) answers 401 HISTORICAL_UNAVAILABLE_ON_FREE_USAGE_PLAN on the historical endpoint and 200 on the live endpoint (3 credits, 46 events); `oddspapi_api_key` is not an Odds API key (401 INVALID_KEY). Impact found: P2B's `capture_game_lines_morning.py` read only the historical endpoint with the paid key, so `10-20` would have scored on the derived spread proxy (correlation 0.46). The owner answered at `10-19 14:16 PT` that he is not renewing the paid plan.
+- 🔑 **Game lines fallback, then the free key as the normal path.** First fix (`10-19 13:23 PT`): when the historical call fails, the live endpoint is read with `ODDS_FALLBACK_KEY_NAME` (default `odds_api_key`); same rows, label, unique key and log; `requested_ts` and `snapshot_ts` carry the true fetch time; the log `error` column reads "fallback live ..." so the substitution is visible; `GL_DRY_RUN=1` parses without writing. `nba/probe_game_lines_fallback.py` rehearsed `10-20` without writing: 144 rows, 3 games, 9 books (betmgm, betonlineag, betrivers, betus, bovada, draftkings, fanduel, lowvig, mybookieag), 3 credits. Second fix (`10-19 14:18 PT`): the free key is now the normal path. The tunable `nba_config.classification_config['game_lines_feed']` holds mode `live`, `live_key_name` `odds_api_key` and `historical_key_name` `odds_api_key_nba`; mode `live` reads the live endpoint directly (no historical attempt, log note "live odds_api_key", no warning); mode `historical` restores the paid snapshot if a plan is ever bought. Dry run: 144 rows, 3 games, 9 books, 491 credits left. The baseline's 08:00 snapshot becomes the 08:05 live line on normal days. The old statement that a paid key feeds the game lines is superseded by this entry (T50, `10-19`).
+- 🔑 **ParlayAPI 10,000-row truncation (fixed).** The `10-19` P3 read returned 10,001 items with the `x-result-truncated` header; ParlayAPI's hint is a per-source serving cap of 10,000 rows sampled across books and markets that pagination cannot recover. Measured the same hour with `nba/probe_parlay_perbook.py`: the full read held DraftKings 1,772 of the 3,020 rows a DraftKings-only read returns and Bovada 1,173 of 1,545; a read narrowed to all eight history books in one call was still truncated; a read narrowed to ONE book was complete for every book; `date=` and `commenceTimeFrom/To` are ignored.
+- 🔑 **The per-book fix in `capture_parlay_props.fetch`.** A truncated (or offset-capped) full read is followed by one read per book (the history's books plus aliases; tunable `market_feed.per_book_reads`), merged without duplicates (identity is book, event, market key, market, player, line, period); each book's result is logged; a book that errors or is itself truncated is a warning, never fatal. `market_feed.per_book_budget_s` (default 240 s) holds all per-book reads together and the P3 step is capped at 10 minutes (soft; matches the 10-minute step limit in `nba-p3-afternoon-light.yml`). Verified in probe mode for `10-20` with `nba/probe_parlay_truncation.py` (nothing written to `board_snapshots`): DraftKings 2,690 rows (+1,083 the full read dropped), Bovada 1,241 (+249), FanDuel 432 (+31), the other eight names 0; no per-book read was truncated; about 50 s; 33 credits (12,289 left). The market anchor's DraftKings rows (`apply_market_anchor.py`) come from the same capture and gain the same rows.
+- 🔑 **Bovada tricode join bug (fixed).** ParlayAPI names Bovada players "Name (TEAM)", so all 41 Bovada players on `10-20` missed `nba_ref.player_name_map` and `build_rung_market`'s exact-name join; Bovada never counted in the market term. `normalize` now strips a trailing "(XXX)" tricode; 1,449 archived Bovada rows (`10-20` 514, `10-21` 935, label routine) were re-keyed in place with no collisions; `10-20` then showed 0 unresolved for every app and book.
+- 🔑 **What ParlayAPI can supply (measured, a monitor item).** Of the history's eight books ParlayAPI carries three: DraftKings, FanDuel (one-sided milestone rows, line 0) and Bovada; betmgm, caesars/williamhill_us, betrivers, betonline/betonlineag and fanatics returned 0 rows before game day. `build_rung_market` de-vigs only two-sided lines, so milestone ladders never count there. On live game days (probed with `probe_parlay_perbook_mlb.py` on the MLB postseason board because NBA's first game day was `10-20`) betmgm, fanatics, bet365 and others appear; the per-book reads already include betmgm, caesars, betrivers, betonline and fanatics, so they are captured the moment they post. The history's eight-book set stays the counted set for parity; bet365, pinnacle, hardrock, parx and exchanges are kept raw and not counted.
+- 🔑 **ParlayAPI discovery (`10-19 14:17-14:32 PT`).** `probe_parlay_discovery.py` and `probe_parlay_event_odds.py` showed its Odds-API-compatible `/sports/basketball_nba/odds` carries NBA GAME lines from 14 books (fanduel, pinnacle, fliff, bet365, betmgm, betrivers, bovada, caesars, draftkings, fanatics, hardrock, novig, parx, prophetx) and that event-level player-prop odds are the same feed as `/props` (no extra books). The owner had said the prop lines come from ParlayAPI; the per-book design above is the answer.
+- 🔑 **ParlayAPI credits shared (verified, no action).** NBA capture costs 3 credits per 10,000-row page (a few to about 12 a day). The roughly 50 a day of burn is the MLB postseason market capture, which ends in early November; 12,455 credits cover the NBA season. After the per-book fix the pool read 12,289 (`10-20` probe) and 11,008 on `10-22`.
+- 🔑 **Referee polling, morning line, scheduler `/simulate` (the three paths not exercised before 10-20).** The referee step ends `exit 0` and is bounded by the day's deadline; the morning line is soft; referees post about 06:00 PT and P2B polls until 09:25 PT. Verified safe by reading, not by a game-day run.
+- 🔑 **Injury report.** The newest stored snapshot was `10-07` (preseason gap). A probe (trigger file `mode: probe`) showed the CDN answering 200 directly and the parser reading 78 rows from the known-good `2026-04-08` report. For `10-20` the game-day filings existed (6 teams, NOT_YET_SUBMITTED / Out); the -05:00 stamp convention is documented and paired with the delta's cutoffs. On slate days `INJURY_EXPECT=1` makes zero snapshots a visible soft failure. On `10-20 09:43 PT` `nba/sim_delta_check.py` ran the real `build_availability_delta.py` against that day's baseline and the stored injury snapshots inside a rolled-back transaction (workflow `nba-sim-delta-check.yml`).
+- 🔑 **Every board scraper swept (`10-19 16:02 PT`).** `nba/probe_scrape_sweep.py` runs every production board scraper exactly as P3 runs it into a scratch directory, parses with the archiver's own builders, checks every market key against the scorer's `MARKET_TO_PROP` and every player against the name map, and writes nothing. Two archiver faults were fixed in `archive_live_boards.py`: Fliff spells props out ("Points and Rebounds", "Three Pointers Made", "1st Quarter Points") and 522 of 858 legs carried keys no scorer reads (`FLIFF_KEY` now maps them); Sleeper posts first-quarter props (`first_qtr_points`, `_rebounds`, `_assists`, 78 legs), now mapped to the scorer's `_q1` keys. Sleeper's NBA alt ladder was found live in the feed on the sweep; Fliff posted NBA player props (860 legs and 41 players for `10-20`, one line per market, equal to the app line for line, checked by `probe_fliff_nba_lines.py` on `10-19 16:55 PT`). On `10-18` the Sleeper NBA "ALT STAT" source probes (`probe_sleeper_alt.py`, `_alt2`, `_alt3`, `10-18 23:26-23:42 PT`) found the public `lines/available_alt` carrying every sport but NBA.
+- 🔑 **Underdog spelled-out combos (found `10-20`).** Underdog now writes combos as "Points + Rebounds", "Points + Assists", "Rebounds + Assists" and adds "FG Attempted" and "3s Attempted"; `archive_live_boards.rows_underdog` stored them as `player_points_+_rebounds` and similar keys no scorer or engine reads, so those legs would never have scored on `10-20`. They are mapped to canonical keys.
+- 🔑 **Certification and rehearsal results before the first game day.** `nba-sim-slate` for `10-20` scored 1,114 PrizePicks legs (31 players, 3 games; the small slate gives slate-size cap 1) and recorded 9 slips; the sandboxed `10-20` build plus live pick scored 2,187 legs with 0 unresolved and 9 paper slips; `certify_slip_system` read 82 checks then 83 checks with 0 FAIL (the L3 check was made side-aware after it read every Less goblin/demon as a sign error, 559 and 594 cases); the integration test and `audit_release_path` passed. Production `10-17`: P2A 14.3 min, P2B 3.7 min, P3 6.4 min, all green; a second P2A dispatch at 09:35 PT was refused by the run-once guard ("already claimed"), which is correct. P1 weekly static `10-19` was all green with certification 2/2 (the two prior weeks had failed on partial static loads, already repaired). The morning monitor ran at 05:53 PT and succeeded in about 30 s.
+- 🔑 **Two scheduled check-ins were set for `10-20`:** 08:25 PT (P2A, P2B, morning line, crews) and 11:50 PT (P3 boards, ParlayAPI per-book log, picks before the 12:00 PT tip); an extra 11:56 PT check covered the Betr quote probe and the book-posting verification.
+
+### T50.4-B. Game-day chain timing from the rolled-back full simulation
+- 🔑 **Why a simulation.** On `10-19 20:30 PT` the owner asked to run and score a full slate as a real simulation and learn whether the timeline fits the deadlines ("no more guessing"). Earlier evidence was only no-game-day runs (P3 4.5-9 min with no scoring, pick, certify or market refresh; the P2B model build timed only in pieces), so "P3 fits" had been inference.
+- 🔑 **Mechanism.** `nba/sim_p3_full.py` and `.github/workflows/nba-sim-p3.yml` (added `10-19 20:39-20:40 PT`) run the REAL P2B model build and the REAL P3 chain for an unplayed slate in ONE shared transaction that is rolled back: the connection function is proxied, a commit becomes release-and-reopen of a savepoint, a rollback becomes rollback-to-savepoint, and ALTER, CREATE INDEX, TRUNCATE and advisory locks are never sent so production readers are never blocked; scrapers and ladder builders run as real subprocesses. Two full runs for `10-20` each ended with production verified empty for the slate (`baseline_history`, `final_hp`, `final_hp_derived`, `board_scored`, `live_slips`, `ud_live_slips`, `paper_picks`, `board_true_hp`, the `rung_market` window, `board_tiers_v2` and `board_snapshots` window/morning all 0; an independent check step green). A driver bug (`SNAP_TABLES` truncated, "bad table spec") was fixed in run 2.
+- 🔑 **Measured, run 2 (10-20, 3 games, first tip 12:00 PT).** P2B took 3,029 s (about 50 min: periods ladder 679 s, as-of calibration 379 s, confidence refit about 26 min, `final_hp` 51 s) from 08:05, done about 08:56, against a P3 start of 11:31 (3.4 hours of slack). P3 steps took 839 s including a 365 s Betr wait at its cap; with about 67 s of runner setup and the claim, P3 ends about 11:46, which is 14 minutes before the 12:00 tip in the worst case (Betr never lands before the cap); with Betr rows landing at once P3 takes about 9 minutes and ends about 11:40.
+- 🔑 **Biggest P3 steps.** Scrapers 88 s (Underdog and Fliff), rung keys 51 s, ParlayAPI 46 s, market refresh of `final_hp` 68 s, price-shop ledger 61 s, pick 12 s, scorer 6 s.
+- 🔑 **Output of the 10-20 simulation.** 9,158 legs scored (betr 1,922 after relabelling the real probe harvest as window inside the transaction, prizepicks 2,565, underdog 2,134, sleeper 1,210, fliff 692, bovada 397, draftkings 238), 9 PrizePicks slips, 4 Underdog slips, `board_true_hp` 4,091 of 4,091, certify P2 7/7 and P3 9/9.
+- 🔑 **Second simulation, 10-21 slate (11 games).** The first attempt (started `10-20 20:56 PT` = 23:56 ET) was an artifact: the archive labels 'window' for the same ET day's games only, so every `10-21` PrizePicks and Underdog row became 'routine', no tiers formed and the pick was refused (correctly). Rule: simulations must start after midnight ET to see the next slate as 'window'. The rerun started `10-20 21:40 PT` (= 00:40 ET) and passed: P2B certify 7/7 (blowout refit 2.4 s; P2B took 107 min, 08:05 to 09:53 PT, per the digest, not re-verified against the 3,029 s figure), P3 certify 9/9, P3 took 11 min (13:16 to 13:27 PT, 152 minutes before a 16:00 tip), 21 PrizePicks and 6 Underdog paper slips; scored rows PrizePicks 9,170, Sleeper 4,185, Underdog 3,968, Fliff 2,356, Bovada 1,274, DraftKings 8; `board_true_hp` 11,620 of 11,620. Production after rollback: all 0, no `pipeline_runs` row, no stale sessions.
+- 🔑 **Real bug found by the rerun.** The blowout refit died on KeyError 'GAME_DATE': `ensure_season_files` writes an empty 2026-27 stub (records empty) and the refit built a DataFrame with no columns. Fixed in `build_blowout_model.py` (an empty season is skipped). The step is continue-on-error with no production reader, but a failing step is still a failure.
+- 🔑 **Defect closed: missing index `nba_market.board_tiers_v2_nm_idx`.** The index `build_confidence_v3.py` uses for its per-prop query did not exist in production (the live table moved to v2 on `10-08`); without it each per-prop query ran 17 minutes or more (the first simulation run was cancelled after 22 minutes). It was created CONCURRENTLY (103 MB, valid) on `10-19`. With it the refit is about 26 min (`tmp_graded` about 5 min, 21 props about 13 min, plus the fit). See the sibling DATABASE section for the table side.
+- 🔑 **Heavy slate rule of thumb.** For the 11-game `10-21` slate P3 was planned for 13:16 PT with a 16:00 PT tip.
+- 🔑 **Betr A/B simulation (10-19 22:56 PT).** `nba/sim_betr_ab.py` and `nba-sim-betr-ab.yml` (rolled back, 2,418 s, production verified empty, switch still false) archive the real committed Betr board as window and score it twice. With Betr on, 8,920 legs scored (betr 1,884, prizepicks 2,562, underdog 2,131, sleeper 1,205, fliff 690, bovada 392, draftkings 56); parked, 7,036 legs scored and the log read "Betr PARKED ... 2,320 Betr legs not scored". See the sibling baseline section for the effect on other apps' scores.
+
+### T50.4-C. P3 changes: Betr wait and park, speed-up, step limits, timing gap, early tip, held-player case
+- 🔑 **Betr bounded wait (new soft P3 step, 10-19 17:34 PT).** Gap found: Betr's board is harvested by its own workflow (dispatched by P3) and archives itself 'window' minutes AFTER P3 scores, and the scorer drops Betr's earlier routine/probe rows once any window row exists, so Betr never reached the scorer. `nba/p3_wait_betr.py` ("Wait for the Betr window board", before the scorer) polls for Betr window rows and stops the moment they land or the dispatched harvest run completes without them. It is capped by `classification_config['p3_betr_wait']` (max_wait_s 360, poll_s 15, stop 14 minutes before the first tip), is soft, reads only, counts rows fetched within 90 minutes, and writes one verdict line `BETR_WAIT|...` in the log. In `nba-p3-afternoon-light.yml` the step carries a 9-minute step limit. A real Betr harvest (label probe) ran 3 min 48 s and archived 2,320 legs for `10-20`.
+- 🔑 **Betr PARKED (owner `10-19 22:51 PT`: leave Betr out, debug, simulate and test it separately).** Park = `classification_config['p3_betr_wait'].enabled = false` (the P3 Betr dispatch step reads the switch and exits 0 with a notice, no harvest; `score_board_legs.py` drops `betr` / `betr_us_dfs`) plus "betr" removed from `nba_main_ui.apps` (now prizepicks, underdog, sleeper, fliff). Restore = set the switch true and add "betr" back to `nba_main_ui.apps`; nothing else. Research use of Betr stays allowed. Betr's harvest resolves league NBA from `2026-10-20` UTC (`betr-cloud-harvest.yml`, auto-switch). The earlier statement in this file that the Betr harvester is the live harvester is superseded for production by this park (T50, `10-19`): the harvester and its renewal still exist, but Betr is not a playable production app.
+- 🔑 **Betr archive fix.** `archive_live_boards.rows_betr` did not map FIELD_GOALS_ATTEMPTED, FREE_THROWS_ATTEMPTED, FOULS and REB, so 1,165 of 7,730 committed-board rows were unscorable; now 94.7 percent are scorable. Tiers and alt rungs are still lumped into `<market>_alternate` with multiplier NULL, so Betr's payout is not capturable from the board; still unmappable keys: TWO_POINTERS_MADE / ATTEMPTS, 1ST_HALF_PRA, TRIPLE_DOUBLE, dunks, first-to-score, the "(combo)" keys. Betr prices are instead called directly: `nba/probe_betr_quote.py` (`10-18 20:28 PT`, read-only, boots like the cloud harvest with a seeded session, geolocation and NBA chip; a plain bearer from the stored session gets 401; answers go to `nba_market.betr_quote`, about 400 entries priced) and `nba/probe_betr_quote_engine.py` (`10-19 14:34 PT`, variable `BQ_ENGINE_DATE`, prices every placed slip of the slate leg for leg, run after P3 on game days through `nba-browser-probe.yml`). Earlier probes: `probe_betr_slip.py` and `probe_betr_slip_wire.py` (`10-18 19:49 PT`), `probe_betr_quote_less.py` (`10-18 20:51 PT`).
+- 🔑 **P3 speed-up (owner `10-20`: "P3 speed up ... keep going").** Afternoon-job checkout 108 s to about 7 s (sparse and blobless; proof workflow `nba-ci-checkout-speed-test.yml`); the run-once claim job's one-file checkout 53 s to 2 s; `final_hp` tier cutpoints computed from (value, count) pairs instead of a 7.8M-row sort (bit-identical `percentile_cont`, about 20 s off P3; audit `audit_conf_cutpoints.py`); `final_hp` reads only the slate's `rung_market` rows when `FE_DATE` is set (about 11 s off P3); the price-shop ledger runs with JIT off for its session (cell_rates 48-87 s down to 4 s, same plan and rows; benchmark `audit_jit_benchmark.py` found JIT total 1.4 s on versus 1.3 s off for the other P3 read queries, identical results); the injury scraper extracts PDFs in parallel processes with no post-download sleep (rows identical); parallel snapshot fetch (`INJURY_WORKERS`, 8 threads) measured NO faster through the proxy, so the default went back to sequential (`audit_injury_scan_speed.py`).
+- 🔑 **Step limits in `nba-p3-afternoon-light.yml` (read from the file on 10-26).** Job-level limits 10 and 45 minutes; steps: refresh board rung keys 8 min, PrizePicks price keys 5, live sportsbook props (ParlayAPI market term) 10, market snapshot and rung market 8, sportsbook consensus and event map 5, wait for P2B 22, market refresh of `final_hp` 8, wait for the Betr window board 9, collect soft-step failures 10. The retired `board_hp` step was removed from the soft-failure list in the same file (see item below).
+- 🔑 **Market refresh of final_hp hit its 8-minute limit (10-23).** On the big slate the soft step stopped after 9 of 12 props (run green). Stocks, threes and turnovers carry no market term, so no slip leg changed, but the whole-number re-pricing after it was skipped. Raising the limit to 15 minutes is waiting for the owner's decision (per the ledger). Learnings item T-12 records that soft steps can time out silently on big slates.
+- 🔑 **Early tip and the held player (10-23).** The pick ran at 12:47 PT, before the 13:00 PT first game (CHI @ MIL). The rebounds 4-Flex (main and backup) held Giddey from that game, so it was unplaceable by 14:22 PT when the owner looked; `audit_portfolio_replacements.py` found no placeable 4-Flex in the round robin (the 3-Power was placeable). Root cause: the pick checks only the slate's first tip, not each leg's own tip versus when the owner places. A fix is to be designed (open).
+- 🔑 **Window snapshot versus pick time (timing gap, learnings T-8 and T-4).** The historical `board_snapshots` 'window' snapshot, which supplies every backtest's PrizePicks lines, the books' standard line and the tier map, is taken at about 14:40 PT (median, every month `2024-10 .. 2026-06`), while the live engine picks at about 13:15 PT in P3. Backtests therefore see about 85 minutes more news (late scratches, line moves) than the live pick. Leak rule T-4: the 'close' snapshot is tip time, after the pick; any books or market factor must use the 'window' label or earlier (a round-1 line gap doubled on the close snapshot).
+- 🔑 **P3 is dispatched by the scheduler at about 20:16 UTC (13:16 PT)** on normal days; heavy-slate and early-tip days follow the min(13:15, first tip minus 30) plus 1 rule.
+- 🔑 **Runner queue (10-22).** Between 09:30 and 09:45 PT every workflow sat queued because two sessions' commits each start a deploy and a pages build. Rule: batch commits.
+- 🔑 **Soft and hard P3/P2A additions.** P3 `soft_paper_al` (paper Goblin/Demon Less tracker, `nba/paper_altless_tracker.py`, table `nba_score.paper_altless_slips`, never placed, off the slip screen) picks after the Underdog paper pick; P2A grades it and prints the running report (`10-20 17:04-17:20 PT`; a game is final by schedule status or both teams' box scores). `build_market_derived.py` with `MD_DATES` refreshes given dates incrementally (schedule from `nba_calendar.games`, LA/L.A. Clippers aliases) as SOFT steps in P2A (recent:3) and P3 (the slate); maintenance task name `derived_dates`. P2A and P3 also gained the nightly/slate sportsbook consensus and event map (stale since `2026-06-13`), both soft (`10-22 09:47 PT`). `nba/grade_board_outcomes.py` now grades PrizePicks two-player combos (either player out voids), "Quarters with N+ Points", triple-doubles and the spellings `player_fouls`, `player_free_throws_attempted`, `player_free_throws_made`, `player_reb_q1`, with name overrides Alexandre Sarr to Alex Sarr and Lu Dort to Luguentz Dort; the P2A 7-day window regraded `10-20` and `10-21` the same night. P3 dispatches the slip-quote run after the pick (soft) and the live grade pays PrizePicks' quoted tier (grader kept as `payout_model`; see the sibling multipliers section). P3 `soft_boardhp` (board_hp) was added `10-22 19:44 PT` and retired `10-23 00:46 PT` when `final_hp` itself carried the board-centred calibration.
+- 🔑 **Quote gate and portfolio engine hooks.** `nba/apply_quote_gate.py` is the "Quote gate" step of `nba-pp-payout-map.yml` (mode `slipq`), right after PrizePicks quotes every placed and backup slip; a slip fails with no quote, status other than 200, a leg not on PrizePicks' board as built, no all-hit payout, or an all-hit payout below `pp_portfolio.quote_min_ratio` (0.95) times `build_slip_engine.pp_payout`. Walk order is k then unit; the first n passing become 'placed'; a failed placed slip becomes 'placed_quote_skip' (graded 'graded_quote_skip'); passing extras stay backups; idempotent; a `::warning::` is emitted when fewer than n pass. `live_slip_engine.pick()` records `pp_portfolio.backups` (4) extra portfolio slips in round-robin order as 'placed_backup' (graded 'graded_backup'; staked profit reads status 'graded' only). Certified by rolled-back production `pick()` on `2025-11-15` and `2026-01-10`. The 2-slip portfolio units (threes_D1 4F, assists_D1 4F steals-free, rebounds_R 4F, stocks_R 4F, single points_R 3P, rebounds_R 3P) are chosen by `portfolio_select` (round robin, no repeat, leg cap) placed after the strategies. Strategy content belongs to the sibling system-design section.
+
+### T50.4-D. P2B confidence refit and its time budget
+- 🔑 **The 10-21 refit hung (red to yellow).** The P2B confidence refit ran past its budget: each prop's market CTEs (`rung_market` 1.14M rows; `board_tiers_v2` window/prizepicks 1.19M rows with a regexp per row) were re-planned per prop, about 30 minutes each, and the query hung from 11:13 to 13:03 PT (18:13 to 20:03 UTC) before it was terminated at 13:03 PT; that is the `10-21` P2B 'failure' row. P3 `10-21` rebuilt `final_hp` itself (25,208 legs) on the PREVIOUS confidence model; the `model_params` snapshot for `10-21` was saved by hand.
+- 🔑 **Change committed (10-21).** `build_confidence_v3.py` now builds the market aggregates as indexed temp tables once (`tmp_rm`, `tmp_bt`) and sets session JIT off. `nba/audit_confidence_refit_speed.py` (`10-21 13:51 PT`) compares old versus new per-prop queries on the same `tmp_graded` with tolerance 1e-9.
+- 🔑 **Result on 10-22.** The refit took 10 min 45 s; P2B `10-22` certified 7/7 with no soft failure, referee crews 2/2, 519 rostered players and 9 Out/Doubtful applied. The parity audit was required to pass before the 08:05 PT P2B or the change would be reverted; the P2B run above is the live evidence, and a formal `build_confidence_v3` parity proof is still recorded as owed (see the open-items sub-section).
+- 🔑 **P2A 10-22.** Every step green, no soft failure, 14 games over 2 dates, gap audit clean, 45,316 legs graded.
+
+### T50.4-E. Slips timeout, Overview switch-off, deployment rule and the UI timing audit
+- 🔑 **Slips screen "Build failed: HARD_QUERY_TIMEOUT_12000MS" (fixed `10-21`).** Root cause: the place-by team lookup compared player ids as TEXT, so the game-log index was unused (one scan per leg). Compared as bigint it takes 0.8 s on the real keys. The fix shipped in the UI line `v1.4.2x`; the table side is in the sibling DATABASE section.
+- 🔑 **Incident: a server-side find/replace corrupted a commit (10-21).** The `v1.4.26` commit was broken by a patch whose new text held a dollar-quote sequence; the tool read it as "text after the match" and duplicated the file tail. The build failed but production never broke; `slips.js` was restored whole and redeployed as `v1.4.27`. This was the second such corruption (the first hit `build_market_anchor.py`, restored after a second occurrence; `certify_slip_system.py` was damaged the same way earlier on `10-18` and restored with a whole-file put).
+- 🔑 **Overview pre-selected view, then switched off (10-21).** Owner `13:56 PT` asked for a pre-selected Overview of real good legs that loads lighter. `v1.4.28` shipped it; the first pass pushed every candidate through the full leg loader and hit the 20 s limit, so `v1.4.29` took the tick off. Root cause found: the leg loader's PrizePicks tier/factor/multiplier lookups joined on `regexp_replace(...)` equal to the market key, so the regexp ran for every row times 38 markets (1.2M calls per lookup). `v1.4.30` normalises the key once per row (MATERIALIZED) and hash-joins; old and new leg queries were md5-identical on 3,000 legs of `10-21`; the lean Overview first pass fell from 15.7 s to 4.8 s in a direct EXPLAIN. A new index `nba_market.ud_line_flags_hide_lookup` (game_date, player, line, WHERE hide) cut the per-row Underdog-hide check from 2.6 s to 0.5 s. `nba/audit_ui_board_timing.py` (`10-21 14:33 PT`, HTTP GETs only, the browser gives the board load 15 s) showed the whole board falling from 10-15 s to 4-8 s, but Overview STILL timed out: the exact Overview query ran more than 4 minutes in the database (cancelled) while the literal variant took 4.8 s, not yet explained. `v1.4.32` serves Overview only when the config key `nba_main_ui.overview.enabled` is true, and it is currently false (the Overview switch-off).
+- 🔑 **Deployment rule (found `10-18`, test C0b).** The deploy ships `alphadog-v2-nba-main-ui` only when its ENTRY file changes, and the browser caches client parts by `VERSION`; two `nba/main_ui` changes (a test-only filter and a replay label) sat undeployed until `VERSION` was bumped. Rule: after any `nba/main_ui` change, bump `VERSION`. New test C0b checks that the deployed `VERSION` equals the repo's, that every served client part is byte-equal to the repo and that no `nba/main_ui` commit exists after the last `VERSION` bump; the UI end-to-end run read 101 of 101 then. Later UI end-to-end counts: 102/102 (`v1.4.14`), 103/103 (`v1.4.19`), 104/104 (`v1.4.16` run), 105/105 on the new apps config (`v1.4.22`).
+- 🔑 **UI test workflow additions (10-17).** A UI test workflow input for the engine (webkit is Safari's engine) at `10-17 17:55 PT` and a full-history run for the undeployed-change guard at `18:59 PT`.
+- 🔑 **Read-after-write cache (10-18, v1.4.14).** The UI re-read the unit with the same SELECT right after saving and Hyperdrive's query cache served the OLD config; fixed with `now()` on reads and UPDATE ... RETURNING on writes; test C51 failed once then passed.
+- 🔑 **Outside connection kill (10-18 02:01 PT).** A first 2025-26 live-loop replay died with "terminating connection due to administrator command": an outside process ended every client connection (the MLB runners' preflight `pg_terminate_backend` on all client backends matches; MLB code was not touched). Production was untouched (rollback) and the replay was re-run. MLB shares the database, so NBA sessions use session-level SET only.
+- 🔑 **Live-loop replays and scorers added 10-17 to 10-18.** `audit_season_replay` with `AR_CAPS` (research-only in-process override; labels `s2526_cap2`, `s2425_cap2`, streak flags `s2526_streak`, `s2425_streak`) all rolled back (`live_slips` 0 to 0, states unchanged, PASS); `nba/research_streak_replay_score.py` scores one replay that holds all stake variants; `integration_test_rollback.py` and the scorer were corrected after reading "x0.5 would be below the minimum: full stake kept" as halved.
+
+### T50.4-F. Feeds and scrapers: Fliff 30040, Underdog, derived tables, grading, freshness audit
+- 🔑 **Fliff dead from the build-285 refusal (fixed `10-22 09:17-09:34 PT`).** Since the morning of `10-22` every Fliff call returned api error 30040 "This version of the app is no longer supported": our `APP_VERSION` 5.0.34.285 was below the server's `min_app_build` 286. `nba/research_fliff_version.py` proved it (285 refused; 286, 287 and 290 accepted). `nba/scrape_fliff_board.py` now uses build 286 plus self-heal: on 30040 it raises the build one step (up to 8 steps) and logs the version accepted. Verified with the production scraper through `nba/research_fliff_scrape_check.py`: 2,366 legs, 75 players, 14 events. Recipe: if Fliff returns 30040 bump the app build one at a time (self-heal does it). The workflow `fliff-probe.yml` gained `mode`, `balance` and `discover_version` inputs and a read-only health check of the pipeline Fliff scraper.
+- 🔑 **Fliff probe (10-20 22:05 PT, separate structure).** `fliff-probe.yml` is an on-demand workflow (code in `fliff_probe/`, output only in `fliff_probe/out/`, database only read for the credential lookup; input `max_events`; steps discover_props, pairs, ladder, bundle, skipper). Nothing else in the repo is edited by it.
+- 🔑 **Fliff skipper probe facts (10-25).** The Pick'Em league id is a STRING key (`fkey__sk_league__461`) and games are `fobj__conflict_event__N`, not integers; JSON truncated at 2,500 characters broke parsing and the full text is now returned (`probe_fliff_pickem_quote.py`). Fliff web login sits behind Google reCAPTCHA v3 (per the `app_login.py` docstring).
+- 🔑 **Underdog 6-hour token refresh (approved exception to the "do not touch the schedule" rule).** `nba/underdog_login.py` with `nba-underdog-login.yml` (`10-21 17:34 PT`, one manual run, stores ONLY the refresh token; optional OTP step) and `nba/underdog_auth.py` with `nba-underdog-token-refresh.yml` (`10-21 17:38 PT`; refresh token rotated and saved under a row lock). Cron `41 3,9,15,21 * * *` UTC = 20:41, 02:41, 08:41 and 14:41 PT; a scheduled run starts at a random point up to 20 minutes after its slot (human timing); job limit 30 minutes. The credentials come from GitHub secrets (names `UD_EMAIL`, `UD_PASSWORD`; values never printed). Owner request `10-21 17:32 PT`: get the token with the password and use it; `17:37 PT`: create a refresher so a fresh token is always on hand, like Betr. `10-21 18:47 PT`: the Underdog scraper no longer crashes on an `american_price` of 0.
+- 🔑 **Underdog line flags backfill.** `nba-ud-flags-backfill.yml` (`10-20 12:37 PT`) writes `nba_market.ud_line_flags` (alternate rung of a prediction-market line means hide) from the current Underdog board file for a date already archived; it writes no board rows.
+- 🔑 **Sleeper alt ladder and spelled-out names.** See T50.4-A; the Sleeper ALT STAT ladder is carried in the main feed from the `10-19` sweep, so the `10-18` question is closed.
+- 🔑 **Board outcome grader (10-22).** Details are in T50.4-C (combos, quarters, triple-doubles, spellings, name overrides). Not gradable without a new source: `player_first_to_score` (needs play-by-play) and dunks. Stat types stored under fallback keys: Dunks, Two Pointers Made/Attempted, the four Combos, Quarters with 3+/5+ Points (now graded where a box score exists). Ungraded `10-21` before the fix: no_stat 1,263 legs, unmatched_player 688 legs.
+- 🔑 **Stale-table audit (10-22 09:36 PT).** `nba/audit_data_freshness.py` answers whether every NBA table is still fed (owner `09:13 PT`: deep scrutiny of both pipelines). Findings: `market_consensus`, `event_game_map` and `schedule_norm` had stopped at `2026-06-13` (rebuilt only by hand), leaving the main UI sportsbook consensus panels empty and the blowout model's market-spread join blind to 2026-27; fixed by `build_market_derived.py` (backfilled `10-20..10-22`: 1,851 consensus rows, 15 of 15 sportsbook events mapped to 14 games). Listed and left unchanged: `game_lines_closing` stale since `2026-06-14` (no closing game lines this season), `player_splits` and `player_career_season_totals` stale since `2026-09-08` (read by the UI), `official_tendency` stale since `2026-09-23`, `defender_ratings` stale since `2026-04-09` (the 2026-27 fit lands with the first P1 that has matchup shards, `10-26`).
+- 🔑 **ParlayAPI split-read (10-22).** On `10-21` the Bovada-only read was itself truncated (2,341 rows). `capture_parlay_props.py` now re-reads a truncated book once per market it showed (market_map keys plus alternates), AFTER every book's plain read so DraftKings never loses time budget, capped by `market_feed.split_max_reads` (24). Unit-tested on a fake API; live on `10-22` the reads were not truncated so no split ran; 11,008 credits left. ParlayAPI returns 0 rows for BetMGM, Caesars, BetRivers, BetOnline and Fanatics; the live market term counts DraftKings, Bovada and some FanDuel, not the history's eight books (`research_parlay_split_check.py`, `10-22 09:38 PT`).
+- 🔑 **Market anchor books.** `build_market_anchor.py` gained config/env `MA_BOOKS` (default draftkings, unchanged) and the market-anchor workflow a `books` input (`10-20 15:53 PT`).
+- 🔑 **Slip-quote and pricing probe scripts.** `probe_app_slip_pricing.py` (read-only, public web pages in a real Chrome, `10-18 19:51 PT`); `research_ud_payout_probe.py` (`10-21 15:41 PT`); `probe_sleeper_pricing.py` and `probe_sleeper_bundles.py` (`10-25 22:07` and `22:27 PT`); `probe_fliff_pickem_quote.py` (`10-25 22:35 PT`). The owner's standing rule (`10-25`): before pricing any pick'em app, map its per-leg and per-slip multipliers by building slips in the app or web itself through Actions, then predict many slips and check; any mismatch means not mapped yet. The owner rejected use of his own Chrome; all app probing runs in Actions.
+
+ or the run is refused; `permissions: contents: read`; commits nothing; job limit 180 minutes; installs psycopg, numpy, scipy, pandas on Python 3.11. Verified in the workflow file on `10-26`.
+- 🔑 **`nba-browser-probe.yml` ("NBA Browser Probe (no commit)").** Dispatch-only; input `script` is a file under `nba/` that needs Chrome; runs `python nba/<script>`; commits nothing; job limit 20 minutes.
+- 🔑 **Repo is PUBLIC, so Actions logs are public.** Never print tokens, passwords, request bodies, page text, names, emails, balances or one-time codes. API keys live only in `nba_config.external_credentials`; passwords only in GitHub secrets; Betr's password is never stored. No entry is ever created or submitted on any app (price and quote calls only).
+- 🔑 **Costs.** Cloudflare 5 USD a month and GitHub 4 USD a month; no extra cost on either.
+- 🔑 **No pipeline runs twice for the same slate** and the schedule tasks are not touched; approved exceptions are the Underdog 6-hour refresh and the Sleeper/Fliff auto-renew. Research may now run beside the pipelines; only heavy database writes keep out of the P2A, P2B and P3 windows (owner `10-23`: research must not be stuck waiting on scheduled tasks).
+- 🔑 **Deployment rule.** The UI ships only on a `VERSION` bump (test C0b; see T50.4-E).
+- 🔑 **Patch-tool dollar-sequence caveat.** A `github_patch_file` new text must never contain a dollar sign followed by a quote, a backtick, an ampersand or another dollar sign: the tool expands those as "text after the match" and duplicates the file tail. This corrupted `build_market_anchor.py` (twice, restored), `certify_slip_system.py` (a regex ending in a dollar-quote duplicated sections; restored with a whole-file put) and `slips.js` (`v1.4.26`; restored whole as `v1.4.27`). Write regexes without the end anchor; verify the blob hash after every commit.
+- 🔑 **Sleeps are background-only.** A foreground sleep is blocked; start a background sleep and wait for the task notification (a `10-25` error started sleeps and then polled immediately so no time passed).
+- 🔑 **Repo workflow.** Bridge tools plus a local clone; sync with checkout/clean/pull; commit through put/patch and verify the hash; batch commits because each commit starts a deploy and a pages build.
+- 🔑 **MLB no-touch rule.** No edits to MLB code (`main.py`, `scrape.yml`, MLB workers, the MLB board file, the MLB certification-center script, `fliff-board.yml`, the mobile-deploy workers script). MLB shares the database, so NBA sessions use session-level SET only.
+
 <!-- T50 END MARKER -->
 
 ## 🆕 §T49.4b — **`T49` TRANSCRIPT BATCH: PIPELINE FINDINGS OF THE `10-15` FULL-PASS AGENTS, THE MORNING MONITOR, PARLAYAPI HISTORY AND BOARD STATE (PT)** *(source: subagents `ae5a74c` pipelines and `a86ad1d` boards, reports `10-15 12:41–12:46 PT`; the main transcript `10-16 15:49 PT` onward; this section qualifies `§T49.4`)*
