@@ -1,5 +1,7 @@
 # NBA GLOSSARY — every term, and exactly where to find it
 
+> 🔗 **Continuation files.** `NBA_MASTER_SUMMARY_V2.md` continues `NBA_MASTER_SUMMARY.md` (chapters `§T49` onward) and `NBA_OPEN_ITEMS_V2.md` continues `NBA_OPEN_ITEMS.md` (T50 addendum onward). Each V1 + V2 pair is ONE document: always read both. New chapters and open items go to V2.
+
 **Purpose.** When a term comes up and you need the source, this tells you which transcript, which
 context, and which document section. Any material term appearing more than once belongs here.
 
