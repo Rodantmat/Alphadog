@@ -434,8 +434,12 @@ def main():
     else:
         today = dt.datetime.now(AF.UDL.PT).date()
         days = [d for d in AF.slate_days(conn) if AF.season_of(d) == "2026-27" and dt.date(2026, 10, 20) <= d < today]
-        conn = run_ud(conn, days, LivePricer, bk)
-        run_pp_live(conn, days, bk)
+        if APP == "betr":
+            print("Betr has no board this season (harvest parked 2026-10-19) - no real part")
+        else:
+            P = LivePricer if APP == "sleeper" else LiveFliffPricer
+            conn = run_ud(conn, days, P, bk)
+            run_pp_live(conn, days, bk, P)
     bk.report()
     log("done")
 
