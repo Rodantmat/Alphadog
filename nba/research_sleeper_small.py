@@ -27,6 +27,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("ST_APP", "sleeper")
 import research_sleeper_transfer as ST              # noqa: E402
 
+if os.environ.get("FL_OVR"):                         # Fliff margin sensitivity (Pick'Em feed 2026-10-26: 1/1.85 + 1/1.80 = 1.096)
+    ST.OVR_F = float(os.environ["FL_OVR"])
+
 ORDERS = ("src", "p", "pm", "fav")
 FLOORS = (0.0, 0.56, 0.58, 0.60, 0.62)
 SIDES = ("any", "Over", "Under")
