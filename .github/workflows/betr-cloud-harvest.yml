@@ -67,18 +67,13 @@ jobs:
           fi
           echo "league=$L" >> "$GITHUB_OUTPUT"
           echo "Resolved league: $L (today $(date -u +%Y-%m-%d) UTC)"
-      - name: System deps (Chrome fonts + Xvfb)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
-            libnss3 libxss1 libasound2t64 libgbm1 || \
-          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
-            libnss3 libxss1 libasound2 libgbm1
+      # BROWSER-FREE (2026-10-26, owner 16:22 PT "get it fixed"): the board is ONE GraphQL query with the owner's own session token
+      # sent raw (proven HTTP 200, run 40421094133) - nba/betr_board_direct.py. The SeleniumBase / Xvfb / Cloudflare-clearing
+      # browser harvest is retired; no Chrome is installed here any more.
       - name: Python deps
         run: |
           python -m pip install --upgrade pip
-          pip install seleniumbase "proxy.py" "psycopg[binary]"
-          sbase get chromedriver || true
+          pip install curl_cffi "psycopg[binary]"
       # SELF-RENEWING SESSION (2026-10-09): the harvester reads the seeded session from the credential store first (the copy it
       # renewed last time), refreshes the Keycloak tokens inside it when the access token nears expiry, and persists the renewal
       # (nba_config.external_credentials 'betr_session_state'). BETR_SESSION_STATE is the seed / fallback only.
