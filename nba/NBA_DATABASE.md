@@ -1,5 +1,7 @@
 # NBA DATABASE — every schema, table and column
 
+> 🔗 **Continuation files.** `NBA_MASTER_SUMMARY_V2.md` continues `NBA_MASTER_SUMMARY.md` (chapters `§T49` onward) and `NBA_OPEN_ITEMS_V2.md` continues `NBA_OPEN_ITEMS.md` (T50 addendum onward). Each V1 + V2 pair is ONE document: always read both. New chapters and open items go to V2.
+
 **Purpose.** The complete data dictionary: what exists, what each column holds, and the specifics that
 matter (keys, defaults, sizes, gotchas). Built transcript by transcript from the actual `CREATE TABLE`
 statements and `information_schema` reads, not from memory.
