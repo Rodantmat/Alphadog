@@ -29,7 +29,7 @@ def main():
     print("\nGAMES:", t[:3000], flush=True)
     games = list(dict.fromkeys(re.findall(r'"(fobj__conflict_event__\d+)"', t)))
     st, t = Q.raw(fc, host, {"__object_class_name": "FCM__Skipper_GetCards__Request",
-                             "variables": {"filter": {"league": nba, "games": games[:1], "prop_categories": []}}})
+                             "variables": {"filter": {"league": nba, "games": games[:1], "prop_categories": ["fkey__sk_prop_category__1060"]}}})
     j = json.loads(t)["result"]["response"]
     print("\nCARDS response keys:", list(j.keys()), flush=True)
     packs = j.get("cards_packs") or []
