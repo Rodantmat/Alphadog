@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-nba-daily-delta";
-const VERSION = "alphadog-v2-nba-daily-delta-v0.1.0";
+const VERSION = "alphadog-v2-nba-daily-delta-v0.1.1";   // v0.1.1 (2026-10-27): one row per player-game (feed duplicate broke the 10-26 load)
 const JOB_KEY = "nba-daily-delta";
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const BATCH_SIZE = 500;
