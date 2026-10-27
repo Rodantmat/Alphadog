@@ -1320,8 +1320,9 @@ def pick(conn, day, require_fresh=True):
         elif not fslips:
             print(f"  {day}: FALLBACK triggered (B built {built_b}) - not enough Unders >= {fb.get('floor', 0.55)} for a slip", flush=True)
         for k_fb, pick_ in enumerate(fslips, start=1):
+            st_fb = 'placed' if k_fb <= n_main else 'placed_backup'
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
-                            VALUES (%s,%s,%s,%s,%s,'power','placed',1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                            VALUES (%s,%s,%s,%s,%s,'power',%s,1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, 'P_FB_U3power', k_fb, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
                                                                     'prop': l['prop'], 'tier': 'R', 'side': 'Under', 'line': float(l['line']),
                                                                     'factor': 1, 'event_id': l.get('event_id')} for l in pick_]),
