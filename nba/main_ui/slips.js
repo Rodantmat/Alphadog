@@ -352,7 +352,14 @@ async function backtestContext(sql, cfg, names) {
     const c = r ? (typeof r.config_json === "string" ? JSON.parse(r.config_json) : r.config_json) : {};
     flPlay = c.enabled === true && c.play === true;
   } catch (_e) { flPlay = false; }
-  return { cellRate, certHit, record, suffix, stateOf, unit, udAlarm, slPlay, flPlay };
+  // BETR PLAY GATE (2026-10-26): classification_config['betr_live'].play - false returns Betr to paper (recorded, not shown)
+  let btPlay = false;
+  try {
+    const r = (await q(sql, "SELECT config_json, now() AS read_at FROM nba_config.classification_config WHERE config_key = 'betr_live'"))[0];
+    const c = r ? (typeof r.config_json === "string" ? JSON.parse(r.config_json) : r.config_json) : {};
+    btPlay = c.enabled === true && c.play === true;
+  } catch (_e) { btPlay = false; }
+  return { cellRate, certHit, record, suffix, stateOf, unit, udAlarm, slPlay, flPlay, btPlay };
 }
 
 // PLAY OR SKIP, AND HOW MUCH (2026-10-15). Until today the label read only 'shadow' from the status, so a slip the engine recorded
