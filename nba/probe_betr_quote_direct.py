@@ -49,7 +49,11 @@ def main():
     code, body, route = D.query(tok)
     if code != 200 or not body:
         print(f"NO BOARD: HTTP {code}"); sys.exit(1)
-    allp = [p for p in Q.picks_from_board(H.board_events(body)[0]) if p["tier"] == "REGULAR"]
+    # only games that have NOT started (picks on a live game come back INVALID_PROJECTION - run 40424706918)
+    from datetime import datetime, timedelta, timezone
+    soon = datetime.now(timezone.utc) + timedelta(minutes=8)
+    evs = [e for e in H.board_events(body)[0] if e.get("date") and datetime.fromisoformat(str(e["date"]).replace("Z", "+00:00")) > soon]
+    allp = [p for p in Q.picks_from_board(evs) if p["tier"] == "REGULAR"]
     # one MORE and one LESS candidate per (event, team, player) on the main stats, earliest events first
     by_event = {}
     for p in allp:
@@ -82,25 +86,34 @@ def main():
         res = ((j or {}).get("data") or {}).get("validateEntryOnEntryRules") or []
         perf = next((x.get("perfectRegularMultiplier") for x in res if x.get("perfectRegularMultiplier")), None)
         dyn = next((x.get("dynamicMultipliers") for x in res if x.get("dynamicMultipliers")), None) or []
-        dyn_map = {str(d["winningPicks"]): d["multiplier"] for d in dyn}
+        dyn_map = {str(d["winningPicks"]): d["multiplier"] for d in dyn if int(d.get("numberOfPicks") or 0) == len(picks)}
+        status = sorted({str(x.get("gameMode")) + ":" + str(x.get("status")) for x in res})
         errs = [e.get("message") for x in res for e in (x.get("errors") or [])][:2]
         for x in res:
             Q.store(tag, picks, x)
         ok_p = perf is not None and abs(float(perf) - float(exp_perfect)) < 1e-6
         ok_d = (not exp_dyn) or all(abs(float(dyn_map.get(k, -1)) - float(v)) < 1e-6 for k, v in exp_dyn.items())
         print(f"{tag:<26} HTTP {code}  Perfect {perf} (table {exp_perfect}) {'MATCH' if ok_p else 'DIFF'} | Dynamic {dyn_map} "
-              f"(table {exp_dyn}) {'MATCH' if ok_d else 'DIFF'}{'  errors: ' + str(errs) if errs else ''}", flush=True)
+              f"(table {exp_dyn}) {'MATCH' if ok_d else 'DIFF'} | {status}{'  errors: ' + str(errs) if errs else ''}", flush=True)
         time.sleep(0.6)
 
     for n in range(2, 7):
         run(f"{n} picks all MORE", build(n, ["MORE"] * n), PR[str(n)], DR.get(str(n)) if n >= 2 else None)
         run(f"{n} picks all LESS", build(n, ["LESS"] * n), PL[str(n)], DL.get(str(n)))
         run(f"{n} picks 1 MORE + LESS", build(n, ["MORE"] + ["LESS"] * (n - 1)), PR[str(n)], DR.get(str(n)))
-    # same-game pair (two players of one event, different teams if possible)
-    ev = events[0]
-    a = first(ev, "MORE", set())
-    b = first(ev, "MORE", {a["player"]}, {a["team"]}) if a else None
-    run("2 picks same game MORE", [a, b] if a and b else None, PR["2"], DR.get("2"))
+    # SAME-GAME pairs (first run showed 2.8x on a same-game pair - re-checked here on games not yet started)
+    for ev in events[:3]:
+        a = first(ev, "MORE", set())
+        if not a:
+            continue
+        opp_m = first(ev, "MORE", {a["player"]}, {a["team"]})
+        opp_l = first(ev, "LESS", {a["player"]}, {a["team"]})
+        mate = next((p for p in by_event[ev] if p["team"] == a["team"] and p["player"] != a["player"] and p["outcome"] == "MORE"), None)
+        run(f"SG opp teams MORE+MORE", [a, opp_m] if opp_m else None, PR["2"], DR.get("2"))
+        run(f"SG opp teams MORE+LESS", [a, opp_l] if opp_l else None, PR["2"], DR.get("2"))
+        run(f"SG same team MORE+MORE", [a, mate] if mate else None, PR["2"], DR.get("2"))
+        other = first(events[-1], "MORE", {a["player"]}) if events[-1] != ev else None
+        run(f"SG pair + 1 other game (3)", [a, opp_m, other] if opp_m and other else None, PR["3"], DR.get("3"))
 
 
 if __name__ == "__main__":
