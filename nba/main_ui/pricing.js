@@ -58,6 +58,7 @@ export function nbaModes(app, n) {
   if (app === "prizepicks") return ["power", "flex"];
   if (app === "underdog") return n >= 3 ? ["power", "flex"] : ["power"];
   if (app === "sleeper") return n >= 3 ? ["power", "flex"] : ["power"];
+  if (app === "betr") return ["power", "flex"];   // Perfect / Dynamic
   return [];
 }
 
