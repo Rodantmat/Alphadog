@@ -206,6 +206,12 @@ jobs:
           sys.exit(1 if miss else 0)
           EOF
 
+      # ONE ROW PER PLAYER-GAME (2026-10-27): the feed listed Booker twice for PHX @ OKC (a phantom 0-minute OKC row) - the load
+      # refused the night and P2B's ladder crashed. The real line (most minutes) is kept in every mined player file.
+      - name: One row per player-game in the mined files
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        run: python nba/dedupe_player_game_files.py
+
       - name: Commit mined data
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         # conflict-safe commit (2026-10-07, nba/git_push_retry.sh); a push that cannot land is a visible warning, not a
