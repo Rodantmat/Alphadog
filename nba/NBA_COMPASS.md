@@ -608,7 +608,14 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    Underdog's main lines 230 / 275 (84%; when different Betr sits ~1 point higher on points / PRA / reb+ast). Betr STILL PARKED
    (classification_config p3_betr_wait false, not in nba_main_ui.apps) - un-parking and any Betr slip engine are the owner's call.
    Betr payouts were already mapped from Betr's own pricing query on 10-18 (fact 169, pp_slip_rules betr_payout_v1; ALL-LESS entries
-   discounted) - the research studies price Betr flat (no all-Less discount).
+   discounted) - the research studies (research_sleeper_transfer pay_betr) use exactly these tables, all-Less discount included.
+   RE-CERTIFIED 2026-10-26 from Betr's own pricing query with the owner's token, no browser (probe_betr_quote_direct runs 40424706918 +
+   40425203392, answers in nba_market.betr_quote): Perfect 2-6 = 3 / 6 / 10 / 20 / 35, all-LESS 2.75 / 5.5 / 9 / 18 / 31.5, one MORE
+   restores the full table, Dynamic 2: 2 / 0.5, 3: 3 / 1, 4: 6 / 1.5, 5: 10 / 2 / 0.4, 6: 20 / 1.5 / 1 (all-LESS 1.75 / 2.75 / 5.5 / 9 /
+   18 tops) - every value MATCHES betr_payout_v1; 2-3 picks SUCCESS on games not yet started, 4-6 matched on picks from games already
+   live (INVALID_PROJECTION flag, prices identical). Same-game pair on OPPOSITE teams = 3x, no adjustment (a 2.8x seen earlier was a
+   pair from a live game); two picks of the SAME team only = refused ("at least 2 different teams"). Not verified: Betr's void / DNP rule
+   (studies drop the void and pay the smaller table; a 2-pick with a void is refunded).
    DAILY CAPTURE (owner 17:04 PT "make it be properly got everyday ... token renewed"): classification_config['p3_betr_wait'].capture
    = true -> P3 dispatches the browser-free harvest at the window EVERY slate even while parked (archived as 'window'); enabled stays
    false, so Betr is NOT scored, the wait step stays off and nothing reaches the Slips screen. RENEWAL PROVEN today (probe_betr_renew_now
