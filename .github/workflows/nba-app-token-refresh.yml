@@ -21,7 +21,10 @@ jobs:
       max-parallel: 1
       fail-fast: false
       matrix:
-        app: [sleeper, fliff]
+        # sleeper removed (owner 2026-10-27 12:12 PT: "We just need to scrape the board with no token or user, it does not need it,
+        # the logged access was needed for the multiplier structure mechanics that we already have") - the Sleeper board scrape
+        # and slip engine are anonymous; Sleeper's login now shows a captcha, so the refresh failed every slot
+        app: [fliff]
     concurrency:
       group: nba-app-auth-${{ matrix.app }}
       cancel-in-progress: false
