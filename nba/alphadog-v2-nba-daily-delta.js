@@ -170,7 +170,9 @@ async function runJob(input, env) {
 
   try {
     const f = await fetchFromGithubRaw(env, "nba/data/nba_delta_player_game_log.json");
-    playerWritten = await upsertPlayerGameLogs(sql, f.records || [], sourceKey, f.season || season);
+    const dropped = [];
+    playerWritten = await upsertPlayerGameLogs(sql, dedupePlayerGame(f.records || [], dropped), sourceKey, f.season || season);
+    if (dropped.length) duplicatesDropped.push(...dropped.map(d => `player_game_log ${d}`));
   } catch (err) { errors.push(`player_game_log_failed: ${String(err)}`); }
 
   try {
