@@ -14,6 +14,7 @@ LATEST PrizePicks quote:
 Portfolio slips (live_slip_engine.PORTFOLIO_UNITS) are walked in the engine's round-robin order (rank k, then unit order): the
 first n that PASS are 'placed'; a placed slip that fails becomes 'placed_quote_skip'; a passing backup is promoted to 'placed' while
 fewer than n are placed; the rest stay 'placed_backup'. Any other strategy's placed slip that fails becomes 'placed_quote_skip'.
+The thin-night fallback (pp_fallback.strategy, 2026-10-27) is walked the same way on its own, k order, cap pp_fallback.slips.
 Every change is printed and noted on the slip (streak_note). Idempotent: re-running after a re-quote re-applies the rule to the
 latest quotes (a demoted slip that now passes is restored while the portfolio is short). Env: DATABASE_URL, QG_DATE, QG_DRY=1.
 """
@@ -50,6 +51,11 @@ def main():
     n = int(pf.get('n', 2))
     ratio = float(pf.get('quote_min_ratio', 0.95))
     order = pf.get('order', [])
+    # the thin-night fallback (classification_config['pp_fallback'], live_slip_engine.fallback_slips) is gated on its own: its first
+    # fb.slips passing slips (k order) are 'placed', a failed placed slip is replaced by the next passing 'placed_backup'
+    row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='pp_fallback'").fetchone()
+    fbc = (row[0] if row and isinstance(row[0], dict) else json.loads(row[0])) if row else {}
+    fb_strat, fb_n = fbc.get('strategy', 'P_FB_U3power'), int(fbc.get('slips', 2))
     slips = conn.execute("""SELECT strategy, k, legs_json, size, structure, status FROM nba_score.live_slips
                             WHERE game_date=%s AND status IN ('placed', 'placed_backup', 'placed_quote_skip')""", (day,)).fetchall()
     quotes = {}
@@ -80,25 +86,36 @@ def main():
         return True, f"PrizePicks {float(full):g}x vs backtest {mp:.2f}x"
 
     changes = []
-    port = [s for s in slips if s[0] in order or s[0].startswith(PORTFOLIO_PREFIX)]
+    port = [s for s in slips if (s[0] in order or s[0].startswith(PORTFOLIO_PREFIX)) and s[0] != fb_strat]
     # the engine's own round robin: rank k first, then the unit order (live_slip_engine.portfolio_select)
     port.sort(key=lambda s: (s[1], order.index(s[0]) if s[0] in order else 99))
-    placed_n = 0
-    for strategy, k, legs, size, structure, status in port:
-        legs = legs if isinstance(legs, list) else json.loads(legs)
-        ok, why = verdict(strategy, k, legs, size, structure)
-        if ok and placed_n < n:
-            new = 'placed'
-            placed_n += 1
-        elif ok:
-            new = 'placed_backup'
-        else:
-            new = 'placed_quote_skip' if status != 'placed_backup' else 'placed_backup'
-        print(f"  {strategy} k{k} {status} -> {new}: {why}", flush=True)
-        if new != status:
-            changes.append((new, f"quote gate: {why}", strategy, k))
+    fbs = sorted([s for s in slips if s[0] == fb_strat], key=lambda s: s[1])
+
+    def walk(group, cap):
+        placed = 0
+        for strategy, k, legs, size, structure, status in group:
+            legs = legs if isinstance(legs, list) else json.loads(legs)
+            ok, why = verdict(strategy, k, legs, size, structure)
+            if ok and placed < cap:
+                new = 'placed'
+                placed += 1
+            elif ok:
+                new = 'placed_backup'
+            else:
+                new = 'placed_quote_skip' if status != 'placed_backup' else 'placed_backup'
+            print(f"  {strategy} k{k} {status} -> {new}: {why}", flush=True)
+            if new != status:
+                changes.append((new, f"quote gate: {why}", strategy, k))
+        return placed
+
+    placed_n = walk(port, n)
+    if fbs:
+        fb_placed = walk(fbs, fb_n)
+        print(f"QUOTE GATE {day}: thin-night fallback {fb_strat} placed {fb_placed} of {fb_n} ({len(fbs)} built incl. backups)", flush=True)
+        if fb_placed < fb_n:
+            print(f"::warning::quote gate: only {fb_placed} of {fb_n} fallback slips passed PrizePicks' quote on {day}", flush=True)
     for strategy, k, legs, size, structure, status in slips:
-        if (strategy, k) in {(p[0], p[1]) for p in port} or status != 'placed':
+        if (strategy, k) in {(p[0], p[1]) for p in port + fbs} or status != 'placed':
             continue
         legs = legs if isinstance(legs, list) else json.loads(legs)
         ok, why = verdict(strategy, k, legs, size, structure)
