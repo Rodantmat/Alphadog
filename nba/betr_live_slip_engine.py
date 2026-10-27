@@ -94,7 +94,7 @@ def build(conn, day, cfg):
             key = (str(l.get("player_id")), l["prop"], l["side"])
             if key not in seen:
                 seen.add(key); pool.append(l)
-    _sl, mk, _ml, _a, _b = RSD.load(conn, day)
+    fair, _main = ST.consensus(conn, day)     # the books' de-vigged chance of Over - the SAME definition the history ordered by
     tm = SL.teams_of(conn, {str(x.get("player_id")) for x in pool if x.get("player_id") is not None}, day)
     floor = float(cfg.get("floor", 0.58))
     priced, why = [], defaultdict(int)
