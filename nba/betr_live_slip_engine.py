@@ -96,6 +96,9 @@ def build(conn, day, cfg):
             if key not in seen:
                 seen.add(key); pool.append(l)
     fair, _main = ST.consensus(conn, day)     # the books' de-vigged chance of Over - the SAME definition the history ordered by
+    near = defaultdict(list)                  # (pid, prop) -> [(line, P(Over))] for a leg whose exact line the books do not post
+    for (fpid, fprop, fline), fp_ in fair.items():
+        near[(fpid, fprop)].append((fline, fp_))
     tm = SL.teams_of(conn, {str(x.get("player_id")) for x in pool if x.get("player_id") is not None}, day)
     floor = float(cfg.get("floor", 0.58))
     priced, why = [], defaultdict(int)
