@@ -113,13 +113,23 @@ def build(conn, day, cfg):
             why["Betr line differs"] += 1; continue
         po = fair.get((pid, l["prop"], float(l["line"])))
         if po is None:
-            # the books' nearest posted line within 1 point (10-26 dry run: 10 of 10 Betr-priced legs sat 0.5 off the books' line); the
-            # order only needs the books' view of the leg, so the nearest line's chance stands in (the history used the books' main line)
-            cands = [(abs(fl_ - float(l["line"])), fp_) for fl_, fp_ in near.get((pid, l["prop"]), []) if abs(fl_ - float(l["line"])) <= 1.0]
-            if not cands:
-                why["no books' price within 1 point"] += 1; continue
-            po = min(cands)[1]
-            why["books' price at a nearby line"] += 1
+            # LIVE BOOKS POST FEWER MAIN LINES than the history's (ParlayAPI: DraftKings + Bovada, Bovada often only rungs - 10-26 dry run:
+            # SGA points 31.5 had Bovada 29.5 / 34.5 only). The order only needs the books' view of the leg: P(Over) is read off the books'
+            # own lines - interpolated between the nearest line below and above (within 6 points), else the nearest line within 2 points
+            L = float(l["line"])
+            pts = sorted(near.get((pid, l["prop"]), []))
+            lo = [x for x in pts if x[0] < L and L - x[0] <= 6]
+            hi = [x for x in pts if x[0] > L and x[0] - L <= 6]
+            if lo and hi:
+                (l1, p1), (l2, p2) = lo[-1], hi[0]
+                po = p1 + (p2 - p1) * (L - l1) / (l2 - l1)
+                why["books' chance interpolated between their lines"] += 1
+            else:
+                cands = [(abs(fl_ - L), fp_) for fl_, fp_ in pts if abs(fl_ - L) <= 2.0]
+                if not cands:
+                    why["no books' price near the line"] += 1; continue
+                po = min(cands)[1]
+                why["books' chance from a line within 2 points"] += 1
         pf = [po if l["side"] == "Over" else 1 - po]
         priced.append({"pid": pid, "player": l.get("player"), "prop": l["prop"], "side": l["side"], "line": float(l["line"]),
                        "p": float(l["p"]), "pf": sum(pf) / len(pf), "team": tm.get(pid), "game": l.get("event_id")})
