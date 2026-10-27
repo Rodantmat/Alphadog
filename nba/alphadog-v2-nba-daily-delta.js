@@ -182,7 +182,9 @@ async function runJob(input, env) {
 
   try {
     const f = await fetchFromGithubRaw(env, "nba/data/nba_delta_player_game_log_advanced.json");
-    playerAdvWritten = await upsertPlayerAdvanced(sql, f.records || [], sourceKey);
+    const dropped = [];
+    playerAdvWritten = await upsertPlayerAdvanced(sql, dedupePlayerGame(f.records || [], dropped), sourceKey);
+    if (dropped.length) duplicatesDropped.push(...dropped.map(d => `player_game_log_advanced ${d}`));
   } catch (err) { errors.push(`player_advanced_failed: ${String(err)}`); }
 
   try {
