@@ -1,0 +1,201 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.44",
+ "route": "/api/main-board/health",
+ "slate": {
+  "date": "2026-10-25",
+  "today": "2026-10-26",
+  "mode": "replay",
+  "latest_scored": "2026-10-26",
+  "next_slate": "2026-10-26",
+  "first_tip_today": "2026-10-26T23:00:00.000Z",
+  "requested": "2026-10-25"
+ },
+ "overall_status": "red",
+ "generated_at": "2026-10-27T02:07:51.219Z",
+ "total_board_players": 368,
+ "total_board_games": 7,
+ "layers": [
+  {
+   "key": "P2A",
+   "label": "P2A - Results & stats (box scores, grading)",
+   "status": "green",
+   "last_update": "2026-10-26 \u2022 success \u2022 2026-10-26 10:44 UTC",
+   "window_note": "Daily ~03:30 PT: prior-night box scores, grading, stats refresh.",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 1,
+     "expected": 1,
+     "unit": "success",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-26",
+    "status": "success"
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "P2B",
+   "label": "P2B - Slate model (baseline, injuries, crews, morning line)",
+   "status": "green",
+   "last_update": "2026-10-26 \u2022 success \u2022 2026-10-26 15:44 UTC",
+   "window_note": "Slate day: must finish before P3.",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 1,
+     "expected": 1,
+     "unit": "success",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-26",
+    "status": "success"
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "P3",
+   "label": "P3 - Board capture, scoring & engine picks",
+   "status": "green",
+   "last_update": "2026-10-26 \u2022 success \u2022 2026-10-26 20:32 UTC",
+   "window_note": "Slate day: runs ~30 min before the first tip (2026-10-26 23:00 UTC).",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 1,
+     "expected": 1,
+     "unit": "success",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-26",
+    "status": "success"
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "P1",
+   "label": "P1 - Weekly static refresh",
+   "status": "red",
+   "last_update": "2026-10-26 \u2022 failure/failure \u2022 2026-10-26 20:40 UTC",
+   "window_note": "Mondays 12:00 PT: rosters, profiles, tracking, ratings.",
+   "metrics": [
+    {
+     "label": "Today's run",
+     "covered": 0,
+     "expected": null,
+     "unit": "failure/failure",
+     "note": null
+    }
+   ],
+   "totals": {
+    "run_key": "2026-10-26",
+    "status": "failure/failure"
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "board",
+   "label": "Scored Board (2026-10-25, replay)",
+   "status": "green",
+   "last_update": "2026-10-25 20:21 UTC",
+   "window_note": "No scored board for today (2026-10-26) - the screen replays the latest scored slate.",
+   "metrics": [
+    {
+     "label": "prizepicks legs",
+     "covered": 5962,
+     "expected": null,
+     "unit": "legs",
+     "note": "96 players"
+    },
+    {
+     "label": "underdog legs",
+     "covered": 3667,
+     "expected": null,
+     "unit": "legs",
+     "note": "96 players"
+    },
+    {
+     "label": "sleeper legs",
+     "covered": 2572,
+     "expected": null,
+     "unit": "legs",
+     "note": "88 players"
+    },
+    {
+     "label": "fliff legs",
+     "covered": 1548,
+     "expected": null,
+     "unit": "legs",
+     "note": "88 players"
+    }
+   ],
+   "totals": {
+    "legs": 13749
+   },
+   "rerun_action": null
+  },
+  {
+   "key": "capture",
+   "label": "DFS Board Capture (2026-10-26)",
+   "status": "green",
+   "last_update": "2026-10-27 02:00 UTC",
+   "window_note": "Latest capture on or before today, per app and snapshot label (routine / window / close).",
+   "metrics": [
+    {
+     "label": "betr \u2022 routine",
+     "covered": 3981,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-27 02:00 UTC"
+    },
+    {
+     "label": "fliff \u2022 close",
+     "covered": 2368,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-26 22:38 UTC"
+    },
+    {
+     "label": "fliff \u2022 morning",
+     "covered": 2292,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-26 15:09 UTC"
+    },
+    {
+     "label": "fliff \u2022 window",
+     "covered": 2194,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-26 20:20 UTC"
+    },
+    {
+     "label": "prizepicks \u2022 close",
+     "covered": 10161,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-26 22:37 UTC"
+    },
+    {
+     "label": "prizepicks \u2022 morning",
+     "covered": 9740,
+     "expected": null,
+     "unit": "rows",
+     "note": "fetched 2026-10-26 15:09 UTC"
+    },
+    "... 7 more"
+   ],
+   "totals": null,
+   "rerun_action": null
+  },
+  "... 3 more"
+ ]
+}

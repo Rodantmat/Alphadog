@@ -1,0 +1,1554 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.44",
+ "route": "/api/slips/high-hit",
+ "slate": {
+  "date": "2026-10-25",
+  "today": "2026-10-26",
+  "mode": "replay",
+  "latest_scored": "2026-10-26",
+  "next_slate": "2026-10-26",
+  "first_tip_today": "2026-10-26T23:00:00.000Z",
+  "requested": "2026-10-25"
+ },
+ "source": "live",
+ "generated_slips": [
+  {
+   "source_key": "prizepicks",
+   "entry_mode": "power",
+   "slip_size": 3,
+   "slip_type": "3-pick",
+   "structure_label": "3-pick Power",
+   "track_label": "P_B5_3power",
+   "strategy": "P_B5_3power",
+   "k": 1,
+   "status": "graded",
+   "stake_weight": 1,
+   "estimated_multiplier": 6,
+   "estimated_multiplier_flex_tiers": null,
+   "estimated_hit_probability_0_100": 68.7,
+   "result": {
+    "hits": 3,
+    "payout": 6,
+    "pushes": 0
+   },
+   "strategy_state": null,
+   "place_by_utc": "2026-10-25T21:00:00.000Z",
+   "place_by_pt": "2:00 PM PT",
+   "place_by_game": "LAL@UTA",
+   "place_by_exact": true,
+   "stake_label": "PLAY $2.00 (paper)",
+   "streak_note": "2-slip portfolio",
+   "unit_usd": 2,
+   "play_usd": 2,
+   "backtest_hit_probability_0_100": null,
+   "strategy_cert_leg_hit_0_100": null,
+   "strategy_backtest": null,
+   "legs": [
+    {
+     "board_row_id": "2026-10-25~prizepicks~1630549~turnovers~1.5~Over",
+     "final_board_row_id": "2026-10-25~prizepicks~1630549~turnovers~1.5~Over",
+     "player_name": "Day'Ron Sharpe",
+     "player_id": "1630549",
+     "mlb_player_id": "1630549",
+     "team_id": "nba_1610612751",
+     "team_abbr": "BKN",
+     "opponent_abbr": "IND",
+     "game_pk": "0022600113",
+     "official_game_time_utc": "2026-10-25T22:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "turnovers",
+     "prop_label": "Turnovers",
+     "line_value": 1.5,
+     "selected_side": "more",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 18.4,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 74.4,
+     "estimated_hit_probability_0_100": 74.4,
+     "certainty_0_100": 89.6,
+     "overall_score_0_100": 78.4,
+     "score_0_100": 78.4,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "turnovers_R",
+     "result_hit": 1,
+     "result_push": false,
+     "board_percentile": 91.1,
+     "cell_backtest_hit_0_100": 61.7,
+     "cell_backtest_legs": 2293
+    },
+    {
+     "board_row_id": "2026-10-25~prizepicks~1630540~steals~0.5~Over",
+     "final_board_row_id": "2026-10-25~prizepicks~1630540~steals~0.5~Over",
+     "player_name": "Miles McBride",
+     "player_id": "1630540",
+     "mlb_player_id": "1630540",
+     "team_id": "nba_1610612752",
+     "team_abbr": "NYK",
+     "opponent_abbr": "ORL",
+     "game_pk": "0022600114",
+     "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "steals",
+     "prop_label": "Steals",
+     "line_value": 0.5,
+     "selected_side": "more",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 10.3,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 66.3,
+     "estimated_hit_probability_0_100": 66.3,
+     "certainty_0_100": 92,
+     "overall_score_0_100": 74.1,
+     "score_0_100": 74.1,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "steals_R",
+     "result_hit": 1,
+     "result_push": false,
+     "board_percentile": 84.1,
+     "cell_backtest_hit_0_100": 63.9,
+     "cell_backtest_legs": 1631
+    },
+    {
+     "board_row_id": "2026-10-25~prizepicks~1642846~blocks~0.5~Over",
+     "final_board_row_id": "2026-10-25~prizepicks~1642846~blocks~0.5~Over",
+     "player_name": "Ace Bailey",
+     "player_id": "1642846",
+     "mlb_player_id": "1642846",
+     "team_id": "nba_1610612762",
+     "team_abbr": "UTA",
+     "opponent_abbr": "LAL",
+     "game_pk": "0022600112",
+     "official_game_time_utc": "2026-10-25T21:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "blocks",
+     "prop_label": "Blocks",
+     "line_value": 0.5,
+     "selected_side": "more",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 9.4,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 65.4,
+     "estimated_hit_probability_0_100": 65.4,
+     "certainty_0_100": 94.3,
+     "overall_score_0_100": 76.1,
+     "score_0_100": 76.1,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "blocks_R",
+     "result_hit": 1,
+     "result_push": false,
+     "board_percentile": 87.4
+    }
+   ],
+   "model_multiplier": 6,
+   "quote_note": "PrizePicks quote 1:24 PM PT: 6x"
+  },
+  {
+   "source_key": "prizepicks",
+   "entry_mode": "power",
+   "slip_size": 3,
+   "slip_type": "3-pick",
+   "structure_label": "3-pick Power",
+   "track_label": "P_B3_3power",
+   "strategy": "P_B3_3power",
+   "k": 1,
+   "status": "graded",
+   "stake_weight": 1,
+   "estimated_multiplier": 6,
+   "estimated_multiplier_flex_tiers": null,
+   "estimated_hit_probability_0_100": 78.5,
+   "result": {
+    "hits": 1,
+    "payout": 0,
+    "pushes": 0
+   },
+   "strategy_state": null,
+   "place_by_utc": "2026-10-25T23:00:00.000Z",
+   "place_by_pt": "4:00 PM PT",
+   "place_by_game": "LAC@OKC",
+   "place_by_exact": true,
+   "stake_label": "PLAY $2.00 (paper)",
+   "streak_note": "2-slip portfolio",
+   "unit_usd": 2,
+   "play_usd": 2,
+   "backtest_hit_probability_0_100": 58.7,
+   "strategy_cert_leg_hit_0_100": null,
+   "strategy_backtest": null,
+   "legs": [
+    {
+     "board_row_id": "2026-10-25~prizepicks~1629636~turnovers~4.5~Under",
+     "final_board_row_id": "2026-10-25~prizepicks~1629636~turnovers~4.5~Under",
+     "player_name": "Darius Garland",
+     "player_id": "1629636",
+     "mlb_player_id": "1629636",
+     "team_id": "nba_1610612746",
+     "team_abbr": "LAC",
+     "opponent_abbr": "OKC",
+     "game_pk": "0022600116",
+     "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "turnovers",
+     "prop_label": "Turnovers",
+     "line_value": 4.5,
+     "selected_side": "less",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 29,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 85,
+     "estimated_hit_probability_0_100": 85,
+     "certainty_0_100": 89.1,
+     "overall_score_0_100": 87,
+     "score_0_100": 87,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "turnovers_R",
+     "result_hit": 0,
+     "result_push": false,
+     "board_percentile": 99.9,
+     "cell_backtest_hit_0_100": 63.1,
+     "cell_backtest_legs": 4831
+    },
+    {
+     "board_row_id": "2026-10-25~prizepicks~1642866~blocks~0.5~Under",
+     "final_board_row_id": "2026-10-25~prizepicks~1642866~blocks~0.5~Under",
+     "player_name": "Joan Beringer",
+     "player_id": "1642866",
+     "mlb_player_id": "1642866",
+     "team_id": "nba_1610612750",
+     "team_abbr": "MIN",
+     "opponent_abbr": "TOR",
+     "game_pk": "0022600115",
+     "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "blocks",
+     "prop_label": "Blocks",
+     "line_value": 0.5,
+     "selected_side": "less",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 20.9,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 76.9,
+     "estimated_hit_probability_0_100": 76.9,
+     "certainty_0_100": 90,
+     "overall_score_0_100": 80.8,
+     "score_0_100": 80.8,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "blocks_R",
+     "result_hit": 1,
+     "result_push": false,
+     "board_percentile": 95.2,
+     "cell_backtest_hit_0_100": 50,
+     "cell_backtest_legs": 4
+    },
+    {
+     "board_row_id": "2026-10-25~prizepicks~1630532~turnovers~2.5~Under",
+     "final_board_row_id": "2026-10-25~prizepicks~1630532~turnovers~2.5~Under",
+     "player_name": "Franz Wagner",
+     "player_id": "1630532",
+     "mlb_player_id": "1630532",
+     "team_id": "nba_1610612753",
+     "team_abbr": "ORL",
+     "opponent_abbr": "NYK",
+     "game_pk": "0022600114",
+     "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "turnovers",
+     "prop_label": "Turnovers",
+     "line_value": 2.5,
+     "selected_side": "less",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 17.7,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 73.7,
+     "estimated_hit_probability_0_100": 73.7,
+     "certainty_0_100": 89.7,
+     "overall_score_0_100": 77.9,
+     "score_0_100": 77.9,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "turnovers_R",
+     "result_hit": 0,
+     "result_push": false,
+     "board_percentile": 90.3,
+     "cell_backtest_hit_0_100": 63.1,
+     "cell_backtest_legs": 4831
+    }
+   ],
+   "model_multiplier": 6,
+   "quote_note": "PrizePicks quote 1:24 PM PT: 6x"
+  },
+  {
+   "source_key": "prizepicks",
+   "entry_mode": "flex",
+   "slip_size": 4,
+   "slip_type": "4-pick",
+   "structure_label": "4-pick Flex",
+   "track_label": "P_B4_4flex",
+   "strategy": "P_B4_4flex",
+   "k": 1,
+   "status": "graded",
+   "stake_weight": 1,
+   "estimated_multiplier": 6,
+   "estimated_multiplier_flex_tiers": {
+    "3": 1.5,
+    "4": 6
+   },
+   "estimated_hit_probability_0_100": 74.7,
+   "result": {
+    "hits": 1,
+    "payout": 0,
+    "pushes": 0
+   },
+   "strategy_state": null,
+   "place_by_utc": "2026-10-25T23:00:00.000Z",
+   "place_by_pt": "4:00 PM PT",
+   "place_by_game": "TOR@MIN",
+   "place_by_exact": true,
+   "stake_label": "PLAY $2.00 (paper)",
+   "streak_note": "2-slip portfolio",
+   "unit_usd": 2,
+   "play_usd": 2,
+   "backtest_hit_probability_0_100": 56.6,
+   "strategy_cert_leg_hit_0_100": null,
+   "strategy_backtest": null,
+   "legs": [
+    {
+     "board_row_id": "2026-10-25~prizepicks~1642866~blocks~0.5~Under",
+     "final_board_row_id": "2026-10-25~prizepicks~1642866~blocks~0.5~Under",
+     "player_name": "Joan Beringer",
+     "player_id": "1642866",
+     "mlb_player_id": "1642866",
+     "team_id": "nba_1610612750",
+     "team_abbr": "MIN",
+     "opponent_abbr": "TOR",
+     "game_pk": "0022600115",
+     "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "blocks",
+     "prop_label": "Blocks",
+     "line_value": 0.5,
+     "selected_side": "less",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 20.9,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 76.9,
+     "estimated_hit_probability_0_100": 76.9,
+     "certainty_0_100": 90,
+     "overall_score_0_100": 80.8,
+     "score_0_100": 80.8,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "blocks_R",
+     "result_hit": 1,
+     "result_push": false,
+     "board_percentile": 95.2,
+     "cell_backtest_hit_0_100": 50,
+     "cell_backtest_legs": 4
+    },
+    {
+     "board_row_id": "2026-10-25~prizepicks~1630178~blocks~0.5~Under",
+     "final_board_row_id": "2026-10-25~prizepicks~1630178~blocks~0.5~Under",
+     "player_name": "Tyrese Maxey",
+     "player_id": "1630178",
+     "mlb_player_id": "1630178",
+     "team_id": "nba_1610612755",
+     "team_abbr": "PHI",
+     "opponent_abbr": "DET",
+     "game_pk": "0022600117",
+     "official_game_time_utc": "2026-10-25T23:30:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "blocks",
+     "prop_label": "Blocks",
+     "line_value": 0.5,
+     "selected_side": "less",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 7,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 63,
+     "estimated_hit_probability_0_100": 63,
+     "certainty_0_100": 95,
+     "overall_score_0_100": 75.3,
+     "score_0_100": 75.3,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "blocks_R",
+     "result_hit": 0,
+     "result_push": false,
+     "board_percentile": 85.9,
+     "cell_backtest_hit_0_100": 50,
+     "cell_backtest_legs": 4
+    },
+    {
+     "board_row_id": "2026-10-25~prizepicks~1629636~turnovers~4.5~Under",
+     "final_board_row_id": "2026-10-25~prizepicks~1629636~turnovers~4.5~Under",
+     "player_name": "Darius Garland",
+     "player_id": "1629636",
+     "mlb_player_id": "1629636",
+     "team_id": "nba_1610612746",
+     "team_abbr": "LAC",
+     "opponent_abbr": "OKC",
+     "game_pk": "0022600116",
+     "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "turnovers",
+     "prop_label": "Turnovers",
+     "line_value": 4.5,
+     "selected_side": "less",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 29,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 85,
+     "estimated_hit_probability_0_100": 85,
+     "certainty_0_100": 89.1,
+     "overall_score_0_100": 87,
+     "score_0_100": 87,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "turnovers_R",
+     "result_hit": 0,
+     "result_push": false,
+     "board_percentile": 99.9,
+     "cell_backtest_hit_0_100": 63.1,
+     "cell_backtest_legs": 4831
+    },
+    {
+     "board_row_id": "2026-10-25~prizepicks~1630532~turnovers~2.5~Under",
+     "final_board_row_id": "2026-10-25~prizepicks~1630532~turnovers~2.5~Under",
+     "player_name": "Franz Wagner",
+     "player_id": "1630532",
+     "mlb_player_id": "1630532",
+     "team_id": "nba_1610612753",
+     "team_abbr": "ORL",
+     "opponent_abbr": "NYK",
+     "game_pk": "0022600114",
+     "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+     "source_key": "prizepicks",
+     "canonical_prop_key": "turnovers",
+     "prop_label": "Turnovers",
+     "line_value": 2.5,
+     "selected_side": "less",
+     "line_type": "regular",
+     "is_goblin": 0,
+     "is_demon": 0,
+     "leg_factor": 1,
+     "app_multiplier": 0,
+     "edge_0_100": 17.7,
+     "breakeven_0_100": 56,
+     "hit_probability_0_100": 73.7,
+     "estimated_hit_probability_0_100": 73.7,
+     "certainty_0_100": 89.7,
+     "overall_score_0_100": 77.9,
+     "score_0_100": 77.9,
+     "replay_mode": 1,
+     "tier": "R",
+     "cell": "turnovers_R",
+     "result_hit": 0,
+     "result_push": false,
+     "board_percentile": 90.3,
+     "cell_backtest_hit_0_100": 63.1,
+     "cell_backtest_legs": 4831
+    }
+   ],
+   "model_multiplier": 6,
+   "quote_note": "PrizePicks quote 1:24 PM PT: 6x"
+  }
+ ],
+ "test_only_recorded": 32,
+ "backup_pool": [
+  {
+   "board_row_id": "2026-10-25~prizepicks~1642347~fg3a~2.5~Under",
+   "final_board_row_id": "2026-10-25~prizepicks~1642347~fg3a~2.5~Under",
+   "player_name": "Jamal Shead",
+   "player_id": "1642347",
+   "mlb_player_id": "1642347",
+   "team_id": "nba_1610612761",
+   "team_abbr": "TOR",
+   "opponent_abbr": "MIN",
+   "game_pk": "0022600115",
+   "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+   "source_key": "prizepicks",
+   "canonical_prop_key": "fg3a",
+   "prop_label": "3-PT Attempted",
+   "line_value": 2.5,
+   "selected_side": "less",
+   "line_type": "regular",
+   "is_goblin": 0,
+   "is_demon": 0,
+   "leg_factor": 1,
+   "app_multiplier": 0,
+   "edge_0_100": 37.5,
+   "breakeven_0_100": 56,
+   "hit_probability_0_100": 93.5,
+   "estimated_hit_probability_0_100": 93.5,
+   "certainty_0_100": 89.6,
+   "overall_score_0_100": 94.5,
+   "score_0_100": 94.5,
+   "replay_mode": 1,
+   "board_percentile": 100
+  },
+  {
+   "board_row_id": "2026-10-25~prizepicks~1629029~fga~22.5~Under",
+   "final_board_row_id": "2026-10-25~prizepicks~1629029~fga~22.5~Under",
+   "player_name": "Luka Don\u010di\u0107",
+   "player_id": "1629029",
+   "mlb_player_id": "1629029",
+   "team_id": "nba_1610612747",
+   "team_abbr": "LAL",
+   "opponent_abbr": "UTA",
+   "game_pk": "0022600112",
+   "official_game_time_utc": "2026-10-25T21:00:00.000Z",
+   "source_key": "prizepicks",
+   "canonical_prop_key": "fga",
+   "prop_label": "FG Attempts",
+   "line_value": 22.5,
+   "selected_side": "less",
+   "line_type": "regular",
+   "is_goblin": 0,
+   "is_demon": 0,
+   "leg_factor": 1,
+   "app_multiplier": 0,
+   "edge_0_100": 37.4,
+   "breakeven_0_100": 56,
+   "hit_probability_0_100": 93.4,
+   "estimated_hit_probability_0_100": 93.4,
+   "certainty_0_100": 86.6,
+   "overall_score_0_100": 93.7,
+   "score_0_100": 93.7,
+   "replay_mode": 1,
+   "board_percentile": 100
+  },
+  {
+   "board_row_id": "2026-10-25~prizepicks~1629029~fg3a~10.5~Under",
+   "final_board_row_id": "2026-10-25~prizepicks~1629029~fg3a~10.5~Under",
+   "player_name": "Luka Don\u010di\u0107",
+   "player_id": "1629029",
+   "mlb_player_id": "1629029",
+   "team_id": "nba_1610612747",
+   "team_abbr": "LAL",
+   "opponent_abbr": "UTA",
+   "game_pk": "0022600112",
+   "official_game_time_utc": "2026-10-25T21:00:00.000Z",
+   "source_key": "prizepicks",
+   "canonical_prop_key": "fg3a",
+   "prop_label": "3-PT Attempted",
+   "line_value": 10.5,
+   "selected_side": "less",
+   "line_type": "regular",
+   "is_goblin": 0,
+   "is_demon": 0,
+   "leg_factor": 1,
+   "app_multiplier": 0,
+   "edge_0_100": 34.7,
+   "breakeven_0_100": 56,
+   "hit_probability_0_100": 90.7,
+   "estimated_hit_probability_0_100": 90.7,
+   "certainty_0_100": 88.5,
+   "overall_score_0_100": 91.8,
+   "score_0_100": 91.8,
+   "replay_mode": 1,
+   "board_percentile": 100
+  },
+  {
+   "board_row_id": "2026-10-25~prizepicks~1629029~fta~9.5~Under",
+   "final_board_row_id": "2026-10-25~prizepicks~1629029~fta~9.5~Under",
+   "player_name": "Luka Don\u010di\u0107",
+   "player_id": "1629029",
+   "mlb_player_id": "1629029",
+   "team_id": "nba_1610612747",
+   "team_abbr": "LAL",
+   "opponent_abbr": "UTA",
+   "game_pk": "0022600112",
+   "official_game_time_utc": "2026-10-25T21:00:00.000Z",
+   "source_key": "prizepicks",
+   "canonical_prop_key": "fta",
+   "prop_label": "FT Attempts",
+   "line_value": 9.5,
+   "selected_side": "less",
+   "line_type": "regular",
+   "is_goblin": 0,
+   "is_demon": 0,
+   "leg_factor": 1,
+   "app_multiplier": 0,
+   "edge_0_100": 30.8,
+   "breakeven_0_100": 56,
+   "hit_probability_0_100": 86.8,
+   "estimated_hit_probability_0_100": 86.8,
+   "certainty_0_100": 88.5,
+   "overall_score_0_100": 88.3,
+   "score_0_100": 88.3,
+   "replay_mode": 1,
+   "board_percentile": 99.9
+  },
+  {
+   "board_row_id": "2026-10-25~prizepicks~1630595~fgm~9.5~Under",
+   "final_board_row_id": "2026-10-25~prizepicks~1630595~fgm~9.5~Under",
+   "player_name": "Cade Cunningham",
+   "player_id": "1630595",
+   "mlb_player_id": "1630595",
+   "team_id": "nba_1610612765",
+   "team_abbr": "DET",
+   "opponent_abbr": "PHI",
+   "game_pk": "0022600117",
+   "official_game_time_utc": "2026-10-25T23:30:00.000Z",
+   "source_key": "prizepicks",
+   "canonical_prop_key": "fgm",
+   "prop_label": "FG Made",
+   "line_value": 9.5,
+   "selected_side": "less",
+   "line_type": "regular",
+   "is_goblin": 0,
+   "is_demon": 0,
+   "leg_factor": 1,
+   "app_multiplier": 0,
+   "edge_0_100": 30.3,
+   "breakeven_0_100": 56,
+   "hit_probability_0_100": 86.3,
+   "estimated_hit_probability_0_100": 86.3,
+   "certainty_0_100": 88.4,
+   "overall_score_0_100": 87.9,
+   "score_0_100": 87.9,
+   "replay_mode": 1,
+   "board_percentile": 99.9
+  },
+  {
+   "board_row_id": "2026-10-25~prizepicks~1628983~fga~18.5~Under",
+   "final_board_row_id": "2026-10-25~prizepicks~1628983~fga~18.5~Under",
+   "player_name": "Shai Gilgeous-Alexander",
+   "player_id": "1628983",
+   "mlb_player_id": "1628983",
+   "team_id": "nba_1610612760",
+   "team_abbr": "OKC",
+   "opponent_abbr": "LAC",
+   "game_pk": "0022600116",
+   "official_game_time_utc": "2026-10-25T23:00:00.000Z",
+   "source_key": "prizepicks",
+   "canonical_prop_key": "fga",
+   "prop_label": "FG Attempts",
+   "line_value": 18.5,
+   "selected_side": "less",
+   "line_type": "regular",
+   "is_goblin": 0,
+   "is_demon": 0,
+   "leg_factor": 1,
+   "app_multiplier": 0,
+   "edge_0_100": 29.6,
+   "breakeven_0_100": 56,
+   "hit_probability_0_100": 85.6,
+   "estimated_hit_probability_0_100": 85.6,
+   "certainty_0_100": 87.9,
+   "overall_score_0_100": 86.9,
+   "score_0_100": 86.9,
+   "replay_mode": 1,
+   "board_percentile": 99.9
+  },
+  "... 237 more"
+ ],
+ "pricing": {
+  "pp": {
+   "compression": {
+    "knee": 9.1,
+    "formula": "payout = product if product <= knee else knee * (product/knee)^exponent",
+    "exponent": 0.857
+   },
+   "flex_2pick_base": {
+    "1": 0.5,
+    "2": 2
+   },
+   "base_power": {
+    "2": 3,
+    "3": 6,
+    "4": 10,
+    "5": 20,
+    "6": 37.5,
+    "note": "all-standard; 5 and 6 verified 2026-09-21 (WNBA slips run, 3 player sets each, unadjusted)"
+   },
+   "flex_all_standard": {
+    "3": {
+     "2": 1,
+     "3": 3
+    },
+    "4": {
+     "3": 1.5,
+     "4": 6
+    },
+    "5": {
+     "3": 0.4,
+     "4": 2,
+     "5": 10
+    },
+    "6": {
+     "4": 0.4,
+     "5": 2,
+     "6": 25
+    },
+    "note": "all-standard Flex, 2026-09-21 (NBA + WNBA); 2-pick in flex_2pick_base"
+   },
+   "power_alt_v3": {
+    "3": {
+     "a": 0.9868,
+     "b": 5.1492
+    },
+    "4": {
+     "a": 1.0148,
+     "b": 9.5795
+    },
+    "5": {
+     "a": 1.0348,
+     "b": 17.4639
+    },
+    "6": {
+     "a": 1.0522,
+     "b": 32.523
+    },
+    "fit": "2026-10-18 research_pp_power_law_fit.py run 39183035664: 393 quotes 3-6 picks (NBA 277 incl. the 10-18 live board proof run, WNBA 116), ln-ln least squares per size with an NBA term (NBA x1.012/0.990/0.967/0.957), residual sd 0.033-0.048; b here = fitted NBA law x k_n, k_n = 10th percentile of quote / law on NBA quotes (0.9607 / 0.9622 / 0.9660 / 0.9608) -> mean 0.95 of the quote, above it on 1-8% of quotes (max +3% / +5% / +7% / +13%). Replaces compress(base x fp), which paid 3-picks +7% (+23% max) and 4-6 picks -10/-11/-20%.",
+    "formula": "Power with >= 1 goblin/demon, 3-6 picks: payout = grid_down(b_n * fp^a_n), fp = product of leg factors; grid 0.1 below 3x, 0.25 at or above. 2-pick keeps compress(3 x fp)."
+   },
+   "flex_same_game_v3": {
+    "3": {
+     "2": 0.75,
+     "3": 3
+    },
+    "4": {
+     "3": 1.25,
+     "4": 5
+    },
+    "applies": "all-standard Flex with two or more players from the same game, 3 and 4 picks (5 and 6 picks: never adjusted in any quote)",
+    "evidence": "2026-10-18 proof run on the 10-20 NBA board: 3-Flex 3/1 -> 3/0.75 on 2 of 4 same-game slips, 4-Flex 6/1.5 -> 5/1.25 on 1 of 3; WNBA 2026-09-21 3-pick partial 1.0 -> 0.75. PrizePicks adjusts only some pairs (a correlation it computes per pair; an Over/Under pair and NYK-PHI Bridges/Maxey Overs were not adjusted) - we cannot see which, so every same-game 3/4-Flex is paid the adjusted table (conservative)."
+   },
+   "flex_alt_tiers": {
+    "why": "PrizePicks partial tiers are nearly flat in the factor product (3-Flex one miss ~1.0x up to fp 3.4, 5-Flex one miss ~2.0x up to fp 6.8, two misses 0.4x); the certified grader scaled them by the full factor product and overpaid them 2-5x (2026-10-09, quotes run 38020184454 + probe 38021265189 + 2026-09 WNBA mining).",
+    "built": "2026-10-10T03:46:20.087355+00:00",
+    "tiers": {
+     "3": {
+      "0": [
+       [
+        0.352,
+        1.5
+       ],
+       [
+        0.358,
+        1.6
+       ],
+       [
+        0.366,
+        1.6
+       ],
+       [
+        0.403,
+        1.8
+       ],
+       [
+        0.42,
+        1.8
+       ],
+       [
+        0.422,
+        1.8
+       ],
+       "... 133 more"
+      ],
+      "1": [
+       [
+        0.352,
+        0.5
+       ],
+       [
+        0.358,
+        0.5
+       ],
+       [
+        0.366,
+        0.5
+       ],
+       [
+        0.403,
+        0.5
+       ],
+       [
+        0.42,
+        0.5
+       ],
+       [
+        0.422,
+        0.5
+       ],
+       "... 133 more"
+      ]
+     },
+     "4": {
+      "0": [
+       [
+        0.25,
+        1.8
+       ],
+       [
+        0.262,
+        1.9
+       ],
+       [
+        0.281,
+        2
+       ],
+       [
+        0.29,
+        2
+       ],
+       [
+        0.296,
+        2
+       ],
+       [
+        0.347,
+        2.25
+       ],
+       "... 133 more"
+      ],
+      "1": [
+       [
+        0.25,
+        0.5
+       ],
+       [
+        0.262,
+        0.5
+       ],
+       [
+        0.281,
+        0.5
+       ],
+       [
+        0.29,
+        0.5
+       ],
+       [
+        0.296,
+        0.5
+       ],
+       [
+        0.347,
+        0.5
+       ],
+       "... 133 more"
+      ]
+     },
+     "5": {
+      "0": [
+       [
+        0.207,
+        2.25
+       ],
+       [
+        0.237,
+        2.25
+       ],
+       [
+        0.24,
+        2.25
+       ],
+       [
+        0.242,
+        2.25
+       ],
+       [
+        0.26,
+        2.25
+       ],
+       [
+        0.299,
+        4
+       ],
+       "... 138 more"
+      ],
+      "1": [
+       [
+        0.207,
+        0.5
+       ],
+       [
+        0.237,
+        0.5
+       ],
+       [
+        0.24,
+        0.5
+       ],
+       [
+        0.242,
+        0.5
+       ],
+       [
+        0.26,
+        0.5
+       ],
+       [
+        0.299,
+        0.5
+       ],
+       "... 138 more"
+      ],
+      "2": [
+       [
+        0.207,
+        0.25
+       ],
+       [
+        0.237,
+        0.25
+       ],
+       [
+        0.24,
+        0.25
+       ],
+       [
+        0.242,
+        0.25
+       ],
+       [
+        0.26,
+        0.25
+       ],
+       [
+        0.299,
+        0.25
+       ],
+       "... 138 more"
+      ]
+     },
+     "6": {
+      "0": [
+       [
+        0.108,
+        2.25
+       ],
+       [
+        0.13,
+        2.25
+       ],
+       [
+        0.158,
+        2.5
+       ],
+       [
+        0.161,
+        2.5
+       ],
+       [
+        0.174,
+        3
+       ],
+       [
+        0.199,
+        5
+       ],
+       "... 135 more"
+      ],
+      "1": [
+       [
+        0.108,
+        0.5
+       ],
+       [
+        0.13,
+        0.5
+       ],
+       [
+        0.158,
+        0.5
+       ],
+       [
+        0.161,
+        0.5
+       ],
+       [
+        0.174,
+        0.5
+       ],
+       [
+        0.199,
+        0.5
+       ],
+       "... 135 more"
+      ],
+      "2": [
+       [
+        0.108,
+        0.25
+       ],
+       [
+        0.13,
+        0.25
+       ],
+       [
+        0.158,
+        0.25
+       ],
+       [
+        0.161,
+        0.25
+       ],
+       [
+        0.174,
+        0.25
+       ],
+       [
+        0.199,
+        0.25
+       ],
+       "... 135 more"
+      ]
+     }
+    },
+    "meaning": "Flex payout for a slip WITH goblins/demons, by size n and number of misses: [factor_product, payout] points; payout = linear interpolation in ln(factor_product) between points, clamped to the end points. Each point is the LOWER ENVELOPE (min payout PrizePicks quoted at that factor product or above) - conservative by construction.",
+    "sources": [
+     "nba_market.pp_quote NBA+WNBA status 200, legs priced in pp_mined_leg(_wnba)",
+     "probe_pp_demon_flex.py run 38021265189 (all-demon 3/5-Flex, 2026-10-10 03:40Z)"
+    ],
+    "extra_points": [
+     [
+      3,
+      0,
+      6.396,
+      23
+     ],
+     [
+      3,
+      1,
+      6.396,
+      2.5
+     ],
+     [
+      3,
+      0,
+      6.772,
+      23
+     ],
+     [
+      3,
+      1,
+      6.772,
+      2.25
+     ],
+     [
+      3,
+      0,
+      11.663,
+      40
+     ],
+     [
+      3,
+      1,
+      11.663,
+      3.5
+     ],
+     "... 16 more"
+    ],
+    "n_quote_points": 2282
+   },
+   "betr_payout_v1": {
+    "app": "betr",
+    "open": [],
+    "rules": {
+     "max_picks": 10,
+     "min_teams": 2,
+     "same_game": "no adjustment (2-pick same game 3x, 3-pick with a same-team pair 6x)",
+     "edge_tiers": "EDGE_1..4 lower the payout, boosted tiers raise it; priced per entry by Betr, not per line within a tier - use the live quote",
+     "max_per_tier": {
+      "EDGE_1": 4,
+      "EDGE_2": 4,
+      "EDGE_3": 4,
+      "EDGE_4": 3,
+      "BOOSTED": 4,
+      "BOOSTED_4": 3,
+      "MINI_BOOSTED": 4,
+      "SUPER_BOOSTED": 4
+     },
+     "less_discount": "only when EVERY pick is LESS; one MORE pick restores the full table (2-6 picks, 9 stats tested)"
+    },
+    "source": "Betr own pricing query ValidateEntryWithRules (read-only), nba_market.betr_quote, runs 39195748178 + LESS runs 2026-10-19 UTC (all-LESS 5 / 6 measured 2026-10-19 21:5x UTC)",
+    "all_less_note": "all-LESS 2-10 measured 2026-10-19 (Betr own pricing query, read-only): Perfect top = 0.9x the regular table from 5 picks (2.75/5.5/9 at 2-4), Flex top = 0.9x the regular one-step-smaller Perfect; partial tiers lower. One MORE pick restores the full table.",
+    "dynamic_regular": {
+     "2": {
+      "1": 0.5,
+      "2": 2
+     },
+     "3": {
+      "2": 1,
+      "3": 3
+     },
+     "4": {
+      "3": 1.5,
+      "4": 6
+     },
+     "5": {
+      "3": 0.4,
+      "4": 2,
+      "5": 10
+     },
+     "6": {
+      "4": 1,
+      "5": 1.5,
+      "6": 20
+     },
+     "7": {
+      "5": 1.25,
+      "6": 2,
+      "7": 35
+     },
+     "8": {
+      "5": 1.25,
+      "6": 1.5,
+      "7": 2,
+      "8": 50
+     },
+     "9": {
+      "6": 1.25,
+      "7": 1.5,
+      "8": 2,
+      "9": 100
+     },
+     "10": {
+      "6": 1,
+      "7": 1.25,
+      "8": 1.5,
+      "9": 2,
+      "10": 200
+     }
+    },
+    "perfect_regular": {
+     "2": 3,
+     "3": 6,
+     "4": 10,
+     "5": 20,
+     "6": 35,
+     "7": 50,
+     "8": 100,
+     "9": 200,
+     "10": 300
+    },
+    "dynamic_all_less": {
+     "2": {
+      "1": 0.5,
+      "2": 1.75
+     },
+     "3": {
+      "2": 1,
+      "3": 2.75
+     },
+     "4": {
+      "3": 1.25,
+      "4": 5.5
+     },
+     "5": {
+      "3": 0.25,
+      "4": 1.75,
+      "5": 9
+     },
+     "6": {
+      "4": 1,
+      "5": 1.25,
+      "6": 18
+     },
+     "7": {
+      "5": 1.25,
+      "6": 1.75,
+      "7": 31.5
+     },
+     "8": {
+      "5": 1.25,
+      "6": 1.25,
+      "7": 1.75,
+      "8": 45
+     },
+     "9": {
+      "6": 1.25,
+      "7": 1.25,
+      "8": 1.75,
+      "9": 90
+     },
+     "10": {
+      "6": 1,
+      "7": 1.25,
+      "8": 1.25,
+      "9": 1.75,
+      "10": 180
+     }
+    },
+    "perfect_all_less": {
+     "2": 2.75,
+     "3": 5.5,
+     "4": 9,
+     "5": 18,
+     "6": 31.5,
+     "7": 45,
+     "8": 90,
+     "9": 180,
+     "10": 270
+    }
+   },
+   "power_same_game_v3": {
+    "2": 2.8,
+    "3": 5.75,
+    "since": "2026-10-21",
+    "applies": "all-standard Power with two or more players from the same game, 2 and 3 picks (4-6 picks: never adjusted in any quote)",
+    "evidence": "nba_market.pp_quote, NBA all-standard same-game quotes through 2026-10-21 (incl. the SGPOWER round pp_payout_map_20261022T030917Z, 37 quotes): 2-pick Power 3.0 x28, 2.9 x6, 2.8 x1 (35); 3-pick Power 6.0 x23, 5.75 x4 (27); 4/5/6-pick 10 / 20 / 37.5 every time. Cuts seen in the SGPOWER round only on TEAMMATES taken the SAME direction (More/More, Less/Less) - one pair of the four teammate pairs; no opponent pair and no More/Less pair was cut. Which teammate pairs PrizePicks cuts is not observable - conservative: every same-game 2 / 3-pick Power pays the lowest seen. Mean would be 2.98 / 5.96."
+   }
+  },
+  "ud": {
+   "flex": {
+    "3|0": 3.25,
+    "3|1": 1.09,
+    "4|0": 7.2,
+    "4|1": 1.4,
+    "5|0": 10,
+    "5|1": 2.5,
+    "6|0": 25,
+    "6|1": 2.6,
+    "6|2": 0.25,
+    "7|0": 40,
+    "7|1": 2.75,
+    "7|2": 0.5,
+    "8|0": 80,
+    "8|1": 3,
+    "8|2": 1
+   },
+   "source": "nba/build_ud_slip_engine.py STD / FLEX (test asserts equality)",
+   "changes": [
+    {
+     "to": 7.2,
+     "key": "flex 4|0",
+     "why": "Underdog own entry estimate: 10 / 10 four-pick Flex entries across different games = 7.2 x prod(m) floored (research_ud_payout_probe run 39689206312, nba_market.ud_payout_quotes); Underdog payout_outcome table 7.2; also 2 decimals floor applied in code",
+     "date": "2026-10-21",
+     "from": 6
+    }
+   ],
+   "standard": {
+    "2": 3.5,
+    "3": 6.5,
+    "4": 12,
+    "5": 20,
+    "6": 35,
+    "7": 65,
+    "8": 120
+   }
+  },
+  "sleeper": {
+   "flex": "round-robin over the (n-1)-pick sub-combinations, stake split evenly; all hit = average of the n products; one miss = product of the other n-1 / n; two misses (Sleeper pays them only at 5+ picks) UNVERIFIED -> 0 (conservative)",
+   "power": "PRODUCT of the picks' displayed payout multipliers; all must hit",
+   "voids": "push / DNP voids the pick, entry graded as if never included; < 2 live picks = refund (1.0); a Flex reduced to 2 live picks pays as a 2-pick Max",
+   "limits": {
+    "max_picks": 8,
+    "min_picks": 2,
+    "max_win_usd": 5000,
+    "flex_min_picks": 3,
+    "flex_min_multiplier": 1.25
+   },
+   "source": "owner MLB entries 2026-09-10: 19 placed slips + app screenshots (classification_config board_payout_conversion_rules), MULTIPLIER_TABLES_MASTER.md section 5 (3/3 Flex 2.775 predicted vs 2.78 real; 2/3 0.884-0.963 predicted, 0.92 real); outside sources agree (BettingUSA 'cumulative', OddsAssist 2-pick 2.84x / 3.12x); Sleeper help centre for Flex shape, voids and limits",
+   "function": "nba_market.sleeper_slip_payout(mults float8[], results text[] hit|miss|void, mode power|flex, haircut numeric default this row)",
+   "replicated": "2026-10-09 (owner: be sure it is replicated to NBA)",
+   "ledger_root": "per-leg effective price in nba_score.price_shop_ledger = m x (1 - slip_haircut)^(1/2) (the 2-pick Max carries the most haircut per leg -> the conservative per-leg price)",
+   "slip_haircut": 0,
+   "true_pricing": {
+    "set_at": "2026-10-26",
+    "source": "probe_sleeper_payout_fit run 40375790579: 454 of the owner's own Sleeper entries (my_parlays, read-only). Max = product x max_bonus[n] when every leg is in a different game (opposite-side same-game pairs keep it; same-side same-game pairs are priced down - not modelled, the live engine never builds same-game). Flex tiers EV-matched at q = 1/m: T0 = flex_ev[n] / (P(all) + r1 P(1 miss) + r2 P(2 misses)), T1 = r1 T0, T2 = r2 T0 (3-pick reproduces T0 to the cent 19/26, T1 21/26). 5-6 pick flex targets rest on few entries.",
+    "flex_ev": {
+     "3": 1.0012,
+     "4": 1.0801,
+     "5": 1.148,
+     "6": 1.197
+    },
+    "max_bonus": {
+     "2": 1,
+     "3": 1.0797,
+     "4": 1.1011,
+     "5": 1.1742,
+     "6": 1.2755
+    },
+    "flex_ratio": {
+     "3": [
+      0.3287,
+      0
+     ],
+     "4": [
+      0.2474,
+      0
+     ],
+     "5": [
+      0.235,
+      0.049
+     ],
+     "6": [
+      0.096,
+      0.0193
+     ]
+    }
+   },
+   "note_2026_10_10": "MLB slips showed a 2-8% cut below the product; NBA entries pay the plain product (2-pick, Flex) or more (3-pick Max). slip_haircut 0.08 -> 0.0; the 3-pick bonus is recorded, not priced (conservative) until confirmed.",
+   "per_leg_from_odds": "payout_multiplier = 1 + (decimal - 1) x 0.95 (verified exact; only needed when deriving from sportsbook odds - the NBA board carries Sleeper's own multipliers)",
+   "slip_haircut_observed": [
+    0.02,
+    0.08
+   ],
+   "max_size_bonus_applied": {
+    "2": 1,
+    "3": 1
+   },
+   "max_size_bonus_observed": {
+    "2": 1,
+    "3": 1.0797,
+    "4": 1.102
+   },
+   "nba_verified_2026_10_09": {
+    "source": "owner Sleeper NBA entry screens 2026-10-09 22:20 PT (10-20 board; nothing submitted)",
+    "max_2pick": "LeBron PRA 31.5 MORE 1.79 x Wembanyama PRA 40.5 MORE 1.78 = 3.1862 -> app 3.18 (product, cut to the cent)",
+    "max_3pick": "+ Tatum PRA 42.5 LESS 1.75 = 5.5759 -> app 6.02 (product x 1.0797 - a 3-pick Max bonus; one point, NOT applied until a second size confirms it)",
+    "flex_3pick": "all hit: round robin mean of the 2-pick sub-products 3.1446 -> app 3.14; 2 hit -> app 1.05 (sub-product / 3 = 1.038-1.062) - round robin EXACT, no haircut"
+   },
+   "nba_verified_2026_10_09b": {
+    "source": "owner Sleeper NBA entry screens 22:24-22:25 PT (no submit)",
+    "max_4pick": "LeBron M 1.79, Tatum L 1.75, SGA M 1.80, Wembanyama M 1.78 (SGA+Wemby same game) = 10.0365 -> app 11.06 (x1.102)",
+    "conclusion": "Sleeper pays AT LEAST the plain product (Max) and the round robin (Flex) at every size seen; a size bonus grows from 3 picks (1.08 / 1.10). Pricing keeps the plain product and round robin (never above the app); the bonus stays recorded, unpriced.",
+    "flex_4pick": "round robin of the 3-pick sub-products 5.639 -> app 6.09 (x1.08); 3 of 4 -> app 1.52 vs 1.39-1.43",
+    "max_5_6pick": "+ Brunson LESS 36.5 -> app 20.43 (flex 9.42/1.92/0.39); + Cunningham LESS 39.5 -> app 39.01 (flex 21.67/1.86/0.37) - those two legs multipliers were not on screen, so not decomposed"
+   },
+   "slip_haircut_mlb_observed": [
+    0.02,
+    0.08
+   ]
+  },
+  "betr": {
+   "app": "betr",
+   "open": [],
+   "rules": {
+    "max_picks": 10,
+    "min_teams": 2,
+    "same_game": "no adjustment (2-pick same game 3x, 3-pick with a same-team pair 6x)",
+    "edge_tiers": "EDGE_1..4 lower the payout, boosted tiers raise it; priced per entry by Betr, not per line within a tier - use the live quote",
+    "max_per_tier": {
+     "EDGE_1": 4,
+     "EDGE_2": 4,
+     "EDGE_3": 4,
+     "EDGE_4": 3,
+     "BOOSTED": 4,
+     "BOOSTED_4": 3,
+     "MINI_BOOSTED": 4,
+     "SUPER_BOOSTED": 4
+    },
+    "less_discount": "only when EVERY pick is LESS; one MORE pick restores the full table (2-6 picks, 9 stats tested)"
+   },
+   "source": "Betr own pricing query ValidateEntryWithRules (read-only), nba_market.betr_quote, runs 39195748178 + LESS runs 2026-10-19 UTC (all-LESS 5 / 6 measured 2026-10-19 21:5x UTC)",
+   "all_less_note": "all-LESS 2-10 measured 2026-10-19 (Betr own pricing query, read-only): Perfect top = 0.9x the regular table from 5 picks (2.75/5.5/9 at 2-4), Flex top = 0.9x the regular one-step-smaller Perfect; partial tiers lower. One MORE pick restores the full table.",
+   "dynamic_regular": {
+    "2": {
+     "1": 0.5,
+     "2": 2
+    },
+    "3": {
+     "2": 1,
+     "3": 3
+    },
+    "4": {
+     "3": 1.5,
+     "4": 6
+    },
+    "5": {
+     "3": 0.4,
+     "4": 2,
+     "5": 10
+    },
+    "6": {
+     "4": 1,
+     "5": 1.5,
+     "6": 20
+    },
+    "7": {
+     "5": 1.25,
+     "6": 2,
+     "7": 35
+    },
+    "8": {
+     "5": 1.25,
+     "6": 1.5,
+     "7": 2,
+     "8": 50
+    },
+    "9": {
+     "6": 1.25,
+     "7": 1.5,
+     "8": 2,
+     "9": 100
+    },
+    "10": {
+     "6": 1,
+     "7": 1.25,
+     "8": 1.5,
+     "9": 2,
+     "10": 200
+    }
+   },
+   "perfect_regular": {
+    "2": 3,
+    "3": 6,
+    "4": 10,
+    "5": 20,
+    "6": 35,
+    "7": 50,
+    "8": 100,
+    "9": 200,
+    "10": 300
+   },
+   "dynamic_all_less": {
+    "2": {
+     "1": 0.5,
+     "2": 1.75
+    },
+    "3": {
+     "2": 1,
+     "3": 2.75
+    },
+    "4": {
+     "3": 1.25,
+     "4": 5.5
+    },
+    "5": {
+     "3": 0.25,
+     "4": 1.75,
+     "5": 9
+    },
+    "6": {
+     "4": 1,
+     "5": 1.25,
+     "6": 18
+    },
+    "7": {
+     "5": 1.25,
+     "6": 1.75,
+     "7": 31.5
+    },
+    "8": {
+     "5": 1.25,
+     "6": 1.25,
+     "7": 1.75,
+     "8": 45
+    },
+    "9": {
+     "6": 1.25,
+     "7": 1.25,
+     "8": 1.75,
+     "9": 90
+    },
+    "10": {
+     "6": 1,
+     "7": 1.25,
+     "8": 1.25,
+     "9": 1.75,
+     "10": 180
+    }
+   },
+   "perfect_all_less": {
+    "2": 2.75,
+    "3": 5.5,
+    "4": 9,
+    "5": 18,
+    "6": 31.5,
+    "7": 45,
+    "8": 90,
+    "9": 180,
+    "10": 270
+   }
+  }
+ },
+ "max_per_game": {
+  "sleeper": 2,
+  "underdog": 1,
+  "prizepicks": 2
+ },
+ "notes": [
+  "\u26a0 3 PrizePicks slip(s) have a leg that was NOT on PrizePicks' board when PrizePicks quoted them: Daniss Jenkins turnovers 1.5 R (in 3 slips). Those slips cannot be placed as built - they are not shown and not played (recorded).",
+  "32 test-only slip(s) recorded as not played and not shown (2 A_core_3power, 1 A_core_5flex, 2 A_regular_5power, 2 A_wrebounds_4flex, 9 A_wsteals_5flex, 1 B_demon_3flex, 1 B_demon_5flex, 2 C_wstocks_4flex, 1 P_B6_4flex, 1 P_B7_3power, 1 P_B9_6flex, 1 R_stocks_4power, 2 UD P4 weighted:points_R_U 2S, 1 UD P4 weighted:points_R_U 4S, 1 UD P4 weighted:points_R_U 6F, 2 UD P5 mains 2S, 1 UD P5 weighted:points_R_U 4S, 1 UD P5 weighted:points_R_U 6F).",
+  "To play today: 3 PrizePicks slip(s) $6.00 (total $6.00) at $2.00 per unit - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).",
+  "Place by (each slip closes when the first game among its legs tips): 1 by 2:00 PM PT, 2 by 4:00 PM PT.",
+  "Streak flag A_core_3power: off: legs 7/9 = 78% over its last 2 played days; ON below 55%.",
+  "Streak flag A_regular_5power: off: last 1 played days 2026-10-21 -2.00; ON after 3 straight losing days.",
+  "... 1 more"
+ ],
+ "board_legs": 12201,
+ "stake_unit": {
+  "usd": 2,
+  "min": 1,
+  "playPaper": true,
+  "udPlay": true,
+  "auto": {
+   "enabled": false,
+   "start": 1,
+   "step": 1,
+   "max": 15,
+   "up_x": 25,
+   "down_x": 15,
+   "unit": 2,
+   "season_profit": 0,
+   "season_high": 0,
+   "last_change": null,
+   "as_of": "2026-10-19",
+   "season_start": "2026-10-20",
+   "next_raise_at": 75,
+   "step_down_below": -30
+  }
+ },
+ "timing_ms": {
+  "slips": 761,
+  "board": 1824,
+  "injuries": 592,
+  "backtest": 20623,
+  "place_by": 203,
+  "whole_number_hp": 103,
+  "build": 320
+ },
+ "snapshot": {
+  "served": false,
+  "stored": true,
+  "build_ms": 24951,
+  "fingerprint": "5d3fbe83af1134ce0bbe68e921d0a1f0",
+  "refresh": false
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.44",
+ "route": "/api/player-search",
+ "rows": [
+  {
+   "player_id": "nba_203897",
+   "player_name": "Zach LaVine",
+   "primary_position": "G \u2022 SAC",
+   "active": 1
+  }
+ ]
+}
