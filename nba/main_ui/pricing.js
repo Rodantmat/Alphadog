@@ -233,6 +233,7 @@ export function nbaBreakeven(pricing, app, mode, legs) {
 
 export function nbaModeLabel(app, mode) {
   app = String(app || "").toLowerCase();
+  if (app === "betr") return mode === "flex" ? "Dynamic" : "Perfect";
   if (mode === "flex") return "Flex";
   return app === "underdog" ? "Standard" : "Power";
 }
