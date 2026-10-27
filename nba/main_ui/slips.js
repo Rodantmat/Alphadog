@@ -189,7 +189,15 @@ async function engineSlips(sql, cfg, slate) {
   if (hasSl && hasSl.ok) sl = await q(sql, `SELECT strategy, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.sleeper_live_slips WHERE game_date = $1::date ORDER BY strategy, k`, [slate.date]);
   return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })),
            sl: sl.map(r => ({ ...r, app: "sleeper", track: `Sleeper ${r.size}-pick ${r.structure === "flex" ? "Flex" : "Max"} (Underdog T1 legs)` })),
-           fl: (await fliffLive(sql, slate)).map(r => ({ ...r, app: "fliff", track: `Fliff ${r.size}-pick Max (Underdog T1 legs)` })) };
+           fl: (await fliffLive(sql, slate)).map(r => ({ ...r, app: "fliff", track: `Fliff ${r.size}-pick Max (Underdog T1 legs)` })),
+           bt: (await betrLive(sql, slate)).map(r => ({ ...r, app: "betr", track: `Betr ${r.size}-pick Dynamic (Underdog T2+T3 legs)` })) };
+}
+// BETR (owner 2026-10-26 18:31 PT: "Let's go b so, you can deploy it in the slip system") - nba/betr_live_slip_engine.py, two 4-pick
+// Dynamic slips a slate at Betr's own line (= the Underdog leg's line); the table is created by the engine, so it is looked up first
+async function betrLive(sql, slate) {
+  const has = (await q(sql, "SELECT to_regclass('nba_score.betr_live_slips') IS NOT NULL ok"))[0];
+  if (!has || !has.ok) return [];
+  return q(sql, `SELECT strategy, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.betr_live_slips WHERE game_date = $1::date ORDER BY strategy, k`, [slate.date]);
 }
 // FLIFF PICK'EM (owner 2026-10-26 14:22 PT: Fliff option 2 "deploy that") - nba/fliff_live_slip_engine.py, one 2-pick Max a slate at
 // Fliff Pick'Em's own line and multiplier; the table is created by the engine, so it is looked up first
