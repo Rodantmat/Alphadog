@@ -1313,7 +1313,8 @@ def pick(conn, day, require_fresh=True):
     # longest losing run 5 nights. Tunables in classification_config['pp_fallback'] (enabled / trigger / floor / size / slips).
     fb = fallback_cfg(conn)
     if fb.get('enabled') and pools.get('__pb__') is not None:
-        built_b, fslips = fallback_slips(pools['__pb__'], fb)
+        n_main = int(fb.get('slips', 2))
+        built_b, fslips = fallback_slips(pools['__pb__'], fb, extra=int(fb.get('backups', 0)))
         if built_b > int(fb.get('trigger', 1)):
             print(f"  {day}: fallback not needed - portfolio B builds {built_b} slips", flush=True)
         elif not fslips:
