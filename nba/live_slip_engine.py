@@ -1309,40 +1309,22 @@ def pick(conn, day, require_fresh=True):
     # lines, any prop, final_hp >= floor (0.55), best final_hp first, <= 1 leg a game, >= 2 teams, 2 slips from different players,
     # 1 unit each. History on those nights only: 2024-25 ~+59% / 2025-26 +65% ROI, 178 slips, max drawdown 10u, nights won 49%,
     # longest losing run 5 nights. Tunables in classification_config['pp_fallback'] (enabled / trigger / floor / size / slips).
-    try:
-        fb = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='pp_fallback'").fetchone()
-        fb = (fb[0] if isinstance(fb[0], dict) else json.loads(fb[0])) if fb else {}
-    except Exception:  # noqa: BLE001
-        fb = {}
+    fb = fallback_cfg(conn)
     if fb.get('enabled') and pools.get('__pb__') is not None:
-        built_b = sum(1 for u in PB.UNITS if PB.unit_slip(pools['__pb__'], u) is not None)
-        if built_b <= int(fb.get('trigger', 1)):
-            size, floor_, nsl = int(fb.get('size', 3)), float(fb.get('floor', 0.55)), int(fb.get('slips', 2))
-            cand = sorted([l for l in pools['__pb__'] if l['tier'] == 'R' and l['side'] == 'Under' and float(l['p']) >= floor_],
-                          key=lambda l: -float(l['p']))
-            used, k_fb = set(), 0
-            for _ in range(nsl):
-                pick_, players, games = [], set(), set()
-                for l in cand:
-                    if l['player'] in used or l['player'] in players or l['event_id'] in games:
-                        continue
-                    pick_.append(l); players.add(l['player']); games.add(l['event_id'])
-                    if len(pick_) == size:
-                        break
-                if len(pick_) < size or len({l['team_id'] for l in pick_}) < 2:
-                    break
-                used |= players
-                k_fb += 1
-                conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
-                                VALUES (%s,%s,%s,%s,%s,'power','placed',1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
-                             (day, 'P_FB_U3power', k_fb, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
-                                                                        'prop': l['prop'], 'tier': 'R', 'side': 'Under', 'line': float(l['line']),
-                                                                        'factor': 1, 'event_id': l.get('event_id')} for l in pick_]),
-                              size, f"thin-night fallback: portfolio B built {built_b}"))
-                print(f"  {day}: FALLBACK P_FB_U3power k{k_fb} (B built {built_b}) -> placed: " +
-                      "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick_), flush=True)
-            if not k_fb:
-                print(f"  {day}: FALLBACK triggered (B built {built_b}) - not enough Unders >= {floor_} for a slip", flush=True)
+        built_b, fslips = fallback_slips(pools['__pb__'], fb)
+        if built_b > int(fb.get('trigger', 1)):
+            print(f"  {day}: fallback not needed - portfolio B builds {built_b} slips", flush=True)
+        elif not fslips:
+            print(f"  {day}: FALLBACK triggered (B built {built_b}) - not enough Unders >= {fb.get('floor', 0.55)} for a slip", flush=True)
+        for k_fb, pick_ in enumerate(fslips, start=1):
+            conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
+                            VALUES (%s,%s,%s,%s,%s,'power','placed',1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                         (day, 'P_FB_U3power', k_fb, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
+                                                                    'prop': l['prop'], 'tier': 'R', 'side': 'Under', 'line': float(l['line']),
+                                                                    'factor': 1, 'event_id': l.get('event_id')} for l in pick_]),
+                          len(pick_), f"thin-night fallback: portfolio B built {built_b}"))
+            print(f"  {day}: FALLBACK P_FB_U3power k{k_fb} (B built {built_b}) -> placed: " +
+                  "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick_), flush=True)
     conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
     conn.commit()
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
