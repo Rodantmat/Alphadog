@@ -807,6 +807,50 @@ jobs:
           FL_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/fliff_live_slip_engine.py
 
+      # BETR (owner 2026-10-26 18:31 PT: "Let's go b so, you can deploy it in the slip system"): read Betr's board RIGHT NOW without a
+      # browser with the owner's own token (nba/betr_board_direct.py - the session renews itself) and archive it as this slate's 'window'
+      # board, then two 4-pick Dynamic slips (nba/betr_live_slip_engine.py, strategy B_T23_4dyn: Underdog T2+T3 legs at Betr's own line,
+      # final_hp >= 0.58, ordered by the books' chance, top 2 skipped, <= 2 per game, never all-Under -> nba_score.betr_live_slips; gate
+      # classification_config betr_live). Betr stays out of the scorer (p3_betr_wait.enabled false). Nothing is sent to Betr. Soft.
+      - name: Betr board (owner token, no browser) + pick (4-pick Dynamic x2)
+        id: soft_btpick
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 8
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
+          BETR_CLIENT_ID: ${{ secrets.BETR_CLIENT_ID }}
+          BETR_LEAGUE: "NBA"
+          BT_MODE: "pick"
+          BT_DATE: ${{ steps.d.outputs.asof }}
+        run: |
+          if python -u nba/betr_board_direct.py; then
+            ARCHIVE_APPS=betr ARCHIVE_SPORT=nba ARCHIVE_LABEL=window python -u nba/archive_live_boards.py \
+              || echo "::warning::Betr board archive failed - the pick uses the newest Betr board on file (refused when over 3 h old)"
+          else
+            echo "::warning::Betr board capture failed - the pick uses the newest Betr board on file (refused when over 3 h old)"
+          fi
+          python -u nba/betr_live_slip_engine.py
+
+      # THE SLIPS SCREEN, PRECOMPUTED (owner 2026-10-26 18:31 PT: "it should run in a pipeline before and just be retrieved by the ui"):
+      # every app's picks are in - the UI worker builds the screen once and stores it; the owner's views read the stored copy. Soft.
+      - name: Warm the Slips screen (precomputed snapshot)
+        id: soft_warm
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' }}
+        continue-on-error: true
+        run: |
+          # the UI worker builds the screen with its own code and stores it (nba_score.ui_slips_snapshot); later views read it
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/warm.json -w "%{http_code}" --max-time 120 -X POST -H "content-type: application/json" -d '{}' \
+              "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev/api/slips/high-hit?refresh=1") || code=000
+            echo "slips snapshot warm (attempt $i): http $code $(python3 -c "import json; j = json.load(open('/tmp/warm.json')); print(j.get('snapshot'), len(j.get('generated_slips') or []), 'slips, slate', (j.get('slate') or {}).get('date'))" 2>/dev/null)"
+            [ "$code" = "200" ] && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
+
       # FORWARD PAPER TRACKER (2026-10-20, owner: "anything that's proved positive, we will try"): fixed goblin / demon Less rules
       # (AL_*, sizes 2-6 Power + Flex, ONLY on rungs PrizePicks' window board opened to Less) and the 9 standard-line Flex rules
       # whose bootstrap lower bound is positive in both seasons (SR_*). PAPER: written to nba_score.paper_altless_slips with status
