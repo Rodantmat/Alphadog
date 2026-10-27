@@ -257,7 +257,7 @@ def fallback_slips(prepared, fb, extra=0):
     size, floor_, nsl = int(fb.get('size', 3)), float(fb.get('floor', 0.55)), int(fb.get('slips', 2))
     cand = sorted([l for l in prepared if l['tier'] == 'R' and l['side'] == 'Under' and float(l['p']) >= floor_], key=lambda l: -float(l['p']))
     used, out = set(), []
-    for _ in range(nsl):
+    for _ in range(nsl + max(0, int(extra))):
         pick_, players, games = [], set(), set()
         for l in cand:
             if l['player'] in used or l['player'] in players or l['event_id'] in games:
