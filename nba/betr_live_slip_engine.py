@@ -5,7 +5,8 @@ slate, strategy B_T23_4dyn (research_betr_4dyn ST_PART=hist_ud, run 40426972736 
 Dynamic, 2 a day):
   legs    Underdog portfolio T units T2 then T3 (each unit's own qualified legs; T3's legs not already in T2), final_hp >= 0.58
   price   at BETR's own REGULAR main line, which must equal the Underdog leg's line (final_hp is that line's chance); the side must be
-          open on Betr; the books' de-vigged chance at that line must exist (window board)
+          open on Betr; the books' de-vigged chance at that line must exist (window board; research_sleeper_transfer.consensus -
+          FanDuel / DraftKings / BetMGM / Caesars / Fanatics / BetOnline / Bovada / BetRivers, the history's own definition)
   order   by the books' chance (high first); the top 2 legs skipped; at most 2 legs per game; different players across the 2 slips;
           >= 2 teams; a slip that comes out all-Under swaps its last leg for the best Over (Betr pays all-LESS entries less)
   history +49.6% ROI, 262 slips / 131 slates, max drawdown 9.2u, cashed 45%, early / late 2024-25 +57 / +43%, 2025-26 +49 / +39%
