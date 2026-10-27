@@ -23,7 +23,7 @@
 - ✅ `T50-14` / `T50-42` (Sleeper sign-in): bypassed, not solved. The owner's token hand-over on 10-26 (09:54-10:06 PT) gave the system Sleeper read access; the code-only sign-in root cause (a 4-digit code, an hCaptcha challenge that appears as a visible 520x570 frame, the Fliff verify-location gate) is still not fixed. Detail: `NBA_WORKERS.md` `§T50.4-H`, `§T50.4-Z8`.
 - 🔄 `T50-44` (upper bound and cross-app transfer): now has Part E and the true-price transfer-study results (`NBA_MULTIPLIERS.md` `§T50.3-Z7`); Sleeper live slips `S_T1_2max` (2-pick Max, +33.0% over 306 replay slips) and `S_T1_3flex` (3-pick Flex, +24.1% over 294 replay slips) were deployed 10-26 12:17-12:28 PT (`NBA_SYSTEM_DESIGN.md` `§T50.7-Z12`, `NBA_SYSTEM_ARCHITECTURE.md` `§T50.8-Z2`). The ROIs are replays at the fitted Sleeper prices, not live results.
 
-## C. Superseded notice for `NBA_SWEEP_RUN_LOG.md` (5 MB, also not patchable; not one of the twelve documents)
+## C. Superseded notice for `NBA_SWEEP_RUN_LOG.md` (5 MB, frozen: the bridge cannot write it, and it now carries a continuation notice added by the `2026-10-26` workflow; not one of the twelve documents)
 
 Lines 9-33 (RUN 240 to RUN 245-T) are stale. They give 12 referee rows, no referee log and a board-snapshot anchor flat at 10-06; the referee table now has 21 rows and the referee log 9 rows. The correct facts are in `NBA_DATABASE.md` `§T50.6` and `NBA_SYSTEM_ARCHITECTURE.md` `§T50.8-Z2`. The log's last run is RUN 245 (10-09) and its highest transcript is T31; nothing after that is recorded there by design (the twelve documents carry the record).
 
