@@ -32,6 +32,25 @@ async function fetchFromGithubRaw(env, path) {
   return resp.json();
 }
 
+// DUPLICATE PLAYER-GAME ROWS (2026-10-27): NBA's feed listed Devin Booker (1626164) twice for 0022600124 PHX @ OKC - his real
+// Phoenix line (33.8 min) and a phantom 0-minute Oklahoma City row. One INSERT ... ON CONFLICT cannot touch the same key twice
+// ("ON CONFLICT DO UPDATE command cannot affect row a second time"), so the whole night's player logs failed to load. One row per
+// (player, game) is kept: the one with the most minutes (the real line); the dropped duplicates are reported.
+function dedupePlayerGame(records, dropped) {
+  const best = new Map();
+  for (const r of records) {
+    if (!r.PLAYER_ID || !r.GAME_ID) continue;
+    const k = `${r.PLAYER_ID}|${r.GAME_ID}`;
+    const cur = best.get(k);
+    if (!cur) { best.set(k, r); continue; }
+    const keep = (Number(r.MIN) || 0) > (Number(cur.MIN) || 0) ? r : cur;
+    const drop = keep === r ? cur : r;
+    dropped.push(`${drop.PLAYER_ID}/${drop.GAME_ID}/team ${drop.TEAM_ID}/min ${drop.MIN}`);
+    best.set(k, keep);
+  }
+  return [...best.values()];
+}
+
 function chunk(arr, size) {
   if (!arr || arr.length === 0) return [];
   const out = [];
