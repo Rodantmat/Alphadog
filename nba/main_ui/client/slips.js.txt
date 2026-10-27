@@ -348,7 +348,7 @@ function poolStatusHtml(){
   const parts=Object.keys(bySrc).sort().map(k=>{const legs=bySrc[k];const top=legs.slice(0,2).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(displayPropLabel(l.canonical_prop_key))+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(', ');return '<b>'+esc(appLabel(k))+': '+legs.length+'</b> ('+top+')'});
   return '<div class="poolStatus" style="opacity:0.85;font-size:12px;margin:6px 0">Backup pool by app &mdash; '+parts.join(' &nbsp;|&nbsp; ')+'</div>';
 }
-function activeSourceFilters(){const m={prizepicks:$('filterPrizepicks'),sleeper:$('filterSleeper'),underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+function activeSourceFilters(){const m={prizepicks:$('filterPrizepicks'),sleeper:$('filterSleeper'),underdog:$('filterUnderdog'),fliff:$('filterFliff'),betr:$('filterBetr')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
 function slipSummaryHtml(filtered){
   const groups=new Map();
   for(const x of filtered){const s=x.s;const lab=s.track_label||appLabel(s.source_key);const key=lab+'|'+s.slip_size+'-Pick '+nbaModeLabel(s.source_key,s.entry_mode);groups.set(key,(groups.get(key)||0)+1)}
