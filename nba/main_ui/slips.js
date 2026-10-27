@@ -522,7 +522,8 @@ export async function apiHighHit(sql, cfg, url, version) {
       const cellFields = cr ? { cell_backtest_hit_0_100: r1(100 * cr.p), cell_backtest_legs: cr.n } : {};
       // a graded slip's leg with no result is a push / void (the grader drops it and pays the smaller slip)
       const push = s.hits != null && x.hit == null;
-      if (hit) legs.push(slipLeg(hit, { tier: x.tier, leg_factor: Number(x.factor) || hit.leg_factor, cell: x.cell, result_hit: x.hit == null ? null : Number(x.hit), result_push: push, board_percentile: percentile(s.app, Number(hit.score_0_100)), ...cellFields, ...riskFor(risk, hit.player_name) }));
+      if (hit) legs.push(slipLeg(hit, { tier: x.tier, leg_factor: Number(x.factor) || hit.leg_factor, cell: x.cell, result_hit: x.hit == null ? null : Number(x.hit), result_push: push, board_percentile: percentile(app, Number(hit.score_0_100)), ...cellFields, ...riskFor(risk, hit.player_name),
+        ...(s.app === "betr" ? { source_key: "betr", line_type: "regular", app_multiplier: null, edge_0_100: null, breakeven_0_100: null } : {}) }));
       else {
         const wn = x.player_id ? wnMap.get([String(x.player_id), x.prop, line, sideIn(x.side)].join("|")) : null;
         if (!wn) unmatched++;
