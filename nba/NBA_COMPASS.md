@@ -647,6 +647,30 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    Underdog's (UI test C13; UI v1.4.44). UI TEST 2026-10-26 98/103: C1 / C2 (board counts mid-slate with games started), C49
    (PrizePicks P_B5 / P_B9 blocks_R records), C50 (the test still expects Underdog PLAY only on ' P5 ' tracks - the T-unit portfolios
    play) are outside this change.
+188. 🔑 **PRIZEPICKS THIN-NIGHT FALLBACK P_FB_U3power IS LIVE; DUPLICATE PLAYER-GAME FEED FIX (2026-10-27; owner 15:33 PT "Deploy it
+   and give me the slips for today").** FEED FIX: the NBA feed listed Booker twice for 10-26 game 0022600124 (real PHX row + a phantom
+   0-min OKC row) - P2A's delta upsert ("ON CONFLICT ... cannot affect row a second time") and P2B's combos ladder failed. Fixed in
+   nba/alphadog-v2-nba-daily-delta.js v0.1.1 (dedupePlayerGame: one row per PLAYER_ID|GAME_ID, most minutes kept, duplicatesDropped
+   reported) and nba/dedupe_player_game_files.py (P2A step before "Commit mined data"); P2A / P2B re-run force=true, Certify P2 passed.
+   WHY A FALLBACK: 10-27 (4 games) portfolio B built 1 slip and the quote gate skipped it (legs not on PrizePicks) -> nothing on the
+   screen. REJECTED FIRST (out of sample): small-slate rules (<= 4 games test -40% / -28%; <= 5 -8% / -23%), 2-pick variations
+   (inconsistent), the general fallback-rule search (research_pp_fallback, mixed). THE RULE (research_pp_fallback_rule run 40594721780,
+   the one setting chosen on 2024-25 that held on 2025-26): when portfolio B builds <= 1 slip, 3-pick POWER of the best STANDARD UNDERS,
+   any prop, final_hp >= 0.55, best first, <= 1 leg a game, >= 2 teams, 2 slips from different players, 1 unit each. On those nights
+   only: 2024-25 +63% (92 slips, 56 nights, nights won 46%), 2025-26 +65% (80 slips, 45 nights, won 52%); 172 slips, +110u, max dd
+   10u, longest losing run 5 nights; trigger <= 2 +43%, floors .52 / .58 also positive; 1 slip a night was -19% in 2024-25 (the 2nd
+   slip carries it). CODE: live_slip_engine.fallback_cfg / fallback_slips (pure; P3 pick() and the audits call the same function),
+   rows nba_score.live_slips strategy P_FB_U3power. CONFIG classification_config['pp_fallback'] {enabled, trigger 1, floor 0.55, size
+   3, slips 2, backups 2, strategy}. PARITY: research_pp_fallback_parity run 40598923012 engine = research, 0 nights differ (the
+   earlier "178 slips" was a transcription error; 172 is right). DAY BY DAY THIS SEASON (research_pp_fallback_audit run 40597742145):
+   10-20 B 3, 10-21 6, 10-23 6, 10-24 6, 10-25 6, 10-26 6 -> not needed; 10-22 B 0 -> triggered, no slip (window board); 10-27 B 1 ->
+   triggered. BACKUPS: slips k3, k4 recorded 'placed_backup'; apply_quote_gate.py now gates the fallback on its own (k order, cap
+   pp_fallback.slips) and promotes a passing backup when a main slip fails (dry run audit_quote_gate_dry 10-27: both mains placed 6x).
+   Backups on history (research_pp_fallback_backups run 40599500713): k3 +20% / +41% (74 slips), k4 +31% / +88% (64), k5 0% / +29%
+   (not used). 10-27 LIVE: the engine's first legs (Mamukelashvili TO U0.5, Reaves / Kornet blk U0.5, Bridges reb U3.5) were not on
+   PrizePicks (0.5 blocks / turnover Unders get pulled); substituted by the next rule legs and re-quoted 200 / 6x: k1 LaVine TO U2.5 +
+   Thybulle stl U1.5 + Bridges pts U11.5; k2 Ellis TO U0.5 + Wembanyama pra U40.5 + Reed reb_ast U10.5; owner placed both ($2, 6x),
+   saved slip_ids 233 / 234. ALSO 10-27: Sleeper dropped from nba-app-token-refresh.yml (owner: the board needs no token).
 
 ---
 
