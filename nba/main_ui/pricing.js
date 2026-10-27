@@ -121,6 +121,21 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
     for (let i = 0; i < n; i++) if (hit[i]) prod *= f[i];
     return floor2(base * prod);
   }
+  if (app === "betr") {
+    // BETR (2026-10-26, Betr's own pricing query - pp_slip_rules['betr_payout_v1'], re-certified on 10-26): a FLAT table by size and
+    // hits - Perfect (power) pays only all hit, Dynamic (flex) by hits; an entry whose picks are ALL Less pays the all-LESS table
+    // (one More restores the full table). The leg factor is 1 on every regular Betr pick.
+    const b = pricing.betr || {};
+    const less = legs.every(l => /^(less|under)$/i.test(String(l.selected_side || l.side || "")));
+    if (mode === "power") {
+      const t = less ? b.perfect_all_less : b.perfect_regular;
+      if (!t || !(Number(t[String(n)]) > 0)) return null;
+      return misses === 0 ? Number(t[String(n)]) : 0;
+    }
+    const t = less ? b.dynamic_all_less : b.dynamic_regular;
+    if (!t || !t[String(n)]) return null;
+    return Number(t[String(n)][String(hits)] || 0);
+  }
   if (app === "fliff") {
     // FLIFF PICK'EM (2026-10-26; contest rules v2.0): a Max entry pays the product of the picks' Selection Multipliers (the guaranteed
     // Contest Score); Flex / SuperFlex reductions are unpublished - not priced
