@@ -515,7 +515,9 @@ export async function apiHighHit(sql, cfg, url, version) {
     const legs = [];
     for (const x of lj) {
       const side = sideOut(x.side), line = Number(x.line);
-      const hit = (x.player_id && byKey.get([s.app, String(x.player_id), x.prop, line, side].join("|"))) || byKey.get([s.app, "n:" + norm(x.player), x.prop, line, side].join("|"));
+      // a Betr leg is the Underdog leg at the same line (the engine requires it; Betr stays off the scored board) - it reads that row
+      const app = s.app === "betr" ? "underdog" : s.app;
+      const hit = (x.player_id && byKey.get([app, String(x.player_id), x.prop, line, side].join("|"))) || byKey.get([app, "n:" + norm(x.player), x.prop, line, side].join("|"));
       const cr = s.app === "prizepicks" && x.cell ? bt.cellRate.get(`${x.cell}|${x.tier}|${sideIn(x.side)}`) : null;
       const cellFields = cr ? { cell_backtest_hit_0_100: r1(100 * cr.p), cell_backtest_legs: cr.n } : {};
       // a graded slip's leg with no result is a push / void (the grader drops it and pays the smaller slip)
