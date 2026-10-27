@@ -235,6 +235,41 @@ def portfolio_cfg(conn):
     return _PORTFOLIO
 
 
+def fallback_cfg(conn):
+    """classification_config['pp_fallback'] (thin-night fallback tunables) - {} when absent / unreadable"""
+    try:
+        row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='pp_fallback'").fetchone()
+        return (row[0] if isinstance(row[0], dict) else json.loads(row[0])) if row else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def fallback_slips(prepared, fb):
+    """THE THIN-NIGHT FALLBACK (owner 2026-10-27 15:33 PT "Deploy it"; research_pp_fallback_rule run 40594721780). On portfolio B's
+    prepared board: (B units that build a slip, [slips]). Slips only when B builds <= fb.trigger (1): 3-pick POWER of the best standard
+    UNDERS - final_hp >= fb.floor (0.55), best final_hp first, <= 1 leg a game, >= 2 teams, fb.slips (2) slips from different players.
+    Pure (reads the prepared legs, writes nothing) - the live pick and the day-by-day audit call this same function."""
+    built_b = sum(1 for u in PB.UNITS if PB.unit_slip(prepared, u) is not None)
+    if built_b > int(fb.get('trigger', 1)):
+        return built_b, []
+    size, floor_, nsl = int(fb.get('size', 3)), float(fb.get('floor', 0.55)), int(fb.get('slips', 2))
+    cand = sorted([l for l in prepared if l['tier'] == 'R' and l['side'] == 'Under' and float(l['p']) >= floor_], key=lambda l: -float(l['p']))
+    used, out = set(), []
+    for _ in range(nsl):
+        pick_, players, games = [], set(), set()
+        for l in cand:
+            if l['player'] in used or l['player'] in players or l['event_id'] in games:
+                continue
+            pick_.append(l); players.add(l['player']); games.add(l['event_id'])
+            if len(pick_) == size:
+                break
+        if len(pick_) < size or len({l['team_id'] for l in pick_}) < 2:
+            break
+        used |= players
+        out.append(pick_)
+    return built_b, out
+
+
 def portfolio_select(pools, cmap, broad_day, cfg, extra=0):
     """The day's portfolio slips: [(unit name, k, slip)] - round robin over cfg['order'], no repeated slip, a leg (player, prop,
     side, line) in at most cfg['leg_cap'] taken slips, at most cfg['n'] slips. `extra` > 0 continues the same round robin for that
