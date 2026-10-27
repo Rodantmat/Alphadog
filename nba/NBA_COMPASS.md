@@ -622,6 +622,31 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    run 40424128956): Keycloak refresh with the owner's offline token, access 2a4e8f (exp 11-15) -> 6743f6 (exp 11-26), refresh rotated,
    persisted to the credential store; the board read with the NEW stored token: HTTP 200, 9 events, 2,876 legs. Every capture renews
    within 12 days of expiry, and daily use keeps the offline session alive. If the session is ever refused the harvest run exits 2 (red).
+187. 🔑 **BETR STRATEGY B IS LIVE ON THE SLIPS SCREEN; THE SLIPS SCREEN IS PRECOMPUTED (2026-10-26; owner 18:31 PT "Let's go b so, you
+   can deploy it in the slip system. The slips also take long to load ... it should run in a pipeline before and just be retrieved by
+   the ui").** STRATEGY B_T23_4dyn (research_betr_4dyn run 40426972736, ~11,700 variations around the owner's 4-pick Dynamic x2):
+   Underdog T2+T3 legs, final_hp >= 0.58, ordered by the books' de-vigged chance, top 2 skipped, <= 2 legs per game, never all-Under
+   (the last leg swapped for the best Over), 2 slips a slate with different players: +49.6% ROI, 262 slips, max drawdown 9.2u, cashed
+   45%, all four half-seasons positive (+57 / +43 / +49 / +39); chosen from many variations, so expect less live. ENGINE
+   nba/betr_live_slip_engine.py -> nba_score.betr_live_slips; P3 step "Betr board (owner token, no browser) + pick" (board ->
+   archive 'window' -> BT_MODE pick), P2A "Betr grade". LIVE RULES: the Betr side must be open and Betr's line must EQUAL Underdog's;
+   a leg in a game started before the Betr board is skipped (Betr refuses it); the books' chance is the exact line's consensus, else
+   interpolated between the books' nearest lines below / above (<= 6 pts), else the nearest line within 2 pts, else the leg is skipped;
+   a board older than 3 h builds nothing. PRICING pp_slip_rules betr_payout_v1 (Dynamic 4 = 6x / 1.5x, all-LESS 5.5 / 1.25; void
+   rule unverified). GATE classification_config betr_live: enabled + play switched on 2026-10-26 ~19:15 PT. DRY RUN 10-26 (board
+   23:45Z, after 4 of 9 games tipped): pool 48 -> 1 priced (15 below floor, 7 game started, 12 Betr side closed - Betr posts Under on
+   far fewer props than Over -, 9 no books' price - live consensus is Bovada + DraftKings only -, 4 Betr line differs) -> no slip.
+   FIRST REAL TEST is the next P3 on a pre-tip board; if Betr's closed Unders and thin books keep the pool under 10 legs, B will
+   often build 0-1 slips - that is a live-data limit of the strategy, not a bug. SLIPS SCREEN SNAPSHOT: nba_score.ui_slips_snapshot
+   (slate_date, slate_mode PK, fingerprint, payload, built_at, build_ms); /api/slips/high-hit serves the stored payload while an md5
+   fingerprint of everything it reads matches (every app's slips, quotes, board_scored, injuries, final_hp_derived, configs, payout
+   rules, strategy states, unit history, streak flags, edge monitors, PT date, UI version) and it is < 6 h old; else it builds (same
+   code), stores and serves; ?refresh=1 forces a build. Warmed by P3 (after the picks), the PrizePicks quote gate and P2A (after
+   grading). Timing probe run 40434904349: 17.4 s cold build, then 1.15 s / 1.48 s served (was 14-24 s every load). ALSO FIXED: the
+   Slips screen's app filter dropped Fliff (and had no Betr) - both added; a Fliff leg reads the Underdog board row when Fliff's line is
+   Underdog's (UI test C13; UI v1.4.44). UI TEST 2026-10-26 98/103: C1 / C2 (board counts mid-slate with games started), C49
+   (PrizePicks P_B5 / P_B9 blocks_R records), C50 (the test still expects Underdog PLAY only on ' P5 ' tracks - the T-unit portfolios
+   play) are outside this change.
 
 ---
 
