@@ -493,7 +493,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   let unmatched = 0;
   const slips = [];
   const ljOf = s => (typeof s.legs_json === "string" ? JSON.parse(s.legs_json) : s.legs_json || []);
-  eng.sl = [...(eng.sl || []), ...(eng.fl || [])];   // Sleeper + Fliff (live only; the replays carry none) - each row keeps its own app
+  eng.sl = [...(eng.sl || []), ...(eng.fl || []), ...(eng.bt || [])];   // Sleeper + Fliff + Betr (live only; the replays carry none) - each row keeps its own app
   const pb = await placeByMap(sql, slate.date, [...eng.pp, ...eng.ud, ...eng.sl].flatMap(s => ljOf(s).map(x => ({
     pid: x.player_id ? String(x.player_id) : null, name: x.player_id ? null : String(x.player || "").toLowerCase() }))));
   lap("place_by");
