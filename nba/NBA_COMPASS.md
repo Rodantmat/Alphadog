@@ -609,6 +609,12 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    (classification_config p3_betr_wait false, not in nba_main_ui.apps) - un-parking and any Betr slip engine are the owner's call.
    Betr payouts were already mapped from Betr's own pricing query on 10-18 (fact 169, pp_slip_rules betr_payout_v1; ALL-LESS entries
    discounted) - the research studies price Betr flat (no all-Less discount).
+   DAILY CAPTURE (owner 17:04 PT "make it be properly got everyday ... token renewed"): classification_config['p3_betr_wait'].capture
+   = true -> P3 dispatches the browser-free harvest at the window EVERY slate even while parked (archived as 'window'); enabled stays
+   false, so Betr is NOT scored, the wait step stays off and nothing reaches the Slips screen. RENEWAL PROVEN today (probe_betr_renew_now
+   run 40424128956): Keycloak refresh with the owner's offline token, access 2a4e8f (exp 11-15) -> 6743f6 (exp 11-26), refresh rotated,
+   persisted to the credential store; the board read with the NEW stored token: HTTP 200, 9 events, 2,876 legs. Every capture renews
+   within 12 days of expiry, and daily use keeps the offline session alive. If the session is ever refused the harvest run exits 2 (red).
 
 ---
 
