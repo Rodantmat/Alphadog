@@ -160,6 +160,7 @@ async function runJob(input, env) {
   const sql = pg(env);
   const sourceKey = "NBA_GITHUB_COMMITTED_DAILY_DELTA";
   const errors = [];
+  const duplicatesDropped = [];
   let playerWritten = 0, teamWritten = 0, playerAdvWritten = 0, teamAdvWritten = 0;
   let season = null, meta = null;
 
