@@ -409,6 +409,14 @@ function stakeAdvice(s, bt) {
     if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
     return { label: "PLAY $" + usd.toFixed(2) + " (Fliff)", play_usd: usd };
   }
+  if (s.app === "betr") {
+    if (!bt.btPlay) return { label: "paper (Betr engine)", play_usd: null };
+    const w = Number(s.stake == null ? 1 : s.stake);
+    if (!(w > 0)) return { label: "SKIP - not staked", play_usd: null };
+    const usd = Math.round(bt.unit.usd * w * 100) / 100;
+    if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
+    return { label: "PLAY $" + usd.toFixed(2) + " (Betr)", play_usd: usd };
+  }
   if (s.app !== "prizepicks") return { label: "paper", play_usd: null };
   const skip = SKIP_REASON.find(([k]) => st.includes(k));
   if (skip) return { label: `SKIP - ${skip[1]}`, play_usd: null };
