@@ -159,6 +159,22 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -u nba/apply_quote_gate.py
 
+      # THE SLIPS SCREEN, PRECOMPUTED (owner 2026-10-26 18:31 PT): PrizePicks' quotes and the gate just changed what the screen
+      # shows - store it again so the owner's view is the stored one. Soft.
+      - name: Warm the Slips screen (precomputed snapshot)
+        if: ${{ always() && github.event.inputs.mode == 'slipq' }}
+        continue-on-error: true
+        run: |
+          # the UI worker builds the screen with its own code and stores it (nba_score.ui_slips_snapshot); later views read it
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/warm.json -w "%{http_code}" --max-time 120 -X POST -H "content-type: application/json" -d '{}' \
+              "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev/api/slips/high-hit?refresh=1") || code=000
+            echo "slips snapshot warm (attempt $i): http $code $(python3 -c "import json; j = json.load(open('/tmp/warm.json')); print(j.get('snapshot'), len(j.get('generated_slips') or []), 'slips, slate', (j.get('slate') or {}).get('date'))" 2>/dev/null)"
+            [ "$code" = "200" ] && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
+
       - name: Commit payout map
         if: always()
         # ONE push helper (nba/git_push_retry.sh): the old loop ended on `sleep` after 5 failed pushes, so a lost
