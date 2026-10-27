@@ -67,8 +67,8 @@ def main():
     c = np.cumsum(allpl)
     dd = float(np.max(np.maximum.accumulate(np.concatenate([[0], c]))[1:] - c))
     print(f"   BOTH: {len(allx)} slips, ROI {100 * np.mean(allx):+.1f}%, profit {sum(allx):+.1f}u, max dd {dd:.1f}u "
-          f"(research_pp_fallback_rule: 178 slips, +61.8%, +110.0u, dd 10.0u) -> "
-          f"{'PARITY OK' if len(allx) == 178 and abs(sum(allx) - 110.0) < 0.05 else 'PARITY DIFFERS - check'}")
+          f"(research_pp_fallback_rule run 40594721780: 92 + 80 = 172 slips, +110.0u, dd 10.0u) -> "
+          f"{'PARITY OK' if len(allx) == 172 and abs(sum(allx) - 110.0) < 0.05 else 'PARITY DIFFERS - check'}")
 
     # 2 this season night by night
     print("\n2 THIS SEASON, NIGHT BY NIGHT (the engine's own board and function)")
