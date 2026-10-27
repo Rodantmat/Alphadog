@@ -582,7 +582,10 @@ async function buildHighHit(sql, cfg, url, version) {
     for (const x of lj) {
       const side = sideOut(x.side), line = Number(x.line);
       // a Betr leg is the Underdog leg at the same line (the engine requires it; Betr stays off the scored board) - it reads that row
-      const app = s.app === "betr" ? "underdog" : s.app;
+      // a Fliff leg is an Underdog T1 leg (fliff_live_slip_engine): it reads that row when Fliff's line is Underdog's (ud_line) -
+      // C13 2026-10-26: the Fliff slip's legs looked for a 'fliff' board row that does not exist and showed no probability
+      const viaUd = s.app === "betr" || (s.app === "fliff" && x.ud_line != null && Number(x.ud_line) === line);
+      const app = viaUd ? "underdog" : s.app;
       const hit = (x.player_id && byKey.get([app, String(x.player_id), x.prop, line, side].join("|"))) || byKey.get([app, "n:" + norm(x.player), x.prop, line, side].join("|"));
       const cr = s.app === "prizepicks" && x.cell ? bt.cellRate.get(`${x.cell}|${x.tier}|${sideIn(x.side)}`) : null;
       const cellFields = cr ? { cell_backtest_hit_0_100: r1(100 * cr.p), cell_backtest_legs: cr.n } : {};
