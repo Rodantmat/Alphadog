@@ -107,9 +107,10 @@ def build(conn, day, cfg):
             why["not on Betr (side closed)"] += 1; continue
         if float(l["line"]) not in lines:
             why["Betr line differs"] += 1; continue
-        pf = mk.get((pid, l["prop"], l["side"], float(l["line"])))
-        if not pf:
+        po = fair.get((pid, l["prop"], float(l["line"])))
+        if po is None:
             why["no books' price at the line"] += 1; continue
+        pf = [po if l["side"] == "Over" else 1 - po]
         priced.append({"pid": pid, "player": l.get("player"), "prop": l["prop"], "side": l["side"], "line": float(l["line"]),
                        "p": float(l["p"]), "pf": sum(pf) / len(pf), "team": tm.get(pid), "game": l.get("event_id")})
     cand = sorted(priced, key=lambda x: -x["pf"])[int(cfg.get("skip", 2)):]
