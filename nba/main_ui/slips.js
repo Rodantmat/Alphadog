@@ -438,7 +438,7 @@ export async function apiHighHit(sql, cfg, url, version) {
   const boardSlate = slate;
   let eng = await engineSlips(sql, cfg, boardSlate);
   let fallbackNote = null;
-  if (!eng.pp.length && !eng.ud.length && !(eng.sl || []).length && !(eng.fl || []).length) {
+  if (!eng.pp.length && !eng.ud.length && !(eng.sl || []).length && !(eng.fl || []).length && !(eng.bt || []).length) {
     // first choice: the live engine's own slips for a past slate (production-configuration season replay)
     const lbl = await liveReplayLabel(sql, cfg);
     if (lbl) {
