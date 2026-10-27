@@ -336,10 +336,16 @@ jobs:
           # PARK SWITCH (owner 2026-10-19 22:55 PT: "leave betr out for now"): classification_config['p3_betr_wait'].enabled = false
           # -> no harvest is dispatched, the wait step reports off, and the scorer drops Betr rows. true restores the whole path.
           ON=$(psql "$DATABASE_URL" -Atqc "SELECT coalesce((config_json->>'enabled')::boolean, true) FROM nba_config.classification_config WHERE config_key='p3_betr_wait'" 2>/dev/null || echo t)
-          if [ "$ON" = "f" ]; then
+          # CAPTURE WHILE PARKED (owner 2026-10-26 17:04 PT: "make it be properly got everyday ... token renewed"):
+          # p3_betr_wait.capture = true dispatches the (browser-free) harvest even while Betr is parked - the board is captured and
+          # archived as 'window' every slate and the session token renews on the way; Betr is still NOT scored (the scorer reads
+          # enabled) and the wait step stays off (it also reads enabled).
+          CAP=$(psql "$DATABASE_URL" -Atqc "SELECT coalesce((config_json->>'capture')::boolean, false) FROM nba_config.classification_config WHERE config_key='p3_betr_wait'" 2>/dev/null || echo f)
+          if [ "$ON" = "f" ] && [ "$CAP" != "t" ]; then
             echo "::notice::Betr is PARKED (p3_betr_wait.enabled = false) - no harvest dispatched, Betr is not scored this run"
             exit 0
           fi
+          [ "$ON" = "f" ] && echo "::notice::Betr is PARKED but capture is on - board captured and archived, Betr not scored this run"
           code=000
           for i in 1 2 3; do
             code=$(curl -s -o /tmp/betr_dispatch.json -w "%{http_code}" --max-time 30 -X POST \
