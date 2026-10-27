@@ -101,11 +101,18 @@ def build(conn, day, cfg):
         near[(fpid, fprop)].append((fline, fp_))
     tm = SL.teams_of(conn, {str(x.get("player_id")) for x in pool if x.get("player_id") is not None}, day)
     floor = float(cfg.get("floor", 0.58))
+    # Betr takes no pick in a game that has started (INVALID_PROJECTION, 10-26 quote probe) and drops it from its board - such a leg is
+    # counted apart from a side Betr did not open
+    tip = dict(conn.execute("""SELECT event_id, min(commence_time) FROM nba_market.board_snapshots
+                               WHERE bookmaker='underdog' AND game_date=%s GROUP BY 1""", (day,)).fetchall())
     priced, why = [], defaultdict(int)
     for l in pool:
         pid = str(l.get("player_id")) if l.get("player_id") is not None else None
         if pid is None or float(l["p"]) < floor:
             why["below floor / no id"] += 1; continue
+        t0 = tip.get(l.get("event_id"))
+        if t0 is not None and t0 <= last:
+            why["game started before the Betr board"] += 1; continue
         lines = bb.get((pid, l["prop"], l["side"]))
         if not lines:
             why["not on Betr (side closed)"] += 1; continue
