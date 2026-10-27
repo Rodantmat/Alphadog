@@ -430,7 +430,73 @@ function stakeAdvice(s, bt) {
   return { label: "PLAY $" + usd.toFixed(2) + (state === "active" ? "" : " (" + state + ")"), play_usd: usd };
 }
 
+// THE SLIPS SCREEN IS PRECOMPUTED (owner 2026-10-26 18:31 PT: "The slips also take long to load ... it should run in a pipeline before
+// and just be retrieved by the ui"). The screen's payload is built by THIS code (no second copy of the logic) and kept in
+// nba_score.ui_slips_snapshot, one row per slate and mode, with a fingerprint of everything it is built from (every app's slips for
+// the slate - status, stake, results -, PrizePicks' quotes, the scored board, injuries, whole-number probabilities, the UI / unit /
+// play-gate configs and payout rules, strategy states, the unit history, streak flags, the edge monitors, the code version and the
+// Pacific date). A view serves the stored payload while the fingerprint matches (at most 6 h old); otherwise it builds, stores and
+// serves. The pipelines warm it right after they change what the screen shows (P3 after the picks, the PrizePicks quote gate, P2A
+// after grading: POST /api/slips/high-hit?refresh=1), so the owner's first view is the stored one. A failed snapshot read or write
+// never blocks the screen - it builds as before.
+const SNAP_MAX_AGE = "6 hours";
+async function slipsFingerprint(sql, slate, version) {
+  const r = (await q(sql, `SELECT md5(concat_ws('|',
+     (SELECT count(*) || ':' || coalesce(max(placed_at)::text, '') || ':' || coalesce(max(graded_at)::text, '') || ':' || md5(coalesce(string_agg(strategy || k || status || coalesce(hits::text, '') || coalesce(stake_weight::text, '') || coalesce(unit_usd::text, ''), ',' ORDER BY strategy, k), '')) FROM nba_score.live_slips WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') || ':' || coalesce(max(graded_at)::text, '') || ':' || md5(coalesce(string_agg(status || coalesce(hits::text, '') || stake::text, ',' ORDER BY portfolio, composition, size, k), '')) FROM nba_score.ud_live_slips WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') || ':' || coalesce(max(graded_at)::text, '') || ':' || md5(coalesce(string_agg(status || stake::text, ','), '')) FROM nba_score.sleeper_live_slips WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') || ':' || coalesce(max(graded_at)::text, '') || ':' || md5(coalesce(string_agg(status || stake::text, ','), '')) FROM nba_score.fliff_live_slips WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') || ':' || coalesce(max(graded_at)::text, '') || ':' || md5(coalesce(string_agg(status || stake::text, ','), '')) FROM nba_score.betr_live_slips WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(quoted_at)::text, '') FROM nba_score.live_slip_quotes WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') FROM nba_score.board_scored WHERE game_date = $1::date),
+     (SELECT coalesce(max(snapshot_ts)::text, '') FROM nba_daily.injury_report_snapshots WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') FROM nba_score.final_hp_derived WHERE game_date = $1::date),
+     (SELECT md5(string_agg(config_key || config_json::text, ',' ORDER BY config_key)) FROM nba_config.classification_config
+       WHERE config_key IN ('nba_main_ui', 'stake_unit', 'sleeper_live', 'fliff_live', 'betr_live', 'sleeper_payout', 'prop_reliability_audit_latest')),
+     (SELECT md5(string_agg(rule_key || rule_json::text, ',' ORDER BY rule_key)) FROM nba_config.pp_slip_rules),
+     (SELECT md5(coalesce(string_agg(strategy || state || live_cap, ',' ORDER BY strategy), '')) || coalesce(max(updated_at)::text, '') FROM nba_score.live_strategy_state),
+     (SELECT coalesce(max(updated_at)::text, '') FROM nba_score.live_unit_history),
+     (SELECT md5(coalesce(string_agg(strategy || flag_on || coalesce(reason, ''), ',' ORDER BY strategy), '')) FROM nba_score.live_streak_flags WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(decided_at)::text, '') FROM nba_score.ud_edge_monitor),
+     (SELECT count(*) || ':' || coalesce(sum(p)::text, '') FROM nba_score.edge_monitor_ref),
+     (SELECT count(*) || ':' || coalesce(sum(cert_leg_hit)::text, '') FROM nba_score.live_strategy_calib),
+     (now() AT TIME ZONE 'America/Los_Angeles')::date::text, $2::text, $3::text)) AS fp, now() AS read_at`, [slate.date, slate.mode, version]))[0];
+  return r ? r.fp : null;
+}
+
 export async function apiHighHit(sql, cfg, url, version) {
+  const t0 = Date.now();
+  const refresh = url && url.searchParams && url.searchParams.get("refresh") === "1";
+  let slate = null, fp = null;
+  try { slate = await resolveSlate(sql, cfg, url); fp = await slipsFingerprint(sql, slate, version); } catch (_e) { fp = null; }
+  if (fp && !refresh) {
+    try {
+      const row = (await q(sql, `SELECT payload, to_char(built_at AT TIME ZONE 'America/Los_Angeles', 'FMHH12:MI AM') t, build_ms, now() AS read_at
+                                 FROM nba_score.ui_slips_snapshot WHERE slate_date = $1::date AND slate_mode = $2 AND fingerprint = $3
+                                 AND built_at > now() - interval '${SNAP_MAX_AGE}'`, [slate.date, slate.mode, fp]))[0];
+      if (row) {
+        const out = typeof row.payload === "string" ? JSON.parse(row.payload) : row.payload;
+        out.snapshot = { served: true, built_pt: row.t, build_ms: row.build_ms, fingerprint: fp };
+        out.timing_ms = { snapshot: Date.now() - t0 };
+        return out;
+      }
+    } catch (_e) { /* snapshot unreadable - build below */ }
+  }
+  const out = await buildHighHit(sql, cfg, url, version);
+  const ms = Date.now() - t0;
+  if (fp && out && out.ok) {
+    try {
+      await q(sql, `INSERT INTO nba_score.ui_slips_snapshot (slate_date, slate_mode, fingerprint, payload, built_at, build_ms)
+                    VALUES ($1::date, $2, $3, $4::jsonb, now(), $5)
+                    ON CONFLICT (slate_date, slate_mode) DO UPDATE SET fingerprint = EXCLUDED.fingerprint, payload = EXCLUDED.payload,
+                      built_at = EXCLUDED.built_at, build_ms = EXCLUDED.build_ms RETURNING 1`, [slate.date, slate.mode, fp, JSON.stringify(out), ms], 20000);
+      out.snapshot = { served: false, stored: true, build_ms: ms, fingerprint: fp, refresh: !!refresh };
+    } catch (e) { out.snapshot = { served: false, stored: false, error: String(e && e.message || e).slice(0, 160) }; }
+  }
+  return out;
+}
+
+async function buildHighHit(sql, cfg, url, version) {
   const T = {}; let tp = Date.now();
   const lap = k => { T[k] = Date.now() - tp; tp = Date.now(); };
   let slate = await resolveSlate(sql, cfg, url);
