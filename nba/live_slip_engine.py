@@ -244,11 +244,13 @@ def fallback_cfg(conn):
         return {}
 
 
-def fallback_slips(prepared, fb):
+def fallback_slips(prepared, fb, extra=0):
     """THE THIN-NIGHT FALLBACK (owner 2026-10-27 15:33 PT "Deploy it"; research_pp_fallback_rule run 40594721780). On portfolio B's
     prepared board: (B units that build a slip, [slips]). Slips only when B builds <= fb.trigger (1): 3-pick POWER of the best standard
     UNDERS - final_hp >= fb.floor (0.55), best final_hp first, <= 1 leg a game, >= 2 teams, fb.slips (2) slips from different players.
-    Pure (reads the prepared legs, writes nothing) - the live pick and the day-by-day audit call this same function."""
+    Pure (reads the prepared legs, writes nothing) - the live pick and the day-by-day audit call this same function.
+    extra > 0: that many BACKUP slips after the main ones, the same greedy on the remaining players (owner 2026-10-27: legs pulled from
+    PrizePicks - 0.5 blocks / turnover Unders - cost a slip; the quote gate promotes a passing backup in place of a failed slip)."""
     built_b = sum(1 for u in PB.UNITS if PB.unit_slip(prepared, u) is not None)
     if built_b > int(fb.get('trigger', 1)):
         return built_b, []
