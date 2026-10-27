@@ -113,7 +113,13 @@ def build(conn, day, cfg):
             why["Betr line differs"] += 1; continue
         po = fair.get((pid, l["prop"], float(l["line"])))
         if po is None:
-            why["no books' price at the line"] += 1; continue
+            # the books' nearest posted line within 1 point (10-26 dry run: 10 of 10 Betr-priced legs sat 0.5 off the books' line); the
+            # order only needs the books' view of the leg, so the nearest line's chance stands in (the history used the books' main line)
+            cands = [(abs(fl_ - float(l["line"])), fp_) for fl_, fp_ in near.get((pid, l["prop"]), []) if abs(fl_ - float(l["line"])) <= 1.0]
+            if not cands:
+                why["no books' price within 1 point"] += 1; continue
+            po = min(cands)[1]
+            why["books' price at a nearby line"] += 1
         pf = [po if l["side"] == "Over" else 1 - po]
         priced.append({"pid": pid, "player": l.get("player"), "prop": l["prop"], "side": l["side"], "line": float(l["line"]),
                        "p": float(l["p"]), "pf": sum(pf) / len(pf), "team": tm.get(pid), "game": l.get("event_id")})
