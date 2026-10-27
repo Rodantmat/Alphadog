@@ -1326,8 +1326,8 @@ def pick(conn, day, require_fresh=True):
                          (day, 'P_FB_U3power', k_fb, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
                                                                     'prop': l['prop'], 'tier': 'R', 'side': 'Under', 'line': float(l['line']),
                                                                     'factor': 1, 'event_id': l.get('event_id')} for l in pick_]),
-                          len(pick_), f"thin-night fallback: portfolio B built {built_b}"))
-            print(f"  {day}: FALLBACK P_FB_U3power k{k_fb} (B built {built_b}) -> placed: " +
+                          len(pick_), st_fb, f"thin-night fallback{' backup' if st_fb == 'placed_backup' else ''}: portfolio B built {built_b}"))
+            print(f"  {day}: FALLBACK P_FB_U3power k{k_fb} (B built {built_b}) -> {st_fb}: " +
                   "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick_), flush=True)
     conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
     conn.commit()
