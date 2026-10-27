@@ -1309,8 +1309,10 @@ def pick(conn, day, require_fresh=True):
     # THIN-NIGHT FALLBACK (owner 2026-10-27 15:33 PT "Deploy it" - the best balance of research_pp_fallback_rule run 40594721780):
     # when portfolio B builds <= trigger slips (1) its units are replaced by 3-pick POWER slips of the board's best UNDERS - standard
     # lines, any prop, final_hp >= floor (0.55), best final_hp first, <= 1 leg a game, >= 2 teams, 2 slips from different players,
-    # 1 unit each. History on those nights only: 2024-25 ~+59% / 2025-26 +65% ROI, 178 slips, max drawdown 10u, nights won 49%,
-    # longest losing run 5 nights. Tunables in classification_config['pp_fallback'] (enabled / trigger / floor / size / slips).
+    # 1 unit each. History on those nights only: 2024-25 +63% (92 slips) / 2025-26 +65% (80) ROI, 172 slips, +110u, max drawdown
+    # 10u, nights won 46% / 52%, longest losing run 5 nights (engine = research: research_pp_fallback_parity, 0 nights differ).
+    # Tunables in classification_config['pp_fallback'] (enabled / trigger / floor / size / slips / backups - extra slips recorded
+    # 'placed_backup', promoted by the quote gate when a main slip fails PrizePicks' quote).
     fb = fallback_cfg(conn)
     if fb.get('enabled') and pools.get('__pb__') is not None:
         n_main = int(fb.get('slips', 2))
