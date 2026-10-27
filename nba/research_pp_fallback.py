@@ -32,7 +32,7 @@ import research_portfolio_caps as PC                 # noqa: E402
 import research_pp_2pick as R2                       # noqa: E402
 import live_slip_engine as L                         # noqa: E402
 
-HIST = PC.HIST
+HIST = list(PC.HIST)
 CUR = "2026-27"
 TS = [int(x) for x in (os.environ.get("FB_T") or "1,2,3").split(",")]
 TIERS = {"R": lambda t: t == "R", "RG": lambda t: t == "R" or t.startswith("G"), "RD": lambda t: t == "R" or t.startswith("D"),
