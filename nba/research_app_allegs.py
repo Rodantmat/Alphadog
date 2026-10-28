@@ -216,6 +216,21 @@ def greedy(base, idx, k, banned, gc=1):
     return out
 
 
+def mix_fix(s, base, idx, gc, banned):
+    """Betr 'mix' (the live engine's rule): an all-Under slip swaps its last leg for the best Over that fits (other player, game cap)"""
+    if not s or any(l["side"] != "Under" for l in s):
+        return s
+    used = {l["player_id"] for l in s} | banned
+    gm = defaultdict(int)
+    for l in s[:-1]:
+        gm[l["event_id"]] += 1
+    for i in idx:
+        l = base[i]
+        if l["side"] == "Over" and l["player_id"] not in used and gm[l["event_id"]] < gc:
+            return s[:-1] + [l]
+    return s
+
+
 class Acc:
     """per (rule, structure, slips a slate): per season n, sum, sumsq, cashed, cumulative P/L, peak, max drawdown"""
     def __init__(self):
