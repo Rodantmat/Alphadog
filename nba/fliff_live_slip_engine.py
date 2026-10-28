@@ -119,9 +119,9 @@ def pick(conn, day):
                     VALUES (%s, %s, 2, 'max', 1, %s, 1, 'live', %s, %s)
                     ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, model_multiplier = EXCLUDED.model_multiplier,
                       board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
-                    WHERE nba_score.fliff_live_slips.graded_at IS NULL""", (day, STRATEGY, json.dumps(lj), round(mult, 4), last))
+                    WHERE nba_score.fliff_live_slips.graded_at IS NULL""", (day, name, json.dumps(lj), round(mult, 4), last))
     conn.commit()
-    print(f"FLIFF_LIVE|{day} {STRATEGY}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} @{l['m']}" for l in s) + f" = x{mult:.3f}")
+    print(f"FLIFF_LIVE|{day} {name}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} @{l['m']}" for l in s) + f" = x{mult:.3f}")
 
 
 def grade(conn, day):
