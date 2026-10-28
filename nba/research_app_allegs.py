@@ -243,12 +243,16 @@ def day(acc, si, legs):
             idx = np.nonzero((P >= fl) & (E >= g) & (M <= mc))[0]
             if len(idx) < 2:
                 continue
-            first = greedy(base, idx, 6, set())
+            first = greedy(base, idx, 6, set(), gc)
             for k in SIZES:
                 s1 = first[:k]
+                if sd == "mix":
+                    s1 = mix_fix(s1, base, idx, gc, set())
                 if len(s1) < k or len({l["team"] for l in s1}) < 2:
                     continue
-                s2 = greedy(base, idx, k, {l["player_id"] for l in s1})
+                s2 = greedy(base, idx, k, {l["player_id"] for l in s1}, gc)
+                if sd == "mix":
+                    s2 = mix_fix(s2, base, idx, gc, {l["player_id"] for l in s1})
                 s2 = s2 if len(s2) == k and len({l["team"] for l in s2}) >= 2 else None
                 for st in ("max", "flex"):
                     if (k, st) not in STRUCTS:
