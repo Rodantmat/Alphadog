@@ -332,6 +332,11 @@ def main():
         print(f"  (b2) the same robust rules by BALANCE (2-season P/L / worst drawdown), top {top}:")
         for q in bal[:top]:
             print("    " + row(acc, q))
+        lv = sorted([q for q in both if acc.d[q][2][0] >= 5 and stat(acc.d[q][2])[1] > 0],
+                    key=lambda q: -((stat(acc.d[q][0])[5] + stat(acc.d[q][1])[5]) / max(stat(acc.d[q][0])[4], stat(acc.d[q][1])[4], 1)))
+        print(f"  (b3) robust in both seasons AND positive this season on the real board (>= 5 slips): {len(lv)} rules; top {top} by balance:")
+        for q in lv[:top]:
+            print("    " + row(acc, q))
         if both:
             m24 = np.array([stat(acc.d[q][0])[1] for q in both]); m25 = np.array([stat(acc.d[q][1])[1] for q in both])
             m26 = [stat(acc.d[q][2])[1] for q in both if acc.d[q][2][0] >= 3]
