@@ -671,6 +671,20 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    PrizePicks (0.5 blocks / turnover Unders get pulled); substituted by the next rule legs and re-quoted 200 / 6x: k1 LaVine TO U2.5 +
    Thybulle stl U1.5 + Bridges pts U11.5; k2 Ellis TO U0.5 + Wembanyama pra U40.5 + Reed reb_ast U10.5; owner placed both ($2, 6x),
    saved slip_ids 233 / 234. ALSO 10-27: Sleeper dropped from nba-app-token-refresh.yml (owner: the board needs no token).
+189. 🔑 **EARN THE RAISE ON EVERY APP, FROM $2, COUNTED FROM 2026-10-24; UNIT CHANGE ALERT ON THE SLIPS SCREEN (2026-10-28; owner
+   13:00 PT "I am placing at 2 now, and we will count from the last adjusted strategies, so 4 days ago. I want it to show itself on
+   the slip screen and give a alert message of unit amount change").** classification_config['stake_unit'].auto: enabled, start 2,
+   count_from 2026-10-24, apps 'all', floor 1, step 1, up_x 25, down_x 15, max 15; unit_usd 2. RULE: + $1 each time the profit
+   reaches 25 x the next unit ($75 for $3, $100 for $4 ...), - $1 when the drop from the high reaches 15 x the unit (never below
+   $1). PROFIT = every PLAYED slip on every app - PrizePicks live_slips graded (k < 100), Underdog / Sleeper / Fliff / Betr rows
+   status 'live' - units x stake x the unit in force that slate (live_slip_engine.unit_profit_all_apps; the owner's own saved /
+   substituted slips are not the measure). CODE: live_slip_engine.unit_season_state (count_from), auto_unit (apps / floor);
+   nba/unit_update.py = P2A step "Unit (earn the raise, every app)" after the Betr grade (soft, reported as unit-update), walks
+   every slate from count_from in order (idempotent), ::warning on a change. SEED: live_unit_history 10-24 -$2.00, 10-25 +$4.00,
+   10-26 +$5.71, 10-27 +$9.71 (unit 2, hold). UI v1.4.45: the unit note says the profit on every app since the count date, the next
+   raise and the step-down point; the first note is a red "⚠ UNIT CHANGE: $a -> $b from this slate - enter every slip at $b" the
+   slate after the engine moves the unit. Probe probe_ui_unit.py run 40761090493: "Unit $2.00 - earn the raise (auto): profit on
+   every app since 2026-10-24 $9.71, next raise to $3.00 at $75.00; steps down to $1.00 if the season profit falls to $-20.29".
 
 ---
 
