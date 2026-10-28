@@ -24,7 +24,14 @@ REPORT per structure: (a) THE SELECTION METHOD OUT OF SAMPLE - best rule (it and
   2024-25 shown on 2025-26 and this season, then chosen on 2025-26 shown on 2024-25; (b) ROBUST IN BOTH SEASONS (rule + neighbours
   positive, >= 150 slips), ranked by the worse season's lower bound, with profit / max drawdown balance and this season's real result;
   (c) the live rules as a reference (UD-T1 transfer, research_app_line_rule runs 40768767535 / 40768774635).
-Env: DATABASE_URL, AA_APP (sleeper | fliff), AA_SMOKE (1 = every 8th history slate), AA_TOP (rows per list, 8).
+BETR (AA_APP=betr; owner 2026-10-28 16:44 PT "double check with the same level of scrutiny for betr"): a FLAT table - no per-pick
+  multiplier (pp_slip_rules betr_payout_v1 = research_sleeper_transfer.BETR_*: Perfect 2-6 = 3 / 6 / 10 / 20 / 35, Dynamic 3-6 by hits,
+  an all-LESS entry pays the discounted tables). Legs: history = the books' consensus MAIN line both sides (Betr = the books' / Underdog's
+  main line); this season = Betr's own archived board (board_snapshots 'betr', main markets, newest capture of the slate) with final_hp
+  at Betr's line. m = 1 for every Betr leg, so the orders are p / bl / pf (the books' chance), no gate / cap; side adds 'mix' (an
+  all-Under slip swaps its last leg for the best Over that fits - the live engine's rule); the kind slot carries the game cap
+  (gc1 = one leg a game, gc2 = up to two). "max" = Perfect, "flex" = Dynamic.
+Env: DATABASE_URL, AA_APP (sleeper | fliff | betr), AA_SMOKE (1 = every 8th history slate), AA_TOP (rows per list, 8).
 """
 import itertools
 import math
