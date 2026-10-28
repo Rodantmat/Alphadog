@@ -1990,6 +1990,19 @@
       "team_abbreviation": "SAS"
     },
     {
+      "id": 1642402,
+      "full_name": "Enrique Freeman",
+      "last_comma_first": "Freeman, Enrique",
+      "roster_status": 1,
+      "from_year": "2024",
+      "to_year": "2026",
+      "player_code": "enrique_freeman",
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
+    },
+    {
       "id": 1642277,
       "full_name": "Johnny Furphy",
       "last_comma_first": "Furphy, Johnny",
