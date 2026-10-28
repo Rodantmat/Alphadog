@@ -257,8 +257,8 @@ def grade(conn, day):
         if not st:
             print(f"SLEEPER_GRADE|{d}: no box scores yet - left ungraded")
             continue
-        for name, size, structure, lj, stake in conn.execute(
-                "SELECT strategy, size, structure, legs_json, stake FROM nba_score.sleeper_live_slips WHERE game_date = %s AND graded_at IS NULL", (d,)).fetchall():
+        for name, kk, size, structure, lj, stake in conn.execute(
+                "SELECT strategy, k, size, structure, legs_json, stake FROM nba_score.sleeper_live_slips WHERE game_date = %s AND graded_at IS NULL", (d,)).fetchall():
             legs = lj if isinstance(lj, list) else json.loads(lj)
             for l in legs:
                 h = AF.outcome(st, l)
