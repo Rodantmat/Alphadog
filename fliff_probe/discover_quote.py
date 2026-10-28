@@ -85,7 +85,7 @@ def main():
         rep["targets"][t] = rep["targets"][t][:6]
     print("chunks:", len(rep["chunks"]), "| targets found:", {k: len(v) for k, v in rep["targets"].items()},
           "| words:", {k: len(v) for k, v in rep["words"].items()}, flush=True)
-    (OUT / "discovery_quote.json").write_text(json.dumps(rep, indent=1))
+    (OUT / os.environ.get("QUOTE_OUT", "discovery_quote.json")).write_text(json.dumps(rep, indent=1))
 
 
 if __name__ == "__main__":
