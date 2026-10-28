@@ -434,8 +434,11 @@ def auto_unit(conn, day):
     high = max(high, prof)
     old = u; step = float(a['step']); reason = 'hold'
     floor_ = float(a['floor']) if a.get('floor') is not None else float(a['start'])
-    while u + step <= float(a['max']) + 1e-9 and prof >= float(a['up_x']) * (u + step):
-        u += step; reason = f"raise: season profit {prof:.2f} >= {float(a['up_x']):g} x {u:g}"
+    # raise_basis 'current' (owner 2026-10-28 13:28 PT "Put the next raise at $50 and we do gradually from there"): the raise from u
+    # comes at up_x x u ($2 -> $3 at $50, $3 -> $4 at $75 ...); 'next' (default, 2026-10-18) at up_x x (u + step)
+    basis_cur = a.get('raise_basis') == 'current'
+    while u + step <= float(a['max']) + 1e-9 and prof >= float(a['up_x']) * (u if basis_cur else u + step):
+        reason = f"raise: profit {prof:.2f} >= {float(a['up_x']):g} x {(u if basis_cur else u + step):g}"; u += step
     if u == old and u - step >= floor_ - 1e-9 and high - prof >= float(a['down_x']) * u:
         reason = f"step down: drop {high - prof:.2f} from the season high {high:.2f} >= {float(a['down_x']):g} x {u:g}"; u -= step
     conn.execute("""INSERT INTO nba_score.live_unit_history (game_date, season_start, season_profit, season_high, unit_from, unit_usd, reason)
