@@ -782,6 +782,7 @@ async function unitAutoStatus(sql, su) {
   if (!a) return null;
   const st = { enabled: a.enabled === true, start: Number(a.start || 1), step: Number(a.step || 1), max: Number(a.max || 15),
                up_x: Number(a.up_x || 25), down_x: Number(a.down_x || 15), unit: Number(su.unit_usd || a.start || 1),
+               floor: Number(a.floor != null ? a.floor : (a.start || 1)), apps: a.apps || "pp", count_from: a.count_from || null,
                season_profit: 0, season_high: 0, last_change: null };
   try {
     const has = (await q(sql, "SELECT to_regclass('nba_score.live_unit_history') IS NOT NULL ok"))[0];
