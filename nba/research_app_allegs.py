@@ -89,6 +89,8 @@ def pay(s, st):
         return 1.0
     if APP == "fliff":
         return floor2(math.prod(l["m"] for l in live)) if all(l["hit"] for l in live) else 0.0
+    if APP == "betr":
+        return ST.pay_betr(live, st == "flex")
     if st == "max" or len(live) == 2:
         return ST.pay_max(live, ST.BONUS_TRUE)
     return ST.pay_flex_ev(live)
