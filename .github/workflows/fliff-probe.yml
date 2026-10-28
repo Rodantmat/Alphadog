@@ -94,6 +94,7 @@ jobs:
             export_history) python fliff_probe/export_history.py ;;
             discover_quote) python fliff_probe/discover_quote.py ;;
             discover_quote_calls) python fliff_probe/discover_quote_calls.py ;;
+            discover_boosts) python fliff_probe/discover_boosts.py ;;
             discover_formula)
               QUOTE_WORDS='(correlationFactor|SGPCoeff|sgpProb|FlexPlayCoeff|FlexProbability|FlexPlayUtils|calcFlex|SGP_PLUS|SAME_GAME_V|play_through_progress|play_through_target|play_through_multiplier|sgp_quote_info|min_contest_multiplier|minContestMultiplier|chef_choice_min|early_payout)' \
               QUOTE_PER_WORD=8 QUOTE_CTX=2500 QUOTE_OUT=discovery_formula.json python fliff_probe/discover_quote.py ;;
