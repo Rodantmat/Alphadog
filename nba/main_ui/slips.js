@@ -591,7 +591,10 @@ async function buildHighHit(sql, cfg, url, version) {
       const cellFields = cr ? { cell_backtest_hit_0_100: r1(100 * cr.p), cell_backtest_legs: cr.n } : {};
       // a graded slip's leg with no result is a push / void (the grader drops it and pays the smaller slip)
       const push = s.hits != null && x.hit == null;
-      if (hit) legs.push(slipLeg(hit, { tier: x.tier, leg_factor: Number(x.factor) || hit.leg_factor, cell: x.cell, result_hit: x.hit == null ? null : Number(x.hit), result_push: push, board_percentile: percentile(app, Number(hit.score_0_100)), ...cellFields, ...riskFor(risk, hit.player_name),
+      // FLIFF GAME (owner 2026-10-28 13:59 PT: "For fliff I don't have how to search players, so for fliff only, add which game
+      // (teams) each legs are"): the Fliff board's own matchup (fliff_pickem_board.matchup, e.g. "OKC@DAL") on every Fliff leg
+      const gameFields = s.app === "fliff" && x.matchup ? { game_label: String(x.matchup).replace("@", " @ ") } : {};
+      if (hit) legs.push(slipLeg(hit, { ...gameFields, tier: x.tier, leg_factor: Number(x.factor) || hit.leg_factor, cell: x.cell, result_hit: x.hit == null ? null : Number(x.hit), result_push: push, board_percentile: percentile(app, Number(hit.score_0_100)), ...cellFields, ...riskFor(risk, hit.player_name),
         ...(viaUd ? { source_key: s.app, line_type: "regular", app_multiplier: null, edge_0_100: null, breakeven_0_100: null } : {}) }));
       else {
         const wn = x.player_id ? wnMap.get([String(x.player_id), x.prop, line, sideIn(x.side)].join("|")) : null;
