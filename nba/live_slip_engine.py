@@ -360,7 +360,13 @@ def stake_unit(conn):
 # +14,749, 0.2% losing; with every payout cut 20% median +4,144, 6.4% losing; cut 35% median -5 (the unit stays at 1).
 # A manual unit on the Slips screen turns auto off; its Auto button turns it back on. Replays never write the config row
 # (LS_UNIT_NO_PERSIST=1, set by audit_season_replay) - the unit then lives in this process and the rolled-back history table.
-UNIT_AUTO_DEFAULT = {"enabled": False, "start": 1.0, "step": 1.0, "max": 15.0, "up_x": 25.0, "down_x": 15.0}
+# 2026-10-28 (owner 13:00 PT: "I am placing at 2 now, and we will count from the last adjusted strategies, so 4 days ago"):
+#   count_from  the profit counts from this date (2026-10-24), not the season's first night; the unit starts at `start` (2) then
+#   apps 'all'  the profit is every PLAYED slip on every app (PrizePicks live_slips graded, Underdog / Sleeper / Fliff / Betr 'live'
+#               rows), each slate's units x the unit in force that slate; 'pp' = PrizePicks only (the 2026-10-18 rule)
+#   floor       the step-down never goes below it (1 = the apps' minimum entry); default `start` (the 2026-10-18 rule)
+UNIT_AUTO_DEFAULT = {"enabled": False, "start": 1.0, "step": 1.0, "max": 15.0, "up_x": 25.0, "down_x": 15.0, "count_from": None,
+                     "apps": "pp", "floor": None}
 
 
 def unit_auto_cfg(conn):
