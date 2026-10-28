@@ -224,6 +224,8 @@ def pick(conn, day):
         conn.commit()
         return
     for name, k, structure in STRATS:
+        if name not in rules:
+            continue
         if name not in slips:
             print(f"SLEEPER_LIVE|{day} {name}: not enough legs - no slip")
             continue
