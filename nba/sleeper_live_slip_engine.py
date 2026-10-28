@@ -155,6 +155,39 @@ def build(conn, day):
     return out, f"T1 qualified {len(c)}, on Sleeper {len(priced)}, after cap/skip {len(cand)}"
 
 
+def build_all(conn, day, rule):
+    """S_ALL rule: [slips] from every Sleeper window leg at its own line (research_app_allegs.live_legs + day(), order evbl)"""
+    sl, mk, *_ = RSD.load(conn, day)
+    legs = []
+    for (pid, prop, side, line), l in sl.get("window", {}).items():
+        if l["hp"] is None:
+            continue
+        pm = mk.get((pid, prop, side, line))
+        legs.append({"pid": None if pid is None else str(pid), "player": l["player"], "prop": prop, "side": side, "line": float(line), "m": float(l["m"]),
+                     "p": float(l["hp"]), "pf": (sum(pm) / len(pm)) if pm else 1 / (float(l["m"]) * 1.1238), "game": l["event_id"],
+                     "kind": l["kind"], "ud_line": None})
+    tm = teams_of(conn, {l["pid"] for l in legs if l["pid"] is not None}, day)
+    for l in legs:
+        l["team"] = tm.get(l["pid"])
+    # exactly research_app_allegs.day(): the order is stable on RSD.load's order, a leg without a known team is still a leg
+    cand = [l for l in legs if l["p"] >= rule["floor"] and l["p"] * l["m"] >= rule["gate"] and l["m"] <= rule["mcap"]]
+    cand.sort(key=lambda l: -(l["p"] + l["pf"]) / 2 * l["m"])
+    out, used = [], set()
+    for _ in range(rule["slips"]):
+        s, pl, gm = [], set(), set()
+        for l in cand:
+            if l["pid"] in pl or l["pid"] in used or l["game"] in gm:
+                continue
+            s.append(l); pl.add(l["pid"]); gm.add(l["game"])
+            if len(s) == rule["size"]:
+                break
+        if len(s) < rule["size"] or len({l["team"] for l in s}) < 2:
+            break
+        used |= pl
+        out.append(s)
+    return out, f"Sleeper window legs with final_hp {len(legs)}, qualifying {len(cand)}"
+
+
 def pick(conn, day):
     sc = cfg(conn, "sleeper_live")
     if not sc.get("enabled"):
