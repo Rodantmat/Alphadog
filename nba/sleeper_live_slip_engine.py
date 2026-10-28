@@ -37,6 +37,15 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_score.sleeper_live_slips (
   PRIMARY KEY (game_date, strategy, k))"""
 STRATS = (("S_T1_2max", 2, "max"), ("S_T1_3flex", 3, "flex"))
 MCAP, SKIP = 1.85, 1
+# ALL-LEGS RULE (owner 2026-10-28 16:44 PT "Deploy the best balance strategies"; research_app_allegs AA_ONLY=5flex AA_FINE=1 run
+# 40784902924, the best balance among 2,349 rules robust in both seasons AND positive on this season's real Sleeper boards):
+# S_ALL_5flex - every leg on Sleeper's window board (main lines both sides + alternate rungs) with our final_hp AT SLEEPER'S LINE,
+# final_hp >= 0.50, final_hp x m >= 1.12, ranked by (final_hp + market chance) / 2 x m (market = the books' de-vigged chance at the
+# same line, else 1 / (1.1238 m)), distinct players, one leg a game, >= 2 teams; 5-pick Flex, TWO slips a slate (the second from
+# other players), no leg skipped. History 2024-25 +106.5% (254 slips, max dd 8.3u) / 2025-26 +137.2% (238, dd 8.5u); this season's
+# real boards +53.5% (10 slips, dd 1.4u). Caveats: history prices are Sleeper's law on the books' lines (flatters value legs); 5-pick
+# Flex tiers rest on few of the owner's entries. classification_config['sleeper_live'].rules picks which rules build.
+ALL_RULE = {"name": "S_ALL_5flex", "size": 5, "structure": "flex", "slips": 2, "floor": 0.50, "gate": 1.12, "mcap": 99.0}
 
 
 def connect():
