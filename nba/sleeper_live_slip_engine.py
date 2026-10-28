@@ -195,6 +195,29 @@ def pick(conn, day):
         return
     conn.execute(DDL)
     pr = pricing(conn)
+    rules = sc.get("rules") or [n for n, _k, _s in STRATS]
+    if ALL_RULE["name"] in rules:
+        aslips, anote = build_all(conn, day, ALL_RULE)
+        print(f"SLEEPER_LIVE|{day} {ALL_RULE['name']}: {anote}, slips {len(aslips)}")
+        k_, st_ = ALL_RULE["size"], ALL_RULE["structure"]
+        for kk, s in enumerate(aslips, start=1):
+            lj = [{"player": l["player"], "player_id": l["pid"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": l["m"],
+                   "p": round(l["p"], 4), "pf": round(l["pf"], 4), "team": l["team"], "event_id": l["game"], "tier": "R", "kind": l["kind"]} for l in s]
+            ms = [l["m"] for l in s]
+            tiers = flex_tiers(ms, pr[1], pr[2])
+            conn.execute("""INSERT INTO nba_score.sleeper_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status,
+                              model_multiplier, flex_tiers) VALUES (%s, %s, %s, %s, %s, %s, 1, 'live', %s, %s)
+                            ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, status = EXCLUDED.status,
+                              model_multiplier = EXCLUDED.model_multiplier, flex_tiers = EXCLUDED.flex_tiers, built_at = now()
+                            WHERE nba_score.sleeper_live_slips.graded_at IS NULL""",
+                         (day, ALL_RULE["name"], k_, st_, kk, json.dumps(lj), round(tiers[k_], 4), json.dumps(tiers)))
+            print(f"SLEEPER_LIVE|{day} {ALL_RULE['name']} k{kk}: " + "; ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']:g} x{l['m']:.2f} ({100 * l['p']:.0f}%)" for l in s)
+                  + f" -> Flex tiers {tiers}")
+        if not aslips:
+            print(f"SLEEPER_LIVE|{day} {ALL_RULE['name']}: not enough qualifying legs - no slip")
+    if not any(n in rules for n, _k, _s in STRATS):
+        conn.commit()
+        return
     slips, note = build(conn, day)
     print(f"SLEEPER_LIVE|{day} {note}")
     if slips is None:
