@@ -230,7 +230,10 @@ def neighbours(key):
     for j in (i - 1, i + 1):
         if 0 <= j < len(GATES):
             out.append((o, sd, pr, kd, fl, GATES[j], mc, k, st, ns))
-    out.append((o, sd, pr, kd, fl, g, MCAPS[1 - MCAPS.index(mc)], k, st, ns))
+    i = MCAPS.index(mc)
+    for j in (i - 1, i + 1):
+        if 0 <= j < len(MCAPS):
+            out.append((o, sd, pr, kd, fl, g, MCAPS[j], k, st, ns))
     return out
 
 
