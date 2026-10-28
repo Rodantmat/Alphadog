@@ -412,7 +412,8 @@ def main():
             print(f"  robust rules: ROI median 2024-25 {100 * np.median(m24):+.1f}% / 2025-26 {100 * np.median(m25):+.1f}%; this season (>= 3 slips) "
                   f"{len(m26)} rules, median {100 * np.median(m26) if m26 else 0:+.1f}%, positive {100 * np.mean(np.array(m26) > 0) if m26 else 0:.0f}%")
     print("\n(c) LIVE RULES FOR REFERENCE (UD-T1 transfer, top leg skipped; research_app_line_rule): Sleeper 2-pick Max +33.0% "
-          "(+36.2 / +29.8, dd 13.6u, 306 slips), 3-pick Flex +24.1% (+28.3 / +19.9, dd 10.0u); Fliff 2-pick Max +44.0% (+45.8 / +41.1, dd 7.0u, 184)")
+          "(+36.2 / +29.8, dd 13.6u, 306 slips), 3-pick Flex +24.1% (+28.3 / +19.9, dd 10.0u); Fliff 2-pick Max +44.0% (+45.8 / +41.1, dd 7.0u, 184); "
+          "Betr live B_T23_4dyn (UD T2+T3 legs at Betr's line, order books' chance, floor .58, top 2 skipped, 2 slips) history +49.6% (262, dd 9.2u)")
     log("done")
 
 
