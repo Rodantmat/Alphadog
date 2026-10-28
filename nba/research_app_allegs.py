@@ -233,7 +233,8 @@ def day(acc, si, legs):
     for l in legs:
         l["_g"] = AF.GRP.get(l["prop"])
     for o, sd, pr, kd in itertools.product(ORDERS, SIDES, PROPS, KINDS):
-        base = sorted([l for l in legs if (sd == "any" or l["side"] == sd) and (kd == "all" or l["kind"] == "main")
+        gc = 2 if kd == "gc2" else 1
+        base = sorted([l for l in legs if (sd in ("any", "mix") or l["side"] == sd) and (kd == "all" or l["kind"] == "main")
                        and (pr == "all" or (pr == "low") == (l["_g"] == "lowvol"))], key=key_of(o))
         if len(base) < 2:
             continue
