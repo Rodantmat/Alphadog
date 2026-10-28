@@ -688,6 +688,22 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    AMENDED 13:28 PT (owner "Put the next raise at $50 and we do gradually from there"): auto.raise_basis 'current' - the raise from
    the unit u comes at 25 x u: $2 -> $3 at $50, $3 -> $4 at $75, $4 -> $5 at $100 (+$25 a step); UI v1.4.46. Probe run 40764265205:
    "next raise to $3.00 at $50.00".
+190. 🔑 **SLEEPER ALL-LEGS 5-PICK FLEX AND FLIFF NO-SKIP UNDERS DEPLOYED (2026-10-28; owner 16:44 PT "Deploy the best balance
+   strategies"; standing: "definitely no skipping, unless absolutely nothing holds positive ROI").** SLEEPER S_ALL_5flex
+   (classification_config sleeper_live.rules ['S_ALL_5flex'], retiring S_T1_2max / S_T1_3flex - still selectable): every leg on
+   Sleeper's window board (main both sides + alternate rungs) with final_hp AT SLEEPER'S LINE, final_hp >= .50, final_hp x m >= 1.12,
+   ranked by (final_hp + books' de-vigged chance) / 2 x m, distinct players, one leg a game, >= 2 teams, two 5-pick Flex slips a slate
+   (k 1 / 2, the second from other players), nothing skipped. research_app_allegs AA_ONLY=5flex AA_FINE=1 run 40784902924: 2024-25
+   +106.5% (254, dd 8.3u), 2025-26 +137.2% (238, dd 8.5u), this season's real boards +53.5% (10, dd 1.4u). Alternatives shown to the
+   owner: main-only mcap 2.5 (+124 / +96, dd 9.1); low-volume ev gate 1.08 (+103 / +176, dd 11.6). CAVEATS: history prices Sleeper's law
+   on the books' lines and is flattering (value legs on this season's real board lost 7-17% a leg over ~1,900 legs); 5 / 6-pick Flex
+   tiers rest on few of the owner's entries. CODE sleeper_live_slip_engine.build_all / ALL_RULE; grade now per k. FLIFF F_UDT1_2max_U
+   (fliff_live strategy / order 'src' / side 'Under' / skip 0): Underdog T1's qualified legs, Under only, in T1's own order, Fliff
+   Pick'Em line and multiplier, final_hp >= .56, m <= 1.85, one 2-pick Max. research_fliff_transfer run 40784908302: +24.6 / +22.6%,
+   worst dd 7.8u, this season 4 slips +132%; the skip-1 F_T1_2max (+45.8 / +41.1, dd 7.0) is kept selectable. CODE
+   fliff_live_slip_engine.build (cfg order / side / strategy; one leg per player-prop-side, first in T1's order). CERTIFIED
+   audit_new_app_rules run 40790159792: engine = research on all 8 past Sleeper slates and both Fliff Pick'Em days. UI v1.4.48 labels
+   "Sleeper 5-pick Flex (all Sleeper legs, slip k)". First live slate 2026-10-29 (10-28's slips were already placed under the old rules).
 
 ---
 
