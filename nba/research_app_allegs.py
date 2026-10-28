@@ -148,6 +148,38 @@ def live_legs(conn, d, st):
             pm = mk.get((l["player_id"], l["prop"], l["side"], l["line"]))
             out.append({**l, "pf": float(np.mean(pm)) if pm else 1 / (l["m"] * 1.1238), "team": tm.get(str(l["player_id"]))})
         return out
+    if APP == "betr":
+        last = conn.execute("SELECT max(snapshot_ts) FROM nba_market.board_snapshots WHERE bookmaker='betr' AND game_date=%s", (d,)).fetchone()[0]
+        if last is None:
+            return out
+        rows = conn.execute("""SELECT DISTINCT nm.player_id::text, b.player, b.market_key, b.side, b.line::float, b.event_id
+                               FROM nba_market.board_snapshots b JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+                               WHERE b.bookmaker='betr' AND b.game_date=%s AND b.snapshot_ts=%s AND b.market_key = ANY(%s)""",
+                            (d, last, list(RSD.MK))).fetchall()
+        hp = {(r[0], r[1], r[2], float(r[3])): r[4] for r in conn.execute(RSH.FSQL, (d,)).fetchall()}
+        # the event of each player from the books' window board of the slate (the Betr capture's own event ids are Betr's)
+        evs = dict(conn.execute("""SELECT DISTINCT ON (nm.player_id) nm.player_id::text, b.event_id FROM nba_market.board_snapshots b
+                                   JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+                                   WHERE b.bookmaker='underdog' AND b.game_date=%s ORDER BY nm.player_id, b.snapshot_ts DESC""", (d,)).fetchall())
+        seen = set()
+        for pid, nm, mkey, side, line, _bev in rows:
+            if mkey not in RSD.MK or mkey.endswith("_alternate"):
+                continue
+            prop = RSD.MK[mkey]
+            if (pid, prop, side, line) in seen:
+                continue
+            seen.add((pid, prop, side, line))
+            p = hp.get((pid, prop, side, line))
+            if p is None:
+                continue
+            l = {"player": nm, "player_id": pid, "prop": prop, "side": side, "line": line, "m": 1.0, "kind": "main",
+                 "event_id": evs.get(pid), "p": float(p)}
+            pm = mk.get((pid, prop, side, line))
+            l["pf"] = float(np.mean(pm)) if pm else 0.5
+            l["hit"] = AF.outcome(st, l)
+            l["team"] = tm.get(str(pid))
+            out.append(l)
+        return out
     import fliff_live_slip_engine as FL
     fl, _last, _n = FL.board(conn, d)
     if not fl:
