@@ -398,20 +398,45 @@ def refresh_auto_unit(conn, day):
     print(f"  {day}: unit {u:g} (earn the raise)", flush=True)
 
 
+UNIT_PLAYED_SQL = """
+    WITH played AS (
+        SELECT game_date, coalesce(stake_weight, 1) * profit u FROM nba_score.live_slips
+         WHERE status IN ('graded','graded_void','graded_week2','graded_post') AND k < 100 AND profit IS NOT NULL
+        UNION ALL SELECT game_date, coalesce(stake, 1) * profit FROM nba_score.ud_live_slips WHERE status = 'live' AND profit IS NOT NULL
+        UNION ALL SELECT game_date, coalesce(stake, 1) * profit FROM nba_score.sleeper_live_slips WHERE status = 'live' AND profit IS NOT NULL
+        UNION ALL SELECT game_date, coalesce(stake, 1) * profit FROM nba_score.fliff_live_slips WHERE status = 'live' AND profit IS NOT NULL
+        UNION ALL SELECT game_date, coalesce(stake, 1) * profit FROM nba_score.betr_live_slips WHERE status = 'live' AND profit IS NOT NULL)
+    SELECT coalesce(sum(pl.u * coalesce((SELECT h.unit_usd FROM nba_score.live_unit_history h WHERE h.season_start = %(s0)s
+                                           AND h.game_date < pl.game_date ORDER BY h.game_date DESC LIMIT 1), %(start)s)), 0)
+      FROM played pl WHERE pl.game_date BETWEEN %(s0)s AND %(day)s"""
+
+
+def unit_profit_all_apps(conn, s0, day, start):
+    """apps 'all' (2026-10-28): the dollars every PLAYED slip on every app won / lost from s0 to day - each slate's units x the
+    unit in force that slate (the last live_unit_history row before it, else the start)."""
+    return float(conn.execute(UNIT_PLAYED_SQL, {'s0': s0, 'day': day, 'start': start}).fetchone()[0])
+
+
 def auto_unit(conn, day):
     """grade(): after the slate is graded, earn (or give back) the raise; the result applies from the next slate."""
     a = unit_auto_cfg(conn)
     if not a.get('enabled') or os.environ.get('LS_UNIT_USD'):
         return
     s0, u, high = unit_season_state(conn, day)
-    prof = float(conn.execute("""SELECT coalesce(sum(coalesce(unit_usd, %s) * coalesce(stake_weight, 1) * profit), 0) FROM nba_score.live_slips
-                                 WHERE status IN ('graded','graded_void','graded_week2','graded_post') AND k < 100
-                                   AND game_date BETWEEN %s AND %s""", (float(a['start']), s0, day)).fetchone()[0])
+    if day < s0:
+        return
+    if a.get('apps') == 'all':
+        prof = unit_profit_all_apps(conn, s0, day, float(a['start']))
+    else:
+        prof = float(conn.execute("""SELECT coalesce(sum(coalesce(unit_usd, %s) * coalesce(stake_weight, 1) * profit), 0) FROM nba_score.live_slips
+                                     WHERE status IN ('graded','graded_void','graded_week2','graded_post') AND k < 100
+                                       AND game_date BETWEEN %s AND %s""", (float(a['start']), s0, day)).fetchone()[0])
     high = max(high, prof)
     old = u; step = float(a['step']); reason = 'hold'
+    floor_ = float(a['floor']) if a.get('floor') is not None else float(a['start'])
     while u + step <= float(a['max']) + 1e-9 and prof >= float(a['up_x']) * (u + step):
         u += step; reason = f"raise: season profit {prof:.2f} >= {float(a['up_x']):g} x {u:g}"
-    if u == old and u - step >= float(a['start']) - 1e-9 and high - prof >= float(a['down_x']) * u:
+    if u == old and u - step >= floor_ - 1e-9 and high - prof >= float(a['down_x']) * u:
         reason = f"step down: drop {high - prof:.2f} from the season high {high:.2f} >= {float(a['down_x']):g} x {u:g}"; u -= step
     conn.execute("""INSERT INTO nba_score.live_unit_history (game_date, season_start, season_profit, season_high, unit_from, unit_usd, reason)
                     VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date) DO UPDATE SET season_start=EXCLUDED.season_start,
