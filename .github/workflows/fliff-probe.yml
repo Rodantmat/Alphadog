@@ -92,6 +92,8 @@ jobs:
               python -c "import json;d=json.load(open('/tmp/fliffchk/fliff_nba_current_meta.json'));print('CHECK', {k:d.get(k) for k in ('ok','fetched_at','app_version','events','markets','legs','players','errors')})" ;;
             pairs) python fliff_probe/pairings.py ;;
             export_history) python fliff_probe/export_history.py ;;
+            discover_quote) python fliff_probe/discover_quote.py ;;
+            discover_quote_calls) python fliff_probe/discover_quote_calls.py ;;
             *) python fliff_probe/run_probe.py ;;
           esac
       - name: Commit probe output (fliff_probe/out only)
