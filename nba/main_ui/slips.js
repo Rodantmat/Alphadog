@@ -797,7 +797,9 @@ async function unitAutoStatus(sql, su) {
       if (c) st.last_change = { date: c.d, from: Number(c.f), to: Number(c.u), reason: c.reason };
     }
   } catch (_e) { /* the history table appears with the engine's next run */ }
-  st.next_raise_at = st.unit + st.step <= st.max + 1e-9 ? Math.round(st.up_x * (st.unit + st.step) * 100) / 100 : null;
+  // raise_basis 'current' (owner 2026-10-28 13:28 PT): the raise from the unit u comes at up_x x u ($2 -> $3 at $50)
+  st.raise_basis = a.raise_basis || "next";
+  st.next_raise_at = st.unit + st.step <= st.max + 1e-9 ? Math.round(st.up_x * (st.raise_basis === "current" ? st.unit : st.unit + st.step) * 100) / 100 : null;
   st.step_down_below = st.unit - st.step >= st.floor - 1e-9 ? Math.round((st.season_high - st.down_x * st.unit) * 100) / 100 : null;
   return st;
 }
