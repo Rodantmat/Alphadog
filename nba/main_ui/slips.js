@@ -789,14 +789,16 @@ async function unitAutoStatus(sql, su) {
     if (has && has.ok) {
       const h = (await q(sql, `SELECT game_date::text d, season_start::text s0, season_profit p, season_high hi, unit_usd u FROM nba_score.live_unit_history
                                ORDER BY game_date DESC LIMIT 1`))[0];
-      if (h) { st.season_profit = Number(h.p); st.season_high = Number(h.hi); st.as_of = h.d; st.season_start = h.s0; }
+      // 2026-10-28: only the current count (auto.count_from) - rows of an earlier count are history
+      if (h && (!st.count_from || h.s0 >= String(st.count_from).slice(0, 10))) { st.season_profit = Number(h.p); st.season_high = Number(h.hi); st.as_of = h.d; st.season_start = h.s0; }
+      else if (st.count_from) st.season_start = String(st.count_from).slice(0, 10);
       const c = (await q(sql, `SELECT game_date::text d, unit_from f, unit_usd u, reason FROM nba_score.live_unit_history
-                               WHERE unit_usd <> unit_from ORDER BY game_date DESC LIMIT 1`))[0];
+                               WHERE unit_usd <> unit_from AND season_start::text = $1 ORDER BY game_date DESC LIMIT 1`, [st.season_start || ""]))[0];
       if (c) st.last_change = { date: c.d, from: Number(c.f), to: Number(c.u), reason: c.reason };
     }
   } catch (_e) { /* the history table appears with the engine's next run */ }
   st.next_raise_at = st.unit + st.step <= st.max + 1e-9 ? Math.round(st.up_x * (st.unit + st.step) * 100) / 100 : null;
-  st.step_down_below = st.unit - st.step >= st.start - 1e-9 ? Math.round((st.season_high - st.down_x * st.unit) * 100) / 100 : null;
+  st.step_down_below = st.unit - st.step >= st.floor - 1e-9 ? Math.round((st.season_high - st.down_x * st.unit) * 100) / 100 : null;
   return st;
 }
 
