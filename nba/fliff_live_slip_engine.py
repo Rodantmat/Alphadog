@@ -79,11 +79,12 @@ def build(conn, day, cfg):
         return None, last, "no Underdog window board / final_hp for the slate"
     c, gc = ST.ud_lists(rows, legs)["T1"]
     tm = SL.teams_of(conn, {str(x["player_id"]) for x in c if x.get("player_id") is not None}, day)
-    priced = []
+    priced, seen = [], set()
     for src in c:
         pid = str(src["player_id"]) if src.get("player_id") is not None else None
         f = fl.get((pid, src["prop"], src["side"]))
-        if f:
+        if f and (pid, src["prop"], src["side"]) not in seen:
+            seen.add((pid, src["prop"], src["side"]))     # first occurrence in Underdog T1's own order (research_sleeper_small)
             priced.append({"pid": pid, "player": f[0], "prop": src["prop"], "side": src["side"], "line": f[1], "m": f[2], "p": float(src["p"]),
                            "team": tm.get(pid), "game": f[3], "match": f[4], "ud_line": float(src["line"])})
     cand = [l for l in sorted(priced, key=lambda x: -x["p"]) if l["p"] >= float(cfg.get("floor", 0.56)) and l["m"] <= float(cfg.get("mcap", 1.85))]
