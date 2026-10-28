@@ -380,7 +380,8 @@ function legLine(l){
   const lt=String(l.line_type||'regular');
   if(String(l.source_key||'').toLowerCase()==='prizepicks'){const label=Number(l.is_goblin)===1?'Goblin':(Number(l.is_demon)===1?'Demon':'Regular');variant=' <span class="badge '+label.toLowerCase()+'" style="vertical-align:middle">'+esc(label)+'</span>'}
   else if(l.leg_factor!=null&&Math.abs(Number(l.leg_factor)-1)>1e-9){variant=' <span class="badge source" style="vertical-align:middle">'+esc(Number(l.leg_factor).toFixed(2))+'x</span>'}
-  return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+variant+(lt!=='regular'&&String(l.source_key)!=='prizepicks'?'':'');
+  const game=l.game_label?' <span class="small" style="opacity:0.85;white-space:nowrap">('+esc(l.game_label)+')</span>':'';
+  return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+variant+game+(lt!=='regular'&&String(l.source_key)!=='prizepicks'?'':'');
 }
 // The legs that count: every row except the unchecked ones (a substitute is appended checked). NBA payouts depend on WHICH legs
 // are in the slip (factors / multipliers), not only on its size, so the badge and the real-multiplier fields price these legs.
