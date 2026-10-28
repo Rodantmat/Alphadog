@@ -77,9 +77,9 @@ def main():
         for mm in WORDS.finditer(js):
             w = mm.group(0).lower()
             lst = rep["words"].setdefault(w, [])
-            if len(lst) < 12:
-                s = max(0, mm.start() - 300)
-                lst.append({"chunk": name, "ctx": js[s: mm.end() + 500]})
+            if len(lst) < PER_WORD:
+                s = max(0, mm.start() - CTX_AFTER)
+                lst.append({"chunk": name, "ctx": js[s: mm.end() + CTX_AFTER]})
         time.sleep(0.2)
     for t in rep["targets"]:
         rep["targets"][t] = rep["targets"][t][:6]
