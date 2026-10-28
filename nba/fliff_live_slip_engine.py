@@ -111,6 +111,7 @@ def pick(conn, day):
         conn.commit()
         print(f"FLIFF_LIVE|{day} no slip")
         return
+    name = cfg.get("strategy") or STRATEGY
     lj = [{"player": l["player"], "player_id": l["pid"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": l["m"],
            "p": round(l["p"], 4), "team": l["team"], "event_id": l["game"], "matchup": l["match"], "tier": "R", "ud_line": l["ud_line"]} for l in s]
     mult = floor2(s[0]["m"] * s[1]["m"])
