@@ -11,7 +11,12 @@ PRICING (Fliff Pick'Em contest rules v2.0, getfliff.com/fliff-pickem-contest-rul
 Multipliers (the guaranteed Contest Score; any extra pool share is not counted); a void drops the pick, a 2-pick with a void (or every
 pick void) is refunded. SIDES: option_type 0 = Over, verified against the sportsbooks every pick (323 / 326 cards on 2026-10-26); the
 pick stops if the check does not hold.
-GATE: classification_config['fliff_live'] (enabled, play, floor, mcap, skip). Rows: nba_score.fliff_live_slips. Nothing is sent to
+NO-SKIP RULE (owner 2026-10-28 16:44 PT "Deploy the best balance strategies" + 16:03 "definitely no skipping, unless absolutely nothing
+holds positive ROI"): F_UDT1_2max_U - the same Underdog T1 legs, Under only, in Underdog T1's own qualified order (cfg order 'src'),
+final_hp >= 0.56, multiplier <= 1.85, NO leg skipped, one slip. research_fliff_transfer run 40784908302 (K_F 1.0971 history, the real
+Pick'Em board this season): 2024-25 +24.6% / 2025-26 +22.6%, worst dd 7.8u; this season 4 slips +132%. The skip-1 rule (F_T1_2max,
++45.8 / +41.1, dd 7.0) stays selectable by config.
+GATE: classification_config['fliff_live'] (enabled, play, floor, mcap, skip, order p | src, side any | Over | Under, strategy). Rows: nba_score.fliff_live_slips. Nothing is sent to
 Fliff. Modes: FL_MODE=pick (FL_DATE or today PT) | grade (FL_DATE or every ungraded slate). Env: DATABASE_URL.
 """
 import datetime as dt
