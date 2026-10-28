@@ -56,7 +56,7 @@ ORDERS = ("p", "ev", "edge", "bl", "evbl") if APP != "betr" else ("p", "bl", "pf
 FLOORS = (0.0, 0.53, 0.56, 0.59)
 GATES = (0.0, 1.00, 1.04, 1.08)
 MCAPS = (99.0, 1.85)
-SIDES = ("any", "Over", "Under")
+SIDES = ("any", "Over", "Under") if APP != "betr" else ("any", "Over", "Under", "mix")
 PROPS = ("all", "nolow", "low")
 KINDS = ("main", "all") if APP == "sleeper" else ("main",)
 NSL = (1, 2)
