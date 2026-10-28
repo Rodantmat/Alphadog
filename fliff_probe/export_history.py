@@ -48,6 +48,11 @@ QUERIES = {
         where l.game_date >= %s""",
         ["game_date", "game_id", "nba_player_id", "name", "team_id", "matchup", "wl", "min", "pts", "reb", "ast", "fg3m", "stl", "blk", "tov", "plus_minus"],
         lambda: (SINCE,)),
+    "scored": ("""
+        select game_date, app, player_id, player, prop, line, side, kind, tier, baseline_hp, cal_shift, final_hp, confidence, score, edge, interpolated
+        from nba_score.board_scored where game_date >= %s""",
+        ["game_date", "app", "player_id", "player", "prop", "line", "side", "kind", "tier", "baseline_hp", "cal_shift", "final_hp", "confidence", "score", "edge", "interpolated"],
+        lambda: (SINCE,)),
     "pickem": ("""
         select game_date, snapshot_ts, player, team, prop, line, option_type, multiplier, fliff_game, matchup, tip_utc, proposal_fkey
         from nba_market.fliff_pickem_board""",
