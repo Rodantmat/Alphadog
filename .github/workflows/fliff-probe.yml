@@ -92,6 +92,7 @@ jobs:
               python -c "import json;d=json.load(open('/tmp/fliffchk/fliff_nba_current_meta.json'));print('CHECK', {k:d.get(k) for k in ('ok','fetched_at','app_version','events','markets','legs','players','errors')})" ;;
             pairs) python fliff_probe/pairings.py ;;
             export_history) python fliff_probe/export_history.py ;;
+            export_scored) EXPORT_ONLY=scored,box,props,pickem python fliff_probe/export_history.py ;;
             discover_quote) python fliff_probe/discover_quote.py ;;
             discover_quote_calls) python fliff_probe/discover_quote_calls.py ;;
             discover_boosts) python fliff_probe/discover_boosts.py ;;
