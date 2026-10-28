@@ -53,8 +53,14 @@ SIDES = ("any", "Over", "Under")
 PROPS = ("all", "nolow", "low")
 KINDS = ("main", "all") if APP == "sleeper" else ("main",)
 NSL = (1, 2)
+if os.environ.get("AA_FINE") == "1":               # finer steps for a focused structure (owner: test every value in between)
+    FLOORS = (0.0, 0.50, 0.53, 0.56, 0.59, 0.62)
+    GATES = (0.0, 0.95, 1.00, 1.04, 1.08, 1.12, 1.20)
+    MCAPS = (99.0, 2.5, 1.85)
 SIZES = (2, 3, 4, 5, 6)
 STRUCTS = [(k, "max") for k in SIZES] + ([(k, "flex") for k in SIZES if k >= 3] if APP == "sleeper" else [])
+if os.environ.get("AA_ONLY"):                       # e.g. "5flex" (2026-10-28 owner: the 5-pick Flex in detail)
+    STRUCTS = [x for x in STRUCTS if f"{x[0]}{x[1]}" in os.environ["AA_ONLY"].split(",")]
 SEASONS = ("2024-25", "2025-26", "2026-27")
 
 
