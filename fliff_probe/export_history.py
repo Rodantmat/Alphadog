@@ -64,7 +64,10 @@ QUERIES = {
 def main():
     os.makedirs(OUT, exist_ok=True)
     url = os.environ["DATABASE_URL"]
+    only = {x.strip() for x in os.environ.get("EXPORT_ONLY", "").split(",") if x.strip()}
     for name, (sql, cols, args) in QUERIES.items():
+        if only and name not in only:
+            continue
         t = time.time()
         for attempt in range(3):
             try:
