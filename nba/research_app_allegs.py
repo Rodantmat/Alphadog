@@ -130,6 +130,10 @@ def hist_legs(conn, d, st, ovr, kt, kf):
             l["m"] = round(1 / (kf * l["pf"]), 2)
             if l["m"] <= 1.0:
                 continue
+        if APP == "betr":
+            if l["kind"] != "main":
+                continue
+            l["m"] = 1.0
         l["team"] = tm.get(str(l["player_id"]))
         out.append(l)
     return out
