@@ -52,7 +52,7 @@ import research_sleeper_transfer as ST               # noqa: E402
 
 APP = os.environ.get("AA_APP") or "sleeper"
 T0 = time.time()
-ORDERS = ("p", "ev", "edge", "bl", "evbl")
+ORDERS = ("p", "ev", "edge", "bl", "evbl") if APP != "betr" else ("p", "bl", "pf")
 FLOORS = (0.0, 0.53, 0.56, 0.59)
 GATES = (0.0, 1.00, 1.04, 1.08)
 MCAPS = (99.0, 1.85)
