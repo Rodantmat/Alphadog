@@ -737,7 +737,12 @@ async function buildHighHit(sql, cfg, url, version) {
   }
   // EARN THE RAISE (2026-10-18): the unit, how it was earned and what moves it next
   const au = bt.unit.auto;
-  if (au && au.enabled) notes.push(`Unit ${money(bt.unit.usd)} - earn the raise (auto): season profit ${money(au.season_profit)}` +
+  // UNIT CHANGE ALERT (owner 2026-10-28 13:00 PT: "show itself on the slip screen and give an alert message of unit amount change"):
+  // the engine moved the unit after the last graded slate -> the first note, in red (a leading warning sign), until the next grade
+  if (au && au.enabled && au.last_change && au.last_change.date === au.as_of)
+    notes.unshift(`⚠ UNIT CHANGE: ${money(au.last_change.from)} -> ${money(au.last_change.to)} from this slate - enter every slip at ${money(au.last_change.to)} (${au.last_change.reason}).`);
+  if (au && au.enabled) notes.push(`Unit ${money(bt.unit.usd)} - earn the raise (auto): ${au.apps === "all" ? "profit on every app" : "season profit"}` +
+    `${au.season_start ? " since " + au.season_start : ""} ${money(au.season_profit)}` +
     (au.next_raise_at != null ? `, next raise to ${money(au.unit + au.step)} at ${money(au.next_raise_at)}` : ", at the maximum") +
     (au.step_down_below != null ? `; steps down to ${money(au.unit - au.step)} if the season profit falls to ${money(au.step_down_below)}.` : "."));
   else if (au) notes.push(`Unit ${money(bt.unit.usd)} - set by hand (earn the raise is off; the Auto button turns it back on).`);
