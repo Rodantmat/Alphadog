@@ -200,7 +200,7 @@ def live_legs(conn, d, st):
 
 def key_of(o):
     return {"p": lambda l: -l["p"], "ev": lambda l: -l["p"] * l["m"], "edge": lambda l: -(l["p"] - 1 / l["m"]),
-            "bl": lambda l: -(l["p"] + l["pf"]) / 2, "evbl": lambda l: -(l["p"] + l["pf"]) / 2 * l["m"]}[o]
+            "bl": lambda l: -(l["p"] + l["pf"]) / 2, "evbl": lambda l: -(l["p"] + l["pf"]) / 2 * l["m"], "pf": lambda l: -l["pf"]}[o]
 
 
 def greedy(base, idx, k, banned):
