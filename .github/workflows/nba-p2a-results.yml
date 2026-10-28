@@ -435,6 +435,16 @@ jobs:
           BT_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
         run: python -u nba/betr_live_slip_engine.py
 
+      # EARN THE RAISE ON EVERY APP (owner 2026-10-28 13:00 PT): every app is graded - the unit for the next slate from the profit
+      # of every played slip since stake_unit.auto.count_from (nba/unit_update.py; the Slips screen alerts a change). Soft.
+      - name: Unit (earn the raise, every app)
+        id: soft_unit
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UNIT_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
+        run: python -u nba/unit_update.py
+
       # THE SLIPS SCREEN, PRECOMPUTED (owner 2026-10-26 18:31 PT): every app's results are in - store the screen again. Soft.
       - name: Warm the Slips screen (precomputed snapshot)
         id: soft_warm
