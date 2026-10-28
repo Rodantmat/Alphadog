@@ -91,6 +91,7 @@ jobs:
               FLIFF_SPORTS=nba FLIFF_OUT_DIR=/tmp/fliffchk timeout 300 python nba/scrape_fliff_board.py | tail -n 15
               python -c "import json;d=json.load(open('/tmp/fliffchk/fliff_nba_current_meta.json'));print('CHECK', {k:d.get(k) for k in ('ok','fetched_at','app_version','events','markets','legs','players','errors')})" ;;
             pairs) python fliff_probe/pairings.py ;;
+            export_history) python fliff_probe/export_history.py ;;
             *) python fliff_probe/run_probe.py ;;
           esac
       - name: Commit probe output (fliff_probe/out only)
