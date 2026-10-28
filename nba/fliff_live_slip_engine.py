@@ -87,7 +87,12 @@ def build(conn, day, cfg):
             seen.add((pid, src["prop"], src["side"]))     # first occurrence in Underdog T1's own order (research_sleeper_small)
             priced.append({"pid": pid, "player": f[0], "prop": src["prop"], "side": src["side"], "line": f[1], "m": f[2], "p": float(src["p"]),
                            "team": tm.get(pid), "game": f[3], "match": f[4], "ud_line": float(src["line"])})
-    cand = [l for l in sorted(priced, key=lambda x: -x["p"]) if l["p"] >= float(cfg.get("floor", 0.56)) and l["m"] <= float(cfg.get("mcap", 1.85))]
+    # cfg.order: 'p' (final_hp, highest first) or 'src' (Underdog T1's own qualified order - research_sleeper_small 'src');
+    # cfg.side: 'any' | 'Over' | 'Under'
+    order, side = cfg.get("order", "p"), cfg.get("side", "any")
+    base = list(priced) if order == "src" else sorted(priced, key=lambda x: -x["p"])
+    cand = [l for l in base if l["p"] >= float(cfg.get("floor", 0.56)) and l["m"] <= float(cfg.get("mcap", 1.85))
+            and (side == "any" or l["side"] == side)]
     s = ST.pick(cand[int(cfg.get("skip", 1)):], 2, gc)
     if s is not None and len({l["team"] for l in s}) < 2:
         s = None
