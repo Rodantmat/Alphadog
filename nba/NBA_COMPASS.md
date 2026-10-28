@@ -685,6 +685,9 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    raise and the step-down point; the first note is a red "⚠ UNIT CHANGE: $a -> $b from this slate - enter every slip at $b" the
    slate after the engine moves the unit. Probe probe_ui_unit.py run 40761090493: "Unit $2.00 - earn the raise (auto): profit on
    every app since 2026-10-24 $9.71, next raise to $3.00 at $75.00; steps down to $1.00 if the season profit falls to $-20.29".
+   AMENDED 13:28 PT (owner "Put the next raise at $50 and we do gradually from there"): auto.raise_basis 'current' - the raise from
+   the unit u comes at 25 x u: $2 -> $3 at $50, $3 -> $4 at $75, $4 -> $5 at $100 (+$25 a step); UI v1.4.46. Probe run 40764265205:
+   "next raise to $3.00 at $50.00".
 
 ---
 
