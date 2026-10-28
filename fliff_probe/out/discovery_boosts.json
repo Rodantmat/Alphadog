@@ -1,0 +1,1405 @@
+{
+ "leagues": [
+  {
+   "id": "fkey__sk_league__-555",
+   "display_name": "In play",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__461",
+   "display_name": "NBA",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__441",
+   "display_name": "MLB",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__451",
+   "display_name": "NFL",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__481",
+   "display_name": "NHL",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__452",
+   "display_name": "College Football",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__467",
+   "display_name": "WNBA",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__462",
+   "display_name": "College Basketball",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__10381",
+   "display_name": "ATP Basel",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__10379",
+   "display_name": "ATP Vienna",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__10349",
+   "display_name": "WTA Tokyo",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__10560",
+   "display_name": "WTA Guangzhou",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43002",
+   "display_name": "UEFA Champions League",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4397",
+   "display_name": "UEFA Europa League",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4385",
+   "display_name": "[England] Premier League",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4200",
+   "display_name": "Major League Soccer",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4389",
+   "display_name": "[Mexico] Liga MX",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4395",
+   "display_name": "[Spain] LaLiga",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4382",
+   "display_name": "[Germany] Bundesliga",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4388",
+   "display_name": "[Italy] Serie A",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4384",
+   "display_name": "[France] Ligue 1",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4303",
+   "display_name": "[Brazil] Serie A",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4451",
+   "display_name": "Japan NPB",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__444",
+   "display_name": "KBO",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4751",
+   "display_name": "[Korea] KBL",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4752",
+   "display_name": "[China] CBA",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4950",
+   "display_name": "UFC",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__13041",
+   "display_name": "NASCAR Xfinity 500",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__13020",
+   "display_name": "F1 Mexican Grand Prix",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__14029",
+   "display_name": "PGA Mexico Championship",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4951",
+   "display_name": "Bouts",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4383",
+   "display_name": "[England] Championship",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43005",
+   "display_name": "UEFA Nations League",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43022",
+   "display_name": "[Egypt] Premier League",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43024",
+   "display_name": "[Turkey] Super Lig",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43031",
+   "display_name": "[Portugal] Primeira League",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43007",
+   "display_name": "[Argentina] Liga Profesional",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43009",
+   "display_name": "EFL Cup",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__43008",
+   "display_name": "Europa Conference League",
+   "has_boosted_offers": false
+  },
+  {
+   "id": "fkey__sk_league__4502",
+   "display_name": "CFL",
+   "has_boosted_offers": false
+  }
+ ],
+ "boosted_categories": [
+  {
+   "league": "NBA",
+   "game": "fobj__conflict_event__422086",
+   "category": "fkey__sk_prop_category__777",
+   "name": "Boosted"
+  },
+  {
+   "league": "NBA",
+   "game": "fobj__conflict_event__422316",
+   "category": "fkey__sk_prop_category__777",
+   "name": "Boosted"
+  },
+  {
+   "league": "NBA",
+   "game": "fobj__conflict_event__422320",
+   "category": "fkey__sk_prop_category__777",
+   "name": "Boosted"
+  },
+  {
+   "league": "NBA",
+   "game": "fobj__conflict_event__420987",
+   "category": "fkey__sk_prop_category__777",
+   "name": "Boosted"
+  },
+  {
+   "league": "NBA",
+   "game": "fobj__conflict_event__421010",
+   "category": "fkey__sk_prop_category__777",
+   "name": "Boosted"
+  },
+  {
+   "league": "NBA",
+   "game": "fobj__conflict_event__421009",
+   "category": "fkey__sk_prop_category__777",
+   "name": "Boosted"
+  },
+  {
+   "league": "MLB",
+   "game": "fobj__conflict_event__422369",
+   "category": "fkey__sk_prop_category__777",
+   "name": "Boosted"
+  }
+ ],
+ "boost_objects": [
+  {
+   "path": "/games/page[2]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422086",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "games NBA"
+  },
+  {
+   "path": "/games/page[3]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422316",
+    "is_popular": false,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "games NBA"
+  },
+  {
+   "path": "/games/page[6]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422320",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "games NBA"
+  },
+  {
+   "path": "/games/page[8]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__420987",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "games NBA"
+  },
+  {
+   "path": "/games/page[10]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__421010",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793237400000,
+    "subfilter_ids": "..."
+   },
+   "where": "games NBA"
+  },
+  {
+   "path": "/games/page[11]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__421009",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793241000000,
+    "subfilter_ids": "..."
+   },
+   "where": "games NBA"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - 76ers vs. Pacers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Pascal Siakam & Joel Embiid 60+ Points COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 4.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10838",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Plastic_Indiana_43_Victory_Pose-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422086",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - 76ers vs. Pacers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Tyrese Maxey & Aaron Nesmith 7+ Made 3's COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 4.5,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10839",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Premium_sculpted_Sixers_player_figure-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422086",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "20% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - 76ers vs. Pacers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "LeBron James & Pascal Siakam 14+ Assists COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 3.25,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10840",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Gemini_Generated_Image_y78ypdy78ypdy78y-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422086",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - 76ers vs. Pacers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Jaylen Brown Top Points Scorer of the Game",
+    "market_note": "",
+    "prev_eu_odds": 5.25,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10841",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_plastic_PHILA_7_basketball_star-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422086",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422086 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - Wizards vs. Cavaliers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "AJ Dybantsa 20+ Points",
+    "market_note": "",
+    "prev_eu_odds": 5.7,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10833",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Wizards__4_Sculpted_Basketball_Portrait-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422316",
+    "is_popular": false,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - Wizards vs. Cavaliers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Donovan Mitchell & Trae Young 60+ Points COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 4.5,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10834",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_11__2026__12_32_28_PM-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422316",
+    "is_popular": false,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - Wizards vs. Cavaliers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Anthony Davis & James Harden 50+ Points COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 4.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10835",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_plastic_basketball_star-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422316",
+    "is_popular": false,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "25% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - Wizards vs. Cavaliers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "James Harden & Trae Young 7+ Made 3's COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 3.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10836",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_13__2026__12_28_05_PM-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422316",
+    "is_popular": false,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[4]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793228400000,
+    "footer_note": "NBA - Wizards vs. Cavaliers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Trae Young Top Points Scorer of the Game",
+    "market_note": "",
+    "prev_eu_odds": 5.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10837",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Wizards_No._3_basketball_star-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950216284
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[4]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422316",
+    "is_popular": false,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793228400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422316 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "25% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "NBA - Warriors vs. T'Wolves",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "LaMelo Ball Top Points Scorer of the Game",
+    "market_note": "",
+    "prev_eu_odds": 3.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10846",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_Wolves_player_spinning_a_basketball-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards NBA fobj__conflict_event__422320 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422320",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422320 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "NBA - Warriors vs. T'Wolves",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Steph Curry Most Made 3's in the Game",
+    "market_note": "",
+    "prev_eu_odds": 2.75,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10847",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Warriors_basketball_portrait-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards NBA fobj__conflict_event__422320 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422320",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__422320 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "20% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "NBA - Knicks vs. Bulls",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Karl-Anthony Towns Top Points Scorer of the Game",
+    "market_note": "",
+    "prev_eu_odds": 3.75,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10842",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_6__2026__12_07_26_PM-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__420987",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "NBA - Knicks vs. Bulls",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Norman Powell Most Made 3's in the Game",
+    "market_note": "",
+    "prev_eu_odds": 4.75,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10843",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Bulls__24_victory_pose-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__420987",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "NBA - Knicks vs. Bulls",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Jalen Brunson Most Assists in the Game",
+    "market_note": "",
+    "prev_eu_odds": 3.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10844",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_5__2026__06_44_01_PM-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__420987",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "25% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "NBA - Knicks vs. Bulls",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Caleb Wilson 20+ Points",
+    "market_note": "",
+    "prev_eu_odds": 2.4,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10845",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Bulls_Number_8_Collectible-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__420987",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__420987 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793237400000,
+    "footer_note": "NBA - Thunder vs. Mavericks",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Shai Gilgeous-Alexander & Cooper Flagg 70+ Points COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 5.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10848",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_18__2026__01_43_36_PM-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950306374
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__421010",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793237400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793237400000,
+    "footer_note": "NBA - Thunder vs. Mavericks",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Jared McCain & Max Christie 7+ Made 3's COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 2.75,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10849",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_18__2026__03_38_35_PM-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950306374
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__421010",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793237400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793237400000,
+    "footer_note": "NBA - Thunder vs. Mavericks",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Cooper Flagg Top Points Scorer of the Game",
+    "market_note": "",
+    "prev_eu_odds": 4.25,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10850",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Dallas__32_Basketball_Character-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950306374
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__421010",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793237400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "15% Boost",
+    "end_time_stamp_utc_millis": 1793237400000,
+    "footer_note": "NBA - Thunder vs. Mavericks",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Kyrie Irving Most Made 3's in the Game",
+    "market_note": "",
+    "prev_eu_odds": 4.5,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10851",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Mavs__11_Basketball_Collectible-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950306374
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__421010",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793237400000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__421010 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "25% Boost",
+    "end_time_stamp_utc_millis": 1793241000000,
+    "footer_note": "NBA - Lakers vs. Clippers",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Austin Reaves & Darius Garland 60+ Points COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 3.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__421009|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10852",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Lakers_Number_15_Portrait-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950342410
+   },
+   "where": "cards NBA fobj__conflict_event__421009 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__421009",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "",
+    "start_time_stamp_utc_millis": 1793241000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards NBA fobj__conflict_event__421009 Boosted"
+  },
+  {
+   "path": "/games/page[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422369",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "World Series - Game 5, MIL leads series 3-1",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "games MLB"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "30% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "MLB - Brewers vs. Rays",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Jacob Misiorowski 8+ Strikeouts",
+    "market_note": "",
+    "prev_eu_odds": 3.15,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10828",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/07/ChatGPT_Image_Jul_20__2026__04_05_45_PM-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[0]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422369",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "World Series - Game 5, MIL leads series 3-1",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "MLB - Brewers vs. Rays",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Christian Yelich & Jackson Chourio 4+ Hits COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 5.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10829",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_Brewers__22_baseball_portrait-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[1]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422369",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "World Series - Game 5, MIL leads series 3-1",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "MLB - Brewers vs. Rays",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Junior Caminero OR Yandy Diaz to Record 3+ Hits",
+    "market_note": "",
+    "prev_eu_odds": 6.5,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10830",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_plastic_baseball_player_with_bat-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[2]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422369",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "World Series - Game 5, MIL leads series 3-1",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "10% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "MLB - Brewers vs. Rays",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "Jackson Chourio & Junior Caminero 2+ HRs COMBINED",
+    "market_note": "",
+    "prev_eu_odds": 14.5,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10831",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/07/ChatGPT_Image_Jul_27__2026__01_49_24_PM-removebg-preview-1-7.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42102,
+    "weight": 100007950252320
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[3]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422369",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "World Series - Game 5, MIL leads series 3-1",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[4]",
+   "obj": {
+    "betting_options": "...",
+    "boosted_note": "25% Boost",
+    "end_time_stamp_utc_millis": 1793232000000,
+    "footer_note": "MLB - Brewers vs. Rays",
+    "game_render_data": "...",
+    "inplay_game_progress": "...",
+    "market_name": "William Contreras OR Jake Bauers to Hit a Home Run",
+    "market_note": "",
+    "prev_eu_odds": 3.0,
+    "prop_category": "...",
+    "sgp_mode": 0,
+    "skin": 101,
+    "skipper_area_key": "cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10832",
+    "sponsor_logo_url": "https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_Plastic_Brewers__24_Portrait-removebg-preview-1.png",
+    "user_value_threshold": null,
+    "vendor": 701,
+    "vendor_channel_id": 42101,
+    "weight": 100007950252320
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  },
+  {
+   "path": "/cards_packs[0]/cards[4]/game_render_data",
+   "obj": {
+    "away_team": "...",
+    "draw_team": "...",
+    "has_boosted_offers": true,
+    "home_team": "...",
+    "id": "fobj__conflict_event__422369",
+    "is_popular": true,
+    "league": "...",
+    "metrics": "...",
+    "note": "World Series - Game 5, MIL leads series 3-1",
+    "start_time_stamp_utc_millis": 1793232000000,
+    "subfilter_ids": "..."
+   },
+   "where": "cards MLB fobj__conflict_event__422369 Boosted"
+  }
+ ],
+ "errors": [],
+ "boosted_cards_raw": [
+  "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 4.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184171, \"option_type\": 0, \"proposal_fkey\": \"3144_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10838|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10838\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - 76ers vs. Pacers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"PHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21053/jersey_starpack.png\", \"full_name\": \"PHI 76ers\", \"id\": \"fobj__sb_nomenclature_team__21053\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21053/raw.png\", \"name\": \"PHI 76ers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"IND\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20175/jersey_starpack.png\", \"full_name\": \"IND Pacers\", \"id\": \"fobj__sb_nomenclature_team__20175\", \"jersey_lettering_hex_color\": \"#FDBB30\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20175/raw.png\", \"name\": \"IND Pacers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422086\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422086\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219498382, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422086\"}, \"market_name\": \"Pascal Siakam & Joel Embiid 60+ Points COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 4.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10838\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Plastic_Indiana_43_Victory_Pose-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.0, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184172, \"option_type\": 0, \"proposal_fkey\": \"3145_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10839|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10839\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - 76ers vs. Pacers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"PHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21053/jersey_starpack.png\", \"full_name\": \"PHI 76ers\", \"id\": \"fobj__sb_nomenclature_team__21053\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21053/raw.png\", \"name\": \"PHI 76ers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"IND\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20175/jersey_starpack.png\", \"full_name\": \"IND Pacers\", \"id\": \"fobj__sb_nomenclature_team__20175\", \"jersey_lettering_hex_color\": \"#FDBB30\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20175/raw.png\", \"name\": \"IND Pacers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422086\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422086\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219498382, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422086\"}, \"market_name\": \"Tyrese Maxey & Aaron Nesmith 7+ Made 3's COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 4.5, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10839\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Premium_sculpted_Sixers_player_figure-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.75, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184173, \"option_type\": 0, \"proposal_fkey\": \"3146_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10840|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10840\", \"total_amount\": 1}, \"boosted_note\": \"20% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - 76ers vs. Pacers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"PHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21053/jersey_starpack.png\", \"full_name\": \"PHI 76ers\", \"id\": \"fobj__sb_nomenclature_team__21053\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21053/raw.png\", \"name\": \"PHI 76ers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"IND\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20175/jersey_starpack.png\", \"full_name\": \"IND Pacers\", \"id\": \"fobj__sb_nomenclature_team__20175\", \"jersey_lettering_hex_color\": \"#FDBB30\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20175/raw.png\", \"name\": \"IND Pacers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422086\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422086\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219498382, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422086\"}, \"market_name\": \"LeBron James & Pascal Siakam 14+ Assists COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 3.25, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10840\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Gemini_Generated_Image_y78ypdy78ypdy78y-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.75, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184174, \"option_type\": 0, \"proposal_fkey\": \"3147_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10841|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10841\", \"total_amount\": 1}, \"boosted_note\": \"10% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - 76ers vs. Pacers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"PHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21053/jersey_starpack.png\", \"full_name\": \"PHI 76ers\", \"id\": \"fobj__sb_nomenclature_team__21053\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21053/raw.png\", \"name\": \"PHI 76ers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"IND\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20175/jersey_starpack.png\", \"full_name\": \"IND Pacers\", \"id\": \"fobj__sb_nomenclature_team__20175\", \"jersey_lettering_hex_color\": \"#FDBB30\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20175/raw.png\", \"name\": \"IND Pacers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422086\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422086\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219498382, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422086\"}, \"market_name\": \"Jaylen Brown Top Points Scorer of the Game\", \"market_note\": \"\", \"prev_eu_odds\": 5.25, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422086|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10841\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_plastic_PHILA_7_basketball_star-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}], \"schema_version\": 1}], \"schema_version\": 1}",
+  "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 6.25, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184162, \"option_type\": 0, \"proposal_fkey\": \"3139_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10833|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10833\", \"total_amount\": 1}, \"boosted_note\": \"10% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - Wizards vs. Cavaliers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"WAS\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21997/jersey_starpack.png\", \"full_name\": \"WAS Wizards\", \"id\": \"fobj__sb_nomenclature_team__21997\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21997/raw.png\", \"name\": \"WAS Wizards\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CLE\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19921/jersey_starpack.png\", \"full_name\": \"CLE Cavaliers\", \"id\": \"fobj__sb_nomenclature_team__19921\", \"jersey_lettering_hex_color\": \"#BC945C\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19921/raw.png\", \"name\": \"CLE Cavaliers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422316\", \"is_popular\": false, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422316\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793222126951, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422316\"}, \"market_name\": \"AJ Dybantsa 20+ Points\", \"market_note\": \"\", \"prev_eu_odds\": 5.7, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10833\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Wizards__4_Sculpted_Basketball_Portrait-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.0, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184163, \"option_type\": 0, \"proposal_fkey\": \"3140_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10834|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10834\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - Wizards vs. Cavaliers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"WAS\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21997/jersey_starpack.png\", \"full_name\": \"WAS Wizards\", \"id\": \"fobj__sb_nomenclature_team__21997\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21997/raw.png\", \"name\": \"WAS Wizards\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CLE\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19921/jersey_starpack.png\", \"full_name\": \"CLE Cavaliers\", \"id\": \"fobj__sb_nomenclature_team__19921\", \"jersey_lettering_hex_color\": \"#BC945C\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19921/raw.png\", \"name\": \"CLE Cavaliers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422316\", \"is_popular\": false, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422316\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793222126951, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422316\"}, \"market_name\": \"Donovan Mitchell & Trae Young 60+ Points COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 4.5, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10834\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_11__2026__12_32_28_PM-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 4.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184164, \"option_type\": 0, \"proposal_fkey\": \"3141_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10835|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10835\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - Wizards vs. Cavaliers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"WAS\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21997/jersey_starpack.png\", \"full_name\": \"WAS Wizards\", \"id\": \"fobj__sb_nomenclature_team__21997\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21997/raw.png\", \"name\": \"WAS Wizards\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CLE\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19921/jersey_starpack.png\", \"full_name\": \"CLE Cavaliers\", \"id\": \"fobj__sb_nomenclature_team__19921\", \"jersey_lettering_hex_color\": \"#BC945C\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19921/raw.png\", \"name\": \"CLE Cavaliers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422316\", \"is_popular\": false, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422316\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793222126951, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422316\"}, \"market_name\": \"Anthony Davis & James Harden 50+ Points COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 4.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10835\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_plastic_basketball_star-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184165, \"option_type\": 0, \"proposal_fkey\": \"3142_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10836|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10836\", \"total_amount\": 1}, \"boosted_note\": \"25% Boost\", \"end_time_stamp_utc_millis\": 1793228400000, \"footer_note\": \"NBA - Wizards vs. Cavaliers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"WAS\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21997/jersey_starpack.png\", \"full_name\": \"WAS Wizards\", \"id\": \"fobj__sb_nomenclature_team__21997\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21997/raw.png\", \"name\": \"WAS Wizards\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CLE\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19921/jersey_starpack.png\", \"full_name\": \"CLE Cavaliers\", \"id\": \"fobj__sb_nomenclature_team__19921\", \"jersey_lettering_hex_color\": \"#BC945C\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19921/raw.png\", \"name\": \"CLE Cavaliers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422316\", \"is_popular\": false, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793228400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422316\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793222126951, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422316\"}, \"market_name\": \"James Harden & Trae Young 7+ Made 3's COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 3.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422316|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10836\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_13__2026__12_28_05_PM-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950216284}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184166, \"option_type\": 0, \"proposal_fkey\": \"3143_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422316|fkey__sk_",
+  "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184189, \"option_type\": 0, \"proposal_fkey\": \"3152_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10846|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10846\", \"total_amount\": 1}, \"boosted_note\": \"25% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"NBA - Warriors vs. T'Wolves\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"GSW\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20985/jersey_starpack.png\", \"full_name\": \"GS Warriors\", \"id\": \"fobj__sb_nomenclature_team__20985\", \"jersey_lettering_hex_color\": \"#FDB927\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20985/raw.png\", \"name\": \"GS Warriors\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"MIN\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21996/jersey_starpack.png\", \"full_name\": \"MIN Timberwolves\", \"id\": \"fobj__sb_nomenclature_team__21996\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21996/raw.png\", \"name\": \"MIN Timberwolves\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422320\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422320\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793223109253, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422320\"}, \"market_name\": \"LaMelo Ball Top Points Scorer of the Game\", \"market_note\": \"\", \"prev_eu_odds\": 3.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10846\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_Wolves_player_spinning_a_basketball-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.0, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184190, \"option_type\": 0, \"proposal_fkey\": \"3153_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10847|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10847\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"NBA - Warriors vs. T'Wolves\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"GSW\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20985/jersey_starpack.png\", \"full_name\": \"GS Warriors\", \"id\": \"fobj__sb_nomenclature_team__20985\", \"jersey_lettering_hex_color\": \"#FDB927\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20985/raw.png\", \"name\": \"GS Warriors\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"MIN\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21996/jersey_starpack.png\", \"full_name\": \"MIN Timberwolves\", \"id\": \"fobj__sb_nomenclature_team__21996\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21996/raw.png\", \"name\": \"MIN Timberwolves\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422320\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422320\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793223109253, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422320\"}, \"market_name\": \"Steph Curry Most Made 3's in the Game\", \"market_note\": \"\", \"prev_eu_odds\": 2.75, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422320|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10847\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Warriors_basketball_portrait-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}], \"schema_version\": 1}], \"schema_version\": 1}",
+  "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 4.25, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184181, \"option_type\": 0, \"proposal_fkey\": \"3148_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10842|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10842\", \"total_amount\": 1}, \"boosted_note\": \"20% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"NBA - Knicks vs. Bulls\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"NYK\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22018/jersey_starpack.png\", \"full_name\": \"NY Knicks\", \"id\": \"fobj__sb_nomenclature_team__22018\", \"jersey_lettering_hex_color\": \"#F58426\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22018/raw.png\", \"name\": \"NY Knicks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22026/jersey_starpack.png\", \"full_name\": \"CHI Bulls\", \"id\": \"fobj__sb_nomenclature_team__22026\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22026/raw.png\", \"name\": \"CHI Bulls\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__420987\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__420987\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793224449445, \"skipper_area_key\": \"game_progress|fobj__conflict_event__420987\"}, \"market_name\": \"Karl-Anthony Towns Top Points Scorer of the Game\", \"market_note\": \"\", \"prev_eu_odds\": 3.75, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10842\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_6__2026__12_07_26_PM-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.25, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184182, \"option_type\": 0, \"proposal_fkey\": \"3149_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10843|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10843\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"NBA - Knicks vs. Bulls\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"NYK\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22018/jersey_starpack.png\", \"full_name\": \"NY Knicks\", \"id\": \"fobj__sb_nomenclature_team__22018\", \"jersey_lettering_hex_color\": \"#F58426\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22018/raw.png\", \"name\": \"NY Knicks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22026/jersey_starpack.png\", \"full_name\": \"CHI Bulls\", \"id\": \"fobj__sb_nomenclature_team__22026\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22026/raw.png\", \"name\": \"CHI Bulls\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__420987\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__420987\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793224449445, \"skipper_area_key\": \"game_progress|fobj__conflict_event__420987\"}, \"market_name\": \"Norman Powell Most Made 3's in the Game\", \"market_note\": \"\", \"prev_eu_odds\": 4.75, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10843\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Bulls__24_victory_pose-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.25, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184183, \"option_type\": 0, \"proposal_fkey\": \"3150_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10844|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10844\", \"total_amount\": 1}, \"boosted_note\": \"10% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"NBA - Knicks vs. Bulls\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"NYK\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22018/jersey_starpack.png\", \"full_name\": \"NY Knicks\", \"id\": \"fobj__sb_nomenclature_team__22018\", \"jersey_lettering_hex_color\": \"#F58426\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22018/raw.png\", \"name\": \"NY Knicks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22026/jersey_starpack.png\", \"full_name\": \"CHI Bulls\", \"id\": \"fobj__sb_nomenclature_team__22026\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22026/raw.png\", \"name\": \"CHI Bulls\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__420987\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__420987\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793224449445, \"skipper_area_key\": \"game_progress|fobj__conflict_event__420987\"}, \"market_name\": \"Jalen Brunson Most Assists in the Game\", \"market_note\": \"\", \"prev_eu_odds\": 3.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10844\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_5__2026__06_44_01_PM-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 2.75, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184184, \"option_type\": 0, \"proposal_fkey\": \"3151_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10845|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10845\", \"total_amount\": 1}, \"boosted_note\": \"25% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"NBA - Knicks vs. Bulls\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"NYK\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22018/jersey_starpack.png\", \"full_name\": \"NY Knicks\", \"id\": \"fobj__sb_nomenclature_team__22018\", \"jersey_lettering_hex_color\": \"#F58426\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22018/raw.png\", \"name\": \"NY Knicks\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"CHI\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/22026/jersey_starpack.png\", \"full_name\": \"CHI Bulls\", \"id\": \"fobj__sb_nomenclature_team__22026\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/22026/raw.png\", \"name\": \"CHI Bulls\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__420987\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__420987\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793224449445, \"skipper_area_key\": \"game_progress|fobj__conflict_event__420987\"}, \"market_name\": \"Caleb Wilson 20+ Points\", \"market_note\": \"\", \"prev_eu_odds\": 2.4, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__420987|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10845\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Bulls_Number_8_Collectible-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}], \"schema_version\": 1}], \"schema_version\": 1}",
+  "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 93000000184197, \"option_type\": 0, \"proposal_fkey\": \"3154_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10848|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10848\", \"total_amount\": 1}, \"boosted_note\": \"10% Boost\", \"end_time_stamp_utc_millis\": 1793237400000, \"footer_note\": \"NBA - Thunder vs. Mavericks\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"OKC\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20140/jersey_starpack.png\", \"full_name\": \"OKC Thunder\", \"id\": \"fobj__sb_nomenclature_team__20140\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20140/raw.png\", \"name\": \"OKC Thunder\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"DAL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21998/jersey_starpack.png\", \"full_name\": \"DAL Mavericks\", \"id\": \"fobj__sb_nomenclature_team__21998\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21998/raw.png\", \"name\": \"DAL Mavericks\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__421010\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793237400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__421010\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219303152, \"skipper_area_key\": \"game_progress|fobj__conflict_event__421010\"}, \"market_name\": \"Shai Gilgeous-Alexander & Cooper Flagg 70+ Points COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 5.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10848\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_18__2026__01_43_36_PM-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950306374}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.0, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 93000000184198, \"option_type\": 0, \"proposal_fkey\": \"3155_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10849|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10849\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793237400000, \"footer_note\": \"NBA - Thunder vs. Mavericks\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"OKC\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20140/jersey_starpack.png\", \"full_name\": \"OKC Thunder\", \"id\": \"fobj__sb_nomenclature_team__20140\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20140/raw.png\", \"name\": \"OKC Thunder\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"DAL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21998/jersey_starpack.png\", \"full_name\": \"DAL Mavericks\", \"id\": \"fobj__sb_nomenclature_team__21998\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21998/raw.png\", \"name\": \"DAL Mavericks\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__421010\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793237400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__421010\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219303152, \"skipper_area_key\": \"game_progress|fobj__conflict_event__421010\"}, \"market_name\": \"Jared McCain & Max Christie 7+ Made 3's COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 2.75, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10849\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/05/ChatGPT_Image_May_18__2026__03_38_35_PM-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950306374}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 4.75, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 93000000184199, \"option_type\": 0, \"proposal_fkey\": \"3156_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10850|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10850\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793237400000, \"footer_note\": \"NBA - Thunder vs. Mavericks\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"OKC\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20140/jersey_starpack.png\", \"full_name\": \"OKC Thunder\", \"id\": \"fobj__sb_nomenclature_team__20140\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20140/raw.png\", \"name\": \"OKC Thunder\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"DAL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21998/jersey_starpack.png\", \"full_name\": \"DAL Mavericks\", \"id\": \"fobj__sb_nomenclature_team__21998\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21998/raw.png\", \"name\": \"DAL Mavericks\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__421010\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793237400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__421010\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219303152, \"skipper_area_key\": \"game_progress|fobj__conflict_event__421010\"}, \"market_name\": \"Cooper Flagg Top Points Scorer of the Game\", \"market_note\": \"\", \"prev_eu_odds\": 4.25, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10850\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Dallas__32_Basketball_Character-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950306374}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.0, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 93000000184200, \"option_type\": 0, \"proposal_fkey\": \"3157_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10851|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10851\", \"total_amount\": 1}, \"boosted_note\": \"15% Boost\", \"end_time_stamp_utc_millis\": 1793237400000, \"footer_note\": \"NBA - Thunder vs. Mavericks\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"OKC\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/20140/jersey_starpack.png\", \"full_name\": \"OKC Thunder\", \"id\": \"fobj__sb_nomenclature_team__20140\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/20140/raw.png\", \"name\": \"OKC Thunder\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"DAL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21998/jersey_starpack.png\", \"full_name\": \"DAL Mavericks\", \"id\": \"fobj__sb_nomenclature_team__21998\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21998/raw.png\", \"name\": \"DAL Mavericks\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__421010\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793237400000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__421010\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219303152, \"skipper_area_key\": \"game_progress|fobj__conflict_event__421010\"}, \"market_name\": \"Kyrie Irving Most Made 3's in the Game\", \"market_note\": \"\", \"prev_eu_odds\": 4.5, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__421010|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10851\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Mavs__11_Basketball_Collectible-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950306374}], \"schema_version\": 1}], \"schema_version\": 1}",
+  "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 93000000184204, \"option_type\": 0, \"proposal_fkey\": \"3158_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421009|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10852|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__421009|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10852\", \"total_amount\": 1}, \"boosted_note\": \"25% Boost\", \"end_time_stamp_utc_millis\": 1793241000000, \"footer_note\": \"NBA - Lakers vs. Clippers\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"LAL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21052/jersey_starpack.png\", \"full_name\": \"LA Lakers\", \"id\": \"fobj__sb_nomenclature_team__21052\", \"jersey_lettering_hex_color\": \"#552582\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21052/raw.png\", \"name\": \"LA Lakers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"LAC\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/21945/jersey_starpack.png\", \"full_name\": \"LA Clippers\", \"id\": \"fobj__sb_nomenclature_team__21945\", \"jersey_lettering_hex_color\": \"#FFFFFF\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/21945/raw.png\", \"name\": \"LA Clippers\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__421009\", \"is_popular\": true, \"league\": {\"abbreviation\": \"NBA\", \"available_games\": 15, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 203, \"display_name\": \"NBA\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__461\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"NBA\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3952, \"skipper_area_key\": \"leagues|fkey__sk_league__461\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1255}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"\", \"start_time_stamp_utc_millis\": 1793241000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__421009\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219498448, \"skipper_area_key\": \"game_progress|fobj__conflict_event__421009\"}, \"market_name\": \"Austin Reaves & Darius Garland 60+ Points COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 3.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__421009|fkey__sk_prop_category__777|fkey__sk_league__461|fobj__skipper_boosted_offer_v2__10852\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_Lakers_Number_15_Portrait-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950342410}], \"schema_version\": 1}], \"schema_version\": 1}",
+  "{\"__object_class_name\": \"FCM__Skipper_GetCards__Response\", \"cards_packs\": [{\"cards\": [{\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.75, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184150, \"option_type\": 0, \"proposal_fkey\": \"3134_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10828|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10828\", \"total_amount\": 1}, \"boosted_note\": \"30% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"MLB - Brewers vs. Rays\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"MIL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19138/jersey_starpack.png\", \"full_name\": \"MIL Brewers\", \"id\": \"fobj__sb_nomenclature_team__19138\", \"jersey_lettering_hex_color\": \"#FFC52E\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19138/raw.png\", \"name\": \"MIL Brewers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"TB\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19145/jersey_starpack.png\", \"full_name\": \"TB Rays\", \"id\": \"fobj__sb_nomenclature_team__19145\", \"jersey_lettering_hex_color\": \"#F5D130\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19145/raw.png\", \"name\": \"TB Rays\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422369\", \"is_popular\": true, \"league\": {\"abbreviation\": \"MLB\", \"available_games\": 1, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 204, \"display_name\": \"MLB\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__441\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"MLB\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3953, \"skipper_area_key\": \"leagues|fkey__sk_league__441\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1015}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"World Series - Game 5, MIL leads series 3-1\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422369\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219496904, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422369\"}, \"market_name\": \"Jacob Misiorowski 8+ Strikeouts\", \"market_note\": \"\", \"prev_eu_odds\": 3.15, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10828\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/07/ChatGPT_Image_Jul_20__2026__04_05_45_PM-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 5.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184151, \"option_type\": 0, \"proposal_fkey\": \"3135_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10829|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10829\", \"total_amount\": 1}, \"boosted_note\": \"10% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"MLB - Brewers vs. Rays\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"MIL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19138/jersey_starpack.png\", \"full_name\": \"MIL Brewers\", \"id\": \"fobj__sb_nomenclature_team__19138\", \"jersey_lettering_hex_color\": \"#FFC52E\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19138/raw.png\", \"name\": \"MIL Brewers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"TB\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19145/jersey_starpack.png\", \"full_name\": \"TB Rays\", \"id\": \"fobj__sb_nomenclature_team__19145\", \"jersey_lettering_hex_color\": \"#F5D130\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19145/raw.png\", \"name\": \"TB Rays\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422369\", \"is_popular\": true, \"league\": {\"abbreviation\": \"MLB\", \"available_games\": 1, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 204, \"display_name\": \"MLB\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__441\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"MLB\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3953, \"skipper_area_key\": \"leagues|fkey__sk_league__441\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1015}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"World Series - Game 5, MIL leads series 3-1\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422369\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219496904, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422369\"}, \"market_name\": \"Christian Yelich & Jackson Chourio 4+ Hits COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 5.0, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10829\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Molded_Brewers__22_baseball_portrait-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 7.0, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184152, \"option_type\": 0, \"proposal_fkey\": \"3136_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10830|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10830\", \"total_amount\": 1}, \"boosted_note\": \"10% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"MLB - Brewers vs. Rays\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"MIL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19138/jersey_starpack.png\", \"full_name\": \"MIL Brewers\", \"id\": \"fobj__sb_nomenclature_team__19138\", \"jersey_lettering_hex_color\": \"#FFC52E\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19138/raw.png\", \"name\": \"MIL Brewers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"TB\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19145/jersey_starpack.png\", \"full_name\": \"TB Rays\", \"id\": \"fobj__sb_nomenclature_team__19145\", \"jersey_lettering_hex_color\": \"#F5D130\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19145/raw.png\", \"name\": \"TB Rays\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422369\", \"is_popular\": true, \"league\": {\"abbreviation\": \"MLB\", \"available_games\": 1, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 204, \"display_name\": \"MLB\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__441\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"MLB\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3953, \"skipper_area_key\": \"leagues|fkey__sk_league__441\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1015}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"World Series - Game 5, MIL leads series 3-1\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422369\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219496904, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422369\"}, \"market_name\": \"Junior Caminero OR Yandy Diaz to Record 3+ Hits\", \"market_note\": \"\", \"prev_eu_odds\": 6.5, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10830\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/10/Sculpted_plastic_baseball_player_with_bat-removebg-preview-1.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42101, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 16.0, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184153, \"option_type\": 0, \"proposal_fkey\": \"3137_p_402_prematch\", \"selection_image\": null, \"selection_name\": null, \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10831|0.0#0\", \"status\": 0, \"ticket_image\": null}], \"skipper_area_key\": \"prop_odds|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10831\", \"total_amount\": 1}, \"boosted_note\": \"10% Boost\", \"end_time_stamp_utc_millis\": 1793232000000, \"footer_note\": \"MLB - Brewers vs. Rays\", \"game_render_data\": {\"away_team\": {\"abbreviation\": \"MIL\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19138/jersey_starpack.png\", \"full_name\": \"MIL Brewers\", \"id\": \"fobj__sb_nomenclature_team__19138\", \"jersey_lettering_hex_color\": \"#FFC52E\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19138/raw.png\", \"name\": \"MIL Brewers\", \"starpack_lettering_disabled\": false}, \"draw_team\": {\"abbreviation\": \"Tie\", \"boxed_jersey_image_url\": \"\", \"full_name\": \"Tie\", \"id\": \"no_team_id\", \"jersey_lettering_hex_color\": \"\", \"logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2025/12/TypeDraw-SizeS@3x.png\", \"name\": \"Tie\", \"starpack_lettering_disabled\": false}, \"has_boosted_offers\": true, \"home_team\": {\"abbreviation\": \"TB\", \"boxed_jersey_image_url\": \"https://image-store.getfliff.com/sb/team/19145/jersey_starpack.png\", \"full_name\": \"TB Rays\", \"id\": \"fobj__sb_nomenclature_team__19145\", \"jersey_lettering_hex_color\": \"#F5D130\", \"logo_url\": \"https://image-store.getfliff.com/sb/team/19145/raw.png\", \"name\": \"TB Rays\", \"starpack_lettering_disabled\": false}, \"id\": \"fobj__conflict_event__422369\", \"is_popular\": true, \"league\": {\"abbreviation\": \"MLB\", \"available_games\": 1, \"channel_limit_code\": 111, \"chef_choices_style\": 3, \"dash_weight\": 204, \"display_name\": \"MLB\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_league__441\", \"kind\": \"LEAGUE\", \"layout\": 2, \"live_games\": 0, \"name\": \"MLB\", \"show_market_props_amount\": null, \"show_more_level\": 1, \"skin\": 3953, \"skipper_area_key\": \"leagues|fkey__sk_league__441\", \"starpack_style\": 0, \"subfilters\": null, \"tour\": null, \"tournament_name\": null, \"weight\": 1015}, \"metrics\": {\"chat_messages_count\": 0, \"chat_unique_users_count\": 0}, \"note\": \"World Series - Game 5, MIL leads series 3-1\", \"start_time_stamp_utc_millis\": 1793232000000, \"subfilter_ids\": []}, \"inplay_game_progress\": {\"away_team_score\": \"0\", \"game_clock_server_time_millis_utc\": -1, \"game_clock_type\": 45601, \"game_clock_type_sr\": 45601, \"game_clock_vendor_time_millis\": -1, \"game_id\": \"fobj__conflict_event__422369\", \"game_outcome\": 4234, \"game_phase\": \"\", \"game_phase_sr\": \"\", \"game_state\": 0, \"home_team_score\": \"0\", \"obj_version\": 1793219496904, \"skipper_area_key\": \"game_progress|fobj__conflict_event__422369\"}, \"market_name\": \"Jackson Chourio & Junior Caminero 2+ HRs COMBINED\", \"market_note\": \"\", \"prev_eu_odds\": 14.5, \"prop_category\": {\"card_name\": \"\", \"footer\": \"\", \"has_boosted_offers\": false, \"id\": \"fkey__sk_prop_category__777\", \"modal_name\": \"\", \"name\": \"Boosted\", \"ticket_name\": \"Boosted\", \"weight\": 299}, \"sgp_mode\": 0, \"skin\": 101, \"skipper_area_key\": \"cards|fobj__conflict_event__422369|fkey__sk_prop_category__777|fkey__sk_league__441|fobj__skipper_boosted_offer_v2__10831\", \"sponsor_logo_url\": \"https://image-store.getfliff.com/wp-content/uploads/2026/07/ChatGPT_Image_Jul_27__2026__01_49_24_PM-removebg-preview-1-7.png\", \"user_value_threshold\": null, \"vendor\": 701, \"vendor_channel_id\": 42102, \"weight\": 100007950252320}, {\"betting_options\": {\"options\": [{\"column_type\": null, \"eu_odds\": 3.5, \"is_main_line\": true, \"line\": 0.0, \"obj_version\": 184154, \"option_type\": 0, \"proposal_fkey\": \"3138_p_402_prematch\", "
+ ],
+ "calls": 343
+}
