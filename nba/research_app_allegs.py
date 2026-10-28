@@ -203,14 +203,14 @@ def key_of(o):
             "bl": lambda l: -(l["p"] + l["pf"]) / 2, "evbl": lambda l: -(l["p"] + l["pf"]) / 2 * l["m"], "pf": lambda l: -l["pf"]}[o]
 
 
-def greedy(base, idx, k, banned):
-    """the first k legs of `base` at positions `idx` (already qualified, in order): distinct players, one leg a game"""
-    out, pl, gm = [], set(), set()
+def greedy(base, idx, k, banned, gc=1):
+    """the first k legs of `base` at positions `idx` (already qualified, in order): distinct players, at most gc legs a game"""
+    out, pl, gm = [], set(), defaultdict(int)
     for i in idx:
         l = base[i]
-        if l["player_id"] in pl or l["player_id"] in banned or l["event_id"] in gm:
+        if l["player_id"] in pl or l["player_id"] in banned or gm[l["event_id"]] >= gc:
             continue
-        out.append(l); pl.add(l["player_id"]); gm.add(l["event_id"])
+        out.append(l); pl.add(l["player_id"]); gm[l["event_id"]] += 1
         if len(out) == k:
             break
     return out
