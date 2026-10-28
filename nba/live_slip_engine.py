@@ -381,6 +381,8 @@ def unit_season_state(conn, day):
     a = unit_auto_cfg(conn)
     s0, _ = regular_season_window(conn, day)
     s0 = s0 or day
+    if a.get('count_from'):
+        s0 = max(s0, dt.date.fromisoformat(str(a['count_from'])[:10]))
     prev = conn.execute("""SELECT unit_usd, season_high FROM nba_score.live_unit_history WHERE season_start=%s AND game_date < %s
                            ORDER BY game_date DESC LIMIT 1""", (s0, day)).fetchone()
     return s0, (float(prev[0]) if prev else float(a['start'])), (float(prev[1]) if prev else 0.0)
