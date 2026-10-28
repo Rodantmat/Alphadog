@@ -603,7 +603,7 @@ async function buildHighHit(sql, cfg, url, version) {
         legs.push({ board_row_id: `${slate.date}~${s.app}~${x.player_id || x.player}~${x.prop}~${line}~${sideIn(x.side)}`, player_name: fullName.get(norm(x.player)) || x.player, canonical_prop_key: x.prop, prop_label: propLabel(x.prop),
           line_value: line, selected_side: side, source_key: s.app, tier: x.tier, leg_factor: Number(x.factor) || null, hit_probability_0_100: wnHp, estimated_hit_probability_0_100: wnHp,
           score_0_100: wn && wn.score != null ? r1(wn.score) : undefined, hp_source: wn ? "final_hp_derived:" + wn.derivation : undefined, cell: x.cell,
-          result_hit: x.hit == null ? null : Number(x.hit), result_push: push, game_pk: x.event_id || null, mlb_player_id: x.player_id || x.player, ...cellFields });
+          result_hit: x.hit == null ? null : Number(x.hit), result_push: push, game_pk: x.event_id || null, mlb_player_id: x.player_id || x.player, ...cellFields, ...gameFields });
       }
     }
     const mode = s.structure === "flex" ? "flex" : "power";
