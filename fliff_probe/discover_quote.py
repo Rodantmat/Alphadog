@@ -28,8 +28,11 @@ TARGETS = [
     "SkipperGetParlayPlusQuoteResponseSchema", "SkipperGetParlayPlusQuoteV2ResponseSchema", "SkipperGetContestResponseSchema",
     "SkipperGetContestWinnersResponseSchema", "SkipperPlacePickResponseSchema",
 ]
-WORDS = re.compile(r"(flex_play|flex_mode|FlexPlay|parlay_plus|ParlayPlus|prize_pool|leftover|guaranteed_multiplier|min_multiplier|"
-                   r"boosted|boost_|sgp_mode|same_game|correlat|multiplier_adjust|payout_multiplier|max_payout|pod_|contest_)", re.I)
+WORDS = re.compile(os.environ.get("QUOTE_WORDS") or
+                   r"(flex_play|flex_mode|FlexPlay|parlay_plus|ParlayPlus|prize_pool|leftover|guaranteed_multiplier|min_multiplier|"
+                   r"boosted|boost_|sgp_mode|same_game|correlat|multiplier_adjust|payout_multiplier|max_payout|pod_|contest_)")
+PER_WORD = int(os.environ.get("QUOTE_PER_WORD", "12"))
+CTX_AFTER = int(os.environ.get("QUOTE_CTX", "500"))
 
 
 def get(url):
