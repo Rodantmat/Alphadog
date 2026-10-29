@@ -172,7 +172,7 @@ def main():
                         return False
                 return True
 
-            both = [q for q in ks if ok(q, 0, 25) and ok(q, 1, 25) and nb_ok(q)]
+            both = [q for q in ks if ok(q, 0, MIN) and ok(q, 1, MIN) and nb_ok(q)]
             both.sort(key=lambda q: -((RA.stat(acc.d[q][0])[5] + RA.stat(acc.d[q][1])[5]) / max(RA.stat(acc.d[q][0])[4], RA.stat(acc.d[q][1])[4], 1)))
             print(f"  (1) positive in both history seasons (>= 25 slips each, neighbours positive): {len(both)} rules; top {TOP} by balance:")
             seen, shown = set(), 0
