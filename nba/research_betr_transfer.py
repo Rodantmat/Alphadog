@@ -154,6 +154,10 @@ class Book:
         print("=" * 170 + f"\nBETR TRANSFER | part {PART} | rules {len(A)}")
         if LIVE_RULE in A:
             print("  LIVE RULE B_T23_4dyn: " + fmt(LIVE_RULE))
+        for sk in (0, 1):                                  # the live rule without its skip (owner: no skipping unless nothing holds)
+            q = LIVE_RULE[:4] + (sk,) + LIVE_RULE[5:]
+            if q in A:
+                print(f"  LIVE RULE AT SKIP {sk}:  " + fmt(q))
         for k in KS:
             for stc in ("perfect", "dynamic"):
                 if stc == "dynamic" and k < 3:
