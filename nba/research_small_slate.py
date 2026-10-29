@@ -44,6 +44,7 @@ GCS = (1, 2, 3, 99)
 SIZES = RA.SIZES
 STRUCTS = RA.STRUCTS
 TOP = int(os.environ.get("SS_TOP") or 8)
+MIN = int(os.environ.get("SS_MIN") or 8)      # small slates are rare (~20 a season): slips a season needed for a rule to count
 
 
 def day(acc, si, legs, bucket_flags, cover):
