@@ -43,9 +43,18 @@ def main():
     if not ck:
         print("COOKIE|SLEEPER_COOKIE is empty in this run (secret not passed to the workflow)")
         return
-    parts = [p.strip() for p in ck.split(";") if p.strip()]
-    names = [(p.split("=", 1)[0], len(p.split("=", 1)[1]) if "=" in p else 0) for p in parts]
-    print(f"COOKIE|stored value: {len(ck)} chars, {len(parts)} cookie(s): " + ", ".join(f"{n}({l})" for n, l in names), flush=True)
+    # the secret may be a browser cookie EXPORT (JSON list of {name, value, ...}) or a plain "a=b; c=d" header string
+    try:
+        data = json.loads(ck)
+        items = data if isinstance(data, list) else data.get("cookies", [data])
+        pairs = [(str(i["name"]), str(i["value"])) for i in items if isinstance(i, dict) and "name" in i and "value" in i]
+        fmt = "json export"
+    except Exception:  # noqa: BLE001
+        pairs = [(p.split("=", 1)[0].strip(), p.split("=", 1)[1].strip()) for p in ck.split(";") if "=" in p]
+        fmt = "header string"
+    ck = "; ".join(f"{n}={v}" for n, v in pairs)
+    # names (never values) and lengths only; GitHub masks nothing of a parsed value, so values are never printed
+    print(f"COOKIE|stored format: {fmt}, {len(pairs)} cookie(s): " + ", ".join(f"{n[:40]}({len(v)})" for n, v in pairs), flush=True)
     routes = [("direct", None)] + ([("proxy", PROXY)] if PROXY else [])
     for route, px in routes:
         call(f"cookie header only        {route:<6}", {"cookie": ck}, px)
