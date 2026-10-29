@@ -34,6 +34,8 @@ import research_sleeper_hist as RSH                   # noqa: E402
 APP = RA.APP
 SEASONS = RA.SEASONS
 BUCKETS = (("s3", 3), ("s4", 4))
+if os.environ.get("SS_ALL") == "1":          # every slate too: a layered fallback must also hold on the normal days (owner 14:33 PT)
+    BUCKETS = BUCKETS + (("all", 99),)
 ORDERS = RA.ORDERS
 SIDES = RA.SIDES
 FLOORS = RA.FLOORS
