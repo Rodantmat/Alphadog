@@ -219,6 +219,37 @@ def main():
                 print(f"  small-slate coverage {100 * cov4:.0f}%, small-slate pooled ROI {100 * roi4:+.1f}%")
                 print("     ALL SLATES : " + row(acc, q, cover[q]))
                 print("     <=4 GAMES  : " + row(acc, q4, cover[q4]))
+    # (3) BOARD-STYLE VIEW (owner 15:44 PT): the fallback only fires where the live rule builds nothing, so it need NOT hold on normal days or in both seasons.
+    def pooled(q):
+        n = sum(RA.stat(acc.d[q][i])[0] for i in range(3))
+        pl = sum(RA.stat(acc.d[q][i])[5] for i in range(3))
+        return n, (pl / n if n else 0.0)
+
+    for b, _mx in BUCKETS:
+        for k_, st_ in STRUCTS:
+            ks = [q for q in keys if q[0] == b and q[8] == k_ and q[9] == st_]
+            tot = [sum(nsl[b][i] for i in range(3))]
+            good = []
+            for q in ks:
+                n, r = pooled(q)
+                cv = sum(cover[q]) / max(tot[0], 1)
+                if n < 2 * MIN or r <= 0 or cv < 0.9:
+                    continue
+                if any(nq in acc.d and pooled(nq)[0] >= MIN and pooled(nq)[1] <= 0 for nq in neighbours(q)):
+                    continue
+                good.append((r, q, n, cv))
+            good.sort(key=lambda t: -t[0])
+            print("\n" + "=" * 170 + f"\n{APP.upper()} | BOARD-STYLE <= {_mx} games | {k_}-PICK {st_.upper()} - pooled over both history seasons + 2026-27 real, coverage >= 90%, neighbours positive: {len(good)} rules; top {TOP}")
+            seen = set()
+            shown = 0
+            for r, q, n, cv in good:
+                sig = tuple(round(RA.stat(acc.d[q][i])[1], 3) for i in range(3))
+                if sig in seen:
+                    continue
+                seen.add(sig); shown += 1
+                print(f"    pooled {n} slips {100 * r:+.1f}% cov {100 * cv:.0f}% | " + row(acc, q, cover[q]))
+                if shown >= TOP:
+                    break
     print("\ndone")
     RA.log("done")
 
