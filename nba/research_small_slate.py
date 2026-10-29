@@ -193,6 +193,32 @@ def main():
             print(f"  (2) coverage >= 90% of the small slates in BOTH history seasons AND positive in both: {len(full)} rules; top {TOP} by balance:")
             for q in full[:TOP]:
                 print("    " + row(acc, q, cover[q]))
+    if any(b == "all" for b, _ in BUCKETS):
+        for k_, st_ in STRUCTS:
+            cands = []
+            for q in keys:
+                if q[0] != "all" or q[8] != k_ or q[9] != st_:
+                    continue
+                a = acc.d[q]
+                if not (a[0][0] >= 100 and a[1][0] >= 100 and RA.stat(a[0])[1] > 0 and RA.stat(a[1])[1] > 0
+                        and a[2][0] >= 5 and RA.stat(a[2])[1] > 0):
+                    continue
+                q4 = ("s4",) + q[1:]
+                if q4 not in acc.d:
+                    continue
+                b4 = acc.d[q4]
+                n4 = b4[0][0] + b4[1][0]
+                if n4 < 2 * MIN or (b4[0][1] + b4[1][1]) <= 0:
+                    continue
+                cov4 = (cover[q4][0] + cover[q4][1]) / max(nsl["s4"][0] + nsl["s4"][1], 1)
+                cands.append((cov4, (b4[0][1] + b4[1][1]) / n4, q, q4))
+            cands.sort(key=lambda c: (-(c[0] >= 0.8), -c[1]))
+            print("\n" + "=" * 170 + f"\n{APP.upper()} | LAYER CANDIDATES {k_}-PICK {st_.upper()} - positive on EVERY slate in both history seasons "
+                  f"(>= 100 slips) AND this season (>= 5), and positive pooled on the <= 4-game slates: {len(cands)}; top {TOP} (coverage >= 80% first, by small-slate ROI)")
+            for cov4, roi4, q, q4 in cands[:TOP]:
+                print(f"  small-slate coverage {100 * cov4:.0f}%, small-slate pooled ROI {100 * roi4:+.1f}%")
+                print("     ALL SLATES : " + row(acc, q, cover[q]))
+                print("     <=4 GAMES  : " + row(acc, q4, cover[q4]))
     print("\ndone")
     RA.log("done")
 
