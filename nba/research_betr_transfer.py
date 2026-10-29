@@ -40,7 +40,7 @@ SIDES = ("any", "Over", "Under", "mix")
 SKIPS = (0, 1, 2)
 GCS = ("own", 1, 2)
 NSL = (1, 2, 3)
-KS = (2, 3, 4, 5, 6)
+KS = tuple(int(x) for x in os.environ["BT_KS"].split(",")) if os.environ.get("BT_KS") else (2, 3, 4, 5, 6)
 SEASONS = ("2024-25", "2025-26", "2026-27")
 LIVE_RULE = ("UD-T23", "pf", 0.58, "mix", 2, "2", 2, 4, "dynamic")
 
