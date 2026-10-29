@@ -158,6 +158,8 @@ def main():
     keys = list(acc.d)
     RA.log(f"{len(keys)} cells")
     for b, _mx in BUCKETS:
+        if b == "all":
+            continue
         for k_, st_ in STRUCTS:
             ks = [q for q in keys if q[0] == b and q[8] == k_ and q[9] == st_]
             if not ks:
