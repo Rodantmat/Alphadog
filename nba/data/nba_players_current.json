@@ -3667,6 +3667,19 @@
       "team_abbreviation": "PHI"
     },
     {
+      "id": 1643133,
+      "full_name": "Lawson Lovering",
+      "last_comma_first": "Lovering, Lawson",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "lawson_lovering",
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
+    },
+    {
       "id": 1626168,
       "full_name": "Trey Lyles",
       "last_comma_first": "Lyles, Trey",
@@ -4536,19 +4549,6 @@
       "team_city": "Charlotte",
       "team_name": "Hornets",
       "team_abbreviation": "CHA"
-    },
-    {
-      "id": 1643758,
-      "full_name": "AK Okereke",
-      "last_comma_first": "Okereke, AK",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "ak_okereke",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
     },
     {
       "id": 1629006,
