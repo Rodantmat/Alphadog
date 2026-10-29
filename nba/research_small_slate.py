@@ -184,7 +184,7 @@ def main():
                 print("    " + row(acc, q, cover[q]))
                 if shown >= TOP:
                     break
-            full = [q for q in ks if cover[q][0] >= 0.9 * nsl[b][0] and cover[q][1] >= 0.9 * nsl[b][1] and ok(q, 0, 25) and ok(q, 1, 25)]
+            full = [q for q in ks if cover[q][0] >= 0.9 * nsl[b][0] and cover[q][1] >= 0.9 * nsl[b][1] and ok(q, 0, MIN) and ok(q, 1, MIN)]
             full.sort(key=lambda q: -((RA.stat(acc.d[q][0])[5] + RA.stat(acc.d[q][1])[5]) / max(RA.stat(acc.d[q][0])[4], RA.stat(acc.d[q][1])[4], 1)))
             print(f"  (2) coverage >= 90% of the small slates in BOTH history seasons AND positive in both: {len(full)} rules; top {TOP} by balance:")
             for q in full[:TOP]:
