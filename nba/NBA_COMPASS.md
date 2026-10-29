@@ -704,6 +704,22 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    fliff_live_slip_engine.build (cfg order / side / strategy; one leg per player-prop-side, first in T1's order). CERTIFIED
    audit_new_app_rules run 40790159792: engine = research on all 8 past Sleeper slates and both Fliff Pick'Em days. UI v1.4.48 labels
    "Sleeper 5-pick Flex (all Sleeper legs, slip k)". First live slate 2026-10-29 (10-28's slips were already placed under the old rules).
+191. **BETR SCRUTINY + final_hp CALIBRATION ON REAL BOARDS (2026-10-28 evening; owner 16:44 PT "double check with the same level of
+   scrutiny for betr").** (1) BETR ALL-LEGS (research_app_allegs AA_APP=betr, run 40790859133; Betr flat table, main lines, Perfect /
+   Dynamic 2-6, sides incl. mix, game cap 1 / 2): history +90% to +1,200% (2-pick Perfect cashing 83-88%) but this season's real Betr
+   board median -25% (2-pick) to -100% (4-6 Perfect) over the robust rules - REJECTED. Cause: the flat table pays legs of any strength the
+   same; history main lines include near-certain legs (final_hp .80-.90) that this season's real board does not reward. (2) CALIBRATION
+   (audit_hist_leg_calibration run 40796351581): history final_hp is honest per leg (2025-26 main .60-.65: 1,775 legs, mean .620, hit .632;
+   alternates within 1-2 points) - NO leakage; this season's real Sleeper board main legs run HIGH: .55-.60 hit .509 (1,691 legs, -6.1 pts),
+   .60-.65 hit .555 (501, -6.3), .70-.80 hit .580 (69, -16.8); alternates calibrated. S_ALL_5flex stays on (real-board +53.5% on 10 slips)
+   but its history figures assume calibrated main legs - grade it daily. (3) BETR TRANSFER (research_betr_transfer runs 40790862599 ud /
+   40790867203 pp / 40796381243 ud 4-6 + skip check; Underdog T1 / T2 / T3 and unions, PrizePicks B units, at Betr's line): live rule
+   B_T23_4dyn (skip 2) +51.4 / +45.5%, dd 8.2u; the SAME rule at skip 0 +38.8 / +45.9%, dd 16.0u; skip 1 +39.2 / +33.9%, dd 17.5u.
+   Best no-skip by balance: 5-pick Dynamic UD-T12 order books' chance, mix, own game cap, 2 slips +65.6 / +62.7% dd 13.8u; 5-pick Dynamic
+   UD-T123 p >= .56 mix 3 slips +66.4 / +65.1% dd 10.6u; 6-pick Dynamic UD-T23 blend p >= .56 2 slips +72.7 / +106.4% dd 12.0u; 4-pick
+   Dynamic UD-T12 order books' chance mix 2 slips +42.7 / +43.7% dd 15.2u; 4-pick Dynamic UD-T1 p >= .54 1 slip +35.0 / +44.3% dd 8.5u.
+   PrizePicks legs on Betr weak (best +22-55% one season, ~+1-30% the other). Real Betr board this season: 4 slates (10-20, 10-21, 10-26,
+   10-27) - no rule has >= 3 real slips positive among the 4-6-pick leaders. Owner to choose; Betr config unchanged (B_T23_4dyn, skip 2).
 
 ---
 
