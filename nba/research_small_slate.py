@@ -168,7 +168,7 @@ def main():
 
             def nb_ok(q):
                 for nq in neighbours(q):
-                    if nq in acc.d and acc.d[nq][0][0] >= 12 and not (RA.stat(acc.d[nq][0])[1] > 0 and RA.stat(acc.d[nq][1])[1] > 0):
+                    if nq in acc.d and acc.d[nq][0][0] >= MIN // 2 and not (RA.stat(acc.d[nq][0])[1] > 0 and RA.stat(acc.d[nq][1])[1] > 0):
                         return False
                 return True
 
