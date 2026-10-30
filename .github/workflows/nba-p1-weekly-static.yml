@@ -106,22 +106,44 @@ jobs:
             echo "proxy: credential store has no proxy_url row - using the PROXY_URL secret"
           fi
 
-      - name: Teams and arenas
-        env:
-          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
-        run: |
-          python nba/scrape_nba_stats_teams.py
-          python nba/scrape_nba_stats_arenas.py
-          # officials register (2026-09-26, T26-8): scraper and loader were both unscheduled; the
-          # differential worker reads this file too.
-          python nba/scrape_nba_officials.py
+      # RUN CLOCK (2026-10-30, Fix 4): every source-freshness judgement below compares a scraper's meta fetched_at to this moment.
+      - name: Record run start
+        id: runstart
+        run: echo "at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
-      - name: Players and bio
+      # INDEPENDENT STEPS (2026-10-30, P1 run 40382775981). Each scrape is its own step with `if: !cancelled()`, so one failing
+      # scrape (the 10-26 play-type step exited 1 under bash -e) can no longer skip the unrelated scrapes behind it. Nothing is
+      # swallowed: every failing step still turns the job red, and the freshness gate below names each source that did not refresh.
+      - name: Teams
+        if: ${{ !cancelled() }}
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
-        run: |
-          python nba/scrape_nba_stats_players.py
-          python nba/scrape_nba_player_bio.py
+        run: python nba/scrape_nba_stats_teams.py
+
+      - name: Arenas
+        if: ${{ !cancelled() }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/scrape_nba_stats_arenas.py
+
+      # officials register (2026-09-26, T26-8): scraper and loader were both unscheduled; the differential worker reads this file too.
+      - name: Officials register
+        if: ${{ !cancelled() }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/scrape_nba_officials.py
+
+      - name: Players
+        if: ${{ !cancelled() }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/scrape_nba_stats_players.py
+
+      - name: Player bio
+        if: ${{ !cancelled() }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/scrape_nba_player_bio.py
 
       # --- weekly AS-OF tables: every value computed from games strictly before the snapshot date ----
       - name: Weekly as-of season tables (pt_defend, hustle, clutch, coaches, all_players)
