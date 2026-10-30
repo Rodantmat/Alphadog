@@ -54,7 +54,7 @@ def call(session, host, hdr, request_obj, proxies):
             "referer": "https://sports.getfliff.com/", "user-agent": UA}
 
     def once():
-        r = request("POST", url, session=session, proxies=proxies, routes=("direct", "proxy"), tries=1, timeout=60,
+        r = request("POST", url, session=session, proxies=proxies, routes=("proxy", "direct"), tries=1, timeout=60,
                     budget=budget, label="fliff", json=body, headers=hdrs, impersonate="chrome124")
         if r.status_code != 200:
             raise RuntimeError(f"http {r.status_code}")
