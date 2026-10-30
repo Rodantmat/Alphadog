@@ -42,6 +42,10 @@ NAME_OVERRIDES = {
     # Confirmed 2026-10-20 (opening-day audit): Underdog lists Miles McBride (NYK, id 1630540) by his nickname; 13 morning
     # legs carried no player_id and would have been dropped from the scorer on every Underdog board.
     "deucemcbride": "milesmcbride",
+    # 2026-10-30 (grading audit): same pairs the grader carried alone, so scorer, grader and DB map share one table
+    "camjohnson": "cameronjohnson",
+    "alexandresarr": "alexsarr",
+    "ludort": "luguentzdort",
 }
 
 
