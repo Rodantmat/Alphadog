@@ -41,7 +41,7 @@ export async function apiHealth(sql, cfg, url, version) {
             FROM nba_score.final_hp WHERE game_date = $1::date`, [d, d === today]),
     q(sql, `SELECT (SELECT max(game_date)::text FROM nba_stats.player_game_log) reg, (SELECT max(game_date)::text FROM nba_stats.player_game_log_postseason) post,
                    (SELECT max(updated_at) FROM nba_stats.player_game_log) reg_upd`),
-    q(sql, `SELECT max(snapshot_ts) last_ts, count(*) FILTER (WHERE game_date = $1::date)::int rows_slate FROM nba_daily.injury_report_snapshots WHERE game_date >= $1::date - 3`, [d]),
+    q(sql, `SELECT (max(snapshot_ts) AT TIME ZONE 'EST') AT TIME ZONE 'America/New_York' last_ts, count(*) FILTER (WHERE game_date = $1::date)::int rows_slate FROM nba_daily.injury_report_snapshots WHERE game_date >= $1::date - 3`, [d]),
     q(sql, `SELECT snapshot_label, count(*)::int n, count(DISTINCT bookmaker)::int books, max(fetched_at) fetched FROM nba_market.game_lines_snapshots WHERE game_date = $1::date GROUP BY 1`, [d]),
     q(sql, `SELECT (SELECT count(*)::int FROM nba_score.live_slips WHERE game_date = $1::date) pp, (SELECT count(*)::int FROM nba_score.ud_live_slips WHERE game_date = $1::date) ud,
                    (SELECT count(*)::int FROM nba_score.live_slips WHERE game_date = $1::date AND status LIKE 'placed%') pp_placed`, [d]),
