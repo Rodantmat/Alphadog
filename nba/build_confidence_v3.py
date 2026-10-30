@@ -151,6 +151,46 @@ def confidence_of(d, attach=False):
     return pd.Series(np.clip(0.45 + 0.55 * raw, 0.35, 0.99), index=d.index)
 
 
+# FIX 7 (2026-10-30). The 10-21 refit had no ceiling anywhere: SET statement_timeout = 0, no step timeout, and when the operator
+# terminated the run the server-side backend of the killed client kept running unseen (a backend notices a dead client only when
+# it next sends data). The ceiling is now a TUNABLE (nba_config.system_settings 'confidence_refit_statement_timeout_s'), default
+# 1200 s: a normal whole refit takes 10.7-16.3 min in total (the 10-22..10-29 baseline), so ONE statement over 20 min is the JIT /
+# plan pathology of 10-21 (30+ min per prop), never normal work. The backend then dies by itself - no orphan - and the
+# P2B step has its own timeout-minutes as the second ceiling.
+DEFAULT_STATEMENT_TIMEOUT_S = 1200
+
+
+def statement_timeout_s(conn):
+    try:
+        r = conn.execute("SELECT setting_value FROM nba_config.system_settings WHERE setting_key = 'confidence_refit_statement_timeout_s'").fetchone()
+        conn.rollback()
+        v = int(float(str(r[0]).strip())) if r and r[0] is not None else DEFAULT_STATEMENT_TIMEOUT_S
+        return v if v > 0 else DEFAULT_STATEMENT_TIMEOUT_S
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return DEFAULT_STATEMENT_TIMEOUT_S
+
+
+def note_orphans(conn, minutes=5):
+    """Report (never kill - MLB shares this database) backends of an earlier run of this script that are still working."""
+    try:
+        rows = conn.execute(
+            """SELECT pid, state, round(extract(epoch FROM now() - query_start)/60) AS min, left(query, 80)
+               FROM pg_stat_activity WHERE application_name = 'build_confidence_v3' AND pid <> pg_backend_pid()
+                 AND state <> 'idle' AND query_start < now() - make_interval(mins => %s)""", (minutes,)).fetchall()
+        conn.rollback()
+        for pid, state, mins, q in rows:
+            print(f"::warning::ORPHANED BACKEND from an earlier refit: pid {pid} {state} for {mins} min ({q!r}) - it holds locks / I-O; "
+                  f"it will stop at its statement_timeout, or an operator can pg_terminate_backend({pid}).", flush=True)
+        return len(rows)
+    except Exception as e:
+        print(f"(orphan check skipped: {e})", flush=True)
+        return -1
+
+
 def main():
     # SEASONS (T23-2, fixed 2026-09-23). Was a hardcoded "2024-25,2025-26": from 2026-27 the refit
     # would have kept learning from two stale seasons and ignored the live one. stats_seasons(2) is
