@@ -322,8 +322,10 @@ def main():
             ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE
               SET new_hp = EXCLUDED.new_hp, reason = EXCLUDED.reason""", out_rows)
     conn.commit()
-    n_out = sum(1 for r in out_rows if r[7] == "now_out")
-    print(f"\nwrote {len(out_rows):,} overrides ({n_out:,} now-OUT, "
+    # LABEL FIX (Fix 6): now-OUT rows are written with reason 'now_out_flag_only' (since 2026-09-24), so the old test
+    # `reason == "now_out"` was always 0 and the log said "0 now-OUT" on a day with 7 newly-OUT players.
+    n_out = sum(1 for r in out_rows if str(r[7]).startswith("now_out"))
+    print(f"\nwrote {len(out_rows):,} overrides ({n_out:,} now-OUT flag-only rows [new_hp = old_hp by design], "
           f"{len(out_rows)-n_out:,} reallocated teammates)", flush=True)
     conn.close()
 
