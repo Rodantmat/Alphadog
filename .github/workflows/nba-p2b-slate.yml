@@ -443,6 +443,7 @@ jobs:
 
       - name: Refit the confidence deduction model
         if: ${{ steps.d.outputs.has_games == '1' }}
+        timeout-minutes: 45   # Fix 7: baseline 10.7-16.3 min (10-22..10-29); the 10-21 run stalled for hours with no ceiling
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           C3_SEASONS: ${{ github.event.inputs.season }}
