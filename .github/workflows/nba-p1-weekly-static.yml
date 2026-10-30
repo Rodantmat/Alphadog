@@ -237,6 +237,19 @@ jobs:
         # run's favour and still fails loudly if the push cannot land.
         run: bash nba/git_push_retry.sh "NBA P1 weekly static [skip ci]" nba/data/*.json
 
+      # SOURCE FRESHNESS GATE (2026-10-30, P1 run 40382775981). A worker that is POSTed after a failed/skipped scrape re-upserts LAST
+      # WEEK'S file, answers ok, moves updated_at - and the by-data verifier then calls it LANDED. Measured 10-26: lineups, tracking
+      # detail, DARKO, shot quality and player tracking were reloaded from the 10-19 files and their *_asof snapshots were
+      # byte-identical copies of the previous week. This step judges each worker's source meta (fetched_at >= run start, no scrape
+      # error) and publishes which workers/tables are stale; the snapshot and load steps below skip exactly those, and the final
+      # step turns the run red naming them. Nothing is hidden: skipped = reported.
+      - name: Source freshness (scraper meta fetched_at vs run start)
+        id: fresh
+        if: always()
+        env:
+          RUN_STARTED_AT: ${{ steps.runstart.outputs.at }}
+        run: python nba/static_freshness.py
+
       # 🔴 LOAD WHAT WE JUST SCRAPED (2026-09-24). THE TOP PRE-SEASON VERIFICATION IN
       # NBA_SYSTEM_DESIGN.md §2, answered - badly. P1 scrapes and commits JSON, and only
       # build_defender_ratings.py and build_static_context.py touch DATABASE_URL. Everything else -
