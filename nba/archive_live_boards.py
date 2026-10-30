@@ -263,6 +263,12 @@ def rows_underdog(doc, gd, label):
         _pm, _prov = _pm_of_ou.get(_ouid, (None, None))
         UD_FLAGS[(mk, l["player"], float(line))] = (l.get("is_main") is False, _pm, _prov, _ouid, bool(l.get("is_main") is False and _pm))
         for side, pre in (("Over", "higher"), ("Under", "lower")):
+            # OPTION STATUS (2026-10-30): only an ACTIVE option is playable. A suspended / closed option stays in Underdog's feed with its
+            # last price (Booker / Green Blocks 1.5 Lower, suspended, were archived and built into slips). Older boards carry no status
+            # on legs (None) - they are kept; ladder rows always carried higher_status / lower_status.
+            _ost = l.get(f"{pre}_status")
+            if _ost is not None and str(_ost).lower() != "active":
+                continue
             disp = l.get(f"{pre}_display_decimal")
             price = _am(disp) if disp not in (None, "") else (l.get(f"{pre}_american") or l.get("over_american" if side == "Over" else "under_american"))
             if price is None:
