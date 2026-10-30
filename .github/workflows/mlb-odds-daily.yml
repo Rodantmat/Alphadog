@@ -6,8 +6,9 @@ name: MLB Odds API Daily (postseason keep-up)
 # (the events list). If the paid key runs out, the calls fail, the run logs it and the history so far is untouched.
 # Retire this workflow after the World Series (or keep it for 2027 when MLB is rebuilt).
 on:
-  schedule:
-    - cron: '30 9 * * *'
+  # SEASON OFF 2026-10-29 (owner): MLB over, cron disabled. Re-enable for 2027 by uncommenting.
+  # schedule:
+  #   - cron: '30 9 * * *'
   workflow_dispatch: {}
 
 permissions:
