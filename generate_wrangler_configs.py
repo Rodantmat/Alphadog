@@ -316,7 +316,7 @@ def make_config(worker_name, include_services=False):
         # period with no backstop. Restoring this proven staggered cron as an independent safety
         # net - if Cowork runs normally this just finds fresh data and is a no-op; if Cowork
         # misses a cycle, the board can no longer go stale for more than a few hours.
-        cfg["triggers"] = {"crons": master_run_crons(0)}
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}  # MLB SEASON OFF 2026-10-29 (owner): never fires; was master_run_crons(0)
     if worker_name == "alphadog-v2-daily-context-runner":
         # New, deliberately simple standalone runner for daily-context-full-run only, same design
         # as board-runner: no queue table, no lock table, just sequential awaited service-binding
