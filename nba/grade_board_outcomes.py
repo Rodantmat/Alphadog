@@ -417,7 +417,7 @@ def main():
                     continue
                 if base in YES_NO:
                     hit = dd(rec)
-                    res = ("over_win" if hit else "under_win") if str(side).lower() in ("yes", "over") else ("under_win" if hit else "over_win")
+                    res = "over_win" if hit else "under_win"   # 2026-10-30: the NUMBER's outcome for every side (consumers apply the side); the old No/Under swap inverted 16,246 rows
                     out.append((d, event_id, label, book, mk, player, side, line, None, 1 if hit else 0, res, is_alt, True))
                     tot[res] += 1
                     continue
