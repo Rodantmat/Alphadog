@@ -423,7 +423,7 @@ def main():
                     continue
                 if base in YES_NO_TD:
                     hit = td(rec)
-                    res = ("over_win" if hit else "under_win") if str(side).lower() in ("yes", "over") else ("under_win" if hit else "over_win")
+                    res = "over_win" if hit else "under_win"   # same rule as double_double (2026-10-30)
                     out.append((d, event_id, label, book, mk, player, side, line, None, 1 if hit else 0, res, is_alt, True))
                     tot[res] += 1
                     continue
