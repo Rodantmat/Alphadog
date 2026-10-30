@@ -515,6 +515,11 @@ jobs:
           [ "${{ steps.soft_paper_al.outcome }}" = "failure" ] && L="$L paper-tracker-grade"
           [ "${{ steps.soft_udedge.outcome }}" = "failure" ] && L="$L underdog-edge-monitor"
           [ "${{ steps.soft_consensus.outcome }}" = "failure" ] && L="$L consensus-event-map"
+          [ "${{ steps.soft_loadcontent.outcome }}" = "failure" ] && L="$L load-content-check"
+          [ "${{ steps.soft_slgrade.outcome }}" = "failure" ] && L="$L sleeper-grade"
+          [ "${{ steps.soft_flgrade.outcome }}" = "failure" ] && L="$L fliff-grade"
+          [ "${{ steps.soft_btgrade.outcome }}" = "failure" ] && L="$L betr-grade"
+          [ "${{ steps.soft_warm.outcome }}" = "failure" ] && L="$L slips-screen-warm"
           L="${L# }"
           echo "list=$L" >> "$GITHUB_OUTPUT"
           if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
