@@ -932,6 +932,7 @@ jobs:
           [ "${{ steps.soft_boards.outcome }}" = "failure" ] && L="$L other-boards"
           [ "${{ steps.soft_props.outcome }}" = "failure" ] && L="$L sportsbook-props"
           [ "${{ steps.soft_betr.outcome }}" = "failure" ] && L="$L betr-dispatch"
+          [ "${{ steps.soft_betrwait.outcome }}" = "failure" ] && L="$L betr-wait"
           [ "${{ steps.soft_slipq.outcome }}" = "failure" ] && L="$L pp-slip-quotes-dispatch"
           [ "${{ steps.soft_udpick.outcome }}" = "failure" ] && L="$L underdog-pick"
           [ "${{ steps.soft_slpick.outcome }}" = "failure" ] && L="$L sleeper-pick"
