@@ -335,6 +335,10 @@ def rows_sleeper(doc, gd, label):
             m = l.get(key)
             if m is None:
                 continue
+            # per-side status (one-sided/suspended guard, same rule as Underdog): a side that is not active is not playable
+            _sst = l.get(("over" if side == "Over" else "under") + "_status")
+            if _sst is not None and str(_sst).lower() != "active":
+                continue
             # commence_time: the scraper's schedule map gives the game DATE (US date), not a tip time; a date-only value is
             # taken as the game date directly by the stamping step below (round 2, P3#1)
             out.append((gd, ev("sleeper", gd, l, "game_id", "event"), label, doc.get("meta", {}).get("fetched_at"), "sleeper", mk,
