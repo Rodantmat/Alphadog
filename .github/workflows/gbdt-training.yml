@@ -4,10 +4,9 @@ permissions:
   contents: write
 
 on:
-  schedule:
-    # Weekly, Sunday 09:00 UTC (real, slow-changing player/context data does not need
-    # more frequent retraining - matches the locked design decision).
-    - cron: "0 9 * * 0"
+  # SEASON OFF 2026-10-29 (owner): MLB over, weekly cron disabled. Re-enable for 2027 by uncommenting.
+  # schedule:
+  #   - cron: "0 9 * * 0"
   workflow_dispatch:
     inputs:
       seasons:
