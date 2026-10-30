@@ -459,7 +459,7 @@ def make_config(worker_name, include_services=False):
         # master-run stage crons being restored together.
         # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
         # comment above (crons=[] doesn't reliably clear an existing live trigger).
-        cfg["triggers"] = {"crons": master_run_crons(26)}
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}  # MLB SEASON OFF 2026-10-29 (owner): never fires; was master_run_crons(26)
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
