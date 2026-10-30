@@ -3,10 +3,10 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-30T18:37:08Z",
+  "fetched_at": "2026-10-30T20:17:55Z",
   "egress": {
-    "ip": "72.199.114.197",
-    "hostname": "ip72-199-114-197.sd.sd.cox.net",
+    "ip": "174.66.128.153",
+    "hostname": "ip174-66-128-153.sd.sd.cox.net",
     "city": "San Diego",
     "region": "California",
     "country": "US",
@@ -17,10 +17,10 @@
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 8804,
-  "row_count": 8804,
+  "rows": 8836,
+  "row_count": 8836,
   "total_pages": 1,
-  "future_pickable": 8804,
+  "future_pickable": 8836,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
@@ -41,22 +41,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 10054457,
+      "bytes": 10093023,
       "total_pages": 1,
       "ok": true,
-      "rows": 8804,
-      "future_pickable": 8804
+      "rows": 8836,
+      "future_pickable": 8836
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 10054435,
+      "bytes": 10092991,
       "total_pages": 1,
       "ok": true,
-      "rows": 8804,
-      "future_pickable": 8804
+      "rows": 8836,
+      "future_pickable": 8836
     }
   ],
-  "github_run_id": "41108203158"
+  "github_run_id": "41121847760"
 }

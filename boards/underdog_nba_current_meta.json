@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-30T18:27:51Z",
-  "fetched_at": "2026-10-30T18:30:31Z",
+  "started_at": "2026-10-30T20:17:58Z",
+  "fetched_at": "2026-10-30T20:20:27Z",
   "categories": [
     "1Q Assists",
     "1Q Points",
@@ -47,7 +47,7 @@
     ],
     [
       "pills[match=211185]",
-      114
+      120
     ],
     [
       "lines[match=211180]",
@@ -55,7 +55,7 @@
     ],
     [
       "pills[match=211180]",
-      105
+      116
     ],
     [
       "lines[match=211186]",
@@ -63,7 +63,7 @@
     ],
     [
       "pills[match=211186]",
-      114
+      115
     ],
     [
       "lines[match=211187]",
@@ -71,7 +71,7 @@
     ],
     [
       "pills[match=211187]",
-      91
+      95
     ],
     [
       "lines[match=211188]",
@@ -79,7 +79,7 @@
     ],
     [
       "pills[match=211188]",
-      109
+      115
     ],
     [
       "lines[match=211189]",
@@ -87,7 +87,7 @@
     ],
     [
       "pills[match=211189]",
-      85
+      89
     ],
     [
       "lines[match=211190]",
@@ -95,7 +95,7 @@
     ],
     [
       "pills[match=211190]",
-      98
+      104
     ],
     [
       "lines[match=211191]",
@@ -103,7 +103,7 @@
     ],
     [
       "pills[match=211191]",
-      107
+      109
     ],
     [
       "lines[match=211181]",
@@ -111,7 +111,7 @@
     ],
     [
       "pills[match=211181]",
-      104
+      109
     ],
     [
       "lines[match=211192]",
@@ -119,7 +119,7 @@
     ],
     [
       "pills[match=211192]",
-      96
+      102
     ],
     [
       "lines[match=212023,other-day]",
@@ -283,77 +283,77 @@
     ],
     [
       "lines_with_stats[players]",
-      2,
-      146
+      7,
+      147
     ],
     [
       "alternate_projections",
-      904,
-      3513,
+      940,
+      6211,
       0,
-      "deduped 14"
+      "deduped 27"
     ],
     [
       "lines[mass=true]",
-      16
+      2
     ],
     [
       "lines[mass=false]",
       0
     ]
   ],
-  "lines": 1311,
-  "legs": 1311,
-  "ladder_legs": 3513,
-  "ladder_lines_with_alternates": 904,
-  "players": 146,
-  "pregame_legs": 1311,
+  "lines": 1353,
+  "legs": 1353,
+  "ladder_legs": 6211,
+  "ladder_lines_with_alternates": 940,
+  "players": 147,
+  "pregame_legs": 1353,
   "live_legs": 0,
   "by_stat": {
-    "Steals": 146,
-    "Points": 144,
-    "Pts + Rebs + Asts": 143,
+    "Steals": 147,
+    "Pts + Rebs + Asts": 142,
     "Rebounds": 140,
-    "3-Pointers Made": 136,
-    "Assists": 108,
-    "Rebounds + Assists": 87,
-    "To Record a Double Double": 76,
-    "1Q Points": 64,
-    "Points + Rebounds": 63,
+    "3-Pointers Made": 138,
+    "Points": 137,
+    "Assists": 96,
+    "Rebounds + Assists": 88,
+    "To Record a Double Double": 78,
+    "1Q Points": 66,
+    "Points + Rebounds": 62,
+    "Blocks": 52,
     "Points + Assists": 51,
     "Moneyline": 50,
     "Fantasy Points": 43,
-    "Blocks + Steals": 18,
-    "To Record a Triple Double": 12,
+    "Blocks + Steals": 28,
+    "To Record a Triple Double": 15,
     "Margin of Victory": 10,
-    "Total Points": 10,
-    "Blocks": 10
+    "Total Points": 10
   },
   "by_line_type": {
-    "balanced": 1311
+    "balanced": 1353
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 379,
+    "1.0": 394,
     "None": 60,
-    "1.04": 38,
-    "1.05": 36,
-    "1.07": 32,
-    "0.91": 29,
-    "1.09": 28,
-    "1.14": 20,
-    "0.82": 18,
-    "0.85": 17,
-    "1.12": 17,
-    "0.99": 17,
-    "0.9": 16,
-    "0.75": 16,
-    "0.81": 15
+    "1.04": 37,
+    "1.05": 32,
+    "1.09": 32,
+    "0.91": 28,
+    "1.07": 23,
+    "0.8": 22,
+    "0.81": 21,
+    "0.9": 20,
+    "0.95": 20,
+    "1.14": 19,
+    "1.12": 18,
+    "0.75": 18,
+    "1.23": 17
   },
-  "github_run_id": "41106920752",
+  "github_run_id": "41121847760",
   "target_date_et": "2026-10-30",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 156.9
+  "elapsed_s": 148.5
 }
