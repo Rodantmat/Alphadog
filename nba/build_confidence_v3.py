@@ -354,7 +354,11 @@ def main():
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.confidence_verification (
             check_type text, slice text, tier text, n int, stated numeric, actual numeric,
             gap numeric, run_at timestamptz DEFAULT now())""")
-        cur.execute("DELETE FROM nba_score.confidence_verification WHERE tier='v3'")
+        # FIX 7: per-prop progress goes to a STAGING table, so a killed / timed-out run leaves the live table's previous
+        # complete 'v3' set in place (it used to DELETE it here, before the loop, and leave a partial set on a stall).
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.confidence_verification_progress
+            (LIKE nba_score.confidence_verification INCLUDING DEFAULTS)""")
+        cur.execute("TRUNCATE nba_score.confidence_verification_progress")
     conn.commit()
     frames = []
     for prop in props:
