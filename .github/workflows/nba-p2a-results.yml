@@ -252,6 +252,18 @@ jobs:
           sleep 150
           python nba/verify_static_loads.py
 
+      # 1b) CONTENT, PER TABLE (Fix 2, 2026-10-30): every measure-type and per-game table must hold the CURRENT season through the
+      #     latest game (the 4 measure-type tables had no 2026-27 row for nine days while their updated_at moved nightly).
+      #     SOFT for its first runs (recorded on the run note as load-content-check), then promote to a hard stop.
+      - name: Daily-load content check (measure types and per-game tables hold the current season)
+        id: soft_loadcontent
+        continue-on-error: true
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}
+        run: python -u nba/verify_daily_load_content.py
+
       # 1c) CONTENT, NOT TIMESTAMPS (2026-10-15 full pass). The verifier above checks that each table's updated_at moved - every
       #     upsert moves it, so a load of the PREVIOUS committed files (the mined-data push failed; the writer workers read the
       #     repo) still counted as landed and the grader then voided last night's legs as game_not_found. Every team of every
