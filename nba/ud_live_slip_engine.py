@@ -129,6 +129,7 @@ def ud_live_portfolio(conn):
 
 def load_legs(conn, day):
     hide = ud_alt_policy_hide(conn)
+    hide_bu = ud_hide_blocks_under(conn)
     n_flags, n_hide = conn.execute("SELECT count(*), count(*) FILTER (WHERE hide) FROM nba_market.ud_line_flags WHERE game_date=%s AND snapshot_label='window'", (day,)).fetchone()
     if hide and not n_flags:
         print(f"  {day}: WARNING - no Underdog line flags for the window board (nba_market.ud_line_flags empty): alternates are NOT screened this run", flush=True)
