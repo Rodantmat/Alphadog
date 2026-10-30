@@ -28,7 +28,7 @@ import research_betr_transfer as RB                  # noqa: E402
 import research_sleeper_transfer as ST               # noqa: E402
 
 RB.GCS = ("own", 1, 2, 3)
-BUCKETS = (("s3", 3), ("s4", 4))
+BUCKETS = (("s3", 3), ("s4", 4), ("big", 99))     # big = >= 6 games (the normal days the rule is SELECTED on)
 TOP = int(os.environ.get("BS_TOP") or 6)
 MINN = int(os.environ.get("BS_MINN") or 25)
 COV = float(os.environ.get("BS_COV") or 0.85)
