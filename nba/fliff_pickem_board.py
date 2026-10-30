@@ -29,7 +29,8 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_market.fliff_pickem_board (
 
 def main():
     label = os.environ.get("FP_LABEL") or "window"
-    fc = Q.FliffClient(proxy=Q.PROXY)
+    from geo_proxy import geo
+    fc = Q.FliffClient(proxy=geo(Q.PROXY) or Q.PROXY)  # owner location (San Diego)
     fc.ping()
     host = fc.ping_data.get("skipper_public_feed_endpoint")
     st, t = Q.raw(fc, host, {"__object_class_name": "FCM__Skipper_GetLeagues__Request"})
