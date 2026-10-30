@@ -6423,6 +6423,19 @@
       "team_abbreviation": "SAS"
     },
     {
+      "id": 1631104,
+      "full_name": "Blake Wesley",
+      "last_comma_first": "Wesley, Blake",
+      "roster_status": 1,
+      "from_year": "2022",
+      "to_year": "2026",
+      "player_code": "blake_wesley",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
+    },
+    {
       "id": 1629632,
       "full_name": "Coby White",
       "last_comma_first": "White, Coby",
