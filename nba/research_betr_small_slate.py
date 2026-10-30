@@ -81,8 +81,61 @@ def run(conn, days, pricer_cls, dp):
     return conn
 
 
+def selected_on_normal(dp):
+    """SELECTION WITHOUT PEEKING (why the small-slate grid alone is not credible: ~45 slips a rule and thousands of rules - the top of the list is luck).
+    Rules are chosen ONLY on the normal slates (>= 6 games): positive in BOTH history seasons (>= 100 slips each), ranked by the worse season's lower
+    bound; then applied UNCHANGED to the small slates (<= 4 games) and shown there, with the grid-wide median as the null."""
+    big = dp.book["big"].acc.d
+    sm = dp.book["s4"].acc.d
+    ns_ = [len(dp.slates["s4"][i]) for i in range(3)]
+    print("=" * 170 + "\nSELECTED ON NORMAL SLATES (>= 6 games, both history seasons positive, >= 100 slips each), APPLIED UNCHANGED TO SMALL SLATES (<= 4 games)")
+    for k in RB.KS:
+        for stc in ("perfect", "dynamic"):
+            if stc == "dynamic" and k < 3:
+                continue
+            allr = [q for q in sm if q[7] == k and q[8] == stc and q[4] == 0 and sum(sm[q][i][0] for i in range(3)) >= MINN]
+            if allr:
+                rois = sorted(sum(sm[q][i][1] for i in range(3)) / sum(sm[q][i][0] for i in range(3)) for q in allr)
+                print(f"\n== {k}-pick {stc.upper()} | NULL on small slates: {len(allr)} skip-0 rules with >= {MINN} slips, median pooled ROI {100 * rois[len(rois) // 2]:+.0f}%, "
+                      f"share positive {100 * sum(r > 0 for r in rois) / len(rois):.0f}%")
+            cands = []
+            for q, a in big.items():
+                if q[7] != k or q[8] != stc or q[4] != 0:
+                    continue
+                if not all(a[i][0] >= 100 and a[i][1] > 0 for i in (0, 1)):
+                    continue
+                lbs = []
+                for i in (0, 1):
+                    n = a[i][0]; mean = a[i][1] / n; var = max(a[i][2] / n - mean * mean, 0.0)
+                    lbs.append(mean - math.sqrt(var / n))
+                cands.append((min(lbs), q, a))
+            cands.sort(key=lambda t: -t[0])
+            print(f"   normal-slate rules passing: {len(cands)}; top {TOP} by the worse season's lower bound, each shown on small slates:")
+            seen = set()
+            shown = 0
+            for lb, q, a in cands:
+                sig = tuple(round(a[i][1], 2) for i in (0, 1))
+                if sig in seen:
+                    continue
+                seen.add(sig); shown += 1
+                src, how, fl, side, sk, g, ns, kk, st_ = q
+                nm = " | ".join(f"{SEASONS[i]} {int(a[i][0])} {100 * a[i][1] / a[i][0]:+.0f}%" for i in (0, 1))
+                s = sm.get(q)
+                if s is None:
+                    sml = "no small-slate slips"
+                else:
+                    n = sum(s[i][0] for i in range(3))
+                    cov = n / (ns * max(sum(ns_), 1))
+                    sml = (f"SMALL pooled {int(n)} slips {100 * sum(s[i][1] for i in range(3)) / n if n else 0:+.0f}% cov {100 * cov:.0f}% | " +
+                           " | ".join(f"{SEASONS[i]} {int(s[i][0])} {100 * s[i][1] / s[i][0] if s[i][0] else 0:+.0f}%" for i in range(3)))
+                print(f"    {src:<7} order={how:<5} p>={fl:.2f} side={side:<5} games<={g:<3} slips/slate={ns} | NORMAL {nm} | {sml}")
+                if shown >= TOP:
+                    break
+
+
 def report(dp):
-    for b, mx in BUCKETS:
+    selected_on_normal(dp)
+    for b, mx in BUCKETS[:2]:
         A = dp.book[b].acc.d
         ns_ = [len(dp.slates[b][i]) for i in range(3)]
         print("=" * 170 + f"\nBETR credible universe | slates with <= {mx} games seen: " + ", ".join(f"{s} {n}" for s, n in zip(SEASONS, ns_)) + f" | rules {len(A)}")
