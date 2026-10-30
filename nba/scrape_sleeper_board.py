@@ -64,7 +64,8 @@ def slim_players(raw):
 
 def main():
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    proxy = os.environ.get("PROXY_URL", "").strip()
+    from geo_proxy import geo
+    proxy = geo(os.environ.get("PROXY_URL", ""))  # owner location (San Diego); direct only as fallback
     proxies = {"https": proxy, "http": proxy} if proxy else None
     sports = [s.strip() for s in os.environ.get("SLEEPER_SPORTS", "mlb,nba").split(",") if s.strip()]
     s = requests.Session()
