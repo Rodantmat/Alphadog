@@ -63,7 +63,7 @@ async function releaseLock(client, holderId) {
 }
 
 const WORKER_NAME = "alphadog-v2-weekly-differential-runner";
-const VERSION = "v1.0.1-scheduled";
+const VERSION = "v1.0.1-scheduled"; // MLB SEASON OFF 2026-10-29 (owner): cron disabled in generate_wrangler_configs.py
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
