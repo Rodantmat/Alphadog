@@ -4,19 +4,19 @@
   ],
   "summary": {
     "2026-27_Q1": {
-      "rows": 1266,
+      "rows": 1321,
       "sample_max_min_first2000": 12.0
     },
     "2026-27_Q2": {
-      "rows": 1293,
+      "rows": 1352,
       "sample_max_min_first2000": 12.0
     },
     "2026-27_Q3": {
-      "rows": 1261,
+      "rows": 1314,
       "sample_max_min_first2000": 12.0
     },
     "2026-27_Q4": {
-      "rows": 1307,
+      "rows": 1368,
       "sample_max_min_first2000": 12.0
     }
   }
