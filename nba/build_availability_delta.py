@@ -286,7 +286,8 @@ def main():
                 continue
             share = mins(r.player_id) / wsum
             gain = net * share
-            base_min = float(r.proj_min or 0)
+            # NaN-SAFE (same trap as mins(): `float(NaN or 0)` is NaN). A NaN base_min is skipped, never written.
+            base_min = float(r.proj_min) if (r.proj_min is not None and r.proj_min == r.proj_min) else 0.0
             if base_min <= 0 or abs(gain) < 0.5 or gain != gain:
                 continue
             # scale the projection by the minutes ratio, then shift the rung in log-odds by the
