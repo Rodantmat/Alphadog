@@ -53,7 +53,7 @@ class Dispatch:
         pricer.leg = leg
         try:
             for b, mx in BUCKETS:
-                if ng <= mx:
+                if (b == "big" and ng >= 6) or (b != "big" and ng <= mx):
                     self.slates[b][si].add(d)
                     self.book[b].day(season, d, src, qualified, gc_own, pricer)
         finally:
