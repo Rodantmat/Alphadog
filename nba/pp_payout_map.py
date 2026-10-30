@@ -92,7 +92,8 @@ def utc():
 
 
 def proxies():
-    u = (os.getenv("PROXY_URL") or "").strip()
+    from geo_proxy import geo
+    u = geo(os.getenv("PROXY_URL") or "")  # owner location (San Diego)
     return {"http": u, "https": u} if u else None
 
 
