@@ -1,7 +1,8 @@
 name: MLB Automatic Scraper
 
 on:
-  schedule:
+  # SEASON OFF 2026-10-29 (owner): MLB over, 2-hourly cron disabled. Re-enable for 2027 by uncommenting schedule + cron.
+  # schedule:
     # PREVENTION FIX 2026-08-06: added after a real incident where the board went stale for an
     # extended period because this workflow only ran via dispatch from the orchestration layer,
     # with no independent backstop. Runs every 2 hours regardless of whether anything else in the
