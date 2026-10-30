@@ -152,6 +152,8 @@ NAME_OVERRIDES = {
     "herbjones": "herbertjones",
     "nicolasclaxton": "nicclaxton",
     "moewagner": "moritzwagner",
+    "camjohnson": "cameronjohnson",     # 2026-10-30: 39 legs unmatched_player (the (ohnson, c) alias key is ambiguous)
+    "deucemcbride": "milesmcbride",     # also in nba_names.py; 104 legs unmatched_player
     "alexandresarr": "alexsarr",        # 2026-10-22 P2A audit: PrizePicks / Underdog spelling (69 legs unmatched on 10-21)
     "ludort": "luguentzdort",           # 2026-10-22 P2A audit (19 legs unmatched on 10-21)
 }
