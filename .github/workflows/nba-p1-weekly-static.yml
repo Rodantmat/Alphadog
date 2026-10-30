@@ -352,10 +352,20 @@ jobs:
         run: python nba/verify_static_loads.py
 
       - name: Certify the weekly layer
+        if: ${{ !cancelled() }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PIPE: "p1"
         run: python nba/certify_pipeline.py
+
+      # FINAL REPORT (2026-10-30): the run is red, by name, for every source that did not refresh (a deliberately deferred
+      # prior-season profile is not a failure).
+      - name: Report stale sources (final)
+        if: ${{ !cancelled() }}
+        env:
+          RUN_STARTED_AT: ${{ steps.runstart.outputs.at }}
+          FRESH_FAIL: "1"
+        run: python nba/static_freshness.py
 
   # SLIP REQUALIFICATION (2026-10-01, section 29): after the weekly layer is certified, rebuild the certified slip
   # chain in delta mode, re-run the frozen 66-invariant pass, re-validate every live strategy walk-forward, and write
