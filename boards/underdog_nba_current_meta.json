@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-30T20:17:58Z",
-  "fetched_at": "2026-10-30T20:20:27Z",
+  "started_at": "2026-10-30T23:13:03Z",
+  "fetched_at": "2026-10-30T23:15:00Z",
   "categories": [
     "1Q Assists",
     "1Q Points",
@@ -47,7 +47,7 @@
     ],
     [
       "pills[match=211185]",
-      120
+      130
     ],
     [
       "lines[match=211180]",
@@ -55,15 +55,7 @@
     ],
     [
       "pills[match=211180]",
-      116
-    ],
-    [
-      "lines[match=211186]",
-      20
-    ],
-    [
-      "pills[match=211186]",
-      115
+      102
     ],
     [
       "lines[match=211187]",
@@ -71,7 +63,15 @@
     ],
     [
       "pills[match=211187]",
-      95
+      110
+    ],
+    [
+      "lines[match=211186]",
+      20
+    ],
+    [
+      "pills[match=211186]",
+      111
     ],
     [
       "lines[match=211188]",
@@ -79,23 +79,7 @@
     ],
     [
       "pills[match=211188]",
-      115
-    ],
-    [
-      "lines[match=211189]",
-      20
-    ],
-    [
-      "pills[match=211189]",
-      89
-    ],
-    [
-      "lines[match=211190]",
-      20
-    ],
-    [
-      "pills[match=211190]",
-      104
+      109
     ],
     [
       "lines[match=211191]",
@@ -103,7 +87,23 @@
     ],
     [
       "pills[match=211191]",
-      109
+      95
+    ],
+    [
+      "lines[match=211189]",
+      20
+    ],
+    [
+      "pills[match=211189]",
+      93
+    ],
+    [
+      "lines[match=211190]",
+      20
+    ],
+    [
+      "pills[match=211190]",
+      98
     ],
     [
       "lines[match=211181]",
@@ -111,7 +111,7 @@
     ],
     [
       "pills[match=211181]",
-      109
+      99
     ],
     [
       "lines[match=211192]",
@@ -119,7 +119,7 @@
     ],
     [
       "pills[match=211192]",
-      102
+      90
     ],
     [
       "lines[match=212023,other-day]",
@@ -283,77 +283,77 @@
     ],
     [
       "lines_with_stats[players]",
-      7,
-      147
+      49,
+      152
     ],
     [
       "alternate_projections",
-      940,
-      6211,
+      934,
+      6034,
       0,
-      "deduped 27"
+      "deduped 196"
     ],
     [
       "lines[mass=true]",
-      2
+      3
     ],
     [
       "lines[mass=false]",
-      0
+      1
     ]
   ],
-  "lines": 1353,
-  "legs": 1353,
-  "ladder_legs": 6211,
-  "ladder_lines_with_alternates": 940,
-  "players": 147,
-  "pregame_legs": 1353,
-  "live_legs": 0,
+  "lines": 1360,
+  "legs": 1360,
+  "ladder_legs": 6034,
+  "ladder_lines_with_alternates": 934,
+  "players": 152,
+  "pregame_legs": 1168,
+  "live_legs": 192,
   "by_stat": {
-    "Steals": 147,
-    "Pts + Rebs + Asts": 142,
-    "Rebounds": 140,
-    "3-Pointers Made": 138,
-    "Points": 137,
-    "Assists": 96,
-    "Rebounds + Assists": 88,
-    "To Record a Double Double": 78,
-    "1Q Points": 66,
-    "Points + Rebounds": 62,
+    "Pts + Rebs + Asts": 154,
+    "Rebounds": 151,
+    "Points": 147,
+    "3-Pointers Made": 142,
+    "Steals": 142,
+    "Assists": 97,
+    "Rebounds + Assists": 86,
+    "To Record a Double Double": 77,
+    "Points + Rebounds": 68,
+    "Points + Assists": 53,
     "Blocks": 52,
-    "Points + Assists": 51,
     "Moneyline": 50,
-    "Fantasy Points": 43,
-    "Blocks + Steals": 28,
-    "To Record a Triple Double": 15,
+    "1Q Points": 44,
+    "Blocks + Steals": 35,
+    "Fantasy Points": 29,
+    "To Record a Triple Double": 13,
     "Margin of Victory": 10,
     "Total Points": 10
   },
   "by_line_type": {
-    "balanced": 1353
+    "balanced": 1360
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 394,
+    "1.0": 346,
     "None": 60,
-    "1.04": 37,
-    "1.05": 32,
-    "1.09": 32,
-    "0.91": 28,
+    "1.04": 36,
+    "1.05": 34,
+    "0.95": 30,
+    "0.91": 29,
+    "1.09": 28,
+    "1.14": 25,
     "1.07": 23,
-    "0.8": 22,
     "0.81": 21,
-    "0.9": 20,
-    "0.95": 20,
-    "1.14": 19,
-    "1.12": 18,
-    "0.75": 18,
-    "1.23": 17
+    "0.75": 19,
+    "0.76": 18,
+    "1.17": 18,
+    "0.88": 18,
+    "0.8": 15
   },
-  "github_run_id": "41121847760",
+  "github_run_id": "41142968825",
   "target_date_et": "2026-10-30",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 148.5
+  "elapsed_s": 114.6
 }
