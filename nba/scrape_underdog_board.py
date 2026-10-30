@@ -351,6 +351,10 @@ def main():
                 "higher_fantasy_prob": _fant(hi, "probability"), "lower_fantasy_prob": _fant(lo, "probability"),
                 "higher_display_decimal": _fant(hi, "decimal") or hi.get("decimal_price"), "lower_display_decimal": _fant(lo, "decimal") or lo.get("decimal_price"),
                 "higher_payout_modifier": _pay_mod(hi), "lower_payout_modifier": _pay_mod(lo),
+                # OPTION STATUS (2026-10-30, owner: "Underdog Blocks less do not exist"): the option's own status was never carried to the
+                # leg, so a SUSPENDED Lower (Booker / Green Blocks 1.5 on the 10-30 board) was archived and built into slips as if it were
+                # playable. None = the option does not exist on that line (a more-only line has only the higher option).
+                "higher_status": hi.get("status"), "lower_status": lo.get("status"),
                 "line_type": ln.get("line_type"), "live": ln.get("live_event"), "status": ln.get("status"), "expires_at": ln.get("expires_at"), "rank": ln.get("rank"),
                 "game_id": app.get("match_id"), "game_start": game.get("scheduled_at") or game.get("start_time"), "game_title": game.get("title") or "", "appearance_id": ast.get("appearance_id"),
             })
