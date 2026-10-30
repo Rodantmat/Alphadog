@@ -48,7 +48,11 @@ class Dispatch:
 
         def leg(q):
             x = orig(q)
-            return x if x is not None and x.get("same_line") else None
+            if x is None or not x.get("same_line"):
+                return None
+            # BOARD-FAITHFUL BAND (research_betr_board_shape run 40981468916): Betr's real board is 97.5% pf .40-.55 and 0.1% pf >= .60, history's main-line legs are 6.9%
+            # pf >= .60 (honestly calibrated, but not offered on Betr) - keep only legs the real board shows
+            return x if PFMIN <= x["pf"] <= PFMAX else None
 
         pricer.leg = leg
         try:
