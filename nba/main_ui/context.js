@@ -107,8 +107,12 @@ export async function injuries(sql, date, teamNames, tipIso) {
   if (!teamNames.length) return { as_of: null, rows: [] };
   const rows = await q(sql, `
     WITH s AS (SELECT max(snapshot_ts) ts FROM nba_daily.injury_report_snapshots
-               WHERE game_date = $1::date AND snapshot_ts <= COALESCE($3::timestamptz, now()))
-    SELECT team, player_name, status, reason, snapshot_ts FROM nba_daily.injury_report_snapshots
+               WHERE game_date = $1::date
+                 -- DST (Fix 7): snapshot_ts is stamped ET wall time with a FIXED -05:00 label all year (T20-12), so a real instant
+                 -- must be put in that convention before it is compared: wall time in New York, read as EST. (Identity in winter.)
+                 AND snapshot_ts <= (COALESCE($3::timestamptz, now()) AT TIME ZONE 'America/New_York') AT TIME ZONE 'EST')
+    SELECT team, player_name, status, reason, snapshot_ts,
+           (snapshot_ts AT TIME ZONE 'EST') AT TIME ZONE 'America/New_York' AS as_of_real FROM nba_daily.injury_report_snapshots
     WHERE game_date = $1::date AND snapshot_ts = (SELECT ts FROM s) AND ${TEAM_NAME("team")} = ANY($2::text[])
     ORDER BY team, CASE status WHEN 'Out' THEN 1 WHEN 'Doubtful' THEN 2 WHEN 'Questionable' THEN 3 WHEN 'Probable' THEN 4 ELSE 5 END, player_name`,
     [date, pgArr(teamNames), tipIso || null]);
