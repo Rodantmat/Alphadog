@@ -214,6 +214,19 @@ def main():
     if lad.empty:
         print(f"  no baseline for {asof} - P2 must run first"); return
     lad["player_id"] = lad["player_id"].astype(str)
+    # PLAYER-LEVEL PROJECTED MINUTES (Fix 6, 2026-10-30). proj_min is a PLAYER quantity - one value per player per
+    # date, measured identical across every prop on 2026-10-29 (76 of 76 players) - but the combos builder (pra /
+    # pts_ast / pts_reb / reb_ast / stocks / fantasy_score) and double_double store it as NULL. pandas turns NULL
+    # into NaN and `float(NaN or 0)` is NaN (NaN is truthy), so every combo leg of every affected-team teammate got
+    # NaN probabilities and was DROPPED (2026-10-29: 6,732 rows) - the teammate reallocation silently never reached
+    # the combo ladders (COMPASS fact 134: ALL legs get a final HP). Fill each player's NULL rows from his own
+    # non-NULL rows (max skips NaN). A player with no minutes projection at all stays NaN, is skipped below, and is
+    # counted in the line printed here.
+    lad["proj_min"] = pd.to_numeric(lad["proj_min"], errors="coerce")
+    _n_pm_null = int(lad["proj_min"].isna().sum())
+    lad["proj_min"] = lad.groupby("player_id")["proj_min"].transform("max")
+    print(f"  proj_min NULL on {_n_pm_null:,} ladder rows (combos / double_double); after the player-level fill "
+          f"{int(lad['proj_min'].isna().sum()):,} remain (players with no minutes projection at all)", flush=True)
     lad["team"] = lad["player_id"].map(last_team)
     aff = lad[lad["team"].isin(teams)].copy()
     print(f"  legs on affected teams: {len(aff):,} of {len(lad):,}", flush=True)
