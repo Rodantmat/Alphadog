@@ -52,7 +52,8 @@ def query(tok):
     """(status, body or None, route). Direct first, then the proxy; 429/5xx/connection errors retried with a growing pause."""
     body = json.dumps({"operationName": "LeagueUpcomingEvents", "query": Q, "variables": {"league": H.LEAGUE}})
     last = (0, None, "none")
-    for route, px in (("direct", None), ("proxy", H.PROXY or None)):
+    from geo_proxy import geo
+    for route, px in (("proxy", geo(H.PROXY) or None), ("direct", None)):  # owner location (San Diego) first
         if route == "proxy" and not px:
             continue
         for attempt in range(3):
