@@ -96,7 +96,24 @@ def main():
     check(conn, "L2.regular_factor_exactly_1", r[1] == 0, r[1])
     check(conn, "L2.goblin_factor_below_1", r[2] == 0, r[2])
     check(conn, "L2.demon_factor_above_1", r[3] / max(r[4], 1) < 0.001, r[3], f"of {r[4]} demons at <=1.0 (documented near-anchor tail, must stay <0.1%)")
-    check(conn, "L2.priced_share", 1 - r[5] / r[6] > 0.99, f"{1 - r[5] / r[6]:.4f}")
+    # 2026-10-30: the priced share is measured over the legs the live pricing model can price (the markets of the current
+    # model's family_by_market, read from nba_config - nothing hardcoded). PrizePicks' 2026-27 board added goblin/demon rungs
+    # on stats with no fitted spread family (steals, blocks, fantasy points, ...): unpriced BY DESIGN ("never priced by guess";
+    # selection needs a two-season gate), so they are reported, not counted against the pricing chain. Silent join/key loss -
+    # the failure class this check exists for - is caught by the two checks below (undocumented reasons; standards always priced).
+    d = one(conn, """WITH cur AS (SELECT params_json->'family_by_market' fam FROM nba_config.pp_pricing_model WHERE is_current),
+          p AS (SELECT l.factor, l.kind, l.price_reason, jsonb_exists(cur.fam, l.base_market) in_dom
+                FROM nba_market.pp_leg_price l CROSS JOIN cur WHERE l.snapshot_label='window')
+        SELECT count(*) FILTER (WHERE in_dom), count(*) FILTER (WHERE in_dom AND factor IS NULL),
+               count(*) FILTER (WHERE factor IS NULL AND kind='standard'),
+               count(*) FILTER (WHERE factor IS NULL AND COALESCE(price_reason,'(null)') <> ALL (ARRAY['no_center','no_spread_model','outside_calibration','invalid_center'])),
+               count(*) FILTER (WHERE factor IS NULL AND NOT in_dom)
+        FROM p""")
+    n_dom, nul_dom, nul_std, nul_undoc, nul_out = d
+    check(conn, "L2.priced_share", n_dom > 0 and 1 - nul_dom / max(n_dom, 1) > 0.99, f"{1 - nul_dom / max(n_dom, 1):.4f}",
+          f"(modelled-market legs {n_dom}; whole window {1 - r[5] / r[6]:.4f}; {nul_out} unpriced legs of unmodelled markets are out of domain by design)")
+    check(conn, "L2.standard_legs_always_priced", nul_std == 0, nul_std, "(a Regular leg is priced by rule; any null is a key/center failure)")
+    check(conn, "L2.unpriced_reasons_documented", nul_undoc == 0, nul_undoc, "(allowed: no_center, no_spread_model, outside_calibration, invalid_center; no_price_key_yet / no_current_model = chain failure)")
     r = one(conn, """SELECT count(*) FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND factor IS NOT NULL AND implied_p IS NOT NULL
                      AND abs(implied_p*factor - 0.5) > 0.15""")
     check(conn, "L2.implied_x_factor_near_half", r[0] < 1000, r[0], "(PP prices legs so implied*factor ~ 0.5; large deviations = pricing anomalies)")
