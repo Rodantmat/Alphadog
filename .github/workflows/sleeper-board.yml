@@ -9,8 +9,9 @@ name: Sleeper Board Scraper
 # A manual dispatch can still name any sport.
 
 on:
-  schedule:
-    - cron: '15 */2 * * *'
+  # SEASON OFF 2026-10-29 (owner): scheduled runs were MLB-only; cron disabled. NBA capture is pipeline-timed.
+  # schedule:
+  #   - cron: '15 */2 * * *'
   workflow_dispatch:
     inputs:
       sports:
