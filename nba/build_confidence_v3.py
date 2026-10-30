@@ -552,9 +552,11 @@ def main():
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.confidence_verification (
             check_type text, slice text, tier text, n int, stated numeric, actual numeric,
             gap numeric, run_at timestamptz DEFAULT now())""")
+        # ATOMIC SWAP (FIX 7): DELETE + INSERT in ONE transaction, committed once - readers see the old complete set or the new one
         cur.execute("DELETE FROM nba_score.confidence_verification WHERE tier='v3'")
         cur.executemany("""INSERT INTO nba_score.confidence_verification
             (check_type, slice, tier, n, stated, actual, gap) VALUES (%s,%s,%s,%s,%s,%s,%s)""", rows)
+        cur.execute("TRUNCATE nba_score.confidence_verification_progress")
     conn.commit()
     conn.close()
     print(f"\nwrote {len(rows)} rows to nba_score.confidence_verification", flush=True)
