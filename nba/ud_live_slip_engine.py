@@ -113,7 +113,7 @@ def ud_hide_blocks_under(conn):
     Blocks, but the pick'em app does NOT offer 'less' on Blocks - a slip with such a leg cannot be placed. Under legs of the plain Blocks market
     (player_blocks and its alternates) are kept out of the pool. Blocks+Steals is not touched (not reported)."""
     r = conn.execute("SELECT config_json->'ud_alt_policy'->>'hide_blocks_under' FROM nba_config.classification_config WHERE config_key='nba_main_ui'").fetchone()
-    return not (r and r[0] is not None and str(r[0]).lower() in ('false', 'f', '0'))
+    return bool(r and r[0] is not None and str(r[0]).lower() in ('true', 't', '1'))   # OFF by default (owner 2026-10-30 16:00 PT: never kill a 'less' leg that the app offers; availability must be identified per leg)
 
 
 def ud_live_portfolio(conn):
