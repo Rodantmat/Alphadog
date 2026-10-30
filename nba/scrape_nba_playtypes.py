@@ -14,7 +14,17 @@ from pathlib import Path
 
 from curl_cffi import requests
 
-STATS_HEADERS = {"Host": "stats.nba.com"}
+STATS_HEADERS = {
+    "Host": "stats.nba.com",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Referer": "https://stats.nba.com/",
+    "x-nba-stats-origin": "stats",
+    "x-nba-stats-token": "true",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+}
 
 PLAY_TYPES = ["Transition", "Isolation", "PRBallHandler", "PRRollman", "Postup", "Spotup",
               "Handoff", "Cut", "OffScreen", "OffRebound", "Misc"]
