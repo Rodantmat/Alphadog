@@ -2,10 +2,10 @@
   "ok": true,
   "source": "betr graphql getUpcomingEventsV2, owner token, no browser (proxy)",
   "league": "NBA",
-  "started_at": "2026-10-30T18:39:40Z",
-  "fetched_at": "2026-10-30T18:39:42Z",
-  "legs": 5477,
-  "alt_legs": 3890,
+  "started_at": "2026-10-30T20:19:37Z",
+  "fetched_at": "2026-10-30T20:19:39Z",
+  "legs": 5445,
+  "alt_legs": 3866,
   "players": 138,
   "events": 10,
   "board_op": "getUpcomingEventsV2",
@@ -13,7 +13,7 @@
   "token_expires_at": "2026-11-26T00:06:55Z",
   "tier_samples": {
     "REGULAR": {
-      "marketId": "1032610302870078724",
+      "marketId": "1032610302870107082",
       "marketStatus": "OPENED",
       "isLive": false,
       "type": "REGULAR",
@@ -21,17 +21,17 @@
       "name": "1st Half Points",
       "key": "1ST_HALF_POINTS",
       "order": 32,
-      "value": 7.5,
+      "value": 7.0,
       "nonRegularPercentage": 0,
       "nonRegularValue": 0.0,
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "1032610302927804272",
+          "marketOptionId": "1032610302927856170",
           "outcome": "MORE"
         },
         {
-          "marketOptionId": "1032610302927804273",
+          "marketOptionId": "1032610302927856171",
           "outcome": "LESS"
         }
       ]
