@@ -306,6 +306,7 @@ jobs:
         if: always()
         env:
           WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}
+          STALE_WORKERS: ${{ steps.fresh.outputs.stale_workers }}
         run: |
           # set +e DELIBERATELY: GitHub runs this shell with -e, so the first slow worker aborted the
           # whole loop and the remaining nine never ran (measured 2026-09-24: teams loaded, players
