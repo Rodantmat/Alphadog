@@ -274,10 +274,12 @@ jobs:
         if: always()
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SKIP_TABLES: ${{ steps.fresh.outputs.skip_tables }}
         run: |
           python -m pip install -q "psycopg[binary]"
           python - <<'EOF'
           import os, psycopg
+          SKIP = set(os.environ.get("SKIP_TABLES", "").split())
           TABLES = ["nba_stats.player_impact_rating", "nba_stats.player_playtype_profile", "nba_stats.player_shot_quality",
                     "nba_stats.player_shot_quality_delta", "nba_stats.player_shot_zone_profile", "nba_stats.player_tracking_detail",
                     # retention audit 2026-10-08: these six were also overwritten weekly (keyed by player/team only) with no as-of copy
