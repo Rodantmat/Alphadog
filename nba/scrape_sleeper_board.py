@@ -42,7 +42,7 @@ def fetch(session, url, proxies, tries=3):
     (the schedule probe passed 1 to stay fast over many URLs; a missing URL is a final 404 and costs one call anyway)."""
     from net_retry import Deadline, RetryError, request
     try:
-        r = request("GET", url, session=session, proxies=proxies, routes=("direct", "proxy"), tries=max(2, tries), base=2,
+        r = request("GET", url, session=session, proxies=proxies, routes=("proxy", "direct"), tries=max(2, tries), base=2,
                     cap=12, timeout=45, budget=Deadline(float(os.environ.get("SLEEPER_CALL_BUDGET_S", "90"))),
                     label="sleeper", headers=UA, impersonate="chrome124")
     except RetryError as exc:
