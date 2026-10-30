@@ -364,7 +364,7 @@ def main():
             out = []
             for mk, player, side, line in legs:
                 event_id = label = book = None
-                base = mk.replace("_alternate", "") if mk else ""
+                base = mk.replace("_alternate", "").replace("_promo", "") if mk else ""   # Sleeper boosted payout = same market (score_board_legs.norm_market)
                 is_alt = bool(mk and mk.endswith("_alternate"))
                 if base in COMBO:
                     res, actual = "no_stat", None
