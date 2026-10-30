@@ -371,7 +371,7 @@ def main():
             pc["confidence"] = pc_conf
             gap = abs(float(pc["won"].mean()) - float(pc["final_hp"].mean()))
             with conn.cursor() as cur:
-                cur.execute("""INSERT INTO nba_score.confidence_verification
+                cur.execute("""INSERT INTO nba_score.confidence_verification_progress
                     (check_type, slice, tier, n, stated, actual, gap) VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                     ("group_prop", prop, "v3", len(pc), round(float(pc_conf.mean()), 4),
                      round(float(pc["won"].mean()), 4), round(gap, 4)))
