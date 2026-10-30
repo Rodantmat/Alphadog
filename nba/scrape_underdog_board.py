@@ -39,7 +39,7 @@ def get(session, url, proxies):
     budget (UNDERDOG_CALL_BUDGET_S, 90 s) - the old loop could spend 375 s on ONE call, past P3's 300 s cap."""
     from net_retry import Deadline, RetryError, request
     try:
-        r = request("GET", url, session=session, proxies=proxies, routes=("direct", "proxy"), tries=3, base=2, cap=12,
+        r = request("GET", url, session=session, proxies=proxies, routes=("proxy", "direct"), tries=3, base=2, cap=12,
                     timeout=45, budget=Deadline(float(os.environ.get("UNDERDOG_CALL_BUDGET_S", "90"))), label="underdog",
                     headers={**H, "client-request-id": str(uuid.uuid4())}, impersonate="safari_ios")
     except RetryError as exc:
