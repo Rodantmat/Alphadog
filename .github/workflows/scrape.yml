@@ -7,7 +7,7 @@ on:
     # extended period because this workflow only ran via dispatch from the orchestration layer,
     # with no independent backstop. Runs every 2 hours regardless of whether anything else in the
     # pipeline is calling it, so raw PrizePicks data can never go more than ~2 hours stale.
-    - cron: '0 */2 * * *'
+    # - cron: '0 */2 * * *'
   repository_dispatch:
     types: [alphadog_prizepicks_board]
   workflow_dispatch:
