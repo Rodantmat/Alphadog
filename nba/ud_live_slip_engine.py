@@ -143,6 +143,7 @@ def load_legs(conn, day):
                replace(replace(b.market_key,'_alternate',''),'player_','') mk
         FROM nba_market.board_snapshots b
         WHERE b.bookmaker='underdog' AND b.snapshot_label='window' AND b.game_date=%s
+          AND NOT (%s::boolean AND b.side='Under' AND b.market_key IN ('player_blocks','player_blocks_alternate'))
           AND NOT (%s::boolean AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf WHERE uf.game_date=b.game_date AND uf.snapshot_label='window'
                                            AND uf.market_key=b.market_key AND uf.player=b.player AND uf.line=b.line AND uf.hide)))
       SELECT b.event_id, b.pn, nm.player_id, b.mk, b.market_key, b.side, b.line, b.m,
