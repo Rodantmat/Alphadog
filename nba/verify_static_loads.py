@@ -93,7 +93,7 @@ def reinvoke(worker):
     out = f"/tmp/repair-{worker}.json"
     try:
         r = subprocess.run(["curl", "-sS", "--max-time", str(REPAIR_TIMEOUT_S), "-o", out, "-w", "%{http_code}", "-X", "POST", url,
-                            "-H", "content-type: application/json", "-d", "{}"], capture_output=True, text=True, timeout=REPAIR_TIMEOUT_S + 30)
+                            "-H", "content-type: application/json", "-d", json.dumps(BODY_FOR.get(worker, {}))], capture_output=True, text=True, timeout=REPAIR_TIMEOUT_S + 30)
         code = (r.stdout or "").strip()
         try:
             j = json.load(open(out))
