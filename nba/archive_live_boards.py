@@ -369,6 +369,9 @@ def rows_fliff(doc, gd, label):
         if raw in (None, "") or not l.get("player"):
             skipped += 1
             continue
+        if l.get("status") == 748:       # Fliff status 748 = not-open proposal (seen on team totals only; 733 = open)
+            skipped += 1
+            continue
         try:
             line = float(raw)
         except (TypeError, ValueError):
