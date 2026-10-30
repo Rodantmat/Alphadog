@@ -108,6 +108,14 @@ def ud_alt_policy_hide(conn):
     return not (r and r[0] is not None and str(r[0]).lower() in ('false', 'f', '0'))
 
 
+def ud_hide_blocks_under(conn):
+    """nba_main_ui.ud_alt_policy.hide_blocks_under (default TRUE; owner 2026-10-30 15:58 PT): the Underdog feed lists a Lower (Under) option on
+    Blocks, but the pick'em app does NOT offer 'less' on Blocks - a slip with such a leg cannot be placed. Under legs of the plain Blocks market
+    (player_blocks and its alternates) are kept out of the pool. Blocks+Steals is not touched (not reported)."""
+    r = conn.execute("SELECT config_json->'ud_alt_policy'->>'hide_blocks_under' FROM nba_config.classification_config WHERE config_key='nba_main_ui'").fetchone()
+    return not (r and r[0] is not None and str(r[0]).lower() in ('false', 'f', '0'))
+
+
 def ud_live_portfolio(conn):
     """nba_config.classification_config['ud_live_portfolio'].live: 'T' (owner 2026-10-25 20:01 PT) builds portfolio T as the played
     Underdog portfolio and records P5 / P4 as shadow; anything else (or no row) keeps the P5 / P4 behaviour."""
