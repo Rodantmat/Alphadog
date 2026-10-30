@@ -5,10 +5,12 @@ name: MLB Live Market Capture (postseason keep-up)
 # postseason ends before the Nov 1 DST change. A late GitHub cron is harmless: the capture records its real time and labels
 # by the nearest board time. Retire after the World Series (or keep for 2027).
 on:
-  schedule:
-    - cron: '5 16 * * *'    # 09:05 PDT
-    - cron: '5 20 * * *'    # 13:05 PDT
-    - cron: '5 0 * * *'     # 17:05 PDT
+  # SEASON OFF 2026-10-29: MLB season over, crons disabled to stop burning Actions minutes.
+  # Re-enable for 2027 by uncommenting the three schedule lines below.
+  # schedule:
+  #   - cron: '5 16 * * *'    # 09:05 PDT
+  #   - cron: '5 20 * * *'    # 13:05 PDT
+  #   - cron: '5 0 * * *'     # 17:05 PDT
   workflow_dispatch:
     inputs:
       mode:
