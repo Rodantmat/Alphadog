@@ -146,21 +146,40 @@ jobs:
         run: python nba/scrape_nba_player_bio.py
 
       # --- weekly AS-OF tables: every value computed from games strictly before the snapshot date ----
-      - name: Weekly as-of season tables (pt_defend, hustle, clutch, coaches, all_players)
+      - name: Weekly as-of season tables (matchups, pt_defend, hustle, clutch, preseason logs, coaches, all_players)
+        if: ${{ !cancelled() }}
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           SEASONS_N: ${{ github.event.inputs.seasons_n || '1' }}
           MODE: "season"
+          # the step name always promised coaches + all_players but TABLES was unset, and the script's default list
+          # (matchups, pt_defend, hustle, clutch, preseason_logs) leaves both out: nba_coaches_* stopped at 2025-26
+          TABLES: "matchups,pt_defend,hustle,clutch,preseason_logs,coaches,all_players"
         run: python nba/scrape_nba_season_tables.py
 
-      - name: Team stats, on/off, playtypes, tracking
+      - name: Team stats
+        if: ${{ !cancelled() }}
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
-        run: |
-          python nba/scrape_nba_team_stats.py
-          python nba/scrape_nba_onoff.py
-          python nba/scrape_nba_playtypes.py
-          python nba/scrape_nba_player_tracking.py
+        run: python nba/scrape_nba_team_stats.py
+
+      - name: On/off
+        if: ${{ !cancelled() }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/scrape_nba_onoff.py
+
+      - name: Play types
+        if: ${{ !cancelled() }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/scrape_nba_playtypes.py
+
+      - name: Player tracking
+        if: ${{ !cancelled() }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/scrape_nba_player_tracking.py
 
       # LOAD WHAT THIS RUN SCRAPED - ALL OF IT (2026-10-07, full-system certification pass G). P1 invokes the
       # nba-static-lineups and nba-static-tracking-detail writers below, but until today it never scraped their files:
