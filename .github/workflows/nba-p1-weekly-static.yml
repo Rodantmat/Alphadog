@@ -289,6 +289,9 @@ jobs:
                     "nba_ref.players"]
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
               for t in TABLES:
+                  if t in SKIP:
+                      print(f"  {t}: source not refreshed this run - as-of copy SKIPPED (it would be last week's rows again)", flush=True)
+                      continue
                   hist = t + "_asof"
                   c.execute(f"CREATE TABLE IF NOT EXISTS {hist} (LIKE {t} INCLUDING DEFAULTS)")
                   c.execute(f"ALTER TABLE {hist} ADD COLUMN IF NOT EXISTS as_of_date date NOT NULL DEFAULT current_date")
