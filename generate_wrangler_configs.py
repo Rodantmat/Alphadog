@@ -401,7 +401,7 @@ def make_config(worker_name, include_services=False):
         # independent safety net alongside Cowork, not a replacement for it.
         # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
         # comment above (crons=[] doesn't reliably clear an existing live trigger).
-        cfg["triggers"] = {"crons": master_run_crons(14)}
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}  # MLB SEASON OFF 2026-10-29 (owner): never fires; was master_run_crons(14)
     if worker_name == "alphadog-v2-scoring-runner-matrix":
         # PART 1b (new 2026-07-29): matrix-builder, fully isolated. Confirmed live to be the
         # real bottleneck in the scoring chain - even paired with just 2 light stages, the
