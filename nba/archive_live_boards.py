@@ -446,6 +446,8 @@ def rows_betr(doc, gd, label):
     for l in doc.get("legs") or []:
         if l.get("line") is None or not l.get("player"):
             continue
+        if l.get("status") not in (None, "OPENED"):
+            continue                     # closed/suspended Betr market is not playable
         raw = str(l.get("stat", "")).lower()
         suffix = ""
         for pre, suf in _period.items():
