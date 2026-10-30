@@ -60,6 +60,9 @@ TABLES_FOR = {
 # tables whose freshness column is not updated_at
 STAMP_COL = {"nba_stats.player_roster_snapshot": "snapshot_taken_at"}
 REPAIR_TIMEOUT_S = 900
+# request body per worker for the synchronous repair: the measure-types worker defaults to the finished backfill seasons
+# (nba_backfill_*), the daily load is the current season's nba_delta_* files (COMPASS section 5; Fix 2, 2026-10-30)
+BODY_FOR = {"nba-static-measure-types": {"file_prefix": "nba/data/nba_delta_"}}
 
 
 def last_write(conn, tbl):
