@@ -117,7 +117,7 @@ export async function injuries(sql, date, teamNames, tipIso) {
     ORDER BY team, CASE status WHEN 'Out' THEN 1 WHEN 'Doubtful' THEN 2 WHEN 'Questionable' THEN 3 WHEN 'Probable' THEN 4 ELSE 5 END, player_name`,
     [date, pgArr(teamNames), tipIso || null]);
   const flip = n => { const p = String(n || "").split(", "); return p.length === 2 ? `${p[1]} ${p[0]}` : String(n || ""); };
-  return { as_of: rows[0] ? new Date(rows[0].snapshot_ts).toISOString() : null,
+  return { as_of: rows[0] ? new Date(rows[0].as_of_real).toISOString() : null,
     rows: rows.map(r => ({ team: r.team, player: flip(r.player_name), status: r.status, reason: r.reason })) };
 }
 
