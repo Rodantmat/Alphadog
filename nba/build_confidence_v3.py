@@ -210,8 +210,19 @@ def main():
         # certified seasons stay in the fit all season and the live season accumulates on top (2023-24 has no board rows,
         # so before the rollover the third season adds nothing).
         seasons = stats_seasons(3)
-    conn = psycopg.connect(os.environ["DATABASE_URL"])
-    conn.execute("SET statement_timeout = 0")
+    conn = psycopg.connect(os.environ["DATABASE_URL"], application_name="build_confidence_v3")
+    note_orphans(conn)
+    _t = statement_timeout_s(conn)
+    conn.execute(f"SET statement_timeout = {_t * 1000}")
+    print(f"statement_timeout = {_t} s (nba_config.system_settings confidence_refit_statement_timeout_s; default {DEFAULT_STATEMENT_TIMEOUT_S})", flush=True)
+    import signal
+    def _stop(signum, frame):
+        # the runner's cancel / step timeout sends SIGINT then SIGTERM: cancel the running statement so no backend is orphaned
+        try:
+            conn.cancel()
+        finally:
+            raise SystemExit(143)
+    signal.signal(signal.SIGTERM, _stop)
     # JIT OFF for this session (2026-10-21): the 10-21 refit's market aggregate over board_tiers_v2 ran 20+ min where the plan costs
     # ~1 min - the same JIT pathology build_price_shop_ledger showed (48-87 s on vs 4 s off). Session-scoped: MLB shares the database.
     conn.execute("SET jit = off")
