@@ -37,7 +37,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import research_sleeper_small as SS                 # noqa: E402
 import research_sleeper_transfer as ST              # noqa: E402
 
-K = 4
+K = int(os.environ.get("B4_K") or 4)                 # 2026-11-01: any size (3-6 Dynamic, 2-6 Perfect)
+FLEX = (os.environ.get("B4_ST") or "flex") == "flex"   # flex = Dynamic, max = Perfect
 ORDERS = ("src", "p", "pf", "blend")      # Betr is flat-priced (m = 1): pm / fav collapse to p; pf = the books' chance, blend = mean
 FLOORS = (0.0, 0.54, 0.56, 0.58, 0.60, 0.62, 0.64)
 SIDES = ("any", "Over", "Under", "mix")
