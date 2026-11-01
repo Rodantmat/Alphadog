@@ -20,7 +20,12 @@ from datetime import date
 
 import psycopg
 
-BOOKS = "('draftkings','fanduel','betmgm','williamhill_us','betrivers','bovada','betonlineag','fanatics')"
+# + pinnacle / novig / prophetx (2026-11-01, owner: "ParlayAPI provides the pro line level odds"): ParlayAPI serves NO NBA props from
+# betmgm / caesars / betrivers / betonline / fanatics (game-day probe research_parlay_gameday.py, run 41336080868) but does serve
+# two-sided props from these three sharp / exchange books. The history (Odds API) holds none of their rows, so every certified history
+# rung is unchanged; live coverage of PrizePicks rungs 5.7% -> 15.5%, books per priced rung 1.05 -> 1.49, and their de-vigged prices
+# beat a coin flip on the rungs only they price (Brier 0.236 vs 0.250; Novig 0.218, the sharpest) - research_market_books_sim.py.
+BOOKS = "('draftkings','fanduel','betmgm','williamhill_us','betrivers','bovada','betonlineag','fanatics','pinnacle','novig','prophetx')"
 
 DDL = """
 CREATE TABLE IF NOT EXISTS nba_market.rung_market (
