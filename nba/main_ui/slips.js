@@ -747,7 +747,9 @@ async function buildHighHit(sql, cfg, url, version) {
   if (au && au.enabled) notes.push(`Unit ${money(bt.unit.usd)} - earn the raise (auto): ${au.apps === "all" ? "profit on every app" : "season profit"}` +
     `${au.season_start ? " since " + au.season_start : ""} ${money(au.season_profit)}` +
     (au.next_raise_at != null ? `, next raise to ${money(au.unit + au.step)} at ${money(au.next_raise_at)}` : ", at the maximum") +
-    (au.step_down_below != null ? `; steps down to ${money(au.unit - au.step)} if the season profit falls to ${money(au.step_down_below)}.` : "."));
+    (au.step_down_below != null ? (au.ladder_from
+      ? `; steps down to ${money(au.unit - 1)} if the profit falls below ${money(au.step_down_below)} (unit ladder: +$1 at 25, 75, 150, 250, 375 ..., the same points down).`
+      : `; steps down to ${money(au.unit - au.step)} if the season profit falls to ${money(au.step_down_below)}.`) : "."));
   else if (au) notes.push(`Unit ${money(bt.unit.usd)} - set by hand (earn the raise is off; the Auto button turns it back on).`);
   if (unmatched) notes.push(`${unmatched} slip legs are not on the scored board (shown without a probability).`);
   if (fallbackNote) notes.push(fallbackNote);
