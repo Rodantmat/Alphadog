@@ -46,7 +46,8 @@ DEFAULT_CFG = {
     "provider": "parlayapi",
     "key_name": "parlay_api_key",          # which nba_config.external_credentials row holds the key (parlay_api_key_alt = the 2026-10-09 key)
     # the sportsbooks the certified history counted (build_rung_market.BOOKS) - the live term must count the same set
-    "books": ["draftkings", "fanduel", "betmgm", "williamhill_us", "betrivers", "bovada", "betonlineag", "fanatics"],
+    # + pinnacle / novig / prophetx (2026-11-01): ParlayAPI's live two-sided NBA prop books (see build_rung_market.BOOKS)
+    "books": ["draftkings", "fanduel", "betmgm", "williamhill_us", "betrivers", "bovada", "betonlineag", "fanatics", "pinnacle", "novig", "prophetx"],
     # ParlayAPI bookmaker name -> the history's bookmaker name (identity unless listed)
     "book_aliases": {"caesars": "williamhill_us", "williamhill": "williamhill_us", "betonline": "betonlineag"},
     # ParlayAPI market_key -> Odds API market key (the history's vocabulary). Filled from the first probe; unmapped = listed.
