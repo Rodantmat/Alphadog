@@ -393,7 +393,7 @@ def main():
             best = max(cand, key=lambda q: stat(acc.d[q][tr])[2])
             print(f"    chosen on {SEASONS[tr]} -> {SEASONS[ot]} {100 * stat(acc.d[best][ot])[1]:+.1f}% / 2026-27 "
                   f"{100 * stat(acc.d[best][2])[1]:+.1f}% ({int(stat(acc.d[best][2])[0])}) :: {row(acc, best)}")
-        both = [q for q in ks if robust(acc, q, 0, 150) and robust(acc, q, 1, 150)]
+        both = [q for q in ks if robust(acc, q, 0, MIN_BOTH) and robust(acc, q, 1, MIN_BOTH)]
         both.sort(key=lambda q: -min(stat(acc.d[q][0])[2], stat(acc.d[q][1])[2]))
         print(f"  (b) ROBUST IN BOTH SEASONS: {len(both)} rules (of {len(ks)}); top {top} by the worse season's lower bound:")
         seen = set()
