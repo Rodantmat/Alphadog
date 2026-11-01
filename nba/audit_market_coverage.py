@@ -26,7 +26,7 @@ import os
 
 import psycopg
 
-BOOKS = ('draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'betrivers', 'bovada', 'betonlineag', 'fanatics')
+BOOKS = ('draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'betrivers', 'bovada', 'betonlineag', 'fanatics', 'pinnacle', 'novig', 'prophetx')  # = build_rung_market.BOOKS (2026-11-01)
 
 COV_SQL = """
 WITH r AS (SELECT DISTINCT game_date, player, base_market AS market, line FROM nba_market.board_tiers_v2
