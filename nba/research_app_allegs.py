@@ -350,6 +350,10 @@ def main():
         legs = [l for l in legs if l.get("p") is not None and l.get("team") is not None and l.get("event_id") is not None]
         if len(legs) < 2:
             continue
+        # AA_MAXGAMES (2026-11-01, owner 12:29 PT "Find fallbacks with positive ROI for them as well for days alike today"): only slates
+        # with at most N games among the legs (11-01 had 4 games; S_ALL_5flex takes one leg a game for 5 picks - it cannot build there)
+        if MAXG and len({l["event_id"] for l in legs}) > MAXG:
+            continue
         vals += [(si, l["kind"], l["side"], AF.GRP.get(l["prop"]), l["p"], l["m"], l["hit"]) for l in legs if l["hit"] is not None]
         day(acc, si, legs)
         if i % 40 == 39:
