@@ -34,7 +34,8 @@ WITH bk AS (
   SELECT game_date, snapshot_label, player, market_key, line, bookmaker, side,
          CASE WHEN price>0 THEN 100.0/(price+100) ELSE (-price)/((-price)+100.0) END AS implied
   FROM nba_market.board_snapshots
-  WHERE bookmaker IN ('draftkings','fanduel','betmgm','williamhill_us','betrivers','bovada','betonlineag','fanatics')
+  -- + pinnacle / novig / prophetx (2026-11-01): same book set as build_rung_market.BOOKS (none in history)
+  WHERE bookmaker IN ('draftkings','fanduel','betmgm','williamhill_us','betrivers','bovada','betonlineag','fanatics','pinnacle','novig','prophetx')
     AND price > -100000 AND price <> -137 AND price <> 100 AND line IS NOT NULL
 ), paired AS (
   SELECT o.game_date, o.snapshot_label, o.player, o.market_key, o.line, o.bookmaker,
