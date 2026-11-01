@@ -437,10 +437,30 @@ def auto_unit(conn, day):
     # raise_basis 'current' (owner 2026-10-28 13:28 PT "Put the next raise at $50 and we do gradually from there"): the raise from u
     # comes at up_x x u ($2 -> $3 at $50, $3 -> $4 at $75 ...); 'next' (default, 2026-10-18) at up_x x (u + step)
     basis_cur = a.get('raise_basis') == 'current'
-    while u + step <= float(a['max']) + 1e-9 and prof >= float(a['up_x']) * (u if basis_cur else u + step):
-        reason = f"raise: profit {prof:.2f} >= {float(a['up_x']):g} x {(u if basis_cur else u + step):g}"; u += step
-    if u == old and u - step >= floor_ - 1e-9 and high - prof >= float(a['down_x']) * u:
-        reason = f"step down: drop {high - prof:.2f} from the season high {high:.2f} >= {float(a['down_x']):g} x {u:g}"; u -= step
+    # THE LADDER (owner 2026-11-01 11:41 / 11:43 PT: "the thresholds ... need to be exponential ... $1 -> $2 at 25, -> $3 at 75,
+    # -> $4 at 150 ... dropping mirror the ladder, the same thresholds downwards ... if you get a drought with a big unit, we're not
+    # losing too much"). From auto.ladder_from on, the unit is the rung the profit sits on: rung n starts at up_x x n(n-1)/2 -
+    # $1 below 25, $2 from 25, $3 from 75, $4 from 150, $5 from 250 ... (+25, +50, +75 ...), the same thresholds downwards; floor /
+    # max kept. Slates before ladder_from keep the rule they were played under (unit_update rebuilds every slate from count_from, so
+    # the history stays exactly as played). Simulated (nba/research_unit_ladder.py, run 41343264292): 2025-26 +23,242 vs +26,018
+    # (ROI +85.6 vs +90.0%), 2024-25 +3,683 vs +5,049 (ROI +58.1 vs +51.5%), worst drop 318 vs 627; 5,000 seasons with payouts cut
+    # 20%: losing 2.0% vs 8.3%, P5 +61 vs -62; cut 35%: losing 40% vs 56%.
+    lf = a.get('ladder_from')
+    if lf and day >= dt.date.fromisoformat(str(lf)[:10]):
+        n = 1.0
+        while n + 1 <= float(a['max']) + 1e-9 and prof >= float(a['up_x']) * n * (n + 1) / 2:
+            n += 1
+        n = max(n, floor_)
+        if n > u:
+            reason = f"ladder raise: profit {prof:.2f} >= {float(a['up_x']) * (n - 1) * n / 2:g} (rung {n:g})"
+        elif n < u:
+            reason = f"ladder step down: profit {prof:.2f} < {float(a['up_x']) * (u - 1) * u / 2:g} (rung {n:g})"
+        u = n
+    else:
+        while u + step <= float(a['max']) + 1e-9 and prof >= float(a['up_x']) * (u if basis_cur else u + step):
+            reason = f"raise: profit {prof:.2f} >= {float(a['up_x']):g} x {(u if basis_cur else u + step):g}"; u += step
+        if u == old and u - step >= floor_ - 1e-9 and high - prof >= float(a['down_x']) * u:
+            reason = f"step down: drop {high - prof:.2f} from the season high {high:.2f} >= {float(a['down_x']):g} x {u:g}"; u -= step
     conn.execute("""INSERT INTO nba_score.live_unit_history (game_date, season_start, season_profit, season_high, unit_from, unit_usd, reason)
                     VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date) DO UPDATE SET season_start=EXCLUDED.season_start,
                     season_profit=EXCLUDED.season_profit, season_high=EXCLUDED.season_high, unit_from=EXCLUDED.unit_from,
