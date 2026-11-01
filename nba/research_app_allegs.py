@@ -383,7 +383,7 @@ def main():
         q = np.quantile(np.array(REAL_PF), [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99])
         print(f"REAL BETR SIDES (books' chance of the sides Betr posted this season, n {len(REAL_PF)}): "
               + ", ".join(f"q{int(100 * p)} {v:.3f}" for p, v in zip([0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99], q))
-              + f" | history band in use: {BETR_PF}", flush=True)
+              + f" | history band in use: {BETR_PF} | payout table {os.environ.get('BETR_TABLE') or 'api (betr_payout_v1)'}", flush=True)
     top = int(os.environ.get("AA_TOP") or 8)
     print("\n" + "=" * 170 + f"\nLEGS ({APP}): final_hp x m bins -> legs, hit, mean m, return per pick (history = the app's law, 2026-27 = REAL board)")
     V = np.array([(si, p, m, h) for si, k, sd, g, p, m, h in vals], float)
