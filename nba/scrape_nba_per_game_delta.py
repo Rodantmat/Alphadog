@@ -181,7 +181,7 @@ def run_delta(name, data_path, meta_path, logged_games, fetch_fn, proxies, fetch
         "cdn_fallback_games": sorted(fallback_games),
     })
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    print(f"{name}: +{len(new_rows)} rows, {len(errors)} errors, {len(newly_empty)} newly-empty")
+    print(f"{name}: +{len(new_rows)} rows, {len(errors)} errors, {len(newly_empty)} newly-empty, {len(via_fallback)} via fallback, {len(upgraded)} upgraded to the primary")
     return errors
 
 
