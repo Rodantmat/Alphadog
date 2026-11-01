@@ -175,8 +175,10 @@ def run_delta(name, data_path, meta_path, logged_games, fetch_fn, proxies, fetch
     meta.update({
         "fetched_at": fetched_at, "season": season, "method": "delta",
         "row_count": len(rows), "games_covered": len({r["game_id"] for r in rows}),
-        "last_delta": {"attempted": len(delta), "recovered_games": len({r["game_id"] for r in new_rows}), "errors": errors, "newly_empty": newly_empty},
+        "last_delta": {"attempted": len(delta), "recovered_games": len({r["game_id"] for r in new_rows}), "errors": errors, "newly_empty": newly_empty,
+                       "via_fallback": via_fallback, "upgraded_from_fallback": upgraded},
         "known_empty_games": sorted(known_empty | set(newly_empty)),
+        "cdn_fallback_games": sorted(fallback_games),
     })
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"{name}: +{len(new_rows)} rows, {len(errors)} errors, {len(newly_empty)} newly-empty")
