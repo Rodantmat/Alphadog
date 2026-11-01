@@ -190,6 +190,8 @@ def live_legs(conn, d, st):
                  "event_id": evs.get(pid), "p": float(p)}
             pm = mk.get((pid, prop, side, line))
             l["pf"] = float(np.mean(pm)) if pm else 0.5
+            if pm:
+                REAL_PF.append(l["pf"])
             l["hit"] = AF.outcome(st, l)
             l["team"] = tm.get(str(pid))
             out.append(l)
