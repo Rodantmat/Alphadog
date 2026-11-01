@@ -333,7 +333,7 @@ def robust(acc, key, si, mn):
 
 def lab(key):
     o, sd, pr, kd, fl, g, mc, k, st, ns = key
-    return (f"{k}-pick {st:<4} order {o:<4} side {sd:<5} props {pr:<5} {kd:<4} p>={fl:.2f} pxm>={g:.2f} m<={mc:g} {ns} slip(s)/slate")
+    return (f"{k}-pick {st:<4} order {o:<4} side {sd:<5} props {pr:<5} {kd:<6} p>={fl:.2f} pxm>={g:.2f} m<={mc:g} {ns} slip(s)/slate")
 
 
 def row(acc, key):
