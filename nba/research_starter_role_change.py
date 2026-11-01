@@ -28,7 +28,8 @@ def main():
                               g.pts, g.reb, g.ast, g.fg3m, g.stl, g.blk, g.tov, s.is_starter
                        FROM nba_stats.player_game_log g JOIN nba_stats.player_game_starter_status s
                          ON s.player_id = g.player_id AND s.game_id = g.game_id
-                       WHERE g.game_id LIKE '002%%' AND g.season IN ('2024-25','2025-26')""", conn)
+                       WHERE g.game_id LIKE '002%%' AND g.season = ANY(%s)""", conn,
+                    params=((os.environ.get("SR_SEASONS") or "2024-25,2025-26").split(","),))
     g = g.sort_values(["pid", "season", "game_date"])
     grp = g.groupby(["pid", "season"])["is_starter"]
     g["last1"] = grp.shift(1)
