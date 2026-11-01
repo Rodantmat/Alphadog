@@ -241,7 +241,31 @@ def et_date(s):
         return None
 
 
-def normalize(items, cfg, label, slate):
+_SFX = re.compile(r"\s+(jr|sr|ii|iii|iv)\.?$", re.I)
+
+
+def name_key(n):
+    """Accent-, suffix- and punctuation-blind key: 'Alperen Sengun' == 'Alperen Şengün', 'Jabari Smith' == 'Jabari Smith Jr.'."""
+    import unicodedata
+    n = unicodedata.normalize("NFKD", str(n or "")).encode("ascii", "ignore").decode().lower().replace(".", "").replace("'", "").replace("-", " ")
+    return _SFX.sub("", re.sub(r"\s+", " ", n).strip())
+
+
+def pp_name_map(conn, slate):
+    """name_key -> the PrizePicks spelling for the slate's players (archived BEFORE this step). A key shared by two different
+    spellings is dropped (never guess between two players)."""
+    m, bad = {}, set()
+    for (p,) in conn.execute("""SELECT DISTINCT player FROM nba_market.board_snapshots WHERE bookmaker='prizepicks'
+                               AND game_date BETWEEN %s AND %s""", (slate, slate.fromordinal(slate.toordinal() + 1))).fetchall():
+        k = name_key(p)
+        if k in m and m[k] != p:
+            bad.add(k)
+        m[k] = p
+    return {k: v for k, v in m.items() if k not in bad}
+
+
+def normalize(items, cfg, label, slate, ppmap=None):
+    ppmap = ppmap or {}
     books = set(cfg["books"]); alias = cfg.get("book_aliases", {}); mmap = cfg["market_map"]; alts = cfg.get("alternate_suffixes", [])
     rows, unmapped, flat = [], {}, 0
     now = datetime.now(timezone.utc)
