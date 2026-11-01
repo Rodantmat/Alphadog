@@ -138,6 +138,13 @@ def hist_legs(conn, d, st, ovr, kt, kf):
         if APP == "betr":
             if l["kind"] != "main":
                 continue
+            # BETR SIDE AVAILABILITY (2026-11-01 defect): history assumed Betr posts BOTH sides of every book main line at its flat table
+            # - a 0.5 blocks Under at -400 pays the same 3x as a coin flip, so history ROI ran +400..+800% with 90% of 5-pick Dynamic
+            # entries cashing. Betr closes the lopsided side (11-01: 25 of 35 candidates 'not on Betr (side closed)'). AA_BETR_PF
+            # "lo,hi" keeps only history sides whose books' chance is inside the band Betr's REAL boards leave open (printed below as
+            # REAL BETR SIDES - books' chance quantiles of the sides Betr actually posted this season).
+            if BETR_PF and not (BETR_PF[0] <= l["pf"] <= BETR_PF[1]):
+                continue
             l["m"] = 1.0
         l["team"] = tm.get(str(l["player_id"]))
         out.append(l)
