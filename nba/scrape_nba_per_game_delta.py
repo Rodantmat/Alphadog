@@ -198,7 +198,8 @@ def main():
         sys.exit(1)
     logged_games = {r["GAME_ID"] for r in logged.get("records", []) if r.get("GAME_ID")}
 
-    e1 = run_delta("starter_status", Path(f"nba/data/nba_starter_status_{slug}.json"), Path(f"nba/data/nba_starter_status_{slug}_meta.json"), logged_games, fetch_starter_status, proxies, fetched_at, season)
+    e1 = run_delta("starter_status", Path(f"nba/data/nba_starter_status_{slug}.json"), Path(f"nba/data/nba_starter_status_{slug}_meta.json"), logged_games, fetch_starter_status, proxies, fetched_at, season,
+                   fallback_fn=fetch_starter_status_cdn)
     e2 = run_delta("game_officials", Path(f"nba/data/nba_game_officials_{slug}.json"), Path(f"nba/data/nba_game_officials_{slug}_meta.json"), logged_games, fetch_officials, proxies, fetched_at, season)
     if len(e1) + len(e2) > max(3, len(logged_games) * 0.05):
         sys.exit(1)
