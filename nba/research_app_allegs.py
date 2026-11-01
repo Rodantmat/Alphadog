@@ -73,6 +73,11 @@ STRUCTS = [(k, "max") for k in SIZES] + ([(k, "flex") for k in SIZES if k >= 3] 
 if os.environ.get("AA_ONLY"):                       # e.g. "5flex" (2026-10-28 owner: the 5-pick Flex in detail)
     STRUCTS = [x for x in STRUCTS if f"{x[0]}{x[1]}" in os.environ["AA_ONLY"].split(",")]
 SEASONS = ("2024-25", "2025-26", "2026-27")
+MAXG = int(os.environ.get("AA_MAXGAMES") or 0)       # 0 = every slate
+# AA_MIN: the slip minimums of the selection (100) / robust-in-both-seasons (150) lists - small slates are few, so a small-slate run
+# lowers them (e.g. AA_MIN=20 -> 20 / 30); the neighbours rule (every neighbouring rule positive) still applies
+MIN_SEL = int(os.environ.get("AA_MIN") or 100)
+MIN_BOTH = int(1.5 * MIN_SEL)
 
 
 def log(m):
