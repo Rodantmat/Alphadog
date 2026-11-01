@@ -376,7 +376,7 @@ def main():
     for it in items:
         d = et_date(it.get("commence_time")) or it.get("game_date"); dates[str(d)] = dates.get(str(d), 0) + 1
     print("  game dates: " + ", ".join(f"{d}: {n}" for d, n in sorted(dates.items())), flush=True)
-    rows, unmapped, flat = normalize(items, cfg, LABEL, slate)
+    rows, unmapped, flat = normalize(items, cfg, LABEL, slate, pp_name_map(conn, slate))
     if unmapped:
         print(f"  UNMAPPED sportsbook market keys (kept raw, not written): " + ", ".join(f"{k} x{n}" for k, n in sorted(unmapped.items(), key=lambda x: -x[1])), flush=True)
     n_slate = sum(1 for r in rows if r[2] == LABEL)
