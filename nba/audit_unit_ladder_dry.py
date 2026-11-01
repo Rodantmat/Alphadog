@@ -45,8 +45,10 @@ def walk(conn, ladder_from):
 
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
+    # the live count only (the table also keeps the 3 rows of the superseded 2026-10-20 count, which the walk never touches)
+    s0 = str(L.unit_auto_cfg(conn)['count_from'])[:10]
     before = [tuple(r) for r in conn.execute("""SELECT game_date, round(season_profit::numeric, 2), unit_from, unit_usd, reason
-                                                FROM nba_score.live_unit_history ORDER BY game_date""").fetchall()]
+                                                FROM nba_score.live_unit_history WHERE season_start = %s ORDER BY game_date""", (s0,)).fetchall()]
     ok = True
     r1 = walk(conn, None)
     same = [(a[0], a[3]) for a in before] == [(b[0], b[3]) for b in r1] and [a[1] for a in before] == [b[1] for b in r1]
