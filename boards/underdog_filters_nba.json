@@ -19,7 +19,14 @@
   "8a056512-d3af-4508-bd03-8f76682c9461": "To Record a Triple Double",
   "be84ed82-3618-4f55-a914-ee9b1f7925cf": "1Q Assists",
   "75c81a08-bed1-4847-8d29-9669665986c3": "To Record a Double Double",
-  "1099ec6f-260c-4407-b168-05abdf611c05": "Fantasy Points"
+  "1099ec6f-260c-4407-b168-05abdf611c05": "Fantasy Points",
+  "fbbda150-82f4-44cf-97ee-4206187096fe": "1Q 3-Pointers Made",
+  "683ea76c-9a01-441c-8e16-2bbc3ac53c8e": "1H 3-Pointers Made",
+  "66d96aa2-db69-4cc0-9a89-71764ca19bf3": "1Q Pts + Rebs + Asts",
+  "696aa7ae-8d9a-4180-bd24-8e58985a3d43": "1H Points",
+  "4b1a3bf5-6f00-47c1-8c6b-8d9896aab8ee": "1H Rebounds",
+  "bcce1af9-cefe-4d8c-90ac-07abe923b366": "1H Pts + Rebs + Asts",
+  "4d8e6288-8772-413d-9daf-24372d36b2b3": "1H Assists"
  },
  "market_groups": {}
 }
