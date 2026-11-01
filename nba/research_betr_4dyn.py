@@ -152,7 +152,8 @@ class Book4(ST.Book):
                     " | ".join(f"{s} {n} {x:+.0f}%" for s, (n, x) in r["seas"].items()))
 
         print("=" * 180)
-        print(f"BETR 4-PICK DYNAMIC VARIATIONS | PART {ST.PART} | combinations with >= 150 slips: {len(rows)}")
+        print(f"BETR {K}-PICK {'DYNAMIC' if FLEX else 'PERFECT'} VARIATIONS | PART {ST.PART} | table {os.environ.get('BETR_TABLE') or 'api'} | "
+              f"side band {ST.BETR_PF} | combinations with >= 150 slips: {len(rows)}")
         base = [r for r in rows if r["key"][:7] == ("UD-T2", "src", 0.0, "any", 0, "own", 2)]
         for r in base:
             print("BASELINE  " + fmt(r))
