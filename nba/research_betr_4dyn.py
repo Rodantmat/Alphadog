@@ -125,7 +125,7 @@ class Book4(ST.Book):
                     break
                 comp = (src, how, fl, side, sk, str(g), ns)
                 for s in slips[:ns]:
-                    self.slips[comp].append((season, d, ST.pay_betr(s, True)))
+                    self.slips[comp].append((season, d, ST.pay_betr(s, FLEX)))
 
     def report(self):
         rows = []
