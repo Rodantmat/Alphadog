@@ -74,6 +74,8 @@ if os.environ.get("AA_ONLY"):                       # e.g. "5flex" (2026-10-28 o
     STRUCTS = [x for x in STRUCTS if f"{x[0]}{x[1]}" in os.environ["AA_ONLY"].split(",")]
 SEASONS = ("2024-25", "2025-26", "2026-27")
 MAXG = int(os.environ.get("AA_MAXGAMES") or 0)       # 0 = every slate
+BETR_PF = tuple(float(x) for x in os.environ["AA_BETR_PF"].split(",")) if os.environ.get("AA_BETR_PF") else None
+REAL_PF = []                                          # books' chance of every side Betr really posted this season (live_legs, pf from the books)
 # AA_MIN: the slip minimums of the selection (100) / robust-in-both-seasons (150) lists - small slates are few, so a small-slate run
 # lowers them (e.g. AA_MIN=20 -> 20 / 30); the neighbours rule (every neighbouring rule positive) still applies
 MIN_SEL = int(os.environ.get("AA_MIN") or 100)
