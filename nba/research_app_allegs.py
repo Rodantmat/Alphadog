@@ -264,9 +264,10 @@ class Acc:
 def day(acc, si, legs):
     for l in legs:
         l["_g"] = AF.GRP.get(l["prop"])
-    for o, sd, pr, kd in itertools.product(ORDERS, SIDES, PROPS, KINDS):
-        gc = 2 if kd == "gc2" else 1
-        base = sorted([l for l in legs if (sd in ("any", "mix") or l["side"] == sd) and (kd == "all" or l["kind"] == "main")
+    for o, sd, pr, kd0, skp in itertools.product(ORDERS, SIDES, PROPS, KINDS, SKIPS):
+        kd = kd0 if skp == 0 else f"{kd0}s{skp}"      # the skip rides in the kind slot (gc2s2 = up to 2 a game, top 2 skipped)
+        gc = 2 if kd0 == "gc2" else 1
+        base = sorted([l for l in legs if (sd in ("any", "mix") or l["side"] == sd) and (kd0 == "all" or l["kind"] == "main")
                        and (pr == "all" or (pr == "low") == (l["_g"] == "lowvol"))], key=key_of(o))
         if len(base) < 2:
             continue
