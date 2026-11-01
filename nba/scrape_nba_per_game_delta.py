@@ -44,13 +44,17 @@ STATS_HEADERS = {
 }
 
 
-def get_json(url, proxies):
+CDN_HEADERS = {"User-Agent": STATS_HEADERS["User-Agent"], "Referer": "https://www.nba.com/", "Origin": "https://www.nba.com"}
+CDN_POS = {"PG": "G", "SG": "G", "G": "G", "SF": "F", "PF": "F", "F": "F", "C": "C"}
+
+
+def get_json(url, proxies, headers=None):
     """stats.nba.com through the system retry policy (nba/net_retry.py, 2026-10-09): 4 attempts (was 2), full-jitter
     backoff (was a fixed 3 s), 429/5xx/connection errors retried, a final 4xx returned at once."""
     from net_retry import RetryError, request
     try:
         resp = request("GET", url, session=requests, proxies=proxies, routes=("proxy",), tries=4, base=2, cap=15,
-                       timeout=30, label="stats boxscore", headers=STATS_HEADERS, impersonate="chrome124")
+                       timeout=30, label="stats boxscore", headers=headers or STATS_HEADERS, impersonate="chrome124")
     except RetryError as exc:
         return None, str(exc)
     if resp.status_code != 200:
