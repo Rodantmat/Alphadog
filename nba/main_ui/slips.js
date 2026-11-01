@@ -804,6 +804,15 @@ async function unitAutoStatus(sql, su) {
   st.raise_basis = a.raise_basis || "next";
   st.next_raise_at = st.unit + st.step <= st.max + 1e-9 ? Math.round(st.up_x * (st.raise_basis === "current" ? st.unit : st.unit + st.step) * 100) / 100 : null;
   st.step_down_below = st.unit - st.step >= st.floor - 1e-9 ? Math.round((st.season_high - st.down_x * st.unit) * 100) / 100 : null;
+  // THE LADDER (owner 2026-11-01 11:41 / 11:43 PT; live_slip_engine.auto_unit, auto.ladder_from): rung n starts at up_x x n(n-1)/2
+  // ($2 from 25, $3 from 75, $4 from 150, $5 from 250 ...) and the same thresholds count downwards - the next raise is the next
+  // rung's start, the step-down point is the current rung's own start.
+  st.ladder_from = a.ladder_from || null;
+  if (st.ladder_from) {
+    st.raise_basis = "ladder";
+    st.next_raise_at = st.unit + 1 <= st.max + 1e-9 ? st.up_x * st.unit * (st.unit + 1) / 2 : null;
+    st.step_down_below = st.unit - 1 >= st.floor - 1e-9 ? st.up_x * (st.unit - 1) * st.unit / 2 : null;
+  }
   return st;
 }
 
