@@ -273,7 +273,7 @@ def day(acc, si, legs):
             continue
         P = np.array([l["p"] for l in base]); M = np.array([l["m"] for l in base]); E = P * M
         for fl, g, mc in itertools.product(FLOORS, GATES, MCAPS):
-            idx = np.nonzero((P >= fl) & (E >= g) & (M <= mc))[0]
+            idx = np.nonzero((P >= fl) & (E >= g) & (M <= mc))[0][skp:]
             if len(idx) < 2:
                 continue
             first = greedy(base, idx, 6, set(), gc)
