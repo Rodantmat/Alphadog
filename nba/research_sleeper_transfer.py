@@ -88,6 +88,18 @@ BETR_PERFECT = {2: 3, 3: 6, 4: 10, 5: 20, 6: 35}
 BETR_PERFECT_LESS = {2: 2.75, 3: 5.5, 4: 9, 5: 18, 6: 31.5}
 BETR_DYN = {3: {2: 1, 3: 3}, 4: {3: 1.5, 4: 6}, 5: {3: 0.4, 4: 2, 5: 10}, 6: {4: 1, 5: 1.5, 6: 20}}
 BETR_DYN_LESS = {3: {2: 1, 3: 2.75}, 4: {3: 1.25, 4: 5.5}, 5: {3: 0.25, 4: 1.75, 5: 9}, 6: {4: 1, 5: 1.25, 6: 18}}
+# BETR_TABLE=pub (research only, 2026-11-01): the PUBLISHED table (CBS Sports 2026-10-29) instead of Betr's own pricing API
+# (betr_payout_v1). The published all-LESS discount is unknown - the API's LESS / regular ratio is applied to the published numbers.
+if os.environ.get("BETR_TABLE") == "pub":
+    _PUB_P = {2: 2, 3: 5, 4: 10, 5: 20, 6: 30}
+    _PUB_D = {3: {2: 1.25, 3: 2.25}, 4: {3: 1.5, 4: 5}, 5: {4: 2.5, 5: 10}, 6: {4: 1.05, 5: 1.25, 6: 20}}
+    BETR_PERFECT_LESS = {k: round(v * BETR_PERFECT_LESS[k] / BETR_PERFECT[k], 3) for k, v in _PUB_P.items()}
+    BETR_DYN_LESS = {k: {h: round(x * (BETR_DYN_LESS[k].get(h, x) / BETR_DYN[k].get(h, x) if BETR_DYN[k].get(h) else 1), 3)
+                         for h, x in t.items()} for k, t in _PUB_D.items()}
+    BETR_PERFECT, BETR_DYN = _PUB_P, _PUB_D
+# BETR_PF="lo,hi" (research only, 2026-11-01 side-availability defect): a history Betr side is kept only if the books' chance of that
+# side is inside the band (Betr's real boards post the books' main line only when that side is ~40-55%; the favourite is closed or moved)
+BETR_PF = tuple(float(x) for x in os.environ["BETR_PF"].split(",")) if os.environ.get("BETR_PF") else None
 SMOKE = os.environ.get("ST_SMOKE") == "1"
 
 
