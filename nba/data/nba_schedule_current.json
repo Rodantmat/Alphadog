@@ -23231,8 +23231,8 @@
       "away_team_tricode": "POR",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "3:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23246,8 +23246,8 @@
       "away_team_tricode": "PHI",
       "arena_name": "Spectrum Center",
       "arena_city": "Charlotte",
-      "game_status": 1,
-      "game_status_text": "6:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23261,8 +23261,8 @@
       "away_team_tricode": "ATL",
       "arena_name": "Smoothie King Center",
       "arena_city": "New Orleans",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23276,8 +23276,8 @@
       "away_team_tricode": "SAC",
       "arena_name": "FedExForum",
       "arena_city": "Memphis",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23291,8 +23291,8 @@
       "away_team_tricode": "CLE",
       "arena_name": "Fiserv Forum",
       "arena_city": "Milwaukee",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23306,8 +23306,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "Frost Bank Center",
       "arena_city": "San Antonio",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23321,8 +23321,8 @@
       "away_team_tricode": "OKC",
       "arena_name": "Toyota Center",
       "arena_city": "Houston",
-      "game_status": 1,
-      "game_status_text": "8:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
