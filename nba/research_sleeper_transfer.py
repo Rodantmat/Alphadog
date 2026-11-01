@@ -168,6 +168,8 @@ class HistPricer:
         ps = po if src["side"] == "Over" else 1 - po
         if not 0.05 < ps < 0.95:
             return None
+        if APP == "betr" and BETR_PF and not (BETR_PF[0] <= ps <= BETR_PF[1]):
+            return None
         b = self.bx.get(pid)
         m = round(1 / (OVR * ps), 2) if APP == "sleeper" else round(1 / (OVR_F * ps), 3) if APP == "fliff" else 1.0
         return {"pid": pid, "prop": src["prop"], "side": src["side"], "line": line, "m": m, "pf": ps,
