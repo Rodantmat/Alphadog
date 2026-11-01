@@ -81,6 +81,35 @@ def fetch_starter_status(game_id, proxies):
     return rows, None
 
 
+def fetch_starter_status_cdn(game_id, proxies):
+    """FALLBACK (2026-11-01): P2A 11-01 lost game 0022600153's starters to one stats.nba.com HTTP 403 (a re-fetch an hour later
+    answered 200). NBA's CDN live box score carries the same per-game starter flag: measured on 4 committed games
+    (research_starter_cdn.py) it matched boxscoretraditionalv3 on the starter flag 108/108 and the position 108/108 (CDN
+    PG/SG/SF/PF/C -> v3 G/F/C). It lacks v3's DNP comment and some inactive two-way players, so a game filled from here is
+    recorded in meta.cdn_fallback_games and re-fetched from v3 on the next run (the v3 rows then replace these)."""
+    body, err = get_json(f"https://cdn.nba.com/static/json/liveData/boxscore/boxscore_{game_id}.json", proxies, CDN_HEADERS)
+    if body is None:
+        return None, err
+    g = body.get("game") or {}
+    if g.get("gameStatus") != 3:
+        return None, f"cdn gameStatus {g.get('gameStatus')} (not final)"
+    rows = []
+    for side in ("homeTeam", "awayTeam"):
+        for p in (g.get(side) or {}).get("players") or []:
+            pid = p.get("personId")
+            if not pid:
+                continue
+            st = 1 if str(p.get("starter")) == "1" else 0
+            pos = CDN_POS.get(str(p.get("position") or "").upper()) if st else None
+            if st and not pos:
+                return None, f"cdn starter {pid} with unmapped position {p.get('position')!r}"
+            rows.append({"player_id": int(pid), "game_id": game_id, "start_position": pos, "is_starter": st,
+                         "comment": p.get("notPlayingDescription") or None})
+    if sum(r["is_starter"] for r in rows) != 10:
+        return None, f"cdn starters {sum(r['is_starter'] for r in rows)} != 10"
+    return rows, None
+
+
 def fetch_officials(game_id, proxies):
     body, err = get_json(f"https://stats.nba.com/stats/boxscoresummaryv3?GameID={game_id}&LeagueID=00", proxies)
     if body is None:
