@@ -128,18 +128,38 @@ def load(path, default):
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else default
 
 
-def run_delta(name, data_path, meta_path, logged_games, fetch_fn, proxies, fetched_at, season):
+def run_delta(name, data_path, meta_path, logged_games, fetch_fn, proxies, fetched_at, season, fallback_fn=None):
     data = load(data_path, {"rows": []})
     meta = load(meta_path, {})
     rows = data.get("rows", [])
-    covered = {r["game_id"] for r in rows}
+    fallback_games = set(meta.get("cdn_fallback_games", []))
+    covered = {r["game_id"] for r in rows} - fallback_games      # a fallback-filled game is re-asked of the primary source
     known_empty = set(meta.get("known_empty_games", []))
     delta = sorted(logged_games - covered - known_empty)
-    print(f"{name}: logged={len(logged_games)} covered={len(covered)} known_empty={len(known_empty)} -> delta={len(delta)}")
+    print(f"{name}: logged={len(logged_games)} covered={len(covered)} known_empty={len(known_empty)} fallback-filled={len(fallback_games)} -> delta={len(delta)}")
 
-    new_rows, errors, newly_empty = [], [], []
+    new_rows, errors, newly_empty, via_fallback, upgraded = [], [], [], [], []
     for gid in delta:
         got, err = fetch_fn(gid, proxies)
+        if got is not None and gid in fallback_games:
+            if got:                     # the primary source answered: its rows replace the fallback rows
+                rows = [r for r in rows if r["game_id"] != gid]
+                fallback_games.discard(gid)
+                upgraded.append(gid)
+            else:                       # primary empty for a game the fallback filled - keep the fallback rows
+                continue
+        if got is None and fallback_fn is not None:
+            if gid in fallback_games:   # already filled by the fallback; the primary is still failing - keep and retry next run
+                print(f"{name}: {gid} primary still failing ({err}) - keeping the fallback rows")
+                continue
+            got2, err2 = fallback_fn(gid, proxies)
+            if got2:
+                print(f"{name}: {gid} primary failed ({err}) -> filled from the fallback source ({len(got2)} rows)")
+                fallback_games.add(gid)
+                via_fallback.append(gid)
+                got, err = got2, None
+            else:
+                err = f"{err}; fallback: {err2}"
         if got is None:
             errors.append({"game_id": gid, "error": err})
         elif not got:
@@ -148,7 +168,7 @@ def run_delta(name, data_path, meta_path, logged_games, fetch_fn, proxies, fetch
             new_rows.extend(got)
         time.sleep(0.3)
 
-    if new_rows:
+    if new_rows or upgraded:
         rows.extend(new_rows)
         data["rows"] = rows
         data_path.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
