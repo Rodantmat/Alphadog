@@ -69,7 +69,7 @@ def main():
     print(f"(3) ladder_from 2026-11-01: slates before it identical to the live history: {same3}", flush=True)
     ok &= same3
     conn.rollback()
-    after = [tuple(r) for r in conn.execute("SELECT game_date, round(season_profit::numeric, 2), unit_from, unit_usd, reason FROM nba_score.live_unit_history ORDER BY game_date").fetchall()]
+    after = [tuple(r) for r in conn.execute("SELECT game_date, round(season_profit::numeric, 2), unit_from, unit_usd, reason FROM nba_score.live_unit_history WHERE season_start = %s ORDER BY game_date", (s0,)).fetchall()]
     cu = conn.execute("SELECT config_json->'unit_usd' FROM nba_config.classification_config WHERE config_key='stake_unit'").fetchone()[0]
     print(f"rolled back - live history unchanged: {after == before}; config unit_usd {json.dumps(cu)}", flush=True)
     print("ALL PASS" if ok and after == before else "FAIL", flush=True)
