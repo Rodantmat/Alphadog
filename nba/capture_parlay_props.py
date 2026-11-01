@@ -294,6 +294,7 @@ def normalize(items, cfg, label, slate, ppmap=None):
         # name map and rung_market's exact-name join, so Bovada never counted in the market term. The history's Odds API rows carry
         # the bare name; strip a trailing team tricode in parentheses.
         pl = TEAM_SUFFIX.sub("", pl).strip()
+        pl = ppmap.get(name_key(pl), pl)       # book spelling -> PrizePicks spelling (accents / Jr. / III), exact join downstream
         if (not pl or "@" in pl or pl in (str(it.get("home_team") or ""), str(it.get("away_team") or "")) or per not in ("FULL", "GAME", "")
                 or any(w in mname for w in ("quarter", "half", "1st", "2nd", "3rd", "4th", "team", "total points o/u -"))):
             unmapped[f"{mk} [{mname[:40]}]"] = unmapped.get(f"{mk} [{mname[:40]}]", 0) + 1
