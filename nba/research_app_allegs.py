@@ -387,7 +387,7 @@ def main():
         print("\n" + "=" * 170 + f"\n{APP.upper()} {k_}-PICK {st_.upper()} - {len(ks)} rules")
         print("  (a) THE SELECTION METHOD OUT OF SAMPLE (best robust rule on the training season by its lower bound):")
         for tr, ot in ((0, 1), (1, 0)):
-            cand = [q for q in ks if robust(acc, q, tr, 100)]
+            cand = [q for q in ks if robust(acc, q, tr, MIN_SEL)]
             if not cand:
                 print(f"    chosen on {SEASONS[tr]}: no robust rule"); continue
             best = max(cand, key=lambda q: stat(acc.d[q][tr])[2])
