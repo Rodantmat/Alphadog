@@ -626,7 +626,7 @@ async function buildHighHit(sql, cfg, url, version) {
           result_hit: x.hit == null ? null : Number(x.hit), result_push: push, game_pk: x.event_id || null, mlb_player_id: x.player_id || x.player, ...cellFields, ...gameFields });
       }
     }
-    const mode = s.structure === "flex" ? "flex" : "power";
+    const mode = (s.structure === "flex" || s.structure === "dynamic") ? "flex" : "power";   // 2026-11-02: Betr Dynamic is the flex-type entry (was shown as Perfect)
     const tiers = nbaTiers(pricing, s.app, mode, legs) || {};
     slips.push({
       source_key: s.app, entry_mode: mode, slip_size: legs.length, slip_type: `${legs.length}-pick`,
