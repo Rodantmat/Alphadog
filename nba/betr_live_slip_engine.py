@@ -33,6 +33,7 @@ import research_app_final_strategies as AF          # noqa: E402
 import research_sleeper_deep as RSD                  # noqa: E402
 import research_sleeper_transfer as ST               # noqa: E402
 import sleeper_live_slip_engine as SL                # noqa: E402
+import research_sleeper_hist as RSH                  # noqa: E402
 
 PT = ZoneInfo("America/Los_Angeles")
 STRATEGY = "B_T23_4dyn"
