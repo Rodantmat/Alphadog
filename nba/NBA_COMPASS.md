@@ -742,6 +742,12 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    into ud_live_slip_engine (config ud_live_portfolio.live = 'C'; parity audit_ud_portfolio_c_parity 13 of 13 slates PASS) but not
    switched on. Next: a multi-structure portfolio restricted to the forward-robust structures (2S, 4S, 4F), chosen with a holdout, then
    parity + dry run (draft builder ud_portfolio_p.py, not wired).
+   SCOPED SEARCH (2S / 4S / 4F only, run 41512622929): holdout portfolios chosen on 2024-25 -> 2025-26 +10% to +13% (this season
+   -5% to 0%); chosen on 2025-26 -> 2024-25 +12% to +33% (this season +29% to +83%). Best in-sample sets: 2S ALL-both-core-ev-skip1 +
+   4S R-Less-combos-score-p0.55 + 2S composition ex:rebounds_F2_U +43 / +44%, dd 25.3u, 2.56 slips a day, this season +35% (31 slips).
+   VERDICT: T stays. T was chosen on 2024-25 alone and its 2025-26 on today's prices is +30.5% OUT OF SAMPLE - more than any holdout
+   portfolio of this search keeps (+10-19%). Option kept for the owner: add the 4-pick Power R-Less-combos-score-p0.55-gc1 (chosen on
+   2025-26 +179%, out of sample 2024-25 +69%; 0.59 slips a day, 81% of its days lose, dd 19u).
 
 ---
 
