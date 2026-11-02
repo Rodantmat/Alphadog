@@ -720,6 +720,16 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    Dynamic UD-T12 order books' chance mix 2 slips +42.7 / +43.7% dd 15.2u; 4-pick Dynamic UD-T1 p >= .54 1 slip +35.0 / +44.3% dd 8.5u.
    PrizePicks legs on Betr weak (best +22-55% one season, ~+1-30% the other). Real Betr board this season: 4 slates (10-20, 10-21, 10-26,
    10-27) - no rule has >= 3 real slips positive among the 4-6-pick leaders. Owner to choose; Betr config unchanged (B_T23_4dyn, skip 2).
+192. **UNDERDOG FULL SEARCH ON TODAY'S PRICES (2026-11-02 00:40 PT; owner "try different prop lines, different directions, different
+   approaches, ranks, trailings, all possible").** research_app_deep DP_REPRICE=1 (run 41414823328): all 122,603 strategies (B1 levels x
+   sides x props x ranks x floors x skip, B2 single line level / line position / prop-group caps, TR trailing ranks, FX factor bands, DOC
+   compositions) x 2-8 Power / 3-8 Flex, with history repriced to today's law m = K / nv (F Over .4759, F Under .4601, B Over .4889,
+   B Under .4699, else .4797; legs without books' no-vig dropped) and p := out-of-sample calibrated p_hat (research_ud_rebuild run
+   41409811739). HONEST TESTS: walk-forward top-1 / top-5: 2S +14 / +4%, 6S +55 / +20%, 6F +2 / +21%, every other structure negative
+   (3S -29/-19, 4S -24/-21, 3F -42/-3, 4F -19/-16, 5F -24/-22). Portfolio holdouts: chosen on 2024-25 -> 2025-26 -13% to -34%; chosen
+   on 2025-26 -> 2024-25 -7% to +8%. Robust-in-both lists exist for every structure (2S 74, 4S 30, 4F 24, 3S 24, 6F 15) but they are
+   the survivors of 122k tries and do not carry forward. Conclusion: on today's Underdog prices only 2-pick Standard keeps a small
+   positive forward edge; 6-pick results are lottery-driven. No change deployed; owner to choose.
 
 ---
 
