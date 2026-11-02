@@ -17,7 +17,8 @@ PAYOUT (Betr's own pricing query, re-certified 2026-10-26, pp_slip_rules['betr_p
 BOARD: the Betr board is read without a browser with the owner's own token (betr_board_direct.py) and archived as 'window' right before
   the pick (P3); the engine reads the newest Betr rows of the slate from nba_market.board_snapshots. Betr stays out of the scorer
   (classification_config p3_betr_wait.enabled = false); this engine only reads the board. Nothing is sent to Betr.
-GATE: classification_config['betr_live'] (enabled, floor, skip, game_cap, slips, k). Rows: nba_score.betr_live_slips.
+GATE: classification_config['betr_live'] (enabled; mode 'board' = the Betr-board rules list (2026-11-01), else the legacy B_T23 keys
+  floor, skip, game_cap, slips, k). Rows: nba_score.betr_live_slips. BT_DRY=1 prints the slips and writes nothing.
 Modes: BT_MODE=pick (BT_DATE or today PT) | grade (BT_DATE or every ungraded slate). Env: DATABASE_URL.
 """
 import datetime as dt
