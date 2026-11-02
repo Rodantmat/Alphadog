@@ -805,7 +805,25 @@ async function buildHighHit(sql, cfg, url, version) {
     }
   }
   if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - the afternoon run builds them at 1:16 PM PT, or 29 minutes before the first tip when that is earlier; they appear here a few minutes later." : `No slips recorded for ${slate.date}.`);
+  // UNITS ONLY ON TOP (owner 2026-11-02 14:05 PT: "remove all the description ... keep that hidden ... just put the units per app ...
+  // which app, what's the current unit, when it increases, what's the current accumulate"): with units per app on, the top of the
+  // screen is the unit table; every other note stays in the payload as hidden_notes (not shown).
+  let unitTable = null, hiddenNotes = null;
+  if (bt.unit.byApp && bt.unit.perApp) {
+    const NM = { prizepicks: "PrizePicks", underdog: "Underdog", sleeper: "Sleeper", fliff: "Fliff", betr: "Betr" };
+    const AB = { pp: "prizepicks", ud: "underdog", sleeper: "sleeper", fliff: "fliff", betr: "betr" };
+    const chg = new Map((bt.unit.changes || []).map(c => [AB[c.app] || c.app, c.from]));
+    unitTable = ["prizepicks", "underdog", "sleeper", "fliff", "betr"].filter(a => bt.unit.perApp[a]).map(a => {
+      const v = bt.unit.perApp[a];
+      return { app: NM[a], unit: Number(v.unit), next_unit: v.next_raise_at != null ? Number(v.unit) + 1 : null,
+               next_at: v.next_raise_at != null ? Number(v.next_raise_at) : null, accumulated: Number(v.profit),
+               down_below: v.step_down_below != null ? Number(v.step_down_below) : null, changed_from: chg.has(a) ? chg.get(a) : null };
+    });
+    hiddenNotes = notes.slice();
+    notes.length = 0;
+  }
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, test_only_recorded: testOnly.length, backup_pool: pool,
+    unit_table: unitTable, hidden_notes: hiddenNotes,
     pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, stake_unit: bt.unit, timing_ms: (lap("build"), T) };
 }
 
