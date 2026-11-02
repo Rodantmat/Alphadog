@@ -40,6 +40,11 @@ UNITS = {
     "B6": ("b2", ("R", "B", "lowvol", "p", "low", 0, 1), 4, "flex"),
     "B7": ("b1", ("R", "B", "lowvol", "blend", 0.70, 2, 1), 3, "power"),
     "B9": ("b1", ("RD", "B", "lowvol", "ev", 0.62, 2, 1), 6, "flex"),
+    # 2026-11-02 (owner 13:24 PT "No power ... anything over 2 pick must be flex"): the 3-pick Power units' legs as 4-pick Flex
+    # (research_portfolio_caps PC_SET=flexb); their 3-pick Flex versions reuse B3 / B5 / B7 (same 3 legs, Flex entry)
+    "B3x4": ("f", (0.68, "Under", "none"), 4, "flex"),
+    "B5x4": ("b1", ("R", "O", "all", "p", 0.62, 1, 1), 4, "flex"),
+    "B7x4": ("b1", ("R", "B", "lowvol", "blend", 0.70, 2, 1), 4, "flex"),
 }
 
 

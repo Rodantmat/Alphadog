@@ -205,6 +205,13 @@ PORTFOLIO_UNITS = {
     'P_B6_4flex':         ('pb:B6',                4, 'flex',  ''),
     'P_B7_3power':        ('pb:B7',                3, 'power', ''),
     'P_B9_6flex':         ('pb:B9',                6, 'flex',  ''),
+    # 2026-11-02 (owner 13:24 PT "No power, let's keep a safer smaller slip anything over 2 pick must be flex"): B3 / B5 / B7 as Flex
+    'P_B3_3flex':         ('pb:B3',                3, 'flex',  ''),
+    'P_B5_3flex':         ('pb:B5',                3, 'flex',  ''),
+    'P_B7_3flex':         ('pb:B7',                3, 'flex',  ''),
+    'P_B3_4flex':         ('pb:B3x4',              4, 'flex',  ''),
+    'P_B5_4flex':         ('pb:B5x4',              4, 'flex',  ''),
+    'P_B7_4flex':         ('pb:B7x4',              4, 'flex',  ''),
 }
 PORTFOLIO_DEFAULT = {"enabled": False, "n": 2, "leg_cap": 2, "order": list(PORTFOLIO_UNITS),
                      "replaces": ["A_wrebounds_4flex", "C_wstocks_4flex", "A_core_3power", "D_points_3power"]}
