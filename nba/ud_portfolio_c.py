@@ -36,6 +36,7 @@ UNITS = {
     "C1": ("ALL", "Less", "all", 0.535, 1, 2, 2),
     "C2": ("ALL", "both", "nolow", 0.535, 1, 2, 1),
 }
+SHORT = {"C1": "all lines, Less, all props", "C2": "all lines, More + Less, no low-volume props"}
 LABEL = {"C1": "2-pick Power, all lines, Less, all props, r_hat >= .535, skip 1",
          "C2": "2-pick Power, all lines, More + Less, no low-volume props, r_hat >= .535, skip 1"}
 

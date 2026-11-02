@@ -25,6 +25,9 @@ GRADING (Underdog's rules): a DNP or a push VOIDS the pick and the entry shrinks
   as a 2-pick Standard.
 PORTFOLIO T (owner 2026-10-25 20:01 PT; NBA_COMPASS 183): with classification_config['ud_live_portfolio'].live = 'T' the played
   Underdog portfolio is T (ud_portfolio_t: three 2-pick Standards), rows portfolio 'T' status 'live'; P5 / P4 are recorded as shadow.
+PORTFOLIO C (owner 2026-11-02 10:39 PT; NBA_COMPASS 192/193): with ['ud_live_portfolio'].live = 'C' the played portfolio is C
+  (ud_portfolio_c: 2-pick Standards ranked by the calibrated chance x today's multiplier), rows portfolio 'C' status 'live'; T, P5,
+  P4 are recorded as shadow. UDL_DRY=1 builds, prints and rolls back (nothing written).
 Modes: UDL_MODE=pick (P3, after the PrizePicks pick) | grade (P2A). Env: DATABASE_URL, UDL_MODE, UDL_DATE (YYYY-MM-DD), UDL_FORCE.
 """
 import datetime as dt
@@ -40,6 +43,7 @@ import psycopg
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_ud_slip_engine as E   # noqa: E402 - the certified engine (original 14 cells, centers out)
 import ud_portfolio_t as UPT       # noqa: E402 - portfolio T, the shared builder (audit_ud_portfolio_t_parity)
+import ud_portfolio_c as UPC       # noqa: E402 - portfolio C, the shared builder (research_ud_switch, audit_ud_portfolio_c_parity)
 from live_slip_engine import regular_season_window as _season_window, PT   # noqa: E402 - one season resolver, one clock (cert pass F)
 
 MKT = {'points': 'points', 'rebounds': 'rebounds', 'assists': 'assists', 'threes': 'threes_made', 'steals': 'steals',
@@ -119,6 +123,8 @@ def ud_hide_blocks_under(conn):
 def ud_live_portfolio(conn):
     """nba_config.classification_config['ud_live_portfolio'].live: 'T' (owner 2026-10-25 20:01 PT) builds portfolio T as the played
     Underdog portfolio and records P5 / P4 as shadow; anything else (or no row) keeps the P5 / P4 behaviour."""
+    if os.environ.get('UDL_PORTFOLIO'):          # dry runs / audits only (audit_ud_portfolio_c_parity)
+        return os.environ['UDL_PORTFOLIO']
     try:
         r = conn.execute("SELECT config_json->>'live' FROM nba_config.classification_config WHERE config_key='ud_live_portfolio'").fetchone()
     except Exception:  # noqa: BLE001
@@ -296,7 +302,7 @@ def pick(conn, day):
                 seen.add(key)
                 flag = any(l['side'] == 'Under' and fresh.get(teams.get(l['player_id']), 0) >= 2 for l in slip)
                 stake = 0.0 if sd else (0.5 if flag else 1.0)
-                status = f"stand_down:{sd}" if sd else ('shadow' if live_pf == 'T' else 'paper')
+                status = f"stand_down:{sd}" if sd else ('shadow' if live_pf in ('T', 'C') else 'paper')
                 legs_json = [{'cell': l['cell'], 'player': l['player'], 'player_id': l['player_id'], 'prop': l['prop'], 'tier': l['tier'],
                               'side': l['side'], 'line': l['line'], 'factor': l['factor'], 'event_id': l['event_id']} for l in slip]
                 conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
@@ -306,7 +312,7 @@ def pick(conn, day):
     # shared builder the parity audit certified. Stake 0 only where the research had no slate: the final regular-season week and the
     # postseason (the pre-All-Star week WAS in the research, so T plays it). No half stake (the research staked every slip 1 unit;
     # the absence flag is recorded for information).
-    if live_pf == 'T':
+    if live_pf in ('T', 'C'):
         raw = UPT.raw_legs(legs)
         t_sd = sd if sd in ('final_week', 'postseason') else None
         for uid in UPT.UNITS:
@@ -318,8 +324,27 @@ def pick(conn, day):
             conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                          (day, 'T', f"{uid} {UPT.LABEL[uid]}", UPT.UNITS[uid][2], UPT.UNITS[uid][3], 1, json.dumps(slip),
+                          0.0 if t_sd else 1.0, f"stand_down:{t_sd}" if t_sd else ('live' if live_pf == 'T' else 'shadow'), flag))
+            n_rows += 1
+    # PORTFOLIO C (owner 2026-11-02 10:39 PT; NBA_COMPASS 192/193): 2-pick Standards on today's prices, ranked by the calibrated
+    # chance x multiplier, built by the shared builder research_ud_switch measured. Stake 0 only where the research had no slate
+    # (the final regular-season week, the postseason), 1 unit otherwise; no half stake (the research staked every slip 1 unit).
+    if live_pf == 'C':
+        craw = UPC.calibrate([dict(l) for l in UPT.raw_legs(legs)], UPC.consensus(conn, day))
+        n_books = sum(1 for l in craw if l['nv_src'] == 'books')
+        print(f"  {day}: portfolio C - {len(craw)} calibrated legs ({n_books} priced by the books, {len(craw) - n_books} by Underdog's own multiplier)", flush=True)
+        c_sl = UPC.portfolio(craw)
+        for uid in UPC.UNITS:
+            if not any(u == uid for u, _k, _s in c_sl):
+                print(f"  {day}: portfolio C {uid} - no slip (not enough legs over the floor)", flush=True)
+        for uid, k, slip in c_sl:
+            flag = any(l['side'] == 'Under' and fresh.get(teams.get(l['player_id']), 0) >= 2 for l in slip)
+            conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                         (day, 'C', f"{uid} {UPC.SHORT[uid]}", len(slip), 'standard', k, json.dumps(UPC.slip_json(uid, slip)),
                           0.0 if t_sd else 1.0, f"stand_down:{t_sd}" if t_sd else 'live', flag))
             n_rows += 1
+            print(f"  {day}: C {uid} slip {k}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} m {l['m']} p_hat {l['ph']:.3f} r_hat {l['rh']:.3f}" for l in slip), flush=True)
     # PLAYOFF UNDERS on Underdog (§31z, 2026-10-09): on a play-in / playoff slate the postseason-only rule (playoff_unders.py, the
     # same code its certification backtested) builds its slip(s) - one pick per game by Underdog's rule. Paper (stake 1) only with
     # a PASS postseason verdict; otherwise recorded at stake 0 ('shadow_post'). Graded by grade() below like every paper slip.
@@ -351,9 +376,13 @@ def pick(conn, day):
                               1.0 if passed else 0.0, 'paper_post' if passed else 'shadow_post', False))
                 n_rows += 1
                 print(f"  {day}: {name} - {'PAPER' if passed else 'SHADOW'} slip of {len(slip)} (postseason verdict {verdict.get(name, 'none')})", flush=True)
+    if os.environ.get('UDL_DRY') == '1':
+        conn.rollback()
+        print(f"  {day}: UDL_DRY=1 - {n_rows} slips built and ROLLED BACK (nothing written)", flush=True)
+        return
     conn.commit()
     print(f"  {day}: {len(legs)//3} Underdog legs scored | stand-down: {sd or 'no'} | teams with 2+ fresh absences: "
-          f"{sum(1 for v in fresh.values() if v >= 2)} | {n_rows} slips logged ({'T live, P5 + P4 shadow' if live_pf == 'T' else 'P5 + P4 shadow'})", flush=True)
+          f"{sum(1 for v in fresh.values() if v >= 2)} | {n_rows} slips logged ({'C live, T + P5 + P4 shadow' if live_pf == 'C' else 'T live, P5 + P4 shadow' if live_pf == 'T' else 'P5 + P4 shadow'})", flush=True)
 
 
 def payout(structure, legs_after_void):
