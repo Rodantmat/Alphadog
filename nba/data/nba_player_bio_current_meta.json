@@ -1,8 +1,8 @@
 {
-  "fetched_at": "2026-10-26T19:03:15Z",
+  "fetched_at": "2026-11-02T19:04:39Z",
   "source_url": "https://stats.nba.com/stats/leaguedashplayerbiostats?LeagueID=00&Season=2026-27&SeasonType=Regular+Season&PerMode=Totals",
   "http_status": 200,
-  "player_count": 400,
+  "player_count": 442,
   "error": null,
-  "position_note": "positions_matched: 400/400 via playerindex"
+  "position_note": "positions_matched: 442/442 via playerindex"
 }
