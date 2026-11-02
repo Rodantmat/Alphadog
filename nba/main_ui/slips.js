@@ -190,7 +190,7 @@ async function engineSlips(sql, cfg, slate) {
   return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })),
            sl: sl.map(r => ({ ...r, app: "sleeper", track: `Sleeper ${r.size}-pick ${r.structure === "flex" ? "Flex" : "Max"} ${String(r.strategy || "").startsWith("S_ALL") ? `(all Sleeper legs, slip ${r.k})` : "(Underdog T1 legs)"}` })),
            fl: (await fliffLive(sql, slate)).map(r => ({ ...r, app: "fliff", track: `Fliff ${r.size}-pick Max (Underdog T1 legs)` })),
-           bt: (await betrLive(sql, slate)).map(r => ({ ...r, app: "betr", track: `Betr ${r.size}-pick Dynamic (Underdog T2+T3 legs)` })) };
+           bt: (await betrLive(sql, slate)).map(r => ({ ...r, app: "betr", track: String(r.strategy || "").startsWith("B_BRD") ? `Betr ${r.size}-pick Dynamic ${String(r.strategy).endsWith("_fb") ? "fallback " : ""}(Betr board, slip ${r.k})` : `Betr ${r.size}-pick Dynamic (Underdog T2+T3 legs)` })) };
 }
 // BETR (owner 2026-10-26 18:31 PT: "Let's go b so, you can deploy it in the slip system") - nba/betr_live_slip_engine.py, two 4-pick
 // Dynamic slips a slate at Betr's own line (= the Underdog leg's line); the table is created by the engine, so it is looked up first
