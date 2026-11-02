@@ -213,6 +213,14 @@ def main():
                     print(f"    {v} {sd:5s} n {len(x):6,d} final_hp {np.mean([l['p'] for l in x]):.3f} p_hat {np.mean([l['ph'] for l in x]):.3f} "
                           f"hit {np.mean([l['hit'] for l in x]):.3f} hit x m {np.mean([l['hit'] * l['m'] for l in x]):.3f}")
 
+    print("  2026-27 by the source of nv (books' no-vig vs Underdog's own multiplier), p_hat zones: n / p_hat / hit / hit x m")
+    for src in ("books", "ud"):
+        for lo, hi in ((0.0, 0.50), (0.50, 0.55), (0.55, 0.60), (0.60, 0.65), (0.65, 1.01)):
+            x = [l for l in data["2026-27"] if l.get("nv_src", "books") == src and lo <= l.get("ph", -1) < hi]
+            if len(x) >= 30:
+                print(f"    {src:5s} p_hat {lo:.2f}-{hi:.2f} n {len(x):6,d} p_hat {np.mean([l['ph'] for l in x]):.3f} hit {np.mean([l['hit'] for l in x]):.3f} "
+                      f"hit x m {np.mean([l['hit'] * l['m'] for l in x]):.3f} final_hp {np.mean([l['p'] for l in x]):.3f}")
+
     # ---------------- PART D: every rule ----------------
     keyf = {"rh": lambda l: -l["rh"], "edge": lambda l: -l["edge"], "ph": lambda l: -l["ph"]}
     valf = {"rh": lambda l: l["rh"], "edge": lambda l: l["edge"], "ph": lambda l: l["ph"]}
