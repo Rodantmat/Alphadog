@@ -601,8 +601,9 @@ async function buildHighHit(sql, cfg, url, version) {
         ...(viaUd ? { source_key: s.app, line_type: "regular", app_multiplier: null, edge_0_100: null, breakeven_0_100: null } : {}) }));
       else {
         const wn = x.player_id ? wnMap.get([String(x.player_id), x.prop, line, sideIn(x.side)].join("|")) : null;
-        if (!wn) unmatched++;
-        const wnHp = wn && wn.hp != null ? r1(100 * wn.hp) : null;
+        const ownP = s.app === "betr" && x.p != null ? r1(100 * Number(x.p)) : null;   // a Betr-board leg's final_hp at Betr's line
+        if (!wn && ownP == null) unmatched++;
+        const wnHp = wn && wn.hp != null ? r1(100 * wn.hp) : ownP;
         legs.push({ board_row_id: `${slate.date}~${s.app}~${x.player_id || x.player}~${x.prop}~${line}~${sideIn(x.side)}`, player_name: fullName.get(norm(x.player)) || x.player, canonical_prop_key: x.prop, prop_label: propLabel(x.prop),
           line_value: line, selected_side: side, source_key: s.app, tier: x.tier, leg_factor: Number(x.factor) || null, hit_probability_0_100: wnHp, estimated_hit_probability_0_100: wnHp,
           score_0_100: wn && wn.score != null ? r1(wn.score) : undefined, hp_source: wn ? "final_hp_derived:" + wn.derivation : undefined, cell: x.cell,
