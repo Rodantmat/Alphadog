@@ -584,7 +584,10 @@ async function buildHighHit(sql, cfg, url, version) {
       // a Betr leg is the Underdog leg at the same line (the engine requires it; Betr stays off the scored board) - it reads that row
       // a Fliff leg is an Underdog T1 leg (fliff_live_slip_engine): it reads that row when Fliff's line is Underdog's (ud_line) -
       // C13 2026-10-26: the Fliff slip's legs looked for a 'fliff' board row that does not exist and showed no probability
-      const viaUd = s.app === "betr" || (s.app === "fliff" && x.ud_line != null && Number(x.ud_line) === line);
+      // 2026-11-01 Betr-board rules (B_BRD_*): the leg is Betr's own line, which need not be Underdog's - it reads the Underdog row only
+      // when one exists at that line, else it shows the engine's own final_hp at Betr's line (legs_json p)
+      const viaUd = (s.app === "betr" && (!String(s.strategy || "").startsWith("B_BRD") || byKey.has(["underdog", String(x.player_id), x.prop, line, side].join("|"))))
+        || (s.app === "fliff" && x.ud_line != null && Number(x.ud_line) === line);
       const app = viaUd ? "underdog" : s.app;
       const hit = (x.player_id && byKey.get([app, String(x.player_id), x.prop, line, side].join("|"))) || byKey.get([app, "n:" + norm(x.player), x.prop, line, side].join("|"));
       const cr = s.app === "prizepicks" && x.cell ? bt.cellRate.get(`${x.cell}|${x.tier}|${sideIn(x.side)}`) : null;
