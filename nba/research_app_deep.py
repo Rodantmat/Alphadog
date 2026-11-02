@@ -571,7 +571,8 @@ def main():
         print(f"\n  -- {lab}")
         for r in sorted(rows, key=key)[:8]:
             print("    " + pr(r))
-        lead.append(sorted(rows, key=key)[0])
+        if rows:                                           # 2026-11-01: a smoke run can leave the portfolio empty
+            lead.append(sorted(rows, key=key)[0])
     L = int(round(np.mean([np.sum(seas == s) for s in hist]))) if len(hist) == 2 else int(np.sum(seas == hist[0]))
     seen = set()
     for r in lead:
