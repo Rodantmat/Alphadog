@@ -50,12 +50,16 @@ def rules(conn):
     return r[0] if isinstance(r[0], dict) else json.loads(r[0])
 
 
-def payout(legs, rj):
-    """Betr Dynamic on the graded legs: voids dropped; < 2 live or 1 team = refund; all-LESS table when every live leg is Under"""
+def payout(legs, rj, structure="dynamic"):
+    """Betr Dynamic (or Perfect, when the owner placed the slip as Perfect - structure 'perfect') on the graded legs: voids dropped;
+    < 2 live or 1 team = refund; all-LESS table when every live leg is Under"""
     live = [l for l in legs if l.get("hit") is not None]
     n = len(live)
     if n < 2 or len({l.get("team") for l in live}) < 2:
         return 1.0
+    if structure == "perfect":
+        tab = rj["perfect_all_less"] if all(l["side"] == "Under" for l in live) else rj["perfect_regular"]
+        return float(tab.get(str(n)) or 0.0) if all(l["hit"] for l in live) else 0.0
     tab = rj["dynamic_all_less"] if all(l["side"] == "Under" for l in live) else rj["dynamic_regular"]
     return float((tab.get(str(n)) or {}).get(str(sum(1 for l in live if l["hit"])), 0.0))
 
@@ -345,13 +349,13 @@ def grade(conn, day):
         if not st:
             print(f"BETR_GRADE|{d}: no box scores yet - left ungraded")
             continue
-        for name, k, lj, stake in conn.execute("SELECT strategy, k, legs_json, stake FROM nba_score.betr_live_slips WHERE game_date = %s AND graded_at IS NULL",
-                                               (d,)).fetchall():
+        for name, k, lj, stake, struct in conn.execute("""SELECT strategy, k, legs_json, stake, structure FROM nba_score.betr_live_slips
+                                                          WHERE game_date = %s AND graded_at IS NULL""", (d,)).fetchall():
             legs = lj if isinstance(lj, list) else json.loads(lj)
             for l in legs:
                 h = AF.outcome(st, l)
                 l["hit"] = None if h is None else bool(h)
-            pay = payout(legs, rj)
+            pay = payout(legs, rj, struct)
             hits = sum(1 for l in legs if l["hit"])
             conn.execute("""UPDATE nba_score.betr_live_slips SET legs_json = %s, hits = %s, payout = %s, profit = %s, graded_at = now()
                             WHERE game_date = %s AND strategy = %s AND k = %s""",
