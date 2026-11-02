@@ -23,7 +23,7 @@ from collections import defaultdict
 
 import numpy as np
 
-K = {("F", "Over"): 0.4759, ("F", "Under"): 0.4601, ("B", "Over"): 0.4889, ("B", "Under"): 0.4699}
+K = {("R", "Over"): 0.5010, ("R", "Under"): 0.4969, ("F", "Over"): 0.4759, ("F", "Under"): 0.4601, ("B", "Over"): 0.4889, ("B", "Under"): 0.4699}
 K_ALL = 0.4797
 COEF = (-0.025, 0.518, 0.905, -0.048, 0.050, 0.051)        # const, logit final_hp, logit nv, F, B, Under (fit 2024-25 + 2025-26)
 GRP = {"points": "mains", "rebounds": "mains", "assists": "mains", "threes_made": "mains", "pra": "combos", "pts_reb": "combos",

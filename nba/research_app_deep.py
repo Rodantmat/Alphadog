@@ -78,7 +78,7 @@ def log(m):
 #   * p := p_hat = logistic(const + a logit final_hp + b logit nv + F + B + Under), fitted OUT OF SAMPLE (2024-25 on 2025-26, 2025-26 on
 #     2024-25, this season on both) - it corrects the B-line overrating with the market. Every rank / floor / ev then uses p_hat.
 REPRICE = os.environ.get("DP_REPRICE") == "1"
-RP_K = {("F", "Over"): 0.4759, ("F", "Under"): 0.4601, ("B", "Over"): 0.4889, ("B", "Under"): 0.4699}
+RP_K = {("R", "Over"): 0.5010, ("R", "Under"): 0.4969, ("F", "Over"): 0.4759, ("F", "Under"): 0.4601, ("B", "Over"): 0.4889, ("B", "Under"): 0.4699}
 RP_KALL = 0.4797
 RP_COEF = {"2024-25": (-0.032, 0.631, 0.828, -0.056, 0.064, 0.067), "2025-26": (-0.018, 0.459, 0.954, -0.041, 0.039, 0.035),
            "2026-27": (-0.025, 0.518, 0.905, -0.048, 0.050, 0.051)}
