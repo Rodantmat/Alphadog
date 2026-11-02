@@ -1,14 +1,17 @@
 {
-  "fetched_at": "2026-11-01T11:33:53Z",
+  "fetched_at": "2026-11-02T11:34:21Z",
   "season": "2026-27",
   "method": "delta",
-  "row_count": 264,
-  "games_covered": 88,
+  "row_count": 276,
+  "games_covered": 92,
   "last_delta": {
-    "attempted": 7,
-    "recovered_games": 7,
+    "attempted": 4,
+    "recovered_games": 4,
     "errors": [],
-    "newly_empty": []
+    "newly_empty": [],
+    "via_fallback": [],
+    "upgraded_from_fallback": []
   },
-  "known_empty_games": []
+  "known_empty_games": [],
+  "cdn_fallback_games": []
 }
