@@ -346,6 +346,26 @@ def main():
             print(f"  robust rules: median ROI 2024-25 {100 * np.median([stat(acc[k][0])[1] for k in both]):+.1f}% / 2025-26 "
                   f"{100 * np.median([stat(acc[k][1])[1] for k in both]):+.1f}% | this season (>= 5 slips) {len(m26)} rules, median "
                   f"{100 * np.median(m26) if m26 else 0:+.1f}%, positive {100 * np.mean(np.array(m26) > 0) if m26 else 0:.0f}%")
+    # COMPACT SUMMARY (the log reader shows the tail): per structure the robust count, medians, the out-of-sample selection and the
+    # best rule robust in both history seasons AND positive on this season's real boards (>= 8 slips), by profit / drawdown
+    print("\n" + "=" * 190 + "\nSUMMARY BY STRUCTURE")
+    for n, st in STRUCTS:
+        ks = [k for k in keys if k[6] == n and k[7] == st]
+        both = [k for k in ks if robust(k, 0, 100) and robust(k, 1, 100)]
+        m26 = [stat(acc[k][2])[1] for k in both if acc[k][2][0] >= 5]
+        wf = []
+        for tr, ot in ((0, 1), (1, 0)):
+            cand = sorted([k for k in ks if robust(k, tr, 100)], key=lambda k: -stat(acc[k][tr])[2])[:5]
+            if cand:
+                wf.append(f"chosen {SEASONS[tr][2:]} -> {SEASONS[ot][2:]} {100 * np.mean([stat(acc[k][ot])[1] for k in cand]):+.0f}% / now "
+                          f"{100 * np.mean([stat(acc[k][2])[1] for k in cand]):+.0f}%")
+        three = sorted([k for k in both if acc[k][2][0] >= 8 and stat(acc[k][2])[1] > 0],
+                       key=lambda k: -((stat(acc[k][0])[5] + stat(acc[k][1])[5]) / max(stat(acc[k][0])[4], stat(acc[k][1])[4], 1)))
+        print(f"  {n}{'S' if st == 'standard' else 'F'}: robust {len(both)} | median {100 * np.median([stat(acc[k][0])[1] for k in both]) if both else 0:+.0f}% / "
+              f"{100 * np.median([stat(acc[k][1])[1] for k in both]) if both else 0:+.0f}% | now median {100 * np.median(m26) if m26 else 0:+.0f}% "
+              f"({100 * np.mean(np.array(m26) > 0) if m26 else 0:.0f}% positive) | {' | '.join(wf)} | all-three {len(three)}")
+        for k in three[:2]:
+            print("      " + row(k))
     print("\n(live reference: portfolio T (3 x 2-pick Standard, B-line based) - this season 17 slips -5.18u, -30.5%)")
     log("done")
 
