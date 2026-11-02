@@ -68,6 +68,68 @@ def log(m):
     print(f"[{time.time() - T0:6.0f}s] {m}", flush=True)
 
 
+# ---------------- DP_REPRICE=1 (owner 2026-11-01 23:22 / 2026-11-02 00:22 PT: "Replicate the current multipliers ... try different prop
+# lines, different directions, different approaches, ranks, trailings, all possible") ----------------
+# Every family runs on TODAY'S Underdog prices and the CALIBRATED chance (research_ud_rebuild run 41409811739):
+#   * the price law measured on this season's real window boards, K = m x nv (nv = books' no-vig for that side at that line): F Over .4759,
+#     F Under .4601, B Over .4889, B Under .4699, all .4797 (R lines);
+#   * history legs: m = round(K / nv, 2) (history paid ~1.00 on mains - not today's prices); legs with no books' no-vig are left out;
+#   * this season: Underdog's REAL m; a leg without a sportsbook price takes nv = K / m (Underdog prices off the exchange);
+#   * p := p_hat = logistic(const + a logit final_hp + b logit nv + F + B + Under), fitted OUT OF SAMPLE (2024-25 on 2025-26, 2025-26 on
+#     2024-25, this season on both) - it corrects the B-line overrating with the market. Every rank / floor / ev then uses p_hat.
+REPRICE = os.environ.get("DP_REPRICE") == "1"
+RP_K = {("F", "Over"): 0.4759, ("F", "Under"): 0.4601, ("B", "Over"): 0.4889, ("B", "Under"): 0.4699}
+RP_KALL = 0.4797
+RP_COEF = {"2024-25": (-0.032, 0.631, 0.828, -0.056, 0.064, 0.067), "2025-26": (-0.018, 0.459, 0.954, -0.041, 0.039, 0.035),
+           "2026-27": (-0.025, 0.518, 0.905, -0.048, 0.050, 0.051)}
+
+
+def _lvl(tier):
+    t = str(tier)
+    return "R" if t == "R" else "B" if t.startswith("B") else "F" if t.startswith("F") else "R"
+
+
+def _lg(x):
+    x = min(max(float(x), 1e-4), 1 - 1e-4)
+    return float(np.log(x / (1 - x)))
+
+
+def reprice_day(conn, d, season, legs, rows):
+    import research_sleeper_transfer as STR
+    fair, _main = STR.consensus(conn, d)
+
+    def nv_of(pid, prop, side, line, tier, m):
+        po = fair.get((str(pid), prop, float(line)))
+        nv = None if po is None else (po if side == "Over" else 1 - po)
+        if nv is not None and not 0.03 < nv < 0.97:
+            nv = None
+        if nv is None and season == "2026-27" and m and m > 0:
+            x = RP_K.get((_lvl(tier), side), RP_KALL) / float(m)
+            nv = x if 0.03 < x < 0.97 else None
+        return nv
+    b = RP_COEF.get(season, RP_COEF["2026-27"])
+    out = []
+    for l in legs:
+        nv = nv_of(l["player_id"], l["prop"], l["side"], l["line"], l["tier"], l["m"])
+        if nv is None:
+            continue
+        lv = _lvl(l["tier"])
+        if season != "2026-27":
+            l["m"] = round(RP_K.get((lv, l["side"]), RP_KALL) / nv, 2)
+        z = b[0] + b[1] * _lg(l["p"]) + b[2] * _lg(nv) + b[3] * (lv == "F") + b[4] * (lv == "B") + b[5] * (l["side"] == "Under")
+        l["p_raw"], l["nv"], l["p"] = l["p"], nv, float(1 / (1 + np.exp(-z)))
+        out.append(l)
+    rows_out = []
+    for r in rows:
+        nv = nv_of(r.get("player_id"), r["prop"], r["side"], r["line"], r.get("tier"), r.get("factor"))
+        if nv is None:
+            continue
+        if season != "2026-27":
+            r["factor"] = round(RP_K.get((_lvl(r.get("tier")), r["side"]), RP_KALL) / nv, 2)
+        rows_out.append(r)
+    return out, rows_out
+
+
 def fam_lists():
     b2 = [(lv, sd, ps, rk, lp, pc, gc) for lv in LEVELS for sd in AF.SIDES for ps in AF.PROPSETS for rk in (("p", "ev") if APP == "UD" else ("p",))
           for lp in ("all", "low", "high") for pc in (0, 2) for gc in AF.GCAPS]
@@ -320,6 +382,8 @@ def main():
         if not st:
             continue
         legs, rows = (AF.load_ud if APP == "UD" else AF.load_betr)(conn, d, st)
+        if REPRICE and APP == "UD":
+            legs, rows = reprice_day(conn, d, s, legs, rows)
         if not legs:
             continue
         for l in legs:
