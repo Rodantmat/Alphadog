@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-11-01T20:04:04Z",
-  "fetched_at": "2026-11-01T20:05:17Z",
+  "started_at": "2026-11-02T21:19:54Z",
+  "fetched_at": "2026-11-02T21:23:50Z",
   "categories": [
     "1H 3-Pointers Made",
     "1H Assists",
@@ -36,109 +36,137 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      52
+      92
     ],
     [
       "matches",
-      44,
+      62,
       "today",
-      4,
+      15,
       "other",
-      40,
+      47,
       "target",
-      "2026-11-01"
+      "2026-11-02"
     ],
     [
-      "lines[match=212030]",
+      "lines[match=212034]",
       20
     ],
     [
-      "pills[match=212030]",
-      86
+      "pills[match=212034]",
+      116
     ],
     [
-      "lines[match=212031]",
+      "lines[match=212038]",
       20
     ],
     [
-      "pills[match=212031]",
-      88
+      "pills[match=212038]",
+      120
     ],
     [
-      "lines[match=212032]",
+      "lines[match=212039]",
       20
     ],
     [
-      "pills[match=212032]",
-      88
+      "pills[match=212039]",
+      107
     ],
     [
-      "lines[match=212033]",
+      "lines[match=212035]",
       20
     ],
     [
-      "pills[match=212033]",
-      100
+      "pills[match=212035]",
+      89
     ],
     [
-      "lines[match=212034,other-day]",
-      0
+      "lines[match=212036]",
+      20
     ],
     [
-      "lines[match=212035,other-day]",
-      0
+      "pills[match=212036]",
+      110
     ],
     [
-      "lines[match=212036,other-day]",
-      0
+      "lines[match=212037]",
+      20
     ],
     [
-      "lines[match=212037,other-day]",
-      0
+      "pills[match=212037]",
+      116
     ],
     [
-      "lines[match=212038,other-day]",
-      0
+      "lines[match=212042]",
+      20
     ],
     [
-      "lines[match=212039,other-day]",
-      0
+      "pills[match=212042]",
+      130
     ],
     [
-      "lines[match=212040,other-day]",
-      0
+      "lines[match=212041]",
+      20
     ],
     [
-      "lines[match=212041,other-day]",
-      0
+      "pills[match=212041]",
+      114
     ],
     [
-      "lines[match=212042,other-day]",
-      0
+      "lines[match=212040]",
+      20
     ],
     [
-      "lines[match=212043,other-day]",
-      0
+      "pills[match=212040]",
+      78
     ],
     [
-      "lines[match=212044,other-day]",
-      0
+      "lines[match=212043]",
+      20
     ],
     [
-      "lines[match=212045,other-day]",
-      0
+      "pills[match=212043]",
+      117
     ],
     [
-      "lines[match=212046,other-day]",
-      0
+      "lines[match=212044]",
+      20
     ],
     [
-      "lines[match=212047,other-day]",
-      0
+      "pills[match=212044]",
+      121
     ],
     [
-      "lines[match=212048,other-day]",
-      0
+      "lines[match=212045]",
+      20
+    ],
+    [
+      "pills[match=212045]",
+      112
+    ],
+    [
+      "lines[match=212046]",
+      20
+    ],
+    [
+      "pills[match=212046]",
+      91
+    ],
+    [
+      "lines[match=212048]",
+      20
+    ],
+    [
+      "pills[match=212048]",
+      105
+    ],
+    [
+      "lines[match=212047]",
+      20
+    ],
+    [
+      "pills[match=212047]",
+      66
     ],
     [
       "lines[match=212049,other-day]",
@@ -241,16 +269,104 @@
       0
     ],
     [
+      "lines[match=212065,other-day]",
+      0
+    ],
+    [
+      "lines[match=212066,other-day]",
+      0
+    ],
+    [
+      "lines[match=212067,other-day]",
+      0
+    ],
+    [
+      "lines[match=212068,other-day]",
+      0
+    ],
+    [
+      "lines[match=212069,other-day]",
+      0
+    ],
+    [
+      "lines[match=212070,other-day]",
+      0
+    ],
+    [
+      "lines[match=212071,other-day]",
+      0
+    ],
+    [
+      "lines[match=212072,other-day]",
+      0
+    ],
+    [
+      "lines[match=212073,other-day]",
+      0
+    ],
+    [
+      "lines[match=212074,other-day]",
+      0
+    ],
+    [
+      "lines[match=212075,other-day]",
+      0
+    ],
+    [
+      "lines[match=212076,other-day]",
+      0
+    ],
+    [
+      "lines[match=212077,other-day]",
+      0
+    ],
+    [
+      "lines[match=212078,other-day]",
+      0
+    ],
+    [
+      "lines[match=212079,other-day]",
+      0
+    ],
+    [
+      "lines[match=212080,other-day]",
+      0
+    ],
+    [
+      "lines[match=212081,other-day]",
+      0
+    ],
+    [
+      "lines[match=212082,other-day]",
+      0
+    ],
+    [
+      "lines[match=212083,other-day]",
+      0
+    ],
+    [
+      "lines[match=212084,other-day]",
+      0
+    ],
+    [
+      "lines[match=212085,other-day]",
+      0
+    ],
+    [
+      "lines[match=212086,other-day]",
+      0
+    ],
+    [
       "lines_with_stats[players]",
-      69,
-      55
+      16,
+      209
     ],
     [
       "alternate_projections",
-      347,
-      1315,
+      1285,
+      4945,
       0,
-      "deduped 6"
+      "deduped 46"
     ],
     [
       "lines[mass=true]",
@@ -261,65 +377,65 @@
       0
     ]
   ],
-  "lines": 563,
-  "legs": 563,
-  "ladder_legs": 1315,
-  "ladder_lines_with_alternates": 347,
-  "players": 55,
-  "pregame_legs": 563,
+  "lines": 2000,
+  "legs": 2000,
+  "ladder_legs": 4945,
+  "ladder_lines_with_alternates": 1285,
+  "players": 209,
+  "pregame_legs": 2000,
   "live_legs": 0,
   "by_stat": {
-    "Steals": 55,
-    "Points": 53,
-    "Rebounds": 53,
-    "Pts + Rebs + Asts": 53,
-    "3-Pointers Made": 51,
-    "Moneyline": 44,
-    "Assists": 37,
-    "Rebounds + Assists": 29,
-    "To Record a Double Double": 22,
-    "1Q Points": 20,
-    "Points + Rebounds": 18,
-    "Points + Assists": 17,
-    "Fantasy Points": 16,
-    "1Q Pts + Rebs + Asts": 16,
-    "1Q 3-Pointers Made": 12,
-    "1H 3-Pointers Made": 12,
-    "1H Points": 11,
-    "1H Pts + Rebs + Asts": 11,
-    "Blocks": 9,
-    "Blocks + Steals": 6,
-    "1H Rebounds": 5,
-    "Margin of Victory": 4,
-    "Total Points": 4,
-    "To Record a Triple Double": 4,
+    "Rebounds": 201,
+    "Steals": 201,
+    "Points": 198,
+    "Pts + Rebs + Asts": 195,
+    "3-Pointers Made": 191,
+    "To Record a Double Double": 162,
+    "Assists": 158,
+    "Rebounds + Assists": 119,
+    "1Q Points": 89,
+    "Points + Rebounds": 89,
+    "Points + Assists": 69,
+    "Fantasy Points": 65,
+    "Moneyline": 62,
+    "To Record a Triple Double": 62,
+    "Blocks": 47,
+    "Blocks + Steals": 23,
+    "Margin of Victory": 15,
+    "Total Points": 15,
+    "1Q 3-Pointers Made": 8,
+    "1H 3-Pointers Made": 8,
+    "1Q Pts + Rebs + Asts": 8,
+    "1H Pts + Rebs + Asts": 6,
+    "1H Points": 5,
+    "1H Rebounds": 3,
     "1H Assists": 1
   },
   "by_line_type": {
-    "balanced": 563
+    "balanced": 2000
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 141,
-    "None": 48,
-    "1.04": 16,
-    "0.91": 15,
-    "1.07": 14,
-    "1.12": 13,
-    "0.72": 12,
-    "1.05": 12,
-    "1.17": 11,
-    "1.08": 11,
-    "0.88": 11,
-    "1.09": 11,
-    "0.77": 9,
-    "0.85": 9,
-    "0.8": 9
+    "1.0": 518,
+    "None": 77,
+    "1.04": 53,
+    "1.05": 52,
+    "0.91": 38,
+    "0.79": 34,
+    "1.09": 33,
+    "0.85": 32,
+    "1.07": 31,
+    "0.82": 29,
+    "0.73": 29,
+    "0.87": 28,
+    "0.8": 28,
+    "22.39": 25,
+    "0.81": 24
   },
-  "github_run_id": "41344727991",
-  "target_date_et": "2026-11-01",
+  "github_run_id": "41526910769",
+  "target_date_et": "2026-11-02",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 70.5
+  "elapsed_s": 235.3
 }
