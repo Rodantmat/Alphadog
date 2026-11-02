@@ -168,6 +168,130 @@ def build(conn, day, cfg):
     return slips, last, note
 
 
+# ===================================================================================================================================
+# BETR-BOARD RULES (owner 2026-11-01 19:39 PT "Replace as you recommended"): research_app_allegs AA_APP=betr AA_BETR_PF=0.40,0.55
+# (runs 41361805334 Betr's table / 41361807692 published table; every 2-6 Perfect / Dynamic rule, side band = what Betr really posts):
+#   MAIN      B_BRD_4dyn   4-pick Dynamic, order bl (half final_hp, half the books' chance), side mix, all props, 1 leg a game,
+#                          final_hp >= .60, 2 slips (2nd from other players): +52.8% / +36.2% (published table +36.3 / +22.8), this
+#                          season +28.1% (8), worst dd 8.8u
+#   FALLBACK  B_BRD_3dyn_fb  only when MAIN builds nothing: 3-pick Dynamic, same order / side / props, up to 2 legs a game, >= .60,
+#                          2 slips: +24.7% / +14.3% (published ~+16 / +4), this season +10.9% (16), worst dd 11u
+# THE SAME CODE PATH AS THE HARNESS (live_legs + day + greedy + mix_fix): Betr's newest board (REGULAR main lines - non-REGULAR tiers
+# and alt rungs are archived as _alternate), final_hp AT BETR'S LINE, the books' de-vigged chance at that line (RSD.load window, else
+# 0.5), the Underdog board's event per player; audit_betr_board_parity.py checks slip-for-slip identity with the harness. Live-only
+# guards (not in history, they only remove unplayable legs): a started game is dropped, a stale board builds nothing.
+# ===================================================================================================================================
+def board_legs(conn, day, guard=True):
+    last = conn.execute("SELECT max(snapshot_ts) FROM nba_market.board_snapshots WHERE bookmaker='betr' AND game_date=%s", (day,)).fetchone()[0]
+    if last is None:
+        return [], None, {}
+    rows = conn.execute("""SELECT DISTINCT nm.player_id::text, b.player, b.market_key, b.side, b.line::float, b.event_id
+                           FROM nba_market.board_snapshots b JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+                           WHERE b.bookmaker='betr' AND b.game_date=%s AND b.snapshot_ts=%s AND b.market_key = ANY(%s)""",
+                        (day, last, list(RSD.MK))).fetchall()
+    hp = {(r[0], r[1], r[2], float(r[3])): r[4] for r in conn.execute(RSH.FSQL, (day,)).fetchall()}
+    evs = dict(conn.execute("""SELECT DISTINCT ON (nm.player_id) nm.player_id::text, b.event_id FROM nba_market.board_snapshots b
+                               JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+                               WHERE b.bookmaker='underdog' AND b.game_date=%s ORDER BY nm.player_id, b.snapshot_ts DESC""", (day,)).fetchall())
+    tip = dict(conn.execute("""SELECT event_id, min(commence_time) FROM nba_market.board_snapshots
+                               WHERE bookmaker='underdog' AND game_date=%s GROUP BY 1""", (day,)).fetchall())
+    _sl, mk, *_ = RSD.load(conn, day)
+    tm = SL.teams_of(conn, {r[0] for r in rows}, day)
+    out, seen, why = [], set(), defaultdict(int)
+    for pid, nm, mkey, side, line, _bev in rows:
+        if mkey not in RSD.MK or mkey.endswith("_alternate"):
+            continue
+        prop = RSD.MK[mkey]
+        if (pid, prop, side, line) in seen:
+            continue
+        seen.add((pid, prop, side, line))
+        p = hp.get((pid, prop, side, line))
+        if p is None:
+            why["no final_hp at Betr's line"] += 1; continue
+        ev = evs.get(pid)
+        t0 = tip.get(ev)
+        if guard and t0 is not None and t0 <= last:
+            why["game started before the Betr board"] += 1; continue
+        pm = mk.get((pid, prop, side, line))
+        l = {"player": nm, "player_id": pid, "prop": prop, "side": side, "line": line, "event_id": ev, "p": float(p),
+             "pf": float(sum(pm) / len(pm)) if pm else 0.5, "team": tm.get(pid)}
+        if l["team"] is None or l["event_id"] is None:
+            why["no team / game"] += 1; continue
+        out.append(l)
+    return out, last, why
+
+
+ORDER_KEY = {"bl": lambda l: -(l["p"] + l["pf"]) / 2, "p": lambda l: -l["p"], "pf": lambda l: -l["pf"]}
+
+
+def _greedy(base, idx, k, banned, gc):
+    out, pl, gm = [], set(), defaultdict(int)
+    for i in idx:
+        l = base[i]
+        if l["player_id"] in pl or l["player_id"] in banned or gm[l["event_id"]] >= gc:
+            continue
+        out.append(l); pl.add(l["player_id"]); gm[l["event_id"]] += 1
+        if len(out) == k:
+            break
+    return out
+
+
+def _mix_fix(s, base, idx, gc, banned):
+    if not s or any(l["side"] != "Under" for l in s):
+        return s
+    used = {l["player_id"] for l in s} | banned
+    gm = defaultdict(int)
+    for l in s[:-1]:
+        gm[l["event_id"]] += 1
+    for i in idx:
+        l = base[i]
+        if l["side"] == "Over" and l["player_id"] not in used and gm[l["event_id"]] < gc:
+            return s[:-1] + [l]
+    return s
+
+
+def select(legs, rule):
+    """research_app_allegs.day() for one rule (props 'all'): -> up to 2 slips"""
+    sd, k, gc, fl = rule.get("side", "mix"), int(rule["k"]), int(rule.get("game_cap", 1)), float(rule.get("floor", 0.60))
+    skp, ns = int(rule.get("skip", 0)), int(rule.get("slips", 2))
+    base = sorted([l for l in legs if sd in ("any", "mix") or l["side"] == sd], key=ORDER_KEY[rule.get("order", "bl")])
+    if len(base) < 2:
+        return []
+    idx = [i for i, l in enumerate(base) if l["p"] >= fl][skp:]
+    if len(idx) < 2:
+        return []
+    s1 = _greedy(base, idx, 6, set(), gc)[:k]
+    if sd == "mix":
+        s1 = _mix_fix(s1, base, idx, gc, set())
+    if len(s1) < k or len({l["team"] for l in s1}) < 2:
+        return []
+    out = [s1]
+    if ns >= 2:
+        b1 = {l["player_id"] for l in s1}
+        s2 = _greedy(base, idx, k, b1, gc)
+        if sd == "mix":
+            s2 = _mix_fix(s2, base, idx, gc, b1)
+        if len(s2) == k and len({l["team"] for l in s2}) >= 2:
+            out.append(s2)
+    return out
+
+
+def build_board(conn, day, cfg):
+    legs, last, why = board_legs(conn, day)
+    if last is None:
+        return [], None, None, "no Betr board for the slate"
+    age_h = (dt.datetime.now(dt.timezone.utc) - last).total_seconds() / 3600
+    if age_h > float(cfg.get("max_board_age_h", 3)):
+        return [], None, last, f"the newest Betr board is {age_h:.1f} h old (> {cfg.get('max_board_age_h', 3)} h) - no slip on a stale board"
+    notes = [f"board {last:%H:%M}Z; {len(legs)} Betr legs with final_hp at Betr's line ({', '.join(f'{v} {k_}' for k_, v in why.items()) or 'none dropped'})"]
+    for rule in cfg["rules"]:
+        slips = select(legs, rule)
+        notes.append(f"{rule['name']}: {len(slips)} slip(s)")
+        if slips:
+            return slips, rule, last, "; ".join(notes)
+    return [], None, last, "; ".join(notes) + " - nothing qualifies"
+
+
 def pick(conn, day):
     cfg = SL.cfg(conn, "betr_live")
     if not cfg.get("enabled"):
