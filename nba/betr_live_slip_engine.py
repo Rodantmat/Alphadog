@@ -299,9 +299,22 @@ def pick(conn, day):
         return
     conn.execute(DDL)
     rj = rules(conn)
-    slips, last, note = build(conn, day, cfg)
+    if cfg.get("mode") == "board":
+        slips, rule, last, note = build_board(conn, day, cfg)
+        strategy = rule["name"] if rule else None
+        slips = [[{**l, "pid": l["player_id"], "game": l["event_id"]} for l in s] for s in slips]
+    else:
+        slips, last, note = build(conn, day, cfg)
+        strategy = STRATEGY
     print(f"BETR_LIVE|{day} {note}", flush=True)
+    if os.environ.get("BT_DRY") == "1":
+        for i, s in enumerate(slips, start=1):
+            print(f"BETR_DRY|{day} {strategy} k{i}: " + " + ".join(f"{l.get('player')} {l['prop']} {l['side']} {l['line']} (p {l['p']:.3f} pf {l['pf']:.3f})" for l in s), flush=True)
+        conn.rollback()
+        return
     if not slips:
+        # a rebuild that now finds nothing leaves no stale ungraded slip of any Betr rule behind
+        conn.execute("DELETE FROM nba_score.betr_live_slips WHERE game_date=%s AND graded_at IS NULL", (day,))
         conn.commit()
         print(f"BETR_LIVE|{day} no slip")
         return
