@@ -5,7 +5,7 @@ import json
 import urllib.request
 
 URL = "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev/api/slips/high-hit?refresh=1"
-req = urllib.request.Request(URL, data=b"{}", headers={"content-type": "application/json"}, method="POST")
+req = urllib.request.Request(URL, data=b"{}", headers={"content-type": "application/json", "user-agent": "curl/8.5.0"}, method="POST")
 j = json.loads(urllib.request.urlopen(req, timeout=180).read())
 print("version", j.get("version"), "ok", j.get("ok"), j.get("error"))
 print("unit_table", json.dumps(j.get("unit_table"), indent=1))
