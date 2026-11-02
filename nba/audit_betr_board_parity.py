@@ -40,7 +40,14 @@ def main():
             l["hit"] = A.AF.outcome(st, l)
         hk = sorted((l["player_id"], l["prop"], l["side"], l["line"], round(l["p"], 6), round(l["pf"], 6)) for l in hl)
         ek = sorted((l["player_id"], l["prop"], l["side"], l["line"], round(l["p"], 6), round(l["pf"], 6)) for l in el)
+        # the harness keeps only players with a box score that day (team from the box) - known only after the game; the engine cannot
+        # know before tip who sits, so it keeps them (they grade as voids). The pools must be equal once those players are set aside.
+        boxed = {str(p) for p in st}
+        extra = [x for x in ek if x[0] not in boxed]
+        ek = [x for x in ek if x[0] in boxed]
         same_pool = hk == ek
+        if extra:
+            print(f"  {d}: engine keeps {len(extra)} legs of {len({x[0] for x in extra})} players with no box score (did not play)", flush=True)
         acc = A.Acc()
         A.day(acc, 0, hl)
         line = [f"{d}: pool harness {len(hk)} / engine {len(ek)} {'SAME' if same_pool else 'DIFF'}"]
