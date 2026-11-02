@@ -56,6 +56,25 @@ SPECS = [
     (8, "3P Less>=0.55 b2b", "f", (0.55, "Under", "back-to-back"), 3, "power", (69, 62, 67, 70, 10.0)),
     (9, "6F lowvol ev>=0.62 gc2 skip1", "b1", ("RD", "B", "lowvol", "ev", 0.62, 2, 1), 6, "flex", (183, 54, 237, 81, 12.4)),
 ]
+# PC_SET=flexb (2026-11-02, owner 13:24 PT "No power, let's keep a safer smaller slip anything over 2 pick must be flex"): portfolio B's
+# units with every 3-pick Power unit as 3-pick Flex and 4-pick Flex, next to the live B (with its Power units) as the baseline.
+# Subsets (stage 2) are drawn from the Flex units only; PC_STOP2=1 stops after stage 2.
+if os.environ.get("PC_SET") == "flexb":
+    _Z = (0, 0, 0, 0, 0)
+    SPECS = [
+        (1, "B3 as 3F Less>=0.68", "f", (0.68, "Under", "none"), 3, "flex", _Z),
+        (2, "B4 4F lowvol trail", "b1", ("R", "B", "lowvol", "trail", 0.62, 1, 0), 4, "flex", _Z),
+        (3, "B5 as 3F More>=0.62 skip1", "b1", ("R", "O", "all", "p", 0.62, 1, 1), 3, "flex", _Z),
+        (4, "B6 4F lowvol low lines", "b2", ("R", "B", "lowvol", "p", "low", 0, 1), 4, "flex", _Z),
+        (5, "B7 as 3F lowvol blend>=0.70", "b1", ("R", "B", "lowvol", "blend", 0.70, 2, 1), 3, "flex", _Z),
+        (6, "B9 6F lowvol ev>=0.62 gc2", "b1", ("RD", "B", "lowvol", "ev", 0.62, 2, 1), 6, "flex", _Z),
+        (7, "B3 as 4F Less>=0.68", "f", (0.68, "Under", "none"), 4, "flex", _Z),
+        (8, "B5 as 4F More>=0.62 skip1", "b1", ("R", "O", "all", "p", 0.62, 1, 1), 4, "flex", _Z),
+        (9, "B7 as 4F lowvol blend>=0.70", "b1", ("R", "B", "lowvol", "blend", 0.70, 2, 1), 4, "flex", _Z),
+        (10, "B3 3P (live)", "f", (0.68, "Under", "none"), 3, "power", _Z),
+        (11, "B5 3P (live)", "b1", ("R", "O", "all", "p", 0.62, 1, 1), 3, "power", _Z),
+        (12, "B7 3P (live)", "b1", ("R", "B", "lowvol", "blend", 0.70, 2, 1), 3, "power", _Z),
+    ]
 NS = len(SPECS)
 
 
@@ -334,8 +353,15 @@ def main():
     A = np.nan_to_num(alone)
     V = ~np.isnan(alone)
     rows = []
-    for k in range(1, NS + 1):
-        for sub in itertools.combinations(range(NS), k):
+    UNI = [i for i in range(NS) if SPECS[i][5] == "flex" or SPECS[i][4] <= 2]
+    if os.environ.get("PC_SET") == "flexb":
+        live_b = [1, 3, 5, 9, 10, 11]
+        pl = A[live_b].sum(axis=0); stk = V[live_b].sum(axis=0)
+        per = [pl[seas == s].sum() / max(stk[seas == s].sum(), 1) for s in HIST]
+        print(f"  LIVE B (B3/B5/B7 as 3-pick Power): slips/day {stk.mean():.2f} | ROI {100 * pl.sum() / stk.sum():+.0f}% "
+              f"({100 * per[0]:+.0f}% / {100 * per[1]:+.0f}%) | profit {pl.sum():+.0f}u | dd {max_dd(pl):.1f}u | losing days {100 * np.mean(pl[stk > 0] < 0):.0f}%")
+    for k in range(1, len(UNI) + 1):
+        for sub in itertools.combinations(UNI, k):
             sub = list(sub)
             pl = A[sub].sum(axis=0); stk = V[sub].sum(axis=0)
             act = stk > 0
@@ -354,9 +380,18 @@ def main():
         for r in sorted(rows, key=key)[:10]:
             print("    " + pr(r))
     print("  -- by number of strategies (best profit/dd at each size)")
-    for k in range(1, NS + 1):
+    for k in range(1, len(UNI) + 1):
         r = max([r for r in rows if len(r[0]) == k], key=lambda r: r[5])
         print("    " + pr(r))
+    if os.environ.get("PC_SET") == "flexb":
+        print("  -- live B with each 3-pick Power unit replaced (3F = as 3-pick Flex, 4F = as 4-pick Flex, - = dropped)")
+        for nm, sub in (("B4+B6+B9 + B3/B5/B7 as 3F", [0, 1, 2, 3, 4, 5]), ("B4+B6+B9 + B3/B5/B7 as 4F", [1, 3, 5, 6, 7, 8]),
+                        ("B4+B6+B9 only (Power units dropped)", [1, 3, 5]), ("B4+B6+B9 + B3 3F + B5 4F + B7 3F", [0, 1, 7, 3, 4, 5])):
+            r = next(r for r in rows if sorted(r[0]) == sorted(sub))
+            print(f"    {nm:<40} " + pr(r))
+    if os.environ.get("PC_STOP2") == "1":
+        log("PC_STOP2 - done")
+        return
 
     # ---------------- STAGE 3: caps ----------------
     print("\n" + "=" * 170 + "\nSTAGE 3 - CAP SWEEP (flat 1u)")
