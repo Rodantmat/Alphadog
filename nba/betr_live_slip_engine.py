@@ -326,8 +326,8 @@ def pick(conn, day):
                         VALUES (%s, %s, %s, 'dynamic', %s, %s, 1, 'live', %s, %s)
                         ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, size = EXCLUDED.size,
                           model_multiplier = EXCLUDED.model_multiplier, board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
-                        WHERE nba_score.betr_live_slips.graded_at IS NULL""", (day, STRATEGY, len(s), i, json.dumps(lj), mult, last))
-        print(f"BETR_LIVE|{day} {STRATEGY} k{i}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']}" for l in s)
+                        WHERE nba_score.betr_live_slips.graded_at IS NULL""", (day, strategy, len(s), i, json.dumps(lj), mult, last))
+        print(f"BETR_LIVE|{day} {strategy} k{i}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']}" for l in s)
               + f" | Dynamic top x{mult}", flush=True)
     # a rebuild that now yields fewer slips leaves no stale ungraded slip behind
     conn.execute("DELETE FROM nba_score.betr_live_slips WHERE game_date=%s AND strategy=%s AND k > %s AND graded_at IS NULL",
