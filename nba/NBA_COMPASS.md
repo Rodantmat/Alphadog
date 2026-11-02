@@ -748,6 +748,16 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    VERDICT: T stays. T was chosen on 2024-25 alone and its 2025-26 on today's prices is +30.5% OUT OF SAMPLE - more than any holdout
    portfolio of this search keeps (+10-19%). Option kept for the owner: add the 4-pick Power R-Less-combos-score-p0.55-gc1 (chosen on
    2025-26 +179%, out of sample 2024-25 +69%; 0.59 slips a day, 81% of its days lose, dd 19u).
+194. 🔑 **UNIT PER APP (2026-11-02; owner 14:00 / 14:05 PT "the unit is gonna be by app, not more the total ... PrizePicks ... set it 3
+   ... when it goes up to 63, then we go to $4").** Each app has its own unit and ladder (nba/unit_per_app.py, stake_unit.per_app,
+   table nba_score.live_unit_app; P2A unit_update.py walks every slate from per_app.from): the 2026-11-01 ladder shape (rung n starts at
+   up_x x n(n-1)/2, the same thresholds down, floor $1) with up_x scaled to the app's slips a day (25 for all 14 together): PrizePicks
+   10.5 ($3 from 31.5, $4 at 63), Underdog 5.5, Sleeper / Betr 3.5, Fliff 2. Seeds 2026-11-02: PrizePicks $3 at 31.5 and Underdog $2
+   at 5.5 and Betr $2 at 3.5 (owner presets, bottom of the rung), Sleeper $4 at 34.63 and Fliff $4 at 12.29 (their own profit since
+   10-24). Profit since 10-24 by app (each slate's units x the unit then): PP +24.20, UD -16.36, Sleeper +34.63, Fliff +12.29, Betr
+   +1.00 = the all-app 55.77 (the all-app figure was right; the 11-01 drop to $2 was the new ladder's $75 rung). Slips screen
+   v1.4.52: the top is one table - app, unit, next increase (amount at profit), accumulated; the other notes are hidden_notes.
+   Checked: audit_slips_units (PrizePicks $3, Underdog $2, Sleeper $4, Fliff $4, Betr $2 on every shown slip).
 
 ---
 
