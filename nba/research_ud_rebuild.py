@@ -155,6 +155,20 @@ def main():
     allx = np.array([l["m_board"] * l["nv"] for l in cur])
     Kall = float(np.median(allx)) if len(allx) else 0.465
     print(f"  ALL n {len(allx)} K median {Kall:.4f} (the 2026-10-22 measure was 0.465)")
+    # THIS SEASON'S UNPRICED LEGS (2026-11-01 sample run 41406198003: only 15% of this season's Underdog legs have a sportsbook no-vig at
+    # the same line - the live book feed is thin): Underdog prices off the exchange, so its own multiplier carries the market's chance -
+    # nv = K[level, side] / m (the law measured above on the priced legs). History keeps the books' no-vig (95% coverage; its Underdog
+    # multipliers were ~1.00 and say nothing).
+    n_fill = 0
+    for s, _d, ls in slates:
+        if s != "2026-27":
+            continue
+        for l in ls:
+            if l["nv"] is None and l["m_board"] > 0:
+                nv = K.get((l["lv"], l["side"]), Kall) / l["m_board"]
+                if 0.03 < nv < 0.97:
+                    l["nv"] = nv; l["nv_src"] = "ud"; n_fill += 1
+    print(f"  this season: {n_fill:,} legs without a sportsbook price get nv = K / Underdog's own multiplier")
 
     # ---------------- PART B: reprice history ----------------
     print("\nPART B - HISTORY REPRICED to today's law (legs with a books' no-vig only)")
