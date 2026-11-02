@@ -730,6 +730,18 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    on 2025-26 -> 2024-25 -7% to +8%. Robust-in-both lists exist for every structure (2S 74, 4S 30, 4F 24, 3S 24, 6F 15) but they are
    the survivors of 122k tries and do not carry forward. Conclusion: on today's Underdog prices only 2-pick Standard keeps a small
    positive forward edge; 6-pick results are lottery-driven. No change deployed; owner to choose.
+193. ⚠️ **CORRECTION TO 192 + PORTFOLIO C vs T (2026-11-02 midday; owner 10:39 PT "go with your recommendation, whatever ones is the
+   strongest").** 192's repricing fell back to K .4797 for R (1.00) lines; the measured R law is K .5010 Over / .4969 Under, so every
+   R-line payout in 192 was ~4% too low. Rerun with the fix (research_app_deep DP_REPRICE=1 run 41505430467): walk-forward top-1 / top-5
+   2S +9 / +15%, 4S +47 / +6%, 4F +24 / +12% (top 10 chosen on either season: 4F 10 of 10 and 9 of 10 positive on the other, 4S 10 / 8,
+   2S 9 / 5); 3S -29 / -4, 3F -31 / -8, 5F -23 / -17, 6F -61 / +15, 6S -32 / +44. Portfolio holdouts now ALL positive: chosen on
+   2024-25 -> 2025-26 +10% to +13%, chosen on 2025-26 -> 2024-25 +12% to +19%. 192's "only 2-pick keeps an edge" is WITHDRAWN.
+   Head-to-head on the same prices (research_ud_switch run 41505424962, every slate): portfolio C (ud_portfolio_c: C1 all lines Less
+   r_hat >= .535 skip 1 2 slips + C2 all lines both no-lowvol 1 slip, 2-pick Power) +18.7% / +29.4% / this season +38.5% (39 slips);
+   the LIVE T grid units (T2 + T3) +25.6% / +30.5% / +37.3% (22 slips) - C is NOT stronger than T, so T stays live. Portfolio C is built
+   into ud_live_slip_engine (config ud_live_portfolio.live = 'C'; parity audit_ud_portfolio_c_parity 13 of 13 slates PASS) but not
+   switched on. Next: a multi-structure portfolio restricted to the forward-robust structures (2S, 4S, 4F), chosen with a holdout, then
+   parity + dry run (draft builder ud_portfolio_p.py, not wired).
 
 ---
 
