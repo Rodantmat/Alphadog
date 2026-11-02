@@ -809,8 +809,8 @@ jobs:
 
       # BETR (owner 2026-10-26 18:31 PT: "Let's go b so, you can deploy it in the slip system"): read Betr's board RIGHT NOW without a
       # browser with the owner's own token (nba/betr_board_direct.py - the session renews itself) and archive it as this slate's 'window'
-      # board, then two 4-pick Dynamic slips (nba/betr_live_slip_engine.py, strategy B_T23_4dyn: Underdog T2+T3 legs at Betr's own line,
-      # final_hp >= 0.58, ordered by the books' chance, top 2 skipped, <= 2 per game, never all-Under -> nba_score.betr_live_slips; gate
+      # board, then the Betr slips (nba/betr_live_slip_engine.py; since 2026-11-01 betr_live.mode 'board': B_BRD_4dyn - two 4-pick Dynamic
+      # from Betr's own board, else the 3-pick fallback B_BRD_3dyn_fb; legacy B_T23_4dyn if mode is removed) -> nba_score.betr_live_slips; gate
       # classification_config betr_live). Betr stays out of the scorer (p3_betr_wait.enabled false). Nothing is sent to Betr. Soft.
       - name: Betr board (owner token, no browser) + pick (4-pick Dynamic x2)
         id: soft_btpick
