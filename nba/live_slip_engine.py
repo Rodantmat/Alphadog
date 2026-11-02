@@ -401,8 +401,13 @@ def refresh_auto_unit(conn, day):
     if not a.get('enabled') or os.environ.get('LS_UNIT_USD'):
         return
     _s0, u, _hi = unit_season_state(conn, day)
+    # 2026-11-02 (owner 14:00 PT "the unit is gonna be by app"): with stake_unit.per_app on, PrizePicks slips take PrizePicks' unit
+    import unit_per_app as UPA
+    pu = UPA.unit_for(conn, 'pp', day)
+    if pu is not None:
+        u = pu
     stake_unit(conn)['unit_usd'] = u
-    print(f"  {day}: unit {u:g} (earn the raise)", flush=True)
+    print(f"  {day}: unit {u:g} (earn the raise{', PrizePicks unit' if pu is not None else ''})", flush=True)
 
 
 UNIT_PLAYED_SQL = """

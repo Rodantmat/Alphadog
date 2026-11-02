@@ -330,7 +330,19 @@ async function backtestContext(sql, cfg, names) {
   const suRow = (await q(sql, "SELECT config_json, now() AS read_at FROM nba_config.classification_config WHERE config_key = 'stake_unit'"))[0];   // now(): never cached (the engine moves the unit)
   const su = suRow ? (typeof suRow.config_json === "string" ? JSON.parse(suRow.config_json) : suRow.config_json) : {};
   const unit = { usd: Number(su.unit_usd || 1), min: Number(su.min_stake_usd || 1), playPaper: su.play_from_day1 !== false,
-                 udPlay: su.ud_play === true, auto: await unitAutoStatus(sql, su) };
+                 udPlay: su.ud_play === true, auto: await unitAutoStatus(sql, su), byApp: null, perApp: null };
+  // UNIT PER APP (owner 2026-11-02 14:00 PT: "the unit is gonna be by app, not more the total"): stake_unit.per_app.units, written by
+  // nba/unit_per_app.py after every graded slate - each app's slips are priced at that app's unit
+  const pa = su.per_app;
+  if (pa && pa.enabled && pa.units) {
+    unit.byApp = Object.fromEntries(Object.entries(pa.units).map(([a, v]) => [a, Number(v && v.unit)]));
+    unit.perApp = pa.units;
+    try {
+      const ch = await q(sql, `SELECT app, unit_from f, unit_usd u, reason FROM nba_score.live_unit_app
+                               WHERE game_date = (SELECT max(game_date) FROM nba_score.live_unit_app) AND unit_usd <> unit_from ORDER BY app`);
+      unit.changes = ch.map(r => ({ app: r.app, from: Number(r.f), to: Number(r.u), reason: r.reason }));
+    } catch (_e) { unit.changes = []; }
+  }
   // UNDERDOG STOP (2026-10-16, owner: "full force since day one ... if things are not going well, then we start changing"): the
   // Underdog P5 portfolio is played when stake_unit.ud_play is true; its edge monitor's ALARM (sticky per season, §31o) stops it.
   let udAlarm = false;
@@ -368,6 +380,10 @@ const SKIP_REASON = [["shadow", "shadow strategy"], ["week1_skip", "week-1 rule"
   ["capped", "daily ceiling reached"], ["below_min", "its half stake is below the minimum entry"],
   // 2026-10-22 quote gate: a backup is used only when a slip fails PrizePicks' quote; a gate skip failed it - never PLAY, never shown
   ["backup", "backup (not needed)"], ["quote_skip", "PrizePicks' quote did not confirm it"]];
+function unitOf(bt, app) {
+  const v = bt.unit.byApp && bt.unit.byApp[app];
+  return Number.isFinite(v) && v > 0 ? v : bt.unit.usd;
+}
 function udAdvice(s, bt) {
   const st = String(s.status || "");
   if (!bt.unit.udPlay) return { label: "paper (Underdog engine)", play_usd: null };
@@ -377,7 +393,7 @@ function udAdvice(s, bt) {
   if (bt.udAlarm && s.portfolio === "P5") return { label: "SKIP - Underdog edge monitor ALARM (stopped)", play_usd: null };
   const w = Number(s.stake == null ? 1 : s.stake);
   if (!(w > 0)) return { label: "SKIP - not staked", play_usd: null };
-  const usd = Math.round(bt.unit.usd * w * 100) / 100;
+  const usd = Math.round(unitOf(bt, "underdog") * w * 100) / 100;
   if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
   return { label: "PLAY $" + usd.toFixed(2) + " (Underdog)", play_usd: usd };
 }
@@ -397,7 +413,7 @@ function stakeAdvice(s, bt) {
     if (!bt.slPlay) return { label: "paper (Sleeper engine)", play_usd: null };
     const w = Number(s.stake == null ? 1 : s.stake);
     if (!(w > 0)) return { label: "SKIP - not staked", play_usd: null };
-    const usd = Math.round(bt.unit.usd * w * 100) / 100;
+    const usd = Math.round(unitOf(bt, "sleeper") * w * 100) / 100;
     if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
     return { label: "PLAY $" + usd.toFixed(2) + " (Sleeper)", play_usd: usd };
   }
@@ -405,7 +421,7 @@ function stakeAdvice(s, bt) {
     if (!bt.flPlay) return { label: "paper (Fliff engine)", play_usd: null };
     const w = Number(s.stake == null ? 1 : s.stake);
     if (!(w > 0)) return { label: "SKIP - not staked", play_usd: null };
-    const usd = Math.round(bt.unit.usd * w * 100) / 100;
+    const usd = Math.round(unitOf(bt, "fliff") * w * 100) / 100;
     if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
     return { label: "PLAY $" + usd.toFixed(2) + " (Fliff)", play_usd: usd };
   }
@@ -413,7 +429,7 @@ function stakeAdvice(s, bt) {
     if (!bt.btPlay) return { label: "paper (Betr engine)", play_usd: null };
     const w = Number(s.stake == null ? 1 : s.stake);
     if (!(w > 0)) return { label: "SKIP - not staked", play_usd: null };
-    const usd = Math.round(bt.unit.usd * w * 100) / 100;
+    const usd = Math.round(unitOf(bt, "betr") * w * 100) / 100;
     if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
     return { label: "PLAY $" + usd.toFixed(2) + " (Betr)", play_usd: usd };
   }
@@ -424,7 +440,7 @@ function stakeAdvice(s, bt) {
   const plays = state === "active" || (bt.unit.playPaper && ["paper", "yellow", "critical", "week2"].includes(state));
   if (!plays) return { label: `SKIP - strategy ${state}`, play_usd: null };
   // 2026-10-18: a slip is priced at the unit in force when the engine picked it (live_slips.unit_usd; earn the raise moves it)
-  const u = s.unit_usd != null && s.unit_usd !== "" ? Number(s.unit_usd) : bt.unit.usd;
+  const u = s.unit_usd != null && s.unit_usd !== "" ? Number(s.unit_usd) : unitOf(bt, "prizepicks");
   const usd = Math.round(u * (s.stake_weight == null ? 1 : Number(s.stake_weight)) * 100) / 100;
   if (usd < bt.unit.min) return { label: "SKIP - its stake is below the minimum entry", play_usd: null };
   return { label: "PLAY $" + usd.toFixed(2) + (state === "active" ? "" : " (" + state + ")"), play_usd: usd };
@@ -723,7 +739,7 @@ async function buildHighHit(sql, cfg, url, version) {
   if (eng.source === "live" && slips.length) {
     const byApp = ["prizepicks", "underdog", "sleeper", "fliff", "betr"].map(a => [a, plays.filter(x => x.source_key === a)]).filter(([, xs]) => xs.length)
       .map(([a, xs]) => xs.length + ({ prizepicks: " PrizePicks", underdog: " Underdog", sleeper: " Sleeper", fliff: " Fliff", betr: " Betr" })[a] + " slip(s) $" + xs.reduce((t, x) => t + x.play_usd, 0).toFixed(2));
-    notes.push("To play today: " + (byApp.length ? byApp.join(" + ") : "0 slips") + " (total $" + plays.reduce((a, x) => a + x.play_usd, 0).toFixed(2) + ") at $" + bt.unit.usd.toFixed(2) + " per unit - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).");
+    notes.push("To play today: " + (byApp.length ? byApp.join(" + ") : "0 slips") + " (total $" + plays.reduce((a, x) => a + x.play_usd, 0).toFixed(2) + ") " + (bt.unit.byApp ? "at each app's own unit (" + ["prizepicks", "underdog", "sleeper", "fliff", "betr"].filter(a => bt.unit.byApp[a]).map(a => ({ prizepicks: "PrizePicks", underdog: "Underdog", sleeper: "Sleeper", fliff: "Fliff", betr: "Betr" })[a] + " $" + unitOf(bt, a).toFixed(2)).join(", ") + ")" : "at $" + bt.unit.usd.toFixed(2) + " per unit") + " - place them soon after they appear: on 2025-26 slates 27% of picked legs had moved or left the board by the close capture (first tip - 25 min).");
   }
   if (eng.source === "live" && plays.length) {
     const by = new Map();
@@ -743,7 +759,19 @@ async function buildHighHit(sql, cfg, url, version) {
     } catch (e) { notes.push("Streak flags could not be read: " + String(e && e.message || e)); }
   }
   // EARN THE RAISE (2026-10-18): the unit, how it was earned and what moves it next
-  const au = bt.unit.auto;
+  const au = bt.unit.byApp ? null : bt.unit.auto;
+  if (bt.unit.byApp) {
+    const NM = { prizepicks: "PrizePicks", underdog: "Underdog", sleeper: "Sleeper", fliff: "Fliff", betr: "Betr" };
+    const AB = { pp: "prizepicks", ud: "underdog", sleeper: "sleeper", fliff: "fliff", betr: "betr" };
+    for (const c of (bt.unit.changes || []).slice().reverse())
+      notes.unshift(`⚠ UNIT CHANGE ${NM[AB[c.app]] || c.app}: ${money(c.from)} -> ${money(c.to)} from this slate (${c.reason}).`);
+    notes.push("Units by app (earn the raise per app, each app's own ladder sized to its slips a day; the same points going down): " +
+      ["prizepicks", "underdog", "sleeper", "fliff", "betr"].filter(a => bt.unit.perApp[a]).map(a => {
+        const v = bt.unit.perApp[a];
+        return `${NM[a]} ${money(v.unit)} (profit ${money(v.profit)}` + (v.next_raise_at != null ? `, next ${money(Number(v.unit) + 1)} at ${money(v.next_raise_at)}` : "") +
+          (v.step_down_below != null ? `, down to ${money(Number(v.unit) - 1)} below ${money(v.step_down_below)}` : "") + ")";
+      }).join(" | ") + ".");
+  }
   // UNIT CHANGE ALERT (owner 2026-10-28 13:00 PT: "show itself on the slip screen and give an alert message of unit amount change"):
   // the engine moved the unit after the last graded slate -> the first note, in red (a leading warning sign), until the next grade
   if (au && au.enabled && au.last_change && au.last_change.date === au.as_of)

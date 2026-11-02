@@ -43,6 +43,9 @@ def main():
         print(f"unit: NEXT SLATE ${float(row[2]):.2f} (after {row[0]}: profit {float(row[3]):+.2f}, high {float(row[4]):.2f}; {row[5]})", flush=True)
         if float(row[1]) != float(row[2]):
             print(f"::warning::UNIT CHANGE ${float(row[1]):.2f} -> ${float(row[2]):.2f} ({row[5]})", flush=True)
+    # 2026-11-02 (owner 14:00 PT): each app's own unit and ladder (unit_per_app); the all-app row above stays as the record
+    import unit_per_app as UPA
+    UPA.update(conn, last)
     if os.environ.get('UNIT_DRY') == '1':
         conn.rollback()
         print("unit: DRY RUN - rolled back", flush=True)
