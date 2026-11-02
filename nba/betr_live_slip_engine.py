@@ -330,8 +330,8 @@ def pick(conn, day):
         print(f"BETR_LIVE|{day} {strategy} k{i}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']}" for l in s)
               + f" | Dynamic top x{mult}", flush=True)
     # a rebuild that now yields fewer slips leaves no stale ungraded slip behind
-    conn.execute("DELETE FROM nba_score.betr_live_slips WHERE game_date=%s AND strategy=%s AND k > %s AND graded_at IS NULL",
-                 (day, STRATEGY, len(slips)))
+    conn.execute("""DELETE FROM nba_score.betr_live_slips WHERE game_date=%s AND graded_at IS NULL
+                    AND (strategy <> %s OR k > %s)""", (day, strategy, len(slips)))
     conn.commit()
 
 
