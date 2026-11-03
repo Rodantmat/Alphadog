@@ -75,7 +75,7 @@ jobs:
             tgZsZ7jyW9tjxQSybmaZa/NRsvpsfm1K+xOMIt35yv24eakHSS/CBOMgsW1w7kW9
             p3HvOXNQ9MmBEd/Gb1z2Ge0CAwEAAQ==
             -----END PUBLIC KEY-----
-        run: python tools/claude_export_transfer.py
+        run: xvfb-run -a python tools/claude_export_transfer.py
       - name: Push encrypted parts to orphan branch
         if: always() && github.event.inputs.mode != 'cleanup'
         run: |
