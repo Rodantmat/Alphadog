@@ -758,6 +758,22 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    +1.00 = the all-app 55.77 (the all-app figure was right; the 11-01 drop to $2 was the new ladder's $75 rung). Slips screen
    v1.4.52: the top is one table - app, unit, next increase (amount at profit), accumulated; the other notes are hidden_notes.
    Checked: audit_slips_units (PrizePicks $3, Underdog $2, Sleeper $4, Fliff $4, Betr $2 on every shown slip).
+195. 🔬 **PRIZEPICKS DEEP REVIEW (2026-11-02 night; owner 20:13 PT "do a deep review on PrizePicks, find better strategies";
+   research_pp_deep_review run 41577821299, live engine board load_board_legs_live, 322 slates; research only, nothing changed).**
+   (A) final_hp on STANDARD lines has almost no ranking power on this season's real board so far (13 slates: logistic slope ~0 for
+   main and low-volume, both sides; top 25 standard legs a slate hit 54.8% vs 57.7 / 59.4% in history). Early season is always weak
+   (first 13 slates of history: slopes 0.23-0.48 vs 0.66-0.95 the rest of the season) - this season is weaker still. Goblin / demon
+   calibration is normal (slopes 0.89 / 0.93). This season main standard Unders hit 53.3% vs Overs 46.6% (n ~5,200 each; history's
+   first 13 slates 50 / 50). (B) THE BOOKS: on history the books' no-vig improves log-loss only marginally (0.6285 -> 0.6268,
+   0.6023 -> 0.6020) and this season's book feed covers 21% of standard legs at PrizePicks' line (87-97% in history), so p_hat
+   cannot carry live; grid strategies on p_hat with demons + chance x factor show +170..+570% in history and -100% this season -
+   the history book snapshot carries information live does not have. REJECTED. (C) Portfolio B as live on the live board path:
+   2024-25 +86% (439 slips), 2025-26 +78% (533), this season +53% (57; placed record ~+33% on 30 after quote skips) - still the best.
+   (D) Grid on final_hp (3,456 combos x Power 2-6 / Flex 3-6): the both-season leaders are the low-volume blend / trailing-cell
+   families B already uses; walk-forward mixed by structure (2P -30 / -28%, 3P -45 / +62, 4P +82 / -100, 3F +36 / +63, 4F +36 / +7,
+   5F +50 / +83, 6F +89 / +139) - nothing beats B out of sample. OPEN IMPROVEMENT: about 1 B slip in 6 is quote-skipped (a leg left
+   PrizePicks' board) with no replacement (B has no backups) - +4.4u of skipped slips this season; rebuilding the unit's slip
+   without the missing leg would keep the same rule on the board as it stands.
 
 ---
 
