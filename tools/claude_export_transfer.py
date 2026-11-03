@@ -87,7 +87,7 @@ def try_curl(name, url, cookies=None, ua=None, proxy=None):
 def try_browser(pending, urls, proxy=None):
     """Open each link in a real Chrome; let Chrome download it, or reuse its cleared cookies with curl."""
     from seleniumbase import Driver
-    kw = dict(uc=True, xvfb=True)
+    kw = dict(uc=True)  # Xvfb display provided by xvfb-run in the workflow
     if proxy:
         kw["proxy"] = proxy.split("://", 1)[-1]
     tag = "proxy" if proxy else "direct"
