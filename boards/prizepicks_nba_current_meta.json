@@ -3,24 +3,24 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-11-02T21:19:51Z",
+  "fetched_at": "2026-11-03T21:19:59Z",
   "egress": {
-    "ip": "72.220.46.89",
-    "hostname": "ip72-220-46-89.sd.sd.cox.net",
+    "ip": "99.75.22.183",
+    "hostname": "99-75-22-183.lightspeed.sndgca.sbcglobal.net",
     "city": "San Diego",
     "region": "California",
     "country": "US",
-    "loc": "32.7157,-117.1647",
-    "org": "AS22773 Cox Communications Inc.",
-    "postal": "92101",
+    "loc": "33.0067,-117.0690",
+    "org": "AS7018 AT&T Enterprises, LLC",
+    "postal": "92128",
     "timezone": "America/Los_Angeles",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 11998,
-  "row_count": 11998,
+  "rows": 2011,
+  "row_count": 2011,
   "total_pages": 1,
-  "future_pickable": 11998,
+  "future_pickable": 2011,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
@@ -41,22 +41,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 13704636,
+      "bytes": 2276493,
       "total_pages": 1,
       "ok": true,
-      "rows": 11998,
-      "future_pickable": 11998
+      "rows": 2011,
+      "future_pickable": 2011
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 13704614,
+      "bytes": 2276471,
       "total_pages": 1,
       "ok": true,
-      "rows": 11998,
-      "future_pickable": 11998
+      "rows": 2011,
+      "future_pickable": 2011
     }
   ],
-  "github_run_id": "41526910769"
+  "github_run_id": "41720316296"
 }
