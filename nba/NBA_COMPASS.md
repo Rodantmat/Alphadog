@@ -774,6 +774,24 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    5F +50 / +83, 6F +89 / +139) - nothing beats B out of sample. OPEN IMPROVEMENT: about 1 B slip in 6 is quote-skipped (a leg left
    PrizePicks' board) with no replacement (B has no backups) - +4.4u of skipped slips this season; rebuilding the unit's slip
    without the missing leg would keep the same rule on the board as it stands.
+196. 🔬 **PRIZEPICKS UNIVERSE, DEEPER - A NEW ANGLE: THE PLAYER'S L10 AVERAGE vs THE LINE (2026-11-03 early; owner 2026-11-02 21:18 PT
+   "different angles, different proplines, different compositions, different ranks, trailings ... go deeper"; research only).**
+   research_pp_universe run 41583958382 (54,167 strategies x Power 2-6 / Flex 3-6, live board path, 322 slates): every line level
+   alone, slate line position and 0.5 lines, every prop alone, 15 ranks (final_hp, x factor, baseline, final_score, cell trail
+   10 / 20 / 40, blends 25 / 50 / 75, the player's own hit AT THE LINE over L5 / L10 / L20, 0.5 final_hp + 0.5 L10, and AEDGE = the
+   player's L10 average's distance from the line toward the pick / sqrt(line + 1)), two-selector compositions (14 blocks, every pair
+   and split). DEMON-VALUE compositions (+120..+370% in both history seasons) lose this season (-100% on most) - demons at final_hp
+   .50-.55 hit .39 this season (vs .49) - not trusted. NEW ANGLE that holds in both seasons AND this season: low-volume LESS ranked
+   by AEDGE, final_hp >= .65, <= 2 a game: U3 (skip top, 3P) +98% (42) / +145% (80) / now +75% (10); U4 (4P) +125% (40) / +188%
+   (80) / now +100% (10). Also L3 (low-volume by the player's L10 hit, final_hp >= .70, 1 a game, 3P) +97 / +115 / now +20; S2
+   (steals 0.5 lines >= .60 2P) +43 / +51 / +33; W4 (low-volume low lines 4F) +82 / +56 / +133; C4 (3 trailing-cell + 1 steals
+   Less 4F) +51 / +87 / +90. PORTFOLIOS (research_pp_candidates run 41586281281, same legs / grader, 1u a slip): B +86.3% / +78.2%
+   (+379 / +417u, dd 15.0 / 16.1u), now +53.4% (57); B + U4 +89.5 / +92.5% (+429 / +567u, dd 17.0 / 21.4u), now +60.4%; B + U3
+   +87.2 / +87.0% (+420 / +533u, dd 17.0 / 20.1u), now +56.6%; B - B4 + U3 + U4 +99.0 / +102.2% (+426 / +601u, dd 15.6 / 26.1u),
+   now +66.1%; B - B6 + U3 + U4 +101.2 / +110.4% (+393 / +610u, dd 13.8 / 19.6u), now +52.9%. HOLDOUT (set chosen on one season
+   only, from every B +/- candidate combination): chosen on 2024-25 (B - B7 + U3 + S2 + C4) -> 2025-26 +84.4% +666u dd 20.2u vs B
+   +78.2% +417u; chosen on 2025-26 (B - B3 + U3 + U4 + C4) -> 2024-25 +84.2% +481u dd 27.8u vs B +86.3% +379u; this season +55.5% /
+   +71.4% vs B +53.4%. Candidates correlate +0.46..+0.62 a day with B (same low-volume family). Owner to choose; nothing live.
 
 ---
 
