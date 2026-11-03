@@ -126,7 +126,7 @@ def try_browser(pending, urls, proxy=None):
                 log(f"  chrome[{tag}] {name}: ZIP via browser {os.path.getsize(os.path.join(DL, name))} bytes")
                 continue
             try:
-                title = d.get_title()
+                title = d.get_title() + " | " + ("login" if "login" in d.get_current_url() else "export" if "export" in d.get_current_url() else "other")
             except Exception:  # noqa: BLE001
                 title = "?"
             log(f"  chrome[{tag}] {name}: no download; page title={title[:60]!r}")
