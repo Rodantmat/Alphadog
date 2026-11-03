@@ -199,6 +199,18 @@ def main():
                 for sd in ("Over", "Under"):
                     calib_table(f"{k} {grp} {sd}", [l for l in g if l["k"] == k and (l["_grp"] == "lowvol") == (grp == "lowvol") and l["side"] == sd], "fh")
 
+    # PART A2 - EARLY SEASON: this season is only ~2 weeks old; each history season's FIRST slates (same count) vs the rest
+    n_now = sum(1 for x in slates if x[0] == "2026-27")
+    print(f"\n  A2 - STANDARD LINES, the first {n_now} slates of each season vs the rest (final_hp)")
+    for s in PERIODS:
+        ds = sorted({d for ss, d, _l in slates if ss == s})
+        early = set(ds[:n_now])
+        for lab, sel in (("first", lambda d: d in early), ("rest", lambda d: d not in early)):
+            g = [l for ss, d, ls in slates if ss == s and sel(d) for l in ls if l["hit"] is not None and l["k"] == "R"]
+            for grp in ("lowvol", "main"):
+                for sd in ("Over", "Under"):
+                    calib_table(f"{s} {lab} R {grp} {sd}", [l for l in g if (l["_grp"] == "lowvol") == (grp == "lowvol") and l["side"] == sd], "fh")
+
     # ---------------- PART B ----------------
     print("\n" + "=" * 170 + "\nPART B - THE MARKET: coverage and the out-of-sample p_hat")
     for s in PERIODS:
