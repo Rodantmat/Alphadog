@@ -792,6 +792,12 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    only, from every B +/- candidate combination): chosen on 2024-25 (B - B7 + U3 + S2 + C4) -> 2025-26 +84.4% +666u dd 20.2u vs B
    +78.2% +417u; chosen on 2025-26 (B - B3 + U3 + U4 + C4) -> 2024-25 +84.2% +481u dd 27.8u vs B +86.3% +379u; this season +55.5% /
    +71.4% vs B +53.4%. Candidates correlate +0.46..+0.62 a day with B (same low-volume family). Owner to choose; nothing live.
+   **LIVE 2026-11-03 (owner 2026-11-02 22:25 PT "Add it, I like it"):** U4 = P_U4_4power, the 7th pp_portfolio unit (n 7).
+   CODE portfolio_b.UNITS['U4'] (kind 'ae') + attach_aedge; live_slip_engine.pb_last10 (each player's last 10 games with minutes
+   before the slate) attached to the calibrated pool before PB.prepare. PARITY audit_pb_u4_parity run 41589945395: 322 of 322 slates
+   live = research (U4 +125.0% / +187.5% / this season +100.0%). END TO END nba-integration-test run 41592624862 (rolled back):
+   P_U4_4power placed on 2026-01-09; its two edge-monitor checks failed only because they expected a pre-season empty ledger
+   (== 2 slates) - relaxed to >= 2.
 
 ---
 
