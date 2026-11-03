@@ -42,6 +42,11 @@ UNITS = {
     "B9": ("b1", ("RD", "B", "lowvol", "ev", 0.62, 2, 1), 6, "flex"),
     # 2026-11-02 (owner 13:24 PT "No power ... anything over 2 pick must be flex"): the 3-pick Power units' legs as 4-pick Flex
     # (research_portfolio_caps PC_SET=flexb); their 3-pick Flex versions reuse B3 / B5 / B7 (same 3 legs, Flex entry)
+    # 2026-11-03 (owner 2026-11-02 22:25 PT "Add it, I like it"; NBA_COMPASS 196): U4 = standard lines, low-volume props, Less, final_hp
+    # >= 0.65, ranked by AEDGE (the player's L10 average's distance below the line / sqrt(line + 1)), <= 2 legs a game, 4-pick Power
+    # (research_pp_universe run 41583958382 / research_pp_candidates run 41586281281: +125% / +188%, this season +100% on 10;
+    # B + U4 +89.5% / +92.5%, this season +60.4%)
+    "U4": ("ae", ("R", "U", "lowvol", 0.65, 2, 0), 4, "power"),
     "B3x4": ("f", (0.68, "Under", "none"), 4, "flex"),
     "B5x4": ("b1", ("R", "O", "all", "p", 0.62, 1, 1), 4, "flex"),
     "B7x4": ("b1", ("R", "B", "lowvol", "blend", 0.70, 2, 1), 4, "flex"),
@@ -117,6 +122,13 @@ def candidates(legs, uid, graded_only=False):
         else:
             r = sorted(base, key=lambda l: (-l["_trail"], -l["p"]))
         return [l for l in r if l["p"] >= mp][tp:], gc, 0
+    if kind == "ae":
+        pool, side, ps, mp, gc, tp = prm
+        base = [l for l in legs if l["tier"] in POOLS[pool] and l["side"] in SIDES[side] and (ps == "all" or l["_grp"] == ps)
+                and float(l["p"]) >= mp]
+        # stable sort on the fixed tie order eligible() set: aedge first, final_hp next (research_pp_universe 'aedge' rank)
+        r = sorted(base, key=lambda l: (-float(l.get("_aedge", 0.0)), -float(l["p"])))
+        return r[tp:], gc, 0
     lv, side, ps, rk, lp, pc, gc = prm
     base = [l for l in legs if l["tier"] == lv and l["side"] in SIDES[side] and (ps == "all" or l["_grp"] == ps)]
     r = sorted(base, key=(lambda l: -l["p"]) if rk == "p" else (lambda l: -l["p"] * float(l["factor"])))
@@ -136,6 +148,23 @@ def select(cand, gc, pc, size):
     if len(pick) >= size and len({l["team_id"] for l in pick[:size]}) >= 2:
         return pick[:size]
     return None
+
+
+# the player's games as (pts, reb, ast, fg3m, stl, blk, tov) -> the leg's stat (research_pp_universe.STATF)
+STATF = {"points": lambda g: g[0], "rebounds": lambda g: g[1], "assists": lambda g: g[2], "threes_made": lambda g: g[3],
+         "steals": lambda g: g[4], "blocks": lambda g: g[5], "turnovers": lambda g: g[6], "stocks": lambda g: g[4] + g[5],
+         "pts_reb": lambda g: g[0] + g[1], "pts_ast": lambda g: g[0] + g[2], "reb_ast": lambda g: g[1] + g[2],
+         "pra": lambda g: g[0] + g[1] + g[2]}
+
+
+def attach_aedge(legs, last10):
+    """AEDGE on every leg (research_pp_universe.load): last10 = {player_id: [game tuples, oldest first]} - the player's last 10 games
+    before the slate with minutes; (mean - line) toward the pick / sqrt(|line| + 1); fewer than 3 games -> 0.0"""
+    for l in legs:
+        v = [STATF[l["prop"]](g) for g in (last10.get(str(l.get("player_id"))) or [])][-10:] if l.get("prop") in STATF else []
+        sgn = 1 if l["side"] == "Over" else -1
+        l["_aedge"] = (sgn * (float(np.mean(v)) - float(l["line"])) / float(np.sqrt(abs(float(l["line"])) + 1))) if len(v) >= 3 else 0.0
+    return legs
 
 
 def unit_slip(prepared, uid, graded_only=False):

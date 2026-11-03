@@ -212,6 +212,8 @@ PORTFOLIO_UNITS = {
     'P_B3_4flex':         ('pb:B3x4',              4, 'flex',  ''),
     'P_B5_4flex':         ('pb:B5x4',              4, 'flex',  ''),
     'P_B7_4flex':         ('pb:B7x4',              4, 'flex',  ''),
+    # 2026-11-03 (owner 2026-11-02 22:25 PT "Add it, I like it"; NBA_COMPASS 196): low-volume Less by the player's L10 average vs the line
+    'P_U4_4power':        ('pb:U4',                4, 'power', ''),
 }
 PORTFOLIO_DEFAULT = {"enabled": False, "n": 2, "leg_cap": 2, "order": list(PORTFOLIO_UNITS),
                      "replaces": ["A_wrebounds_4flex", "C_wstocks_4flex", "A_core_3power", "D_points_3power"]}
@@ -1225,6 +1227,9 @@ def pick(conn, day, require_fresh=True):
         # instead of placing nothing; the savepoint keeps the pick's own transaction usable.
         try:
             with conn.transaction():
+                if any(PB.UNITS.get(PORTFOLIO_UNITS[u][0].split(':', 1)[1], ('',))[0] == 'ae' for u in pf['order']
+                       if PORTFOLIO_UNITS[u][0].startswith('pb:')):
+                    PB.attach_aedge(pools['__calib__'], pb_last10(conn, day, {l['player_id'] for l in pools['__calib__']}))
                 pools['__pb__'] = PB.prepare(pools['__calib__'], pb_rates(conn, day))
         except Exception as e:  # noqa: BLE001
             fb = pf.get('fallback') or {}
@@ -1718,6 +1723,22 @@ def release_record(conn, name, day, draws=2000):
         source = 'live'
     lo = boot_lo([(float(r[0]), float(r[0]) + float(r[1])) for r in g], draws) if len(g) >= 40 else None
     return lo, len(g), source
+
+
+def pb_last10(conn, day, pids):
+    """{player_id: [(pts, reb, ast, fg3m, stl, blk, tov) ...]} - each player's last 10 games with minutes BEFORE `day`, oldest first
+    (portfolio_b.attach_aedge; the research read every game since 2023-10-01 the same way)"""
+    ids = [int(p) for p in pids if p is not None and str(p).isdigit()]
+    out = defaultdict(list)
+    if not ids:
+        return out
+    for pid, pts, reb, ast, fg3m, stl, blk, tov in conn.execute(
+            """SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov FROM (
+                 SELECT g.*, row_number() OVER (PARTITION BY nba_player_id ORDER BY game_date DESC) rn FROM nba_stats.player_game_log g
+                 WHERE nba_player_id = ANY(%s::bigint[]) AND game_date < %s AND game_date >= '2023-10-01' AND min > 0) x
+               WHERE rn <= 10 ORDER BY nba_player_id, game_date""", (ids, day)).fetchall():
+        out[pid].append((float(pts or 0), float(reb or 0), float(ast or 0), float(fg3m or 0), float(stl or 0), float(blk or 0), float(tov or 0)))
+    return out
 
 
 def pb_rates(conn, day):
