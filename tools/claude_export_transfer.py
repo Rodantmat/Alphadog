@@ -72,6 +72,14 @@ def try_curl(name, url, cookies=None, ua=None, proxy=None):
     ok = is_zip(dest)
     log(f"  curl {name}: {'ZIP' if ok else 'not a zip'} {os.path.getsize(dest)} bytes")
     if not ok:
+        import re
+        txt = open(dest, "rb").read(400000).decode("utf-8", "ignore")
+        m = re.search(r"<title[^>]*>(.*?)</title>", txt, re.S)
+        low = txt.lower()
+        log(f"  curl {name}: html title={m.group(1).strip()[:80] if m else None!r} "
+            f"login={'login' in low} challenge={'just a moment' in low} final_path_kind="
+            f"{'login' if 'login' in str(r.url) else 'export' if 'export' in str(r.url) else 'other'}")
+    if not ok:
         os.remove(dest)
     return ok
 
