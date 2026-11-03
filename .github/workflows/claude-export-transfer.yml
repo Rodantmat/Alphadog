@@ -1,0 +1,90 @@
+name: Claude Export Transfer (encrypted, one-off)
+
+# Owner-requested one-off (2026-11-03): pulls the owner's claude.ai account export and returns it ENCRYPTED on the
+# orphan branch xfer-claude-export (repo is public - links come from the private credential store, output is
+# AES-256 + RSA-4096 encrypted to a key held only in Claude's workspace). mode=cleanup deletes the branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "fetch or cleanup"
+        default: "fetch"
+
+permissions:
+  contents: write
+
+jobs:
+  xfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event.inputs.mode != 'cleanup'
+        with:
+          sparse-checkout: tools
+      - name: Cleanup branch
+        if: github.event.inputs.mode == 'cleanup'
+        run: |
+          git init -q x && cd x
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push origin --delete xfer-claude-export || true
+      - uses: actions/setup-python@v5
+        if: github.event.inputs.mode != 'cleanup'
+        with:
+          python-version: '3.11'
+      - name: Resolve proxy (credential store first, secret as fallback)
+        if: github.event.inputs.mode != 'cleanup'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"
+          fi
+      - name: System deps (Chrome fonts + Xvfb)
+        if: github.event.inputs.mode != 'cleanup'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-utils fonts-liberation libnss3 libxss1 libasound2t64 libgbm1 || \
+          sudo apt-get install -y xvfb x11-utils fonts-liberation libnss3 libxss1 libasound2 libgbm1
+      - name: Python deps
+        if: github.event.inputs.mode != 'cleanup'
+        run: |
+          python -m pip install --upgrade pip
+          pip install seleniumbase "psycopg[binary]" curl_cffi
+          sbase get chromedriver || true
+      - name: Fetch + encrypt
+        if: github.event.inputs.mode != 'cleanup'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          XFER_PUBKEY: |
+            -----BEGIN PUBLIC KEY-----
+            MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsnmM00TLDEZZZ/euw7vb
+            EJ7DFvJBj4OTwQpJb1WTwtoOnB6zaWDmCSKLwW6SPYIfVdNhx7TIZrRBFTYti48S
+            ckn0nhTlZMvJ+1367VNNtaaiJtrzVPAIVwoq79oMpenLiNu7FLIGM8sMYwr4Rhhx
+            e8YHf3fNr3ivA0qVPF1vLHayegOeV7JKoPM6Y7QxghIVstCeHBJ9aMoAytwtz8RJ
+            jnA1ZJar+RrIHuU8YqaSe0SKqVorWXI4gSMluZTo+mZumIuReFga3PHFVhE9RI6R
+            zODNjMQUaWZVdgDOS78pxd7eGWQY4iPE3l7dy+nKdjX2wwRQFytGkzZIcxNfMLR1
+            dGDyXUUQ39HTspWugu/sojZsRuEXxDailunFAX7eqZz/CR9VKS8kLGHncYJsqHyO
+            RpT5dMvQQNeNZRltT4y/kwWyrSwqj6OMyJRrKR8jL7jM3rSpSonkCBBSmR8z4s33
+            zicmqj68VaoafUPoE1fWvBTHs+08BlYO4pMos/UbURjZu8kpMw5CjF2WTs9Opr17
+            n2BStyGAz8Eqnxy/QJUsFTdsooMAR5Yq8AsC0swZvp+2LnhT1pBbkXks7AdAyOro
+            tgZsZ7jyW9tjxQSybmaZa/NRsvpsfm1K+xOMIt35yv24eakHSS/CBOMgsW1w7kW9
+            p3HvOXNQ9MmBEd/Gb1z2Ge0CAwEAAQ==
+            -----END PUBLIC KEY-----
+        run: python tools/claude_export_transfer.py
+      - name: Push encrypted parts to orphan branch
+        if: always() && github.event.inputs.mode != 'cleanup'
+        run: |
+          [ -f xfer_out/status.json ] || exit 0
+          ls -la xfer_out
+          cd xfer_out
+          git init -q -b xfer-claude-export
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "encrypted transfer [skip ci]"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -f origin xfer-claude-export
