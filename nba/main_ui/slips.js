@@ -566,7 +566,7 @@ export async function apiHighHit(sql, cfg, url, version) {
         const out = typeof row.payload === "string" ? JSON.parse(row.payload) : row.payload;
         out.snapshot = { served: true, built_pt: row.t, build_ms: row.build_ms, fingerprint: fp };
         out.timing_ms = { snapshot: Date.now() - t0 };
-        return out;
+        return await overlayPpLive(sql, out);
       }
     } catch (_e) { /* snapshot unreadable - build below */ }
   }
