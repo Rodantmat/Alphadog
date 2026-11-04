@@ -552,6 +552,33 @@ def _write_ud_flags(conn, rows):
     return len(recs)
 
 
+def _write_link_ids(conn, rows):
+    """nba_market.app_link_ids: the app's own ids (LINK_IDS) for exactly the rows just archived - latest ids per
+    (bookmaker, market_key, player, side, line). Read by the Slips screen to build the app deep links."""
+    recs, seen = [], set()
+    for r in rows:
+        key = (r[4], r[5], r[6], r[7], float(r[8]))
+        ids = LINK_IDS.get(key)
+        if not ids or key in seen:
+            continue
+        seen.add(key)
+        recs.append((r[4], r[5], r[6], r[6], r[7], float(r[8]), json.dumps(ids), r[0], r[1], r[3]))
+    if not recs:
+        return 0
+    with conn.cursor() as cur:
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_market.app_link_ids (
+          bookmaker text NOT NULL, market_key text NOT NULL, player text NOT NULL, pn text NOT NULL, side text NOT NULL, line numeric NOT NULL,
+          ids jsonb NOT NULL, game_date date, event_id text, snapshot_ts timestamptz, updated_at timestamptz NOT NULL DEFAULT now(),
+          PRIMARY KEY (bookmaker, market_key, player, side, line))""")
+        cur.execute("CREATE INDEX IF NOT EXISTS app_link_ids_pn ON nba_market.app_link_ids (bookmaker, pn, market_key)")
+        cur.executemany("""INSERT INTO nba_market.app_link_ids (bookmaker, market_key, player, pn, side, line, ids, game_date, event_id, snapshot_ts)
+            VALUES (%s,%s,%s,nba_ref.norm_name(%s),%s,%s,%s::jsonb,%s,%s,%s)
+            ON CONFLICT (bookmaker, market_key, player, side, line) DO UPDATE SET ids=EXCLUDED.ids, game_date=EXCLUDED.game_date,
+              event_id=EXCLUDED.event_id, snapshot_ts=EXCLUDED.snapshot_ts, updated_at=now()""", recs)
+    conn.commit()
+    return len(recs)
+
+
 def main():
     label = os.environ.get("ARCHIVE_LABEL", "routine")
     sport = os.environ.get("ARCHIVE_SPORT", "nba")
