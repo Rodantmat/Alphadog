@@ -93,7 +93,11 @@ function takeBestPoolLeg(keptLegs,slip,removed){
     if(bestAny<0||poolEdge(l)>poolEdge(backupPool[bestAny]))bestAny=i;
     if(want&&String(l.line_type||'regular')===want&&(best<0||poolEdge(l)>poolEdge(backupPool[best])))best=i;
   }
-  const pick=best>=0?best:bestAny;
+  // 2026-11-04 (owner 13:48 PT: a goblin came in for a regular PrizePicks leg - "that is wrong"): a PrizePicks slip only ever takes a REGULAR
+  // line. No cross-type fallback and no goblin/demon pool leg is ever a candidate; with no regular leg left the slot stays empty.
+  const ppSlip=String(slip&&slip.source_key||'')==='prizepicks';
+  const pick=ppSlip?best:(best>=0?best:bestAny);
+  if(ppSlip&&pick>=0){const c=backupPool[pick];if(Number(c.is_goblin)===1||Number(c.is_demon)===1||String(c.line_type||'regular')!=='regular')return null}
   return pick>=0?backupPool.splice(pick,1)[0]:null;
 }
 function returnLegToPool(leg){
