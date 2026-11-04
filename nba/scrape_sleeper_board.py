@@ -187,6 +187,7 @@ def main():
                 continue
             legs.append({
                 "line_id": o0.get("line_id"), "sport": sport, "game_id": o0.get("game_id"), "game_status": o0.get("game_status"),
+                "over_line_id": over.get("line_id"), "under_line_id": under.get("line_id"),
                 "subject_id": pid, "subject_type": o0.get("subject_type"), "player": pinfo.get("name") or o0.get("subject_name") or "",
                 "team": o0.get("subject_team") or pinfo.get("team"), "position": o0.get("subject_position") or pinfo.get("position"),
                 "wager_type": o0.get("wager_type"), "market_type": o0.get("market_type"), "line_type": o0.get("line_type"),
