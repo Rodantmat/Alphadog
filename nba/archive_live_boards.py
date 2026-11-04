@@ -487,6 +487,9 @@ def rows_betr(doc, gd, label):
             out.append((gd, ev("betr", gd, l, "event_id"), label, doc.get("meta", {}).get("fetched_at"),
                         "betr", mk, l["player"], side, float(l["line"]), None, None, None, None,
                         l.get("start_time")))
+            if l.get("player_id") and l.get("event_id") and l.get("stat"):
+                LINK_IDS[("betr", mk, l["player"], side, float(l["line"]))] = {
+                    "player_id": str(l["player_id"]), "event_id": str(l["event_id"]), "stat": str(l["stat"]), "tier": str(l.get("tier") or "REGULAR")}
     return out
 
 
