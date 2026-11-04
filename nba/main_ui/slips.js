@@ -268,13 +268,12 @@ function appLinkIds(map, app, x) {
   const base = LINK_MK[x.prop] || ("player_" + x.prop), side = sideIn(x.side), pn = normName(x.player), line = Number(x.line);
   return map.get([app, pn, base, side, line].join("|")) || map.get([app, pn, base + "_alternate", side, line].join("|")) || null;
 }
-function appLinkFor(app, lj, map, pb) {
-  if (!["prizepicks", "sleeper", "betr"].includes(app)) return null;
-  const legs = lj.map(x => {
-    const t = pb.tip.get(legKey(x));
-    return { player: x.player, side: sideIn(x.side) === "Under" ? "u" : "o", line: Number(x.line), ids: appLinkIds(map, app, x), tip_utc: t && t.at ? t.at.toISOString() : null };
-  });
-  return { app, legs, missing: legs.filter(l => !l.ids).length };
+const LINK_APPS = ["prizepicks", "sleeper", "betr"];
+// one leg's link data: the app's ids for it + its side/line + its game's tip (the client builds the url from the legs that are IN the slip at
+// view time - an unchecked, started or substituted leg is handled there)
+function linkLegFor(app, x, map, tipAt) {
+  if (!LINK_APPS.includes(app)) return null;
+  return { ids: appLinkIds(map, app, x), side: sideIn(x.side) === "Under" ? "u" : "o", line: Number(x.line), tip_utc: tipAt ? new Date(tipAt).toISOString() : null };
 }
 
 async function replaySlips(sql, cfg, slate) {
@@ -673,7 +672,7 @@ async function buildHighHit(sql, cfg, url, version) {
       // goes on it is the strategy's state (paper = recorded, never staked, §29c; active = staked)
       strategy_state: s.app === "prizepicks" ? (bt.stateOf.get(s.strategy) || null) : null,
       ...placeBy(lj, pb),
-      app_link: appLinkFor(s.app, lj, linkMap, pb),
+      app_link: LINK_APPS.includes(s.app) ? { app: s.app } : null,
       stake_label: stakeAdvice(s, bt).label,
       streak_note: s.streak_note || null,
       unit_usd: s.unit_usd != null && s.unit_usd !== "" ? Number(s.unit_usd) : null,
@@ -681,7 +680,7 @@ async function buildHighHit(sql, cfg, url, version) {
       backtest_hit_probability_0_100: legs.length && legs.every(l => l.cell_backtest_hit_0_100 != null) ? r1(legs.reduce((a, l) => a + Number(l.cell_backtest_hit_0_100), 0) / legs.length) : null,
       strategy_cert_leg_hit_0_100: s.app === "prizepicks" && bt.certHit.get(s.strategy) != null ? r1(100 * bt.certHit.get(s.strategy)) : null,
       strategy_backtest: s.app === "prizepicks" ? (bt.record.get(s.strategy) || null) : null,
-      legs
+      legs: legs.map((lg, i) => ({ ...lg, link: linkLegFor(s.app, lj[i], linkMap, (pb.tip.get(legKey(lj[i])) || {}).at) }))
     });
   }
   // PRIZEPICKS' OWN QUOTE (2026-10-18, owner: "be sure we are using the proper multipliers"): P3 has PrizePicks quote every engine
@@ -836,7 +835,8 @@ async function buildHighHit(sql, cfg, url, version) {
       const t = String(l.line_type || "regular");
       if ((perType.get(t) || 0) >= size) continue;
       perType.set(t, (perType.get(t) || 0) + 1);
-      pool.push(slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name) }));
+      pool.push(slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name),
+        link: linkLegFor(app, { player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value }, linkMap, l.official_game_time_utc) }));
     }
   }
   if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - the afternoon run builds them at 1:16 PM PT, or 29 minutes before the first tip when that is earlier; they appear here a few minutes later." : `No slips recorded for ${slate.date}.`);

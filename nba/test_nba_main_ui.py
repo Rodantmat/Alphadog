@@ -328,7 +328,7 @@ def api_checks(conn, cfg):
     check("C56 Slips screen shows no test-only slip (they are recorded as not played)", not testshown and isinstance(hh.get("test_only_recorded"), int),
           f"shown test-only {testshown[:3]}; recorded and hidden {hh.get('test_only_recorded')}")
     # C64 (2026-11-03, owner: "turn the title PRIZEPICKS 3-pick Power into the link that will open the app with the lineup"): every PrizePicks /
-    # Sleeper / Betr slip carries app_link (a leg's id + game tip), Underdog / Fliff carry none; the browser's own builder (client slips.js
+    # Sleeper / Betr slip carries app_link and each leg its link data (ids + game tip), Underdog / Fliff carry none; the browser's own builder (client slips.js
     # slipLinkUrl, run here through node on the real payload) makes the right url - PrizePicks board?projections=<id>-o|u-<line>, Sleeper
     # entry_prefill with one line id per leg, Betr referral picks= base64 of player:event:stat:MORE|LESS:tier - from exactly the legs that
     # have ids, and leaves out every leg once its game has started
@@ -337,7 +337,8 @@ def api_checks(conn, cfg):
     stray = [s.get("track_label") for s in sl if s.get("source_key") not in link_apps and s.get("app_link")]
     src64 = (Path(__file__).resolve().parent / "main_ui" / "client" / "slips.js.txt").read_text()
     m64 = re.search(r"function slipLinkUrl[\s\S]*?\n}\n", src64)
-    cases64 = [s["app_link"] for s in sl if isinstance(s.get("app_link"), dict)]
+    cases64 = [{"app": s["app_link"]["app"], "legs": [l.get("link") or {"ids": None, "tip_utc": None, "side": "o", "line": 0} for l in s["legs"]]}
+               for s in sl if isinstance(s.get("app_link"), dict)]
     out64 = {"ok": False}
     if m64 and cases64:
         prog = m64.group(0) + "\nconst c=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(JSON.stringify(c.map(l=>({a:slipLinkUrl(l,0),b:slipLinkUrl(l,9e15)}))));"
@@ -364,6 +365,9 @@ def api_checks(conn, cfg):
             out64 = {"ok": not bad64, "bad": bad64[:3], "withurl": withurl}
         except Exception as e:  # noqa: BLE001
             out64 = {"ok": False, "err": str(e)[:100], "stderr": r64.stderr[:200]}
+    poolbad = [l.get("player_name") for l in (hh.get("backup_pool") or []) if l.get("source_key") in ("prizepicks", "sleeper") and "link" not in l]
+    if poolbad:
+        out64 = {"ok": False, "pool_without_link": poolbad[:3]}
     check("C64 slip titles are app links built from the legs' own ids (PrizePicks / Sleeper / Betr); started legs leave the link; Underdog / Fliff plain",
           hh.get("source") != "live" or (not nolink and not stray and out64.get("ok")),
           f"{len(cases64)} link slips, {out64.get('withurl')} with a url; no link {nolink[:3]}; stray {stray[:3]}; {out64}")

@@ -26,9 +26,10 @@ function legRowHtml(leg,slipIdx,legIdx){
   const checked=(un&&un.has(legIdx))?'':' checked';
   const isSub=isLegSubstitute(slipIdx,leg);
   const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
+  const stTag=autoSwapped.has(slipIdx+'|'+legIdx)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">STARTED</span>':'';
   const hi=String(leg.dnp_risk||'')==='HIGH';
   const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
-  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+stTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
 }
 // One delegated listener on the results container instead of inline onchange="" attributes -
 // inline handlers on dynamically-injected HTML do not resolve to top-level functions in this
@@ -290,6 +291,7 @@ function restoreRealMultInputs(){
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
   bindLegKeepBoxDelegation();
+  autoSwapStartedLegs();
   if(!lastRawSlips.length){return}
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
@@ -325,8 +327,38 @@ function realMultFieldsHtmlForSize(s,idx,size){
     '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(tiers[k]||''))+'"></label>'
   ).join('')+'</div></div>';
 }
+// STARTED GAMES (2026-11-03, owner: "auto-swap any leg whose game has started to a sub leg"). A leg whose game has tipped can no longer be
+// placed: it is unchecked automatically and the SAME pool logic as a hand uncheck brings the substitute (same app, same line type, best edge,
+// no duplicate player, no opposite side of a player in any slip, game cap, 2+ teams). A pool leg whose game has started is never a candidate.
+const autoSwapped=new Set(); // 'slipIdx|legIdx' of the legs swapped out because their game started
+let slipsLive=false;         // only a live slate swaps (a replay slate's games all started long ago)
+function legStarted(l,nowMs){
+  const t=(l&&l.link&&l.link.tip_utc)||(l&&l.official_game_time_utc)||null;
+  const ms=t?Date.parse(t):NaN;
+  return Number.isFinite(ms)&&ms<=nowMs;
+}
+function autoSwapStartedLegs(){
+  if(!slipsLive)return false;
+  let changed=false;const now=Date.now();
+  lastRawSlips.forEach((slip,slipIdx)=>{
+    if(slip.result)return;   // a graded slip is history
+    if(!slipSubs.has(slipIdx))slipSubs.set(slipIdx,new Map());
+    if(!slipUnchecked.has(slipIdx))slipUnchecked.set(slipIdx,new Set());
+    const subs=slipSubs.get(slipIdx),un=slipUnchecked.get(slipIdx);
+    for(let li=0;li<slip.legs.length;li++){   // legs grow as substitutes are appended, so a started substitute is swapped too
+      if(un.has(li)||!legStarted(slip.legs[li],now))continue;
+      un.add(li);autoSwapped.add(slipIdx+'|'+li);changed=true;
+      const kept=slip.legs.filter((l,i)=>!un.has(i));
+      const sub=takeBestPoolLeg(kept,slip,slip.legs[li]);
+      if(sub){slip.legs.push(sub);subs.set(li,sub)}
+    }
+  });
+  return changed;
+}
+setInterval(()=>{try{if(slipsLive&&lastRawSlips&&lastRawSlips.length&&autoSwapStartedLegs())applySlipSourceFilter()}catch(_e){}},60000);
 function poolLegIsLegalForSlip(leg,keptLegs,slip){
   if(!leg)return false;
+  if(slipsLive&&legStarted(leg,Date.now()))return false;
   if(slip&&String(leg.source_key||'')!==String(slip.source_key||''))return false;
   for(const l of keptLegs){ if(String(l.mlb_player_id||l.player_id)===String(leg.mlb_player_id||leg.player_id))return false; }
   // NO OPPOSITE SIDES (owner 2026-10-21 17:30 PT: "some legs are more and some legs are less on the same player"): a substitute is never
@@ -371,9 +403,10 @@ function legRowHtml(leg,slipIdx,legIdx){
   const checked=(un&&un.has(legIdx))?'':' checked';
   const isSub=isLegSubstitute(slipIdx,leg);
   const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
+  const stTag=autoSwapped.has(slipIdx+'|'+legIdx)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">STARTED</span>':'';
   const hi=String(leg.dnp_risk||'')==='HIGH';
   const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
-  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+cellTag(leg)+resultTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+stTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+cellTag(leg)+resultTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
 }
 function legLine(l){
   let variant='';
@@ -416,7 +449,8 @@ function slipTitleNo(s,idx){
 function slipTitleHtml(s,idx){
   const no=slipTitleNo(s,idx);
   const text=String(s.source_key||'').toUpperCase()+' '+(s.structure_label||s.slip_type)+(no?' '+no:'');
-  const li=slipLinkUrl(s.app_link,Date.now());
+  // the link follows the legs that are IN the slip right now: unchecked legs, started legs and substitutes are all handled
+  const li=s.app_link?slipLinkUrl({app:s.app_link.app,legs:keptLegsOf(s,idx).map(l=>l.link||{ids:null,tip_utc:null,side:'o',line:0})},Date.now()):null;
   if(!li||!li.url)return esc(text)+(li&&li.total&&li.used<2?' <span class="small" style="color:#ff6b6b;font-weight:700">(no link: fewer than 2 legs left to open)</span>':'');
   return '<a class="slipOpenApp" href="'+esc(li.url)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">'+esc(text)+'</a> <span style="opacity:.7;font-size:.85em">↗'+(li.used<li.total?' '+li.used+'/'+li.total+' legs':'')+'</span>';
 }
@@ -476,6 +510,8 @@ async function highHitSlips(){
     backupPool=(j.backup_pool||[]).slice();
     slipSubs.clear();
     slipUnchecked.clear();
+    autoSwapped.clear();
+    slipsLive=j.source==='live'&&!(j.slate&&j.slate.mode==='replay');
     applySlipSourceFilter();
   }catch(e){results.innerHTML='<div class="empty err">Build failed: '+esc(e.message||e)+'</div>'}
 }
