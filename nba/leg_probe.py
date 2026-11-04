@@ -28,7 +28,7 @@ import pp_payout_map as PP  # noqa: E402
 DB = os.environ["DATABASE_URL"]
 CYCLES = int(os.getenv("PROBE_CYCLES", "1"))
 INTERVAL = int(os.getenv("PROBE_INTERVAL", "60"))
-PPURL = PP.BOARD_URLS[0]
+PPURL = PP.BOARD_URLS[1]  # partner-api host: answers 200 in ~1.6 s from a runner while api.prizepicks.com is DataDome-403 (experiment 2026-11-04)
 
 
 def norm(s):
