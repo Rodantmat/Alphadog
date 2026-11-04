@@ -66,6 +66,11 @@ def main():
                 one_sided[tuple(v.keys())] += 1
         print(f"SUM {name}: groups {len(g)} paired-delta(under-over) top {deltas.most_common(8)} one_sided {dict(one_sided)}", flush=True)
         print(f"SUM {name}: line_types {dict(Counter(d.get('line_type') for d in nba))} statuses {dict(Counter(d.get('status') for d in nba))}", flush=True)
+        if name == "available":
+            for k, v in g.items():
+                if str(k[1]).endswith(("_2126", "_1809", "_1946")) and str(k[1]).startswith("points_"):
+                    print("TESTPAIR", k[1], k[2], "over", (v.get("over") or {}).get("line_id"), (v.get("over") or {}).get("payout_multiplier"),
+                          "under", (v.get("under") or {}).get("line_id"), (v.get("under") or {}).get("payout_multiplier"), flush=True)
     print("DONE", flush=True)
 
 
