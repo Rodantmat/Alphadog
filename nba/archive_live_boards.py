@@ -702,6 +702,12 @@ def main():
         conn.commit()
         total += len(rows)
         print(f"{app}: archived {len(rows):,} legs as '{label}'", flush=True)
+        if app in ("prizepicks", "sleeper", "betr") and LINK_IDS:
+            try:
+                print(f"{app}: {_write_link_ids(conn, rows):,} app link ids written (nba_market.app_link_ids)", flush=True)
+            except Exception as e:  # noqa: BLE001
+                conn.rollback()
+                print(f"::warning::{app} app link ids NOT written ({type(e).__name__}: {str(e)[:120]})", flush=True)
         if app == "underdog" and UD_FLAGS:
             try:
                 print(f"underdog: {_write_ud_flags(conn, rows):,} line flags written - alternate rungs of prediction-market lines are flagged hide", flush=True)
