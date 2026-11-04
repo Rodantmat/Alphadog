@@ -1012,6 +1012,9 @@ def browser():
                 for r in kept:
                     if re.search(r"NOW GOBLIN|NOW DEMON|OFF BOARD|LINE MOVED|Goblin|Demon", r["txt"]):
                         probs.append(f"{i['head']}: kept leg is not regular: {r['txt']}")
+                m = re.search(r"(\d)/(\d) legs", i["head"])
+                if m and m.group(1) != m.group(2):
+                    probs.append(f"{i['head']}: app link opens only {m.group(1)} of {m.group(2)} legs; rows {[r['txt'][:70] + ('' if r['on'] else ' [OFF]') for r in i['rows']]}")
                 if i["flex"] and i["fields"] < 2:
                     probs.append(f"{i['head']}: Flex card with {i['fields']} multiplier field(s)")
             if probs:
