@@ -154,6 +154,8 @@ def main():
             for o in opts:
                 legs.append({
                     "line_id": o.get("line_id"), "sport": sport, "game_id": o.get("game_id"), "game_status": o.get("game_status"),
+                    "over_line_id": o.get("line_id") if o.get("outcome") == "over" else None,
+                    "under_line_id": o.get("line_id") if o.get("outcome") == "under" else None,
                     "subject_id": pid, "subject_type": o.get("subject_type"), "player": pinfo.get("name") or o.get("subject_name") or "",
                     "team": o.get("subject_team") or pinfo.get("team"), "position": o.get("subject_position") or pinfo.get("position"),
                     "wager_type": o.get("wager_type"), "market_type": o.get("market_type"), "line_type": o.get("line_type"),
