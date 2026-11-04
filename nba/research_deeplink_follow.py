@@ -57,13 +57,19 @@ def show_body(body):
 
 
 def follow(name, url):
+    chain, final_body = [], ""
     for tag, ua in UAS.items():
+        if tag != "ios":
+            continue
         print(f"\n=== {name} [{tag}] {url}", flush=True)
         cur = url
         for i in range(10):
             st, hd, body = hop(cur, ua)
             loc = hd.get("Location") or hd.get("location")
             print(f"   hop{i}: {st} {cur[:200]}", flush=True)
+            chain.append(f"{st} {cur[:260]}")
+            if loc:
+                chain.append(f"  -> {loc[:400]}")
             for k in ("Content-Type", "Server", "X-Branch-Request-Id", "Link"):
                 if hd.get(k):
                     print(f"      {k}: {hd[k][:200]}", flush=True)
@@ -73,10 +79,19 @@ def follow(name, url):
                 continue
             print(f"      body {len(body):,} chars", flush=True)
             if st == 200:
+                final_body = body
                 show_body(body)
                 if len(body) < 2500:
                     print(f"      RAW: {body[:2500]}", flush=True)
             break
+    og = re.findall(r'<meta[^>]+(?:og:title|og:description|twitter:description)[^>]*content=["\']([^"\']{0,400})', final_body, re.I)
+    sch = sorted(set(re.findall(r'[a-z][a-z0-9]{3,20}://[^\s"\'<>\\]{3,200}', final_body, re.I)))[:8]
+    sch = [x for x in sch if not x.startswith(("http://", "https://"))]
+    print(f"SUM|{name}|chain={' ; '.join(chain)[:1500]}", flush=True)
+    print(f"SUM|{name}|og={og[:3]}", flush=True)
+    print(f"SUM|{name}|schemes={sch}", flush=True)
+    ids = sorted(set(re.findall(r'(?:entryId|entry_id|pickIds?|projectionIds?|shareId|share_id)["\'=:\s]+([A-Za-z0-9_\-,]{6,200})', final_body)))[:8]
+    print(f"SUM|{name}|ids={ids}", flush=True)
 
 
 def main():
