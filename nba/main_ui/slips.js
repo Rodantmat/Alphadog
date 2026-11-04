@@ -672,6 +672,7 @@ async function buildHighHit(sql, cfg, url, version) {
       // goes on it is the strategy's state (paper = recorded, never staked, §29c; active = staked)
       strategy_state: s.app === "prizepicks" ? (bt.stateOf.get(s.strategy) || null) : null,
       ...placeBy(lj, pb),
+      app_link: appLinkFor(s.app, lj, linkMap, pb),
       stake_label: stakeAdvice(s, bt).label,
       streak_note: s.streak_note || null,
       unit_usd: s.unit_usd != null && s.unit_usd !== "" ? Number(s.unit_usd) : null,
