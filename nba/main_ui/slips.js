@@ -833,6 +833,7 @@ async function buildHighHit(sql, cfg, url, version) {
     const perType = new Map();
     for (const l of cand) {
       const t = String(l.line_type || "regular");
+      if (app === "prizepicks" && (t !== "regular" || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1)) continue; // 2026-11-04: PrizePicks pool = regular lines only
       if ((perType.get(t) || 0) >= size) continue;
       perType.set(t, (perType.get(t) || 0) + 1);
       pool.push(slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name),
