@@ -510,6 +510,48 @@ async function slipsFingerprint(sql, slate, version) {
   return r ? r.fp : null;
 }
 
+// LIVE LINE CHECK (2026-11-04, owner 14:01 PT: a PrizePicks leg turned goblin / demon after the 1:42 quote - Randle 0.5 Blocks, Brown 2.5 Turnovers - and
+// a goblin came in as a "regular" substitute). EVERY load re-reads PrizePicks' own latest board (nba_market.pp_board_row, the newest payout-map run: kind per
+// projection straight from PrizePicks) and marks each PrizePicks slip leg and pool leg: pp_now = standard | goblin | demon | moved (the line is gone, other
+// lines of that prop remain) | missing (player / prop off the board). The check runs AFTER the stored snapshot is read, so a cached payload is never trusted.
+// A pool leg that is not confirmed standard is dropped; a slip leg that is not standard is flagged (the client unchecks it and swaps in a confirmed one).
+const PP_STAT_PROP = { "Points": "points", "Rebounds": "rebounds", "Assists": "assists", "3-PT Made": "threes_made", "Blocked Shots": "blocks", "Steals": "steals",
+  "Turnovers": "turnovers", "Blks+Stls": "stocks", "Pts+Rebs+Asts": "pra", "Pts+Rebs": "pts_reb", "Pts+Asts": "pts_ast", "Rebs+Asts": "reb_ast",
+  "Personal Fouls": "personal_fouls", "Fantasy Score": "fantasy_score", "Double-Double": "double_double", "FG Made": "fgm", "FG Attempted": "fga",
+  "Free Throws Made": "ftm", "Free Throws Attempted": "fta", "3-PT Attempted": "fg3a", "Offensive Rebounds": "oreb", "Defensive Rebounds": "dreb" };
+export async function overlayPpLive(sql, out) {
+  try {
+    if (!out || !out.ok || out.source !== "live") return out;
+    const slipsPP = (out.generated_slips || []).filter(s => s.source_key === "prizepicks");
+    const poolPP = (out.backup_pool || []).filter(l => l.source_key === "prizepicks");
+    const legs = [...slipsPP.flatMap(s => s.legs || []), ...poolPP];
+    if (!legs.length) return out;
+    const rf = (await q(sql, "SELECT max(run_file) rf FROM nba_market.pp_board_row"))[0];
+    const m = rf && rf.rf && /pp_payout_map_(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/.exec(rf.rf);
+    if (!m) return out;
+    const ranAt = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`;
+    const names = [...new Set(legs.map(l => String(l.player_name || "")).filter(Boolean))];
+    const rows = await q(sql, "SELECT player, stat, line::float line, odds FROM nba_market.pp_board_row WHERE run_file = $1 AND player = ANY($2::text[])", [rf.rf, names]);
+    const by = new Map();
+    for (const r of rows) { const p = PP_STAT_PROP[r.stat]; if (!p) continue; const k = r.player + "|" + p; if (!by.has(k)) by.set(k, []); by.get(k).push(r); }
+    const mark = l => {
+      const rs = by.get(String(l.player_name) + "|" + String(l.canonical_prop_key)) || [];
+      const hit = rs.find(r => Math.abs(Number(r.line) - Number(l.line_value)) < 1e-9);
+      l.pp_now = hit ? String(hit.odds || "unknown").toLowerCase() : (rs.length ? "moved" : "missing");
+      l.pp_checked_at = ranAt;
+    };
+    legs.forEach(mark);
+    out.backup_pool = (out.backup_pool || []).filter(l => l.source_key !== "prizepicks" || l.pp_now === "standard");
+    const flagged = [];
+    for (const s of slipsPP) {
+      const bad = (s.legs || []).filter(l => l.pp_now !== "standard");
+      if (bad.length) { s.pp_alert = bad.map(l => `${l.player_name} ${l.line_value} ${l.canonical_prop_key} is now ${l.pp_now}`); flagged.push(...s.pp_alert.map(a => `${s.structure_label || s.slip_type}: ${a}`)); }
+    }
+    out.pp_live = { checked_at: ranAt, run_file: rf.rf, legs_checked: legs.length, flagged };
+  } catch (e) { out.pp_live = { error: String(e && e.message || e).slice(0, 160) }; }
+  return out;
+}
+
 export async function apiHighHit(sql, cfg, url, version) {
   const t0 = Date.now();
   const refresh = url && url.searchParams && url.searchParams.get("refresh") === "1";
