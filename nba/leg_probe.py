@@ -70,6 +70,7 @@ def pp_fetch():
             r = requests.get(PPURL, headers=PP.BOARD_HEADERS, impersonate="chrome124", proxies=p, timeout=25)
             if r.status_code == 200 and (r.json() or {}).get("data"):
                 return PP.parse_board(r.json()), time.time() - t, route
+            print(f"  pp {route}: HTTP {r.status_code} {len(r.content)}b {r.text[:90]!r}", flush=True)
         except Exception as e:  # noqa: BLE001
             print(f"  pp {route}: {type(e).__name__}", flush=True)
     return None, time.time() - t, "none"
