@@ -29,14 +29,29 @@ def get(u):
     return None
 
 
+def walk(o, out, depth=0):
+    if depth > 6:
+        return
+    if isinstance(o, dict):
+        out.append(o)
+        for v in o.values():
+            walk(v, out, depth + 1)
+    elif isinstance(o, list):
+        for v in o:
+            walk(v, out, depth + 1)
+
+
 def main():
     for name, u in URLS.items():
         data = get(u)
-        if not isinstance(data, list):
-            print(f"SRC {name}: no list ({type(data).__name__})", flush=True)
+        if data is None:
+            print(f"SRC {name}: no data", flush=True)
             continue
-        nba = [d for d in data if isinstance(d, dict) and d.get("sport") == "nba" and d.get("line_id")]
-        print(f"SRC {name}: {len(data)} records, nba {len(nba)}, outcomes {dict(Counter(d.get('outcome') for d in nba))}", flush=True)
+        allr = []
+        walk(data, allr)
+        data = allr
+        nba = [d for d in allr if d.get("sport") == "nba" and d.get("line_id") and d.get("outcome")]
+        print(f"SRC {name}: {len(data)} records, nba {len(nba)}, outcomes {dict(Counter(d.get('outcome') for d in nba))}, sports {dict(Counter(str(d.get('sport')) for d in allr if d.get('line_id')).most_common(6))}", flush=True)
         g = defaultdict(dict)
         for d in nba:
             g[(d.get("game_id"), d.get("market_type"), d.get("outcome_value"), d.get("line_type"))][d.get("outcome")] = d
