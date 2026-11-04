@@ -622,6 +622,9 @@ async function buildHighHit(sql, cfg, url, version) {
       FROM nba_score.final_hp_derived WHERE game_date = $1::date AND player_id = ANY($2::text[])`, [slate.date, pgArr(wnPids)]))
     .map(r => [[r.player_id, r.prop, Number(r.line), sideIn(r.side)].join("|"), r]) : []);
   lap("whole_number_hp");
+  let linkMap = new Map();
+  try { linkMap = await appLinkMap(sql); } catch (_e) { linkMap = new Map(); }   // links are an add-on: a failed lookup never breaks the screen
+  lap("app_links");
   for (const s of [...eng.pp, ...eng.ud, ...eng.sl]) {
     const lj = typeof s.legs_json === "string" ? JSON.parse(s.legs_json) : s.legs_json || [];
     const legs = [];
