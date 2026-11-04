@@ -1,1 +1,1 @@
-script: research_sleeper_ids.py
+script: research_sleeper_pairs.py
