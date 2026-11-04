@@ -265,7 +265,7 @@ async function appLinkMap(sql) {
 }
 function appLinkIds(map, app, x) {
   if (!["prizepicks", "sleeper", "betr"].includes(app)) return null;
-  const base = LINK_MK[x.prop] || ("player_" + x.prop), side = sideIn(x.side) === "under" ? "Under" : "Over", pn = normName(x.player), line = Number(x.line);
+  const base = LINK_MK[x.prop] || ("player_" + x.prop), side = sideIn(x.side), pn = normName(x.player), line = Number(x.line);
   return map.get([app, pn, base, side, line].join("|")) || map.get([app, pn, base + "_alternate", side, line].join("|")) || null;
 }
 function appLinkFor(app, lj, map, pb) {
