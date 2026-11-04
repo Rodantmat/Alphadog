@@ -272,7 +272,7 @@ function appLinkFor(app, lj, map, pb) {
   if (!["prizepicks", "sleeper", "betr"].includes(app)) return null;
   const legs = lj.map(x => {
     const t = pb.tip.get(legKey(x));
-    return { player: x.player, side: sideIn(x.side) === "under" ? "u" : "o", line: Number(x.line), ids: appLinkIds(map, app, x), tip_utc: t && t.at ? t.at.toISOString() : null };
+    return { player: x.player, side: sideIn(x.side) === "Under" ? "u" : "o", line: Number(x.line), ids: appLinkIds(map, app, x), tip_utc: t && t.at ? t.at.toISOString() : null };
   });
   return { app, legs, missing: legs.filter(l => !l.ids).length };
 }
