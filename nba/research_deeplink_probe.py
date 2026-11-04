@@ -9,12 +9,7 @@ import json
 import re
 import sys
 
-try:
-    from curl_cffi import requests
-    KW = {"impersonate": "chrome124"}
-except Exception:  # noqa: BLE001
-    import requests
-    KW = {}
+import urllib.request
 
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
       "Accept": "*/*", "Accept-Language": "en-US,en;q=0.9"}
@@ -33,8 +28,10 @@ SKIP = {"http", "https", "ws", "wss", "data", "blob", "file", "chrome-extension"
 
 def get(url, timeout=40):
     try:
-        r = requests.get(url, headers=UA, timeout=timeout, **KW)
-        return r.status_code, r.text or ""
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
+            return r.status, r.read(3_000_000).decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        return exc.code, ""
     except Exception as exc:  # noqa: BLE001
         return None, str(exc)[:120]
 
