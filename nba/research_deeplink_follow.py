@@ -12,8 +12,6 @@ import urllib.request
 LINKS = {
     "prizepicks": "https://prizepicks.onelink.me/gCQS/shareEntry?entryId=8aa98968377fd9bb5458f95296ca7d74&origin=",
     "underdog": "https://play.underdogsports.com/vgwg/3a7hjzpv",
-    "sleeper": "https://e.slpr.link/1423564897635020800",
-    "betr": "https://l.betr.app/e/TRvwFdZq",
 }
 UAS = {
     "ios": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
@@ -57,9 +55,10 @@ def show_body(body):
 
 
 def follow(name, url):
-    chain, final_body = [], ""
+    chain, final_body, tag_last = [], "", ""
     for tag, ua in UAS.items():
-        if tag != "ios":
+        tag_last = tag
+        if tag == "ios":
             continue
         print(f"\n=== {name} [{tag}] {url}", flush=True)
         cur = url
@@ -87,7 +86,7 @@ def follow(name, url):
     og = re.findall(r'<meta[^>]+(?:og:title|og:description|twitter:description)[^>]*content=["\']([^"\']{0,400})', final_body, re.I)
     sch = sorted(set(re.findall(r'[a-z][a-z0-9]{3,20}://[^\s"\'<>\\]{3,200}', final_body, re.I)))[:8]
     sch = [x for x in sch if not x.startswith(("http://", "https://"))]
-    print(f"SUM|{name}|chain={' ; '.join(chain)[:1500]}", flush=True)
+    print(f"SUM|{name}|{tag_last}|chain={' ; '.join(chain)[:1500]}", flush=True)
     print(f"SUM|{name}|og={og[:3]}", flush=True)
     print(f"SUM|{name}|schemes={sch}", flush=True)
     ids = sorted(set(re.findall(r'(?:entryId|entry_id|pickIds?|projectionIds?|shareId|share_id)["\'=:\s]+([A-Za-z0-9_\-,]{6,200})', final_body)))[:8]
