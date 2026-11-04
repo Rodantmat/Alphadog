@@ -1,0 +1,31 @@
+name: NBA PP Try
+on:
+  workflow_dispatch:
+jobs:
+  try:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: nba/requirements-probe.txt
+      - name: Resolve proxy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null) || P=""
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"
+          fi
+      - run: pip install -r nba/requirements-probe.txt
+      - name: Try
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+        run: python nba/pp_try.py
