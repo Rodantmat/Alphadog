@@ -581,7 +581,7 @@ export async function apiHighHit(sql, cfg, url, version) {
       out.snapshot = { served: false, stored: true, build_ms: ms, fingerprint: fp, refresh: !!refresh };
     } catch (e) { out.snapshot = { served: false, stored: false, error: String(e && e.message || e).slice(0, 160) }; }
   }
-  return out;
+  return await overlayPpLive(sql, out);
 }
 
 async function buildHighHit(sql, cfg, url, version) {
