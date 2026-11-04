@@ -1,0 +1,22 @@
+name: auth-e2e
+on:
+  workflow_dispatch:
+    inputs:
+      step: {description: "request or verify", required: true, default: request}
+      email: {description: "email", required: true}
+      code: {description: "6-digit code (verify only)", required: false, default: ""}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          STEP: ${{ inputs.step }}
+          EMAIL: ${{ inputs.email }}
+          CODE: ${{ inputs.code }}
+        run: |
+          if [ "$STEP" = "request" ]; then
+            curl -s -w "\nHTTP %{http_code}\n" -X POST https://alphadogstyles.com/api/auth/request -H 'content-type: application/json' -d "{\"email\":\"$EMAIL\",\"lang\":\"en\"}"
+          else
+            curl -s -X POST https://alphadogstyles.com/api/auth/verify -H 'content-type: application/json' -d "{\"email\":\"$EMAIL\",\"code\":\"$CODE\"}" -o /tmp/r.json -w "HTTP %{http_code}\n"
+            python3 -c "import json;d=json.load(open('/tmp/r.json'));print({'has_token':bool(d.get('token')),'email':d.get('email'),'error':d.get('error')})"
+          fi
