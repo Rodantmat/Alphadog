@@ -1,0 +1,55 @@
+name: NBA Leg Probe
+
+# Scoped differential check of ONLY the legs on the generated slips + backup pool (PrizePicks + Betr boards fetched in parallel).
+on:
+  workflow_dispatch:
+    inputs:
+      cycles:
+        description: "number of probe cycles in this job"
+        default: "1"
+      interval:
+        description: "seconds between cycle starts"
+        default: "60"
+
+concurrency:
+  group: nba-leg-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: nba/requirements-probe.txt
+      - name: Resolve proxy (credential store first)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null) || P=""
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"
+          fi
+      - name: Deps
+        run: pip install -r nba/requirements-probe.txt
+      - name: Probe
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
+          BETR_CLIENT_ID: ${{ secrets.BETR_CLIENT_ID }}
+          BETR_LEAGUE: NBA
+          BETR_OUT_DIR: /tmp/betr_probe
+          PROBE_CYCLES: ${{ github.event.inputs.cycles || '1' }}
+          PROBE_INTERVAL: ${{ github.event.inputs.interval || '60' }}
+        run: |
+          start=$(date +%s)
+          python nba/leg_probe.py
+          echo "JOB_PROBE_SECONDS=$(( $(date +%s) - start ))"
