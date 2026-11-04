@@ -994,22 +994,28 @@ def browser():
               document.querySelectorAll('#autoCreateResults .slipCard').forEach(c => {
                 const t = c.innerText || '';
                 if (!/prizepicks/i.test(t.slice(0, 200))) return;
-                out.push({head: t.slice(0, 70).replace(/\\n+/g, ' | '), flex: /flex/i.test(t.slice(0, 200)),
-                          fields: c.querySelectorAll('.realMultInput').length,
-                          tagged: (t.match(/NOW GOBLIN|NOW DEMON|OFF BOARD|LINE MOVED/g) || []),
-                          legs: Array.from(c.querySelectorAll('.legRow')).map(r => (r.innerText || '').replace(/\\n+/g, ' ').slice(0, 90))});
+                const rows = Array.from(c.querySelectorAll('.legRow')).map(r => ({txt: (r.innerText || '').replace(/\\n+/g, ' ').slice(0, 110),
+                          on: !!(r.querySelector('.legKeepBox') && r.querySelector('.legKeepBox').checked)}));
+                const sz = parseInt((t.match(/(\\d)-pick/i) || [0, 0])[1], 10) || 0;
+                out.push({head: t.slice(0, 60).replace(/\\n+/g, ' | '), flex: /flex/i.test(t.slice(0, 200)), size: sz,
+                          fields: c.querySelectorAll('.realMultInput').length, rows: rows});
               });
               return out;
             }""")
-            bad = [i["head"] for i in info if i["tagged"]]
-            flexbad = [(i["head"], i["fields"]) for i in info if i["flex"] and i["fields"] < 2]
-            save_sample("pp_cards", info)
             if not info:
                 raise RuntimeError("no PrizePicks cards found on the slips screen")
-            if bad:
-                raise RuntimeError(f"PrizePicks cards still holding a changed/goblin/demon leg: {bad}")
-            if flexbad:
-                raise RuntimeError(f"PrizePicks Flex card with fewer than 2 multiplier fields: {flexbad}")
+            probs = []
+            for i in info:
+                kept = [r for r in i["rows"] if r["on"]]
+                if len(kept) != i["size"]:
+                    probs.append(f"{i['head']}: {len(kept)} legs kept of {i['size']} (no replacement found); rows {[r['txt'][:60] + ('' if r['on'] else ' [OFF]') for r in i['rows']]}")
+                for r in kept:
+                    if re.search(r"NOW GOBLIN|NOW DEMON|OFF BOARD|LINE MOVED|Goblin|Demon", r["txt"]):
+                        probs.append(f"{i['head']}: kept leg is not regular: {r['txt']}")
+                if i["flex"] and i["fields"] < 2:
+                    probs.append(f"{i['head']}: Flex card with {i['fields']} multiplier field(s)")
+            if probs:
+                raise RuntimeError("PrizePicks cards: " + " || ".join(probs))
         step("04a_pp_cards", pp_cards)
 
         def sub():
