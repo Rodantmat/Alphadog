@@ -1406,8 +1406,8 @@
     },
     {
       "id": 1642359,
-      "full_name": "Pacome Dadiet",
-      "last_comma_first": "Dadiet, Pacome",
+      "full_name": "Pac\u00f4me Dadiet",
+      "last_comma_first": "Dadiet, Pac\u00f4me",
       "roster_status": 1,
       "from_year": "2024",
       "to_year": "2026",
@@ -1988,19 +1988,6 @@
       "team_city": "San Antonio",
       "team_name": "Spurs",
       "team_abbreviation": "SAS"
-    },
-    {
-      "id": 1642402,
-      "full_name": "Enrique Freeman",
-      "last_comma_first": "Freeman, Enrique",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2026",
-      "player_code": "enrique_freeman",
-      "team_id": 1610612750,
-      "team_city": "Minnesota",
-      "team_name": "Timberwolves",
-      "team_abbreviation": "MIN"
     },
     {
       "id": 1642277,
@@ -5306,8 +5293,8 @@
     },
     {
       "id": 1642275,
-      "full_name": "Tidjane Salaun",
-      "last_comma_first": "Salaun, Tidjane",
+      "full_name": "Tidjane Sala\u00fcn",
+      "last_comma_first": "Sala\u00fcn, Tidjane",
       "roster_status": 1,
       "from_year": "2024",
       "to_year": "2026",
