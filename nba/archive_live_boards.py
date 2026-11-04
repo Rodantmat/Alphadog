@@ -162,6 +162,8 @@ def rows_prizepicks(doc, gd, label):
                 continue
             out.append((gd, ev("prizepicks", gd, a, "game_id", "start_time"), label, a.get("board_time") or a.get("start_time"), "prizepicks", mk,
                         who, side, float(a["line_score"]), price, None, None, None, a.get("start_time")))
+            if p.get("id") is not None:
+                LINK_IDS[("prizepicks", mk, who, side, float(a["line_score"]))] = {"projection_id": str(p["id"]), "odds_type": odds_type}
     return out
 
 
