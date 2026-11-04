@@ -833,7 +833,9 @@ async function buildHighHit(sql, cfg, url, version) {
     const perType = new Map();
     for (const l of cand) {
       const t = String(l.line_type || "regular");
-      if (app === "prizepicks" && (t !== "regular" || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1)) continue; // 2026-11-04: PrizePicks pool = regular lines only
+      // 2026-11-04: PrizePicks pool = lines PrizePicks itself marks STANDARD, nothing else. board_tiers_v2 also stores kind 'unknown' (an alternate rung
+      // with no anchor) and lineType() read unknown as 'regular' - a goblin (Mikal Bridges 1.5 PF) was offered as a regular substitute (owner 14:01 PT).
+      if (app === "prizepicks" && (String(l.pp_kind || "").toLowerCase() !== "standard" || t !== "regular" || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1)) continue;
       if ((perType.get(t) || 0) >= size) continue;
       perType.set(t, (perType.get(t) || 0) + 1);
       pool.push(slipLeg(l, { board_percentile: percentile(app, Number(l.score_0_100)), ...riskFor(risk, l.player_name),
