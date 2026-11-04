@@ -137,10 +137,7 @@ PPMAP = {}
 def main():
     global PPMAP
     con = psycopg.connect(DB, autocommit=True)
-    PPMAP = {k: v for k, v in re.findall(r"'([^']+)'\s*:\s*'([^']+)'", "")}
-    # stat -> canonical key: reuse the worker's own map (nba/main_ui/slips.js PP_STAT_PROP) via the board table's history
-    for stat, prop in con.execute("SELECT DISTINCT stat, canonical_prop_key FROM nba_market.pp_mined_leg WHERE canonical_prop_key IS NOT NULL").fetchall() if _has_col(con) else []:
-        PPMAP[stat] = prop
+    PPMAP = dict(PP_STAT_PROP)
     con.execute("""CREATE TABLE IF NOT EXISTS nba_market.leg_probe (src text, player text, prop text, line numeric, side text, status text, detail text,
                    probed_at timestamptz, cycle_ms int, fetch_ms jsonb, PRIMARY KEY (src, player, prop, line, side))""")
     st, _ = H.load_session_state()
