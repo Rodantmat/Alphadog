@@ -317,8 +317,19 @@ function recomputeMultiplier(sourceKey,entryMode,size,legs){
   const m=nbaFullMultiplier(NBA_PRICING,sourceKey,entryMode==='flex'?'flex':'power',legs);
   return m==null?0:Math.round(m*1000)/1000;
 }
+// 2026-11-04 (owner 14:01 PT: a PrizePicks 4-pick Flex showed ONE multiplier field, it needs two): a Flex slip ALWAYS shows one field per
+// payout tier (4-pick: 4/4 and 3/4; 5-pick: 5/5, 4/5, 3/5; 6-pick: 6/6, 5/6, 4/6; 3-pick: 3/3 and 2/3), priced or not - when the table
+// cannot price the legs (a swapped-in leg, no table loaded) the fields are shown empty to type, never collapsed to a single field.
+function flexTierFieldsHtml(s,idx,size,tiers,note){
+  const n=Number(size)||0;
+  const hits=n>=5?[n,n-1,n-2]:[n,n-1];
+  return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick Flex'+(note?', '+note:'')+')</span><div class="realMultFields">'+hits.map(k=>
+    '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String((tiers&&tiers[k])||''))+'"></label>'
+  ).join('')+'</div></div>';
+}
 function realMultFieldsHtmlForSize(s,idx,size){
   const mode=s.entry_mode==='flex'?'flex':'power';
+  if(mode==='flex'&&!NBA_PRICING)return flexTierFieldsHtml(s,idx,size,null,'enter them');
   if(mode!=='flex'||!NBA_PRICING){
     const mult=recomputeMultiplier(s.source_key,mode,size,s.legs);
     return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick '+nbaModeLabel(s.source_key,mode)+')</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" value="'+esc(String(mult||''))+'"></div>';
