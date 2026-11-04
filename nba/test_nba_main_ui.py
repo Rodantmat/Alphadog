@@ -983,6 +983,35 @@ def browser():
                 raise RuntimeError("no slip cards: " + page.inner_text("#autoCreateResults")[:200])
         step("04_slips", slips)
 
+        def pp_cards():
+            # 2026-11-04: what the owner actually sees. After the screen loads and auto-swaps, no PrizePicks card may still hold a leg PrizePicks now
+            # lists as goblin/demon (NOW GOBLIN / NOW DEMON / OFF BOARD tags), every PrizePicks Flex card must show one multiplier field per tier,
+            # and a swapped-in leg must not be a goblin/demon.
+            page.wait_for_selector("#autoCreateResults .slipCard", timeout=45000)
+            page.wait_for_timeout(1500)
+            info = page.evaluate("""() => {
+              const out = [];
+              document.querySelectorAll('#autoCreateResults .slipCard').forEach(c => {
+                const t = c.innerText || '';
+                if (!/prizepicks/i.test(t.slice(0, 200))) return;
+                out.push({head: t.slice(0, 70).replace(/\\n+/g, ' | '), flex: /flex/i.test(t.slice(0, 200)),
+                          fields: c.querySelectorAll('.realMultInput').length,
+                          tagged: (t.match(/NOW GOBLIN|NOW DEMON|OFF BOARD|LINE MOVED/g) || []),
+                          legs: Array.from(c.querySelectorAll('.legRow')).map(r => (r.innerText || '').replace(/\\n+/g, ' ').slice(0, 90))});
+              });
+              return out;
+            }""")
+            bad = [i["head"] for i in info if i["tagged"]]
+            flexbad = [(i["head"], i["fields"]) for i in info if i["flex"] and i["fields"] < 2]
+            save_sample("pp_cards", info)
+            if not info:
+                raise RuntimeError("no PrizePicks cards found on the slips screen")
+            if bad:
+                raise RuntimeError(f"PrizePicks cards still holding a changed/goblin/demon leg: {bad}")
+            if flexbad:
+                raise RuntimeError(f"PrizePicks Flex card with fewer than 2 multiplier fields: {flexbad}")
+        step("04a_pp_cards", pp_cards)
+
         def sub():
             rows = page.locator("#autoCreateResults .legRow")
             if not rows.count():
