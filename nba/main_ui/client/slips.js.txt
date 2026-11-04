@@ -196,7 +196,7 @@ function bindSlipSelectBoxes(){
 }
 function slipCardHtml(s,idx){
   const sel=slipDeselected.has(String(idx))?'':' checked';
-  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'
+  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+slipTitleHtml(s,idx)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'
 }
 async function saveSelectedSlips(){
   const boxes=document.querySelectorAll('.slipSelectBox:checked');
@@ -386,6 +386,40 @@ function legLine(l){
 // The legs that count: every row except the unchecked ones (a substitute is appended checked). NBA payouts depend on WHICH legs
 // are in the slip (factors / multipliers), not only on its size, so the badge and the real-multiplier fields price these legs.
 function keptLegsOf(s,idx){const un=slipUnchecked.get(idx);return (s.legs||[]).filter((l,i)=>!(un&&un.has(i)))}
+// APP LINK TITLE (2026-11-03, owner: "turn the title PRIZEPICKS 3-pick Power into the link that will open the app with the lineup; if there are
+// several of the same, add 1/2/3"). The server sends s.app_link = {app, legs:[{ids, side o|u, line, tip_utc}]}; the url is built HERE at view time so a
+// leg whose game has already started is left out even on a stored snapshot. PrizePicks / Sleeper / Betr links verified on the owner's phone
+// (2026-11-03); Underdog / Fliff have no link, their title stays plain. Amount / Flex-Power are not settable by any link - the PLAY $ line stays.
+function slipLinkUrl(link,nowMs){
+  if(!link||!Array.isArray(link.legs))return null;
+  const started=l=>!!l.tip_utc&&Date.parse(l.tip_utc)<=nowMs;
+  const usable=link.legs.filter(l=>l.ids&&!started(l));
+  const info={url:null,total:link.legs.length,used:usable.length,started:link.legs.filter(started).length,missing:link.legs.filter(l=>!l.ids).length};
+  if(usable.length<2)return info;
+  if(link.app==='prizepicks'){
+    info.url='https://app.prizepicks.com/board?projections='+usable.map(l=>l.ids.projection_id+'-'+l.side+'-'+l.line).join(',');
+  }else if(link.app==='sleeper'){
+    info.url='https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1='+usable.map(l=>l.ids.line_id).join(',');
+  }else if(link.app==='betr'){
+    const raw=usable.map(l=>[l.ids.player_id,l.ids.event_id,l.ids.stat,l.side==='u'?'LESS':'MORE',l.ids.tier||'REGULAR'].join(':')).join(',');
+    info.url='https://l.betr.app/referral?partner=alphadog&picks='+encodeURIComponent(btoa(raw));
+  }
+  return info;
+}
+// 1/2/3 when the same title appears more than once (same app + structure label), in the order the slips are listed
+function slipTitleNo(s,idx){
+  const key=x=>String(x.source_key||'')+'|'+String(x.structure_label||x.slip_type||'');
+  const k=key(s);let tot=0,no=0;
+  (lastRawSlips||[]).forEach((x,i)=>{if(key(x)===k){tot++;if(i<=idx)no++}});
+  return tot>1?no:0;
+}
+function slipTitleHtml(s,idx){
+  const no=slipTitleNo(s,idx);
+  const text=String(s.source_key||'').toUpperCase()+' '+(s.structure_label||s.slip_type)+(no?' '+no:'');
+  const li=slipLinkUrl(s.app_link,Date.now());
+  if(!li||!li.url)return esc(text)+(li&&li.total&&li.used<2?' <span class="small" style="color:#ff6b6b;font-weight:700">(no link: fewer than 2 legs left to open)</span>':'');
+  return '<a class="slipOpenApp" href="'+esc(li.url)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">'+esc(text)+'</a> <span style="opacity:.7;font-size:.85em">↗'+(li.used<li.total?' '+li.used+'/'+li.total+' legs':'')+'</span>';
+}
 function slipCardHtml(s,idx){
   const kept=keptLegsOf(s,idx);
   if(kept.length!==(s.legs||[]).length){
@@ -398,7 +432,7 @@ function slipCardHtml(s,idx){
 }
 function slipCardShell(s,idx,sel,multValue,fieldsHtml){
   const meta=[s.track_label?esc(s.track_label):'',s.place_by_pt?'<b>Place by '+esc(s.place_by_pt)+'</b>'+(s.place_by_game?' ('+esc(s.place_by_game)+' tips)':' (first tip)'):'',s.stake_label?'<b>'+esc(s.stake_label)+'</b>':(s.status?esc(String(s.status).replace(/_/g,' ')):''),s.quote_note?(s.quote_failed?'<span style="color:#ff6b6b;font-weight:700">'+esc(s.quote_note)+'</span>':esc(s.quote_note)):'',s.stake_weight!=null&&s.stake_weight!==1?'stake '+esc(s.stake_weight)+'u':'',s.result?('result '+esc(s.result.hits)+'/'+esc(s.slip_size-(s.result.pushes||0))+' hit'+(s.result.pushes?' ('+esc(s.result.pushes)+' push, paid as a '+esc(s.slip_size-s.result.pushes)+'-pick)':'')+' • paid '+esc(Math.round(Number(s.result.payout||0)*100)/100)+'x'):''].filter(Boolean).join(' • ');
-  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(multValue)+'</span></div>'+(meta?'<div class="small" style="margin:2px 0 6px">'+meta+'</div>':'')+(s.streak_note?'<div class="small" style="margin:0 0 6px;color:#b45309">'+esc(s.streak_note)+'</div>':'')+backtestLineHtml(s)+'<div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+fieldsHtml+'</div>'
+  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+slipTitleHtml(s,idx)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(multValue)+'</span></div>'+(meta?'<div class="small" style="margin:2px 0 6px">'+meta+'</div>':'')+(s.streak_note?'<div class="small" style="margin:0 0 6px;color:#b45309">'+esc(s.streak_note)+'</div>':'')+backtestLineHtml(s)+'<div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+fieldsHtml+'</div>'
 }
 async function setStakeAuto(){
   const msg=document.getElementById('stakeUnitMsg');
