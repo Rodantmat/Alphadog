@@ -352,6 +352,11 @@ def rows_sleeper(doc, gd, label):
             # taken as the game date directly by the stamping step below (round 2, P3#1)
             out.append((gd, ev("sleeper", gd, l, "game_id", "event"), label, doc.get("meta", {}).get("fetched_at"), "sleeper", mk,
                         l["player"], side, float(l["line"]), None, float(m), None, None, l.get("game_date")))
+            # the id carries the side: over_line_id / under_line_id (scraper 2026-11-03); an older board file has only `line_id` (the first
+            # option, normally the Over) - used for the Over only, never guessed for the Under
+            _lid = l.get("over_line_id" if side == "Over" else "under_line_id") or (l.get("line_id") if side == "Over" and "over_line_id" not in l else None)
+            if _lid is not None:
+                LINK_IDS[("sleeper", mk, l["player"], side, float(l["line"]))] = {"line_id": str(_lid)}
     return out
 
 
