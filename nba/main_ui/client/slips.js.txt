@@ -299,7 +299,7 @@ function applySlipSourceFilter(){
   if(!lastRawSlips.length){return}
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
-  results.innerHTML=lastSlipsNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  results.innerHTML=lastSlipsNoteHtml+ppLiveNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
   restoreRealMultInputs();
   bindSlipSelectBoxes();
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
