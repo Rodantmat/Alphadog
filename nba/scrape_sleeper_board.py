@@ -129,6 +129,9 @@ def main():
             over, under = sides.get("over", {}), sides.get("under", {})
             legs.append({
                 "line_id": o0.get("line_id"), "sport": sport, "game_id": o0.get("game_id"), "game_status": o0.get("game_status"),
+                # PER-SIDE LINE IDS (2026-11-03): Sleeper's deep link entry_prefill carries plain line_ids and each side (over / under) has
+                # its OWN id - the id is how the app knows the side. `line_id` stays the first option's id (compat); these two are the pair.
+                "over_line_id": over.get("line_id"), "under_line_id": under.get("line_id"),
                 "subject_id": pid, "subject_type": o0.get("subject_type"), "player": pinfo.get("name") or o0.get("subject_name") or "",
                 "team": o0.get("subject_team") or pinfo.get("team"), "position": o0.get("subject_position") or pinfo.get("position"),
                 "wager_type": o0.get("wager_type"), "market_type": o0.get("market_type"), "line_type": o0.get("line_type"),
