@@ -174,6 +174,13 @@ def rows_prizepicks(doc, gd, label):
 # read by ud_live_slip_engine.py and the main UI (tunable nba_main_ui.ud_alt_policy). Nothing about the archived rows themselves changes.
 UD_FLAGS = {}
 
+# APP LINK IDS (2026-11-03, owner: slip titles become links that open the app with the lineup filled). Each app's deep link needs the app's
+# OWN ids, which the board rows do not carry: PrizePicks board?projections=<projection_id>-o|u-<line>; Sleeper entry_prefill line_ids (a separate
+# id per side); Betr referral picks=<playerId>:<eventId>:<stat>:<MORE|LESS>:<tier>. Filled by the rows_* functions (same keys as the board
+# rows: bookmaker, market_key, player, side, line) and written by _write_link_ids to nba_market.app_link_ids - latest ids per key, read
+# by the Slips screen (main_ui/slips.js) to build the links. Nothing about the archived board rows changes.
+LINK_IDS = {}
+
 
 def _ud_line_flags(doc):
     ou_of_line, pm_of_ou = {}, {}
