@@ -495,6 +495,7 @@ async function slipsFingerprint(sql, slate, version) {
      (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') || ':' || coalesce(max(graded_at)::text, '') || ':' || md5(coalesce(string_agg(status || stake::text, ','), '')) FROM nba_score.betr_live_slips WHERE game_date = $1::date),
      (SELECT count(*) || ':' || coalesce(max(quoted_at)::text, '') FROM nba_score.live_slip_quotes WHERE game_date = $1::date),
      (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') FROM nba_score.board_scored WHERE game_date = $1::date),
+     (SELECT count(*) || ':' || coalesce(max(updated_at)::text, '') FROM nba_market.app_link_ids WHERE updated_at > now() - interval '4 days'),
      (SELECT coalesce(max(snapshot_ts)::text, '') FROM nba_daily.injury_report_snapshots WHERE game_date = $1::date),
      (SELECT count(*) || ':' || coalesce(max(built_at)::text, '') FROM nba_score.final_hp_derived WHERE game_date = $1::date),
      (SELECT md5(string_agg(config_key || config_json::text, ',' ORDER BY config_key)) FROM nba_config.classification_config
