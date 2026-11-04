@@ -437,7 +437,7 @@ def api_checks(conn, cfg):
     ppl = hh.get("pp_live") or {}
     ppool = [l for l in (hh.get("backup_pool") or []) if l.get("source_key") == "prizepicks"]
     badpool = [(l.get("player_name"), l.get("line_type"), l.get("pp_kind"), l.get("pp_now")) for l in ppool
-               if str(l.get("pp_kind") or "").lower() != "standard" or str(l.get("line_type") or "regular") != "regular"
+               if (str(l.get("pp_kind") or "").lower() != "standard" and l.get("pp_now") != "standard") or str(l.get("line_type") or "regular") != "regular"
                or l.get("is_goblin") in (1, True) or l.get("is_demon") in (1, True) or (l.get("pp_now") not in (None, "standard"))]
     ppflag = [(s.get("track_label"), l.get("player_name"), l.get("prop_label") or l.get("prop"), l.get("line"), l.get("pp_now"))
               for s in sl if s.get("source_key") == "prizepicks" for l in s["legs"] if l.get("pp_now") not in (None, "standard")]
