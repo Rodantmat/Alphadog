@@ -1,0 +1,45 @@
+{
+ "ok": true,
+ "data_ok": true,
+ "version": "alphadog-v2-nba-main-ui-v1.4.59",
+ "route": "/api/player-search",
+ "rows": [
+  {
+   "player_id": "nba_1642873",
+   "player_name": "Amari Williams",
+   "primary_position": "F-C \u2022 BOS",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1630314",
+   "player_name": "Brandon Williams",
+   "primary_position": "G \u2022 GSW",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1642262",
+   "player_name": "Cody Williams",
+   "primary_position": "F \u2022 MIN",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1629684",
+   "player_name": "Grant Williams",
+   "primary_position": "F \u2022 CHA",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1631114",
+   "player_name": "Jalen Williams",
+   "primary_position": "G-F \u2022 OKC",
+   "active": 1
+  },
+  {
+   "player_id": "nba_1631119",
+   "player_name": "Jaylin Williams",
+   "primary_position": "F \u2022 OKC",
+   "active": 1
+  },
+  "... 12 more"
+ ]
+}

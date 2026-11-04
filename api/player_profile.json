@@ -1,0 +1,6 @@
+{
+ "ok": false,
+ "error": "query failed: HARD_QUERY_TIMEOUT_12000MS || SQL: SELECT split_type, group_value, season, gp, round((min::float / nullif(gp, 0))::numeric, 1)::float min, round((pts::float / nullif(gp, 0))::numeric, 1)::float pts, round((reb::float / nullif(gp, 0))::numeric, 1)::float reb, round((ast::float / nullif(gp, 0))::numeric, 1)::float ast, round((fg3m::float / nullif(gp, 0))::numeric, 1)::float fg3m, round((stl::float / nullif(gp, 0))::numeric, 1)::float",
+ "path": "/api/player-profile",
+ "version": "alphadog-v2-nba-main-ui-v1.4.59"
+}

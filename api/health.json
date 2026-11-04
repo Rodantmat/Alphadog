@@ -1,0 +1,6 @@
+{
+ "ok": false,
+ "error": "query failed: HARD_QUERY_TIMEOUT_12000MS || SQL: SELECT bookmaker, snapshot_label, count(*)::int n, max(fetched_at) fetched, max(game_date)::text game_date FROM nba_market.board_snapshots WHERE game_date = (SELECT max(game_date) FROM nba_market.board_snapshots WHERE game_date <= $1::date AND bookmaker = ANY($2::text[])) AND bookmaker = ANY($2::text[]) GROUP BY 1, 2 ORDER BY 1, 2",
+ "path": "/api/main-board/health",
+ "version": "alphadog-v2-nba-main-ui-v1.4.59"
+}

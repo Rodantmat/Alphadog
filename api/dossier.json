@@ -1,0 +1,6 @@
+{
+ "ok": false,
+ "error": "query failed: HARD_QUERY_TIMEOUT_12000MS || SQL: SELECT x.*, COALESCE(s.is_starter, sp.is_starter) is_starter FROM ( SELECT 'Regular' phase, player_id, team_id, game_id, season, game_date, matchup, wl, min, pts, reb, ast, fg3m, fg3a, stl, blk, tov, fgm, fga, ftm, fta, oreb, dreb, pf, plus_minus FROM nba_stats.player_game_log WHERE nba_player_id = $1::bigint AND game_date < $2::date UNION ALL SELECT 'Playoffs' phase, player_id, team_id, game_id, ",
+ "path": "/api/main-board/dossier",
+ "version": "alphadog-v2-nba-main-ui-v1.4.59"
+}
