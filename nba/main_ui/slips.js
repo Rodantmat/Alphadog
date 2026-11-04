@@ -247,6 +247,36 @@ function placeBy(lj, pb) {
   return { place_by_utc: best ? best.toISOString() : null, place_by_pt: ptClock(best), place_by_game: game, place_by_exact: exact && !!game };
 }
 
+// APP LINKS (2026-11-03, owner: "turn the title PRIZEPICKS 3-pick Power into the link that will open the app with the lineup"). The slip title
+// opens the app with the lineup filled (PrizePicks / Sleeper / Betr - verified on the owner's phone; Underdog and Fliff have no such link, their
+// title stays plain). The ids come from nba_market.app_link_ids (written with every board archive, nba/archive_live_boards.py). The server sends
+// each leg's id + its game's tip; the CLIENT builds the url at view time and leaves out a leg whose game has already started (so a started
+// leg never goes into the link, even on a stored snapshot). Amount and Flex/Power are NOT settable by any of the three links - the card keeps
+// its PLAY $ line.
+const LINK_MK = { steals: "player_steals", turnovers: "player_turnovers", blocks: "player_blocks", stocks: "player_blocks_steals", blocks_steals: "player_blocks_steals",
+  rebounds: "player_rebounds", points: "player_points", pts_ast: "player_points_assists", pra: "player_points_rebounds_assists", pts_reb: "player_points_rebounds",
+  assists: "player_assists", threes_made: "player_threes", threes: "player_threes", reb_ast: "player_rebounds_assists" };
+async function appLinkMap(sql) {
+  const has = (await q(sql, "SELECT to_regclass('nba_market.app_link_ids') IS NOT NULL ok"))[0];
+  if (!has || !has.ok) return new Map();
+  const rows = await q(sql, `SELECT bookmaker, pn, market_key, side, line::float line, ids FROM nba_market.app_link_ids
+                             WHERE bookmaker IN ('prizepicks','sleeper','betr') AND updated_at > now() - interval '4 days'`);
+  return new Map(rows.map(r => [[r.bookmaker, r.pn, r.market_key, r.side, Number(r.line)].join("|"), typeof r.ids === "string" ? JSON.parse(r.ids) : r.ids]));
+}
+function appLinkIds(map, app, x) {
+  if (!["prizepicks", "sleeper", "betr"].includes(app)) return null;
+  const base = LINK_MK[x.prop] || ("player_" + x.prop), side = sideIn(x.side) === "under" ? "Under" : "Over", pn = normName(x.player), line = Number(x.line);
+  return map.get([app, pn, base, side, line].join("|")) || map.get([app, pn, base + "_alternate", side, line].join("|")) || null;
+}
+function appLinkFor(app, lj, map, pb) {
+  if (!["prizepicks", "sleeper", "betr"].includes(app)) return null;
+  const legs = lj.map(x => {
+    const t = pb.tip.get(legKey(x));
+    return { player: x.player, side: sideIn(x.side) === "under" ? "u" : "o", line: Number(x.line), ids: appLinkIds(map, app, x), tip_utc: t && t.at ? t.at.toISOString() : null };
+  });
+  return { app, legs, missing: legs.filter(l => !l.ids).length };
+}
+
 async function replaySlips(sql, cfg, slate) {
   const sfxRow = (await q(sql, "SELECT config_json FROM nba_config.classification_config WHERE config_key = $1", [cfg.ui.replay_backtest.pp_table_suffix_config]))[0];
   const sfxCfg = sfxRow ? (typeof sfxRow.config_json === "string" ? JSON.parse(sfxRow.config_json) : sfxRow.config_json) : {};
