@@ -423,7 +423,7 @@ function legRowHtml(leg,slipIdx,legIdx){
   const checked=(un&&un.has(legIdx))?'':' checked';
   const isSub=isLegSubstitute(slipIdx,leg);
   const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
-  const stTag=autoSwapped.has(slipIdx+'|'+legIdx)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">STARTED</span>':'';
+  const stTag=autoSwapped.has(slipIdx+'|'+legIdx)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">'+(ppChanged(leg)&&!legStarted(leg,Date.now())?ppNowLabel(leg):'STARTED')+'</span>':(ppChanged(leg)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">'+ppNowLabel(leg)+'</span>':'');
   const hi=String(leg.dnp_risk||'')==='HIGH';
   const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
   return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+stTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+cellTag(leg)+resultTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
