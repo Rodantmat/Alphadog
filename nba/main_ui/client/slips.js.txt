@@ -514,6 +514,11 @@ async function highHitSlips(){
     const j=await (await fetch('/api/slips/high-hit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
     if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
     NBA_PRICING=j.pricing||NBA_PRICING;NBA_MAX_PER_GAME=j.max_per_game||NBA_MAX_PER_GAME;
+    {const pl=j.pp_live;
+      if(pl&&pl.checked_at){const t=new Date(pl.checked_at);const hm=t.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Los_Angeles'});
+        ppLiveNoteHtml='<div class="small" style="margin:0 0 8px;'+((pl.flagged||[]).length?'color:#ff6b6b;font-weight:700':'opacity:0.85')+'">PrizePicks lines checked against its own board at '+esc(hm)+' PT: '+((pl.flagged||[]).length?esc((pl.flagged||[]).length+' leg(s) are no longer regular and were swapped out - '+(pl.flagged||[]).join('; ')):'every PrizePicks leg is still regular')+'</div>'}
+      else if(pl&&pl.error){ppLiveNoteHtml='<div class="small" style="margin:0 0 8px;color:#ff6b6b;font-weight:700">PrizePicks live line check did not run ('+esc(pl.error)+') - verify each PrizePicks leg in the app.</div>'}
+      else ppLiveNoteHtml=''}
     const slips=j.generated_slips||[];
     const sl=j.slate||{};
     // 2026-11-02 (owner 14:05 PT): units per app only - app, unit, next increase at / amount, accumulated (the other notes are j.hidden_notes)
