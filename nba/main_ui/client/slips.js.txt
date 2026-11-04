@@ -85,7 +85,7 @@ function poolLegIsLegalForSlip(leg,keptLegs,slip){
 // pool has none of that type, the best-edge legal leg of any type (the card's multiplier is recomputed from the legs either way).
 function poolEdge(l){const e=Number(l&&l.edge_0_100);return Number.isFinite(e)?e:-999}
 function takeBestPoolLeg(keptLegs,slip,removed){
-  const want=removed&&removed.line_type?String(removed.line_type):null;
+  const want=(String(slip&&slip.source_key||'')==='prizepicks')?'regular':(removed&&removed.line_type?String(removed.line_type):null);
   let best=-1,bestAny=-1;
   for(let i=0;i<backupPool.length;i++){
     const l=backupPool[i];
