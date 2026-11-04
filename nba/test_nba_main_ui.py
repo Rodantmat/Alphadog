@@ -431,6 +431,28 @@ def api_checks(conn, cfg):
     over = {k: v for k, v in per_type.items() if v > int(bp["size"])}
     check("C24 backup pool: +EV legs ranked by edge over their own break-even, each line type kept (<= size per app per type)",
           not bad24 and not over and pool24, f"{len(pool24)} legs by type {per_type}; problems {bad24[:3]} over {over}")
+    # C65 (2026-11-04, owner: a PrizePicks goblin/demon must never show as a regular line or be offered as a swap): the PrizePicks backup
+    # pool holds only lines PrizePicks' own board lists as standard; the live check ran against a recent board; every PrizePicks slip leg whose
+    # line is no longer standard is flagged on the payload (so the screen shows NOW GOBLIN/DEMON and auto-swaps it); flex tier fields are always built.
+    ppl = hh.get("pp_live") or {}
+    ppool = [l for l in (hh.get("backup_pool") or []) if l.get("source_key") == "prizepicks"]
+    badpool = [(l.get("player_name"), l.get("line_type"), l.get("pp_kind"), l.get("pp_now")) for l in ppool
+               if str(l.get("pp_kind") or "").lower() != "standard" or str(l.get("line_type") or "regular") != "regular"
+               or l.get("is_goblin") in (1, True) or l.get("is_demon") in (1, True) or (l.get("pp_now") not in (None, "standard"))]
+    ppflag = [(s.get("track_label"), l.get("player_name"), l.get("prop_label") or l.get("prop"), l.get("line"), l.get("pp_now"))
+              for s in sl if s.get("source_key") == "prizepicks" for l in s["legs"] if l.get("pp_now") not in (None, "standard")]
+    try:
+        import datetime as _dt65
+        age65 = None
+        if ppl.get("checked_at"):
+            age65 = (_dt65.datetime.now(_dt65.timezone.utc) - _dt65.datetime.fromisoformat(str(ppl["checked_at"]).replace("Z", "+00:00"))).total_seconds() / 60
+    except Exception:
+        age65 = None
+    src65 = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "main_ui", "client", "slips.js.txt"), encoding="utf-8").read()
+    has_flex65 = "function flexTierFieldsHtml" in src65 and "ppNowLabel" in src65
+    check("C65 PrizePicks: pool is standard-only, live line check ran, goblin/demon legs flagged, flex tier fields built",
+          hh.get("source") != "live" or (not badpool and ppl and not ppl.get("error") and (age65 is None or age65 < 90) and has_flex65),
+          f"pool {len(ppool)} bad {badpool[:3]}; live {ppl.get('checked_at')} age {age65} min file {ppl.get('run_file')} checked {ppl.get('legs_checked')} flagged {ppl.get('flagged')} err {ppl.get('error')}; slip legs now non-standard {ppflag}; flex code {has_flex65}")
     if hh.get("source") == "replay_backtest" and sl:
         res = [s for s in sl if s.get("result")]
         check("C14 replay slips carry the backtest result", len(res) == len(sl), f"{len(res)}/{len(sl)}")
