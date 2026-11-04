@@ -327,6 +327,46 @@ def api_checks(conn, cfg):
                  if re.match(r"^(SKIP - shadow|paper|SKIP - strategy |SKIP - not staked)", str(s.get("stake_label") or ""))]
     check("C56 Slips screen shows no test-only slip (they are recorded as not played)", not testshown and isinstance(hh.get("test_only_recorded"), int),
           f"shown test-only {testshown[:3]}; recorded and hidden {hh.get('test_only_recorded')}")
+    # C64 (2026-11-03, owner: "turn the title PRIZEPICKS 3-pick Power into the link that will open the app with the lineup"): every PrizePicks /
+    # Sleeper / Betr slip carries app_link (a leg's id + game tip), Underdog / Fliff carry none; the browser's own builder (client slips.js
+    # slipLinkUrl, run here through node on the real payload) makes the right url - PrizePicks board?projections=<id>-o|u-<line>, Sleeper
+    # entry_prefill with one line id per leg, Betr referral picks= base64 of player:event:stat:MORE|LESS:tier - from exactly the legs that
+    # have ids, and leaves out every leg once its game has started
+    link_apps = ("prizepicks", "sleeper", "betr")
+    nolink = [s.get("track_label") for s in sl if s.get("source_key") in link_apps and not isinstance(s.get("app_link"), dict)]
+    stray = [s.get("track_label") for s in sl if s.get("source_key") not in link_apps and s.get("app_link")]
+    src64 = (Path(__file__).resolve().parent / "main_ui" / "client" / "slips.js.txt").read_text()
+    m64 = re.search(r"function slipLinkUrl[\s\S]*?\n}\n", src64)
+    cases64 = [s["app_link"] for s in sl if isinstance(s.get("app_link"), dict)]
+    out64 = {"ok": False}
+    if m64 and cases64:
+        prog = m64.group(0) + "\nconst c=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(JSON.stringify(c.map(l=>({a:slipLinkUrl(l,0),b:slipLinkUrl(l,9e15)}))));"
+        r64 = subprocess.run(["node", "-e", prog], input=json.dumps(cases64), capture_output=True, text=True)
+        try:
+            res64 = json.loads(r64.stdout)
+            bad64, withurl = [], 0
+            for l, rr in zip(cases64, res64):
+                got = sum(1 for x in l["legs"] if x.get("ids"))
+                a, b = rr["a"], rr["b"]
+                started_all = any(x.get("tip_utc") for x in l["legs"])
+                if b["url"] is not None and started_all and all(x.get("tip_utc") for x in l["legs"]):
+                    bad64.append(("url with every game started", l["app"]))
+                if got >= 2:
+                    withurl += 1
+                    want = {"prizepicks": "https://app.prizepicks.com/board?projections=", "sleeper": "https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1=",
+                            "betr": "https://l.betr.app/referral?partner=alphadog&picks="}[l["app"]]
+                    if not (a["url"] or "").startswith(want) or a["used"] != got:
+                        bad64.append((l["app"], a))
+                    elif l["app"] == "prizepicks" and len(a["url"].split("projections=")[1].split(",")) != got:
+                        bad64.append(("pp leg count", a["url"]))
+                    elif l["app"] == "sleeper" and len(a["url"].split("deep_link_sub1=")[1].split(",")) != got:
+                        bad64.append(("sleeper leg count", a["url"]))
+            out64 = {"ok": not bad64, "bad": bad64[:3], "withurl": withurl}
+        except Exception as e:  # noqa: BLE001
+            out64 = {"ok": False, "err": str(e)[:100], "stderr": r64.stderr[:200]}
+    check("C64 slip titles are app links built from the legs' own ids (PrizePicks / Sleeper / Betr); started legs leave the link; Underdog / Fliff plain",
+          hh.get("source") != "live" or (not nolink and not stray and out64.get("ok")),
+          f"{len(cases64)} link slips, {out64.get('withurl')} with a url; no link {nolink[:3]}; stray {stray[:3]}; {out64}")
     # C57 (2026-10-17, owner: "be sure you have clear the flags when it start and when it stop"): on an engine slate every streak
     # flag the engine recorded for the date is on the screen (its state and reason), and every shown slip of a flagged strategy
     # carries the streak note the engine wrote on it
