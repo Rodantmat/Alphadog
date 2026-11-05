@@ -84,7 +84,7 @@ def main():
     seasons = sorted({k[0] for k in order})
     print("seasons", seasons, {s: sum(1 for k in order if k[0] == s) for s in seasons}, flush=True)
     combos = list(itertools.product(POOLS, SIDES, PSS, RKS, FLS, GCS, TPS, LPS))
-    cols = [(c, n) for c in combos for n in SIZES]
+    cols = [(c, (n, st)) for c in combos for n in SIZES for st in STR[n]]
     res = {cn: defaultdict(list) for cn in cols}
     his = defaultdict(lambda: defaultdict(list))
     tr = PB.Trailing()
