@@ -127,22 +127,25 @@ def main():
         print("  ", uid, {s: f"{100*np.mean(v):+.0f}% ({len(v)})" for s, v in his[uid].items()})
     hs = [s for s in seasons if s in ("2024-25", "2025-26")]
     cur = [s for s in seasons if s not in hs]
-    for n in SIZES:
+    for n, stt in [(n, st) for n in SIZES for st in STR[n]]:
         rows = []
         for (c, nn), d in res.items():
-            if nn != n:
+            if nn != (n, stt):
                 continue
             if any(len(d.get(s, [])) < 60 for s in hs):
                 continue
             m = [np.mean(d[s]) for s in hs]
             if min(m) <= 0:
                 continue
+            dd = [max_dd(d[s]) for s in hs]
+            dry = [dry_run(d[s]) for s in hs]
+            bal = min(float(np.sum(d[s])) / max(dd[i], 1.0) for i, s in enumerate(hs))
             ce = d.get(cur[0], []) if cur else []
-            rows.append((min(m), c, m, {s: len(d[s]) for s in hs}, (np.mean(ce), len(ce)) if ce else None))
+            rows.append((bal, c, m, {s: len(d[s]) for s in hs}, (np.mean(ce), len(ce)) if ce else None, dd, dry))
         rows.sort(key=lambda r: -r[0])
-        print(f"\n=== {n}-pick Flex: {len(rows)} variants positive in both history seasons (leg-diff cap applied); top 25 by weaker season")
-        for r in rows[:25]:
-            print("  ", r[1], " ".join(f"{100*x:+.0f}%" for x in r[2]), r[3], "this season", ("%+.0f%% (%d)" % (100*r[4][0], r[4][1])) if r[4] else "none")
+        print(f"\n=== {n}-pick {stt}: {len(rows)} variants positive in both history seasons (leg-diff cap applied); top 20 by BALANCE (worse season P/L / max drawdown)")
+        for r in rows[:20]:
+            print("  ", r[1], "ROI", " ".join(f"{100*x:+.0f}%" for x in r[2]), "n", list(r[3].values()), "dd", " ".join(f"{x:.1f}u" for x in r[5]), "dry", r[6], f"bal {r[0]:.1f}")
     print("done")
 
 
