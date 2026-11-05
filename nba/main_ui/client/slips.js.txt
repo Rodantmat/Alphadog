@@ -509,7 +509,8 @@ async function setStakeUnit(){
 async function highHitSlips(){
   const results=$('autoCreateResults');
   if(results&&!results._stakeUnitBound){results._stakeUnitBound=true;results.addEventListener('click',e=>{if(e.target&&e.target.id==='stakeUnitBtn')setStakeUnit();if(e.target&&e.target.id==='stakeAutoBtn')setStakeAuto()})}
-  results.innerHTML='<div class="empty">Loading the engines&#39; slips for the slate...</div>';
+  if(!document.getElementById('liveSpinCss')){const st=document.createElement('style');st.id='liveSpinCss';st.textContent='@keyframes liveSpin{to{transform:rotate(360deg)}}.liveSpin{display:inline-block;width:22px;height:22px;border:3px solid rgba(255,255,255,0.25);border-top-color:#7ee787;border-radius:50%;animation:liveSpin .8s linear infinite;vertical-align:middle;margin-right:10px}';document.head.appendChild(st)}
+  results.innerHTML='<div class="empty" style="padding:28px 0;text-align:center"><span class="liveSpin"></span>Checking every leg on each app&#39;s own board...</div>';
   try{
     const j=await (await fetch('/api/slips/high-hit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
     if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
