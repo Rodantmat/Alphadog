@@ -23621,8 +23621,8 @@
       "away_team_tricode": "PHI",
       "arena_name": "Little Caesars Arena",
       "arena_city": "Detroit",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23636,8 +23636,8 @@
       "away_team_tricode": "ATL",
       "arena_name": "Capital One Arena",
       "arena_city": "Washington",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23651,8 +23651,8 @@
       "away_team_tricode": "MIL",
       "arena_name": "TD Garden",
       "arena_city": "Boston",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23666,8 +23666,8 @@
       "away_team_tricode": "CHA",
       "arena_name": "Barclays Center",
       "arena_city": "Brooklyn",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23681,8 +23681,8 @@
       "away_team_tricode": "CHI",
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23696,8 +23696,8 @@
       "away_team_tricode": "IND",
       "arena_name": "FedExForum",
       "arena_city": "Memphis",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23711,8 +23711,8 @@
       "away_team_tricode": "UTA",
       "arena_name": "Smoothie King Center",
       "arena_city": "New Orleans",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": ""
     },
     {
@@ -23726,8 +23726,8 @@
       "away_team_tricode": "CLE",
       "arena_name": "Paycom Center",
       "arena_city": "Oklahoma City",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23741,8 +23741,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "Toyota Center",
       "arena_city": "Houston",
-      "game_status": 1,
-      "game_status_text": "8:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23756,8 +23756,8 @@
       "away_team_tricode": "TOR",
       "arena_name": "Ball Arena",
       "arena_city": "Denver",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23771,8 +23771,8 @@
       "away_team_tricode": "POR",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23786,8 +23786,8 @@
       "away_team_tricode": "DAL",
       "arena_name": "Frost Bank Center",
       "arena_city": "San Antonio",
-      "game_status": 1,
-      "game_status_text": "9:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23801,8 +23801,8 @@
       "away_team_tricode": "LAL",
       "arena_name": "Golden 1 Center",
       "arena_city": "Sacramento",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23816,8 +23816,8 @@
       "away_team_tricode": "MIA",
       "arena_name": "Intuit Dome",
       "arena_city": "Inglewood",
-      "game_status": 1,
-      "game_status_text": "10:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": ""
     },
     {
