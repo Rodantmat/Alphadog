@@ -136,7 +136,7 @@ function udEntries(j, appId, out) {
     if (appId && String(st.appearance_id) !== String(appId)) continue;
     const prop = UD_STAT[String(st.display_stat || "").trim().toLowerCase()]; if (!prop) continue;
     const opts = {}; for (const o of ln.options || []) opts[String(o.choice)] = o.status == null || String(o.status).toLowerCase() === "active";
-    out.push({ prop, line: Number(ln.stat_value), ouId: ou.id, higher: opts.higher !== false && "higher" in opts ? opts.higher : (opts.higher == null ? true : opts.higher), lower: "lower" in opts ? opts.lower : true });
+    out.push({ prop, aid: st.appearance_id, line: Number(ln.stat_value), ouId: ou.id, higher: opts.higher !== false && "higher" in opts ? opts.higher : (opts.higher == null ? true : opts.higher), lower: "lower" in opts ? opts.lower : true });
   }
 }
 async function udCheck(legs) {
