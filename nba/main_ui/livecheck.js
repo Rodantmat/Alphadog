@@ -164,7 +164,7 @@ async function udCheck(legs) {
   const entries = new Map();   // name|prop -> [{line, ouId, higher, lower, alt}]
   await pool(names, 6, async nm => {
     for (const aid of byName.get(nm)) {
-      try { const j = await udGet(`/v1/lobbies/content/lines_with_stats?appearance_id=${aid}&${UD_COMMON}`); const out = []; udEntries(j, aid, out);
+      try { const j = lws.get(String(aid)) || await udGet(`/v1/lobbies/content/lines_with_stats?appearance_id=${aid}&${UD_COMMON}`); const out = []; udEntries(j, aid, out);
         for (const e of out) { const k = nm + "|" + e.prop; if (!entries.has(k)) entries.set(k, []); entries.get(k).push(e); } } catch (_e) { /* that player stays unchecked */ }
     }
   });
