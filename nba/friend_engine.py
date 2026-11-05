@@ -352,7 +352,7 @@ def backfill():
         dates.add(d)
         if n % 25 == 0:
             log(f"slate {n} {d}: {len(legs)} legs, {len(rows)} slips so far")
-        if n % 40 == 0 and FAPP != "PP":
+        if False:
             conn.close(); conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     conn.close()
     conn = psycopg.connect(os.environ["DATABASE_URL"])
