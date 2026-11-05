@@ -108,7 +108,7 @@ else:
     GTS = (0.0, 1.04, 1.12) if FAPP != "BETR" else (0.0,)
     COMBOS = list(itertools.product(ORD, SIDES, PRS, KDS, FLS, GTS, (0, 1)))
     if FAPP == "SLEEPER":
-        STRUCTS = [(2, "max"), (3, "flex"), (4, "flex"), (5, "flex")]
+        STRUCTS = [(3, "max"), (3, "flex"), (4, "flex"), (5, "flex")]
         HIS = [("evbl", "any", "all", "all", 0.50, 1.12, 0, 5, 2)]
     elif FAPP == "FLIFF":
         STRUCTS = [(2, "max"), (3, "max")]
