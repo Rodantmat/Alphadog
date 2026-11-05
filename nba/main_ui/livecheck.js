@@ -151,7 +151,7 @@ async function udCheck(legs) {
   const pairs = [];   // only the (game, stat) pairs the legs sit in: a leg's team is in the game title ("ATL @ WAS")
   for (const [mid, mt] of mids) { const tt = gtitle(mid); const sids = new Set(legs.filter(l => !tt || tt.includes(String(l.team_abbr || "").toUpperCase())).map(l => UD_PILL[l.canonical_prop_key]).filter(Boolean)); for (const sid of sids) pairs.push([mid, mt, sid]); }
   const pj = await pool(pairs, 10, async ([mid, mt, sid]) => { try { return await udGet(`/v1/lobbies/content/lines?include_live=true&match_id=${mid}&match_type=${encodeURIComponent(mt)}&${UD_COMMON}&show_mass_option_markets=true&filter_id=${sid}&filter_type=PickemStat`); } catch (_e) { return null; } });
-  mj.push(...pj); tick("pills_ms"); T.pairs = pairs.length; T.pill_fail = pj.filter(x => !x).length;
+  mj.push(...pj); tick("pills_ms"); T.game0 = JSON.stringify(asArr(core.games)[0] || {}).slice(0, 260); T.team0 = JSON.stringify(asArr(core.teams)[0] || {}).slice(0, 100); T.app1 = JSON.stringify(asArr((pj.find(x => x) || {}).appearances)[0] || {}).slice(0, 220); T.ln1 = JSON.stringify(asArr((pj.find(x => x) || {}).over_under_lines)[0] || {}).slice(0, 300); T.pairs = pairs.length; T.pill_fail = pj.filter(x => !x).length;
   const allApps = [...asArr(core.appearances)], allPl = [...asArr(core.players)];
   for (const j of mj) if (j) { allApps.push(...asArr(j.appearances)); allPl.push(...asArr(j.players)); }
   const players = allPl, apps = allApps.filter(a => a && a.player_id);
