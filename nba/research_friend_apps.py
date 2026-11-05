@@ -184,8 +184,6 @@ def main():
                     res[(c, k, st)][season].append(pay(s, st) - 1.0)
         if n % 25 == 0:
             log(f"slate {n} {d}: {len(legs)} legs, his legs {len(H)}")
-        if n % 40 == 0:
-            conn.close(); conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     seasons = ["2024-25", "2025-26"]
     for (k, st) in STRUCTS:
         rows = []
