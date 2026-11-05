@@ -5877,6 +5877,19 @@
       "team_abbreviation": "BOS"
     },
     {
+      "id": 1631207,
+      "full_name": "Dalen Terry",
+      "last_comma_first": "Terry, Dalen",
+      "roster_status": 1,
+      "from_year": "2022",
+      "to_year": "2026",
+      "player_code": "dalen_terry",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
+    },
+    {
       "id": 1642876,
       "full_name": "Adou Thiero",
       "last_comma_first": "Thiero, Adou",
