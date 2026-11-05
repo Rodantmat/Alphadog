@@ -789,7 +789,10 @@ for worker in WORKERS:
 # fully separate from MLB's repo-root files, per nba/NBA_SYSTEM_DRAFT.md Section 1.
 for worker in NBA_WORKERS:
     path = Path(f"nba/wrangler.{worker}.jsonc")
-    path.write_text(json.dumps(make_config(worker), indent=2), encoding="utf-8")
+    _cfg = make_config(worker)
+    if worker == "alphadog-v2-nba-friend":
+        _cfg["name"] = "jstacks"  # friend page: deployed under a short public name (owner 2026-11-05)
+    path.write_text(json.dumps(_cfg, indent=2), encoding="utf-8")
     generated.append(str(path))
 
 path = Path("wrangler.alphadog-v2-orchestrator.with-services.jsonc")
