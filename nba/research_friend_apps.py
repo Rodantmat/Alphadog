@@ -114,7 +114,7 @@ else:
         STRUCTS = [(3, "max")]
         HIS = [("p", "Under", "all", "main", 0.56, 0.0, 0, 2, 1)]
     else:
-        STRUCTS = [(3, "flex"), (4, "flex"), (5, "flex")]
+        STRUCTS = [(3, "flex"), (4, "flex"), (5, "flex"), (6, "flex")]
         HIS = [("bl", "any", "all", "gc1", 0.60, 0.0, 0, 4, 2)]
 
     def ranked(legs, c):
