@@ -168,8 +168,8 @@ async function udCheck(legs) {
       for (const pr of j.projections || []) { const opts = {}; for (const o of pr.options || []) opts[String(o.choice)] = o.status == null || String(o.status).toLowerCase() === "active";
         entries.get(k).push({ line: Number(pr.stat_value), higher: opts.higher !== false, lower: opts.lower !== false, alt: true }); } } catch (_e) { /* keep main lines only */ }
   });
-  let unresolved = 0;
-  const dbg = { core_apps: apps.length, core_players: asArr(players).length, names_indexed: byName.size, keys: Object.keys(core).slice(0, 8),
+  let unresolved = 0; const unres = [];
+  const dbg = { unres, core_apps: apps.length, core_players: asArr(players).length, names_indexed: byName.size, keys: Object.keys(core).slice(0, 8),
     app_keys: Object.keys(asArr(core.appearances)[0] || {}).join(","), n_lines: asArr(core.over_under_lines).length, names: [...byName.keys()].slice(0, 6).join("|"), titles: asArr(core.over_under_lines).slice(0, 3).map(x => String((x.over_under || {}).title) + "/" + String(((x.over_under || {}).appearance_stat || {}).display_stat)).join("|"), legs: legs.slice(0, 4).map(l => normName(l.player_name)).join("|") };
   for (const l of legs) {
     const nm = normName(l.player_name);
