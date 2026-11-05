@@ -1,0 +1,26 @@
+name: NBA UD Full Compare
+
+# One-off: compare the freshly mined full Underdog board with the Slips legs (owner 2026-11-04 17:04 PT).
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: nba-ud-full-compare
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install "psycopg[binary]"
+      - name: Compare
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/ud_full_compare.py
