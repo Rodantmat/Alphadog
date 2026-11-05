@@ -151,6 +151,15 @@ async function udCheck(legs) {
     let t = String(ou.title || ""); const ds = String(st.display_stat || ""); if (ds && t.toLowerCase().endsWith(ds.toLowerCase())) t = t.slice(0, t.length - ds.length);
     t = t.replace(/\s+(O\/U|Over\/Under).*$/i, ""); addName(normName(t), st.appearance_id);
   }
+  // appearances of these matches that no list named: ask for their own lines_with_stats (the answer carries the player), cached for the pass below
+  const lws = new Map(), midSet = new Set(mids.map(m => String(m[0]))), namedIds = new Set([...byName.values()].flat().map(String));
+  const unnamed = [...new Set(apps.filter(a => a.type === "Player" && midSet.has(String(a.match_id)) && !namedIds.has(String(a.id))).map(a => String(a.id)))];
+  await pool(unnamed, 12, async aid => {
+    try { const j = await udGet(`/v1/lobbies/content/lines_with_stats?appearance_id=${aid}&${UD_COMMON}`); lws.set(aid, j);
+      const ap = asArr(j.appearances).find(x => x && String(x.id) === aid) || apps.find(x => String(x.id) === aid) || {};
+      const p = asArr(j.players).find(x => x && String(x.id) === String(ap.player_id)) || asArr(j.players)[0] || {};
+      addName(normName((p.first_name || "") + (p.last_name || "")), aid); } catch (_e) { /* stays unnamed */ }
+  });
   const names = [...new Set(legs.map(l => normName(l.player_name)))].filter(n => byName.has(n));
   const entries = new Map();   // name|prop -> [{line, ouId, higher, lower, alt}]
   await pool(names, 6, async nm => {
