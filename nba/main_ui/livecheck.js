@@ -165,7 +165,7 @@ async function udCheck(legs) {
   });
   let unresolved = 0;
   const dbg = { core_apps: apps.length, core_players: asArr(players).length, names_indexed: byName.size, keys: Object.keys(core).slice(0, 8),
-    sample_app: JSON.stringify(asArr(core.appearances)[0] || {}).slice(0, 160), sample_player: JSON.stringify(asArr(core.players)[0] || {}).slice(0, 160) };
+    app_keys: Object.keys(asArr(core.appearances)[0] || {}).join(","), n_lines: asArr(core.over_under_lines).length, sample_title: JSON.stringify((asArr(core.over_under_lines)[0] || {}).over_under || {}).slice(0, 200) };
   for (const l of legs) {
     const nm = normName(l.player_name);
     if (!byName.has(nm)) { unresolved++; continue; }
