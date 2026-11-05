@@ -104,6 +104,104 @@ function markSleeper(l, idset) {
   l.live_now = idset.has(String(id)) ? "ok" : "missing";
 }
 
+// ---------------------------------------------------------------------------------------------------------------- Underdog (scoped)
+// match_grouped_lines (core) names the NBA appearances; then ONLY the players on our legs: lines_with_stats per appearance (main lines) and, for a leg that
+// sits on an alternate rung, alternate_projections of that line. A leg whose player Underdog's core call does not name is left unchecked (no status).
+const UD_STAT = { "points": "points", "rebounds": "rebounds", "assists": "assists", "3-pointers made": "threes_made", "3-pointers": "threes_made", "steals": "steals",
+  "blocks": "blocks", "turnovers": "turnovers", "pts + rebs + asts": "pra", "points + rebounds + assists": "pra", "pts + rebs": "pts_reb", "points + rebounds": "pts_reb",
+  "pts + asts": "pts_ast", "points + assists": "pts_ast", "rebs + asts": "reb_ast", "rebounds + assists": "reb_ast", "blks + stls": "stocks", "blocks + steals": "stocks",
+  "fantasy points": "fantasy_score", "fg attempted": "fga", "3s attempted": "fg3a", "double-double": "double_double", "double doubles": "double_double" };
+const UD_API = "https://api.underdogfantasy.com";
+const UD_COMMON = "product=fantasy&product_experience_id=b34dfd93-d0e8-4da3-8bf4-45c15c548dec&state_config_id=725014ef-3570-4e93-871d-d69674ab3521";
+const UD_H = () => ({ accept: "application/json", "accept-language": "en-US,en;q=0.9", origin: "https://app.underdogsports.com", referer: "https://app.underdogsports.com/", "client-type": "web",
+  "client-version": "20260907143253", "client-device-id": crypto.randomUUID(), "client-request-id": crypto.randomUUID(),
+  "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+  "user-latitude": "32.65148161377867", "user-longitude": "-116.8550890281236" });
+async function udGet(path) {
+  const r = await getText(UD_API + path, { headers: UD_H() }, 10000);
+  if (r.status !== 200) throw new Error("underdog HTTP " + r.status + (r.error ? " " + r.error : ""));
+  return JSON.parse(r.text);
+}
+async function pool(items, n, fn) { const out = []; let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } })); return out; }
+const asArr = x => Array.isArray(x) ? x : Object.values(x || {});
+function udEntries(j, appId, out) {
+  for (const ln of asArr(j.over_under_lines)) {
+    const ou = ln.over_under || {}, st = ou.appearance_stat || {};
+    if (appId && String(st.appearance_id) !== String(appId)) continue;
+    const prop = UD_STAT[String(st.display_stat || "").trim().toLowerCase()]; if (!prop) continue;
+    const opts = {}; for (const o of ln.options || []) opts[String(o.choice)] = o.status == null || String(o.status).toLowerCase() === "active";
+    out.push({ prop, line: Number(ln.stat_value), ouId: ou.id, higher: opts.higher !== false && "higher" in opts ? opts.higher : (opts.higher == null ? true : opts.higher), lower: "lower" in opts ? opts.lower : true });
+  }
+}
+async function udCheck(legs) {
+  const core = await udGet(`/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D=core&match_limit=200&${UD_COMMON}&show_more_picks_cta=true&sport_id=NBA&two_box_enabled_surface=true`);
+  const players = core.players || {}, apps = asArr(core.appearances).filter(a => a && a.type === "Player" && a.player_id);
+  const byName = new Map();
+  for (const a of apps) { const p = players[a.player_id] || asArr(players).find(x => x && x.id === a.player_id) || {}; const nm = normName((p.first_name || "") + (p.last_name || "")); if (!nm) continue; if (!byName.has(nm)) byName.set(nm, []); byName.get(nm).push(a.id); }
+  const names = [...new Set(legs.map(l => normName(l.player_name)))].filter(n => byName.has(n));
+  const entries = new Map();   // name|prop -> [{line, ouId, higher, lower, alt}]
+  await pool(names, 6, async nm => {
+    for (const aid of byName.get(nm)) {
+      try { const j = await udGet(`/v1/lobbies/content/lines_with_stats?appearance_id=${aid}&${UD_COMMON}`); const out = []; udEntries(j, aid, out);
+        for (const e of out) { const k = nm + "|" + e.prop; if (!entries.has(k)) entries.set(k, []); entries.get(k).push(e); } } catch (_e) { /* that player stays unchecked */ }
+    }
+  });
+  // legs not on a main line: look at that line's alternate rungs
+  const needAlt = new Map();
+  for (const l of legs) { const nm = normName(l.player_name), k = nm + "|" + l.canonical_prop_key, es = entries.get(k);
+    if (es && es.length && !es.some(e => near(e.line, l.line_value))) for (const e of es) if (e.ouId) needAlt.set(e.ouId, k); }
+  await pool([...needAlt.entries()], 6, async ([ouId, k]) => {
+    try { const j = await udGet(`/v3/over_unders/${ouId}/alternate_projections?${UD_COMMON}`);
+      for (const pr of j.projections || []) { const opts = {}; for (const o of pr.options || []) opts[String(o.choice)] = o.status == null || String(o.status).toLowerCase() === "active";
+        entries.get(k).push({ line: Number(pr.stat_value), higher: opts.higher !== false, lower: opts.lower !== false, alt: true }); } } catch (_e) { /* keep main lines only */ }
+  });
+  let unresolved = 0;
+  for (const l of legs) {
+    const nm = normName(l.player_name);
+    if (!byName.has(nm)) { unresolved++; continue; }
+    const es = entries.get(nm + "|" + l.canonical_prop_key) || [];
+    const ex = es.filter(e => near(e.line, l.line_value)), less = sideOf(l) === "less";
+    l.live_now = ex.length ? (ex.some(e => less ? e.lower : e.higher) ? "ok" : "side") : (es.length ? "moved" : "missing");
+  }
+  return { unresolved };
+}
+
+// ---------------------------------------------------------------------------------------------------------------- Fliff (scoped)
+// Fliff's public Pick'Em feed (no login): ping -> skipper host -> leagues -> games -> cards; only the games / stat categories the Fliff legs need.
+const FLIFF_CAT = { points: "1060", rebounds: "1031", assists: "1058", threes_made: "1032", pra: "1033", reb_ast: "1034", pts_reb: "1035", pts_ast: "1036", steals: "1037", blocks: "1059", stocks: "1038" };
+async function fliffCheck(legs) {
+  const hdr = { product_code: 10, device_x_id: "web." + crypto.randomUUID().replace(/-/g, ""), app_x_version: "5.0.35.286", app_install_token: "abcdEFGH12", auth_token: "", conn_id: 1, platform: "prod",
+    usa_state_code: "", usa_state_code_source: "ipOrigin=2702|regionCode=|meta=|geocodeOrigin=2702|regionCode=|meta=", xtag: "", country_code: "", af_uid: "no_appsflyer_uid_for_web", location_token: "" };
+  const post = async (host, obj) => {
+    const r = await getText(host.replace(/\/$/, "") + "/fc_mobile_api_public?" + new URLSearchParams(hdr).toString(), { method: "POST", headers: { accept: "application/json, text/plain, */*", "content-type": "application/json",
+      origin: "https://sports.getfliff.com", referer: "https://sports.getfliff.com/", "user-agent": UA },
+      body: JSON.stringify({ header: hdr, invocation: { request: obj }, x_invocations: null, x_sb_meta: { sb_config_version: -1, sb_user_profile_version: -1, sb_user_profile_meta: null, campaigns_meta: { all_visible_campaigns_keys: {} } } }) }, 10000);
+    if (r.status !== 200) throw new Error("fliff HTTP " + r.status); return JSON.parse(r.text);
+  };
+  const ping = await post("https://m-c2.app.getfliff.com/", { __object_class_name: "FCM__Ping__Request", message: "ping " + Date.now() });
+  const host = (((ping.result || {}).response || {}).data || {}).skipper_public_feed_endpoint; if (!host) throw new Error("fliff ping: " + JSON.stringify((ping.result || {}).error || "").slice(0, 80));
+  const lg = await post(host, { __object_class_name: "FCM__Skipper_GetLeagues__Request" });
+  const nba = (((lg.result || {}).response || {}).collections || {}).page.find(x => String(x.abbreviation).toUpperCase() === "NBA").id;
+  const gm = await post(host, { __object_class_name: "FCM__Skipper_GetGames__Request", variables: { filter: { league: nba } } });
+  const games = (((gm.result || {}).response || {}).games || {}).page.map(g => { const r = g.game_render_data; return { id: r.id, teams: [r.away_team.abbreviation, r.home_team.abbreviation] }; });
+  const need = new Map();   // gameId|cat -> true
+  for (const l of legs) { const cat = FLIFF_CAT[l.canonical_prop_key]; const g = games.find(x => x.teams.includes(l.team_abbr)); if (cat && g) need.set(g.id + "|" + cat, [g.id, cat]); }
+  const rows = new Map();   // name|prop -> [{line, type}]
+  await pool([...need.values()], 6, async ([gid, cat]) => {
+    try { const c = await post(host, { __object_class_name: "FCM__Skipper_GetCards__Request", variables: { filter: { league: nba, games: [gid], prop_categories: ["fkey__sk_prop_category__" + cat] } } });
+      const prop = Object.keys(FLIFF_CAT).find(k => FLIFF_CAT[k] === cat);
+      for (const pk of ((c.result || {}).response || {}).cards_packs || []) for (const cd of pk.cards || []) { const pr = cd.player_prop_render_data || {}; if (!pr.name) continue;
+        for (const o of ((cd.betting_options || {}).options) || []) if (o.is_main_line && (o.option_type === 0 || o.option_type === 1) && o.status === 0 && o.eu_odds) {
+          const k = normName(pr.name) + "|" + prop; if (!rows.has(k)) rows.set(k, []); rows.get(k).push({ line: Number(o.line), type: o.option_type }); } } } catch (_e) { /* those legs stay unchecked */ }
+  });
+  for (const l of legs) {
+    const cat = FLIFF_CAT[l.canonical_prop_key]; const g = games.find(x => x.teams.includes(l.team_abbr)); if (!cat || !g || !need.has(g.id + "|" + cat)) continue;
+    const rs = rows.get(normName(l.player_name) + "|" + l.canonical_prop_key) || [], t = sideOf(l) === "less" ? 1 : 0;
+    l.live_now = rs.some(r => near(r.line, l.line_value) && r.type === t) ? "ok" : (rs.length ? "moved" : "missing");
+  }
+  return { games: games.length, cards: need.size };
+}
+
 const LABEL = { moved: "line moved", missing: "off the board", side: "more only now", goblin: "now a goblin", demon: "now a demon" };
 
 export async function overlayLive(sql, out) {
