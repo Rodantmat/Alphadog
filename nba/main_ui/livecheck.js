@@ -190,6 +190,7 @@ async function udCheck(legs) {
         for (const e of out) { const k = nm + "|" + e.prop; if (!entries.has(k)) entries.set(k, []); entries.get(k).push(e); } } catch (_e) { /* that player stays unchecked */ }
     }
   });
+  tick("entries_ms"); T.lack = lack.size;
   // legs not on a main line: look at that line's alternate rungs
   const needAlt = new Map();
   for (const l of legs) { const nm = normName(l.player_name), k = nm + "|" + l.canonical_prop_key, es = entries.get(k);
