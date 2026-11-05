@@ -350,8 +350,8 @@ const autoSwapped=new Set(); // 'slipIdx|legIdx' of the legs swapped out because
 let slipsLive=false;         // only a live slate swaps (a replay slate's games all started long ago)
 // LIVE LINE CHECK (2026-11-04): the server re-reads PrizePicks' newest board on every load and sets pp_now on each PrizePicks leg; a leg that is
 // not standard any more (goblin / demon / moved / off the board) is unchecked and swapped for a confirmed-standard pool leg, like a started leg.
-function ppChanged(l){return !!l&&String(l.source_key||'')==='prizepicks'&&!!l.pp_now&&l.pp_now!=='standard'}
-function ppNowLabel(l){const n=String(l&&l.pp_now||'');return n==='goblin'?'NOW GOBLIN':n==='demon'?'NOW DEMON':n==='moved'?'LINE MOVED':n==='missing'?'OFF BOARD':'CHANGED'}
+function ppChanged(l){if(!l)return false;if(String(l.source_key||'')==='prizepicks')return !!l.pp_now&&l.pp_now!=='standard';return !!l.live_now&&l.live_now!=='ok'}
+function ppNowLabel(l){const n=String(l&&(String(l.source_key||'')==='prizepicks'?l.pp_now:l.live_now)||'');return n==='goblin'?'NOW GOBLIN':n==='demon'?'NOW DEMON':n==='moved'?'LINE MOVED':n==='missing'?'OFF BOARD':n==='side'?'MORE ONLY':'CHANGED'}
 function legStarted(l,nowMs){
   const t=(l&&l.link&&l.link.tip_utc)||(l&&l.official_game_time_utc)||null;
   const ms=t?Date.parse(t):NaN;
