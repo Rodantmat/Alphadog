@@ -242,7 +242,7 @@ export async function overlayLive(sql, out, ppFallback) {
     try {
       if (r.status !== 200) throw new Error(r.error || ("HTTP " + r.status));
       const doc = JSON.parse(r.text); r.text = "";
-      if (app === "prizepicks") { const ix = indexPP(doc); want.prizepicks.forEach(l => markPP(l, ix)); }
+      if (app === "prizepicks") { const ix = indexPP(doc); PP_IX = ix; PP_AT = Date.now(); want.prizepicks.forEach(l => markPP(l, ix)); }
       else if (app === "betr") { const mp = indexBetr(doc); want.betr.forEach(l => markBetr(l, mp)); }
       else { const set = new Set(); for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) set.add(String(o.line_id)); want.sleeper.forEach(l => markSleeper(l, set)); }
       info.ok = true;
