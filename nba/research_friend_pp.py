@@ -144,7 +144,11 @@ def main():
             rows.append((bal, c, m, {s: len(d[s]) for s in hs}, (np.mean(ce), len(ce)) if ce else None, dd, dry))
         rows.sort(key=lambda r: -r[0])
         print(f"\n=== {n}-pick {stt}: {len(rows)} variants positive in both history seasons (leg-diff cap applied); top 20 by BALANCE (worse season P/L / max drawdown)")
-        for r in rows[:20]:
+        for i, r in enumerate(rows[:25]):
+            conn.execute("INSERT INTO nba_friend.research (app,size,structure,rank,rule,roi24,roi25,n24,n25,dd24,dd25,dry24,dry25,bal,cur_roi,cur_n) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                         ("PP", n, stt, i + 1, str(r[1]), float(r[2][0]), float(r[2][1]), list(r[3].values())[0], list(r[3].values())[1], r[5][0], r[5][1], r[6][0], r[6][1], r[0], None, None))
+        conn.commit()
+        for r in rows[:3]:
             print("  ", r[1], "ROI", " ".join(f"{100*x:+.0f}%" for x in r[2]), "n", list(r[3].values()), "dd", " ".join(f"{x:.1f}u" for x in r[5]), "dry", r[6], f"bal {r[0]:.1f}")
     print("done")
 
