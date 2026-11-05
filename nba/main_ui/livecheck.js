@@ -215,7 +215,11 @@ async function fliffCheck(legs) {
     const rs = rows.get(normName(l.player_name) + "|" + l.canonical_prop_key) || [], t = sideOf(l) === "less" ? 1 : 0;
     l.live_now = rs.some(r => near(r.line, l.line_value) && r.type === t) ? "ok" : (rs.length ? "moved" : "missing");
   }
-  return { games: games.length, cards: need.size };
+  return { games: games.length, cards: need.size, teams: games.map(g => g.teams.join("@")).join(","), sample: [...rows.entries()].slice(0, 6).map(([k, v]) => k + "=" + v.map(x => x.line + "/" + x.type).join(";")).join(" | "), n_rows: rows.size };
+}
+export async function fliffTest() {   // TEMP: Fliff feed reachability + shape from the Worker (a synthetic leg per game)
+  const t0 = Date.now(); const legs = []; legs.sweepAll = true;
+  try { const d = await fliffCheck(legs); return { ok: true, ms: Date.now() - t0, ...d }; } catch (e) { return { ok: false, ms: Date.now() - t0, error: String(e && e.message || e).slice(0, 200) }; }
 }
 
 const LABEL = { moved: "line moved", missing: "off the board", side: "more only now", goblin: "now a goblin", demon: "now a demon" };
