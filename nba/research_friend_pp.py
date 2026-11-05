@@ -15,7 +15,21 @@ import portfolio_b as PB                      # noqa: E402
 import research_portfolio_caps as PC          # noqa: E402
 
 HIS = ["B3", "B4", "B5", "B6", "B7", "B9", "B3x4", "B5x4", "B7x4"]
-SIZES = (3, 4, 6)
+SIZES = (3, 4, 5, 6)
+STR = {3: ("flex", "power"), 4: ("flex",), 5: ("flex",), 6: ("flex",)}
+
+
+def max_dd(x):
+    c = np.cumsum(x)
+    return float(np.max(np.maximum.accumulate(np.concatenate([[0], c]))[1:] - c)) if len(x) else 0.0
+
+
+def dry_run(x):
+    best = cur = 0
+    for v in x:
+        cur = cur + 1 if v <= 0 else 0
+        best = max(best, cur)
+    return best
 POOLS = ("R", "RD")
 SIDES = ("O", "U", "B")
 PSS = ("all", "lowvol", "points", "rebounds", "combos")
