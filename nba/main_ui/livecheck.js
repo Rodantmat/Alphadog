@@ -143,6 +143,7 @@ async function udCheck(legs) {
   const T = { t0: Date.now() }; const tick = k => { T[k] = Date.now() - T.t0; };
   const core = await udGet(`/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D=core&match_limit=200&${UD_COMMON}&show_more_picks_cta=true&sport_id=NBA&two_box_enabled_surface=true`);
   // the core call names games only: fetch every NBA match's own lines (10-ish calls in parallel) for the appearances + players dicts
+  tick("core_ms");
   const mids = asArr(core.match_groups).filter(m => m && m.id).map(m => [m.id, m.type || "Game"]);
   const mj = [];
   // a match's plain lines list only its ~20 popular lines: sweep the stat pills the legs need (same filter calls the app uses) to reach every player
