@@ -173,7 +173,7 @@ async function udCheck(legs) {
     app_keys: Object.keys(asArr(core.appearances)[0] || {}).join(","), n_lines: asArr(core.over_under_lines).length, names: [...byName.keys()].slice(0, 6).join("|"), titles: asArr(core.over_under_lines).slice(0, 3).map(x => String((x.over_under || {}).title) + "/" + String(((x.over_under || {}).appearance_stat || {}).display_stat)).join("|"), legs: legs.slice(0, 4).map(l => normName(l.player_name)).join("|") };
   for (const l of legs) {
     const nm = normName(l.player_name);
-    if (!byName.has(nm)) { unresolved++; continue; }
+    if (!byName.has(nm)) { unresolved++; if (unres.length < 60) unres.push(nm + "@" + String((l.link && l.link.tip_utc) || l.official_game_time_utc || l.game_time_utc || "?").slice(5, 16)); if (byName.size > 30) l.live_now = "missing"; continue; }   // Underdog no longer lists the player (game started / pulled): off the board
     const es = entries.get(nm + "|" + l.canonical_prop_key) || [];
     const ex = es.filter(e => near(e.line, l.line_value)), less = sideOf(l) === "less";
     l.live_now = ex.length ? (ex.some(e => less ? e.lower : e.higher) ? "ok" : "side") : (es.length ? "moved" : "missing");
