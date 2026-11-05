@@ -143,7 +143,7 @@ async function udCheck(legs) {
   const core = await udGet(`/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D=core&match_limit=200&${UD_COMMON}&show_more_picks_cta=true&sport_id=NBA&two_box_enabled_surface=true`);
   // the core call names games only: fetch every NBA match's own lines (10-ish calls in parallel) for the appearances + players dicts
   const mids = asArr(core.match_groups).filter(m => m && m.id).map(m => [m.id, m.type || "Game"]);
-  const mj = await pool(mids, 10, async ([mid, mt]) => { try { return await udGet(`/v1/lobbies/content/lines?include_live=true&match_id=${mid}&match_type=${encodeURIComponent(mt)}&${UD_COMMON}&show_mass_option_markets=true`); } catch (_e) { return null; } });
+  const mj = [];
   // a match's plain lines list only its ~20 popular lines: sweep the stat pills the legs need (same filter calls the app uses) to reach every player
   const gtitle = mid => { const g = asArr(core.games).find(x => x && String(x.id) === String(mid)) || {}; return String(g.title || g.abbreviated_title || "").toUpperCase(); };
   const pairs = [];   // only the (game, stat) pairs the legs sit in: a leg's team is in the game title ("ATL @ WAS")
