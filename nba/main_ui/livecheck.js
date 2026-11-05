@@ -112,6 +112,11 @@ const UD_STAT = { "points": "points", "rebounds": "rebounds", "assists": "assist
   "pts + asts": "pts_ast", "points + assists": "pts_ast", "rebs + asts": "reb_ast", "rebounds + assists": "reb_ast", "blks + stls": "stocks", "blocks + steals": "stocks",
   "fantasy points": "fantasy_score", "1q points": "points_q1", "1q 3-pointers made": "threes_made_q1", "1q assists": "assists_q1", "1q rebounds": "rebounds_q1", "1q pts + rebs + asts": "pra_q1",
   "1h points": "points_h1", "1h 3-pointers made": "threes_made_h1", "1h assists": "assists_h1", "1h rebounds": "rebounds_h1", "1h pts + rebs + asts": "pra_h1", "fg attempted": "fga", "3s attempted": "fg3a", "double-double": "double_double", "double doubles": "double_double" };
+const UD_PILL = { points: "8d718cf2-1487-401e-88f7-f9f799e85871", rebounds: "0d33e7f2-6601-486b-9f9e-cbe268d8fc88", assists: "e3bc1aaa-7964-4a84-bcfa-2d92a4d477a2", threes_made: "4295c94a-3110-417e-953f-a4f3ed0dd18b",
+  steals: "acc77cd9-21c3-4763-8109-181edd441f47", blocks: "8476240a-e58b-4744-aabb-f9c5e956f150", pra: "590e7c83-99fc-419f-bdd8-78bb0a691f8b", pts_reb: "cd25de54-fbb4-4111-85ac-60a347a8728f",
+  pts_ast: "80eee07b-f568-4dad-81f6-b05e42aae24e", reb_ast: "e5346095-1c5e-40f0-bb31-95181490038d", stocks: "2eaf3415-32f1-4ffe-9bb1-e49cea27af8d", fantasy_score: "1099ec6f-260c-4407-b168-05abdf611c05",
+  turnovers: "cbb724cf-304d-492e-9060-491f711dbef2", points_q1: "ff6438f9-7dad-422e-ae9a-8561636dbff5", threes_made_q1: "fbbda150-82f4-44cf-97ee-4206187096fe", points_h1: "696aa7ae-8d9a-4180-bd24-8e58985a3d43",
+  threes_made_h1: "683ea76c-9a01-441c-8e16-2bbc3ac53c8e" };
 const UD_API = "https://api.underdogfantasy.com";
 const UD_COMMON = "product=fantasy&product_experience_id=b34dfd93-d0e8-4da3-8bf4-45c15c548dec&state_config_id=725014ef-3570-4e93-871d-d69674ab3521";
 const UD_H = () => ({ accept: "application/json", "accept-language": "en-US,en;q=0.9", origin: "https://app.underdogsports.com", referer: "https://app.underdogsports.com/", "client-type": "web",
