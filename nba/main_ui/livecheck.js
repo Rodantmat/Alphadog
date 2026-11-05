@@ -165,7 +165,7 @@ async function udCheck(legs) {
   }
   // appearances of these matches that no list named: ask for their own lines_with_stats (the answer carries the player), cached for the pass below
   const lws = new Map(), midSet = new Set(mids.map(m => String(m[0]))), namedIds = new Set([...byName.values()].flat().map(String));
-  const unnamed = [...new Set(apps.filter(a => a.type === "Player" && midSet.has(String(a.match_id)) && !namedIds.has(String(a.id))).map(a => String(a.id)))];
+  const unnamed = [];   // the pills name every player of the legs' games; no per-appearance naming pass
   await pool(unnamed, 12, async aid => {
     try { const j = await udGet(`/v1/lobbies/content/lines_with_stats?appearance_id=${aid}&${UD_COMMON}`); lws.set(aid, j);
       const ap = asArr(j.appearances).find(x => x && String(x.id) === aid) || apps.find(x => String(x.id) === aid) || {};
