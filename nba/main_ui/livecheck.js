@@ -174,7 +174,15 @@ async function udCheck(legs) {
   });
   const names = [...new Set(legs.map(l => normName(l.player_name)))].filter(n => byName.has(n));
   const entries = new Map();   // name|prop -> [{line, ouId, higher, lower, alt}]
-  await pool(names, 6, async nm => {
+  // the stat-pill answers already carry every line of the stat: read the entries straight from them (no per-player call)
+  const aidName = new Map(); for (const [nm, ids] of byName) for (const id of ids) aidName.set(String(id), nm);
+  const seenOu = new Set();
+  for (const j of mj) if (j) { const o = []; udEntries(j, null, o);
+    for (const e of o) { const nm = aidName.get(String(e.aid)); if (!nm) continue; const dk = nm + "|" + e.prop + "|" + e.ouId + "|" + e.line; if (seenOu.has(dk)) continue; seenOu.add(dk);
+      const k = nm + "|" + e.prop; if (!entries.has(k)) entries.set(k, []); entries.get(k).push(e); } }
+  // fallback: a named player whose leg stat the pills did not return gets his own lines_with_stats
+  const lack = new Set(legs.filter(l => { const nm = normName(l.player_name); return byName.has(nm) && !entries.has(nm + "|" + l.canonical_prop_key); }).map(l => normName(l.player_name)));
+  await pool([...lack], 8, async nm => {
     for (const aid of byName.get(nm)) {
       try { const j = lws.get(String(aid)) || await udGet(`/v1/lobbies/content/lines_with_stats?appearance_id=${aid}&${UD_COMMON}`); const out = []; udEntries(j, aid, out);
         for (const e of out) { const k = nm + "|" + e.prop; if (!entries.has(k)) entries.set(k, []); entries.get(k).push(e); } } catch (_e) { /* that player stays unchecked */ }
