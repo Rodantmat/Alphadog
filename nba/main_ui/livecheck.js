@@ -145,8 +145,10 @@ async function udCheck(legs) {
   const mids = asArr(core.match_groups).filter(m => m && m.id).map(m => [m.id, m.type || "Game"]);
   const mj = await pool(mids, 10, async ([mid, mt]) => { try { return await udGet(`/v1/lobbies/content/lines?include_live=true&match_id=${mid}&match_type=${encodeURIComponent(mt)}&${UD_COMMON}&show_mass_option_markets=true`); } catch (_e) { return null; } });
   // a match's plain lines list only its ~20 popular lines: sweep the stat pills the legs need (same filter calls the app uses) to reach every player
-  const need = [...new Set(legs.map(l => UD_PILL[l.canonical_prop_key]).filter(Boolean))];
-  const pj = await pool(mids.flatMap(([mid, mt]) => need.map(sid => [mid, mt, sid])), 14, async ([mid, mt, sid]) => { try { return await udGet(`/v1/lobbies/content/lines?include_live=true&match_id=${mid}&match_type=${encodeURIComponent(mt)}&${UD_COMMON}&show_mass_option_markets=true&filter_id=${sid}&filter_type=PickemStat`); } catch (_e) { return null; } });
+  const gtitle = mid => { const g = asArr(core.games).find(x => x && String(x.id) === String(mid)) || {}; return String(g.title || g.abbreviated_title || "").toUpperCase(); };
+  const pairs = [];   // only the (game, stat) pairs the legs sit in: a leg's team is in the game title ("ATL @ WAS")
+  for (const [mid, mt] of mids) { const tt = gtitle(mid); const sids = new Set(legs.filter(l => !tt || tt.includes(String(l.team_abbr || "").toUpperCase())).map(l => UD_PILL[l.canonical_prop_key]).filter(Boolean)); for (const sid of sids) pairs.push([mid, mt, sid]); }
+  const pj = await pool(pairs, 10, async ([mid, mt, sid]) => { try { return await udGet(`/v1/lobbies/content/lines?include_live=true&match_id=${mid}&match_type=${encodeURIComponent(mt)}&${UD_COMMON}&show_mass_option_markets=true&filter_id=${sid}&filter_type=PickemStat`); } catch (_e) { return null; } });
   mj.push(...pj);
   const allApps = [...asArr(core.appearances)], allPl = [...asArr(core.players)];
   for (const j of mj) if (j) { allApps.push(...asArr(j.appearances)); allPl.push(...asArr(j.players)); }
