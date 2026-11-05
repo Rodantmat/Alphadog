@@ -66,7 +66,7 @@ def build(cand, k, gc, H, banned=frozenset(), teams=True):
 
 
 if FAPP == "UD":
-    STRUCTS = [(2, "standard"), (3, "flex"), (4, "flex"), (5, "flex"), (6, "flex")]
+    STRUCTS = [(3, "flex"), (4, "flex"), (5, "flex"), (6, "flex")]
     POOLS = AF.POOLS
     SIDES = ("O", "U", "B")
     SIDEMAP = AF.SIDES
