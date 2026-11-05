@@ -111,7 +111,7 @@ else:
         STRUCTS = [(3, "max"), (3, "flex"), (4, "flex"), (5, "flex")]
         HIS = [("evbl", "any", "all", "all", 0.50, 1.12, 0, 5, 2)]
     elif FAPP == "FLIFF":
-        STRUCTS = [(2, "max"), (3, "max")]
+        STRUCTS = [(3, "max")]
         HIS = [("p", "Under", "all", "main", 0.56, 0.0, 0, 2, 1)]
     else:
         STRUCTS = [(3, "flex"), (4, "flex"), (5, "flex")]
