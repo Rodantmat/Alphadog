@@ -185,12 +185,16 @@ def main():
             m = [float(np.mean(d[s])) for s in seasons]
             if min(m) <= 0:
                 continue
+            dd = [max_dd(d[s]) for s in seasons]
+            dry = [dry_run(d[s]) for s in seasons]
+            bal = min(float(np.sum(d[s])) / max(dd[i], 1.0) for i, s in enumerate(seasons))
             ce = d.get("2026-27", [])
-            rows.append((min(m), c, m, ns, (float(np.mean(ce)), len(ce)) if ce else None))
+            rows.append((bal, c, m, ns, (float(np.mean(ce)), len(ce)) if ce else None, dd, dry))
         rows.sort(key=lambda r: -r[0])
-        print(f"\n=== {FAPP} {k}-pick {st}: {len(rows)} capped variants positive in both history seasons; top 20 by weaker season")
+        print(f"\n=== {FAPP} {k}-pick {st}: {len(rows)} capped variants positive in both history seasons; top 20 by BALANCE (worse season P/L / max drawdown)")
         for r in rows[:20]:
-            print("  ", r[1], " ".join(f"{100 * x:+.0f}%" for x in r[2]), r[3], "this season", ("%+.0f%% (%d)" % (100 * r[4][0], r[4][1])) if r[4] else "none")
+            print("  ", r[1], "ROI", " ".join(f"{100 * x:+.0f}%" for x in r[2]), "n", r[3], "dd", " ".join(f"{x:.1f}u" for x in r[5]), "dry", r[6], f"bal {r[0]:.1f}",
+                  "this season", ("%+.0f%% (%d)" % (100 * r[4][0], r[4][1])) if r[4] else "none")
     print("done")
 
 
