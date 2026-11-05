@@ -28,6 +28,19 @@ def log(m):
     print(f"[{time.time() - T0:6.0f}s] {m}", flush=True)
 
 
+def max_dd(x):
+    c = np.cumsum(x)
+    return float(np.max(np.maximum.accumulate(np.concatenate([[0], c]))[1:] - c)) if len(x) else 0.0
+
+
+def dry_run(x):
+    best = cur = 0
+    for v in x:
+        cur = cur + 1 if v <= 0 else 0
+        best = max(best, cur)
+    return best
+
+
 def lk(l):
     return (str(l["player_id"]), l["prop"], l["side"])
 
