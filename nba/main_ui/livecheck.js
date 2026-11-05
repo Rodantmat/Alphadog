@@ -199,6 +199,7 @@ async function fliffCheck(legs) {
   const nba = (((lg.result || {}).response || {}).collections || {}).page.find(x => String(x.abbreviation).toUpperCase() === "NBA").id;
   const gm = await post(host, { __object_class_name: "FCM__Skipper_GetGames__Request", variables: { filter: { league: nba } } });
   const games = (((gm.result || {}).response || {}).games || {}).page.map(g => { const r = g.game_render_data; return { id: r.id, teams: [r.away_team.abbreviation, r.home_team.abbreviation] }; });
+  if (legs.sweepAll) legs = games.map(g => ({ player_name: "zz", team_abbr: g.teams[0], canonical_prop_key: "points", line_value: 0, selected_side: "more" }));
   const need = new Map();   // gameId|cat -> true
   for (const l of legs) { const cat = FLIFF_CAT[l.canonical_prop_key]; const g = games.find(x => x.teams.includes(l.team_abbr)); if (cat && g) need.set(g.id + "|" + cat, [g.id, cat]); }
   const rows = new Map();   // name|prop -> [{line, type}]
