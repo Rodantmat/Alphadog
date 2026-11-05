@@ -135,9 +135,17 @@ function udEntries(j, appId, out) {
 }
 async function udCheck(legs) {
   const core = await udGet(`/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D=core&match_limit=200&${UD_COMMON}&show_more_picks_cta=true&sport_id=NBA&two_box_enabled_surface=true`);
-  const players = core.players || {}, apps = asArr(core.appearances).filter(a => a && a.type === "Player" && a.player_id);
+  const players = core.players || {}, apps = asArr(core.appearances).filter(a => a && a.player_id);
   const byName = new Map();
-  for (const a of apps) { const p = players[a.player_id] || asArr(players).find(x => x && x.id === a.player_id) || {}; const nm = normName((p.first_name || "") + (p.last_name || "")); if (!nm) continue; if (!byName.has(nm)) byName.set(nm, []); byName.get(nm).push(a.id); }
+  const addName = (nm, id) => { if (!nm) return; if (!byName.has(nm)) byName.set(nm, []); if (!byName.get(nm).includes(id)) byName.get(nm).push(id); };
+  const pl = new Map(asArr(players).filter(x => x && x.id).map(x => [String(x.id), x]));
+  for (const a of apps) { const p = pl.get(String(a.player_id)) || players[a.player_id] || {}; addName(normName((p.first_name || "") + (p.last_name || "")), a.id); }
+  // the core call may not carry the players dict: name the appearances from the lines' own titles ("<Player> <stat>")
+  for (const ln of asArr(core.over_under_lines)) {
+    const ou = ln.over_under || {}, st = ou.appearance_stat || {}; if (!st.appearance_id) continue;
+    let t = String(ou.title || ""); const ds = String(st.display_stat || ""); if (ds && t.toLowerCase().endsWith(ds.toLowerCase())) t = t.slice(0, t.length - ds.length);
+    t = t.replace(/\s+(O\/U|Over\/Under).*$/i, ""); addName(normName(t), st.appearance_id);
+  }
   const names = [...new Set(legs.map(l => normName(l.player_name)))].filter(n => byName.has(n));
   const entries = new Map();   // name|prop -> [{line, ouId, higher, lower, alt}]
   await pool(names, 6, async nm => {
