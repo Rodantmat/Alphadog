@@ -3,6 +3,7 @@
 import { q, pgArr, num, r1, parseLegId, legId, sideIn, sideOut, propLabel, appLabel, resolveSlate, normName } from "./common.js";
 import { loadLegs } from "./board.js";
 import { nbaEv, nbaBreakeven, nbaModes, nbaTiers, nbaModeLabel } from "./pricing.js";
+import { overlayLive } from "./livecheck.js";
 
 export function pricingFrom(cfg) {
   return { pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sleeper || {}, betr: (cfg.pp || {}).betr_payout_v1 || null };
