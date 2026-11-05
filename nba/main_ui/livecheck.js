@@ -267,7 +267,7 @@ export async function overlayLive(sql, out, ppFallback) {
     return { app: "betr", r };
   })());
   const extra = [];
-  for (const [app, fn] of [["underdog", udCheck], ["fliff", fliffCheck]]) {
+  for (const [app, fn] of [["underdog", udCached], ["fliff", fliffCheck]]) {
     const ls = by(app); if (!ls.length) continue;
     const t1 = Date.now();
     extra.push(fn(ls).then(d => { apps[app] = { ok: true, ms: Date.now() - t1, ...d }; }).catch(e => { apps[app] = { ok: false, ms: Date.now() - t1, error: String(e && e.message || e).slice(0, 100) }; }));
