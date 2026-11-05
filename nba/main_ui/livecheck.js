@@ -186,6 +186,7 @@ async function udCheck(legs) {
   for (const j of mj) if (j) { const o = []; udEntries(j, null, o);
     for (const e of o) { const nm = aidName.get(String(e.aid)); if (!nm) continue; const dk = nm + "|" + e.prop + "|" + e.ouId + "|" + e.line; if (seenOu.has(dk)) continue; seenOu.add(dk);
       const k = nm + "|" + e.prop; if (!entries.has(k)) entries.set(k, []); entries.get(k).push(e); } }
+  T.pe = entries.size; T.pek = [...entries.keys()].slice(0, 3).join(","); T.legk = legs.slice(0, 3).map(l => normName(l.player_name) + "|" + l.canonical_prop_key).join(","); T.seen = seenOu.size;
   // fallback: a named player whose leg stat the pills did not return gets his own lines_with_stats
   const lack = new Set(legs.filter(l => { const nm = normName(l.player_name); return byName.has(nm) && !entries.has(nm + "|" + l.canonical_prop_key); }).map(l => normName(l.player_name)));
   await pool([...lack], 8, async nm => {
