@@ -70,6 +70,18 @@ async function api(path, request, env, url) {
     if (path === "/api/slips/recent" && get) return send(await apiRecent(sql, url, VERSION));
     if (path === "/api/stake-unit" && get) return send(await apiStakeUnit(sql, null, VERSION));
     if (path === "/api/stake-unit" && post) return send(await apiStakeUnit(sql, await readJsonSafe(request), VERSION));
+    if (path === "/api/probe-test" && get) {   // TEMP (2026-11-04): can the Worker itself reach each app's board, and how fast
+      const one = async (label, u, init) => { const t = Date.now(); try { const r = await fetch(u, init); const b = await r.text(); return { label, status: r.status, ms: Date.now() - t, bytes: b.length, head: b.slice(0, 60) }; } catch (e) { return { label, status: "ERR", ms: Date.now() - t, head: String(e && e.message || e).slice(0, 80) }; } };
+      const ua = { "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", accept: "application/json", referer: "https://app.prizepicks.com/", origin: "https://app.prizepicks.com" };
+      const res = await Promise.all([
+        one("pp-partner", "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true", { headers: ua }),
+        one("pp-api", "https://api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true", { headers: ua }),
+        one("sleeper", "https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true", { headers: { "user-agent": ua["user-agent"], accept: "application/json", referer: "https://sleeper.com/" } }),
+        one("underdog", "https://api.underdogfantasy.com/v1/lobbies/content/lines?include_live=true&sport_id=NBA", { headers: { accept: "application/json", origin: "https://app.underdogsports.com", referer: "https://app.underdogsports.com/", "client-type": "web", "user-agent": ua["user-agent"] } }),
+        one("betr", "https://api.fantasy.betr.app/graphql", { method: "POST", headers: { "content-type": "application/json", origin: "https://picks.betr.app", "user-agent": ua["user-agent"] }, body: JSON.stringify({ query: "{ __typename }" }) }),
+      ]);
+      return send({ ok: true, colo_note: "worker-side fetch, no proxy", results: res });
+    }
     // the Slips screen and every MLB slip route alias (same contract; NBA slips come from the engines, filtered per route)
     const slipRoutes = { "/api/slips/high-hit": null, "/api/slips/auto-create": null, "/api/slips/research-create": null, "/api/slips/high-hit-underdog": "underdog",
       "/api/slips/regular": "regular", "/api/slips/goblin": "goblin", "/api/slips/demon": "demon" };
