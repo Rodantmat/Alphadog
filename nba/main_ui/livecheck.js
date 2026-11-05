@@ -225,7 +225,14 @@ export async function overlayLive(sql, out) {
       "promotions-api-version": "6.0", jurisdiction: "CA" }, body: JSON.stringify({ operationName: "LeagueUpcomingEvents", query: BETR_Q, variables: { league: "NBA" } }) });
     return { app: "betr", r };
   })());
+  const extra = [];
+  for (const [app, fn] of [["underdog", udCheck], ["fliff", fliffCheck]]) {
+    const ls = by(app); if (!ls.length) continue;
+    const t1 = Date.now();
+    extra.push(fn(ls).then(d => { apps[app] = { ok: true, ms: Date.now() - t1, ...d }; }).catch(e => { apps[app] = { ok: false, ms: Date.now() - t1, error: String(e && e.message || e).slice(0, 100) }; }));
+  }
   const done = await Promise.all(jobs);
+  await Promise.all(extra);
   for (const { app, r } of done) {   // parse one board at a time (memory)
     const info = { ms: r.ms, status: r.status, ok: false };
     try {
