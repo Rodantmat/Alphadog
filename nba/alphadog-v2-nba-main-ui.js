@@ -71,7 +71,6 @@ async function api(path, request, env, url) {
     if (path === "/api/slips/recent" && get) return send(await apiRecent(sql, url, VERSION));
     if (path === "/api/stake-unit" && get) return send(await apiStakeUnit(sql, null, VERSION));
     if (path === "/api/stake-unit" && post) return send(await apiStakeUnit(sql, await readJsonSafe(request), VERSION));
-    if (path === "/api/fliff-test" && get) return send(await fliffTest());   // TEMP (2026-11-04): Fliff feed from the Worker
     if (path === "/api/probe-test" && get) {   // TEMP (2026-11-04): can the Worker itself reach each app's board, and how fast
       const one = async (label, u, init) => { const t = Date.now(); try { const r = await fetch(u, init); const b = await r.text(); return { label, status: r.status, ms: Date.now() - t, bytes: b.length, head: b.slice(0, 60) }; } catch (e) { return { label, status: "ERR", ms: Date.now() - t, head: String(e && e.message || e).slice(0, 80) }; } };
       const ua = { "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", accept: "application/json", referer: "https://app.prizepicks.com/", origin: "https://app.prizepicks.com" };
