@@ -1,0 +1,84 @@
+name: NBA Friend Page Run
+
+# Friend page engine (nba/friend_engine.py). One app per job. Writes only nba_friend.* tables.
+#  - dispatch: app (PP|UD|SLEEPER|FLIFF|BETR|ALL) x mode (backfill|pick|grade), optional day
+#  - cron 20:30Z: pick for today after today's P3 succeeded (polls nba_control.pipeline_runs up to ~100 min)
+#  - cron 15:00Z: grade finished slates
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "PP | UD | SLEEPER | FLIFF | BETR | ALL"
+        default: "ALL"
+        required: true
+      mode:
+        description: "backfill | pick | grade"
+        default: "pick"
+        required: true
+      day:
+        description: "optional YYYY-MM-DD for pick"
+        default: ""
+        required: false
+      wait_p3:
+        description: "wait for today's P3 success first (true/false)"
+        default: "false"
+        required: false
+  schedule:
+    - cron: "30 20 * * *"
+    - cron: "0 15 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-friend-${{ github.event.inputs.mode || github.event.schedule }}-${{ github.event.inputs.app || 'ALL' }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        app: [PP, UD, SLEEPER, FLIFF, BETR]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy scipy pandas
+      - name: Run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          IN_APP: ${{ github.event.inputs.app || 'ALL' }}
+          IN_MODE: ${{ github.event.inputs.mode || (github.event.schedule == '0 15 * * *' && 'grade' || 'pick') }}
+          IN_DAY: ${{ github.event.inputs.day || '' }}
+          IN_WAIT: ${{ github.event.inputs.wait_p3 || (github.event_name == 'schedule' && github.event.schedule == '30 20 * * *' && 'true' || 'false') }}
+          MATRIX_APP: ${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          if [ "$IN_APP" != "ALL" ] && [ "$IN_APP" != "$MATRIX_APP" ]; then echo "skip $MATRIX_APP"; exit 0; fi
+          [[ "$IN_MODE" =~ ^(backfill|pick|grade)$ ]] || { echo "bad mode"; exit 1; }
+          if [ "$IN_WAIT" = "true" ] && [ "$IN_MODE" = "pick" ]; then
+            python - <<'PY'
+          import os, time, datetime as dt, psycopg
+          from zoneinfo import ZoneInfo
+          d = dt.datetime.now(ZoneInfo("America/Los_Angeles")).date()
+          key = f"{d.isoformat()}T00:00:00.000Z"
+          for i in range(50):
+              with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+                  r = c.execute("SELECT status FROM nba_control.pipeline_runs WHERE pipeline='P3' AND run_key=%s", (key,)).fetchone()
+              print("P3", key, r, flush=True)
+              if r and r[0] == "success":
+                  break
+              time.sleep(120)
+          PY
+          fi
+          export FR_APP="$MATRIX_APP" FR_MODE="$IN_MODE"
+          [ -n "$IN_DAY" ] && export FR_DAY="$IN_DAY"
+          [ "$MATRIX_APP" = "BETR" ] && export AA_BETR_PF="0.40,0.55"
+          python -u nba/friend_engine.py
