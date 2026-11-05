@@ -156,6 +156,8 @@ async function udCheck(legs) {
         entries.get(k).push({ line: Number(pr.stat_value), higher: opts.higher !== false, lower: opts.lower !== false, alt: true }); } } catch (_e) { /* keep main lines only */ }
   });
   let unresolved = 0;
+  const dbg = { core_apps: apps.length, core_players: asArr(players).length, names_indexed: byName.size, keys: Object.keys(core).slice(0, 8),
+    sample_app: JSON.stringify(asArr(core.appearances)[0] || {}).slice(0, 160), sample_player: JSON.stringify(asArr(core.players)[0] || {}).slice(0, 160) };
   for (const l of legs) {
     const nm = normName(l.player_name);
     if (!byName.has(nm)) { unresolved++; continue; }
