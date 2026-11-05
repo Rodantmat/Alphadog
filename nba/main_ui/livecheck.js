@@ -218,7 +218,7 @@ export async function overlayLive(sql, out, ppFallback) {
   if (!legs.length) return out;
   const apps = {};
   const jobs = [];
-  if (want.prizepicks.length) jobs.push(getText("https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
+  if (want.prizepicks.length && !ppFresh) jobs.push(getText("https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
     { headers: { "user-agent": UA, accept: "application/json, text/plain, */*", referer: "https://app.prizepicks.com/", origin: "https://app.prizepicks.com" } }).then(r => ({ app: "prizepicks", r })));
   if (want.sleeper.length) jobs.push(getText("https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
     { headers: { "user-agent": UA, accept: "application/json", referer: "https://sleeper.com/" } }, 15000).then(r => ({ app: "sleeper", r })));
