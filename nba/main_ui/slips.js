@@ -519,7 +519,21 @@ const PP_STAT_PROP = { "Points": "points", "Rebounds": "rebounds", "Assists": "a
   "Turnovers": "turnovers", "Blks+Stls": "stocks", "Pts+Rebs+Asts": "pra", "Pts+Rebs": "pts_reb", "Pts+Asts": "pts_ast", "Rebs+Asts": "reb_ast",
   "Personal Fouls": "personal_fouls", "Fantasy Score": "fantasy_score", "Double-Double": "double_double", "FG Made": "fgm", "FG Attempted": "fga",
   "Free Throws Made": "ftm", "Free Throws Attempted": "fta", "3-PT Attempted": "fg3a", "Offensive Rebounds": "oreb", "Defensive Rebounds": "dreb" };
+// LIVE CHECK ON EVERY LOAD (owner 2026-11-04 16:17 PT): each app's own board is read from inside the Worker (livecheck.js, all apps in parallel, seconds); when
+// no app answered, the stored-board check below still runs.
 export async function overlayPpLive(sql, out) {
+  try {
+    const r = await overlayLive(sql, out);
+    const apps = (r && r.pp_live && r.pp_live.apps) || null;
+    if (apps && Object.values(apps).some(a => a.ok)) {
+      const pp = apps.prizepicks;
+      if (pp && !pp.ok) return await overlayPpLiveDb(sql, r);   // PrizePicks down: fall back to the stored board for PrizePicks legs
+      return r;
+    }
+  } catch (_e) { /* fall through to the stored-board check */ }
+  return await overlayPpLiveDb(sql, out);
+}
+async function overlayPpLiveDb(sql, out) {
   try {
     if (!out || !out.ok || out.source !== "live") return out;
     const slipsPP = (out.generated_slips || []).filter(s => s.source_key === "prizepicks");
