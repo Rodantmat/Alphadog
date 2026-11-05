@@ -525,13 +525,9 @@ const PP_STAT_PROP = { "Points": "points", "Rebounds": "rebounds", "Assists": "a
 export async function overlayPpLive(sql, out) {
   let liveErr = null;
   try {
-    const r = await overlayLive(sql, out);
+    const r = await overlayLive(sql, out, overlayPpLiveDb);   // PrizePicks unreachable: its legs are marked from the stored board inside the live check
     const apps = (r && r.pp_live && r.pp_live.apps) || null;
-    if (apps && Object.values(apps).some(a => a.ok)) {
-      const pp = apps.prizepicks;
-      if (pp && !pp.ok) return await overlayPpLiveDb(sql, r);   // PrizePicks down: fall back to the stored board for PrizePicks legs
-      return r;
-    }
+    if (apps && Object.values(apps).some(a => a.ok)) return r;
     liveErr = apps ? "no app answered: " + JSON.stringify(apps).slice(0, 200) : "live check did not run (" + (out && out.source) + ")";
   } catch (e) { liveErr = String(e && e.message || e).slice(0, 200); }
   const d = await overlayPpLiveDb(sql, out);
