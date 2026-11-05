@@ -200,6 +200,17 @@ async function udCheck(legs) {
   return { unresolved, ...dbg };
 }
 
+// Underdog rate-limits bursts (HTTP 429 on rapid reloads): per-leg results are reused for 15 s and, when a fresh pass fails, for 3 min.
+const UD_C = new Map(); let UD_AT = 0;
+const legKey = l => normName(l.player_name) + "|" + l.canonical_prop_key + "|" + l.line_value + "|" + sideOf(l);
+async function udCached(legs) {
+  const age = Date.now() - UD_AT;
+  const apply = () => { let n = 0; for (const l of legs) { const v = UD_C.get(legKey(l)); if (v) { l.live_now = v; n++; } } return n; };
+  if (UD_AT && age < 15000) { const n = apply(); if (n === legs.length) return { cached_s: Math.round(age / 1000), applied: n }; }
+  try { const d = await udCheck(legs); for (const l of legs) if (l.live_now) UD_C.set(legKey(l), l.live_now); UD_AT = Date.now(); return d; }
+  catch (e) { if (UD_AT && age < 180000) { const n = apply(); return { stale_s: Math.round(age / 1000), applied: n, error_was: String(e && e.message || e).slice(0, 40) }; } throw e; }
+}
+
 // ---------------------------------------------------------------------------------------------------------------- Fliff (scoped)
 // Fliff's public Pick'Em feed (no login): ping -> skipper host -> leagues -> games -> cards; only the games / stat categories the Fliff legs need.
 const FLIFF_CAT = { points: "1060", rebounds: "1031", assists: "1058", threes_made: "1032", pra: "1033", reb_ast: "1034", pts_reb: "1035", pts_ast: "1036", steals: "1037", blocks: "1059", stocks: "1038" };
