@@ -135,7 +135,12 @@ function udEntries(j, appId, out) {
 }
 async function udCheck(legs) {
   const core = await udGet(`/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D=core&match_limit=200&${UD_COMMON}&show_more_picks_cta=true&sport_id=NBA&two_box_enabled_surface=true`);
-  const players = core.players || {}, apps = asArr(core.appearances).filter(a => a && a.player_id);
+  // the core call names games only: fetch every NBA match's own lines (10-ish calls in parallel) for the appearances + players dicts
+  const mids = asArr(core.match_groups).filter(m => m && m.id).map(m => [m.id, m.type || "Game"]);
+  const mj = await pool(mids, 10, async ([mid, mt]) => { try { return await udGet(`/v1/lobbies/content/lines?include_live=true&match_id=${mid}&match_type=${encodeURIComponent(mt)}&${UD_COMMON}&show_mass_option_markets=true`); } catch (_e) { return null; } });
+  const allApps = [...asArr(core.appearances)], allPl = [...asArr(core.players)];
+  for (const j of mj) if (j) { allApps.push(...asArr(j.appearances)); allPl.push(...asArr(j.players)); }
+  const players = allPl, apps = allApps.filter(a => a && a.player_id);
   const byName = new Map();
   const addName = (nm, id) => { if (!nm) return; if (!byName.has(nm)) byName.set(nm, []); if (!byName.get(nm).includes(id)) byName.get(nm).push(id); };
   const pl = new Map(asArr(players).filter(x => x && x.id).map(x => [String(x.id), x]));
