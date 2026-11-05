@@ -206,8 +206,10 @@ async function fliffCheck(legs) {
 
 const LABEL = { moved: "line moved", missing: "off the board", side: "more only now", goblin: "now a goblin", demon: "now a demon" };
 
-export async function overlayLive(sql, out) {
+let PP_IX = null, PP_AT = 0;   // last good PrizePicks index in this isolate: rapid reloads reuse it (15 s); a failed fetch falls back to it (3 min)
+export async function overlayLive(sql, out, ppFallback) {
   const t0 = Date.now();
+  const ppFresh = !!PP_IX && Date.now() - PP_AT < 15000;
   if (!out || !out.ok || out.source !== "live") return out;
   const slips = out.generated_slips || [], pool = out.backup_pool || [];
   const legs = [...slips.flatMap(s => s.legs || []), ...pool];
