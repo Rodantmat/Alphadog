@@ -246,9 +246,14 @@ export async function overlayLive(sql, out, ppFallback) {
       else if (app === "betr") { const mp = indexBetr(doc); want.betr.forEach(l => markBetr(l, mp)); }
       else { const set = new Set(); for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) set.add(String(o.line_id)); want.sleeper.forEach(l => markSleeper(l, set)); }
       info.ok = true;
-    } catch (e) { info.error = String(e && e.message || e).slice(0, 100); }
+    } catch (e) {
+      info.error = String(e && e.message || e).slice(0, 100) + (r.text ? " | " + String(r.text).slice(0, 80) : "");
+      if (app === "prizepicks" && PP_IX && Date.now() - PP_AT < 180000) { want.prizepicks.forEach(l => markPP(l, PP_IX)); info.ok = true; info.stale_s = Math.round((Date.now() - PP_AT) / 1000); }
+    }
     apps[app] = info;
   }
+  if (ppFresh && want.prizepicks.length) { want.prizepicks.forEach(l => markPP(l, PP_IX)); apps.prizepicks = { ok: true, ms: 0, cached_s: Math.round((Date.now() - PP_AT) / 1000) }; }
+  if (apps.prizepicks && !apps.prizepicks.ok && ppFallback) { await ppFallback(sql, out); apps.prizepicks.fallback = "stored board"; apps.prizepicks.ok = !!(out.pp_live && !out.pp_live.error); }
   // a pool leg that is not confirmed on its own app's board is never offered as a substitute
   out.backup_pool = pool.filter(l => {
     if (l.source_key === "prizepicks" && apps.prizepicks && apps.prizepicks.ok) return l.pp_now === "standard";
