@@ -165,7 +165,7 @@ async function udCheck(legs) {
     const ex = es.filter(e => near(e.line, l.line_value)), less = sideOf(l) === "less";
     l.live_now = ex.length ? (ex.some(e => less ? e.lower : e.higher) ? "ok" : "side") : (es.length ? "moved" : "missing");
   }
-  return { unresolved };
+  return { unresolved, ...dbg };
 }
 
 // ---------------------------------------------------------------------------------------------------------------- Fliff (scoped)
