@@ -110,7 +110,8 @@ function markSleeper(l, idset) {
 const UD_STAT = { "points": "points", "rebounds": "rebounds", "assists": "assists", "3-pointers made": "threes_made", "3-pointers": "threes_made", "steals": "steals",
   "blocks": "blocks", "turnovers": "turnovers", "pts + rebs + asts": "pra", "points + rebounds + assists": "pra", "pts + rebs": "pts_reb", "points + rebounds": "pts_reb",
   "pts + asts": "pts_ast", "points + assists": "pts_ast", "rebs + asts": "reb_ast", "rebounds + assists": "reb_ast", "blks + stls": "stocks", "blocks + steals": "stocks",
-  "fantasy points": "fantasy_score", "fg attempted": "fga", "3s attempted": "fg3a", "double-double": "double_double", "double doubles": "double_double" };
+  "fantasy points": "fantasy_score", "1q points": "points_q1", "1q 3-pointers made": "threes_made_q1", "1q assists": "assists_q1", "1q rebounds": "rebounds_q1", "1q pts + rebs + asts": "pra_q1",
+  "1h points": "points_h1", "1h 3-pointers made": "threes_made_h1", "1h assists": "assists_h1", "1h rebounds": "rebounds_h1", "1h pts + rebs + asts": "pra_h1", "fg attempted": "fga", "3s attempted": "fg3a", "double-double": "double_double", "double doubles": "double_double" };
 const UD_API = "https://api.underdogfantasy.com";
 const UD_COMMON = "product=fantasy&product_experience_id=b34dfd93-d0e8-4da3-8bf4-45c15c548dec&state_config_id=725014ef-3570-4e93-871d-d69674ab3521";
 const UD_H = () => ({ accept: "application/json", "accept-language": "en-US,en;q=0.9", origin: "https://app.underdogsports.com", referer: "https://app.underdogsports.com/", "client-type": "web",
