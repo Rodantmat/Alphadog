@@ -119,7 +119,8 @@ def main():
                 for n in SIZES:
                     s = sel(cand, gc, n, H)
                     if s:
-                        res[((pool, side, ps, rk, fl, gc, tp, lp), n)][k[0]].append(PC.grade(s, "flex") - 1)
+                        for st in STR[n]:
+                            res[((pool, side, ps, rk, fl, gc, tp, lp), (n, st))][k[0]].append(PC.grade(s, st) - 1)
         tr.push(legs)
     print("\nOWNER portfolio (replayed) ROI per season:")
     for uid in HIS:
