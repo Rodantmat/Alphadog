@@ -56,7 +56,7 @@ def main():
             if not ok:
                 print("friend text: no snapshot for today - skipped")
                 return
-            who, addr, body = "friend", cfg.get("friend_addr"), "AlphaDog Slips are ready in https://is.gd/jstacks \U0001F525"
+            who, addr, body = "friend", cfg.get("friend_addr"), "AlphaDog Slips are ready \U0001F525"
         if not addr:
             print("text alert: no reply address for", who, "- skipped")
             return
