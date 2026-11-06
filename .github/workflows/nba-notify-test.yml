@@ -9,8 +9,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Send test push
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Send test text
         env:
-          NTFY_TOPIC: alphadog-p3-cadfa756781c
-          TEST: "1"
-        run: python3 -u nba/p3_notify.py
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: test
+        run: python -u nba/p3_text.py
