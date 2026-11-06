@@ -496,6 +496,12 @@ def pick():
         legs, _rows = AF.load_ud(conn, d, {})
     else:
         legs = AA.live_legs(conn, d, {})
+        _tm = {}
+        for _p, _t in conn.execute("SELECT DISTINCT ON (nba_player_id) nba_player_id::text, team_id FROM nba_stats.player_game_log WHERE game_date < %s ORDER BY nba_player_id, game_date DESC", (d,)).fetchall():
+            _tm[_p] = _t
+        for l in legs:
+            if l.get("team") is None:
+                l["team"] = _tm.get(str(l.get("player_id")))
         legs = [l for l in legs if l.get("p") is not None and l.get("team") is not None and l.get("event_id") is not None]
     log(f"{d}: {len(legs)} board legs")
     ctx = decor_ctx(conn, d)
