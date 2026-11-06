@@ -30,7 +30,7 @@ const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l
 // replace a drifted / started leg from the friend's own pool: same app, other player, never the opposite side of a player already on the day's slips,
 // the slip's game cap, >= 2 teams, best edge first
 function autoSwap(out, now) {
-  const slips = out.generated_slips || []; let pool = [...(out.backup_pool || [])];
+  const slips = (out.generated_slips || []).filter(s => !s._pairs); let pool = [...(out.backup_pool || [])];
   const used = new Set(slips.flatMap(s => s.legs.map(l => l.player_name + "|" + l.canonical_prop_key + "|" + l.selected_side)));
   const sidesOf = new Map(); for (const s of slips) for (const l of s.legs) sidesOf.set(l.player_name + "|" + l.canonical_prop_key, l.selected_side);
   for (const s of slips) {
