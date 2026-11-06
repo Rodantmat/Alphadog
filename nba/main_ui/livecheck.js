@@ -62,10 +62,11 @@ function markPP(l, ix) {
   const line = Number(l.line_value);
   const byId = pid ? ix.byId.get(pid) : null;
   let res = null;
-  if (byId && near(byId.line, line) && byId.odds === "standard") res = byId;
+  const want = l.want_odds || "standard";   // best-pairings legs may be goblin / demon rungs; every slip leg stays standard
+  if (byId && near(byId.line, line) && byId.odds === want) res = byId;
   const cand = ix.byKey.get(normName(l.player_name) + "|" + String(l.canonical_prop_key)) || [];
-  if (!res) res = cand.find(r => near(r.line, line) && r.odds === "standard") || null;
-  if (res) { l.pp_now = "standard"; l.live_now = "ok"; }
+  if (!res) res = cand.find(r => near(r.line, line) && r.odds === want) || null;
+  if (res) { l.pp_now = want; l.live_now = "ok"; }
   else {
     const same = cand.find(r => near(r.line, line));
     l.pp_now = same ? same.odds : (cand.length ? "moved" : "missing");
