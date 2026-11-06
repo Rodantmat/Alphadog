@@ -102,7 +102,7 @@ async function data(env, token) {
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
         sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now, status: l.source_key === "prizepicks" ? l.pp_now || null : l.live_now || null })) }));
     return { ok: true, version: VERSION, date, today, checked_at: new Date().toISOString(), live: out.pp_live ? { ms: out.pp_live.total_ms, flagged: out.pp_live.flagged.length } : null,
-      roi: { apps, total: n ? { n, roi: p / n } : null }, order: APP_ORDER, labels: APP_LABEL, slips };
+      roi: { apps, total: n ? { n, roi: p / n } : null }, order: APP_ORDER, labels: APP_LABEL, slips, pairs: pairsOut(out, now, date === today) };
   });
 }
 
