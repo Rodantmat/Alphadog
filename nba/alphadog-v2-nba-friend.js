@@ -88,7 +88,15 @@ async function data(env, token) {
       const pl = typeof sn.payload === "string" ? JSON.parse(sn.payload) : sn.payload;
       date = sn.d; out.generated_slips.push(...(pl.slips || [])); out.backup_pool.push(...(pl.pool || []));
     }
-    if (date && date === today) { try { await overlayLive(sql, out, null); autoSwap(out, Date.now()); } catch (e) { out.live_error = String(e && e.message || e).slice(0, 120); } }
+    if (date && date === today) {
+      try {
+        const pr = await q(sql, "SELECT app, kind, p::float p, leg FROM nba_friend.pairs WHERE game_date = $1::date ORDER BY app, rank", [today], 6000);
+        const by = {};
+        for (const r of pr) { const l = typeof r.leg === "string" ? JSON.parse(r.leg) : r.leg; l.p = r.p; l.kind = r.kind; if (r.app === "prizepicks" && r.kind !== "standard") l.want_odds = r.kind; (by[r.app] = by[r.app] || []).push(l); }
+        for (const a of Object.keys(by)) out.generated_slips.push({ _pairs: true, source_key: a, name: "pairs", legs: by[a] });
+      } catch (e) { /* pairs not built yet */ }
+      try { await overlayLive(sql, out, null); autoSwap(out, Date.now()); } catch (e) { out.live_error = String(e && e.message || e).slice(0, 120); }
+    }
     const now = Date.now();
     const slips = (date === today ? out.generated_slips : []).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: linkUrl(s, now),
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
