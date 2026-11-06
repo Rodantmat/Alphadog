@@ -1001,3 +1001,10 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           RESULT: "${{ needs.afternoon.result }}"
         run: python -u nba/p3_text.py
+      # FRIEND PAGE START (2026-11-06): build the friend page's slips right after P3 instead of waiting on GitHub's late cron.
+      - name: Start friend page run
+        if: ${{ needs.afternoon.result == 'success' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run nba-friend-run.yml --repo "$GITHUB_REPOSITORY" --ref main -f app=ALL -f mode=pick -f wait_p3=false
