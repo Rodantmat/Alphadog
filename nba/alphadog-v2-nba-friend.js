@@ -6,7 +6,7 @@
 import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 
-const VERSION = "alphadog-v2-nba-friend-v1.1.0";
+const VERSION = "alphadog-v2-nba-friend-v1.2.0";
 const APP_LABEL = { prizepicks: "PrizePicks", underdog: "Underdog", sleeper: "Sleeper", betr: "Betr", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "underdog", "sleeper", "betr", "fliff"];
 
