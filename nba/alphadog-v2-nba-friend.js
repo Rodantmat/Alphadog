@@ -51,6 +51,17 @@ function autoSwap(out, now) {
   out.backup_pool = pool;
 }
 
+// BEST PAIRINGS (owner 2026-11-06): the day's most likely legs per app (nba_friend.pairs), live-checked with the slips; a leg that is off the board or started is left out
+function pairsOut(out, now, on) {
+  const r = {}; if (!on) return r;
+  for (const s of out.generated_slips || []) {
+    if (!s._pairs) continue;
+    r[s.source_key] = s.legs.filter(l => !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now)).map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value,
+      matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard" }));
+  }
+  return r;
+}
+
 function linkUrl(s, now) {
   const legs = (s.legs || []).filter(l => l.link && l.link.ids && !l.off && !(startedMs(l) != null && startedMs(l) <= now) && !isBad(l));
   if (legs.length < 2 || legs.length < s.legs.length) { if (legs.length < 2) return null; }
