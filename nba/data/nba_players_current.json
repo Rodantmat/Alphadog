@@ -3953,6 +3953,19 @@
       "team_abbreviation": "IND"
     },
     {
+      "id": 1641755,
+      "full_name": "Kevin McCullar Jr.",
+      "last_comma_first": "McCullar Jr., Kevin",
+      "roster_status": 1,
+      "from_year": "2024",
+      "to_year": "2026",
+      "player_code": "kevin_mccullar_jr",
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
+    },
+    {
       "id": 1630183,
       "full_name": "Jaden McDaniels",
       "last_comma_first": "McDaniels, Jaden",
@@ -4099,14 +4112,14 @@
       "id": 1642434,
       "full_name": "Riley Minix",
       "last_comma_first": "Minix, Riley",
-      "roster_status": 1,
+      "roster_status": 0,
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "riley_minix",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": null,
+      "team_city": "",
+      "team_name": "",
+      "team_abbreviation": ""
     },
     {
       "id": 1631169,
@@ -4601,6 +4614,19 @@
       "team_city": "Washington",
       "team_name": "Wizards",
       "team_abbreviation": "WAS"
+    },
+    {
+      "id": 1641807,
+      "full_name": "Norchad Omier",
+      "last_comma_first": "Omier, Norchad",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "norchard_omier",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
     },
     {
       "id": 1642391,
