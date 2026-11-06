@@ -74,7 +74,7 @@ function markPP(l, ix) {
   }
   if (res) {   // rebuild the deep-link ids from the FRESH board (replacement legs gain theirs here)
     const tip = (l.link && l.link.tip_utc) || l.official_game_time_utc || null;
-    l.link = { ids: { odds_type: "standard", projection_id: res.id }, line: res.line, side: sideOf(l) === "less" ? "u" : "o", tip_utc: tip };
+    l.link = { ids: { odds_type: want, projection_id: res.id }, line: res.line, side: sideOf(l) === "less" ? "u" : "o", tip_utc: tip };
   }
 }
 
