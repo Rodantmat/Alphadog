@@ -98,7 +98,7 @@ async function data(env, token) {
       try { await overlayLive(sql, out, null); autoSwap(out, Date.now()); } catch (e) { out.live_error = String(e && e.message || e).slice(0, 120); }
     }
     const now = Date.now();
-    const slips = (date === today ? out.generated_slips : []).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: linkUrl(s, now),
+    const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: linkUrl(s, now),
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
         sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now, status: l.source_key === "prizepicks" ? l.pp_now || null : l.live_now || null })) }));
     return { ok: true, version: VERSION, date, today, checked_at: new Date().toISOString(), live: out.pp_live ? { ms: out.pp_live.total_ms, flagged: out.pp_live.flagged.length } : null,
