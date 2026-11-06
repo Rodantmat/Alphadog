@@ -55,6 +55,14 @@ RULES = {
     "FLIFF": [("3M", 3, "max", ("bl", "Under", "low", "main", 0.6, 1.04, 0))],
     "BETR": [("4F", 4, "flex", ("p", "any", "nolow", "gc2", 0.6, 0.0, 0))],
 }[FAPP]
+# the extra slips, chosen in the backtest (research_friend_extra, extras picked on the first 60% of slates, read on the last 40%)
+EXTRA = {
+    "PP": [("X1", 4, "flex", ("RD", "B", "lowvol", "p", 0.62, 1, 0, "low"))],
+    "UD": [],
+    "SLEEPER": [("X1", 3, "flex", ("edge", "Under", "low", "main", 0.6, 1.04, 1))],
+    "FLIFF": [("X1", 3, "max", ("edge", "any", "low", "main", 0.6, 1.04, 1))],
+    "BETR": [],
+}[FAPP]
 HIS_PP = ["B3", "B4", "B5", "B6", "B7", "B9", "B3x4", "B5x4", "B7x4"]
 need = lambda k: max(1, int(0.4 * k))
 MK = {'player_points': 'points', 'player_rebounds': 'rebounds', 'player_assists': 'assists', 'player_threes': 'threes_made',
