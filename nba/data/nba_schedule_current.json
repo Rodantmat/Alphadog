@@ -23831,8 +23831,8 @@
       "away_team_tricode": "ORL",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -23846,8 +23846,8 @@
       "away_team_tricode": "MIA",
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
