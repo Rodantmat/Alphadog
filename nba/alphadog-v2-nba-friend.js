@@ -87,7 +87,7 @@ async function data(env, token) {
   });
 }
 
-const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>NBA Slips</title>
+const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>AlphaDog-JStacks</title>${HEAD_ICONS}
 <style>
 :root{--bg:#0e1116;--card:#171c24;--ink:#e8edf3;--mut:#8b97a6;--ok:#38c172;--bad:#ef4d4d;--line:#252c37;--acc:#6aa9ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;padding:16px;max-width:640px;margin:0 auto}
