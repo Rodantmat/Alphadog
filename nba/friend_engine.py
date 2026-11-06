@@ -542,20 +542,25 @@ def pick():
     # EXTRA slips (owner 2026-11-06 "deploy it"): one more slip per app from other players, the same leg-difference ladder against his legs,
     # never a player already on the friend's other slips. The base rules above are untouched; the backfill history does not include them.
     for code, size, st, rule in EXTRA:
-        if FAPP == "PP":
-            cand, gc = pp_cand(legs, rule)
-        else:
-            cand, gc = ranked(legs, rule), 1
-        s = build(cand, size, gc, H, banned=frozenset(used), teams=(FAPP != "UD"))
-        if not s:
-            log(f"{code}: no extra slip")
+        try:
+            if FAPP == "PP":
+                cand, gc = pp_cand(legs, rule)
+            else:
+                cand, gc = ranked(legs, rule), 1
+            s = build(cand, size, gc, H, banned=frozenset(used), teams=(FAPP != "UD"))
+            if not s:
+                log(f"{code}: no extra slip")
+                continue
+            xs = {"source_key": APP_KEY, "name": f"{APP_LABEL} {size}-pick {titles[size] + 1}", "structure_label": STRUCT_NAME[st], "size": size, "game_cap": gc,
+                  "legs": [deco(conn, ctx, l, d) for l in s]}
+        except Exception as e:
+            log(f"{code}: extra slip failed, base slips unaffected: {e}")
             continue
         titles[size] += 1
-        slips.append({"source_key": APP_KEY, "name": f"{APP_LABEL} {size}-pick {titles[size]}", "structure_label": STRUCT_NAME[st], "size": size, "game_cap": gc,
-                      "legs": [deco(conn, ctx, l, d) for l in s]})
+        slips.append(xs)
         rows.append(dict(d=d, code=code, no=titles[size], st=st, size=size, legs=[leg_json(l) for l in s]))
         used |= {pid(l) for l in s}
-        log(f"{code}: " + "; ".join(f"{x['player_name']} {x['canonical_prop_key']} {x['selected_side']} {x['line_value']}" for x in slips[-1]["legs"]))
+        log(f"{code}: " + "; ".join(f"{x['player_name']} {x['canonical_prop_key']} {x['selected_side']} {x['line_value']}" for x in xs["legs"]))
     for x in pool:
         x.pop("_code", None)
     conn.execute("DELETE FROM nba_friend.snapshot WHERE game_date=%s AND payload->>'app'=%s", (d, APP_KEY))
