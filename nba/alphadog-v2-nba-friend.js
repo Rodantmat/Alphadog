@@ -205,7 +205,7 @@ export default {
       if (m[2]) { const d = await data(env, m[1]); return d ? json(d) : notFound(); }
       const ok = await withPg(env, sql => tokenOk(sql, m[1]));
       if (!ok) return notFound();
-      return new Response(PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
+      return new Response(PAGE.replaceAll("{{T}}", m[1]), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
     } catch (err) { return json({ ok: false, error: String(err && err.message || err).slice(0, 200) }, 500); }
   }
 };
