@@ -114,13 +114,111 @@ function render(d){
 fetch(location.pathname.replace(/\\/$/,'')+'/data',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(render).catch(e=>{$('#app').innerHTML='<p class="flag">Could not load ('+esc(e)+'). Pull down to retry.</p>'});
 </script></body></html>`;
 
+const REPORT = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>NBA Slips Track Record</title>
+<style>
+:root{--bg:#0e1116;--card:#171c24;--ink:#e8edf3;--mut:#8b97a6;--ok:#38c172;--bad:#ef4d4d;--line:#252c37;--acc:#6aa9ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;padding:16px;max-width:900px;margin:0 auto}
+h1{font-size:20px;margin:6px 0 2px}h2{font-size:14px;margin:26px 0 8px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}.sub{color:var(--mut);font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}.c{background:var(--card);border-radius:12px;padding:12px}.c b{display:block;font-size:20px}.c span{color:var(--mut);font-size:12px}
+.wrap{overflow-x:auto;background:var(--card);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:520px}td,th{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+td:first-child,th:first-child{text-align:left}th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase}tr:last-child td{border-bottom:0}.tot td{font-weight:700}
+.pos{color:var(--ok)}.neg{color:var(--bad)}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}.tabs button{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}.tabs button.on{background:var(--acc);color:#071018;border-color:var(--acc)}
+.note{background:var(--card);border-radius:12px;padding:12px 14px;color:var(--mut);font-size:13px;margin-top:10px}.note b{color:var(--ink)}svg{width:100%;height:auto;background:var(--card);border-radius:12px}
+.lg{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:13px}.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.spin{color:var(--mut);padding:24px 0}
+</style></head><body><h1>NBA slips: track record</h1><div class="sub">Every slip graded, $1 on every slip. Seasons 2024-25, 2025-26 and 2026-27 to date.</div><div id="app" class="spin">Loading…</div>
+<script>
+var $=function(s){return document.querySelector(s)};var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var COL={prizepicks:'#6aa9ff',underdog:'#f5b942',sleeper:'#38c172',betr:'#e0679a',fliff:'#a78bfa'};
+var HC=0.95;var D=null,SEAS='all',DAYAPP='prizepicks',DAYSEAS='all';
+function seasonOf(d){var y=+d.slice(0,4),m=+d.slice(5,7);var s=m>=8?y:y-1;return s+'-'+String(s+1).slice(2)}
+function money(v){return (v>=0?'+ const d = await data(env, m[1]); return d ? json(d) : notFound(); }
+      const ok = await withPg(env, sql => tokenOk(sql, m[1]));
+      if (!ok) return notFound();
+      return new Response(PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
+    } catch (err) { return json({ ok: false, error: String(err && err.message || err).slice(0, 200) }, 500); }
+  }
+};
+:'- const d = await data(env, m[1]); return d ? json(d) : notFound(); }
+      const ok = await withPg(env, sql => tokenOk(sql, m[1]));
+      if (!ok) return notFound();
+      return new Response(PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
+    } catch (err) { return json({ ok: false, error: String(err && err.message || err).slice(0, 200) }, 500); }
+  }
+};
+)+Math.abs(v).toFixed(2)}function pct(v){return (v>=0?'+':'')+(v*100).toFixed(1)+'%'}function cls(v){return v>=0?'pos':'neg'}
+function adj(v){return v>0?v*HC:v}
+function stats(rows){var n=0,p=0,h=0,w=0,c=0,pk=0,dd=0,dry=0,cur=0;rows.forEach(function(r){n+=r.n;p+=r.p;h+=adj(r.p);w+=r.w;c+=r.p;if(c>pk)pk=c;if(pk-c>dd)dd=pk-c;if(r.p<=0){cur++;if(cur>dry)dry=cur}else cur=0});
+  return {n:n,days:rows.length,profit:p,wins:w,roi:n?p/n:0,hc:h,dd:dd,dry:dry}}
+function rowsFor(app,seas){return D.rows.filter(function(r){return r.app===app&&(seas==='all'||r.s===seas)})}
+function render(){
+  var seasons=['all'].concat(D.seasons);var h='';
+  var tot=0,tn=0;var cards='';
+  D.order.forEach(function(a){var st=stats(rowsFor(a,'all'));tot+=st.hc;tn+=st.n;cards+='<div class="c"><span>'+esc(D.labels[a])+'</span><b class="'+cls(st.hc)+'">'+money(st.hc)+'</b><span>on '+st.n+' slips, after the 5% cut</span></div>'});
+  h+='<div class="cards">'+cards+'<div class="c"><span>All five apps</span><b class="'+cls(tot)+'">'+money(tot)+'</b><span>on '+tn+' slips at $1 each</span></div></div>';
+  h+='<h2>Summary by app</h2><div class="tabs">'+seasons.map(function(s){return '<button class="'+(s===SEAS?'on':'')+'" data-s="'+s+'">'+(s==='all'?'All seasons':s)+'</button>'}).join('')+'</div>';
+  h+='<div class="wrap"><table><tr><th>App</th><th>Slips</th><th>Slips won</th><th>Profit</th><th>ROI</th><th>ROI after 5% cut</th><th>Max drawdown</th><th>Longest dry run (days)</th></tr>';
+  var T=[];D.order.forEach(function(a){var rs=rowsFor(a,SEAS);if(!rs.length)return;T=T.concat(rs);var st=stats(rs);
+    h+='<tr><td>'+esc(D.labels[a])+'<div class="sub">'+esc(D.struct[a])+'</div></td><td>'+st.n+'</td><td>'+Math.round(100*st.wins/st.n)+'% of slips</td><td class="'+cls(st.profit)+'">'+money(st.profit)+'</td><td class="'+cls(st.roi)+'">'+pct(st.roi)+'</td><td class="'+cls(st.roi)+'">'+pct(st.hc/st.n)+'</td><td> const d = await data(env, m[1]); return d ? json(d) : notFound(); }
+      const ok = await withPg(env, sql => tokenOk(sql, m[1]));
+      if (!ok) return notFound();
+      return new Response(PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
+    } catch (err) { return json({ ok: false, error: String(err && err.message || err).slice(0, 200) }, 500); }
+  }
+};
++st.dd.toFixed(2)+'</td><td>'+st.dry+'</td></tr>'});
+  var n=0,p=0,hh=0;T.forEach(function(r){n+=r.n;p+=r.p;hh+=adj(r.p)});
+  h+='<tr class="tot"><td>Total</td><td>'+n+'</td><td></td><td class="'+cls(p)+'">'+money(p)+'</td><td class="'+cls(p)+'">'+(n?pct(p/n):'')+'</td><td class="'+cls(hh)+'">'+(n?pct(hh/n):'')+'</td><td></td><td></td></tr></table></div>';
+  h+='<div class="note"><b>How to read it.</b> Profit is in dollars with $1 on every slip: a slip that loses is -$1, a win is its payout minus the $1. "After 5% cut" takes 5% off every winning payout, to allow for lines that move between our build and your entry; losses stay as they are. Max drawdown is the biggest drop from a peak in the running total; dry run is the longest streak of days that did not make money.</div>';
+  h+='<h2>Running total, $1 on every slip</h2>'+chart()+'<div class="lg">'+D.order.map(function(a){return '<span><i style="background:'+COL[a]+'"></i>'+esc(D.labels[a])+'</span>'}).join('')+'</div>';
+  h+='<h2>Day by day</h2><div class="tabs">'+D.order.map(function(a){return '<button class="'+(a===DAYAPP?'on':'')+'" data-a="'+a+'">'+esc(D.labels[a])+'</button>'}).join('')+'</div><div class="tabs">'+seasons.map(function(s){return '<button class="'+(s===DAYSEAS?'on':'')+'" data-d="'+s+'">'+(s==='all'?'All seasons':s)+'</button>'}).join('')+'</div>';
+  var rs=rowsFor(DAYAPP,'all');var cum=0;var cu={};rs.forEach(function(r){cum+=r.p;cu[r.d]=cum});
+  var shown=rs.filter(function(r){return DAYSEAS==='all'||r.s===DAYSEAS}).slice().reverse();
+  h+='<div class="wrap"><table><tr><th>Date</th><th>Slips</th><th>Won</th><th>Day result</th><th>Running total (all seasons)</th></tr>'+shown.map(function(r){return '<tr><td>'+r.d+'</td><td>'+r.n+'</td><td>'+r.w+'</td><td class="'+cls(r.p)+'">'+money(r.p)+'</td><td class="'+cls(cu[r.d])+'">'+money(cu[r.d])+'</td></tr>'}).join('')+'</table></div>';
+  h+='<div class="note"><b>About the history.</b> '+esc(D.notes)+'</div>';
+  $('#app').className='';$('#app').innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll('button[data-s]'),function(b){b.onclick=function(){SEAS=b.getAttribute('data-s');render()}});
+  Array.prototype.forEach.call(document.querySelectorAll('button[data-a]'),function(b){b.onclick=function(){DAYAPP=b.getAttribute('data-a');render()}});
+  Array.prototype.forEach.call(document.querySelectorAll('button[data-d]'),function(b){b.onclick=function(){DAYSEAS=b.getAttribute('data-d');render()}});
+}
+function chart(){
+  var dates=[];D.rows.forEach(function(r){if(dates.indexOf(r.d)<0)dates.push(r.d)});dates.sort();var W=860,H=300,L=46,R=10,T=10,B=24;
+  var series=D.order.map(function(a){var c=0,m={};rowsFor(a,'all').forEach(function(r){c+=adj(r.p);m[r.d]=c});var last=0;return {a:a,pts:dates.map(function(d){if(m[d]!=null)last=m[d];return last})}});
+  var mn=0,mx=1;series.forEach(function(s){s.pts.forEach(function(v){if(v<mn)mn=v;if(v>mx)mx=v})});
+  var x=function(i){return L+(W-L-R)*i/Math.max(1,dates.length-1)},y=function(v){return T+(H-T-B)*(1-(v-mn)/(mx-mn))};
+  var g='';var step=Math.max(10,Math.ceil((mx-mn)/5/10)*10);for(var t=Math.ceil(mn/step)*step;t<=mx;t+=step){g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(t)+'" y2="'+y(t)+'" stroke="#252c37"/><text x="'+(L-6)+'" y="'+(y(t)+4)+'" fill="#8b97a6" font-size="11" text-anchor="end"> const d = await data(env, m[1]); return d ? json(d) : notFound(); }
+      const ok = await withPg(env, sql => tokenOk(sql, m[1]));
+      if (!ok) return notFound();
+      return new Response(PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
+    } catch (err) { return json({ ok: false, error: String(err && err.message || err).slice(0, 200) }, 500); }
+  }
+};
++t+'</text>'}
+  var lab='';['2024-10','2025-10','2026-10'].forEach(function(m){var i=dates.findIndex(function(d){return d.slice(0,7)>=m});if(i>=0)lab+='<text x="'+x(i)+'" y="'+(H-6)+'" fill="#8b97a6" font-size="11">'+m+'</text>'});
+  var ls=series.map(function(s){return '<polyline fill="none" stroke="'+COL[s.a]+'" stroke-width="2" points="'+s.pts.map(function(v,i){return x(i).toFixed(1)+','+y(v).toFixed(1)}).join(' ')+'"/>'}).join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Running total per app">'+g+lab+ls+'</svg>'}
+fetch(location.pathname.replace(/\\/report\\/?$/,'')+'/report-data',{cache:'no-store'}).then(function(r){return r.ok?r.json():Promise.reject(r.status)}).then(function(d){D=d;D.rows.forEach(function(r){r.s=seasonOf(r.d)});D.seasons=[];D.rows.forEach(function(r){if(D.seasons.indexOf(r.s)<0)D.seasons.push(r.s)});D.seasons.sort();render()}).catch(function(e){$('#app').textContent='Could not load ('+e+').'});
+</script></body></html>`;
+
+async function reportData(env, token) {
+  return withPg(env, async sql => {
+    if (!(await tokenOk(sql, token))) return null;
+    const rows = await q(sql, "SELECT app, game_date::text d, count(*)::int n, sum(profit)::float p, sum((profit>0)::int)::int w FROM nba_friend.slips WHERE status='graded' GROUP BY 1,2 ORDER BY 2,1", [], 15000);
+    return { ok: true, order: APP_ORDER, labels: APP_LABEL, rows,
+      struct: { prizepicks: "4-pick Flex + 3-pick Power", underdog: "4-pick Flex", sleeper: "3-pick Flex", betr: "4-pick Dynamic", fliff: "3-pick Max" },
+      notes: "Every slip was rebuilt day by day with the same rules used today and graded on the real box scores, at $1 a slip. PrizePicks and Underdog history uses the real boards of each day. For Sleeper, Betr and Fliff, the 2024-25 and 2025-26 seasons use modelled boards (the sportsbooks' main lines priced with each app's measured payout rules); only 2026-27 uses the apps' real boards, so treat those two seasons as a close estimate, not an exact record. The 2026-27 season is small so far, so its numbers can swing a lot." };
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const m = url.pathname.replace(/\/+$/, "").match(/^\/([A-Za-z0-9_-]{5,64})(\/data)?$/);
+    const m = url.pathname.replace(/\/+$/, "").match(/^\/([A-Za-z0-9_-]{5,64})(\/data|\/report|\/report-data)?$/);
     try {
       if (url.pathname === "/health") return json({ ok: true, worker: "alphadog-v2-nba-friend", version: VERSION, hyperdrive: !!env.HYPERDRIVE });
       if (!m) return notFound();
+      if (m[2] === "/report-data") { const d = await reportData(env, m[1]); return d ? json(d) : notFound(); }
+      if (m[2] === "/report") { const ok2 = await withPg(env, sql => tokenOk(sql, m[1])); return ok2 ? new Response(REPORT, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } }) : notFound(); }
       if (m[2]) { const d = await data(env, m[1]); return d ? json(d) : notFound(); }
       const ok = await withPg(env, sql => tokenOk(sql, m[1]));
       if (!ok) return notFound();
