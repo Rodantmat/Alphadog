@@ -542,4 +542,19 @@ async function highHitSlips(){
   }catch(e){results.innerHTML='<div class="empty err">Build failed: '+esc(e.message||e)+'</div>'}
 }
 
+// BEST PAIRINGS OF THE DAY (owner 2026-11-06): the day's most likely legs per app for easy low-multiplier pairings; one collapsed section per app, at the very bottom
+var pairsData={};const pairsOpen=new Set();
+function pairsHtml(){
+  const order=['prizepicks','underdog','sleeper','fliff','betr'];
+  const secs=order.filter(a=>(pairsData[a]||[]).length);
+  if(!secs.length)return '';
+  const results=$('autoCreateResults');
+  if(results&&!results._pairsBound){results._pairsBound=true;results.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('pairsApp')){if(d.open)pairsOpen.add(d.dataset.app);else pairsOpen.delete(d.dataset.app)}},true)}
+  return '<h3 style="margin:22px 0 6px">Best pairings of the day</h3>'+secs.map(a=>{
+    const ls=pairsData[a];
+    return '<details class="pairsApp slipCard" data-app="'+esc(a)+'"'+(pairsOpen.has(a)?' open':'')+'><summary style="cursor:pointer;font-weight:800">Best pairings of the day &ndash; '+esc(appLabel(a))+' <span class="small" style="opacity:.7">('+ls.length+')</span></summary>'+ls.map(l=>{
+      const tip=l.tip?new Date(l.tip).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Los_Angeles'})+' PT':'';
+      const tag=l.kind&&l.kind!=='standard'?' <span class="badge '+esc(l.kind)+'" style="vertical-align:middle">'+esc(l.kind.charAt(0).toUpperCase()+l.kind.slice(1))+'</span>':'';
+      return '<div class="legRow"><span class="legRowText">'+esc(l.player||'')+' &mdash; '+esc(l.line??'')+' '+esc(displayPropLabel(l.prop))+' '+(String(l.side||'').toLowerCase()==='less'||String(l.side||'').toLowerCase()==='under'?'LESS':'MORE')+tag+(l.matchup||tip?' <span class="small" style="opacity:.85">('+esc([l.matchup,tip].filter(Boolean).join(' · '))+')</span>':'')+'</span><b class="legRowPct">'+(Number(l.p)*100).toFixed(1)+'%</b></div>'}).join('')+'</details>'}).join('');
+}
 bindSlipSourceFilters();
