@@ -475,7 +475,7 @@ def deco(conn, ctx, l, d):
                     continue
                 if base and mk.replace("_alternate", "") != base:
                     continue
-                if APP_KEY == "prizepicks" and ids.get("odds_type") != "standard":
+                if APP_KEY == "prizepicks" and ids.get("odds_type") != (l.get("odds") or "standard"):
                     continue
                 if best is None or ("_alternate" in best[0] and "_alternate" not in mk):
                     best = (mk, ids)
