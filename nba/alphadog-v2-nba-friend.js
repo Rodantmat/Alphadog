@@ -5,8 +5,11 @@
 // DEPLOY NOTE: the deploy script redeploys a worker when THIS file changes - bump VERSION with any change.
 import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
+import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-friend-v1.2.0";
+const VERSION = "alphadog-v2-nba-friend-v1.3.0";
+const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
+const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
 const APP_LABEL = { prizepicks: "PrizePicks", underdog: "Underdog", sleeper: "Sleeper", betr: "Betr", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "underdog", "sleeper", "betr", "fliff"];
 
