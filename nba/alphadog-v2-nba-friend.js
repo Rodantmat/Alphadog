@@ -117,6 +117,7 @@ td,th{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}th{co
 .leg{padding:7px 0;border-top:1px solid var(--line)}.leg:first-of-type{border-top:0}.leg b{font-weight:600}.sub{color:var(--mut);font-size:12.5px}.flag{color:var(--bad);font-size:12px}
 .spin{display:flex;gap:10px;align-items:center;color:var(--mut);padding:24px 0}.dot{width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:r 0.8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
 h2{font-size:15px;margin:18px 0 4px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.pair{background:var(--card);border-radius:12px;padding:10px 14px;margin:8px 0}.pair summary{cursor:pointer;font-weight:600;list-style:none}.pair summary::-webkit-details-marker{display:none}.pair[open] summary{margin-bottom:6px}
 </style></head><body>${BRAND}<div id="app"><div class="spin"><div class="dot"></div><span>Checking every leg on every app…</span></div></div>
 <script>
 const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
