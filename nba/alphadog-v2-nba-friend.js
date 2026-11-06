@@ -52,6 +52,7 @@ function autoSwap(out, now) {
 }
 
 // BEST PAIRINGS (owner 2026-11-06): the day's most likely legs per app (nba_friend.pairs), live-checked with the slips; a leg that is off the board or started is left out
+const PAIR_SHOW = { prizepicks: 8, underdog: 5, sleeper: 5, fliff: 3, betr: 3 };
 function pairsOut(out, now, on) {
   const r = {}; if (!on) return r;
   for (const s of out.generated_slips || []) {
