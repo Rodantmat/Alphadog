@@ -189,8 +189,15 @@ async function reportData(env, token) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const m = url.pathname.replace(/\/+$/, "").match(/^\/([A-Za-z0-9_-]{5,64})(\/data|\/report|\/report-data)?$/);
+    const m = url.pathname.replace(/\/+$/, "").match(/^\/([A-Za-z0-9_-]{5,64})(\/data|\/report|\/report-data|\/manifest\.webmanifest)?$/);
     try {
+      if (url.pathname === "/icon.png") { const bin = Uint8Array.from(atob(String(LOGO_B64).trim()), c => c.charCodeAt(0)); return new Response(bin, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } }); }
+      if (m && m[2] === "/manifest.webmanifest") {
+        const okm = await withPg(env, sql => tokenOk(sql, m[1]));
+        if (!okm) return notFound();
+        return new Response(JSON.stringify({ name: "AlphaDog-JStacks", short_name: "JStacks", start_url: "/" + m[1], scope: "/", display: "standalone", background_color: "#0e1116", theme_color: "#0e1116",
+          icons: [{ src: "/icon.png", sizes: "192x192", type: "image/png", purpose: "any" }] }), { headers: { "content-type": "application/manifest+json", "cache-control": "no-store" } });
+      }
       if (url.pathname === "/health") return json({ ok: true, worker: "alphadog-v2-nba-friend", version: VERSION, hyperdrive: !!env.HYPERDRIVE });
       if (!m) return notFound();
       if (m[2] === "/report-data") { const d = await reportData(env, m[1]); return d ? json(d) : notFound(); }
