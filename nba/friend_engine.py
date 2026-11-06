@@ -623,5 +623,27 @@ def grade():
     log(f"graded {done} of {len(pend)} pending slips")
 
 
+def pairs_only():
+    """rebuild only the day's best pairings for this app (the friend's slips of the day stay untouched)"""
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
+    d = dt.date.fromisoformat(os.environ.get("FR_DAY") or dt.datetime.now(PT).date().isoformat())
+    if FAPP == "PP":
+        legs = []
+    elif FAPP == "UD":
+        legs, _rows = AF.load_ud(conn, d, {})
+    else:
+        legs = AA.live_legs(conn, d, {})
+        _tm = {}
+        for _p, _t in conn.execute("SELECT DISTINCT ON (nba_player_id) nba_player_id::text, team_id FROM nba_stats.player_game_log WHERE game_date < %s ORDER BY nba_player_id, game_date DESC", (d,)).fetchall():
+            _tm[_p] = _t
+        for l in legs:
+            if l.get("team") is None:
+                l["team"] = _tm.get(str(l.get("player_id")))
+        legs = [l for l in legs if l.get("p") is not None and l.get("team") is not None and l.get("event_id") is not None]
+    ctx = decor_ctx(conn, d)
+    write_pairs(conn, d, legs, ctx)
+
+
 if __name__ == "__main__":
-    {"backfill": backfill, "pick": pick, "grade": grade}[MODE]()
+    {"backfill": backfill, "pick": pick, "grade": grade, "pairs": pairs_only}[MODE]()
