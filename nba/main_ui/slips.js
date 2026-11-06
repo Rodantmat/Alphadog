@@ -522,7 +522,30 @@ const PP_STAT_PROP = { "Points": "points", "Rebounds": "rebounds", "Assists": "a
   "Free Throws Made": "ftm", "Free Throws Attempted": "fta", "3-PT Attempted": "fg3a", "Offensive Rebounds": "oreb", "Defensive Rebounds": "dreb" };
 // LIVE CHECK ON EVERY LOAD (owner 2026-11-04 16:17 PT): each app's own board is read from inside the Worker (livecheck.js, all apps in parallel, seconds); when
 // no app answered, the stored-board check below still runs.
+// BEST PAIRINGS OF THE DAY (owner 2026-11-06): nba_friend.pairs (built by the friend pipeline) live-checked like the slips; out.pairs = { app: [legs] }
+async function pairsLive(sql) {
+  const r = {};
+  try {
+    const rows = await q(sql, "SELECT app, kind, p::float p, leg FROM nba_friend.pairs WHERE game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date ORDER BY app, rank", [], 6000);
+    const by = {};
+    for (const x of rows) { const l = typeof x.leg === "string" ? JSON.parse(x.leg) : x.leg; l.p = x.p; l.kind = x.kind; if (x.app === "prizepicks" && x.kind !== "standard") l.want_odds = x.kind; (by[x.app] = by[x.app] || []).push(l); }
+    const tmp = { ok: true, source: "live", generated_slips: Object.keys(by).map(a => ({ source_key: a, name: "pairs", legs: by[a] })), backup_pool: [] };
+    try { await overlayLive(sql, tmp, overlayPpLiveDb); } catch (_e) { /* unchecked legs stay listed */ }
+    const now = Date.now();
+    for (const s of tmp.generated_slips) {
+      r[s.source_key] = s.legs.filter(l => !(s.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok")))
+        .filter(l => { const t = Date.parse(l.official_game_time_utc || ""); return !(t && t <= now); })
+        .map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || null, p: l.p, kind: l.kind || "standard" }));
+    }
+  } catch (_e) { /* pairs not built yet */ }
+  return r;
+}
 export async function overlayPpLive(sql, out) {
+  const [res, pr] = await Promise.all([overlayPpLive0(sql, out), pairsLive(sql)]);
+  if (res && typeof res === "object") res.pairs = pr;
+  return res;
+}
+async function overlayPpLive0(sql, out) {
   let liveErr = null;
   try {
     const r = await overlayLive(sql, out, overlayPpLiveDb);   // PrizePicks unreachable: its legs are marked from the stored board inside the live check
