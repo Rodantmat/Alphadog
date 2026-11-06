@@ -134,12 +134,18 @@ function render(d){
     for(const s of ss){h+='<div class="slip"><h3>'+(s.url?'<a href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>';
       for(const l of s.legs){h+='<div class="leg"><b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+(l.sub?' · replaced':'')+'</div>'+(l.off?'<div class="flag">off the board</div>':l.started?'<div class="flag">game started</div>':'')+'</div>'}
       h+='</div>'}}
-  var pr=d.pairs||{};var anyp=d.order.some(function(a){return pr[a]&&pr[a].length});
-  if(anyp){h+='<h2>Best pairings of the day</h2><p class="sub">The legs most likely to hit, for an easy pairing. Tap an app to open its list.</p>';
-    d.order.forEach(function(a){var ls=pr[a]||[];if(!ls.length)return;h+='<details class="pair"><summary>'+esc(d.labels[a])+'<span class="tag">'+ls.length+' legs</span></summary>';
-      ls.forEach(function(l){h+='<div class="leg"><b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+' · '+(l.p*100).toFixed(1)+'% hit chance'+(l.kind&&l.kind!=='standard'?' · '+esc(l.kind.charAt(0).toUpperCase()+l.kind.slice(1)):'')+'</div></div>'});
-      h+='</details>'})}
-  $('#app').innerHTML=h}
+  h+='<div id="pairsBox"></div>';
+  $('#app').innerHTML=h;window.PD=d;drawPairs()}
+var SHOW={prizepicks:8,underdog:5,sleeper:5,fliff:3,betr:3};var pOpen={};
+function drawPairs(){var d=window.PD;if(!d)return;var box=document.getElementById('pairsBox');if(!box)return;
+  var pr=d.pairs||{};var now=Date.now();var h='';var any=false;
+  d.order.forEach(function(a){var ls=(pr[a]||[]).filter(function(l){var t=l.tip?Date.parse(l.tip):NaN;return !(t&&t<=now)}).slice(0,SHOW[a]||3);if(!ls.length)return;
+    if(!any){h+='<h2>Best pairings of the day</h2><p class="sub">The legs most likely to hit, for an easy pairing. Tap an app to open its list. A leg whose game has started or whose line changed is replaced automatically.</p>';any=true}
+    h+='<details class="pair" data-a="'+a+'"'+(pOpen[a]?' open':'')+'><summary>'+esc(d.labels[a])+'<span class="tag">'+ls.length+' legs</span></summary>';
+    ls.forEach(function(l){h+='<div class="leg"><b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+' · '+(l.p*100).toFixed(1)+'% hit chance'+(l.kind&&l.kind!=='standard'?' · '+esc(l.kind.charAt(0).toUpperCase()+l.kind.slice(1)):'')+'</div></div>'});
+    h+='</details>'});
+  box.innerHTML=h;box.querySelectorAll('details.pair').forEach(function(el){el.addEventListener('toggle',function(){pOpen[el.dataset.a]=el.open})})}
+setInterval(drawPairs,60000);
 fetch(location.pathname.replace(/\\/$/,'')+'/data',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(render).catch(e=>{$('#app').innerHTML='<p class="flag">Could not load ('+esc(e)+'). Pull down to retry.</p>'});
 </script></body></html>`;
 
