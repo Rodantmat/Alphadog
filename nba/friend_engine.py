@@ -535,6 +535,66 @@ def pick():
     put_slip_rows(conn, rows, "placed", replace_dates=[d], replace_status="placed")
     conn.commit()
     log(f"snapshot written: {len(slips)} slips, {len(pool)} pool legs")
+    try:
+        write_pairs(conn, d, legs, ctx)
+    except Exception as e:
+        log(f"pairs failed (slips are unaffected): {e}")
+        conn.rollback()
+
+
+PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}
+PAIR_FLOOR = 0.85
+
+
+def pp_pair_legs(conn, d):
+    """every PrizePicks line with a model hit chance: standard, goblin and demon, More and Less (the certified engine leaves the alternate Less out; the pairing list does not)"""
+    rows = conn.execute("""
+        WITH pr AS MATERIALIZED (
+          SELECT p.player, nba_ref.norm_name(p.player) cn, p.side, p.line, p.kind, p.factor::float price,
+            CASE replace(p.base_market,'player_','') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made'
+              WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
+              WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END prop
+          FROM nba_market.pp_leg_price p
+          WHERE p.snapshot_label='window' AND p.game_date=%s AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false))
+        SELECT nm.player_id::text, pr.player, pr.prop, pr.side, pr.line::float, pr.price, pr.kind, f.final_hp::float
+        FROM pr JOIN nba_ref.player_name_map nm ON nm.norm_name = pr.cn
+        JOIN nba_score.final_hp f ON f.game_date=%s AND f.player_id=nm.player_id AND f.prop=pr.prop AND f.side=pr.side AND f.line=pr.line
+        WHERE f.final_hp >= %s""", (d, d, PAIR_FLOOR)).fetchall()
+    out = []
+    for pid_, player, prop, side, line, price, kind, hp in rows:
+        out.append({"player": player, "player_id": pid_, "prop": prop, "side": side, "line": line, "m": price, "p": hp, "kind": kind,
+                    "odds": (kind if kind in ("goblin", "demon") else "standard")})
+    return out
+
+
+def write_pairs(conn, d, legs, ctx):
+    n_want = PAIR_N[FAPP]
+    cand = pp_pair_legs(conn, d) if FAPP == "PP" else legs
+    best = {}
+    for l in cand:
+        p = l.get("p")
+        if p is None or float(p) < PAIR_FLOOR:
+            continue
+        k = pid(l)
+        if k not in best or float(p) > float(best[k]["p"]):
+            best[k] = l
+    top = sorted(best.values(), key=lambda l: -float(l["p"]))
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_friend.pairs (game_date date, app text, rank int, p double precision, mult double precision,
+                    kind text, leg jsonb, built_at timestamptz DEFAULT now(), PRIMARY KEY (game_date, app, rank))""")
+    conn.execute("DELETE FROM nba_friend.pairs WHERE game_date=%s AND app=%s", (d, APP_KEY))
+    n = 0
+    for l in top:
+        if n >= n_want:
+            break
+        x = deco(conn, ctx, l, d)
+        if not x.get("team_abbr"):
+            continue
+        n += 1
+        x["p"] = round(float(l["p"]), 4)
+        conn.execute("INSERT INTO nba_friend.pairs (game_date, app, rank, p, mult, kind, leg) VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb)",
+                     (d, APP_KEY, n, float(l["p"]), float(l["m"]) if l.get("m") is not None else None, l.get("odds") or l.get("kind") or "standard", json.dumps(x)))
+    conn.commit()
+    log(f"pairings written: {n} legs (hit chance >= {PAIR_FLOOR:.0%}, best {float(top[0]['p']) * 100:.1f}%)" if top else "pairings: no leg reaches the floor")
 
 
 def grade():
