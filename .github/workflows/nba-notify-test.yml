@@ -1,0 +1,16 @@
+name: NBA Notify Test
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Send test push
+        env:
+          NTFY_TOPIC: alphadog-p3-cadfa756781c
+          TEST: "1"
+        run: python3 -u nba/p3_notify.py
