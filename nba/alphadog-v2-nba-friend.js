@@ -57,7 +57,7 @@ function pairsOut(out, now, on) {
   for (const s of out.generated_slips || []) {
     if (!s._pairs) continue;
     r[s.source_key] = s.legs.filter(l => !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now)).map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value,
-      matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard" }));
+      matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard" })).slice(0, PAIR_SHOW[s.source_key] * 2);   // the pool the page fills from (twice the shown count: the page drops a leg whose game starts and takes the next)
   }
   return r;
 }
