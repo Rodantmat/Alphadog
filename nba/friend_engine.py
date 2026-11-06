@@ -489,8 +489,11 @@ def deco(conn, ctx, l, d):
                     best = (mk, ids)
         if best:
             link = {"ids": best[1], "line": float(l["line"]), "side": "o" if side == "more" else "u", "tip_utc": tip}
-    return {"source_key": APP_KEY, "player_name": name, "canonical_prop_key": l["prop"], "line_value": float(l["line"]), "selected_side": side,
-            "team_abbr": ab, "matchup": matchup, "official_game_time_utc": tip, "link": link, "event_id": str(l.get("event_id"))}
+    out = {"source_key": APP_KEY, "player_name": name, "canonical_prop_key": l["prop"], "line_value": float(l["line"]), "selected_side": side,
+           "team_abbr": ab, "matchup": matchup, "official_game_time_utc": tip, "link": link, "event_id": str(l.get("event_id"))}
+    if APP_KEY == "prizepicks" and str(l.get("tier") or "").startswith("D"):
+        out["want_odds"] = "demon"   # a demon line must be checked as a demon, not flagged as drifted
+    return out
 
 
 def pick():
