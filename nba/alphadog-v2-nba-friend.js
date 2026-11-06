@@ -98,7 +98,7 @@ td,th{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}th{co
 .leg{padding:7px 0;border-top:1px solid var(--line)}.leg:first-of-type{border-top:0}.leg b{font-weight:600}.sub{color:var(--mut);font-size:12.5px}.flag{color:var(--bad);font-size:12px}
 .spin{display:flex;gap:10px;align-items:center;color:var(--mut);padding:24px 0}.dot{width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:r 0.8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
 h2{font-size:15px;margin:18px 0 4px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
-</style></head><body><h1>NBA slips</h1><div id="app"><div class="spin"><div class="dot"></div><span>Checking every leg on every app…</span></div></div>
+</style></head><body>${BRAND}<div id="app"><div class="spin"><div class="dot"></div><span>Checking every leg on every app…</span></div></div>
 <script>
 const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(v>=0?'+':'')+(v*100).toFixed(1)+'%';const cls=v=>v==null?'':(v>=0?'pos':'neg');
