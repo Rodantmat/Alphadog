@@ -977,3 +977,27 @@ jobs:
           RESULT: "${{ needs.afternoon.result }}"
           SOFT_FAILED: "${{ needs.afternoon.outputs.soft_failed }}"
         run: python -u nba/pipeline_claim.py
+
+  # PHONE ALERT (2026-11-05, owner request): one clear push the moment P3 / slip generation ends (READY or ALERT).
+  # ntfy.sh topic below; never fails the pipeline.
+  notify:
+    needs: [claim, afternoon, finish]
+    if: ${{ always() && needs.claim.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Send phone alert
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NTFY_TOPIC: alphadog-p3-cadfa756781c
+          RUN_ID: ${{ github.run_id }}
+          RESULT: "${{ needs.afternoon.result }}"
+        run: python -u nba/p3_notify.py
