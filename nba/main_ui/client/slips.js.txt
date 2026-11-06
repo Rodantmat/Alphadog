@@ -551,8 +551,16 @@ function pairsHtml(){
   if(!secs.length)return '';
   const results=$('autoCreateResults');
   if(results&&!results._pairsBound){results._pairsBound=true;results.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('pairsApp')){if(d.open)pairsOpen.add(d.dataset.app);else pairsOpen.delete(d.dataset.app)}},true)}
+  return '<div id="pairsBox">'+pairsInner(secs)+'</div>';
+}
+const PAIRS_SHOW={prizepicks:8,underdog:5,sleeper:5,fliff:3,betr:3};
+// a leg whose game has started is dropped and the next one in the pool takes its place (re-drawn every minute); a drifted / off-board leg was already removed by the live check on load
+setInterval(()=>{try{const b=document.getElementById('pairsBox');if(b){b.innerHTML=pairsInner(['prizepicks','underdog','sleeper','fliff','betr'].filter(a=>(pairsData[a]||[]).length))}}catch(_e){}},60000);
+function pairsInner(secs){
+  const now=Date.now();
   return '<h3 style="margin:22px 0 6px">Best pairings of the day</h3>'+secs.map(a=>{
-    const ls=pairsData[a];
+    const ls=(pairsData[a]||[]).filter(l=>{const t=l.tip?Date.parse(l.tip):NaN;return !(t&&t<=now)}).slice(0,PAIRS_SHOW[a]||3);
+    if(!ls.length)return '';
     return '<details class="pairsApp slipCard" data-app="'+esc(a)+'"'+(pairsOpen.has(a)?' open':'')+'><summary style="cursor:pointer;font-weight:800">Best pairings of the day &ndash; '+esc(appLabel(a))+' <span class="small" style="opacity:.7">('+ls.length+')</span></summary>'+ls.map(l=>{
       const tip=l.tip?new Date(l.tip).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Los_Angeles'})+' PT':'';
       const tag=l.kind&&l.kind!=='standard'?' <span class="badge '+esc(l.kind)+'" style="vertical-align:middle">'+esc(l.kind.charAt(0).toUpperCase()+l.kind.slice(1))+'</span>':'';
