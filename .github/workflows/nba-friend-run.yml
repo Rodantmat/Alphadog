@@ -82,3 +82,24 @@ jobs:
           [ -n "$IN_DAY" ] && export FR_DAY="$IN_DAY"
           [ "$MATRIX_APP" = "BETR" ] && export AA_BETR_PF="0.40,0.55"
           python -u nba/friend_engine.py
+
+  # Friend ready text (Google Voice): once, after all five apps' picks are written. Never fails the run.
+  text:
+    needs: run
+    if: ${{ always() && (github.event.inputs.mode || (github.event.schedule == '30 20 * * *' && 'pick' || 'grade')) == 'pick' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Send friend text
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: friend
+        run: python -u nba/p3_text.py
