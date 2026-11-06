@@ -129,7 +129,7 @@ td:first-child,th:first-child{text-align:left}th{color:var(--mut);font-weight:60
 .note{background:var(--card);border-radius:12px;padding:12px 14px;color:var(--mut);font-size:13px;margin-top:10px}.note b{color:var(--ink)}svg{width:100%;height:auto;background:var(--card);border-radius:12px}
 .lg{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:13px}.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
 .spin{color:var(--mut);padding:24px 0}
-</style></head><body><h1>NBA slips: track record</h1><div class="sub">Every slip graded, one dollar on every slip. Seasons 2024-25, 2025-26 and 2026-27 to date.</div><div id="app" class="spin">Loading…</div>
+</style></head><body>${BRAND}<div class="sub" style="margin-bottom:6px">Track record</div><div class="sub">Every slip graded, one dollar on every slip. Seasons 2024-25, 2025-26 and 2026-27 to date.</div><div id="app" class="spin">Loading…</div>
 <script>
 var DL=String.fromCharCode(36);
 var $=function(s){return document.querySelector(s)};var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
