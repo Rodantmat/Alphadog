@@ -25,7 +25,7 @@ async function tokenOk(sql, token) {
 }
 
 const startedMs = l => { const t = Date.parse((l.link && l.link.tip_utc) || l.official_game_time_utc || ""); return Number.isFinite(t) ? t : null; };
-const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== "standard") : (l.live_now && l.live_now !== "ok"));
+const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok"));
 
 // replace a drifted / started leg from the friend's own pool: same app, other player, never the opposite side of a player already on the day's slips,
 // the slip's game cap, >= 2 teams, best edge first
