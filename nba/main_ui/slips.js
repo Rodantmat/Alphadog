@@ -535,7 +535,8 @@ async function pairsLive(sql) {
     for (const s of tmp.generated_slips) {
       r[s.source_key] = s.legs.filter(l => !(s.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok")))
         .filter(l => { const t = Date.parse(l.official_game_time_utc || ""); return !(t && t <= now); })
-        .map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || null, p: l.p, kind: l.kind || "standard" }));
+        .map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard" }))
+        .slice(0, ({ prizepicks: 8, underdog: 5, sleeper: 5, fliff: 3, betr: 3 }[s.source_key] || 3) * 2);   // pool of twice the shown count: the screen drops a started leg and the next takes its place
     }
   } catch (_e) { /* pairs not built yet */ }
   return r;
