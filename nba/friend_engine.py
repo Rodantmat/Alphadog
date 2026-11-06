@@ -568,7 +568,7 @@ def pp_pair_legs(conn, d):
 
 
 def write_pairs(conn, d, legs, ctx):
-    n_want = PAIR_N[FAPP]
+    n_want = PAIR_N[FAPP] * 4   # a POOL: 4x the legs shown, ranked by hit chance - the screens drop a started / drifted / off-board leg and the next one in the pool takes its place
     cand = pp_pair_legs(conn, d) if FAPP == "PP" else legs
     best = {}
     for l in cand:
