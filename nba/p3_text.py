@@ -28,7 +28,9 @@ def main():
         if not pw:
             print("text alert: no gmail_app_password in the credential store - skipped")
             return
-        if MODE == "p3":
+        if MODE == "test":
+            who, addr, body, day = "test", cfg.get("cell_addr"), "AlphaDog test: the pipeline can text you", None
+        elif MODE == "p3":
             row = c.execute("SELECT run_key, status, note FROM nba_control.pipeline_runs WHERE pipeline='P3' AND github_run_id=%s "
                             "ORDER BY claimed_at DESC LIMIT 1", (RUN_ID,)).fetchone()
             if not row:
