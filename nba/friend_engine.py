@@ -543,7 +543,7 @@ def pick():
 
 
 PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}
-PAIR_FLOOR = 0.85
+PAIR_FLOOR = 0.80  # best legs first (95%+ when the board has them); the list fills down to 80% only when fewer reach 85%; the hit chance is shown on every leg
 
 
 def pp_pair_legs(conn, d):
