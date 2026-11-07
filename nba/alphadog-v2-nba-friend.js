@@ -99,6 +99,16 @@ async function data(env, token) {
       try { await overlayLive(sql, out, null); autoSwap(out, Date.now()); } catch (e) { out.live_error = String(e && e.message || e).slice(0, 120); }
     }
     const now = Date.now();
+    // SAVE AS SEEN (owner 2026-11-06): no save button here, so the slips as this page FIRST showed them on the day (after the leg check and swaps) are what the grade counts
+    if (date && date === today && !out.live_error) {
+      for (const s of out.generated_slips) {
+        if (s._pairs) continue;
+        try {
+          const bad = s.legs.some(l => l.off || (startedMs(l) != null && startedMs(l) <= now) || isBad(l));
+          await q(sql, "INSERT INTO nba_friend.seen (game_date, app, slip_name, legs, skipped) VALUES ($1::date,$2,$3,$4::jsonb,$5) ON CONFLICT DO NOTHING", [today, s.source_key, s.name, JSON.stringify(s.legs), bad], 6000);
+        } catch (e) { /* never blocks the page */ }
+      }
+    }
     const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: linkUrl(s, now),
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
         sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now, status: l.source_key === "prizepicks" ? l.pp_now || null : l.live_now || null })) }));
