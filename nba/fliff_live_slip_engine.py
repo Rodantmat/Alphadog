@@ -144,11 +144,19 @@ def grade(conn, day):
                 h = AF.outcome(st, l)
                 l["hit"] = None if h is None else bool(h)
             live = [l for l in legs if l["hit"] is not None]
-            pay = 1.0 if len(live) < 2 else (floor2(float(live[0]["factor"]) * float(live[1]["factor"])) if all(l["hit"] for l in live) else 0.0)
+            if len(live) < 2:
+                pay = 1.0   # a void drops the pick; fewer than two picks left = refunded
+            elif all(l["hit"] for l in live):
+                prod = 1.0
+                for l in live:
+                    prod *= float(l["factor"])
+                pay = floor2(prod)   # 2026-11-07: any size (the friend's 3-pick Max slips): the product of the live legs' multipliers
+            else:
+                pay = 0.0
             hits = sum(1 for l in legs if l["hit"])
             conn.execute("""UPDATE nba_score.fliff_live_slips SET legs_json = %s, hits = %s, payout = %s, profit = %s, graded_at = now()
                             WHERE game_date = %s AND strategy = %s AND k = 1""", (json.dumps(legs), hits, round(pay, 4), round(float(stake) * (pay - 1), 4), d, name))
-            print(f"FLIFF_GRADE|{d} {name}: {hits}/2 hit, payout {pay:.3f}x")
+            print(f"FLIFF_GRADE|{d} {name}: {hits}/{len(legs)} hit, payout {pay:.3f}x")
         conn.commit()
 
 

@@ -7,13 +7,13 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-jessi-v1.0.0";
-const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper" };
-const APP_ORDER = ["prizepicks", "sleeper"];
+const VERSION = "alphadog-v2-nba-jessi-v1.1.0";   // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
+const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
 // UPX is sized to the app's slips a day (3.5 per slip, as on his screen).
-const UPX = { prizepicks: 10.5, sleeper: 7 };
-const PAIR_SHOW = { prizepicks: 8, sleeper: 5 };
+const UPX = { prizepicks: 10.5, sleeper: 7, fliff: 7 };
+const PAIR_SHOW = { prizepicks: 8, sleeper: 5, fliff: 3 };
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Jessiquinha"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">Jessiquinha</h1></div>`;
 
@@ -151,7 +151,7 @@ function render(d){
       h+='</div>'}}
   h+='<div id="pairsBox"></div>';
   $('#app').innerHTML=h;window.PD=d;drawPairs()}
-var SHOW={prizepicks:8,sleeper:5};var pOpen={};
+var SHOW={prizepicks:8,sleeper:5,fliff:3};var pOpen={};
 function drawPairs(){var d=window.PD;if(!d)return;var box=document.getElementById('pairsBox');if(!box)return;
   var pr=d.pairs||{};var now=Date.now();var h='';var any=false;
   d.order.forEach(function(a){var ls=(pr[a]||[]).filter(function(l){var t=l.tip?Date.parse(l.tip):NaN;return !(t&&t<=now)}).slice(0,SHOW[a]||5);if(!ls.length)return;

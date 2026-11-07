@@ -83,6 +83,9 @@ JESSI_RULES = {
     "PP": [("J1", 4, "flex", ("R", "B", "lowvol", "trail", 0.64, 1, 0, "high")),
            ("J2", 4, "flex", ("R", "B", "lowvol", "p", 0.64, 1, 0, "all")),
            ("J3", 5, "flex", ("R", "O", "combos", "trail", 0.58, 1, 1, "low"))],
+    # owner 2026-11-07 10:21 PT "B, wire B for Jessica" (research_jessi_fliff.py run 42398284000, set B: a 4-pick Max + a 2-pick Max, exact copies of his / the friend's slips allowed)
+    "FLIFF": [("J1", 4, "max", ("bl", "any", "low", "main", 0.55, 1.0, 0)),
+              ("J2", 2, "max", ("edge", "any", "low", "main", 0.6, 1.04, 2))],
     "SLEEPER": [("J1", 5, "flex", ("evbl", "any", "low", "main", 0.0, 1.04, 0)),
                 ("J2", 5, "flex", ("edge", "any", "all", "main", 0.6, 1.04, 0))],
 }
@@ -335,7 +338,10 @@ def jessi_plan(legs, H):
             continue
         else:
             cand, gc = ranked(legs, rule), 1
-        s = build(cand, size, gc, H, banned=frozenset(used), allow_zero=False)
+        if FAPP == "FLIFF":   # Fliff for Jessi: the rule as tested (no leg-difference ladder; exact copies allowed), one slip after the other
+            s = build_at(cand, size, gc, set(), frozenset(used), False, 0)
+        else:
+            s = build(cand, size, gc, H, banned=frozenset(used), allow_zero=False)
         out.append((code, size, st, gc, s, cand))
         if s:
             used |= {pid(l) for l in s}
@@ -717,11 +723,43 @@ def pick():
     put_slip_rows(conn, rows, "placed", replace_dates=[d], replace_status="placed")
     conn.commit()
     log(f"snapshot written: {len(slips)} slips, {len(pool)} pool legs")
+    if FAPP == "FLIFF" and TIER != "jessi":
+        try:
+            mirror_fliff_to_owner(conn, d, rows, slips)
+        except Exception as e:
+            log(f"owner Fliff mirror failed (friend slips unaffected): {e}")
+            conn.rollback()
     try:
         write_pairs(conn, d, legs, ctx)
     except Exception as e:
         log(f"pairs failed (slips are unaffected): {e}")
         conn.rollback()
+
+
+def mirror_fliff_to_owner(conn, d, rows, slips):
+    """owner 2026-11-07 10:21 PT "my friend's fliff is a lot better than mine, wire that for me as well": the friend's Fliff slips of the day are also HIS Fliff slips
+    (nba_score.fliff_live_slips, strategy F_FR_<code>) - shown on his Slips screen like his own Fliff slip, graded by fliff_live_slip_engine.grade; his own F_UDT1_2max_U stays"""
+    n = 0
+    for i, r in enumerate(rows):
+        legs = []
+        for j, l in enumerate(r["legs"]):
+            x = dict(l); x["factor"] = l.get("m"); x["tier"] = "R"
+            mt = (slips[i]["legs"][j] if i < len(slips) and j < len(slips[i]["legs"]) else {}).get("matchup")
+            if mt:
+                x["matchup"] = mt
+            legs.append(x)
+        mult = 1.0
+        for l in legs:
+            mult *= float(l["factor"])
+        mult = int(mult * 100 + 1e-6) / 100.0
+        conn.execute("""INSERT INTO nba_score.fliff_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
+                        VALUES (%s, %s, %s, 'max', 1, %s::jsonb, 1, 'live', %s, now())
+                        ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, model_multiplier = EXCLUDED.model_multiplier,
+                          board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
+                        WHERE nba_score.fliff_live_slips.graded_at IS NULL""", (d, "F_FR_" + r["code"], len(legs), json.dumps(legs), round(mult, 4)))
+        n += 1
+    conn.commit()
+    log(f"owner Fliff: {n} friend slips mirrored into nba_score.fliff_live_slips")
 
 
 PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}

@@ -110,7 +110,7 @@ jobs:
           MODE: friend
         run: python -u nba/p3_text.py
 
-  # The third set (Jessi: PrizePicks + Sleeper). Built AFTER the friend's slips (it stays >= 40% different from them too), same engine, own tables nba_jessi.*
+  # The third set (Jessi: PrizePicks + Sleeper + Fliff). Built AFTER the friend's slips (it stays >= 40% different from them too), same engine, own tables nba_jessi.*
   jessi:
     needs: run
     if: ${{ always() && (github.event.inputs.tier || 'both') != 'friend' }}
@@ -120,7 +120,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        app: [PP, SLEEPER]
+        app: [PP, SLEEPER, FLIFF]
     steps:
       - uses: actions/checkout@v4
         with:
