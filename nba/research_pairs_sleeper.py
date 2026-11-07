@@ -19,7 +19,9 @@ for n, legs in srows:
     for l in legs[:2]:
         lid = ((l.get("link") or {}).get("ids") or {}).get("line_id")
         print("SLIP", n, l["player_name"], lid, "on board" if str(lid) in ids else "NOT on board")
-for ln in doc:
-    s = json.dumps(ln)
-    if "Wembanyama" in s or "wembanyama" in s.lower():
-        print("WEMBY LINE", s[:700]); break
+for r, leg in rows[:1]:
+    leg = leg if isinstance(leg, dict) else json.loads(leg)
+    gid = leg["event_id"].rsplit("-",1)[-1]; print("GAME", gid)
+    for ln in doc:
+        if ln.get("game_id") == gid and ln.get("wager_type") == "blocks":
+            print("BOARD", ln.get("subject_id"), ln.get("status"), ln.get("updated_at"), [(o.get("outcome"), o.get("line_id"), o.get("outcome_value") or o.get("line") , o.get("payout_multiplier")) for o in ln["options"]])
