@@ -78,9 +78,10 @@ FRIEND_RULES, FRIEND_EXTRA = RULES, EXTRA
 # the third set's rules (research_jessi.py, filled in from its backtest): {app: [(code, size, structure, rule)]}
 # (research_jessi.py run 2026-11-06: built against the owner's proxies AND the friend's legs; first 60% of the slates to choose, last 40% to read)
 JESSI_RULES = {
-    "PP": [("J1", 4, "flex", ("RD", "B", "lowvol", "p", 0.62, 1, 0, "low")),
-           ("J2", 5, "flex", ("RD", "B", "all", "p", 0.62, 1, 0, "low")),
-           ("J3", 4, "flex", ("R", "B", "lowvol", "trail", 0.62, 1, 0, "low"))],
+    # owner 2026-11-06 23:25: "Deploy pair 4" (research_jessi_pp5.py): two 4-pick Flex slips, regular lines only, low-volume props, floor 0.64, built on the owner's own rule family;
+    # the only rule against his / the friend's slips is that no slip is EXACTLY the same set of legs (FORBID below)
+    "PP": [("J1", 4, "flex", ("R", "B", "lowvol", "trail", 0.64, 1, 0, "high")),
+           ("J2", 4, "flex", ("R", "B", "lowvol", "p", 0.64, 1, 0, "all"))],
     "SLEEPER": [("J1", 5, "flex", ("evbl", "any", "low", "main", 0.0, 1.04, 0)),
                 ("J2", 5, "flex", ("edge", "any", "all", "main", 0.6, 1.04, 0))],
 }
@@ -301,12 +302,35 @@ else:
 plan_base = plan
 
 
+FORBID = set()        # PrizePicks third set: the exact leg sets (frozenset of lk) of the owner's and the friend's slips of the day
+LAST_FR_SETS = []     # filled by friend_replay: the friend's slips of the slate as leg-key sets
+
+
+def build_distinct_pp(cand, size, gc, banned):
+    """owner 2026-11-05/06: her slips may use his legs and his strategies; the ONLY rule is that a slip is never exactly the same set of legs as one of his or the friend's.
+    The rule's slip; if it equals a forbidden slip, ban its last player and rebuild (same ranking, next leg)"""
+    ban = set(banned)
+    for _ in range(6):
+        s = build_at(cand, size, gc, set(), frozenset(ban), True, 0)
+        if not s:
+            return None
+        if frozenset(lk(l) for l in s) not in FORBID:
+            return s
+        ban.add(pid(s[-1]))
+    return None
+
+
 def jessi_plan(legs, H):
     """the third set: one slip after the other, never a player already on her earlier slips (three slips of one app must not be the same four players)"""
     out, used = [], set()
     for code, size, st, rule in RULES:
         if FAPP == "PP":
             cand, gc = pp_cand(legs, rule)
+            s = build_distinct_pp(cand, size, gc, used)
+            out.append((code, size, st, gc, s, cand))
+            if s:
+                used |= {pid(l) for l in s}
+            continue
         else:
             cand, gc = ranked(legs, rule), 1
         s = build(cand, size, gc, H, banned=frozenset(used), allow_zero=False)
@@ -417,6 +441,12 @@ def backfill():
         H = proxies(legs)
         if TIER == "jessi":
             H = H | friend_replay(legs, H)
+            if FAPP == "PP":
+                FORBID.clear(); FORBID.update(LAST_FR_SETS)
+                for _uid in HIS_PP:
+                    _s = PB.unit_slip(legs, _uid)
+                    if _s:
+                        FORBID.add(frozenset(lk(l) for l in _s))
         for code, size, st, gc, s, _cand in plan(legs, H):
             if not s:
                 continue
@@ -566,12 +596,13 @@ def friend_replay(legs, H):
     """the friend's own slips on a slate (base rules, then the extras with the played players banned) -> their leg keys; for the third set's backfill"""
     global RULES
     keys, used = set(), set()
+    LAST_FR_SETS.clear()
     saved = RULES
     RULES = FRIEND_RULES
     try:
         for code, size, st, gc, s, cand in plan_base(legs, H):
             if s:
-                keys |= {lk(l) for l in s}; used |= {pid(l) for l in s}
+                keys |= {lk(l) for l in s}; used |= {pid(l) for l in s}; LAST_FR_SETS.append(frozenset(lk(l) for l in s))
     finally:
         RULES = saved
     for code, size, st, rule in FRIEND_EXTRA:
@@ -581,7 +612,7 @@ def friend_replay(legs, H):
             cand, gc = ranked(legs, rule), 1
         s = build(cand, size, gc, H, banned=frozenset(used), teams=(FAPP != "UD"))
         if s:
-            keys |= {lk(l) for l in s}; used |= {pid(l) for l in s}
+            keys |= {lk(l) for l in s}; used |= {pid(l) for l in s}; LAST_FR_SETS.append(frozenset(lk(l) for l in s))
     return keys
 
 
@@ -610,6 +641,29 @@ def pick():
         fk = friend_keys(conn, d)
         log(f"{len(fk)} friend legs kept out of the third set")
         H = H | fk
+        if FAPP == "PP":
+            FORBID.clear()
+            for _uid in HIS_PP:
+                _s = PB.unit_slip(legs, _uid)
+                if _s:
+                    FORBID.add(frozenset(lk(l) for l in _s))
+            for _lj in [r[0] for r in conn.execute("SELECT legs_json FROM nba_score.live_slips WHERE game_date=%s", (d,)).fetchall()]:
+                _arr = _lj if isinstance(_lj, list) else json.loads(_lj)
+                _ks = set()
+                for _l in _arr:
+                    _p = _l.get("player_id") if _l.get("player_id") is not None else _l.get("player")
+                    _pr = _l.get("prop") or _l.get("canonical_prop_key"); _sd = _l.get("side") or _l.get("selected_side")
+                    _sd = {"more": "Over", "less": "Under", "over": "Over", "under": "Under"}.get(str(_sd).lower(), _sd)
+                    if _p is not None and _pr and _sd:
+                        _ks.add((str(_p), _pr, _sd))
+                if _ks:
+                    FORBID.add(frozenset(_ks))
+            for (_lj,) in conn.execute('SELECT legs FROM "nba_friend"."slips" WHERE game_date=%s AND app=%s', (d, APP_KEY)).fetchall():
+                _arr = _lj if isinstance(_lj, list) else json.loads(_lj)
+                _ks = {(str(_l["player_id"]), _l["prop"], _l["side"]) for _l in _arr if _l.get("player_id") is not None and _l.get("prop") and _l.get("side")}
+                if _ks:
+                    FORBID.add(frozenset(_ks))
+            log(f"{len(FORBID)} exact slips of his / the friend's forbidden")
     slips, pool, rows, used = [], [], [], set()
     titles = defaultdict(int)
     for code, size, st, gc, s, cand in plan(legs, H):
