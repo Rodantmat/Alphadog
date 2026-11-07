@@ -117,7 +117,7 @@ def tkey(l):
     return l.get("team_id") or l.get("team")
 
 
-def build(cand, k, gc, H, banned=frozenset(), teams=True):
+def build(cand, k, gc, H, banned=frozenset(), teams=True, allow_zero=True):
     """leg-difference ladder (owner 2026-11-05): >=40% different from the owner's legs; if no slip exists, 30%, then 20%, then 10%, else repeat his legs"""
     last = None
     for f in (0.4, 0.3, 0.2, 0.1, 0.0):
