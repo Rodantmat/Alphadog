@@ -63,8 +63,10 @@ jobs:
           IN_DAY: ${{ github.event.inputs.day || '' }}
           IN_WAIT: ${{ github.event.inputs.wait_p3 || (github.event_name == 'schedule' && github.event.schedule == '30 20 * * *' && 'true' || 'false') }}
           MATRIX_APP: ${{ matrix.app }}
+          IN_TIER: ${{ github.event.inputs.tier || 'both' }}
         run: |
           set -euo pipefail
+          if [ "$IN_TIER" = "jessi" ]; then echo "skip: jessi only"; exit 0; fi
           if [ "$IN_APP" != "ALL" ] && [ "$IN_APP" != "$MATRIX_APP" ]; then echo "skip $MATRIX_APP"; exit 0; fi
           [[ "$IN_MODE" =~ ^(backfill|pick|grade|pairs)$ ]] || { echo "bad mode"; exit 1; }
           if [ "$IN_WAIT" = "true" ] && [ "$IN_MODE" = "pick" ]; then
