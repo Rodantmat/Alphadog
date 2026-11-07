@@ -100,7 +100,7 @@ async function data(env, token, save = true) {
     }
     const now = Date.now();
     // SAVE AS SEEN (owner 2026-11-06): no save button here, so the slips as this page FIRST showed them on the day (after the leg check and swaps) are what the grade counts
-    if (date && date === today && !out.live_error) {
+    if (save && date && date === today && !out.live_error) {
       for (const s of out.generated_slips) {
         if (s._pairs) continue;
         try {
