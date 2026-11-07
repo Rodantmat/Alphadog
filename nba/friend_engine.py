@@ -21,6 +21,17 @@ FAPP = (os.environ.get("FR_APP") or "PP").upper()
 MODE = os.environ.get("FR_MODE") or "pick"
 PT = ZoneInfo("America/Los_Angeles")
 T0 = time.time()
+# FR_TIER=jessi (owner 2026-11-06): the third set (PrizePicks + Sleeper) - same engine, own tables (nba_jessi.*), built >= 40% different from the owner AND the friend
+TIER = (os.environ.get("FR_TIER") or "friend").lower()
+SCHEMA = "nba_jessi" if TIER == "jessi" else "nba_friend"
+if SCHEMA != "nba_friend":
+    _orig_execute = psycopg.Connection.execute
+
+    def _execute(self, query, *a, **k):   # every nba_friend.<table> in this file points at the tier's schema; "nba_friend"."t" (quoted) is left alone on purpose
+        if isinstance(query, str) and "nba_friend." in query:
+            query = query.replace("nba_friend.", SCHEMA + ".")
+        return _orig_execute(self, query, *a, **k)
+    psycopg.Connection.execute = _execute
 
 if FAPP == "PP":
     import portfolio_b as PB                      # noqa: E402
