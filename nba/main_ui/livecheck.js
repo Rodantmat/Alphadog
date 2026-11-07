@@ -354,6 +354,8 @@ export async function overlayLive(sql, out, ppFallback) {
   out.backup_pool = pool.filter(l => {
     if (l.source_key === "prizepicks" && apps.prizepicks && apps.prizepicks.ok) return l.pp_now === "standard";
     if (l.live_now && l.live_now !== "ok") return false;
+    // a Sleeper / Betr leg with no id of its own cannot be checked against the app's board, so it is never offered as a substitute (owner 2026-11-07)
+    if ((l.source_key === "sleeper" || l.source_key === "betr") && apps[l.source_key] && apps[l.source_key].ok && !l.live_now) return false;
     return true;
   });
   const flagged = [];

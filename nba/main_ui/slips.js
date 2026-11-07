@@ -256,7 +256,9 @@ function placeBy(lj, pb) {
 // its PLAY $ line.
 const LINK_MK = { steals: "player_steals", turnovers: "player_turnovers", blocks: "player_blocks", stocks: "player_blocks_steals", blocks_steals: "player_blocks_steals",
   rebounds: "player_rebounds", points: "player_points", pts_ast: "player_points_assists", pra: "player_points_rebounds_assists", pts_reb: "player_points_rebounds",
-  assists: "player_assists", threes_made: "player_threes", threes: "player_threes", reb_ast: "player_rebounds_assists" };
+  assists: "player_assists", threes_made: "player_threes", threes: "player_threes", reb_ast: "player_rebounds_assists",
+  // the board archive files these under other names than the leg's prop key (2026-11-07: a Sleeper Fantasy Score leg got no link id, so the deep link left it out and the live check never verified it)
+  fantasy_score: "player_fantasy_points", fantasy_points: "player_fantasy_points", fg3a: "player_threes_attempted", three_point_attempts: "player_threes_attempted" };
 async function appLinkMap(sql) {
   const has = (await q(sql, "SELECT to_regclass('nba_market.app_link_ids') IS NOT NULL ok"))[0];
   if (!has || !has.ok) return new Map();

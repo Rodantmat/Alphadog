@@ -471,8 +471,9 @@ function slipTitleHtml(s,idx){
   const text=String(s.source_key||'').toUpperCase()+' '+(s.structure_label||s.slip_type)+(no?' '+no:'');
   // the link follows the legs that are IN the slip right now: unchecked legs, started legs and substitutes are all handled
   const li=s.app_link?slipLinkUrl({app:s.app_link.app,legs:keptLegsOf(s,idx).map(l=>l.link||{ids:null,tip_utc:null,side:'o',line:0})},Date.now()):null;
+  const noIds=keptLegsOf(s,idx).filter(l=>!(l.link&&l.link.ids)&&!legStarted(l,Date.now()));
   if(!li||!li.url)return esc(text)+(li&&li.total&&li.used<2?' <span class="small" style="color:#ff6b6b;font-weight:700">(no link: fewer than 2 legs left to open)</span>':'');
-  return '<a class="slipOpenApp" href="'+esc(li.url)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">'+esc(text)+'</a> <span style="opacity:.7;font-size:.85em">↗'+(li.used<li.total?' '+li.used+'/'+li.total+' legs':'')+'</span>';
+  return '<a class="slipOpenApp" href="'+esc(li.url)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">'+esc(text)+'</a> <span style="opacity:.7;font-size:.85em">↗'+(li.used<li.total?' '+li.used+'/'+li.total+' legs':'')+'</span>'+(li.used<li.total&&noIds.length?' <span class="small" style="color:#ff6b6b;font-weight:700">(not in the link, add by hand: '+esc(noIds.map(l=>l.player_name).join(', '))+')</span>':'');
 }
 function slipCardHtml(s,idx){
   const kept=keptLegsOf(s,idx);
