@@ -792,6 +792,8 @@ for worker in NBA_WORKERS:
     _cfg = make_config(worker)
     if worker == "alphadog-v2-nba-friend":
         _cfg["name"] = "jstacks"  # friend page: deployed under a short public name (owner 2026-11-05)
+    if worker == "alphadog-v2-nba-jessi":
+        _cfg["name"] = "jessiquinha"  # Jessi page: short public name (owner 2026-11-06)
     path.write_text(json.dumps(_cfg, indent=2), encoding="utf-8")
     generated.append(str(path))
 
