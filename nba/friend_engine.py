@@ -511,7 +511,45 @@ def deco(conn, ctx, l, d):
            "team_abbr": ab, "matchup": matchup, "official_game_time_utc": tip, "link": link, "event_id": str(l.get("event_id"))}
     if APP_KEY == "prizepicks" and str(l.get("tier") or "").startswith("D"):
         out["want_odds"] = "demon"   # a demon line must be checked as a demon, not flagged as drifted
+    out["_g"] = leg_json(l)   # the leg as the grader needs it (player_id, prop, side, line, tier, m ...): the page saves the slip as first shown and the grade uses it
     return out
+
+
+def friend_keys(conn, d):
+    """the friend's actual legs of the day (his slips, as built) - the third set stays >= 40% different from them too"""
+    keys = set()
+    try:
+        for (lj,) in conn.execute('SELECT legs FROM "nba_friend"."slips" WHERE game_date=%s AND app=%s', (d, APP_KEY)).fetchall():
+            for l in (lj if isinstance(lj, list) else json.loads(lj)):
+                if l.get("player_id") is not None and l.get("prop") and l.get("side"):
+                    keys.add((str(l["player_id"]), l["prop"], l["side"]))
+    except Exception as e:
+        log(f"friend legs: {e}")
+        conn.rollback()
+    return keys
+
+
+def friend_replay(legs, H):
+    """the friend's own slips on a slate (base rules, then the extras with the played players banned) -> their leg keys; for the third set's backfill"""
+    global RULES
+    keys, used = set(), set()
+    saved = RULES
+    RULES = FRIEND_RULES
+    try:
+        for code, size, st, gc, s, cand in plan(legs, H):
+            if s:
+                keys |= {lk(l) for l in s}; used |= {pid(l) for l in s}
+    finally:
+        RULES = saved
+    for code, size, st, rule in FRIEND_EXTRA:
+        if FAPP == "PP":
+            cand, gc = pp_cand(legs, rule)
+        else:
+            cand, gc = ranked(legs, rule), 1
+        s = build(cand, size, gc, H, banned=frozenset(used), teams=(FAPP != "UD"))
+        if s:
+            keys |= {lk(l) for l in s}; used |= {pid(l) for l in s}
+    return keys
 
 
 def pick():
