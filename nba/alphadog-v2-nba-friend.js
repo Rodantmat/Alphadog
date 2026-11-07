@@ -75,7 +75,7 @@ function linkUrl(s, now) {
   return null;
 }
 
-async function data(env, token) {
+async function data(env, token, save = true) {
   return withPg(env, async sql => {
     if (!(await tokenOk(sql, token))) return null;
     const today = ptDate();
