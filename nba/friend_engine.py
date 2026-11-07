@@ -125,6 +125,8 @@ def build(cand, k, gc, H, banned=frozenset(), teams=True, allow_zero=True):
         if req == last:
             continue
         last = req
+        if req == 0 and not allow_zero:   # the third set never repeats the owner's / friend's legs: no slip beats a copy
+            break
         s = build_at(cand, k, gc, H, banned, teams, req)
         if s:
             return s
