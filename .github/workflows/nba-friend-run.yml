@@ -23,6 +23,10 @@ on:
         description: "wait for today's P3 success first (true/false)"
         default: "false"
         required: false
+      tier:
+        description: "friend | jessi | both (jessi = the third set, PP + SLEEPER only, built after the friend's)"
+        default: "both"
+        required: false
   schedule:
     - cron: "30 20 * * *"
     - cron: "0 15 * * *"
