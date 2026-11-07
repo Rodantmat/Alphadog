@@ -74,6 +74,13 @@ EXTRA = {
     "FLIFF": [("X1", 3, "max", ("edge", "any", "low", "main", 0.6, 1.04, 1))],
     "BETR": [],
 }[FAPP]
+FRIEND_RULES, FRIEND_EXTRA = RULES, EXTRA
+# the third set's rules (research_jessi.py, filled in from its backtest): {app: [(code, size, structure, rule)]}
+JESSI_RULES = {"PP": [], "SLEEPER": []}
+if TIER == "jessi":
+    if FAPP not in JESSI_RULES:
+        raise SystemExit(f"jessi tier has no {FAPP}")
+    RULES, EXTRA = JESSI_RULES[FAPP], []
 HIS_PP = ["B3", "B4", "B5", "B6", "B7", "B9", "B3x4", "B5x4", "B7x4"]
 need = lambda k: max(1, int(0.4 * k))
 MK = {'player_points': 'points', 'player_rebounds': 'rebounds', 'player_assists': 'assists', 'player_threes': 'threes_made',
