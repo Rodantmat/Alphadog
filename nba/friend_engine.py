@@ -309,7 +309,7 @@ def jessi_plan(legs, H):
             cand, gc = pp_cand(legs, rule)
         else:
             cand, gc = ranked(legs, rule), 1
-        s = build(cand, size, gc, H, banned=frozenset(used))
+        s = build(cand, size, gc, H, banned=frozenset(used), allow_zero=False)
         out.append((code, size, st, gc, s, cand))
         if s:
             used |= {pid(l) for l in s}
