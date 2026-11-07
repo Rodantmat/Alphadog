@@ -92,7 +92,7 @@ jobs:
   # Friend ready text (Google Voice): once, after all five apps' picks are written. Never fails the run.
   text:
     needs: run
-    if: ${{ always() && (github.event.inputs.mode || (github.event.schedule == '30 20 * * *' && 'pick' || 'grade')) == 'pick' }}
+    if: ${{ always() && (github.event.inputs.tier || 'both') != 'jessi' && (github.event.inputs.mode || (github.event.schedule == '30 20 * * *' && 'pick' || 'grade')) == 'pick' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
