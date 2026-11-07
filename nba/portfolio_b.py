@@ -50,7 +50,16 @@ UNITS = {
     "B3x4": ("f", (0.68, "Under", "none"), 4, "flex"),
     "B5x4": ("b1", ("R", "O", "all", "p", 0.62, 1, 1), 4, "flex"),
     "B7x4": ("b1", ("R", "B", "lowvol", "blend", 0.70, 2, 1), 4, "flex"),
+    # 2026-11-07 (owner 09:48 PT "You can deploy them": drop B6; Jessi's three slips switched a little + the 5-pick Flex; research_owner_pp3.py run 42396875783:
+    # his set without B6 + these four = 4.7 slips a day, ROI +105.0% (out of sample +102.5%), drawdown 14.5, losing days 51.3%, longest drought 5).
+    # kind "lp" = friend_engine.pp_cand: (pool, side, prop set, rank, floor, legs a game, skip, line position - only "low" filters); J2 / J3 never reuse a player of the
+    # earlier J slips (BANS), F5 is independent. 
+    "J1": ("lp", ("R", "B", "lowvol", "trail", 0.64, 1, 0, "low"), 4, "flex"),
+    "J2": ("lp", ("R", "B", "lowvol", "p", 0.64, 1, 0, "low"), 4, "flex"),
+    "J3": ("lp", ("R", "O", "combos", "trail", 0.58, 1, 1, "low"), 5, "flex"),
+    "F5": ("lp", ("R", "B", "lowvol", "p", 0.62, 1, 0, "high"), 5, "flex"),
 }
+BANS = {"J2": ("J1",), "J3": ("J1", "J2")}
 
 
 def cell(l):
@@ -122,6 +131,20 @@ def candidates(legs, uid, graded_only=False):
         else:
             r = sorted(base, key=lambda l: (-l["_trail"], -l["p"]))
         return [l for l in r if l["p"] >= mp][tp:], gc, 0
+    if kind == "lp":
+        pool, side, ps, rk, mp, gc, tp, lp = prm
+        base = [l for l in legs if l["tier"] in POOLS[pool] and l["side"] in SIDES[side] and (ps == "all" or l["_grp"] == ps)]
+        if lp == "low":
+            base = [l for l in base if l["_lp"] == "low"]
+        if rk == "p":
+            r = sorted(base, key=lambda l: -l["p"])
+        elif rk == "ev":
+            r = sorted(base, key=lambda l: -l["p"] * float(l["factor"]))
+        elif rk == "blend":
+            r = sorted(base, key=lambda l: -l["_blend"])
+        else:
+            r = sorted(base, key=lambda l: (-l["_trail"], -l["p"]))
+        return [l for l in r if l["p"] >= mp][tp:], gc, 0
     if kind == "ae":
         pool, side, ps, mp, gc, tp = prm
         base = [l for l in legs if l["tier"] in POOLS[pool] and l["side"] in SIDES[side] and (ps == "all" or l["_grp"] == ps)
@@ -170,6 +193,13 @@ def attach_aedge(legs, last10):
 def unit_slip(prepared, uid, graded_only=False):
     """the unit's one slip on the slate (prepared legs), or None"""
     c, gc, pc = candidates(prepared, uid, graded_only)
+    if uid in BANS:
+        banned = set()
+        for b in BANS[uid]:
+            sb = unit_slip(prepared, b, graded_only)
+            if sb:
+                banned |= {l["player"] for l in sb}
+        c = [l for l in c if l["player"] not in banned]
     return select(c, gc, pc, UNITS[uid][2])
 
 

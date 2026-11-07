@@ -214,6 +214,11 @@ PORTFOLIO_UNITS = {
     'P_B7_4flex':         ('pb:B7x4',              4, 'flex',  ''),
     # 2026-11-03 (owner 2026-11-02 22:25 PT "Add it, I like it"; NBA_COMPASS 196): low-volume Less by the player's L10 average vs the line
     'P_U4_4power':        ('pb:U4',                4, 'power', ''),
+    # 2026-11-07 (owner 09:48 PT "You can deploy them"): B6 out; J1 / J2 / J3 (Jessi's slips switched a little) and F5 (5-pick Flex) in; portfolio_b.py
+    'P_J1_4flex':         ('pb:J1',                4, 'flex',  ''),
+    'P_J2_4flex':         ('pb:J2',                4, 'flex',  ''),
+    'P_J3_5flex':         ('pb:J3',                5, 'flex',  ''),
+    'P_F5_5flex':         ('pb:F5',                5, 'flex',  ''),
 }
 PORTFOLIO_DEFAULT = {"enabled": False, "n": 2, "leg_cap": 2, "order": list(PORTFOLIO_UNITS),
                      "replaces": ["A_wrebounds_4flex", "C_wstocks_4flex", "A_core_3power", "D_points_3power"]}
