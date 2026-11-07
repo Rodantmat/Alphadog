@@ -76,7 +76,14 @@ EXTRA = {
 }[FAPP]
 FRIEND_RULES, FRIEND_EXTRA = RULES, EXTRA
 # the third set's rules (research_jessi.py, filled in from its backtest): {app: [(code, size, structure, rule)]}
-JESSI_RULES = {"PP": [], "SLEEPER": []}
+# (research_jessi.py run 2026-11-06: built against the owner's proxies AND the friend's legs; first 60% of the slates to choose, last 40% to read)
+JESSI_RULES = {
+    "PP": [("J1", 4, "flex", ("RD", "B", "lowvol", "p", 0.62, 1, 0, "low")),
+           ("J2", 5, "flex", ("RD", "B", "all", "p", 0.62, 1, 0, "low")),
+           ("J3", 4, "flex", ("R", "B", "lowvol", "trail", 0.62, 1, 0, "low"))],
+    "SLEEPER": [("J1", 5, "flex", ("evbl", "any", "low", "main", 0.0, 1.04, 0)),
+                ("J2", 5, "flex", ("edge", "any", "all", "main", 0.6, 1.04, 0))],
+}
 if TIER == "jessi":
     if FAPP not in JESSI_RULES:
         raise SystemExit(f"jessi tier has no {FAPP}")
