@@ -50,6 +50,13 @@ def main():
                 else:
                     body = "AlphaDog Slips are ready \U0001F525"
                 who, addr = "rodo", cfg.get("cell_addr")
+        elif MODE == "jessi":
+            day = str(c.execute("SELECT max(game_date) FROM nba_jessi.snapshot").fetchone()[0])
+            ok = c.execute("SELECT count(*) FROM nba_jessi.snapshot WHERE game_date=%s AND game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date", (day,)).fetchone()[0]
+            if not ok:
+                print("jessi text: no snapshot for today - skipped")
+                return
+            who, addr, body = "jessi", cfg.get("jessi_addr"), "AlphaDog Slips are ready \U0001F525"
         else:
             day = os.environ.get("DAY") or str(c.execute("SELECT max(game_date) FROM nba_friend.snapshot").fetchone()[0])
             ok = c.execute("SELECT count(*) FROM nba_friend.snapshot WHERE game_date=%s AND game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date", (day,)).fetchone()[0]
