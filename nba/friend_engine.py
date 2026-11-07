@@ -81,7 +81,8 @@ JESSI_RULES = {
     # owner 2026-11-06 23:25: "Deploy pair 4" (research_jessi_pp5.py): two 4-pick Flex slips, regular lines only, low-volume props, floor 0.64, built on the owner's own rule family;
     # the only rule against his / the friend's slips is that no slip is EXACTLY the same set of legs (FORBID below)
     "PP": [("J1", 4, "flex", ("R", "B", "lowvol", "trail", 0.64, 1, 0, "high")),
-           ("J2", 4, "flex", ("R", "B", "lowvol", "p", 0.64, 1, 0, "all"))],
+           ("J2", 4, "flex", ("R", "B", "lowvol", "p", 0.64, 1, 0, "all")),
+           ("J3", 5, "flex", ("R", "O", "combos", "trail", 0.58, 1, 1, "low"))],
     "SLEEPER": [("J1", 5, "flex", ("evbl", "any", "low", "main", 0.0, 1.04, 0)),
                 ("J2", 5, "flex", ("edge", "any", "all", "main", 0.6, 1.04, 0))],
 }
@@ -302,6 +303,7 @@ else:
 plan_base = plan
 
 
+NO_BLOCK = True       # owner 2026-11-07: Jessi's slips may be exactly the same as his / the friend's - never block
 FORBID = set()        # PrizePicks third set: the exact leg sets (frozenset of lk) of the owner's and the friend's slips of the day
 LAST_FR_SETS = []     # filled by friend_replay: the friend's slips of the slate as leg-key sets
 
@@ -314,7 +316,7 @@ def build_distinct_pp(cand, size, gc, banned):
         s = build_at(cand, size, gc, set(), frozenset(ban), True, 0)
         if not s:
             return None
-        if frozenset(lk(l) for l in s) not in FORBID:
+        if NO_BLOCK or frozenset(lk(l) for l in s) not in FORBID:
             return s
         ban.add(pid(s[-1]))
     return None
