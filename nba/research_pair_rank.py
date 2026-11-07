@@ -49,3 +49,34 @@ for n in RULES:
         r = res[n][tag]
         if not r["top3"]: continue
         print(f"{n:42s} {tag:6s} slates {len(r['top3']):3d}  top3 hit {100*statistics.mean(r['top3']):5.1f}%  top8 hit {100*statistics.mean(r['top8']):5.1f}%  all-3-hit days {100*statistics.mean(r['n3']):5.1f}%", flush=True)
+
+# ---- by score bucket: how often does a leg at that score hit, and how many a slate (all rungs, one a player, market rows only)
+print("\nBUCKETS (legs with a market number; one leg a player a slate)", flush=True)
+B = collections.defaultdict(lambda: collections.defaultdict(lambda: [0, 0]))
+GAPB = collections.defaultdict(lambda: [0, 0])
+perday = collections.defaultdict(lambda: collections.defaultdict(int))
+for i, d in enumerate(days):
+    rows = c.execute("SELECT player_id::text, prop, side, line::float, model_hp::float, true_hp::float, market_hp::float FROM nba_score.board_true_hp WHERE game_date=%s AND model_hp IS NOT NULL AND market_hp IS NOT NULL", (d,)).fetchall()
+    best = {"min": {}, "mean": {}, "model": {}}
+    for p, prop, side, line, m, t, k in rows:
+        if prop not in STAT or (d, p) not in box: continue
+        v = STAT[prop](box[(d, p)])
+        if v == line: continue
+        hit = (v > line) if side == "Over" else (v < line)
+        for nm, sc in (("min", min(m, k)), ("mean", (m + k) / 2), ("model", m)):
+            if p not in best[nm] or sc > best[nm][p][0]: best[nm][p] = (sc, hit)
+        if m >= 0.85:
+            g = m - k
+            GAPB["gap<0.10" if g < .10 else "gap .10-.25" if g < .25 else "gap .25-.40" if g < .40 else "gap>=.40"][0] += 1
+            GAPB["gap<0.10" if g < .10 else "gap .10-.25" if g < .25 else "gap .25-.40" if g < .40 else "gap>=.40"][1] += int(hit)
+    for nm in best:
+        for p, (sc, hit) in best[nm].items():
+            for th in (0.95, 0.90, 0.85, 0.80):
+                if sc >= th:
+                    B[nm][th][0] += 1; B[nm][th][1] += int(hit); perday[(nm, th)][d] += 1
+for nm in ("model", "min", "mean"):
+    for th in (0.95, 0.90, 0.85, 0.80):
+        n, h = B[nm][th]
+        if n: print(f"{nm:6s} score>={th:.2f}: {n:6d} legs, hit {100*h/n:5.1f}%, per slate {n/len(days):.1f}", flush=True)
+print("\nMODEL >= 85% legs, by how far the model is above the market:", flush=True)
+for k_, (n, h) in sorted(GAPB.items()): print(f"  {k_:12s} {n:6d} legs hit {100*h/n:5.1f}%", flush=True)
