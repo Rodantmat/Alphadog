@@ -177,7 +177,7 @@ export default {
         return new Response(JSON.stringify({ name: "Jessiquinha", short_name: "Jessiquinha", start_url: "/" + m[1], scope: "/", display: "standalone", background_color: "#0e1116", theme_color: "#0e1116",
           icons: [{ src: "/icon.png", sizes: "192x192", type: "image/png", purpose: "any" }] }), { headers: { "content-type": "application/manifest+json", "cache-control": "no-store" } });
       }
-      if (m[2] === "/data") { const d = await data(env, m[1]); return d ? json(d) : notFound(); }
+      if (m[2] === "/data") { const d = await data(env, m[1], !url.searchParams.has("nosave")); return d ? json(d) : notFound(); }
       if (!(await withPg(env, sql => tokenOk(sql, m[1])))) return notFound();
       return new Response(PAGE.replaceAll("{{T}}", m[1]), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
     } catch (err) { return json({ ok: false, error: String(err && err.message || err).slice(0, 200) }, 500); }
