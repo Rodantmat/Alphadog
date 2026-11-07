@@ -763,7 +763,9 @@ def mirror_fliff_to_owner(conn, d, rows, slips):
 
 
 PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}
-PAIR_FLOOR = 0.80  # best legs first (95%+ when the board has them); the list fills down to 80% only when fewer reach 85%; the hit chance is shown on every leg
+PAIR_FLOOR = 0.80
+PAIR_FLOOR_APP = {"FLIFF": 0.70}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
+# best legs first (95%+ when the board has them); the list fills down to 80% only when fewer reach 85%; the hit chance is shown on every leg
 
 
 def pp_pair_legs(conn, d):
@@ -793,7 +795,7 @@ def write_pairs(conn, d, legs, ctx):
     best = {}
     for l in cand:
         p = l.get("p")
-        if p is None or float(p) < PAIR_FLOOR:
+        if p is None or float(p) < PAIR_FLOOR_APP.get(FAPP, PAIR_FLOOR):
             continue
         k = pid(l)
         if k not in best or float(p) > float(best[k]["p"]):

@@ -528,7 +528,7 @@ async function pairsLive(sql) {
   try {
     const rows = await q(sql, "SELECT app, kind, p::float p, leg FROM nba_friend.pairs WHERE game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date ORDER BY app, rank", [], 6000);
     const by = {};
-    for (const x of rows) { const l = typeof x.leg === "string" ? JSON.parse(x.leg) : x.leg; l.p = x.p; l.kind = x.kind; if (x.app === "prizepicks" && x.kind !== "standard") l.want_odds = x.kind; (by[x.app] = by[x.app] || []).push(l); }
+    for (const x of rows) { const l = typeof x.leg === "string" ? JSON.parse(x.leg) : x.leg; l.p = x.p; l._pair = true; l.kind = x.kind; if (x.app === "prizepicks" && x.kind !== "standard") l.want_odds = x.kind; (by[x.app] = by[x.app] || []).push(l); }
     const tmp = { ok: true, source: "live", generated_slips: Object.keys(by).map(a => ({ source_key: a, name: "pairs", legs: by[a] })), backup_pool: [] };
     try { await overlayLive(sql, tmp, overlayPpLiveDb); } catch (_e) { /* unchecked legs stay listed */ }
     const now = Date.now();

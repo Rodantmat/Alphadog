@@ -273,6 +273,35 @@ export async function fliffTest() {   // TEMP: Fliff feed reachability + shape f
 
 const LABEL = { moved: "line moved", missing: "off the board", side: "more only now", goblin: "now a goblin", demon: "now a demon" };
 
+
+// SLEEPER PAIRINGS (owner 2026-11-07, "no easy pairings for Sleeper"): Sleeper re-issues a line's id whenever its multiplier moves, so the ids stored at pick time are
+// gone within minutes and every pairing was dropped as "missing". A pairing leg (l._pair) whose id left the board is re-resolved: the player's Sleeper subject comes from
+// any of his archived ids still on the board, then his CURRENT line at the same prop and line value gives the fresh id for the same side.
+const SL_WAGER = { points: ["points"], rebounds: ["rebounds"], assists: ["assists"], threes_made: ["threes_made"], blocks: ["blocks"], steals: ["steals"], turnovers: ["turnovers"],
+  stocks: ["blocks_steals"], pra: ["points_rebounds_assists", "points_and_rebounds_and_assists"], pts_reb: ["points_rebounds", "points_and_rebounds"],
+  pts_ast: ["points_assists", "points_and_assists"], reb_ast: ["rebounds_assists", "rebounds_and_assists"] };
+async function refreshSleeperPairs(sql, legs, doc, idset) {
+  const stale = legs.filter(l => l._pair && l.link && l.link.ids && l.link.ids.line_id && !idset.has(String(l.link.ids.line_id)));
+  if (!stale.length) return;
+  const pns = [...new Set(stale.map(l => l._g && l._g.player).filter(Boolean))];
+  if (!pns.length) return;
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+  const rows = await q(sql, "SELECT pn, ids->>'line_id' lid FROM nba_market.app_link_ids WHERE bookmaker='sleeper' AND game_date=$1::date AND pn = ANY($2)", [day, pns], 6000);
+  const bySubj = new Map(); const idLine = new Map();   // line_id -> subject_id
+  for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) idLine.set(String(o.line_id), ln.subject_id);
+  const subj = {}; for (const r of rows) { if (!subj[r.pn] && idLine.has(String(r.lid))) subj[r.pn] = idLine.get(String(r.lid)); }
+  const cur = new Map();   // subject|wager|line|outcome -> current line id
+  for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) {
+    const lv = Number(o.outcome_value != null ? o.outcome_value : (o.line != null ? o.line : ln.line)); if (!Number.isFinite(lv) || o.line_id == null) continue;
+    cur.set(ln.subject_id + "|" + ln.wager_type + "|" + lv + "|" + String(o.outcome || "").toLowerCase(), String(o.line_id));
+  }
+  for (const l of stale) {
+    const sj = subj[l._g && l._g.player]; if (!sj) continue;
+    const prop = l.canonical_prop_key; const side = l.selected_side === "less" ? "under" : "over";
+    for (const w of SL_WAGER[prop] || [prop]) { const id = cur.get(sj + "|" + w + "|" + Number(l.line_value) + "|" + side); if (id) { l.link.ids.line_id = id; break; } }
+  }
+}
+
 let PP_IX = null, PP_AT = 0;   // last good PrizePicks index in this isolate: rapid reloads reuse it (15 s); a failed fetch falls back to it (3 min)
 export async function overlayLive(sql, out, ppFallback) {
   const t0 = Date.now();
@@ -311,7 +340,7 @@ export async function overlayLive(sql, out, ppFallback) {
       const doc = JSON.parse(r.text); r.text = "";
       if (app === "prizepicks") { const ix = indexPP(doc); PP_IX = ix; PP_AT = Date.now(); want.prizepicks.forEach(l => markPP(l, ix)); }
       else if (app === "betr") { const mp = indexBetr(doc); want.betr.forEach(l => markBetr(l, mp)); }
-      else { const set = new Set(); for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) set.add(String(o.line_id)); want.sleeper.forEach(l => markSleeper(l, set)); }
+      else { const set = new Set(); for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) set.add(String(o.line_id)); try { await refreshSleeperPairs(sql, want.sleeper, doc, set); } catch (_e) { /* a pairing that cannot be refreshed is marked missing below */ } want.sleeper.forEach(l => markSleeper(l, set)); }
       info.ok = true;
     } catch (e) {
       info.error = String(e && e.message || e).slice(0, 100) + (r.text ? " | " + String(r.text).slice(0, 80) : "");
