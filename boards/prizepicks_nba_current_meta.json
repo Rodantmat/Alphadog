@@ -3,25 +3,25 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-11-06T21:18:03Z",
+  "fetched_at": "2026-11-07T21:18:34Z",
   "egress": {
-    "ip": "76.91.140.97",
-    "hostname": "syn-076-091-140-097.res.spectrum.com",
-    "city": "San Diego",
+    "ip": "165.162.37.78",
+    "hostname": "syn-165-162-037-078.res.spectrum.com",
+    "city": "Perris",
     "region": "California",
     "country": "US",
-    "loc": "32.7969,-117.2405",
+    "loc": "33.7852,-117.3166",
     "org": "AS20001 Charter Communications Inc",
-    "postal": "92109",
+    "postal": "92570",
     "timezone": "America/Los_Angeles",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 7695,
-  "row_count": 7695,
+  "rows": 5640,
+  "row_count": 5640,
   "total_pages": 1,
-  "future_pickable": 7695,
-  "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
+  "future_pickable": 5640,
+  "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
   "candidates": [
     {
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
@@ -41,22 +41,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 8816623,
+      "bytes": 6450974,
       "total_pages": 1,
       "ok": true,
-      "rows": 7695,
-      "future_pickable": 7695
+      "rows": 5639,
+      "future_pickable": 5639
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 8816448,
+      "bytes": 6452081,
       "total_pages": 1,
       "ok": true,
-      "rows": 7695,
-      "future_pickable": 7695
+      "rows": 5640,
+      "future_pickable": 5640
     }
   ],
-  "github_run_id": "42295374448"
+  "github_run_id": "42415080080"
 }
