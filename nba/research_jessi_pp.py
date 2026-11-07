@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-JESSI PRIZEPICKS RE-SEARCH (owner 2026-11-06): real PrizePicks boards (history legs graded from the box score, this season on the live board path), real payouts.
-Wide rule grid x shapes (flex 3-6, power 2-4). Every slip is built >= 10% different from the owner's proxies AND the friend's slips (never a copy), the portfolio is built
-jointly the way pick() builds it (one slip after the other, no player twice). Phase 1: standalone screen on the first 60% of slates. Phase 2: joint greedy on the first 60%
-with the finalists. Read on the last 40% (out of sample) and per season. READ-ONLY.
+JESSI PRIZEPICKS RE-SEARCH v2 (owner 2026-11-06): real PrizePicks boards (history legs graded from the box score, this season on the live board path), real payouts.
+Owner rule: her slips may use the SAME legs and strategies as his / the friend's; the only rule is that no slip of hers is EXACTLY the same set of legs as one of theirs
+(and her own slips are never the same player twice). Wide rule grid x shapes (flex 3-6, power 2-4). Portfolio built jointly, one slip after the other.
+Phase 1: standalone screen on the first 60% of slates. Phase 2: joint greedy on the first 60% with the finalists. Read on the last 40% (out of sample) and per season. READ-ONLY.
 """
 import os, sys, random, itertools, collections
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import psycopg
 import friend_engine as FE
 import research_jessi as RJ
+import research_friend_extra as RX
 
 random.seed(5)
 SHAPES = [(3, "flex"), (4, "flex"), (5, "flex"), (6, "flex"), (2, "power"), (3, "power"), (4, "power")]
@@ -18,18 +19,26 @@ GRID = list(itertools.product(("R", "RD"), ("O", "U", "B"), ("all", "points", "r
                               (0.58, 0.62, 0.66, 0.70, 0.74), (1, 2, 3), (0, 1, 2), ("all", "low", "high")))
 
 
-def build_one(legs, size, rule, Hf, banned=frozenset()):
+def build_distinct(legs, size, rule, forbid, banned=frozenset()):
+    """the rule's slip; if it is exactly one of the owner's / friend's slips, drop that slip's weakest-ranked player and rebuild (next legs of the same ranking)"""
     cand, gc = FE.pp_cand(legs, rule)
-    return FE.build(cand, size, gc, Hf, banned, teams=True, allow_zero=False)
+    ban = set(banned)
+    for _ in range(6):
+        s = FE.build_at(cand, size, gc, set(), frozenset(ban), True, 0)
+        if not s:
+            return None
+        ks = frozenset(FE.lk(l) for l in s)
+        if ks not in forbid:
+            return s
+        ban.add(FE.pid(s[-1]))
+    return None
 
 
-def joint(day, rules, Hf):
-    """rules = [(size, st, rule)] built one after the other, no player twice -> profits"""
-    legs = day
+def joint(legs, rules, forbid):
     used, out = set(), []
     for size, st, rule in rules:
         try:
-            s = build_one(legs, size, rule, Hf, frozenset(used))
+            s = build_distinct(legs, size, rule, forbid, frozenset(used))
         except Exception:
             s = None
         if not s:
@@ -37,6 +46,25 @@ def joint(day, rules, Hf):
         out.append(RJ.pay(s, st) - 1.0)
         used |= {FE.pid(l) for l in s}
     return out
+
+
+def forbidden(legs, H):
+    """every exact slip of the owner (certified units as modelled) and of the friend (base + extras) of the day"""
+    fb = set()
+    for uid in FE.HIS_PP:
+        s = FE.PB.unit_slip(legs, uid)
+        if s:
+            fb.add(frozenset(FE.lk(l) for l in s))
+    used = set()
+    for code, size, st, gc, s, cand in FE.plan(legs, H):
+        if s:
+            fb.add(frozenset(FE.lk(l) for l in s)); used |= {FE.pid(l) for l in s}
+    for code, size, st, rule in FE.EXTRA:
+        cand, gc = RX.cand_of(legs, rule)
+        s = FE.build(cand, size, gc, H, banned=frozenset(used), teams=True)
+        if s:
+            fb.add(frozenset(FE.lk(l) for l in s)); used |= {FE.pid(l) for l in s}
+    return fb
 
 
 def main():
@@ -52,7 +80,7 @@ def main():
         fprof, fkeys = RJ.friend_day(legs, H)
         if own: OWN[d] = own
         if fprof: FRI[d] = fprof
-        DAYS[d] = (legs, H | fkeys)
+        DAYS[d] = (legs, forbidden(legs, H))
         if len(DAYS) % 30 == 0:
             print(f"loaded {len(DAYS)} slates", flush=True)
     conn.close()
@@ -66,15 +94,14 @@ def main():
         print(f"{nm:22s} TEST :", RJ.fmt(RJ.stats(ser, test)))
         for sy in sorted({seas(d) for d in days}):
             print(f"{nm:22s} {sy}:", RJ.fmt(RJ.stats(ser, [d for d in days if seas(d) == sy])))
-    # phase 1
     VAR = collections.defaultdict(dict)
     for si, (size, st) in enumerate(SHAPES):
         gs = random.Random(30 + si).sample(GRID, min(NV, len(GRID)))
-        for n, d in enumerate(days):
-            legs, Hf = DAYS[d]
+        for d in days:
+            legs, fb = DAYS[d]
             for v in gs:
                 try:
-                    s = build_one(legs, size, v, Hf)
+                    s = build_distinct(legs, size, v, fb)
                     if not s:
                         continue
                     VAR[(size, st, v)].setdefault(d, []).append(RJ.pay(s, st) - 1.0)
@@ -99,8 +126,8 @@ def main():
     def jseries(rules, dsel):
         out = {}
         for d in dsel:
-            legs, Hf = DAYS[d]
-            xs = joint(legs, rules, Hf)
+            legs, fb = DAYS[d]
+            xs = joint(legs, rules, fb)
             if xs:
                 out[d] = xs
         return out
@@ -109,10 +136,9 @@ def main():
         cur = RJ.stats(jseries(chosen, train), train) if chosen else None
         best = None
         for k in fin:
-            if any(k == c for c in chosen):
+            if k in chosen:
                 continue
-            r = chosen + [k]
-            p = RJ.stats(jseries(r, train), train)
+            p = RJ.stats(jseries(chosen + [k], train), train)
             if not p:
                 continue
             if cur and (p["calmar"] <= cur["calmar"] or p["roi"] < 0.75 * cur["roi"]):
@@ -123,21 +149,19 @@ def main():
         if not best:
             break
         chosen.append(best[1])
-        rl = list(chosen)
         print(f"\n+slip {rnd + 1}: {best[1]}", flush=True)
-        print("   TRAIN joint:", RJ.fmt(RJ.stats(jseries(rl, train), train)))
-        print("   TEST  joint:", RJ.fmt(RJ.stats(jseries(rl, test), test)), "  <-- out of sample", flush=True)
-    rl = list(chosen)
+        print("   TRAIN joint:", RJ.fmt(RJ.stats(jseries(chosen, train), train)))
+        print("   TEST  joint:", RJ.fmt(RJ.stats(jseries(chosen, test), test)), "  <-- out of sample", flush=True)
     print("\nFINAL JESSI PRIZEPICKS SET (order = build order):")
-    for k in rl:
+    for k in chosen:
         print("  ", k)
-    ser_all = jseries(rl, days)
+    ser_all = jseries(chosen, days)
     print("ALL    :", RJ.fmt(RJ.stats(ser_all, days)))
     print("TRAIN  :", RJ.fmt(RJ.stats(ser_all, train)))
     print("TEST   :", RJ.fmt(RJ.stats(ser_all, test)))
     for sy in sorted({seas(d) for d in days}):
         print(f"{sy}  :", RJ.fmt(RJ.stats(ser_all, [d for d in days if seas(d) == sy])))
-    for k in rl:
+    for k in chosen:
         print("slip alone:", k[:2], RJ.fmt(RJ.stats(VAR[k], days)))
 
 
