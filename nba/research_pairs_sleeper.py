@@ -1,20 +1,25 @@
 import os, json, urllib.request, psycopg
 req = urllib.request.Request("https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
     headers={"user-agent": "Mozilla/5.0", "accept": "application/json", "referer": "https://sleeper.com/"})
-try:
-    raw = urllib.request.urlopen(req, timeout=30).read()
-    doc = json.loads(raw); print("sleeper board bytes", len(raw), "lines", len(doc))
-    ids = set(str(o.get("line_id")) for ln in doc for o in ln.get("options", []) if o.get("line_id") is not None)
-    print("line ids on board", len(ids))
-except Exception as e:
-    print("SLEEPER FETCH FAILED", e); ids = None
+doc = json.loads(urllib.request.urlopen(req, timeout=30).read())
+ids = {}
+for ln in doc:
+    for o in ln.get("options", []):
+        if o.get("line_id") is not None: ids[str(o["line_id"])] = (ln, o)
+print("sample line keys", sorted(doc[0].keys())); print("sample option", json.dumps(doc[0]["options"][0])[:300])
 c = psycopg.connect(os.environ["DATABASE_URL"])
-for sch in ("nba_friend", "nba_jessi"):
-    rows = c.execute(f"select rank, leg from {sch}.pairs where game_date=(now() at time zone 'America/Los_Angeles')::date and app='sleeper' order by rank").fetchall()
-    ok = 0; nolink = 0
-    for r, leg in rows:
-        leg = leg if isinstance(leg, dict) else json.loads(leg)
-        lid = ((leg.get("link") or {}).get("ids") or {}).get("line_id")
-        if not lid: nolink += 1
-        elif ids is not None and str(lid) in ids: ok += 1
-    print(sch, "sleeper pairs", len(rows), "on live board", ok, "no link", nolink)
+rows = c.execute("select rank, leg from nba_jessi.pairs where game_date=(now() at time zone 'America/Los_Angeles')::date and app='sleeper' order by rank limit 3").fetchall()
+for r, leg in rows:
+    leg = leg if isinstance(leg, dict) else json.loads(leg)
+    print("PAIR", r, leg["player_name"], leg["canonical_prop_key"], leg["line_value"], leg["selected_side"], leg["link"], leg["_g"].get("player"))
+srows = c.execute("select slip_name, legs from nba_jessi.seen where game_date=(now() at time zone 'America/Los_Angeles')::date and app='sleeper'").fetchall()
+for n, legs in srows:
+    legs = json.loads(legs) if isinstance(legs, str) else legs
+    if isinstance(legs, str): legs = json.loads(legs)
+    for l in legs[:2]:
+        lid = ((l.get("link") or {}).get("ids") or {}).get("line_id")
+        print("SLIP", n, l["player_name"], lid, "on board" if str(lid) in ids else "NOT on board")
+for ln in doc:
+    s = json.dumps(ln)
+    if "Wembanyama" in s or "wembanyama" in s.lower():
+        print("WEMBY LINE", s[:700]); break
