@@ -384,6 +384,8 @@ def backfill():
         if len(legs) < 3:
             continue
         H = proxies(legs)
+        if TIER == "jessi":
+            H = H | friend_replay(legs, H)
         for code, size, st, gc, s, _cand in plan(legs, H):
             if not s:
                 continue
