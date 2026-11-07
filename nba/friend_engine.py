@@ -296,6 +296,28 @@ else:
             return out
 
 
+plan_base = plan
+
+
+def jessi_plan(legs, H):
+    """the third set: one slip after the other, never a player already on her earlier slips (three slips of one app must not be the same four players)"""
+    out, used = [], set()
+    for code, size, st, rule in RULES:
+        if FAPP == "PP":
+            cand, gc = pp_cand(legs, rule)
+        else:
+            cand, gc = ranked(legs, rule), 1
+        s = build(cand, size, gc, H, banned=frozenset(used))
+        out.append((code, size, st, gc, s, cand))
+        if s:
+            used |= {pid(l) for l in s}
+    return out
+
+
+if TIER == "jessi":
+    plan = jessi_plan
+
+
 # ------------------------------------------------------------------ day iterators
 def aa_prepare(conn):
     live = [d for d in AF.slate_days(conn) if AF.season_of(d) == "2026-27"]
