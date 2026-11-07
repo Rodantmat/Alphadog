@@ -573,6 +573,10 @@ def pick():
     log(f"{d}: {len(legs)} board legs")
     ctx = decor_ctx(conn, d)
     H = proxies(legs) | owner_keys(conn, d)
+    if TIER == "jessi":
+        fk = friend_keys(conn, d)
+        log(f"{len(fk)} friend legs kept out of the third set")
+        H = H | fk
     slips, pool, rows, used = [], [], [], set()
     titles = defaultdict(int)
     for code, size, st, gc, s, cand in plan(legs, H):
