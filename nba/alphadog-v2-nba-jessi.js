@@ -75,7 +75,7 @@ function ladder(rows, app) {
   return { unit: u, acc: Math.round(acc * 100) / 100, next_at: Math.round(upx * u * (u + 1) / 2 * 100) / 100, down_below: u > 1 ? Math.round(upx * (u - 1) * u / 2 * 100) / 100 : null };
 }
 
-async function data(env, token) {
+async function data(env, token, save = true) {
   return withPg(env, async sql => {
     if (!(await tokenOk(sql, token))) return null;
     const today = ptDate();
