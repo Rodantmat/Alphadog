@@ -698,15 +698,32 @@ def grade():
     if FAPP == "PP":
         PC.SE.flex_alt_tiers(); PC.SE.payout_v3_rules()
     today = dt.datetime.now(PT).date()
-    pend = conn.execute("""SELECT game_date, strategy, slip_no, structure, legs FROM nba_friend.slips
+    pend = conn.execute("""SELECT game_date, strategy, slip_no, structure, legs, size FROM nba_friend.slips
                            WHERE app=%s AND status='placed' AND game_date < %s ORDER BY game_date""", (APP_KEY, today)).fetchall()
+    # the slips as the page FIRST showed them on the day (after the leg check and swaps; no save button there) are the ones graded - close to what was really played
+    seen = {}
+    try:
+        for sd, nm, lg, sk in conn.execute("SELECT game_date, slip_name, legs, skipped FROM nba_friend.seen WHERE app=%s", (APP_KEY,)).fetchall():
+            seen[(sd, nm)] = (lg if isinstance(lg, list) else json.loads(lg), sk)
+    except Exception as e:
+        log(f"seen slips: {e}")
+        conn.rollback()
     done = 0
-    for d, code, no, st, legs in pend:
+    for d, code, no, st, legs, size in pend:
         if not slate_finished(conn, d):
             log(f"{d}: slate not final in the box score yet")
             continue
         sbox = box(conn, d)
         legs = legs if isinstance(legs, list) else json.loads(legs)
+        sv = seen.get((d, f"{APP_LABEL} {size}-pick {no}"))
+        if sv:
+            lg, skipped = sv
+            if skipped:   # first shown with a started / off-board leg: nobody could place it - not counted
+                conn.execute("UPDATE nba_friend.slips SET status='void', graded_at=now() WHERE app=%s AND game_date=%s AND strategy=%s AND slip_no=%s AND status='placed'", (APP_KEY, d, code, no))
+                done += 1
+                continue
+            if lg and all(isinstance(x, dict) and x.get("_g") for x in lg):
+                legs = [dict(x["_g"]) for x in lg]
         for l in legs:
             l["hit"] = outcome(sbox, l)
         m = float(pay_of(legs, st))
