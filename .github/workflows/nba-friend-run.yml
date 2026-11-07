@@ -109,3 +109,57 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           MODE: friend
         run: python -u nba/p3_text.py
+
+  # The third set (Jessi: PrizePicks + Sleeper). Built AFTER the friend's slips (it stays >= 40% different from them too), same engine, own tables nba_jessi.*
+  jessi:
+    needs: run
+    if: ${{ always() && (github.event.inputs.tier || 'both') != 'friend' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        app: [PP, SLEEPER]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy scipy pandas
+      - name: Run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          IN_APP: ${{ github.event.inputs.app || 'ALL' }}
+          IN_MODE: ${{ github.event.inputs.mode || (github.event.schedule == '0 15 * * *' && 'grade' || 'pick') }}
+          IN_DAY: ${{ github.event.inputs.day || '' }}
+          MATRIX_APP: ${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          if [ "$IN_APP" != "ALL" ] && [ "$IN_APP" != "$MATRIX_APP" ]; then echo "skip $MATRIX_APP"; exit 0; fi
+          [[ "$IN_MODE" =~ ^(backfill|pick|grade|pairs)$ ]] || { echo "bad mode"; exit 1; }
+          export FR_APP="$MATRIX_APP" FR_MODE="$IN_MODE" FR_TIER=jessi
+          [ -n "$IN_DAY" ] && export FR_DAY="$IN_DAY"
+          python -u nba/friend_engine.py
+
+  jessi_text:
+    needs: jessi
+    if: ${{ always() && (github.event.inputs.tier || 'both') != 'friend' && (github.event.inputs.mode || (github.event.schedule == '30 20 * * *' && 'pick' || 'grade')) == 'pick' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Send Jessi text
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: jessi
+        run: python -u nba/p3_text.py
