@@ -567,7 +567,7 @@ def friend_replay(legs, H):
     saved = RULES
     RULES = FRIEND_RULES
     try:
-        for code, size, st, gc, s, cand in plan(legs, H):
+        for code, size, st, gc, s, cand in plan_base(legs, H):
             if s:
                 keys |= {lk(l) for l in s}; used |= {pid(l) for l in s}
     finally:
