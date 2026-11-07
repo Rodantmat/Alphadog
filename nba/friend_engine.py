@@ -764,7 +764,7 @@ def mirror_fliff_to_owner(conn, d, rows, slips):
 
 PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}
 PAIR_FLOOR = 0.80
-PAIR_FLOOR_APP = {"FLIFF": 0.70}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
+PAIR_FLOOR_APP = {"FLIFF": 0.70, "SLEEPER": 0.75}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
 # best legs first (95%+ when the board has them); the list fills down to 80% only when fewer reach 85%; the hit chance is shown on every leg
 
 
@@ -789,9 +789,29 @@ def pp_pair_legs(conn, d):
     return out
 
 
+def pair_score(conn, d, cand):
+    """THE PAIRING SCORE (owner 2026-11-07: Wemby blocks Under 3.5 'p 90%' topped every list while the market gave it ~35%; research_pair_rank.py, 439 slates):
+    a leg's model hit chance alone is over-confident (model >= 95% legs hit 79.8%; model 40+ points above the market 60.2%). The score is the LOWER of the model's
+    number and the market's (board_true_hp.market_hp; no market row -> the market-anchored true_hp): score >= 0.90 hit 90.7%, >= 0.85 85.2%, >= 0.80 82.4%
+    (model alone: 79.9 / 78.9 / 78.0). Every rung of a player's ladder is a candidate, the easiest rung (highest score) is the one listed."""
+    rows = conn.execute("SELECT player_id::text, prop, side, line::float, market_hp::float, true_hp::float FROM nba_score.board_true_hp WHERE game_date=%s", (d,)).fetchall()
+    mk = {(a, b, c_, round(e, 2)): (f, g) for a, b, c_, e, f, g in rows}
+    out = []
+    for l in cand:
+        k = (str(l.get("player_id")), l["prop"], l["side"], round(float(l["line"]), 2))
+        m, t = mk.get(k, (None, None))
+        ref = m if m is not None else t
+        if ref is None:
+            continue
+        l = dict(l); l["p_model"] = float(l["p"]); l["p"] = min(float(l["p"]), float(ref)); l["ref"] = "market" if m is not None else "anchored"
+        out.append(l)
+    return out
+
+
 def write_pairs(conn, d, legs, ctx):
     n_want = PAIR_N[FAPP] * 4   # a POOL: 4x the legs shown, ranked by hit chance - the screens drop a started / drifted / off-board leg and the next one in the pool takes its place
     cand = pp_pair_legs(conn, d) if FAPP == "PP" else legs
+    cand = pair_score(conn, d, cand)
     best = {}
     for l in cand:
         p = l.get("p")

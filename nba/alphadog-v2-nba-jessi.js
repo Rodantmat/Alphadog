@@ -7,7 +7,7 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-jessi-v1.1.2";   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.1.3";   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -156,7 +156,7 @@ function drawPairs(){var d=window.PD;if(!d)return;var box=document.getElementByI
   var pr=d.pairs||{};var now=Date.now();var h='';var any=false;
   d.order.forEach(function(a){var ls=(pr[a]||[]).filter(function(l){var t=l.tip?Date.parse(l.tip):NaN;return !(t&&t<=now)}).slice(0,SHOW[a]||5);if(!ls.length)return;
     if(!any){h+='<h2>Best pairings of the day</h2><p class="sub">The legs most likely to hit, for an easy pairing. Tap a leg to open just that leg in the app, then add your own. A leg whose game has started or whose line changed is replaced automatically.</p>';any=true}
-    h+='<details class="pair" data-a="'+a+'"'+(pOpen[a]?' open':'')+'><summary>'+esc(d.labels[a])+'<span class="tag">'+ls.length+' legs</span></summary><div class="bet">Unit: '+money(d.units[a].unit)+' a slip</div>';
+    h+='<details class="pair" data-a="'+a+'"'+(pOpen[a]?' open':'')+'><summary>'+esc(d.labels[a])+'<span class="tag">'+ls.length+' legs</span></summary>';
     ls.forEach(function(l){h+='<div class="leg"><'+(l.url?'a class="pl" href="'+esc(l.url)+'" target="_blank" rel="noopener"':'div')+'><b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+' · '+(l.p*100).toFixed(1)+'% hit chance'+(l.kind&&l.kind!=='standard'?' · '+esc(l.kind.charAt(0).toUpperCase()+l.kind.slice(1)):'')+' '+(l.url?'<span class="go">Open in app ›</span>':'')+'</div></'+(l.url?'a':'div')+'></div>'});
     h+='</details>'});
   box.innerHTML=h;box.querySelectorAll('details.pair').forEach(function(el){el.addEventListener('toggle',function(){pOpen[el.dataset.a]=el.open})})}
