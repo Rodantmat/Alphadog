@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 """Does The Odds API return deep links for Underdog (owner 2026-11-07)? One event, one market, regions=us_dfs, includeLinks + includeSids. READ-ONLY, ~2 credits. The key is never printed."""
 import os, json, urllib.request, urllib.parse, urllib.error
-KEY = os.environ.get("ODDS_API_KEY", "")
-if not KEY: raise SystemExit("no ODDS_API_KEY in this run")
+import psycopg
+_c = psycopg.connect(os.environ["DATABASE_URL"])
+KEYS = {n: (_c.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key=%s", (n,)).fetchone() or [""])[0].strip() for n in ("odds_api_key_nba", "odds_api_key")}
+KEY = ""
+for _n, _k in KEYS.items():
+    try:
+        urllib.request.urlopen("https://api.the-odds-api.com/v4/sports/?" + urllib.parse.urlencode({"apiKey": _k}), timeout=30).read()
+        print("key", _n, "WORKS"); KEY = _k; break
+    except urllib.error.HTTPError as _e:
+        print("key", _n, "HTTP", _e.code, _e.read()[:120].decode("utf8", "replace"))
+if not KEY: raise SystemExit("no working Odds API key")
 B = "https://api.the-odds-api.com/v4"
 def get(path, **q):
     q["apiKey"] = KEY
