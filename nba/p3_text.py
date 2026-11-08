@@ -48,8 +48,26 @@ def main():
                 elif n == 0:
                     body = "AlphaDog ALERT: P3 done but no slips"
                 else:
+                    if os.environ.get("DEFER_READY") == "1":
+                        print("p3 text: ready text deferred to the end of the friend run (Fliff mirror + pairings are written there)")
+                        return
                     body = "AlphaDog Slips are ready \U0001F525"
                 who, addr = "rodo", cfg.get("cell_addr")
+        elif MODE == "owner":
+            # 2026-11-08: sent AFTER the friend run, so the Fliff mirror and the pairings exist when the text lands
+            day = str(c.execute("SELECT (now() AT TIME ZONE 'America/Los_Angeles')::date").fetchone()[0])
+            n = 0
+            for t in ("live_slips", "ud_live_slips", "sleeper_live_slips", "betr_live_slips", "fliff_live_slips"):
+                try:
+                    n += c.execute("SELECT count(*) FROM nba_score.%s WHERE game_date=%%s" % t, (day,)).fetchone()[0]
+                except Exception as e:
+                    print("count", t, e)
+            if os.environ.get("RUN_RESULT") not in ("success", None, ""):
+                print("owner text: friend run result", os.environ.get("RUN_RESULT"), "- ready text still sent if slips exist")
+            if n == 0:
+                print("owner text: no slips today - skipped")
+                return
+            who, addr, body = "rodo", cfg.get("cell_addr"), "AlphaDog Slips are ready \U0001F525"
         elif MODE == "jessi":
             day = str(c.execute("SELECT max(game_date) FROM nba_jessi.snapshot").fetchone()[0])
             ok = c.execute("SELECT count(*) FROM nba_jessi.snapshot WHERE game_date=%s AND game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date", (day,)).fetchone()[0]

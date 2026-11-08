@@ -280,6 +280,20 @@ const LABEL = { moved: "line moved", missing: "off the board", side: "more only 
 const SL_WAGER = { points: ["points"], rebounds: ["rebounds"], assists: ["assists"], threes_made: ["threes_made"], blocks: ["blocks"], steals: ["steals"], turnovers: ["turnovers"],
   stocks: ["blocks_steals"], pra: ["points_rebounds_assists", "points_and_rebounds_and_assists"], pts_reb: ["points_rebounds", "points_and_rebounds"],
   pts_ast: ["points_assists", "points_and_assists"], reb_ast: ["rebounds_assists", "rebounds_and_assists"] };
+// Sleeper's own player list (player_id == the lines' subject_id), cached in the isolate: a pairing leg whose archived ids are ALL stale (Sleeper re-issues
+// line ids whenever a multiplier moves) is still found by NAME -> subject -> the current line id (2026-11-08: 0 of 20 Sleeper pairings were on the board)
+let SL_PLAYERS = null, SL_PLAYERS_AT = 0;
+const slKey = n => String(n || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
+async function sleeperPlayerIds() {
+  if (SL_PLAYERS && Date.now() - SL_PLAYERS_AT < 6 * 3600 * 1000) return SL_PLAYERS;
+  const r = await getText("https://api.sleeper.app/v1/players/nba", { headers: { "user-agent": UA, accept: "application/json", referer: "https://sleeper.com/" }, cf: { cacheTtl: 21600, cacheEverything: true } }, 15000);
+  if (r.status !== 200) throw new Error("sleeper players HTTP " + r.status);
+  const j = JSON.parse(r.text); r.text = "";
+  const m = new Map();
+  for (const [pid, p] of Object.entries(j || {})) { const k = slKey(((p && p.first_name) || "") + ((p && p.last_name) || "")) || slKey(p && p.full_name); if (k) { if (!m.has(k)) m.set(k, []); m.get(k).push(String(pid)); } }
+  SL_PLAYERS = m; SL_PLAYERS_AT = Date.now();
+  return m;
+}
 async function refreshSleeperPairs(sql, legs, doc, idset) {
   const stale = legs.filter(l => l._pair && l.link && l.link.ids && l.link.ids.line_id && !idset.has(String(l.link.ids.line_id)));
   if (!stale.length) return;
@@ -295,8 +309,15 @@ async function refreshSleeperPairs(sql, legs, doc, idset) {
     const lv = Number(o.outcome_value != null ? o.outcome_value : (o.line != null ? o.line : ln.line)); if (!Number.isFinite(lv) || o.line_id == null) continue;
     cur.set(ln.subject_id + "|" + ln.wager_type + "|" + lv + "|" + String(o.outcome || "").toLowerCase(), String(o.line_id));
   }
+  let nmap = null; const boardSubj = new Set();
+  if (stale.some(l => !subj[l._g && l._g.player])) {
+    try { nmap = await sleeperPlayerIds(); } catch (_e) { nmap = null; }
+    for (const ln of Array.isArray(doc) ? doc : []) if (ln.sport === "nba" && ln.subject_id != null) boardSubj.add(String(ln.subject_id));
+  }
   for (const l of stale) {
-    const sj = subj[l._g && l._g.player]; if (!sj) continue;
+    let sj = subj[l._g && l._g.player];
+    if (!sj && nmap) { const c = (nmap.get(slKey(l.player_name)) || []).filter(i => boardSubj.has(i)); if (c.length) sj = c[0]; }
+    if (!sj) continue;
     const prop = l.canonical_prop_key; const side = l.selected_side === "less" ? "under" : "over";
     for (const w of SL_WAGER[prop] || [prop]) { const id = cur.get(sj + "|" + w + "|" + Number(l.line_value) + "|" + side); if (id) { l.link.ids.line_id = id; break; } }
   }

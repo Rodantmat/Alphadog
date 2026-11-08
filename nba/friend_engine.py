@@ -521,6 +521,19 @@ def decor_ctx(conn, d):
         h, a = abbr_of_name(hm), abbr_of_name(aw)
         if h and a and ct:
             tips[(a, h)] = ct.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+    # the official slate (nba_calendar.slate_games) fills every game/tip the odds-based sources miss, so a leg ALWAYS has matchup + tip
+    # (2026-11-08: a Jessi Fliff leg had neither, so it was not seen as started and showed without teams)
+    try:
+        for hid, aid, gdt in conn.execute("SELECT home_team_id, away_team_id, game_datetime_utc FROM nba_calendar.slate_games WHERE game_date=%s", (d,)).fetchall():
+            h, a = ctx["abbr"].get(hid), ctx["abbr"].get(aid)
+            if h and a:
+                games.setdefault(h, (a, h)); games.setdefault(a, (a, h))
+                if gdt and (a, h) not in tips:
+                    g = gdt if gdt.tzinfo else gdt.replace(tzinfo=dt.timezone.utc)
+                    tips[(a, h)] = g.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+    except Exception as e:
+        log(f"slate_games ctx: {e}")
+        conn.rollback()
     ctx["games"], ctx["tips"] = games, tips
     ctx["names"] = {r[0]: r[1] for r in conn.execute("SELECT player_id, display_name FROM nba_ref.player_name_map WHERE display_name IS NOT NULL").fetchall()}
     pns = defaultdict(set)
@@ -764,7 +777,7 @@ def mirror_fliff_to_owner(conn, d, rows, slips):
 
 PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}
 PAIR_FLOOR = 0.80
-PAIR_FLOOR_APP = {"FLIFF": 0.70, "SLEEPER": 0.75}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
+PAIR_FLOOR_APP = {"FLIFF": 0.60, "SLEEPER": 0.75}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
 # best legs first (95%+ when the board has them); the list fills down to 80% only when fewer reach 85%; the hit chance is shown on every leg
 
 

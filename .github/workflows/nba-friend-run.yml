@@ -109,6 +109,13 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           MODE: friend
         run: python -u nba/p3_text.py
+      - name: Send owner ready text (after the friend run)
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: owner
+          RUN_RESULT: "${{ needs.run.result }}"
+        run: python -u nba/p3_text.py
 
   # The third set (Jessi: PrizePicks + Sleeper + Fliff). Built AFTER the friend's slips (it stays >= 40% different from them too), same engine, own tables nba_jessi.*
   jessi:
