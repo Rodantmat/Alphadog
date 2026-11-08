@@ -4112,14 +4112,14 @@
       "id": 1642434,
       "full_name": "Riley Minix",
       "last_comma_first": "Minix, Riley",
-      "roster_status": 0,
+      "roster_status": 1,
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "riley_minix",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
     },
     {
       "id": 1631169,
@@ -5396,6 +5396,19 @@
       "team_abbreviation": "DAL"
     },
     {
+      "id": 1643563,
+      "full_name": "Richie Saunders",
+      "last_comma_first": "Saunders, Richie",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "richie_saunders",
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
+    },
+    {
       "id": 1631248,
       "full_name": "Baylor Scheierman",
       "last_comma_first": "Scheierman, Baylor",
@@ -6452,14 +6465,14 @@
       "id": 1631104,
       "full_name": "Blake Wesley",
       "last_comma_first": "Wesley, Blake",
-      "roster_status": 1,
+      "roster_status": 0,
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "blake_wesley",
-      "team_id": 1610612746,
-      "team_city": "LA",
-      "team_name": "Clippers",
-      "team_abbreviation": "LAC"
+      "team_id": null,
+      "team_city": "",
+      "team_name": "",
+      "team_abbreviation": ""
     },
     {
       "id": 1629632,
