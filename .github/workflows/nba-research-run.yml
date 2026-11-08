@@ -31,6 +31,7 @@ jobs:
       - name: Run
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           SCRIPT: ${{ github.event.inputs.script }}
           EXTRA_ENV: ${{ github.event.inputs.env }}
         run: |
