@@ -260,7 +260,11 @@ def insert_flex(conn, day, craw, fresh, teams, t_sd):
     """portfolio C's Flex unit(s) (UPC.FLEX_UNITS): rows portfolio 'C', structure 'flex', status 'live'; returns the rows written"""
     n_rows = 0
     for uid in UPC.FLEX_UNITS:
-        sl = UPC.flex_slips(uid, craw)
+        try:
+            sl = UPC.flex_slips(uid, craw)
+        except Exception as e:  # noqa: BLE001 - the Flex unit must never take the 2-pick slips down with it
+            print(f"  {day}: portfolio C {uid} - build failed ({e}); the other slips are unaffected", flush=True)
+            continue
         if not sl:
             print(f"  {day}: portfolio C {uid} - no slip (not enough regular-line legs)", flush=True)
             continue
