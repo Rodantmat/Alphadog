@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Does The Odds API return deep links for Underdog (owner 2026-11-07)? One event, one market, regions=us_dfs, includeLinks + includeSids. READ-ONLY, ~2 credits. The key is never printed."""
-import os, json, urllib.request, urllib.parse
+import os, json, urllib.request, urllib.parse, urllib.error
 KEY = os.environ.get("ODDS_API_KEY", "")
 if not KEY: raise SystemExit("no ODDS_API_KEY in this run")
 B = "https://api.the-odds-api.com/v4"
 def get(path, **q):
     q["apiKey"] = KEY
-    r = urllib.request.urlopen(f"{B}{path}?{urllib.parse.urlencode(q)}", timeout=40)
+    try:
+        r = urllib.request.urlopen(f"{B}{path}?{urllib.parse.urlencode(q)}", timeout=40)
+    except urllib.error.HTTPError as ex:
+        print('HTTP', ex.code, ex.read()[:300].decode('utf8', 'replace'), {k: v for k, v in ex.headers.items() if k.lower().startswith('x-requests')}); raise SystemExit(1)
     return json.loads(r.read()), {k: v for k, v in r.headers.items() if k.lower().startswith("x-requests")}
 ev, h = get("/sports/basketball_nba/events"); print("events", len(ev), h)
 ev.sort(key=lambda e: e["commence_time"])
