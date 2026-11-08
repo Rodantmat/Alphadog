@@ -848,6 +848,23 @@ def write_pairs(conn, d, legs, ctx):
         x["p"] = round(float(l["p"]), 4)
         conn.execute("INSERT INTO nba_friend.pairs (game_date, app, rank, p, mult, kind, leg) VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb)",
                      (d, APP_KEY, n, float(l["p"]), float(l["m"]) if l.get("m") is not None else None, l.get("odds") or l.get("kind") or "standard", json.dumps(x)))
+    if FAPP == "PP":
+        # OWNER ONLY (2026-11-08): beside the pool of best (goblin) legs, the 3 best REGULAR lines and the best DEMON (ranks 101+; the friend page never reads pairs)
+        for kind_, take, r0 in (("standard", 3, 101), ("demon", 1, 111)):
+            seen_pl, got = set(), 0
+            for l in sorted([c for c in cand if c.get("kind") == kind_ or (kind_ == "standard" and c.get("odds") == "standard")], key=lambda l: -float(l["p"])):
+                if got >= take:
+                    break
+                if l["player"] in seen_pl:
+                    continue
+                x = deco(conn, ctx, l, d)
+                if not x.get("team_abbr"):
+                    continue
+                seen_pl.add(l["player"]); got += 1
+                x["p"] = round(float(l["p"]), 4); x["extra"] = kind_
+                conn.execute("INSERT INTO nba_friend.pairs (game_date, app, rank, p, mult, kind, leg) VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb)",
+                             (d, APP_KEY, r0 + got, float(l["p"]), float(l["m"]) if l.get("m") is not None else None, kind_, json.dumps(x)))
+            log(f"pairings extra {kind_}: {got}")
     conn.commit()
     log(f"pairings written: {n} legs (hit chance >= {PAIR_FLOOR:.0%}, best {float(top[0]['p']) * 100:.1f}%)" if top else "pairings: no leg reaches the floor")
 

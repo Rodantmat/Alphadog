@@ -528,7 +528,7 @@ const PP_STAT_PROP = { "Points": "points", "Rebounds": "rebounds", "Assists": "a
 async function pairsLive(sql) {
   const r = {};
   try {
-    const rows = await q(sql, "SELECT app, kind, p::float p, leg FROM nba_friend.pairs WHERE game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date ORDER BY app, rank", [], 6000);
+    const rows = await q(sql, "SELECT app, kind, p::float p, leg, rank FROM nba_friend.pairs WHERE game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date ORDER BY app, rank", [], 6000);
     const by = {};
     for (const x of rows) { const l = typeof x.leg === "string" ? JSON.parse(x.leg) : x.leg; l.p = x.p; l._pair = true; l.kind = x.kind; if (x.app === "prizepicks" && x.kind !== "standard") l.want_odds = x.kind; (by[x.app] = by[x.app] || []).push(l); }
     const tmp = { ok: true, source: "live", generated_slips: Object.keys(by).map(a => ({ source_key: a, name: "pairs", legs: by[a] })), backup_pool: [] };
@@ -537,8 +537,9 @@ async function pairsLive(sql) {
     for (const s of tmp.generated_slips) {
       r[s.source_key] = s.legs.filter(l => !(s.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok")))
         .filter(l => { const t = Date.parse(l.official_game_time_utc || ""); return !(t && t <= now); })
-        .map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard" }))
-        .slice(0, ({ prizepicks: 8, underdog: 5, sleeper: 5, fliff: 3, betr: 3 }[s.source_key] || 3) * 2);   // pool of twice the shown count: the screen drops a started leg and the next takes its place
+        .map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard", extra: l.extra || null }));
+      const ex = r[s.source_key].filter(l => l.extra), main = r[s.source_key].filter(l => !l.extra).slice(0, ({ prizepicks: 8, underdog: 5, sleeper: 5, fliff: 3, betr: 3 }[s.source_key] || 3) * 2);
+      r[s.source_key] = main.concat(ex);   // pool of twice the shown count: the screen drops a started leg and the next takes its place
     }
   } catch (_e) { /* pairs not built yet */ }
   return r;
