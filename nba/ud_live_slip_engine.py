@@ -394,7 +394,15 @@ def pick(conn, day):
                           0.0 if t_sd else 1.0, f"stand_down:{t_sd}" if t_sd else 'live', flag))
             n_rows += 1
             print(f"  {day}: C {uid} slip {k}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} m {l['m']} p_hat {l['ph']:.3f} r_hat {l['rh']:.3f}" for l in slip), flush=True)
-        n_rows += insert_flex(conn, day, craw, fresh, teams, t_sd)
+    # C3 FLEX (owner 2026-11-08 11:58 PT, option E): one 4-pick Flex a slate, built whichever of T / C is the played portfolio
+    # (the config row says T today); rows are portfolio 'C', structure 'flex', status 'live'
+    if live_pf in ('T', 'C'):
+        try:
+            fraw = UPC.calibrate([dict(l) for l in UPT.raw_legs(legs)], UPC.consensus(conn, day))
+        except Exception as e:  # noqa: BLE001 - the Flex unit must never take the other slips down with it
+            print(f"  {day}: portfolio C Flex - calibration failed ({e}); the other slips are unaffected", flush=True)
+            fraw = []
+        n_rows += insert_flex(conn, day, fraw, fresh, teams, sd if sd in ('final_week', 'postseason') else None)
     # PLAYOFF UNDERS on Underdog (§31z, 2026-10-09): on a play-in / playoff slate the postseason-only rule (playoff_unders.py, the
     # same code its certification backtested) builds its slip(s) - one pick per game by Underdog's rule. Paper (stake 1) only with
     # a PASS postseason verdict; otherwise recorded at stake 0 ('shadow_post'). Graded by grade() below like every paper slip.
