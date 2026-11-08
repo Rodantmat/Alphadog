@@ -35,7 +35,7 @@ PROPS = {"all": None, "nolow": {"mains", "combos"}, "mains": {"mains"}}
 RANKS = {"rh": [None, 0.535, 0.56, 0.585], "ph": [None, 0.55, 0.60, 0.65]}
 SKIPS = (0, 1, 2)
 NS = (1, 2, 3)
-N = 3
+N = int(os.environ.get("UD_N") or 3)
 
 
 def log(m):
@@ -164,7 +164,7 @@ def main():
     row(ref, "C live (2-pick Standard)")
     for stt in ("standard", "flex"):
         print("\n" + "=" * 200)
-        print(f"3-PICK {stt.upper()} - 1u per slip. slips | ROI | cash | max drawdown (u) | losing days | profit")
+        print(f"{N}-PICK {stt.upper()} - 1u per slip. slips | ROI | cash | max drawdown (u) | losing days | profit")
         rows = []
         for (c, s2), per in res.items():
             if s2 != stt:
