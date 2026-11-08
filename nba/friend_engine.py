@@ -777,7 +777,7 @@ def mirror_fliff_to_owner(conn, d, rows, slips):
 
 PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}
 PAIR_FLOOR = 0.80
-PAIR_FLOOR_APP = {"FLIFF": 0.60, "SLEEPER": 0.75}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
+PAIR_FLOOR_APP = {"FLIFF": 0.60, "SLEEPER": 0.60, "BETR": 0.65}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
 # best legs first (95%+ when the board has them); the list fills down to 80% only when fewer reach 85%; the hit chance is shown on every leg
 
 
@@ -794,7 +794,7 @@ def pp_pair_legs(conn, d):
         SELECT nm.player_id::text, pr.player, pr.prop, pr.side, pr.line::float, pr.price, pr.kind, f.final_hp::float
         FROM pr JOIN nba_ref.player_name_map nm ON nm.norm_name = pr.cn
         JOIN nba_score.final_hp f ON f.game_date=%s AND f.player_id=nm.player_id AND f.prop=pr.prop AND f.side=pr.side AND f.line=pr.line
-        WHERE f.final_hp >= %s""", (d, d, PAIR_FLOOR)).fetchall()
+        WHERE f.final_hp >= %s""", (d, d, 0.50)).fetchall()   # 0.50: the owner-only extras (best regular lines, best demon) reach below the pool floor
     out = []
     for pid_, player, prop, side, line, price, kind, hp in rows:
         out.append({"player": player, "player_id": pid_, "prop": prop, "side": side, "line": line, "m": price, "p": hp, "kind": kind,
@@ -824,6 +824,9 @@ def pair_score(conn, d, cand):
 def write_pairs(conn, d, legs, ctx):
     n_want = PAIR_N[FAPP] * 4   # a POOL: 4x the legs shown, ranked by hit chance - the screens drop a started / drifted / off-board leg and the next one in the pool takes its place
     cand = pp_pair_legs(conn, d) if FAPP == "PP" else legs
+    if FAPP == "SLEEPER":
+        # only lines Sleeper actually posts: its 'alt' rungs are synthetic (2026-11-08: 20 of 20 pairings - Cade assists 5.5 - were not on Sleeper's board, the board has 9.5)
+        cand = [l for l in cand if l.get("kind", "main") == "main"]
     cand = pair_score(conn, d, cand)
     best = {}
     for l in cand:
