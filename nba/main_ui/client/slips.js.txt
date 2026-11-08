@@ -560,11 +560,11 @@ setInterval(()=>{try{const b=document.getElementById('pairsBox');if(b){b.innerHT
 function pairsInner(secs){
   const now=Date.now();
   return '<h3 style="margin:22px 0 6px">Best pairings of the day</h3>'+secs.map(a=>{
-    const ls=(pairsData[a]||[]).filter(l=>{const t=l.tip?Date.parse(l.tip):NaN;return !(t&&t<=now)}).slice(0,PAIRS_SHOW[a]||3);
+    const ls0=(pairsData[a]||[]).filter(l=>{const t=l.tip?Date.parse(l.tip):NaN;return !(t&&t<=now)});const ls=ls0.filter(l=>!l.extra).slice(0,PAIRS_SHOW[a]||3).concat(ls0.filter(l=>l.extra));
     if(!ls.length)return '';
-    return '<details class="pairsApp slipCard" data-app="'+esc(a)+'"'+(pairsOpen.has(a)?' open':'')+'><summary style="cursor:pointer;font-weight:800">Best pairings of the day &ndash; '+esc(appLabel(a))+' <span class="small" style="opacity:.7">('+ls.length+')</span></summary>'+ls.map(l=>{
+    return '<details class="pairsApp slipCard" data-app="'+esc(a)+'"'+(pairsOpen.has(a)?' open':'')+'><summary style="cursor:pointer;font-weight:800">Best pairings of the day &ndash; '+esc(appLabel(a))+' <span class="small" style="opacity:.7">('+ls.filter(l=>!l.extra).length+')</span></summary>'+ls.map((l,i)=>{const hd=l.extra&&(i===0||!ls[i-1].extra)?'<div class="small" style="margin:8px 0 2px;font-weight:800;opacity:.85">Extra (you only): 3 best regular lines + best demon</div>':'';
       const tip=l.tip?new Date(l.tip).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Los_Angeles'})+' PT':'';
       const tag=l.kind&&l.kind!=='standard'?' <span class="badge '+esc(l.kind)+'" style="vertical-align:middle">'+esc(l.kind.charAt(0).toUpperCase()+l.kind.slice(1))+'</span>':'';
-      return '<div class="legRow"><span class="legRowText">'+esc(l.player||'')+' &mdash; '+esc(l.line??'')+' '+esc(displayPropLabel(l.prop))+' '+(String(l.side||'').toLowerCase()==='less'||String(l.side||'').toLowerCase()==='under'?'LESS':'MORE')+tag+(l.matchup||tip?' <span class="small" style="opacity:.85">('+esc([l.matchup,tip].filter(Boolean).join(' · '))+')</span>':'')+'</span><b class="legRowPct">'+(Number(l.p)*100).toFixed(1)+'%</b></div>'}).join('')+'</details>'}).join('');
+      return hd+'<div class="legRow"><span class="legRowText">'+esc(l.player||'')+' &mdash; '+esc(l.line??'')+' '+esc(displayPropLabel(l.prop))+' '+(String(l.side||'').toLowerCase()==='less'||String(l.side||'').toLowerCase()==='under'?'LESS':'MORE')+tag+(l.matchup||tip?' <span class="small" style="opacity:.85">('+esc([l.matchup,tip].filter(Boolean).join(' · '))+')</span>':'')+'</span><b class="legRowPct">'+(Number(l.p)*100).toFixed(1)+'%</b></div>'}).join('')+'</details>'}).join('');
 }
 bindSlipSourceFilters();
