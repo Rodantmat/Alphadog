@@ -777,7 +777,7 @@ def mirror_fliff_to_owner(conn, d, rows, slips):
 
 PAIR_N = {"PP": 8, "UD": 5, "SLEEPER": 5, "FLIFF": 3, "BETR": 3}
 PAIR_FLOOR = 0.80
-PAIR_FLOOR_APP = {"FLIFF": 0.60, "SLEEPER": 0.60, "BETR": 0.65}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
+PAIR_FLOOR_APP = {"FLIFF": 0.60, "SLEEPER": 0.60, "BETR": 0.55}  # Fliff's board has only a leg or two at 80%+ (owner 2026-11-07: no Fliff pairings showed)
 # best legs first (95%+ when the board has them); the list fills down to 80% only when fewer reach 85%; the hit chance is shown on every leg
 
 
