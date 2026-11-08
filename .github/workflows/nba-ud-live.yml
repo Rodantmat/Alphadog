@@ -16,6 +16,10 @@ on:
         description: "1 = rebuild a slate already logged"
         default: "0"
         required: false
+      add_flex:
+        description: "1 = pick mode only: add portfolio C's Flex unit to an already-logged slate (touches nothing else)"
+        default: "0"
+        required: false
 
 permissions:
   contents: read
@@ -42,4 +46,5 @@ jobs:
           UDL_MODE: ${{ github.event.inputs.mode }}
           UDL_DATE: ${{ github.event.inputs.date }}
           UDL_FORCE: ${{ github.event.inputs.force }}
+          UDL_ADD_FLEX: ${{ github.event.inputs.add_flex }}
         run: python -u nba/ud_live_slip_engine.py

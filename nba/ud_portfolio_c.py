@@ -165,3 +165,33 @@ def portfolio(legs):
             seen.add(key)
             out.append((uid, k, s))
     return out
+
+
+# C3 (owner 2026-11-08 11:58 PT: "Deploy E for me"; research_ud_3pick.py UD_N=4, option E): one 4-pick FLEX a slate from the regular
+# lines only (R), More + Less, no low-volume props (no steals / blocks / turnovers / stocks), ranked by the calibrated hit chance p_hat,
+# skip the top 2, no floor. Walk-forward on 2024-25 + 2025-26 history (repriced to today's law): ROI +34.1% / +32.5% / this season +75.4%,
+# cash 45-62%, max drawdown 9.5u / 8.9u / 3.0u. It uses the 3+ pick Flex slot the owner's bonuses need.
+# id -> (level set, side, props, rank key, rank floor, skip, picks, slips)
+FLEX_UNITS = {"C3": ({"R"}, "both", "nolow", "ph", None, 2, 4, 1)}
+FLEX_SHORT = {"C3": "4-pick Flex, regular lines, More + Less, no low-volume props, p_hat rank, skip 2"}
+
+
+def flex_slips(uid, legs):
+    """the Flex unit's slips (list of lists of legs); one pick per player and per game inside a slip"""
+    lvs, sdn, prn, key, fl, sk, n, ns = FLEX_UNITS[uid]
+    pool = [l for l in legs if l["lv"] in lvs and l["side"] in SIDES[sdn] and (PROPS[prn] is None or l["g"] in PROPS[prn])]
+    cand = [l for l in sorted(pool, key=lambda l: -l[key]) if fl is None or l[key] >= fl][sk:]
+    out, used = [], set()
+    for _ in range(ns):
+        s1, pl, gm = [], set(), set()
+        for l in cand:
+            if l["player"] in used or l["player"] in pl or l["event_id"] in gm:
+                continue
+            s1.append(l); pl.add(l["player"]); gm.add(l["event_id"])
+            if len(s1) == n:
+                break
+        if len(s1) < n:
+            break
+        out.append(s1)
+        used |= pl
+    return out

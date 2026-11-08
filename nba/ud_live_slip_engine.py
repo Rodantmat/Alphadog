@@ -256,6 +256,49 @@ def leg_team(conn, day, pids):
     return out
 
 
+def insert_flex(conn, day, craw, fresh, teams, t_sd):
+    """portfolio C's Flex unit(s) (UPC.FLEX_UNITS): rows portfolio 'C', structure 'flex', status 'live'; returns the rows written"""
+    n_rows = 0
+    for uid in UPC.FLEX_UNITS:
+        sl = UPC.flex_slips(uid, craw)
+        if not sl:
+            print(f"  {day}: portfolio C {uid} - no slip (not enough regular-line legs)", flush=True)
+            continue
+        for k, slip in enumerate(sl, start=1):
+            flag = any(l['side'] == 'Under' and fresh.get(teams.get(l['player_id']), 0) >= 2 for l in slip)
+            conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                         (day, 'C', f"{uid} {UPC.FLEX_SHORT[uid]}", len(slip), 'flex', k, json.dumps(UPC.slip_json(uid, slip)),
+                          0.0 if t_sd else 1.0, f"stand_down:{t_sd}" if t_sd else 'live', flag))
+            n_rows += 1
+            print(f"  {day}: C {uid} Flex slip {k}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} m {l['m']} p_hat {l['ph']:.3f}" for l in slip), flush=True)
+    return n_rows
+
+
+def add_flex(conn, day):
+    """UDL_ADD_FLEX=1: add the Flex unit to a slate already logged, touching nothing else (no delete, no rebuild)"""
+    if conn.execute("SELECT count(*) FROM nba_score.ud_live_slips WHERE game_date=%s AND portfolio='C' AND structure='flex'", (day,)).fetchone()[0]:
+        print(f"  {day}: the Flex unit is already logged - nothing to add", flush=True)
+        return
+    from live_slip_engine import post_tip
+    if post_tip(conn, day):
+        print(f"  {day}: the first tip has passed - nothing added", flush=True)
+        return
+    legs = load_legs(conn, day)
+    if not legs:
+        print(f"  {day}: no Underdog window legs joined to final_hp - nothing added", flush=True)
+        return
+    sd = stand_down(conn, day)
+    fresh = fresh_absences(conn, day)
+    teams = leg_team(conn, day, {l['player_id'] for l in legs})
+    craw = UPC.calibrate([dict(l) for l in UPT.raw_legs(legs)], UPC.consensus(conn, day))
+    n = insert_flex(conn, day, craw, fresh, teams, sd if sd in ('final_week', 'postseason') else None)
+    if os.environ.get('UDL_DRY') == '1':
+        conn.rollback(); print(f"  {day}: UDL_DRY=1 - {n} Flex slip(s) built and ROLLED BACK", flush=True); return
+    conn.commit()
+    print(f"  {day}: {n} Flex slip(s) added", flush=True)
+
+
 def pick(conn, day):
     conn.execute(DDL)
     # round-2 P3#5 (2026-10-08): never a post-tip pick (§29z-d) - same rule as the PrizePicks engine
@@ -263,6 +306,8 @@ def pick(conn, day):
     if post_tip(conn, day):
         print(f"  {day}: the first tip has passed - a post-tip Underdog pick is never placed; nothing built", flush=True)
         return
+    if os.environ.get('UDL_ADD_FLEX') == '1':
+        return add_flex(conn, day)
     if conn.execute("SELECT count(*) FROM nba_score.ud_live_slips WHERE game_date=%s", (day,)).fetchone()[0] and os.environ.get('UDL_FORCE') != '1':
         print(f"  {day}: Underdog paper slips already logged - first log wins (UDL_FORCE=1 to rebuild)", flush=True)
         return
@@ -345,6 +390,7 @@ def pick(conn, day):
                           0.0 if t_sd else 1.0, f"stand_down:{t_sd}" if t_sd else 'live', flag))
             n_rows += 1
             print(f"  {day}: C {uid} slip {k}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} m {l['m']} p_hat {l['ph']:.3f} r_hat {l['rh']:.3f}" for l in slip), flush=True)
+        n_rows += insert_flex(conn, day, craw, fresh, teams, t_sd)
     # PLAYOFF UNDERS on Underdog (§31z, 2026-10-09): on a play-in / playoff slate the postseason-only rule (playoff_unders.py, the
     # same code its certification backtested) builds its slip(s) - one pick per game by Underdog's rule. Paper (stake 1) only with
     # a PASS postseason verdict; otherwise recorded at stake 0 ('shadow_post'). Graded by grade() below like every paper slip.
