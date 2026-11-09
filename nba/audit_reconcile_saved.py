@@ -47,6 +47,7 @@ def convert(sl):
 
 def main():
     apply = (os.environ.get("RC_MODE") or "report") == "apply"
+    regrade = os.environ.get("RC_REGRADE") == "1"     # also fix ALREADY-GRADED rows: legs rewritten, graded_at cleared, the graders then regrade them
     frm = os.environ.get("RC_FROM") or (dt.datetime.now(PT).date() - dt.timedelta(days=10)).isoformat()
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     saved = {}
@@ -55,7 +56,7 @@ def main():
     n_ok = n_fix = n_skip = n_nosave = 0
     for app, tbl, scol in APPS:
         has_k = True
-        rows = conn.execute(f"SELECT game_date, {scol}, coalesce(k,1), legs_json FROM nba_score.{tbl} WHERE game_date >= %s AND graded_at IS NULL AND status='live' ORDER BY 1,2,3", (frm,)).fetchall()
+        rows = conn.execute(f"SELECT game_date, {scol}, coalesce(k,1), legs_json FROM nba_score.{tbl} WHERE game_date >= %s AND (graded_at IS NULL OR {'TRUE' if regrade else 'FALSE'}) AND status='live' ORDER BY 1,2,3", (frm,)).fetchall()
         used = set()
         for d, strat, k, legs in rows:
             d = str(d); live = jl(legs); lk = {key(l) for l in live}
@@ -89,7 +90,7 @@ def main():
             if apply:
                 extra = ", size = %s" if app in ("betr", "fliff") else ""
                 args = [json.dumps(new)] + ([len(new)] if extra else []) + [d, strat, k]
-                conn.execute(f"UPDATE nba_score.{tbl} SET legs_json = %s{extra} WHERE game_date = %s AND {scol} = %s AND coalesce(k,1) = %s AND graded_at IS NULL", args)
+                conn.execute(f"UPDATE nba_score.{tbl} SET legs_json = %s{extra}{', graded_at = NULL' if regrade else ''} WHERE game_date = %s AND {scol} = %s AND coalesce(k,1) = %s{'' if regrade else ' AND graded_at IS NULL'}", args)
     if apply:
         conn.commit()
     print(f"RECONCILE|summary: {n_ok} identical, {n_fix} {'fixed' if apply else 'would fix'}, {n_skip} ungradable-left-alone, {n_nosave} with no saved slip")
