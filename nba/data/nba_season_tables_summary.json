@@ -4,23 +4,23 @@
   ],
   "summary": {
     "matchups_2026-27": {
-      "rows": 17114,
-      "mb": 6.92,
+      "rows": 25257,
+      "mb": 10.21,
       "missing": []
     },
     "pt_defend_2026-27": {
-      "rows": 428,
+      "rows": 449,
       "mb": 0.1,
       "missing": []
     },
     "hustle_2026-27": {
-      "rows": 424,
-      "mb": 0.16,
+      "rows": 451,
+      "mb": 0.17,
       "missing": []
     },
     "clutch_2026-27": {
-      "rows": 259,
-      "mb": 0.07,
+      "rows": 300,
+      "mb": 0.08,
       "missing": []
     },
     "preseason_logs_2026-27": {

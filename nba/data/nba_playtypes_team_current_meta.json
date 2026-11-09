@@ -1,10 +1,10 @@
 {
-  "fetched_at": "2026-11-02T19:06:47Z",
+  "fetched_at": "2026-11-09T19:07:27Z",
   "level": "team",
   "season": "2026-27",
   "method_used": "looped_per_playtype",
   "record_count": 660,
-  "team_games": 6.0,
+  "team_games": 10.0,
   "min_expected": 25,
   "status": "ok",
   "error": null

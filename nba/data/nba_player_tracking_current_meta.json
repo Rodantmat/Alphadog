@@ -1,8 +1,8 @@
 {
-  "fetched_at": "2026-11-02T19:07:40Z",
+  "fetched_at": "2026-11-09T19:08:22Z",
   "source_url": "https://stats.nba.com/stats/leaguedashptstats?LeagueID=00&Season=2026-27&SeasonType=Regular+Season&PerMode=PerGame&PlayerOrTeam=Player&PtMeasureType=SpeedDistance&LastNGames=0&Month=0&OpponentTeamID=0",
   "http_status": 200,
-  "player_count": 442,
+  "player_count": 458,
   "error": null,
   "real_headers_seen": [
     "PLAYER_ID",
