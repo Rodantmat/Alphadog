@@ -396,6 +396,16 @@ jobs:
 
       # 4) SLIP GRADE (section 29): yesterday's paper slips graded, the ledger updated, the hurdles evaluated and each
       #    strategy's state set, so that today's P3 pick places only what the state allows.
+      # 3b) GRADE WHAT WAS SAVED (2026-11-09): the Slips screen swaps legs and Save stores the slip as shown; make every ungraded
+      #     UD / Sleeper / Betr / Fliff live row identical to the saved slip BEFORE any grader reads it. Fatal on error: grading a
+      #     slip other than the one placed is worse than not grading.
+      - name: Reconcile saved slips into live rows (grade what was placed)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RC_MODE: report   # flip to apply after the dry run is verified
+          RC_FROM: "2026-11-01"
+        run: python -u nba/audit_reconcile_saved.py
+
       - name: Slip grade (live slip engine, section 29)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
