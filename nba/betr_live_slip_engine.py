@@ -288,12 +288,20 @@ def build_board(conn, day, cfg):
     if age_h > float(cfg.get("max_board_age_h", 3)):
         return [], None, last, f"the newest Betr board is {age_h:.1f} h old (> {cfg.get('max_board_age_h', 3)} h) - no slip on a stale board"
     notes = [f"board {last:%H:%M}Z; {len(legs)} Betr legs with final_hp at Betr's line ({', '.join(f'{v} {k_}' for k_, v in why.items()) or 'none dropped'})"]
+    groups, main_done = [], False
     for rule in cfg["rules"]:
-        slips = select(legs, rule)
-        notes.append(f"{rule['name']}: {len(slips)} slip(s)")
-        if slips:
-            return slips, rule, last, "; ".join(notes)
-    return [], None, last, "; ".join(notes) + " - nothing qualifies"
+        if rule.get("add") or not main_done:      # 'add' rules (owner 2026-11-08: the 6-pick Dynamic) are built IN ADDITION to the main/fallback rule
+            slips = select(legs, rule)
+            notes.append(f"{rule['name']}: {len(slips)} slip(s)")
+            if slips:
+                groups.append((rule, slips))
+                if not rule.get("add"):
+                    main_done = True
+            elif not rule.get("add"):
+                pass
+    if groups:
+        return groups, last, "; ".join(notes)
+    return [], last, "; ".join(notes) + " - nothing qualifies"
 
 
 def pick(conn, day):
@@ -304,38 +312,42 @@ def pick(conn, day):
     conn.execute(DDL)
     rj = rules(conn)
     if cfg.get("mode") == "board":
-        slips, rule, last, note = build_board(conn, day, cfg)
-        strategy = rule["name"] if rule else None
-        slips = [[{**l, "pid": l["player_id"], "game": l["event_id"]} for l in s] for s in slips]
+        groups, last, note = build_board(conn, day, cfg)
+        groups = [(r["name"], [[{**l, "pid": l["player_id"], "game": l["event_id"]} for l in s_] for s_ in sl_]) for r, sl_ in groups]
     else:
         slips, last, note = build(conn, day, cfg)
-        strategy = STRATEGY
+        groups = [(STRATEGY, slips)] if slips else []
     print(f"BETR_LIVE|{day} {note}", flush=True)
     if os.environ.get("BT_DRY") == "1":
-        for i, s in enumerate(slips, start=1):
-            print(f"BETR_DRY|{day} {strategy} k{i}: " + " + ".join(f"{l.get('player')} {l['prop']} {l['side']} {l['line']} (p {l['p']:.3f} pf {l['pf']:.3f})" for l in s), flush=True)
+        for strategy, slips in groups:
+            for i, s in enumerate(slips, start=1):
+                print(f"BETR_DRY|{day} {strategy} k{i}: " + " + ".join(f"{l.get('player')} {l['prop']} {l['side']} {l['line']} (p {l['p']:.3f} pf {l['pf']:.3f})" for l in s), flush=True)
         conn.rollback()
         return
-    if not slips:
+    if not groups:
         # a rebuild that now finds nothing leaves no stale ungraded slip of any Betr rule behind
         conn.execute("DELETE FROM nba_score.betr_live_slips WHERE game_date=%s AND graded_at IS NULL", (day,))
         conn.commit()
         print(f"BETR_LIVE|{day} no slip")
         return
-    for i, s in enumerate(slips, start=1):
-        lj = [{"player": l["player"], "player_id": l["pid"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": 1.0,
-               "p": round(l["p"], 4), "pf": round(l["pf"], 4), "team": l["team"], "event_id": l["game"], "tier": "REGULAR"} for l in s]
-        mult = top_multiplier(len(s), s, rj)
-        conn.execute("""INSERT INTO nba_score.betr_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
-                        VALUES (%s, %s, %s, 'dynamic', %s, %s, 1, 'live', %s, %s)
-                        ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, size = EXCLUDED.size,
-                          model_multiplier = EXCLUDED.model_multiplier, board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
-                        WHERE nba_score.betr_live_slips.graded_at IS NULL""", (day, strategy, len(s), i, json.dumps(lj), mult, last))
-        print(f"BETR_LIVE|{day} {strategy} k{i}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']}" for l in s)
-              + f" | Dynamic top x{mult}", flush=True)
-    # a rebuild that now yields fewer slips leaves no stale ungraded slip behind
-    conn.execute("""DELETE FROM nba_score.betr_live_slips WHERE game_date=%s AND graded_at IS NULL
-                    AND (strategy <> %s OR k > %s)""", (day, strategy, len(slips)))
+    built = []
+    for strategy, slips in groups:
+        for i, s in enumerate(slips, start=1):
+            lj = [{"player": l["player"], "player_id": l["pid"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": 1.0,
+                   "p": round(l["p"], 4), "pf": round(l["pf"], 4), "team": l["team"], "event_id": l["game"], "tier": "REGULAR"} for l in s]
+            mult = top_multiplier(len(s), s, rj)
+            conn.execute("""INSERT INTO nba_score.betr_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
+                            VALUES (%s, %s, %s, 'dynamic', %s, %s, 1, 'live', %s, %s)
+                            ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, size = EXCLUDED.size,
+                              model_multiplier = EXCLUDED.model_multiplier, board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
+                            WHERE nba_score.betr_live_slips.graded_at IS NULL""", (day, strategy, len(s), i, json.dumps(lj), mult, last))
+            built.append((strategy, i))
+            print(f"BETR_LIVE|{day} {strategy} k{i}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']}" for l in s)
+                  + f" | Dynamic top x{mult}", flush=True)
+    # a rebuild that now yields different slips leaves no stale ungraded slip behind
+    for strat_, k_ in conn.execute("SELECT strategy, k FROM nba_score.betr_live_slips WHERE game_date=%s AND graded_at IS NULL", (day,)).fetchall():
+        if (strat_, k_) not in built:
+            conn.execute("DELETE FROM nba_score.betr_live_slips WHERE game_date=%s AND strategy=%s AND k=%s AND graded_at IS NULL", (day, strat_, k_))
     conn.commit()
 
 

@@ -12,7 +12,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import betr_live_slip_engine as E  # noqa: E402
 
 RULES = [{"name": "B_BRD_4dyn", "k": 4, "order": "bl", "side": "mix", "game_cap": 1, "floor": 0.60, "slips": 2},
-         {"name": "B_BRD_3dyn_fb", "k": 3, "order": "bl", "side": "mix", "game_cap": 2, "floor": 0.60, "slips": 2}]
+         {"name": "B_BRD_3dyn_fb", "k": 3, "order": "bl", "side": "mix", "game_cap": 2, "floor": 0.60, "slips": 2},
+         {"name": "B_BRD_6dyn_add", "k": 6, "add": True, "order": "pf", "side": "mix", "game_cap": 2, "floor": 0.58, "skip": 1, "slips": 1}]
 
 
 def main():
