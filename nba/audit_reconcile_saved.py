@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import research_app_final_strategies as AF  # noqa: E402
 
 PT = ZoneInfo("America/Los_Angeles")
-APPS = (("underdog", "ud_live_slips"), ("sleeper", "sleeper_live_slips"), ("betr", "betr_live_slips"), ("fliff", "fliff_live_slips"))
+APPS = (("underdog", "ud_live_slips", "composition"), ("sleeper", "sleeper_live_slips", "strategy"), ("betr", "betr_live_slips", "strategy"), ("fliff", "fliff_live_slips", "strategy"))
 
 
 def jl(x):
@@ -53,9 +53,9 @@ def main():
     for d, sk, strat, legs in conn.execute("SELECT slate_date, source_key, strategy, legs_json FROM nba_score.ui_saved_slips WHERE slate_date >= %s", (frm,)).fetchall():
         saved.setdefault((str(d), sk), []).append((strat, jl(legs)))
     n_ok = n_fix = n_skip = n_nosave = 0
-    for app, tbl in APPS:
+    for app, tbl, scol in APPS:
         has_k = True
-        rows = conn.execute(f"SELECT game_date, strategy, coalesce(k,1), legs_json FROM nba_score.{tbl} WHERE game_date >= %s AND graded_at IS NULL AND status='live' ORDER BY 1,2,3", (frm,)).fetchall()
+        rows = conn.execute(f"SELECT game_date, {scol}, coalesce(k,1), legs_json FROM nba_score.{tbl} WHERE game_date >= %s AND graded_at IS NULL AND status='live' ORDER BY 1,2,3", (frm,)).fetchall()
         used = set()
         for d, strat, k, legs in rows:
             d = str(d); live = jl(legs); lk = {key(l) for l in live}
@@ -89,10 +89,7 @@ def main():
             if apply:
                 extra = ", size = %s" if app in ("betr", "fliff") else ""
                 args = [json.dumps(new)] + ([len(new)] if extra else []) + [d, strat, k]
-                if app == "underdog":
-                    conn.execute(f"UPDATE nba_score.{tbl} SET legs_json = %s WHERE game_date = %s AND composition = %s AND coalesce(k,1) = %s AND graded_at IS NULL", args)
-                else:
-                    conn.execute(f"UPDATE nba_score.{tbl} SET legs_json = %s{extra} WHERE game_date = %s AND strategy = %s AND coalesce(k,1) = %s AND graded_at IS NULL", args)
+                conn.execute(f"UPDATE nba_score.{tbl} SET legs_json = %s{extra} WHERE game_date = %s AND {scol} = %s AND coalesce(k,1) = %s AND graded_at IS NULL", args)
     if apply:
         conn.commit()
     print(f"RECONCILE|summary: {n_ok} identical, {n_fix} {'fixed' if apply else 'would fix'}, {n_skip} ungradable-left-alone, {n_nosave} with no saved slip")
