@@ -414,6 +414,10 @@ def refresh_auto_unit(conn, day):
     if pu is not None:
         u = pu
     stake_unit(conn)['unit_usd'] = u
+    try:
+        UPA.snapshot(conn, day)        # the units the five apps' slips are shown at today (see unit_per_app.snapshot)
+    except Exception as e:  # noqa: BLE001
+        print(f"  unit played snapshot failed: {e}", flush=True)
     print(f"  {day}: unit {u:g} (earn the raise{', PrizePicks unit' if pu is not None else ''})", flush=True)
 
 

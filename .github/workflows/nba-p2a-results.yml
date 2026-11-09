@@ -125,8 +125,17 @@ jobs:
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
         run: |
-          python nba/scrape_nba_daily_delta.py
+          # 2026-11-09: 11-08 P2A died on ONE team-level endpoint (team_scoring http 403) after the player game log had already landed;
+          # the per-game step, the grade and the unit update never ran and the night was graded a day late (the 11-08 PrizePicks unit).
+          # Retry the delta 3x; if a team-level table still fails the night goes on (the player box score is what grading needs, and the
+          # gap audit below fails the job loudly when the box score is NOT complete).
+          ok=0
+          for i in 1 2 3; do
+            if python nba/scrape_nba_daily_delta.py; then ok=1; break; fi
+            echo "::warning::daily delta attempt $i failed"; sleep 45
+          done
           python nba/scrape_nba_per_game_delta.py
+          if [ "$ok" != "1" ]; then echo "::warning::daily delta still failing after 3 tries (team-level tables) - continuing; the gap audit decides"; fi
 
       # M1 defender quality - matchup shards from last night (a baseline-stage factor built from games already played).
       # SOFT (round 2 P2A#13, 2026-10-08): the scrape is incremental (uncovered games are retried next morning), so a night

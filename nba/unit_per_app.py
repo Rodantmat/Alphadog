@@ -30,6 +30,31 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_score.live_unit_app (game_date date, app
   unit_usd double precision, reason text, updated_at timestamptz DEFAULT now(), PRIMARY KEY (game_date, app))"""
 
 
+PLAYED_DDL = """CREATE TABLE IF NOT EXISTS nba_score.live_unit_played (game_date date, app text, unit_usd double precision, recorded_at timestamptz DEFAULT now(),
+  note text, PRIMARY KEY (game_date, app))"""
+
+
+def snapshot(conn, day):
+    """2026-11-09 (owner: zero mismatches): record the unit each app's slips were SHOWN at for `day`, when P3 builds them. The ladder is rebuilt
+    from scratch every P2A; without this a night whose grading slipped (11-08: P2A failed, the 11-07 results landed a day late) rebuilt the
+    ladder with a unit nobody played. update() now accumulates profit at the unit that was played."""
+    import os
+    import psycopg
+    pa, _f, _m = cfg(conn)
+    if not pa.get("enabled"):
+        return
+    units = pa.get("units") or {}
+    with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as c2:      # own connection: never touches the caller's transaction
+        c2.execute(PLAYED_DDL)
+        for app in APPS:
+            u = (units.get(UI_NAME[app]) or {}).get("unit")
+            if u is None:
+                continue
+            c2.execute("""INSERT INTO nba_score.live_unit_played (game_date, app, unit_usd, note) VALUES (%s,%s,%s,'P3 snapshot')
+                          ON CONFLICT (game_date, app) DO NOTHING""", (day, app, float(u)))
+    print(f"unit played snapshot {day}: " + ", ".join(f"{a} ${(units.get(UI_NAME[a]) or {}).get('unit')}" for a in APPS), flush=True)
+
+
 def cfg(conn):
     r = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='stake_unit'").fetchone()
     su = (r[0] if isinstance(r[0], dict) else json.loads(r[0])) if r and r[0] else {}
@@ -66,6 +91,8 @@ def update(conn, last):
         print("unit per app: off", flush=True)
         return {}
     conn.execute(DDL)
+    conn.execute(PLAYED_DDL)
+    played = {(a, d): float(u) for a, d, u in conn.execute("SELECT app, game_date, unit_usd FROM nba_score.live_unit_played").fetchall()}
     f0 = dt.date.fromisoformat(str(pa["from"])[:10])
     conn.execute("DELETE FROM nba_score.live_unit_app WHERE game_date >= %s", (f0,))
     out = {}
@@ -77,6 +104,7 @@ def update(conn, last):
                                  (f0, last)).fetchall():
             per_day[d] = float(x)
         for d in sorted(per_day):
+            u = played.get((app, d), u)          # the unit the slips were shown at that morning, when it was recorded
             prof += per_day[d] * u
             n = rung(prof, up_x, floor_, max_)
             reason = (f"ladder raise: profit {prof:.2f} >= {up_x * (n - 1) * n / 2:g} (rung {n:g})" if n > u else

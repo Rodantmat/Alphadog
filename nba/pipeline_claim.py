@@ -83,6 +83,20 @@ def main():
             print(f"FORCED re-claim of {pipeline} {key} over run {prev[2]} ({prev[3]}) - this run proceeds")
             out(proceed="true", run_key=key.isoformat())
             return
+        # 2026-11-09: a P2A that FAILED (11-08: one 403 killed it at 3:35 AM) must not block the later fallback run - until now the
+        # claim stayed 'failure', the fallback did nothing and the night was graded a day late. A failed / cancelled P2A may be
+        # re-claimed up to twice, no sooner than 5 minutes after it ended. Every other pipeline keeps the strict run-once rule.
+        if pipeline == "P2A" and prev[3] in ("failure", "cancelled") and prev[4] is not None:
+            n_prev = (c.execute("SELECT coalesce(note,'') FROM nba_control.pipeline_runs WHERE pipeline=%s AND run_key=%s", (pipeline, key)).fetchone()[0]).count("[retry after")
+            age = dt.datetime.now(dt.timezone.utc) - prev[4]
+            if n_prev < 2 and age > dt.timedelta(minutes=5):
+                c.execute("""UPDATE nba_control.pipeline_runs SET claimed_at=now(), source=%s, github_run_id=%s, status='claimed', finished_at=NULL,
+                             note=coalesce(note,'') || %s WHERE pipeline=%s AND run_key=%s""",
+                          (source, run_id, f" [retry after {prev[3]} of run {prev[2]}]", pipeline, key))
+                c.commit()
+                print(f"RETRY of {pipeline} {key}: run {prev[2]} ended '{prev[3]}' - this run proceeds")
+                out(proceed="true", run_key=key.isoformat())
+                return
         c.commit()
         print(f"::notice::{pipeline} {key} already claimed by run {prev[2]} ({prev[1]}) at {prev[0]}, status {prev[3]}"
               f" - this run does nothing (no pipeline runs twice). Dispatch with force=true only for deliberate recovery.")
