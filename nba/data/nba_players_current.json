@@ -1204,10 +1204,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "nique_clifford",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
     },
     {
       "id": 1642270,
@@ -1304,14 +1304,14 @@
       "id": 1643721,
       "full_name": "Carson Cooper",
       "last_comma_first": "Cooper, Carson",
-      "roster_status": 1,
+      "roster_status": 0,
       "from_year": "2026",
       "to_year": "2026",
       "player_code": "carson_cooper",
-      "team_id": 1610612763,
-      "team_city": "Memphis",
-      "team_name": "Grizzlies",
-      "team_abbreviation": "MEM"
+      "team_id": null,
+      "team_city": "",
+      "team_name": "",
+      "team_abbreviation": ""
     },
     {
       "id": 1643595,
@@ -1837,14 +1837,14 @@
       "id": 1642400,
       "full_name": "Tristan Enaruna",
       "last_comma_first": "Enaruna, Tristan",
-      "roster_status": 1,
+      "roster_status": 0,
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "tristan_enaruna",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": null,
+      "team_city": "",
+      "team_name": "",
+      "team_abbreviation": ""
     },
     {
       "id": 1642855,
@@ -5919,14 +5919,14 @@
       "id": 1631207,
       "full_name": "Dalen Terry",
       "last_comma_first": "Terry, Dalen",
-      "roster_status": 1,
+      "roster_status": 0,
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "dalen_terry",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
+      "team_id": null,
+      "team_city": "",
+      "team_name": "",
+      "team_abbreviation": ""
     },
     {
       "id": 1642876,
