@@ -3,31 +3,31 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-11-08T20:03:13Z",
+  "fetched_at": "2026-11-09T21:18:58Z",
   "egress": {
-    "ip": "174.66.165.85",
-    "hostname": "ip174-66-165-85.sd.sd.cox.net",
-    "city": "San Diego",
+    "ip": "76.232.126.226",
+    "hostname": "76-232-126-226.lightspeed.sndgca.sbcglobal.net",
+    "city": "Oceanside",
     "region": "California",
     "country": "US",
-    "loc": "32.7157,-117.1647",
-    "org": "AS22773 Cox Communications Inc.",
-    "postal": "92101",
+    "loc": "33.1959,-117.3795",
+    "org": "AS7018 AT&T Enterprises, LLC",
+    "postal": "92058",
     "timezone": "America/Los_Angeles",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 5831,
-  "row_count": 5831,
+  "rows": 6695,
+  "row_count": 6695,
   "total_pages": 1,
-  "future_pickable": 5831,
+  "future_pickable": 6695,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 403,
-      "bytes": 5663,
+      "bytes": 501,
       "error": "blocked"
     },
     {
@@ -41,22 +41,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 6654465,
+      "bytes": 7647177,
       "total_pages": 1,
       "ok": true,
-      "rows": 5831,
-      "future_pickable": 5831
+      "rows": 6695,
+      "future_pickable": 6695
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 6654422,
+      "bytes": 7647155,
       "total_pages": 1,
       "ok": true,
-      "rows": 5831,
-      "future_pickable": 5831
+      "rows": 6695,
+      "future_pickable": 6695
     }
   ],
-  "github_run_id": "42517970192"
+  "github_run_id": "42700959784"
 }
