@@ -34,7 +34,9 @@ def key(l):
         ln = round(float(ln), 2)
     except Exception:  # noqa: BLE001
         ln = None
-    return (norm_name(nm), str(prop), side(sd), ln)
+    pid = l.get("player_id") or l.get("mlb_player_id")
+    who = ("id" + str(pid)) if pid not in (None, "", 0, "0") else norm_name(nm).removesuffix("jr").removesuffix("sr")
+    return (who, str(prop), side(sd), ln)
 
 
 def show(k):
