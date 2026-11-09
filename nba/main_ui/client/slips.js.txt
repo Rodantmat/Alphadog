@@ -311,7 +311,7 @@ function bindAutoCreateSlips(){
 // ---- NBA overrides for the Slips screen (declared after the shared MLB slip code, so these definitions win) ---------------
 // Payouts follow the certified NBA graders (pricing.js, loaded with this part); every slip response carries the database's
 // pricing tables, kept in NBA_PRICING.
-var NBA_PRICING=null, NBA_MAX_PER_GAME={prizepicks:2,underdog:1,sleeper:2};
+var NBA_PRICING=null, NBA_MAX_PER_GAME={prizepicks:2,underdog:1,sleeper:2,betr:2,fliff:2};
 function recomputeMultiplier(sourceKey,entryMode,size,legs){
   if(!NBA_PRICING||!legs||legs.length<2)return 0;
   const m=nbaFullMultiplier(NBA_PRICING,sourceKey,entryMode==='flex'?'flex':'power',legs);
@@ -482,6 +482,12 @@ function slipCardHtml(s,idx){
     const mult=kept.length>=2?recomputeMultiplier(s.source_key,s.entry_mode,kept.length,kept):null;
     const fields=kept.length>=2?realMultFieldsHtmlForSize({...s,legs:kept},idx,kept.length):'<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
     return slipCardShell(s,idx,sel0,mult,fields);
+  }
+  // 2026-11-09 (Betr: a leg left the slip but the multiplier stayed): whenever the legs in the card are not the slip's original size, price the legs that are there
+  const nLegs=(s.legs||[]).length;
+  if(nLegs>=2&&nLegs!==Number(s.slip_size)){
+    const m=recomputeMultiplier(s.source_key,s.entry_mode,nLegs,s.legs);
+    return slipCardShell(s,idx,slipDeselected.has(String(idx))?'':' checked',m||s.estimated_multiplier,realMultFieldsHtmlForSize(s,idx,nLegs));
   }
   return slipCardShell(s,idx,slipDeselected.has(String(idx))?'':' checked',s.estimated_multiplier,realMultFieldsHtml(s,idx));
 }

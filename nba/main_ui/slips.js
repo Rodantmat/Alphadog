@@ -104,6 +104,9 @@ function slipOut(pricing, app, mode, legs, extra = {}) {
     ...extra
   };
 }
+// props the box-score graders can score; anything else (3-pt/FT attempts, defensive rebounds, fantasy score, quarter props, double-doubles) is never offered (2026-11-09: such legs could not be graded)
+const GRADABLE_PROPS = new Set(["points", "rebounds", "assists", "threes_made", "steals", "blocks", "turnovers", "pts_ast", "pts_reb", "reb_ast", "pra", "stocks"]);
+
 export function slipLeg(l, extra = {}) {
   return {
     board_row_id: l.final_board_row_id, final_board_row_id: l.final_board_row_id, player_name: l.player_name, player_id: l.player_id, mlb_player_id: l.player_id,
@@ -912,7 +915,7 @@ async function buildHighHit(sql, cfg, url, version) {
   const pool = [];
   for (const app of ["prizepicks", "underdog", "sleeper"]) {
     const cand = board.filter(l => l.source_key === app && !l.ud_hidden && !inSlip.has(l.final_board_row_id) && Number(l.score_0_100) >= minScore
-                                   && Number(l.edge_0_100) > 0)
+                                   && Number(l.edge_0_100) > 0 && GRADABLE_PROPS.has(String(l.canonical_prop_key)))
       .sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100));
     const perType = new Map();
     for (const l of cand) {
@@ -926,6 +929,43 @@ async function buildHighHit(sql, cfg, url, version) {
         link: linkLegFor(app, { player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value }, linkMap, l.official_game_time_utc) }));
     }
   }
+  // BETR + FLIFF BACKUP BANKS (owner 2026-11-09: "both apps need a leg bank, Fliff and Betr ... create a fallback"). Both apps place the Underdog board's legs
+  // (the engines build them from it), so the bank is the Underdog candidates that sit on the app's OWN board right now: Betr = same player / prop / side AT THE SAME
+  // LINE on the newest Betr snapshot (a regular pick, factor 1); Fliff = same player / prop / side at the same line on the newest Fliff Pick'Em board, with Fliff's own
+  // multiplier (cap 1.85, the engine's mcap) as the leg factor. Same legality as every pool (same app only, no duplicate player, game cap, 2 teams), ordered by edge.
+  // FALLBACK: a bank that cannot be built (no fresh board) is empty and the screen says so - the slip then shrinks and its multiplier is recomputed from the legs left.
+  try {
+    const BETR_MK = { player_points: "points", player_rebounds: "rebounds", player_assists: "assists", player_threes: "threes_made", player_steals: "steals", player_blocks: "blocks",
+      player_turnovers: "turnovers", player_blocks_steals: "stocks", player_points_rebounds: "pts_reb", player_points_assists: "pts_ast", player_rebounds_assists: "reb_ast", player_points_rebounds_assists: "pra" };
+    const udCand = board.filter(l => l.source_key === "underdog" && !l.ud_hidden && Number(l.score_0_100) >= minScore && Number(l.edge_0_100) > 0
+      && String(l.line_type || "regular") === "regular" && GRADABLE_PROPS.has(String(l.canonical_prop_key))).sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100));
+    const used = app => new Set(slips.filter(x => x.source_key === app).flatMap(x => x.legs.map(l => [l.mlb_player_id || l.player_id, l.canonical_prop_key, sideIn(l.selected_side), Number(l.line_value)].join("|"))));
+    const keyOf = l => [l.player_id, l.canonical_prop_key, sideIn(l.selected_side), Number(l.line_value)].join("|");
+    const mkLeg = (l, app, extra) => ({ ...slipLeg(l, { board_percentile: percentile("underdog", Number(l.score_0_100)), ...riskFor(risk, l.player_name), ...extra }),
+      board_row_id: `${slate.date}~${app}~${l.player_id}~${l.canonical_prop_key}~${Number(l.line_value)}~${sideIn(l.selected_side)}`, final_board_row_id: `${slate.date}~${app}~${l.player_id}~${l.canonical_prop_key}~${Number(l.line_value)}~${sideIn(l.selected_side)}`,
+      source_key: app, line_type: "regular", is_goblin: 0, is_demon: 0, app_multiplier: null, link: null });
+    const bsnap = (await q(sql, `SELECT max(snapshot_ts) ts FROM nba_market.board_snapshots WHERE bookmaker='betr' AND game_date=$1::date`, [slate.date]))[0];
+    if (bsnap && bsnap.ts && Date.now() - Date.parse(bsnap.ts) <= 3 * 3600 * 1000) {
+      const rows = await q(sql, `SELECT nm.player_id::text pid, b.market_key mk, b.side, b.line::float line FROM nba_market.board_snapshots b
+        JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+        WHERE b.bookmaker='betr' AND b.game_date=$1::date AND b.snapshot_ts=$2 AND b.market_key = ANY($3::text[])`, [slate.date, bsnap.ts, pgArr(Object.keys(BETR_MK))]);
+      const on = new Set(rows.map(r => [r.pid, BETR_MK[r.mk], sideIn(r.side), Number(r.line)].join("|")));
+      const u = used("betr"); let n = 0;
+      for (const l of udCand) { if (n >= size) break; const k = keyOf(l); if (!on.has(k) || u.has(k)) continue; n++; pool.push(mkLeg(l, "betr", { leg_factor: 1, tier: "REGULAR" })); }
+    } else notes.push("Betr backup bank: no Betr board captured in the last 3 hours - the bank is empty (a removed leg shrinks the slip).");
+    const fsnap = (await q(sql, `SELECT max(snapshot_ts) ts FROM nba_market.fliff_pickem_board WHERE game_date=$1::date`, [slate.date]))[0];
+    if (fsnap && fsnap.ts) {
+      const rows = await q(sql, `SELECT nm.player_id::text pid, b.prop, b.line::float line, b.option_type ot, b.multiplier::float m, b.matchup FROM nba_market.fliff_pickem_board b
+        JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player) WHERE b.game_date=$1::date AND b.snapshot_ts=$2`, [slate.date, fsnap.ts]);
+      const on = new Map(rows.map(r => [[r.pid, r.prop, Number(r.ot) === 0 ? "Over" : "Under", Number(r.line)].join("|"), r]));
+      const u = used("fliff"); let n = 0;
+      for (const l of udCand) {
+        if (n >= size) break; const k = keyOf(l), r = on.get(k);
+        if (!r || u.has(k) || !(Number(r.m) > 1) || Number(r.m) > 1.85 || Number(l.estimated_hit_probability_0_100) < 56) continue;
+        n++; pool.push(mkLeg(l, "fliff", { leg_factor: Number(r.m), tier: "R", game_label: r.matchup ? String(r.matchup).replace("@", " @ ") : undefined }));
+      }
+    } else notes.push("Fliff backup bank: no Fliff Pick'Em board captured for the slate - the bank is empty.");
+  } catch (e) { notes.push("Betr / Fliff backup banks could not be built: " + String(e && e.message || e)); }
   if (!slips.length) notes.unshift(slate.mode === "live" ? "No engine slips yet for today - the afternoon run builds them at 1:16 PM PT, or 29 minutes before the first tip when that is earlier; they appear here a few minutes later." : `No slips recorded for ${slate.date}.`);
   // UNITS ONLY ON TOP (owner 2026-11-02 14:05 PT: "remove all the description ... keep that hidden ... just put the units per app ...
   // which app, what's the current unit, when it increases, what's the current accumulate"): with units per app on, the top of the
