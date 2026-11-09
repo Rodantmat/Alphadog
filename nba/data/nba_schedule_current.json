@@ -23996,8 +23996,8 @@
       "away_team_tricode": "DEN",
       "arena_name": "Arena CDMX",
       "arena_city": "Mexico City",
-      "game_status": 1,
-      "game_status_text": "5:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "NBA Mexico City Game"
     },
     {
@@ -24011,8 +24011,8 @@
       "away_team_tricode": "BKN",
       "arena_name": "State Farm Arena",
       "arena_city": "Atlanta",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24026,8 +24026,8 @@
       "away_team_tricode": "NYK",
       "arena_name": "Rocket Arena",
       "arena_city": "Cleveland",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24041,8 +24041,8 @@
       "away_team_tricode": "WAS",
       "arena_name": "Paycom Center",
       "arena_city": "Oklahoma City",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24056,8 +24056,8 @@
       "away_team_tricode": "ORL",
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
-      "game_status": 1,
-      "game_status_text": "8:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": ""
     },
     {
@@ -24071,8 +24071,8 @@
       "away_team_tricode": "HOU",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24086,8 +24086,8 @@
       "away_team_tricode": "SAS",
       "arena_name": "Moda Center",
       "arena_city": "Portland",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24101,8 +24101,8 @@
       "away_team_tricode": "PHI",
       "arena_name": "United Center",
       "arena_city": "Chicago",
-      "game_status": 1,
-      "game_status_text": "3:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24116,8 +24116,8 @@
       "away_team_tricode": "LAL",
       "arena_name": "Little Caesars Arena",
       "arena_city": "Detroit",
-      "game_status": 1,
-      "game_status_text": "6:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24131,8 +24131,8 @@
       "away_team_tricode": "UTA",
       "arena_name": "Target Center",
       "arena_city": "Minneapolis",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24146,8 +24146,8 @@
       "away_team_tricode": "BKN",
       "arena_name": "American Airlines Center",
       "arena_city": "Dallas",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24161,8 +24161,8 @@
       "away_team_tricode": "BOS",
       "arena_name": "Fiserv Forum",
       "arena_city": "Milwaukee",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24176,8 +24176,8 @@
       "away_team_tricode": "NOP",
       "arena_name": "Intuit Dome",
       "arena_city": "Inglewood",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24191,8 +24191,8 @@
       "away_team_tricode": "MIA",
       "arena_name": "Golden 1 Center",
       "arena_city": "Sacramento",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -25129,7 +25129,7 @@
       "game_id": "0022600256",
       "season": "2026-27",
       "game_date": "2026-11-17T00:00:00Z",
-      "game_datetime_utc": "2026-11-18T03:00:00Z",
+      "game_datetime_utc": "2026-11-18T04:00:00Z",
       "home_team_id": 1610612747,
       "home_team_tricode": "LAL",
       "away_team_id": 1610612766,
@@ -25137,14 +25137,14 @@
       "arena_name": "Crypto.com Arena",
       "arena_city": "Los Angeles",
       "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status_text": "11:00 pm ET",
       "game_label": ""
     },
     {
       "game_id": "0022600257",
       "season": "2026-27",
       "game_date": "2026-11-17T00:00:00Z",
-      "game_datetime_utc": "2026-11-18T04:00:00Z",
+      "game_datetime_utc": "2026-11-18T03:30:00Z",
       "home_team_id": 1610612746,
       "home_team_tricode": "LAC",
       "away_team_id": 1610612762,
@@ -25152,7 +25152,7 @@
       "arena_name": "Intuit Dome",
       "arena_city": "Inglewood",
       "game_status": 1,
-      "game_status_text": "11:00 pm ET",
+      "game_status_text": "10:30 pm ET",
       "game_label": ""
     },
     {
@@ -30349,7 +30349,7 @@
       "game_id": "0022600567",
       "season": "2026-27",
       "game_date": "2027-01-11T00:00:00Z",
-      "game_datetime_utc": "2027-01-12T00:30:00Z",
+      "game_datetime_utc": "2027-01-12T00:00:00Z",
       "home_team_id": 1610612752,
       "home_team_tricode": "NYK",
       "away_team_id": 1610612743,
@@ -30357,14 +30357,14 @@
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
       "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status_text": "7:00 pm ET",
       "game_label": ""
     },
     {
       "game_id": "0022600568",
       "season": "2026-27",
       "game_date": "2027-01-11T00:00:00Z",
-      "game_datetime_utc": "2027-01-12T01:00:00Z",
+      "game_datetime_utc": "2027-01-12T02:30:00Z",
       "home_team_id": 1610612750,
       "home_team_tricode": "MIN",
       "away_team_id": 1610612739,
@@ -30372,14 +30372,14 @@
       "arena_name": "Target Center",
       "arena_city": "Minneapolis",
       "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status_text": "9:30 pm ET",
       "game_label": ""
     },
     {
       "game_id": "0022600569",
       "season": "2026-27",
       "game_date": "2027-01-11T00:00:00Z",
-      "game_datetime_utc": "2027-01-12T03:00:00Z",
+      "game_datetime_utc": "2027-01-12T03:30:00Z",
       "home_team_id": 1610612746,
       "home_team_tricode": "LAC",
       "away_team_id": 1610612747,
@@ -30387,7 +30387,7 @@
       "arena_name": "Intuit Dome",
       "arena_city": "Inglewood",
       "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status_text": "10:30 pm ET",
       "game_label": ""
     },
     {
