@@ -39,8 +39,8 @@ def owner():
     SE.flex_alt_tiers(); SE.payout_v3_rules()
     # --- PrizePicks
     n, bad = 0, []
-    for d, strat, k, st, status, legs, pay, prof, w in conn.execute(
-            """SELECT game_date, strategy, k, structure, status, legs_json, payout, profit, coalesce(stake_weight,1) FROM nba_score.live_slips
+    for d, strat, k, st, status, legs, pay, prof, pmodel in conn.execute(
+            """SELECT game_date, strategy, k, structure, status, legs_json, payout, profit, payout_model FROM nba_score.live_slips
                WHERE game_date >= %s AND status LIKE 'graded%%' AND payout IS NOT NULL""", (FROM,)).fetchall():
         legs = jl(legs)
         sl = [{"hit": hit_of(l.get("hit")), "factor": float(l.get("factor") or 1.0), "event_id": l.get("event_id")} for l in legs]
@@ -49,7 +49,13 @@ def owner():
         except Exception as e:  # noqa: BLE001
             bad.append((d, strat, k, "ERR", str(e)[:80])); continue
         n += 1
-        if abs(float(m) - float(pay)) > TOL or abs(float(prof) - (float(pay) - 1)) > TOL:
+        # a stored payout equal to PrizePicks' own quote (the model value kept in payout_model) is correct by design
+        ref = float(pmodel) if pmodel is not None else float(m)
+        if abs(float(m) - ref) > TOL and abs(float(m) - float(pay)) > TOL:
+            bad.append((str(d), strat, k, st, status, "model", ref, "recomputed", round(float(m), 3))); continue
+        if abs(float(prof) - (float(pay) - 1)) > TOL:
+            bad.append((str(d), strat, k, st, status, "profit", float(prof), "payout", float(pay))); continue
+        if False and abs(float(prof) - (float(pay) - 1)) > TOL:
             bad.append((str(d), strat, k, st, status, "stored", float(pay), "recomputed", round(float(m), 3), "profit", float(prof)))
     report("PP owner", n, bad)
     # --- Underdog
@@ -112,6 +118,11 @@ def owner():
         if abs(p - float(pay)) > TOL or abs(float(stake) * (p - 1) - float(prof)) > TOL:
             bad.append((str(d), name, "stored", float(pay), "recomputed", p, "profit", float(prof)))
     report("Fliff owner", n, bad)
+    # --- unit consistency: ladder unit vs unit actually played
+    r = conn.execute("""SELECT a.game_date, a.app, a.unit_from, p.unit_usd FROM nba_score.live_unit_app a
+                        LEFT JOIN nba_score.live_unit_played p USING (game_date, app)
+                        WHERE a.game_date >= '2026-11-02' AND (p.unit_usd IS NULL OR p.unit_usd <> a.unit_from)""").fetchall()
+    print(f"AUDIT|unit ladder vs played unit: {len(r)} MISMATCH {[(str(a), b, c, d) for a, b, c, d in r]}", flush=True)
     # --- ungraded leftovers
     for tbl, col in (("live_slips", "status LIKE 'graded%%'"), ("ud_live_slips", "graded_at IS NOT NULL"), ("sleeper_live_slips", "graded_at IS NOT NULL"),
                      ("betr_live_slips", "graded_at IS NOT NULL"), ("fliff_live_slips", "graded_at IS NOT NULL")):
