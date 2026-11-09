@@ -1,0 +1,52 @@
+name: NBA Regrade Saved Slips (one-off repair)
+
+# 2026-11-09: rewrites already-graded UD / Sleeper / Betr / Fliff slips to the slip the owner SAVED (nba/audit_reconcile_saved.py, RC_REGRADE=1),
+# regrades them with the real graders, then rebuilds the per-app unit ladder. Manual only. Slips with legs the box score cannot score are left alone.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "first slate date to repair"
+        default: "2026-10-20"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-regrade-saved
+
+jobs:
+  regrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy scipy pandas
+      - name: Reconcile saved slips (graded rows too)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RC_MODE: apply
+          RC_REGRADE: "1"
+          RC_FROM: ${{ github.event.inputs.from }}
+        run: python -u nba/audit_reconcile_saved.py
+      - name: Grade Fliff
+        env: { DATABASE_URL: "${{ secrets.DATABASE_URL }}", FL_MODE: grade }
+        run: python -u nba/fliff_live_slip_engine.py
+      - name: Grade Betr
+        env: { DATABASE_URL: "${{ secrets.DATABASE_URL }}", BT_MODE: grade }
+        run: python -u nba/betr_live_slip_engine.py
+      - name: Grade Sleeper
+        env: { DATABASE_URL: "${{ secrets.DATABASE_URL }}", SL_MODE: grade }
+        run: python -u nba/sleeper_live_slip_engine.py
+      - name: Grade Underdog
+        env: { DATABASE_URL: "${{ secrets.DATABASE_URL }}", UDL_MODE: grade }
+        run: python -u nba/ud_live_slip_engine.py
+      - name: Rebuild unit ladder
+        env: { DATABASE_URL: "${{ secrets.DATABASE_URL }}" }
+        run: python -u nba/unit_update.py
