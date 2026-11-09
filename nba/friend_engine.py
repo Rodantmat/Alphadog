@@ -898,11 +898,8 @@ def grade():
         sv = seen.get((d, f"{APP_LABEL} {size}-pick {no}"))
         if sv:
             lg, skipped = sv
-            if skipped:   # first shown with a started / off-board leg: nobody could place it - not counted
-                conn.execute("UPDATE nba_friend.slips SET status='void', graded_at=now() WHERE app=%s AND game_date=%s AND strategy=%s AND slip_no=%s AND status='placed'", (APP_KEY, d, code, no))
-                done += 1
-                continue
-            if lg and all(isinstance(x, dict) and x.get("_g") for x in lg):
+            # owner 2026-11-09: a slip first opened after tip-off is no longer voided (9 of 9 slips on 11-06 were) - it is graded as built
+            if not skipped and lg and all(isinstance(x, dict) and x.get("_g") for x in lg):
                 legs = [dict(x["_g"]) for x in lg]
         for l in legs:
             l["hit"] = outcome(sbox, l)
