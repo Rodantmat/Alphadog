@@ -108,6 +108,19 @@ async function data(env, token, save = true) {
           await q(sql, "INSERT INTO nba_friend.seen (game_date, app, slip_name, legs, skipped) VALUES ($1::date,$2,$3,$4::jsonb,$5) ON CONFLICT DO NOTHING", [today, s.source_key, s.name, JSON.stringify(s.legs), bad], 6000);
         } catch (e) { /* never blocks the page */ }
       }
+      // AUDIT TRAIL (owner 2026-11-09): every distinct version of a slip this page showed today (the first one is the one graded; a later one means a leg drifted / started and was swapped
+      // after the first open), and the backup pool as it stood at the first open of each app - so a mismatch between what was shown and what was placed can always be traced
+      try {
+        const lk = l => [l.player_name, l.canonical_prop_key, l.selected_side, l.line_value].join("|");
+        for (const s of out.generated_slips) {
+          if (s._pairs) continue;
+          await q(sql, "INSERT INTO nba_friend.seen_log (game_date, app, slip_name, sig, kind, legs) VALUES ($1::date,$2,$3,$4,'shown',$5::jsonb) ON CONFLICT DO NOTHING", [today, s.source_key, s.name, s.legs.map(lk).join(";"), JSON.stringify(s.legs.map(l => ({ player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value, sub: !!l.sub, off: !!l.off })))], 6000);
+        }
+        for (const a of new Set(out.generated_slips.filter(x => !x._pairs).map(x => x.source_key))) {
+          const pl = (out.backup_pool || []).filter(l => l.source_key === a).slice(0, 40).map(l => ({ player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null }));
+          await q(sql, "INSERT INTO nba_friend.seen_log (game_date, app, slip_name, sig, kind, legs) VALUES ($1::date,$2,'pool','pool','pool',$3::jsonb) ON CONFLICT DO NOTHING", [today, a, JSON.stringify(pl)], 6000);
+        }
+      } catch (e) { /* never blocks the page */ }
     }
     const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: linkUrl(s, now),
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
