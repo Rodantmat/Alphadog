@@ -201,7 +201,8 @@ def main():
             if c.execute("SELECT 1 FROM nba_control.text_alert_log WHERE day=%s AND who=%s", (day, who)).fetchone():
                 print("text alert: already sent today to", who)
                 return
-        msg = MIMEText(body, "plain", "utf-8")
+        # 2026-11-09: the Google Voice email bridge flattens \n to a space; U+2028 (line separator) is the one that survives as a real line break
+        msg = MIMEText(body.replace("\n", " "), "plain", "utf-8")
         msg["From"] = user
         msg["To"] = addr
         msg["Subject"] = "Re: AlphaDog"
