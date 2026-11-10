@@ -38,8 +38,13 @@ def main():
         season = AF.season_of(d)
         legs = AA.hist_legs(conn, d, st, ovr, kt, None) if season != "2026-27" else AA.live_legs(conn, d, st)
         legs = [l for l in legs if l.get("p") is not None and l.get("hit") is not None]
-        cand = [l for l in legs if l["p"] >= RULE["floor"] and l["p"] * l["m"] >= RULE["gate"] and l["m"] <= RULE["mcap"]]
-        cand.sort(key=lambda l: -(l["p"] + l["pf"]) / 2 * l["m"])
+        if AA.APP == "sleeper":
+            cand = [l for l in legs if l["p"] >= RULE["floor"] and l["p"] * l["m"] >= RULE["gate"] and l["m"] <= RULE["mcap"]]
+            cand.sort(key=lambda l: -(l["p"] + l["pf"]) / 2 * l["m"])
+        else:   # Fliff / Betr: the Underdog T1-style candidates the screen offers - hit chance >= 0.56 (Betr 0.55), Fliff multiplier 1 < m <= 1.85, best hit chance first
+            fl = 0.56 if AA.APP == "fliff" else 0.55
+            cand = [l for l in legs if l["p"] >= fl and l["kind"] == "main" and (AA.APP == "betr" or 1.0 < l["m"] <= 1.85)]
+            cand.sort(key=lambda l: -l["p"])
         seen, r = set(), 0
         for l in cand:
             if l["player_id"] in seen:
