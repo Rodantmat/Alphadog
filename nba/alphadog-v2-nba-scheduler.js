@@ -245,6 +245,29 @@ async function closeStaleClaim(sql, env, pipeline, key, plan, now, st, dryRun) {
   return { pipeline, run_key: key, action: "recovery_dispatched" };
 }
 
+// recorded P2A failure -> up to two re-dispatches (slots retry-1 / retry-2); the claim step (pipeline_claim.py) accepts a retry only
+// 5+ min after the failed run ended and at most twice, so this can never double-run. (2026-11-10, after the 11-08 NBA-stats 403)
+async function retryFailedP2A(sql, env, key, dryRun) {
+  const d = await sql`SELECT slot, dispatched_at FROM nba_control.scheduler_dispatches WHERE pipeline='P2A' AND run_key=${key}::date AND slot IN ('retry-1','retry-2') AND ok IS DISTINCT FROM false`;
+  const slot = !d.some((x) => x.slot === "retry-1") ? "retry-1" : !d.some((x) => x.slot === "retry-2") ? "retry-2" : null;
+  if (!slot) return { pipeline: "P2A", run_key: key, action: "skip", reason: "both P2A retries already used" };
+  const f = await sql`SELECT finished_at FROM nba_control.pipeline_runs WHERE pipeline='P2A' AND run_key=${key}::date`;
+  if (!f[0] || !f[0].finished_at || Date.now() - new Date(f[0].finished_at).getTime() < 6 * MIN) return { pipeline: "P2A", run_key: key, action: "wait", reason: "P2A retry: failed run ended under 6 min ago" };
+  if (dryRun) return { pipeline: "P2A", run_key: key, action: "p2a_retry_due", slot, dry_run: true };
+  const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot) VALUES ('P2A', ${key}::date, ${slot})
+                        ON CONFLICT (pipeline, run_key, slot) DO NOTHING RETURNING pipeline`;
+  if (!ins[0]) return { pipeline: "P2A", run_key: key, action: "skip", reason: "retry slot already dispatched" };
+  const res = await dispatch(env, WORKFLOWS.P2A, {});
+  if (!res.ok) {
+    await sql`DELETE FROM nba_control.scheduler_dispatches WHERE pipeline='P2A' AND run_key=${key}::date AND slot=${slot}`;
+    await log(sql, slot, "P2A", key, "dispatch_failed_will_retry", res.detail);
+    return { pipeline: "P2A", run_key: key, action: "p2a_retry_dispatch_failed", detail: res.detail };
+  }
+  await sql`UPDATE nba_control.scheduler_dispatches SET ok=true, detail='retry of a recorded P2A failure' WHERE pipeline='P2A' AND run_key=${key}::date AND slot=${slot}`;
+  await log(sql, slot, "P2A", key, "p2a_retry_dispatched", "recorded P2A failure re-fired");
+  return { pipeline: "P2A", run_key: key, action: "p2a_retry_dispatched", slot };
+}
+
 async function act(sql, env, pipeline, key, dec, dryRun) {
   if (dryRun) return { pipeline, run_key: key, ...dec, dry_run: true };
   if (dec.action === "missed") {
