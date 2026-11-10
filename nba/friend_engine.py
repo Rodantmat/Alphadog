@@ -828,14 +828,23 @@ def write_pairs(conn, d, legs, ctx):
         # only lines Sleeper actually posts: its 'alt' rungs are synthetic (2026-11-08: 20 of 20 pairings - Cade assists 5.5 - were not on Sleeper's board, the board has 9.5)
         cand = [l for l in cand if l.get("kind", "main") == "main"]
     cand = pair_score(conn, d, cand)
-    best = {}
-    for l in cand:
-        p = l.get("p")
-        if p is None or float(p) < PAIR_FLOOR_APP.get(FAPP, PAIR_FLOOR):
+    def _best(floor):
+        b = {}
+        for l in cand:
+            p = l.get("p")
+            if p is None or float(p) < floor:
+                continue
+            k = pid(l)
+            if k not in b or float(p) > float(b[k]["p"]):
+                b[k] = l
+        return b
+    best = _best(PAIR_FLOOR_APP.get(FAPP, PAIR_FLOOR))
+    # owner 2026-11-10: every app must show pairings every day (Underdog had none: no leg reached its 80% floor) - when the floor leaves
+    # fewer than twice the shown count, the floor drops step by step to 50% so the app always keeps its easiest legs
+    for fl in (0.70, 0.60, 0.55, 0.50):
+        if len(best) >= PAIR_N[FAPP] * 2 or fl >= PAIR_FLOOR_APP.get(FAPP, PAIR_FLOOR):
             continue
-        k = pid(l)
-        if k not in best or float(p) > float(best[k]["p"]):
-            best[k] = l
+        best = _best(fl)
     top = sorted(best.values(), key=lambda l: -float(l["p"]))
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_friend.pairs (game_date date, app text, rank int, p double precision, mult double precision,
                     kind text, leg jsonb, built_at timestamptz DEFAULT now(), PRIMARY KEY (game_date, app, rank))""")
