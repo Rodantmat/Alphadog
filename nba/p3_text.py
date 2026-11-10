@@ -149,8 +149,26 @@ def main():
                 variants = {"A single newlines only": full.replace("\n\n", "\n"),
                             "B blank line = nbsp": full.replace("\n\n", "\n\u00a0\n"),
                             "C all on one line with bullets": full.replace("\n\n", " | ").replace("\n", " | ")}
-                for nm, b in variants.items():
-                    msg = MIMEText(b, "plain", "utf-8"); msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"
+                from email.mime.multipart import MIMEMultipart
+                nl = full.replace("\n\n", "\n")
+                def _mk(tag, b):
+                    b = "[" + tag + "] " + b
+                    if tag == "D":      # CRLF + 8bit
+                        m = MIMEText(b.replace("\n", "\r\n"), "plain", "utf-8")
+                    elif tag == "E":    # unicode line separator
+                        m = MIMEText(b.replace("\n", " "), "plain", "utf-8")
+                    elif tag == "F":    # multipart: plain + html
+                        m = MIMEMultipart("alternative")
+                        m.attach(MIMEText(b, "plain", "utf-8"))
+                        m.attach(MIMEText("<div>" + b.replace("\n", "<br>") + "</div>", "html", "utf-8"))
+                    elif tag == "G":    # html only
+                        m = MIMEText("<div>" + b.replace("\n", "<br>") + "</div>", "html", "utf-8")
+                    else:               # H: format=flowed
+                        m = MIMEText(b, "plain", "utf-8"); m.set_param("format", "flowed")
+                    return m
+                for tg in "DEFGH":
+                    msg = _mk(tg, nl); nm = tg; b = nl
+                    msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"
                     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as sm:
                         sm.login(user, pw); sm.sendmail(user, [cfg.get("cell_addr")], msg.as_string())
                     print("variant sent:", nm, "|", b.replace("\n", " / "))
