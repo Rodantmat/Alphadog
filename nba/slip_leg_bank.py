@@ -10,6 +10,8 @@ import sys
 import zoneinfo
 
 import sleeper_live_slip_engine as SLE
+import research_app_final_strategies as AF
+import research_sleeper_transfer as ST
 
 DDL = """CREATE TABLE IF NOT EXISTS nba_score.slip_leg_bank (game_date date, app text, strategy text, rank int, leg jsonb, built_at timestamptz DEFAULT now(),
          PRIMARY KEY (game_date, app, strategy, rank))"""
@@ -37,7 +39,31 @@ def sleeper(conn, day):
         print(f"  {i:2d} {l['player']} {l['prop']} {l['side']} {l['line']:g} x{l['m']:.2f} p={l['p']:.2f}")
 
 
+def underdog(conn, day):
+    """Underdog T1 candidate list (the list the T slips, Fliff and Betr are built from: research_sleeper_transfer.ud_lists), ranked best first, one leg a player"""
+    legs, rows = AF.load_ud(conn, day, {})
+    if not legs:
+        print(f"BANK|{day} underdog: no board")
+        return
+    c, _gc = ST.ud_lists(rows, legs)["T1"]
+    best, seen = [], set()
+    for l in c:
+        k = str(l.get("player_id"))
+        if k in seen:
+            continue
+        seen.add(k)
+        best.append({"pid": k, "player": l.get("player"), "prop": l.get("prop"), "side": l.get("side"), "line": float(l["line"]), "p": float(l["p"]), "game": l.get("event_id")})
+    write_bank(conn, day, "underdog", "T1", best)
+    print(f"BANK|{day} underdog T1: {len(best)} legs")
+    for i, l in enumerate(best[:12], 1):
+        print(f"  {i:2d} {l['player']} {l['prop']} {l['side']} {l['line']:g} p={l['p']:.2f}")
+
+
 if __name__ == "__main__":
     day = dt.date.fromisoformat(os.environ.get("SB_DAY") or dt.datetime.now(zoneinfo.ZoneInfo("America/Los_Angeles")).date().isoformat())
     c = SLE.connect()
     sleeper(c, day)
+    try:
+        underdog(c, day)
+    except Exception as e:
+        print(f"BANK|underdog failed (sleeper bank is written): {e}")

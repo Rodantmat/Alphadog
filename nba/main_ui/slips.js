@@ -937,11 +937,11 @@ async function buildHighHit(sql, cfg, url, version) {
     if (bank && bank.length) {
       const nrm = x => String(x == null ? "" : x).toLowerCase().replace(/[^a-z0-9]/g, "");   // the bank stores the player as a bare key (collingillespie)
       const idx = new Map(board.filter(l => l.source_key === "sleeper" && !inSlip.has(l.final_board_row_id))
-        .map(l => [nrm(l.player_name) + "|" + nrm(l.canonical_prop_key) + "|" + nrm(l.selected_side) + "|" + Number(l.line_value), l]));
+        .map(l => [nrm(l.player_name) + "|" + nrm(l.canonical_prop_key) + "|" + nrm(sideIn(l.selected_side)) + "|" + Number(l.line_value), l]));
       const fromBank = [];
       for (const b of bank) {
         const bl = typeof b.leg === "string" ? JSON.parse(b.leg) : b.leg;
-        const l = idx.get(nrm(bl.player) + "|" + nrm(bl.prop) + "|" + nrm(bl.side) + "|" + Number(bl.line));
+        const l = idx.get(nrm(bl.player) + "|" + nrm(bl.prop) + "|" + nrm(sideIn(bl.side)) + "|" + Number(bl.line));
         if (!l) continue;
         fromBank.push(slipLeg(l, { board_percentile: percentile("sleeper", Number(l.score_0_100)), ...riskFor(risk, l.player_name),
           link: linkLegFor("sleeper", { player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value }, linkMap, l.official_game_time_utc) }));
@@ -949,6 +949,32 @@ async function buildHighHit(sql, cfg, url, version) {
       if (fromBank.length) { for (let i = pool.length - 1; i >= 0; i--) if (pool[i].source_key === "sleeper") pool.splice(i, 1); pool.push(...fromBank); }
     }
   } catch (_e) { /* no bank table / query failed: the generic pool stays */ }
+  // STRATEGY-FAITHFUL UNDERDOG SUBS (owner 2026-11-10): the Underdog pool is the T1 candidate list (nba_score.slip_leg_bank, app 'underdog' - the list the T slips, Fliff and
+  // Betr are built from) matched to the scored board row by player id / prop / side / line; no bank or no match leaves the generic pool.
+  try {
+    const bankU = await q(sql, "SELECT rank, leg FROM nba_score.slip_leg_bank WHERE game_date = $1 AND app = 'underdog' ORDER BY rank", [slate.date], 4000);
+    if (bankU && bankU.length) {
+      const idxU = new Map(board.filter(l => l.source_key === "underdog" && !l.ud_hidden && !inSlip.has(l.final_board_row_id))
+        .map(l => [String(l.player_id) + "|" + String(l.canonical_prop_key) + "|" + sideIn(l.selected_side) + "|" + Number(l.line_value), l]));
+      const fromU = [];
+      for (const b of bankU) {
+        const bl = typeof b.leg === "string" ? JSON.parse(b.leg) : b.leg;
+        const l = idxU.get(String(bl.pid) + "|" + String(bl.prop) + "|" + sideIn(bl.side) + "|" + Number(bl.line));
+        if (!l) continue;
+        fromU.push(slipLeg(l, { board_percentile: percentile("underdog", Number(l.score_0_100)), ...riskFor(risk, l.player_name),
+          link: linkLegFor("underdog", { player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value }, linkMap, l.official_game_time_utc) }));
+      }
+      if (fromU.length) { for (let i = pool.length - 1; i >= 0; i--) if (pool[i].source_key === "underdog") pool.splice(i, 1); pool.push(...fromU); }
+    }
+  } catch (_e) { /* no bank: the generic pool stays */ }
+  // PRIZEPICKS SUBS (owner 2026-11-10): the PrizePicks strategies that stake on a thin board are Unders on STANDARD lines (the thin-night fallback: Unders at final_hp >= 0.55,
+  // +63% / +65% on those nights, U3 +104% this season) - so a substitute is a standard Under with the best hit chance first; Overs and low-chance legs stay only as a last resort.
+  try {
+    const ppAll = pool.filter(l => l.source_key === "prizepicks");
+    const hp = l => Number(l.estimated_hit_probability_0_100 != null ? l.estimated_hit_probability_0_100 : l.hit_probability_0_100 || 0);
+    const good = ppAll.filter(l => sideIn(l.selected_side) === "Under" && hp(l) >= 55).sort((a, b) => hp(b) - hp(a));
+    if (good.length >= 3) { for (let i = pool.length - 1; i >= 0; i--) if (pool[i].source_key === "prizepicks") pool.splice(i, 1); pool.push(...good); }
+  } catch (_e) { /* generic PrizePicks pool stays */ }
   // BETR + FLIFF BACKUP BANKS (owner 2026-11-09: "both apps need a leg bank, Fliff and Betr ... create a fallback"). Both apps place the Underdog board's legs
   // (the engines build them from it), so the bank is the Underdog candidates that sit on the app's OWN board right now: Betr = same player / prop / side AT THE SAME
   // LINE on the newest Betr snapshot (a regular pick, factor 1); Fliff = same player / prop / side at the same line on the newest Fliff Pick'Em board, with Fliff's own
@@ -959,6 +985,7 @@ async function buildHighHit(sql, cfg, url, version) {
       player_turnovers: "turnovers", player_blocks_steals: "stocks", player_points_rebounds: "pts_reb", player_points_assists: "pts_ast", player_rebounds_assists: "reb_ast", player_points_rebounds_assists: "pra" };
     const udCand = board.filter(l => l.source_key === "underdog" && !l.ud_hidden && Number(l.score_0_100) >= minScore && Number(l.edge_0_100) > 0
       && String(l.line_type || "regular") === "regular" && GRADABLE_PROPS.has(String(l.canonical_prop_key))).sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100));
+    const udByP = udCand.slice().sort((a, b) => Number(b.estimated_hit_probability_0_100 || 0) - Number(a.estimated_hit_probability_0_100 || 0));   // the Fliff / Betr engines order the Underdog candidates by hit chance
     const used = app => new Set(slips.filter(x => x.source_key === app).flatMap(x => x.legs.map(l => [l.mlb_player_id || l.player_id, l.canonical_prop_key, sideIn(l.selected_side), Number(l.line_value)].join("|"))));
     const keyOf = l => [l.player_id, l.canonical_prop_key, sideIn(l.selected_side), Number(l.line_value)].join("|");
     const mkLeg = (l, app, extra) => ({ ...slipLeg(l, { board_percentile: percentile("underdog", Number(l.score_0_100)), ...riskFor(risk, l.player_name), ...extra }),
@@ -971,7 +998,7 @@ async function buildHighHit(sql, cfg, url, version) {
         WHERE b.bookmaker='betr' AND b.game_date=$1::date AND b.snapshot_ts=$2 AND b.market_key = ANY($3::text[])`, [slate.date, bsnap.ts, pgArr(Object.keys(BETR_MK))]);
       const on = new Set(rows.map(r => [r.pid, BETR_MK[r.mk], sideIn(r.side), Number(r.line)].join("|")));
       const u = used("betr"); let n = 0;
-      for (const l of udCand) { if (n >= size) break; const k = keyOf(l); if (!on.has(k) || u.has(k)) continue; n++; pool.push(mkLeg(l, "betr", { leg_factor: 1, tier: "REGULAR" })); }
+      for (const l of udByP) { if (n >= size) break; const k = keyOf(l); if (!on.has(k) || u.has(k)) continue; n++; pool.push(mkLeg(l, "betr", { leg_factor: 1, tier: "REGULAR" })); }
     } else notes.push("Betr backup bank: no Betr board captured in the last 3 hours - the bank is empty (a removed leg shrinks the slip).");
     const fsnap = (await q(sql, `SELECT max(snapshot_ts) ts FROM nba_market.fliff_pickem_board WHERE game_date=$1::date`, [slate.date]))[0];
     if (fsnap && fsnap.ts) {
@@ -979,7 +1006,7 @@ async function buildHighHit(sql, cfg, url, version) {
         JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player) WHERE b.game_date=$1::date AND b.snapshot_ts=$2`, [slate.date, fsnap.ts]);
       const on = new Map(rows.map(r => [[r.pid, r.prop, Number(r.ot) === 0 ? "Over" : "Under", Number(r.line)].join("|"), r]));
       const u = used("fliff"); let n = 0;
-      for (const l of udCand) {
+      for (const l of udByP) {
         if (n >= size) break; const k = keyOf(l), r = on.get(k);
         if (!r || u.has(k) || !(Number(r.m) > 1) || Number(r.m) > 1.85 || Number(l.estimated_hit_probability_0_100) < 56) continue;
         n++; pool.push(mkLeg(l, "fliff", { leg_factor: Number(r.m), tier: "R", game_label: r.matchup ? String(r.matchup).replace("@", " @ ") : undefined }));
