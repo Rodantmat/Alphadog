@@ -47,16 +47,24 @@ def underdog(conn, day):
     if not legs:
         print(f"BANK|{day} underdog: no board")
         return
-    c, _gc = ST.ud_lists(rows, legs)["T1"]
+    lists = ST.ud_lists(rows, legs)
+    # the Underdog portfolio's own candidate lists: T2 (RB both sides, p >= 0.60) and T3 (More combos, p >= 0.55) - the units that carry the +68% - then T1; best hit chance first
+    c = []
+    for unit in ("T2", "T3", "T1"):
+        if unit in lists:
+            c += [dict(l, _u=unit) for l in lists[unit][0]]
+    c.sort(key=lambda l: -float(l["p"]))
     best, seen = [], set()
     for l in c:
         k = str(l.get("player_id"))
-        if k in seen:
+        if k in seen or float(l["p"]) < 0.55:
             continue
         seen.add(k)
-        best.append({"pid": k, "player": l.get("player"), "prop": l.get("prop"), "side": l.get("side"), "line": float(l["line"]), "p": float(l["p"]), "game": l.get("event_id")})
-    write_bank(conn, day, "underdog", "T1", best)
-    print(f"BANK|{day} underdog T1: {len(best)} legs")
+        best.append({"pid": k, "player": l.get("player"), "prop": l.get("prop"), "side": l.get("side"), "line": float(l["line"]), "p": float(l["p"]), "game": l.get("event_id"), "unit": l["_u"]})
+    write_bank(conn, day, "underdog", "T123", best)
+    conn.execute("DELETE FROM nba_score.slip_leg_bank WHERE game_date=%s AND app='underdog' AND strategy='T1'", (day,))
+    conn.commit()
+    print(f"BANK|{day} underdog T2/T3/T1: {len(best)} legs")
     for i, l in enumerate(best[:12], 1):
         print(f"  {i:2d} {l['player']} {l['prop']} {l['side']} {l['line']:g} p={l['p']:.2f}")
 
