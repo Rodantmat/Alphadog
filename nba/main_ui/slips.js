@@ -951,6 +951,7 @@ async function buildHighHit(sql, cfg, url, version) {
   } catch (_e) { /* no bank table / query failed: the generic pool stays */ }
   // STRATEGY-FAITHFUL UNDERDOG SUBS (owner 2026-11-10): the Underdog pool is the T1 candidate list (nba_score.slip_leg_bank, app 'underdog' - the list the T slips, Fliff and
   // Betr are built from) matched to the scored board row by player id / prop / side / line; no bank or no match leaves the generic pool.
+  let udBankRows = [];   // board rows of the Underdog T1 bank (rule order) - also the source of the Fliff / Betr banks below
   try {
     const bankU = await q(sql, "SELECT rank, leg FROM nba_score.slip_leg_bank WHERE game_date = $1 AND app = 'underdog' ORDER BY rank", [slate.date], 4000);
     if (bankU && bankU.length) {
@@ -960,7 +961,8 @@ async function buildHighHit(sql, cfg, url, version) {
       for (const b of bankU) {
         const bl = typeof b.leg === "string" ? JSON.parse(b.leg) : b.leg;
         const l = idxU.get(String(bl.pid) + "|" + String(bl.prop) + "|" + sideIn(bl.side) + "|" + Number(bl.line));
-        if (!l) continue;
+        if (!l || Number(l.estimated_hit_probability_0_100 || 0) < 55) continue;   // a substitute below 55% hit chance never carries the strategy's ROI
+        udBankRows.push(l);
         fromU.push(slipLeg(l, { board_percentile: percentile("underdog", Number(l.score_0_100)), ...riskFor(risk, l.player_name),
           link: linkLegFor("underdog", { player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value }, linkMap, l.official_game_time_utc) }));
       }
@@ -985,7 +987,7 @@ async function buildHighHit(sql, cfg, url, version) {
       player_turnovers: "turnovers", player_blocks_steals: "stocks", player_points_rebounds: "pts_reb", player_points_assists: "pts_ast", player_rebounds_assists: "reb_ast", player_points_rebounds_assists: "pra" };
     const udCand = board.filter(l => l.source_key === "underdog" && !l.ud_hidden && Number(l.score_0_100) >= minScore && Number(l.edge_0_100) > 0
       && String(l.line_type || "regular") === "regular" && GRADABLE_PROPS.has(String(l.canonical_prop_key))).sort((a, b) => Number(b.edge_0_100) - Number(a.edge_0_100));
-    const udByP = udCand.slice().sort((a, b) => Number(b.estimated_hit_probability_0_100 || 0) - Number(a.estimated_hit_probability_0_100 || 0));   // the Fliff / Betr engines order the Underdog candidates by hit chance
+    const udByP = (udBankRows.length ? udBankRows : udCand).slice().sort((a, b) => Number(b.estimated_hit_probability_0_100 || 0) - Number(a.estimated_hit_probability_0_100 || 0));   // the Fliff / Betr engines order the Underdog candidates by hit chance
     const used = app => new Set(slips.filter(x => x.source_key === app).flatMap(x => x.legs.map(l => [l.mlb_player_id || l.player_id, l.canonical_prop_key, sideIn(l.selected_side), Number(l.line_value)].join("|"))));
     const keyOf = l => [l.player_id, l.canonical_prop_key, sideIn(l.selected_side), Number(l.line_value)].join("|");
     const mkLeg = (l, app, extra) => ({ ...slipLeg(l, { board_percentile: percentile("underdog", Number(l.score_0_100)), ...riskFor(risk, l.player_name), ...extra }),
