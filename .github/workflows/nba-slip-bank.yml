@@ -1,0 +1,29 @@
+name: NBA Substitute Bank (strategy-faithful legs)
+# 2026-11-10: writes nba_score.slip_leg_bank (the ranked candidates of each strategy's own rule). Never touches slips.
+on:
+  workflow_dispatch:
+    inputs:
+      day:
+        description: "slate date (YYYY-MM-DD), blank = today PT"
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: alphadog-nba-slip-bank
+  cancel-in-progress: false
+jobs:
+  bank:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy
+      - env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SB_DAY: ${{ github.event.inputs.day }}
+        run: cd nba && python -u slip_leg_bank.py

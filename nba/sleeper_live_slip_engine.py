@@ -155,8 +155,9 @@ def build(conn, day):
     return out, f"T1 qualified {len(c)}, on Sleeper {len(priced)}, after cap/skip {len(cand)}"
 
 
-def build_all(conn, day, rule):
-    """S_ALL rule: [slips] from every Sleeper window leg at its own line (research_app_allegs.live_legs + day(), order evbl)"""
+def all_candidates(conn, day, rule):
+    """S_ALL rule: the ranked candidate list (every Sleeper window leg that passes the rule's floor / gate / cap, best first) + the count of legs with final_hp.
+    build_all slices the slips off the top of THIS list; the substitute bank (owner 2026-11-10) is the rest of it, so a substitute is a leg the rule itself would play."""
     sl, mk, *_ = RSD.load(conn, day)
     legs = []
     for (pid, prop, side, line), l in sl.get("window", {}).items():
@@ -172,6 +173,13 @@ def build_all(conn, day, rule):
     # exactly research_app_allegs.day(): the order is stable on RSD.load's order, a leg without a known team is still a leg
     cand = [l for l in legs if l["p"] >= rule["floor"] and l["p"] * l["m"] >= rule["gate"] and l["m"] <= rule["mcap"]]
     cand.sort(key=lambda l: -(l["p"] + l["pf"]) / 2 * l["m"])
+    return cand, len(legs)
+
+
+def build_all(conn, day, rule):
+    """S_ALL rule: [slips] from every Sleeper window leg at its own line (research_app_allegs.live_legs + day(), order evbl)"""
+    cand, n_legs = all_candidates(conn, day, rule)
+    legs = [None] * n_legs
     out, used = [], set()
     for _ in range(rule["slips"]):
         s, pl, gm = [], set(), set()
