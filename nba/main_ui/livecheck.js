@@ -250,8 +250,9 @@ async function fliffCheck(legs) {
   const games = (((gm.result || {}).response || {}).games || {}).page.map(g => { const r = g.game_render_data; return { id: r.id, teams: [r.away_team.abbreviation, r.home_team.abbreviation] }; });
   if (legs.sweepAll) legs = games.map(g => ({ player_name: "zz", team_abbr: g.teams[0], canonical_prop_key: "points", line_value: 0, selected_side: "more" }));
   // a stored slip leg has no team_abbr, only its game ("MIA  @  UTA" / matchup): match the Fliff game on both teams (owner 2026-11-10: Fliff slip legs were never checked)
-  const fGame = l => { if (l.team_abbr) { const g = games.find(x => x.teams.includes(l.team_abbr)); if (g) return g; }
-    const m = String(l.game_label || l.matchup || "").toUpperCase().match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/); return m ? games.find(x => x.teams.includes(m[1]) && x.teams.includes(m[2])) : undefined; };
+  const fGame = l => { const m = String(l.game_label || l.matchup || "").toUpperCase().match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/);   // the feed lists several days: the leg's own game (both teams) first, the team alone only as a last resort
+    if (m) { const g = games.find(x => x.teams[0] === m[1] && x.teams[1] === m[2]); if (g) return g; }
+    return l.team_abbr ? games.find(x => x.teams.includes(l.team_abbr)) : undefined; };
   const need = new Map();   // gameId|cat -> true
   for (const l of legs) { const cat = FLIFF_CAT[l.canonical_prop_key]; const g = fGame(l); if (cat && g) need.set(g.id + "|" + cat, [g.id, cat]); }
   const rows = new Map();   // name|prop -> [{line, type}]

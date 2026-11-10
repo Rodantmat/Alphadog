@@ -7,7 +7,7 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-jessi-v1.1.5";   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.2.0";   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -27,6 +27,7 @@ async function tokenOk(sql, token) {
   return !!(t && t.token && token && String(t.token) === String(token));
 }
 
+const legLid = l => { const i = l.link && l.link.ids; if (!i) return null; if (l.source_key === "prizepicks") return i.projection_id ? i.projection_id + "-" + (l.selected_side === "less" ? "u" : "o") + "-" + l.line_value : null; return l.source_key === "sleeper" && i.line_id ? String(i.line_id) : null; };
 const startedMs = l => { const t = Date.parse((l.link && l.link.tip_utc) || l.official_game_time_utc || ""); return Number.isFinite(t) ? t : null; };
 const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok"));
 
@@ -126,15 +127,19 @@ async function data(env, token, save = true) {
       } catch (e) { /* never blocks the page */ }
     }
     const mapLeg = l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null,
-      tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null });
-    const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: slipUrl(s, now), bet: units[s.source_key] ? units[s.source_key].unit : null,
+      tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, team: l.team_abbr || null, lid: legLid(l) });
+    // her bank for the tap-to-uncheck sub (owner 2026-11-10): her own pool + the app's pairing list, live-confirmed legs only, best hit chance first
+    const pairLegs = (out.generated_slips || []).filter(x => x._pairs).flatMap(x => x.legs);
+    const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && l.link !== undefined && !l.off)
+      .map(l => Object.assign(mapLeg(l), { app: l.source_key, p: Number(l.p) || (Number(l.estimated_hit_probability_0_100) / 100) || 0 })).sort((x, y) => y.p - x.p) : [];
+    const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, gcap: s.game_cap || 1, structure: s.structure_label, url: slipUrl(s, now), bet: units[s.source_key] ? units[s.source_key].unit : null,
       legs: s.legs.map(l => Object.assign(mapLeg(l), { sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now })) }));
     const pairs = {};
     if (date === today) for (const s of out.generated_slips) {
       if (!s._pairs) continue;
       pairs[s.source_key] = s.legs.filter(l => !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && (legUrls(l) || s.source_key === "fliff")).map(l => Object.assign(mapLeg(l), { p: l.p, kind: l.kind || "standard", url: legUrls(l) })).slice(0, PAIR_SHOW[s.source_key] * 2);
     }
-    return { ok: true, version: VERSION, date, today, checked_at: new Date().toISOString(), order: APP_ORDER, labels: APP_LABEL, units, slips, pairs };
+    return { ok: true, version: VERSION, date, today, checked_at: new Date().toISOString(), order: APP_ORDER, labels: APP_LABEL, units, slips, pairs, pool: cpool };
   });
 }
 
@@ -157,15 +162,35 @@ const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/
 const DL=String.fromCharCode(36);const money=v=>v==null?'—':DL+Number(v).toFixed(2);
 const tipFmt=t=>{if(!t)return'';const d=new Date(t);return isNaN(d)?'':d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})};
 const propName=p=>String(p).replace(/_/g,' ').replace('threes made','3-pointers made').split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+function started(l){var t=l.tip?Date.parse(l.tip):NaN;return !!t&&t<=Date.now()}
+function alive(s){return s.legs.filter(function(l){return !l.dropped})}
+function lidUrl(app,ls){var ids=ls.map(function(l){return l.lid});if(ids.length<2||ids.some(function(x){return !x}))return null;
+  if(app==='prizepicks')return 'https://app.prizepicks.com/board?projections='+ids.join(',');
+  if(app==='sleeper')return 'https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1='+ids.join(',');return null}
+function canTake(s,c){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return false;
+  if(k.some(function(x){return x.player===c.player}))return false;
+  if(k.filter(function(x){return x.matchup&&x.matchup===c.matchup}).length>=(s.gcap||1))return false;
+  var tm=k.map(function(x){return x.team}).concat([c.team]);if(tm.every(Boolean)&&new Set(tm).size<2)return false;return true}
+function pickSub(s){var P=window.PD.pool||[];for(var i=0;i<P.length;i++){if(canTake(s,P[i]))return P.splice(i,1)[0]}return null}
+function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
+function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
+function sweep(s){var ch=false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
+function initSwap(d){d.pool=(d.pool||[]).slice();d.slips.forEach(function(s){sweep(s)})}
+function slipHtml(s,si){var k=alive(s);var url=s.changed?lidUrl(s.app,k):s.url;
+  var h='<div class="slip" id="slip'+si+'"><h3>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>'+(s.bet!=null?'<div class="bet">Bet: '+money(s.bet)+'</div>':'');
+  s.legs.forEach(function(l,li){h+='<label class="leg" style="display:block'+(l.dropped?';opacity:.45;text-decoration:line-through':'')+'"><input type="checkbox" class="kb" data-si="'+si+'" data-li="'+li+'"'+(l.dropped?'':' checked')+' style="float:right;width:20px;height:20px"><b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+(l.sub?' · SUB':'')+'</div>'+(l.dropped&&l.why?'<div class="flag">'+esc(l.why)+'</div>':'')+'</label>'});
+  if(k.length<2)h+='<div class="flag">Not enough legs kept (min 2)</div>';return h+'</div>'}
+function redraw(si){var s=window.PD.slips[si],el=document.getElementById('slip'+si);if(!s||!el)return;var t=document.createElement('div');t.innerHTML=slipHtml(s,si);el.replaceWith(t.firstChild)}
+document.addEventListener('change',function(e){var t=e.target;if(!t||!t.classList||!t.classList.contains('kb'))return;var si=+t.dataset.si,li=+t.dataset.li,s=window.PD.slips[si],l=s.legs[li];if(t.checked)restoreLeg(s,l);else dropLeg(s,l,'you unchecked it');redraw(si)});
+setInterval(function(){if(!window.PD)return;window.PD.slips.forEach(function(s,si){if(sweep(s))redraw(si)})},60000);
 function render(d){
+  initSwap(d);
   let h='<table><tr><th>App</th><th>Unit</th><th>Next increase</th><th>Accumulated</th></tr>';
   for(const a of d.order){const u=d.units[a];h+='<tr><td>'+esc(d.labels[a])+'</td><td>'+money(u.unit)+'</td><td>'+money(u.unit+1)+' at '+money(u.next_at)+'</td><td>'+money(u.acc)+'</td></tr>'}
   h+='</table>';
   if(!d.slips.length)h+='<p class="sub" style="margin-top:16px">No slips right now. They appear here once the day\\'s lineups are set.</p>';
   for(const a of d.order){const ss=d.slips.filter(s=>s.app===a);if(!ss.length)continue;h+='<h2>'+esc(d.labels[a])+'</h2>';
-    for(const s of ss){h+='<div class="slip"><h3>'+(s.url?'<a href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>'+(s.bet!=null?'<div class="bet">Bet: '+money(s.bet)+'</div>':'');
-      for(const l of s.legs){h+='<div class="leg"><b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+(l.sub?' · replaced':'')+'</div>'+(l.off?'<div class="flag">off the board</div>':l.started?'<div class="flag">game started</div>':'')+'</div>'}
-      h+='</div>'}}
+    for(const s of ss){h+=slipHtml(s,d.slips.indexOf(s))}}
   h+='<div id="pairsBox"></div>';
   $('#app').innerHTML=h;window.PD=d;drawPairs()}
 var SHOW={prizepicks:8,sleeper:5,fliff:3};var pOpen={};
