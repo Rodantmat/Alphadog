@@ -729,6 +729,24 @@ def pick():
         rows.append(dict(d=d, code=code, no=titles[size], st=st, size=size, legs=[leg_json(l) for l in s]))
         used |= {pid(l) for l in s}
         log(f"{code}: " + "; ".join(f"{x['player_name']} {x['canonical_prop_key']} {x['selected_side']} {x['line_value']}" for x in xs["legs"]))
+    # PRIZEPICKS NEVER EMPTY (owner 2026-11-10, Jessi had no PrizePicks slip on a thin board): with no slip built, the same thin-night rule the owner page uses - a
+    # 3-pick POWER of the best standard Unders (final_hp >= 0.55), one leg a game, >= 2 teams, never a repeat of a slip already forbidden to this page
+    if FAPP == "PP" and not slips:
+        try:
+            fcand = sorted([l for l in legs if l["tier"] == "R" and l["side"] == "Under" and float(l["p"]) >= 0.55], key=lambda l: -float(l["p"]))
+            fs = build(fcand, 3, 1, H, banned=frozenset(used), teams=True)
+            if fs:
+                xs = {"source_key": APP_KEY, "name": f"{APP_LABEL} 3-pick 1", "structure_label": STRUCT_NAME["power"], "size": 3, "game_cap": 1,
+                      "legs": [deco(conn, ctx, l, d) for l in fs]}
+                titles[3] += 1
+                slips.append(xs)
+                rows.append(dict(d=d, code="FB", no=titles[3], st="power", size=3, legs=[leg_json(l) for l in fs]))
+                used |= {pid(l) for l in fs}
+                log("FB (thin-night fallback): " + "; ".join(f"{x['player_name']} {x['canonical_prop_key']} {x['selected_side']} {x['line_value']}" for x in xs["legs"]))
+            else:
+                log("FB: no 3 standard Unders >= 55% fit")
+        except Exception as e:
+            log(f"FB fallback failed, nothing else affected: {e}")
     for x in pool:
         x.pop("_code", None)
     conn.execute("DELETE FROM nba_friend.snapshot WHERE game_date=%s AND payload->>'app'=%s", (d, APP_KEY))
