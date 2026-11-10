@@ -33,6 +33,8 @@ def sleeper(conn, day):
             continue
         seen.add(l["pid"])
         best.append({k: l.get(k) for k in ("pid", "player", "prop", "side", "line", "m", "p", "pf", "game", "team")})
+    # ROI by rank band (research_bank_roi, single-leg, 2025-26 / 2026-27): 1-5 +10 / +4, 6-10 +13 / -2, 11-15 +9 / +5, 16-25 +1 / -21, 26+ +3 / -12 -> the bank stops at rank 15
+    best = best[:15]
     write_bank(conn, day, "sleeper", SLE.ALL_RULE["name"], best)
     print(f"BANK|{day} sleeper {SLE.ALL_RULE['name']}: {len(best)} legs (of {n} with final_hp)")
     for i, l in enumerate(best[:15], 1):
