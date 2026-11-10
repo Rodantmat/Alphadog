@@ -1,11 +1,11 @@
 {
-  "fetched_at": "2026-11-09T11:33:36Z",
+  "fetched_at": "2026-11-10T11:33:19Z",
   "season": "2026-27",
   "row_counts": {
-    "player_game_log": 3294,
-    "player_game_log_advanced": 3294,
-    "team_game_log": 292,
-    "team_game_log_advanced": 292
+    "player_game_log": 3479,
+    "player_game_log_advanced": 3479,
+    "team_game_log": 308,
+    "team_game_log_advanced": 308
   },
   "errors": []
 }

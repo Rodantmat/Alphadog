@@ -24206,8 +24206,8 @@
       "away_team_tricode": "LAL",
       "arena_name": "State Farm Arena",
       "arena_city": "Atlanta",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24221,8 +24221,8 @@
       "away_team_tricode": "CLE",
       "arena_name": "Spectrum Center",
       "arena_city": "Charlotte",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24236,8 +24236,8 @@
       "away_team_tricode": "WAS",
       "arena_name": "Little Caesars Arena",
       "arena_city": "Detroit",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24251,8 +24251,8 @@
       "away_team_tricode": "MEM",
       "arena_name": "Scotiabank Arena",
       "arena_city": "Toronto",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24266,8 +24266,8 @@
       "away_team_tricode": "IND",
       "arena_name": "American Airlines Center",
       "arena_city": "Dallas",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24281,8 +24281,8 @@
       "away_team_tricode": "DEN",
       "arena_name": "Toyota Center",
       "arena_city": "Houston",
-      "game_status": 1,
-      "game_status_text": "8:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24296,8 +24296,8 @@
       "away_team_tricode": "SAS",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24311,8 +24311,8 @@
       "away_team_tricode": "NOP",
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
