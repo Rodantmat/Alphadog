@@ -324,6 +324,15 @@ async function tick(env, now, dryRun = false) {
         continue;
       }
       if (states[p].missed) continue;
+      // 2026-11-10: a RECORDED P2A failure was final (11-08: one NBA-stats 403 at 3:35 AM; P2B then built on stale logs and the night was
+      // graded a day late). pipeline_claim.py lets a failed P2A be re-claimed twice, so the scheduler re-fires it (retry-1 / retry-2, no force)
+      // while the P2B window is open; P2B keeps waiting (bounded by p2b_latest) until the retry finishes.
+      if (p === "P2A" && states.P2A.status === "failure" && recoveryOpen("P2A", plan, now)) {
+        const rt = await retryFailedP2A(sql, env, date, dryRun);
+        out.push(rt);
+        if (["p2a_retry_dispatched", "p2a_retry_dispatch_failed", "p2a_retry_due", "wait"].includes(rt.action)) states.P2A.status = "claimed";
+        continue;
+      }
       const dec = decide(p, plan, now, states[p], { P2A: states.P2A.status, P2B: states.P2B.status });
       if (dec.action !== "wait" && dec.action !== "skip") out.push(await act(sql, env, p, date, dec, dryRun));
       else if (dryRun) out.push({ pipeline: p, run_key: date, ...dec });
