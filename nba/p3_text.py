@@ -14,6 +14,77 @@ MODE = os.environ.get("MODE", "p3")
 RUN_ID = os.environ.get("RUN_ID", "")
 RESULT = os.environ.get("RESULT", "")
 
+APP_NAME = {"pp": "PrizePicks", "ud": "Underdog", "sleeper": "Sleeper", "betr": "Betr", "fliff": "Fliff"}
+APP_ORDER = ("pp", "ud", "sleeper", "betr", "fliff")
+FRIEND_UNIT = 5.0           # the friend plays a flat $5 a slip
+JESSI_UPX = {"pp": 10.5, "sleeper": 7.0, "fliff": 7.0}    # same ladder as the Jessi page (nba/alphadog-v2-nba-jessi.js unitFor)
+PAGE_KEY = {"prizepicks": "pp", "underdog": "ud", "sleeper": "sleeper", "betr": "betr", "fliff": "fliff"}
+
+
+def money(v):
+    r = int(round(v))
+    return ("+$%d" % r) if r > 0 else ("-$%d" % -r) if r < 0 else "$0"
+
+
+def unit_for(acc, upx):
+    n = 1
+    while upx * (n + 1) * n / 2 <= acc + 1e-9:
+        n += 1
+    return n
+
+
+def results_block(c, who, today):
+    """'Yesterday Results' per app + Total, then a blank line and the season's Accumulated (all apps), in real dollars.
+    who: rodo | jessi | friend.  Yesterday = the latest slate before `today` that has graded results for that person. Never raises."""
+    try:
+        per = {}      # app -> (yesterday dollars, season dollars)
+        if who == "rodo":
+            rows = c.execute("SELECT game_date, app, profit FROM nba_score.live_unit_app ORDER BY app, game_date").fetchall()
+            ydays = sorted({r[0] for r in rows if str(r[0]) < today})
+            if not ydays:
+                return ""
+            y = ydays[-1]
+            for app in APP_ORDER:
+                mine = [r for r in rows if r[1] == app and str(r[0]) <= str(y)]
+                if not mine:
+                    continue
+                cum = mine[-1][2]
+                prev = mine[-2][2] if len(mine) > 1 else 0.0
+                per[app] = (cum - prev if mine[-1][0] == y else None, cum)
+        else:
+            sch = "nba_jessi" if who == "jessi" else "nba_friend"
+            rows = c.execute(f"SELECT app, game_date, sum(profit)::float FROM {sch}.slips WHERE status='graded' AND game_date < %s::date "
+                             f"AND game_date >= (SELECT season_start FROM {sch}.season) GROUP BY app, game_date ORDER BY game_date", (today,)).fetchall()
+            if not rows:
+                return ""
+            y = max(r[1] for r in rows)
+            for app_name in ("prizepicks", "underdog", "sleeper", "betr", "fliff"):
+                a = PAGE_KEY[app_name]
+                mine = [r for r in rows if r[0] == app_name]
+                if not mine:
+                    continue
+                acc = 0.0; ydol = None
+                for _a, d, p in mine:
+                    u = FRIEND_UNIT if who == "friend" else unit_for(acc, JESSI_UPX.get(a, 7.0))
+                    acc += u * p
+                    if d == y:
+                        ydol = u * p
+                per[a] = (ydol, acc)
+        lines = ["Yesterday Results:"]
+        tot = 0
+        for app in APP_ORDER:
+            if app in per and per[app][0] is not None:
+                r = int(round(per[app][0])); tot += r
+                lines.append(f"{APP_NAME[app]}: {money(r)}")
+        if len(lines) == 1:
+            return ""
+        lines.append(f"Total: {money(tot)}")
+        acc_all = sum(v[1] for v in per.values())
+        return "\n\n" + "\n".join(lines) + "\n\nAccumulated: " + money(acc_all)
+    except Exception as e:  # noqa: BLE001
+        print("results block failed:", type(e).__name__, e)
+        return ""
+
 
 def main():
     with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as c:
@@ -51,7 +122,7 @@ def main():
                     if os.environ.get("DEFER_READY") == "1":
                         print("p3 text: ready text deferred to the end of the friend run (Fliff mirror + pairings are written there)")
                         return
-                    body = "AlphaDog Slips are ready \U0001F525"
+                    body = "AlphaDog Slips are ready \U0001F525" + results_block(c, "rodo", day)
                 who, addr = "rodo", cfg.get("cell_addr")
         elif MODE == "owner":
             # 2026-11-08: sent AFTER the friend run, so the Fliff mirror and the pairings exist when the text lands
@@ -67,21 +138,31 @@ def main():
             if n == 0:
                 print("owner text: no slips today - skipped")
                 return
-            who, addr, body = "rodo", cfg.get("cell_addr"), "AlphaDog Slips are ready \U0001F525"
+            who, addr, body = "rodo", cfg.get("cell_addr"), "AlphaDog Slips are ready \U0001F525" + results_block(c, "rodo", day)
+        elif MODE == "preview":
+            # TEST ONLY: all three people's texts as they would arrive, sent to the OWNER's cell only (RES_TODAY = the pretend today)
+            t = os.environ.get("RES_TODAY") or str(c.execute("SELECT (now() AT TIME ZONE 'America/Los_Angeles')::date").fetchone()[0])
+            for w in ("rodo", "jessi", "friend"):
+                body = ("" if w == "rodo" else f"[preview of {w}'s text]\n") + "AlphaDog Slips are ready \U0001F525" + results_block(c, w, t)
+                msg = MIMEText(body, "plain", "utf-8"); msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as sm:
+                    sm.login(user, pw); sm.sendmail(user, [cfg.get("cell_addr")], msg.as_string())
+                print("preview sent:", w, "|", body.replace("\n", " / "))
+            return
         elif MODE == "jessi":
             day = str(c.execute("SELECT max(game_date) FROM nba_jessi.snapshot").fetchone()[0])
             ok = c.execute("SELECT count(*) FROM nba_jessi.snapshot WHERE game_date=%s AND game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date", (day,)).fetchone()[0]
             if not ok:
                 print("jessi text: no snapshot for today - skipped")
                 return
-            who, addr, body = "jessi", cfg.get("jessi_addr"), "AlphaDog Slips are ready \U0001F525"
+            who, addr, body = "jessi", cfg.get("jessi_addr"), "AlphaDog Slips are ready \U0001F525" + results_block(c, "jessi", day)
         else:
             day = os.environ.get("DAY") or str(c.execute("SELECT max(game_date) FROM nba_friend.snapshot").fetchone()[0])
             ok = c.execute("SELECT count(*) FROM nba_friend.snapshot WHERE game_date=%s AND game_date = (now() AT TIME ZONE 'America/Los_Angeles')::date", (day,)).fetchone()[0]
             if not ok:
                 print("friend text: no snapshot for today - skipped")
                 return
-            who, addr, body = "friend", cfg.get("friend_addr"), "AlphaDog Slips are ready \U0001F525"
+            who, addr, body = "friend", cfg.get("friend_addr"), "AlphaDog Slips are ready \U0001F525" + results_block(c, "friend", day)
         if not addr:
             print("text alert: no reply address for", who, "- skipped")
             return

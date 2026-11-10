@@ -1,0 +1,26 @@
+name: NBA Text Preview (owner's cell only)
+on:
+  workflow_dispatch:
+    inputs:
+      today:
+        description: "pretend today (YYYY-MM-DD); yesterday's results are the slate before it"
+        default: ""
+        required: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Send the three previews to the owner's cell
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: preview
+          RES_TODAY: ${{ github.event.inputs.today }}
+        run: python -u nba/p3_text.py
