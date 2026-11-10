@@ -30,13 +30,14 @@ def main():
     live = [d for d in days if AF.season_of(d) == "2026-27"]
     hist = [d for d in days if AF.season_of(d) != "2026-27"]
     ovr, kt = RSH.law(conn, live)
+    kf = AA.fliff_law(conn, live) if AA.APP == "fliff" else None
     acc = defaultdict(lambda: [0, 0, 0.0])       # (season, band) -> [n, hits, sum profit]
     for i, d in enumerate(hist + live):
         st = AF.box(conn, d)
         if not st:
             continue
         season = AF.season_of(d)
-        legs = AA.hist_legs(conn, d, st, ovr, kt, None) if season != "2026-27" else AA.live_legs(conn, d, st)
+        legs = AA.hist_legs(conn, d, st, ovr, kt, kf) if season != "2026-27" else AA.live_legs(conn, d, st)
         legs = [l for l in legs if l.get("p") is not None and l.get("hit") is not None]
         if AA.APP == "sleeper":
             cand = [l for l in legs if l["p"] >= RULE["floor"] and l["p"] * l["m"] >= RULE["gate"] and l["m"] <= RULE["mcap"]]
