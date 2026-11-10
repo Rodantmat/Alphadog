@@ -374,6 +374,15 @@ export async function overlayLive(sql, out, ppFallback) {
   }
   if (ppFresh && want.prizepicks.length) { want.prizepicks.forEach(l => markPP(l, PP_IX)); apps.prizepicks = { ok: true, ms: 0, cached_s: Math.round((Date.now() - PP_AT) / 1000) }; }
   if (apps.prizepicks && !apps.prizepicks.ok && ppFallback) { await ppFallback(sql, out); apps.prizepicks.fallback = "stored board"; apps.prizepicks.ok = !!(out.pp_live && !out.pp_live.error); }
+  // OWNER RULE (2026-11-10): on EVERY screen (owner, Jessi, Jon) and for every app, a leg that is not confirmed on its app's own board - slip leg, pairing or sub - is not shown
+  // as playable. An app whose board was read leaves no leg unchecked: a leg it did not find is "missing" and the screen scratches it and subs.
+  for (const l of legs) { const a = l.source_key; if (!l.live_now && apps[a] && apps[a].ok) l.live_now = "missing"; }
+  // every leg gets its game's tip-off (stored legs carry only the game label) so a started game is scratched everywhere
+  try {
+    const gk = l => { const t = String(l.matchup || l.game_label || "").toUpperCase().match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/); return t ? t[1] + "@" + t[2] : null; };
+    const tm = new Map(); for (const l of legs) { const k = gk(l); const t = l.official_game_time_utc || (l.link && l.link.tip_utc); if (k && t && !tm.has(k)) tm.set(k, t); }
+    for (const l of legs) { const k = gk(l); if (k && !l.official_game_time_utc && tm.has(k)) l.official_game_time_utc = tm.get(k); }
+  } catch (_e) { /* no times */ }
   // a pool leg that is not confirmed on its own app's board is never offered as a substitute
   out.backup_pool = pool.filter(l => {
     if (l.source_key === "prizepicks" && apps.prizepicks && apps.prizepicks.ok) return l.pp_now === "standard";
