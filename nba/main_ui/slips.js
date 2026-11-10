@@ -1060,6 +1060,7 @@ async function buildHighHit(sql, cfg, url, version) {
     const all = [...slips.flatMap(x => x.legs || []), ...pool], tm = new Map();
     for (const l of all) { const k = gk(l); if (k && l.official_game_time_utc && !tm.has(k)) tm.set(k, l.official_game_time_utc); }
     for (const l of all) { const k = gk(l); if (k && !l.official_game_time_utc && tm.has(k)) l.official_game_time_utc = tm.get(k); }
+    for (const l of all) if (!l.game_label && l.matchup) l.game_label = String(l.matchup).replace(/\s*@\s*/, "  @  ");   // every leg shows its game (Fliff / Betr bank legs came without one)
   } catch (_e) { /* no times: the live check still drops a leg off the board */ }
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, test_only_recorded: testOnly.length, backup_pool: pool,
     unit_table: unitTable, hidden_notes: hiddenNotes,
