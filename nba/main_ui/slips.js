@@ -1033,6 +1033,26 @@ async function buildHighHit(sql, cfg, url, version) {
     hiddenNotes = notes.slice();
     notes.length = 0;
   }
+  // FLIFF / BETR LAST-RESORT BANK (owner 2026-11-10, "all needs to be fixed"): when the Underdog-derived bank finds nothing on an app's own board, the app's own best-hit-chance
+  // legs (nba_friend.pairs - the engine's pairing list, built from that app's board ranked by hit chance, the order the Fliff / Betr engines pick in) fill the bank,
+  // never a player already on one of the app's slips; the live check still drops anything not on the board.
+  try {
+    for (const app of ["fliff", "betr"]) {
+      if (pool.some(l => l.source_key === app)) continue;
+      const inApp = new Set(slips.filter(x => x.source_key === app).flatMap(x => x.legs.map(l => normName(l.player_name))));
+      const prow = await q(sql, "SELECT p::float p, mult::float m, leg FROM nba_friend.pairs WHERE game_date = $1::date AND app = $2 AND kind = 'main' ORDER BY rank LIMIT 12", [slate.date, app], 4000);
+      let n = 0;
+      for (const x of prow) {
+        const l = typeof x.leg === "string" ? JSON.parse(x.leg) : x.leg;
+        if (!l || !l.player_name || inApp.has(normName(l.player_name)) || Number(x.p) < 0.55) continue;
+        const side = sideIn(l.selected_side) === "Over" ? "more" : "less";
+        const id = `${slate.date}~${app}~${l.player_id}~${l.canonical_prop_key}~${Number(l.line_value)}~${sideIn(l.selected_side)}`;
+        pool.push({ ...l, source_key: app, selected_side: side, line_type: "regular", is_goblin: 0, is_demon: 0, tier: l.tier || "R", leg_factor: app === "betr" ? 1 : (Number(x.m) > 1 ? Number(x.m) : 1),
+          estimated_hit_probability_0_100: Math.round(Number(x.p) * 1000) / 10, hit_probability_0_100: Math.round(Number(x.p) * 1000) / 10, board_row_id: id, final_board_row_id: id });
+        if (++n >= 8) break;
+      }
+    }
+  } catch (_e) { /* no pairs: the bank stays as built */ }
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, test_only_recorded: testOnly.length, backup_pool: pool,
     unit_table: unitTable, hidden_notes: hiddenNotes,
     pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, stake_unit: bt.unit, timing_ms: (lap("build"), T) };
