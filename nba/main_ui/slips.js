@@ -929,6 +929,26 @@ async function buildHighHit(sql, cfg, url, version) {
         link: linkLegFor(app, { player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value }, linkMap, l.official_game_time_utc) }));
     }
   }
+  // STRATEGY-FAITHFUL SLEEPER SUBS (owner 2026-11-10 "the subs don't follow the logic"): Sleeper's pool is the S_ALL rule's own ranked candidates (nba_score.slip_leg_bank,
+  // written by slip_leg_bank.py: final_hp >= 0.50, final_hp x multiplier >= 1.12, ranked by blended chance x multiplier) matched to the scored board row; a bank
+  // that is empty or missing leaves the generic pool above in place (never an empty bank).
+  try {
+    const bank = await q(sql, "SELECT rank, leg FROM nba_score.slip_leg_bank WHERE game_date = $1 AND app = 'sleeper' ORDER BY rank", [slate.date], 4000);
+    if (bank && bank.length) {
+      const nrm = x => String(x == null ? "" : x).toLowerCase();
+      const idx = new Map(board.filter(l => l.source_key === "sleeper" && !inSlip.has(l.final_board_row_id))
+        .map(l => [nrm(l.player_name) + "|" + nrm(l.canonical_prop_key) + "|" + nrm(l.selected_side) + "|" + Number(l.line_value), l]));
+      const fromBank = [];
+      for (const b of bank) {
+        const bl = typeof b.leg === "string" ? JSON.parse(b.leg) : b.leg;
+        const l = idx.get(nrm(bl.player) + "|" + nrm(bl.prop) + "|" + nrm(bl.side) + "|" + Number(bl.line));
+        if (!l) continue;
+        fromBank.push(slipLeg(l, { board_percentile: percentile("sleeper", Number(l.score_0_100)), ...riskFor(risk, l.player_name),
+          link: linkLegFor("sleeper", { player: l.player_name, prop: l.canonical_prop_key, side: l.selected_side, line: l.line_value }, linkMap, l.official_game_time_utc) }));
+      }
+      if (fromBank.length) { for (let i = pool.length - 1; i >= 0; i--) if (pool[i].source_key === "sleeper") pool.splice(i, 1); pool.push(...fromBank); }
+    }
+  } catch (_e) { /* no bank table / query failed: the generic pool stays */ }
   // BETR + FLIFF BACKUP BANKS (owner 2026-11-09: "both apps need a leg bank, Fliff and Betr ... create a fallback"). Both apps place the Underdog board's legs
   // (the engines build them from it), so the bank is the Underdog candidates that sit on the app's OWN board right now: Betr = same player / prop / side AT THE SAME
   // LINE on the newest Betr snapshot (a regular pick, factor 1); Fliff = same player / prop / side at the same line on the newest Fliff Pick'Em board, with Fliff's own
