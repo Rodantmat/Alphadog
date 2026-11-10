@@ -295,12 +295,12 @@ async function sleeperPlayerIds() {
   return m;
 }
 async function refreshSleeperPairs(sql, legs, doc, idset) {
-  const stale = legs.filter(l => l._pair && l.link && l.link.ids && l.link.ids.line_id && !idset.has(String(l.link.ids.line_id)));
+  // 2026-11-10 (owner 15:00 PT, Sleeper slips and subs all "off board"): the re-resolve covers EVERY Sleeper leg - slip legs and substitutes too, not only pairings - found by name when no archived id is on the board
+  const stale = legs.filter(l => (l._pair || l.source_key === "sleeper") && l.link && l.link.ids && l.link.ids.line_id && !idset.has(String(l.link.ids.line_id)));
   if (!stale.length) return;
   const pns = [...new Set(stale.map(l => l._g && l._g.player).filter(Boolean))];
-  if (!pns.length) return;
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
-  const rows = await q(sql, "SELECT pn, ids->>'line_id' lid FROM nba_market.app_link_ids WHERE bookmaker='sleeper' AND game_date=$1::date AND pn = ANY($2)", [day, pns], 6000);
+  const rows = pns.length ? await q(sql, "SELECT pn, ids->>'line_id' lid FROM nba_market.app_link_ids WHERE bookmaker='sleeper' AND game_date=$1::date AND pn = ANY($2)", [day, pns], 6000) : [];
   const bySubj = new Map(); const idLine = new Map();   // line_id -> subject_id
   for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) idLine.set(String(o.line_id), ln.subject_id);
   const subj = {}; for (const r of rows) { if (!subj[r.pn] && idLine.has(String(r.lid))) subj[r.pn] = idLine.get(String(r.lid)); }
