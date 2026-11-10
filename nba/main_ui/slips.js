@@ -1053,6 +1053,14 @@ async function buildHighHit(sql, cfg, url, version) {
       }
     }
   } catch (_e) { /* no pairs: the bank stays as built */ }
+  // START TIMES FOR EVERY LEG (owner 2026-11-10: a leg whose game started is scratched and a sub pops up): stored slip legs (Fliff, Underdog...) carry only their game label, so the
+  // tip-off comes from any other leg of the same game that has one; the screen's started-leg swap reads official_game_time_utc.
+  try {
+    const gk = l => { const t = String(l.matchup || l.game_label || "").toUpperCase().match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/); return t ? t[1] + "@" + t[2] : null; };
+    const all = [...slips.flatMap(x => x.legs || []), ...pool], tm = new Map();
+    for (const l of all) { const k = gk(l); if (k && l.official_game_time_utc && !tm.has(k)) tm.set(k, l.official_game_time_utc); }
+    for (const l of all) { const k = gk(l); if (k && !l.official_game_time_utc && tm.has(k)) l.official_game_time_utc = tm.get(k); }
+  } catch (_e) { /* no times: the live check still drops a leg off the board */ }
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, test_only_recorded: testOnly.length, backup_pool: pool,
     unit_table: unitTable, hidden_notes: hiddenNotes,
     pricing, max_per_game: cfg.ui.backup_pool.max_per_game, notes, board_legs: board.length, stake_unit: bt.unit, timing_ms: (lap("build"), T) };
