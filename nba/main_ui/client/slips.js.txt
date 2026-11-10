@@ -563,6 +563,13 @@ function pairsHtml(){
 const PAIRS_SHOW={prizepicks:8,underdog:5,sleeper:5,fliff:3,betr:3};
 // a leg whose game has started is dropped and the next one in the pool takes its place (re-drawn every minute); a drifted / off-board leg was already removed by the live check on load
 setInterval(()=>{try{const b=document.getElementById('pairsBox');if(b){b.innerHTML=pairsInner(['prizepicks','underdog','sleeper','fliff','betr'].filter(a=>(pairsData[a]||[]).length))}}catch(_e){}},60000);
+function pairUrl(a,l){   // one pairing = one deep link (owner 2026-11-10); the same link formats as the slip titles. Underdog / Fliff have no link.
+  const i=l.ids;if(!i)return null;
+  if(a==='prizepicks'&&i.projection_id)return 'https://app.prizepicks.com/board?projections='+i.projection_id+'-'+l.sd+'-'+l.line;
+  if(a==='sleeper'&&i.line_id)return 'https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1='+i.line_id;
+  if(a==='betr'&&i.player_id&&i.event_id&&i.stat)return 'https://l.betr.app/referral?partner=alphadog&picks='+encodeURIComponent(btoa([i.player_id,i.event_id,i.stat,l.sd==='u'?'LESS':'MORE',i.tier||'REGULAR'].join(':')));
+  return null;
+}
 function pairsInner(secs){
   const now=Date.now();
   return '<h3 style="margin:22px 0 6px">Best pairings of the day</h3>'+secs.map(a=>{
@@ -571,6 +578,7 @@ function pairsInner(secs){
     return '<details class="pairsApp slipCard" data-app="'+esc(a)+'"'+(pairsOpen.has(a)?' open':'')+'><summary style="cursor:pointer;font-weight:800">Best pairings of the day &ndash; '+esc(appLabel(a))+' <span class="small" style="opacity:.7">('+ls.filter(l=>!l.extra).length+')</span></summary>'+ls.map((l,i)=>{const hd=l.extra&&(i===0||!ls[i-1].extra)?'<div class="small" style="margin:8px 0 2px;font-weight:800;opacity:.85">Extra (you only): 3 best regular lines + best demon</div>':'';
       const tip=l.tip?new Date(l.tip).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Los_Angeles'})+' PT':'';
       const tag=l.kind&&l.kind!=='standard'?' <span class="badge '+esc(l.kind)+'" style="vertical-align:middle">'+esc(l.kind.charAt(0).toUpperCase()+l.kind.slice(1))+'</span>':'';
-      return hd+'<div class="legRow"><span class="legRowText">'+esc(l.player||'')+' &mdash; '+esc(l.line??'')+' '+esc(displayPropLabel(l.prop))+' '+(String(l.side||'').toLowerCase()==='less'||String(l.side||'').toLowerCase()==='under'?'LESS':'MORE')+tag+(l.matchup||tip?' <span class="small" style="opacity:.85">('+esc([l.matchup,tip].filter(Boolean).join(' · '))+')</span>':'')+'</span><b class="legRowPct">'+(Number(l.p)*100).toFixed(1)+'%</b></div>'}).join('')+'</details>'}).join('');
+      const pu=pairUrl(a,l);const nm=pu?'<a href="'+esc(pu)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">'+esc(l.player||'')+'</a>':esc(l.player||'');
+      return hd+'<div class="legRow"><span class="legRowText">'+nm+' &mdash; '+esc(l.line??'')+' '+esc(displayPropLabel(l.prop))+' '+(String(l.side||'').toLowerCase()==='less'||String(l.side||'').toLowerCase()==='under'?'LESS':'MORE')+tag+(l.matchup||tip?' <span class="small" style="opacity:.85">('+esc([l.matchup,tip].filter(Boolean).join(' · '))+')</span>':'')+'</span><b class="legRowPct">'+(Number(l.p)*100).toFixed(1)+'%</b></div>'}).join('')+'</details>'}).join('');
 }
 bindSlipSourceFilters();

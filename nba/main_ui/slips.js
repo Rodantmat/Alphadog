@@ -540,7 +540,7 @@ async function pairsLive(sql) {
     for (const s of tmp.generated_slips) {
       r[s.source_key] = s.legs.filter(l => !(s.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok")))
         .filter(l => { const t = Date.parse(l.official_game_time_utc || ""); return !(t && t <= now); })
-        .map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard", extra: l.extra || null }));
+        .map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, p: l.p, kind: l.kind || "standard", extra: l.extra || null, ids: (l.link && l.link.ids) || null, sd: sideIn(l.selected_side) === "Under" ? "u" : "o" }));   // ids + side: the client turns each pairing into a deep link (owner 2026-11-10)
       const ex = r[s.source_key].filter(l => l.extra), main = r[s.source_key].filter(l => !l.extra).slice(0, ({ prizepicks: 8, underdog: 5, sleeper: 5, fliff: 3, betr: 3 }[s.source_key] || 3) * 2);
       r[s.source_key] = main.concat(ex);   // pool of twice the shown count: the screen drops a started leg and the next takes its place
     }
