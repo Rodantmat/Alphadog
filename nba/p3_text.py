@@ -175,7 +175,7 @@ def main():
                 return
             for w in (("rodo",) if os.environ.get("OWNER_ONLY") else ("rodo", "jessi", "friend")):
                 body = ("" if w == "rodo" else f"[preview of {w}'s text]\n") + "AlphaDog Slips are ready \U0001F525" + results_block(c, w, t)
-                msg = MIMEText(body, "plain", "utf-8"); msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"
+                msg = MIMEText(body.replace("\n", " "), "plain", "utf-8"); msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"
                 with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as sm:
                     sm.login(user, pw); sm.sendmail(user, [cfg.get("cell_addr")], msg.as_string())
                 print("preview sent:", w, "|", body.replace("\n", " / "))
