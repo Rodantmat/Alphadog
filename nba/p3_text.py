@@ -142,6 +142,18 @@ def main():
         elif MODE == "preview":
             # TEST ONLY: all three people's texts as they would arrive, sent to the OWNER's cell only (RES_TODAY = the pretend today)
             t = os.environ.get("RES_TODAY") or str(c.execute("SELECT (now() AT TIME ZONE 'America/Los_Angeles')::date").fetchone()[0])
+            if os.environ.get("VARIANTS"):
+                # 2026-11-09: the first preview arrived as ONE line (everything after the first line was dropped) - try ways of keeping the lines
+                full = "AlphaDog Slips are ready \U0001F525" + results_block(c, "rodo", t)
+                variants = {"A single newlines only": full.replace("\n\n", "\n"),
+                            "B blank line = nbsp": full.replace("\n\n", "\n\u00a0\n"),
+                            "C all on one line with bullets": full.replace("\n\n", " | ").replace("\n", " | ")}
+                for nm, b in variants.items():
+                    msg = MIMEText(b, "plain", "utf-8"); msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"
+                    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as sm:
+                        sm.login(user, pw); sm.sendmail(user, [cfg.get("cell_addr")], msg.as_string())
+                    print("variant sent:", nm, "|", b.replace("\n", " / "))
+                return
             for w in ("rodo", "jessi", "friend"):
                 body = ("" if w == "rodo" else f"[preview of {w}'s text]\n") + "AlphaDog Slips are ready \U0001F525" + results_block(c, w, t)
                 msg = MIMEText(body, "plain", "utf-8"); msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"

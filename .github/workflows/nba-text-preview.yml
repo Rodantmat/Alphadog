@@ -6,6 +6,10 @@ on:
         description: "pretend today (YYYY-MM-DD); yesterday's results are the slate before it"
         default: ""
         required: false
+      variants:
+        description: "1 = send ONLY three line-break variants of the owner's text (to find what the SMS bridge keeps)"
+        default: ""
+        required: false
 jobs:
   preview:
     runs-on: ubuntu-latest
@@ -23,4 +27,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           MODE: preview
           RES_TODAY: ${{ github.event.inputs.today }}
+          VARIANTS: ${{ github.event.inputs.variants }}
         run: python -u nba/p3_text.py
