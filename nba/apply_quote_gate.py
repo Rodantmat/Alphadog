@@ -110,10 +110,13 @@ def main():
 
     placed_n = walk(port, n)
     if fbs:
-        fb_placed = walk(fbs, fb_n)
-        print(f"QUOTE GATE {day}: thin-night fallback {fb_strat} placed {fb_placed} of {fb_n} ({len(fbs)} built incl. backups)", flush=True)
-        if fb_placed < fb_n:
-            print(f"::warning::quote gate: only {fb_placed} of {fb_n} fallback slips passed PrizePicks' quote on {day}", flush=True)
+        # owner 2026-11-10: the trigger counts B slips that SURVIVE the quote (placed_n), not slips built - when B keeps more than the trigger the fallback
+        # stays backup; when the gate skipped B down to the trigger or below, the fallback is placed (PrizePicks is never empty)
+        fb_cap = fb_n if placed_n <= int(fbc.get('trigger', 1)) else 0
+        fb_placed = walk(fbs, fb_cap)
+        print(f"QUOTE GATE {day}: thin-night fallback {fb_strat} placed {fb_placed} of {fb_cap} ({len(fbs)} built incl. backups)", flush=True)
+        if fb_placed < fb_cap:
+            print(f"::warning::quote gate: only {fb_placed} of {fb_cap} fallback slips passed PrizePicks' quote on {day}", flush=True)
     for strategy, k, legs, size, structure, status in slips:
         if (strategy, k) in {(p[0], p[1]) for p in port + fbs} or status != 'placed':
             continue

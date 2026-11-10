@@ -258,7 +258,7 @@ def fallback_cfg(conn):
         return {}
 
 
-def fallback_slips(prepared, fb, extra=0):
+def fallback_slips(prepared, fb, extra=0, force=False):
     """THE THIN-NIGHT FALLBACK (owner 2026-10-27 15:33 PT "Deploy it"; research_pp_fallback_rule run 40594721780). On portfolio B's
     prepared board: (B units that build a slip, [slips]). Slips only when B builds <= fb.trigger (1): 3-pick POWER of the best standard
     UNDERS - final_hp >= fb.floor (0.55), best final_hp first, <= 1 leg a game, >= 2 teams, fb.slips (2) slips from different players.
@@ -266,7 +266,7 @@ def fallback_slips(prepared, fb, extra=0):
     extra > 0: that many BACKUP slips after the main ones, the same greedy on the remaining players (owner 2026-10-27: legs pulled from
     PrizePicks - 0.5 blocks / turnover Unders - cost a slip; the quote gate promotes a passing backup in place of a failed slip)."""
     built_b = sum(1 for u in PB.UNITS if PB.unit_slip(prepared, u) is not None)
-    if built_b > int(fb.get('trigger', 1)):
+    if built_b > int(fb.get('trigger', 1)) and not force:
         return built_b, []
     size, floor_, nsl = int(fb.get('size', 3)), float(fb.get('floor', 0.55)), int(fb.get('slips', 2))
     cand = sorted([l for l in prepared if l['tier'] == 'R' and l['side'] == 'Under' and float(l['p']) >= floor_], key=lambda l: -float(l['p']))
@@ -1398,13 +1398,17 @@ def pick(conn, day, require_fresh=True):
     fb = fallback_cfg(conn)
     if fb.get('enabled') and pools.get('__pb__') is not None:
         n_main = int(fb.get('slips', 2))
-        built_b, fslips = fallback_slips(pools['__pb__'], fb, extra=int(fb.get('backups', 0)))
-        if built_b > int(fb.get('trigger', 1)):
-            print(f"  {day}: fallback not needed - portfolio B builds {built_b} slips", flush=True)
-        elif not fslips:
+        # 2026-11-10 (owner: PrizePicks empty is a hard fail): B can BUILD slips the quote gate then skips (today both failed, the fallback never fired).
+        # The fallback slips are now always built; when B built more than the trigger they are ALL backups, and the quote gate promotes them only if
+        # too few B slips survive PrizePicks' own quote (apply_quote_gate: cap = fb.slips when surviving B <= trigger, else 0).
+        built_b, fslips = fallback_slips(pools['__pb__'], fb, extra=int(fb.get('backups', 0)), force=True)
+        b_over = built_b > int(fb.get('trigger', 1))
+        if b_over:
+            print(f"  {day}: portfolio B builds {built_b} slips - fallback recorded as backups only", flush=True)
+        if not fslips:
             print(f"  {day}: FALLBACK triggered (B built {built_b}) - not enough Unders >= {fb.get('floor', 0.55)} for a slip", flush=True)
         for k_fb, pick_ in enumerate(fslips, start=1):
-            st_fb = 'placed' if k_fb <= n_main else 'placed_backup'
+            st_fb = 'placed' if (k_fb <= n_main and not b_over) else 'placed_backup'
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
                             VALUES (%s,%s,%s,%s,%s,'power',%s,1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, 'P_FB_U3power', k_fb, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
