@@ -7,7 +7,7 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-jessi-v1.1.3";   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.1.4";   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -32,7 +32,11 @@ const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l
 
 // replace a drifted / started leg from her own pool: same app, other player, never the opposite side of a player already on the day's slips, the slip's game cap, >= 2 teams
 function autoSwap(out, now) {
-  const slips = (out.generated_slips || []).filter(s => !s._pairs); let pool = [...(out.backup_pool || [])];
+  const slips = (out.generated_slips || []).filter(s => !s._pairs);
+  // her bank = her own backup pool, then the app's pairing list (the best hit-chance legs of that app, ranked); a leg the live check marks gone / moved never goes in (owner 2026-11-10: "if it is not available, we get a sub")
+  let pool = [...(out.backup_pool || [])];
+  for (const ps of (out.generated_slips || []).filter(s => s._pairs)) for (const l of ps.legs) if (l.source_key !== "prizepicks" && !pool.some(c => c.source_key === l.source_key && c.player_name === l.player_name)) pool.push(l);
+  pool = pool.filter(c => !isBad(c));
   const sidesOf = new Map(); for (const s of slips) for (const l of s.legs) sidesOf.set(l.player_name + "|" + l.canonical_prop_key, l.selected_side);
   for (const s of slips) {
     s.legs.forEach((l, i) => {
@@ -49,7 +53,7 @@ function autoSwap(out, now) {
       else l.off = true;
     });
   }
-  out.backup_pool = pool;
+  out.backup_pool = pool.filter(c => !c._pair);
 }
 
 function legUrls(l) {   // one leg, one deep link: she taps it and pairs it with a taco or a discounted line inside the app
