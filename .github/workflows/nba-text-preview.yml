@@ -10,6 +10,10 @@ on:
         description: "1 = send ONLY three line-break variants of the owner's text (to find what the SMS bridge keeps)"
         default: ""
         required: false
+      owner_only:
+        description: "1 = only the owner's own text"
+        default: ""
+        required: false
 jobs:
   preview:
     runs-on: ubuntu-latest
@@ -27,5 +31,6 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           MODE: preview
           RES_TODAY: ${{ github.event.inputs.today }}
+          OWNER_ONLY: ${{ github.event.inputs.owner_only }}
           VARIANTS: ${{ github.event.inputs.variants }}
         run: python -u nba/p3_text.py

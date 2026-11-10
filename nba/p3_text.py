@@ -80,7 +80,8 @@ def results_block(c, who, today):
             return ""
         lines.append(f"Total: {money(tot)}")
         acc_all = sum(v[1] for v in per.values())
-        return "\n\n" + "\n".join(lines) + "\n\nAccumulated: " + money(acc_all)
+        # blank lines are written as a line holding one non-breaking space: the Google Voice email bridge drops everything after a truly empty line (2026-11-09 test)
+        return "\n\u00a0\n" + "\n".join(lines) + "\n\u00a0\nAccumulated: " + money(acc_all)
     except Exception as e:  # noqa: BLE001
         print("results block failed:", type(e).__name__, e)
         return ""
@@ -154,7 +155,7 @@ def main():
                         sm.login(user, pw); sm.sendmail(user, [cfg.get("cell_addr")], msg.as_string())
                     print("variant sent:", nm, "|", b.replace("\n", " / "))
                 return
-            for w in ("rodo", "jessi", "friend"):
+            for w in (("rodo",) if os.environ.get("OWNER_ONLY") else ("rodo", "jessi", "friend")):
                 body = ("" if w == "rodo" else f"[preview of {w}'s text]\n") + "AlphaDog Slips are ready \U0001F525" + results_block(c, w, t)
                 msg = MIMEText(body, "plain", "utf-8"); msg["From"] = user; msg["To"] = cfg.get("cell_addr"); msg["Subject"] = "Re: AlphaDog"
                 with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as sm:
