@@ -935,7 +935,7 @@ async function buildHighHit(sql, cfg, url, version) {
   try {
     const bank = await q(sql, "SELECT rank, leg FROM nba_score.slip_leg_bank WHERE game_date = $1 AND app = 'sleeper' ORDER BY rank", [slate.date], 4000);
     if (bank && bank.length) {
-      const nrm = x => String(x == null ? "" : x).toLowerCase();
+      const nrm = x => String(x == null ? "" : x).toLowerCase().replace(/[^a-z0-9]/g, "");   // the bank stores the player as a bare key (collingillespie)
       const idx = new Map(board.filter(l => l.source_key === "sleeper" && !inSlip.has(l.final_board_row_id))
         .map(l => [nrm(l.player_name) + "|" + nrm(l.canonical_prop_key) + "|" + nrm(l.selected_side) + "|" + Number(l.line_value), l]));
       const fromBank = [];
