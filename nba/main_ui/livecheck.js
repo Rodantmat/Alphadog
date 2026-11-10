@@ -249,8 +249,11 @@ async function fliffCheck(legs) {
   const gm = await post(host, { __object_class_name: "FCM__Skipper_GetGames__Request", variables: { filter: { league: nba } } });
   const games = (((gm.result || {}).response || {}).games || {}).page.map(g => { const r = g.game_render_data; return { id: r.id, teams: [r.away_team.abbreviation, r.home_team.abbreviation] }; });
   if (legs.sweepAll) legs = games.map(g => ({ player_name: "zz", team_abbr: g.teams[0], canonical_prop_key: "points", line_value: 0, selected_side: "more" }));
+  // a stored slip leg has no team_abbr, only its game ("MIA  @  UTA" / matchup): match the Fliff game on both teams (owner 2026-11-10: Fliff slip legs were never checked)
+  const fGame = l => { if (l.team_abbr) { const g = games.find(x => x.teams.includes(l.team_abbr)); if (g) return g; }
+    const m = String(l.game_label || l.matchup || "").toUpperCase().match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/); return m ? games.find(x => x.teams.includes(m[1]) && x.teams.includes(m[2])) : undefined; };
   const need = new Map();   // gameId|cat -> true
-  for (const l of legs) { const cat = FLIFF_CAT[l.canonical_prop_key]; const g = games.find(x => x.teams.includes(l.team_abbr)); if (cat && g) need.set(g.id + "|" + cat, [g.id, cat]); }
+  for (const l of legs) { const cat = FLIFF_CAT[l.canonical_prop_key]; const g = fGame(l); if (cat && g) need.set(g.id + "|" + cat, [g.id, cat]); }
   const rows = new Map();   // name|prop -> [{line, type}]
   await pool([...need.values()], 6, async ([gid, cat]) => {
     try { const c = await post(host, { __object_class_name: "FCM__Skipper_GetCards__Request", variables: { filter: { league: nba, games: [gid], prop_categories: ["fkey__sk_prop_category__" + cat] } } });
@@ -260,7 +263,7 @@ async function fliffCheck(legs) {
           const k = normName(pr.name) + "|" + prop; if (!rows.has(k)) rows.set(k, []); rows.get(k).push({ line: Number(o.line), type: o.option_type }); } } } catch (_e) { /* those legs stay unchecked */ }
   });
   for (const l of legs) {
-    const cat = FLIFF_CAT[l.canonical_prop_key]; const g = games.find(x => x.teams.includes(l.team_abbr)); if (!cat || !g || !need.has(g.id + "|" + cat)) continue;
+    const cat = FLIFF_CAT[l.canonical_prop_key]; const g = fGame(l); if (!cat || !g || !need.has(g.id + "|" + cat)) continue;
     const rs = rows.get(normName(l.player_name) + "|" + l.canonical_prop_key) || [], t = sideOf(l) === "less" ? 1 : 0;
     l.live_now = rs.some(r => near(r.line, l.line_value) && r.type === t) ? "ok" : (rs.length ? "moved" : "missing");
   }
