@@ -34,6 +34,12 @@ def unit_for(acc, upx):
 
 
 def results_block(c, who, today):
+    s = _rb(c, who, today)
+    # layout the owner picked (format E): no blank line between the header and "Yesterday Results:", one blank line before "Accumulated"
+    return s.replace(chr(10) + chr(160) + chr(10) + "Yesterday", chr(10) + "Yesterday", 1)
+
+
+def _rb(c, who, today):
     """'Yesterday Results' per app + Total, then a blank line and the season's Accumulated (all apps), in real dollars.
     who: rodo | jessi | friend.  Yesterday = the latest slate before `today` that has graded results for that person. Never raises."""
     try:
