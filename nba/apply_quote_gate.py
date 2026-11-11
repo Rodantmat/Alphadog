@@ -103,6 +103,8 @@ def main():
     fbs = sorted([s for s in slips if s[0] == fb_strat], key=lambda s: s[1])
     fbs2 = sorted([s for s in slips if s[0] == fb2_strat], key=lambda s: s[1])
 
+    placed_keys = []                                 # (strategy, k, size, structure) of every slip walk() placed
+
     def walk(group, cap):
         placed = 0
         for strategy, k, legs, size, structure, status in group:
@@ -111,6 +113,7 @@ def main():
             if ok and placed < cap:
                 new = 'placed'
                 placed += 1
+                placed_keys.append((strategy, k, size, structure))
             elif ok:
                 new = 'placed_backup'
             else:
