@@ -94,7 +94,7 @@ def load(conn):
             nv = None
             if po is not None and 0.03 < po < 0.97:
                 nv = po if l["side"] == "Over" else 1 - po
-            keep.append({"player": l["player"], "pid": pid, "prop": l["prop"], "k": kind(l["tier"]), "side": l["side"], "line": float(l["line"]),
+            keep.append({"player": l["player"], "pid": pid, "prop": l["prop"], "k": kind(l["tier"]), "tier": l["tier"], "side": l["side"], "line": float(l["line"]),
                          "fh": float(l["score"]), "hit": h, "event_id": l["event_id"], "grp": PB.GRP.get(l["prop"]),
                          "conf": cs[0] if cs else None, "sc": cs[1] if cs else None, "nv": nv})
         out.append((s, d, keep))
