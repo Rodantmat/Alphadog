@@ -94,7 +94,7 @@ if TIER == "jessi":
         raise SystemExit(f"jessi tier has no {FAPP}")
     RULES, EXTRA = JESSI_RULES[FAPP], []
 HIS_PP = ["B3", "B4", "B5", "B7", "B9", "J1", "J2", "J3", "F5", "B3x4", "B5x4", "B7x4"]   # 2026-11-07: B6 out, J1 J2 J3 F5 in (owner deploy)
-need = lambda k: max(1, int(0.4 * k))
+need = lambda k: max(1, int(0.2 * k))     # owner 2026-11-11: 40% -> 20%
 MK = {'player_points': 'points', 'player_rebounds': 'rebounds', 'player_assists': 'assists', 'player_threes': 'threes_made',
       'player_steals': 'steals', 'player_blocks': 'blocks', 'player_turnovers': 'turnovers', 'player_blocks_steals': 'stocks',
       'player_points_rebounds': 'pts_reb', 'player_points_assists': 'pts_ast', 'player_rebounds_assists': 'reb_ast',
