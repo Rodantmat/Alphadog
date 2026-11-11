@@ -184,7 +184,12 @@ def main():
     print(f"QUOTE GATE {day}: portfolio slips placed {placed_n} of {n}; {len(changes)} status changes{' (DRY RUN - nothing written)' if dry else ''}", flush=True)
     if placed_n < n:
         print(f"::warning::quote gate: only {placed_n} of {n} portfolio slips passed PrizePicks' quote on {day}", flush=True)
+    for (strategy, k), (nl, ns) in repairs.items():
+        print(f"  REPAIR {strategy} k{k}: now {ns} legs ({', '.join(str(l.get('player')) for l in nl)})", flush=True)
     if not dry:
+        for (strategy, k), (nl, ns) in repairs.items():
+            conn.execute("UPDATE nba_score.live_slips SET legs_json=%s::jsonb, size=%s, streak_note = coalesce(streak_note || '; ', '') || %s WHERE game_date=%s AND strategy=%s AND k=%s",
+                         (json.dumps(nl), ns, f"quote gate repair: unlisted leg dropped, kept as {ns}-pick", day, strategy, k))
         for new, note, strategy, k in changes:
             conn.execute("""UPDATE nba_score.live_slips SET status=%s, streak_note = coalesce(streak_note || '; ', '') || %s
                             WHERE game_date=%s AND strategy=%s AND k=%s""", (new, note, day, strategy, k))
