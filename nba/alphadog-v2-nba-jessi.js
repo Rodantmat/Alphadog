@@ -7,7 +7,7 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-jessi-v1.2.1";   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.2.2";   // v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -130,7 +130,7 @@ async function data(env, token, save = true) {
       tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, team: l.team_abbr || null, lid: legLid(l) });
     // her bank for the tap-to-uncheck sub (owner 2026-11-10): her own pool + the app's pairing list, live-confirmed legs only, best hit chance first
     const pairLegs = (out.generated_slips || []).filter(x => x._pairs).flatMap(x => x.legs);
-    const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && l.link !== undefined && !l.off)
+    const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !(l.source_key === "prizepicks" && ((l.kind && l.kind !== "standard") || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1 || l.want_odds)) && !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && l.link !== undefined && !l.off)
       .map(l => Object.assign(mapLeg(l), { app: l.source_key, p: Number(l.p) || (Number(l.estimated_hit_probability_0_100) / 100) || 0 })).sort((x, y) => y.p - x.p) : [];
     const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, gcap: s.game_cap || 1, structure: s.structure_label, url: slipUrl(s, now), bet: units[s.source_key] ? units[s.source_key].unit : null,
       legs: s.legs.map(l => Object.assign(mapLeg(l), { sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now })) }));

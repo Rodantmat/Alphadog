@@ -7,7 +7,7 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-friend-v1.7.1";   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
+const VERSION = "alphadog-v2-nba-friend-v1.7.2";   // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
 // prior:
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
@@ -128,7 +128,7 @@ async function data(env, token, save = true) {
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
         sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now, status: l.source_key === "prizepicks" ? l.pp_now || null : l.live_now || null, team: l.team_abbr || null, lid: legLid(l) })), gcap: s.game_cap || 1 }));
     const pairLegs = (out.generated_slips || []).filter(x => x._pairs).flatMap(x => x.legs);
-    const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && !l.off)
+    const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !(l.source_key === "prizepicks" && ((l.kind && l.kind !== "standard") || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1 || l.want_odds)) && !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && !l.off)
       .map(l => ({ app: l.source_key, player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, team: l.team_abbr || null, lid: legLid(l), p: Number(l.p) || (Number(l.estimated_hit_probability_0_100) / 100) || 0 })).sort((x, y) => y.p - x.p) : [];
     return { ok: true, version: VERSION, date, today, checked_at: new Date().toISOString(), live: out.pp_live ? { ms: out.pp_live.total_ms, flagged: out.pp_live.flagged.length } : null,
       roi: { apps, total: n ? { n, roi: p / n } : null }, order: APP_ORDER, labels: APP_LABEL, slips, pairs: pairsOut(out, now, date === today), pool: cpool };

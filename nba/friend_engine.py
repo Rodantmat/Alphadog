@@ -747,6 +747,24 @@ def pick():
                 log("FB: no 3 standard Unders >= 55% fit")
         except Exception as e:
             log(f"FB fallback failed, nothing else affected: {e}")
+    # PRIZEPICKS SUB BANK (owner 2026-11-10: "subs for everybody, every app"): the standard Unders (final_hp >= 0.55, the same legs the owner screen offers as subs) that are on no slip of
+    # this page fill the pool, best hit chance first - a pulled / drifted / started PrizePicks leg always has a sub. Never a goblin / demon (tier R standard lines only).
+    if FAPP == "PP":
+        try:
+            inpool = {pid(x) for x in pool} if False else {x.get("player_name") for x in pool}
+            bank = sorted([l for l in legs if l["tier"] == "R" and l["side"] == "Under" and float(l["p"]) >= 0.55 and pid(l) not in used], key=lambda l: -float(l["p"]))
+            n_add = 0
+            seen_pl = set()
+            for l in bank:
+                x = deco(conn, ctx, l, d)
+                if x.get("player_name") in inpool or x.get("player_name") in seen_pl:
+                    continue
+                seen_pl.add(x.get("player_name")); x["_code"] = "BK"; pool.append(x); n_add += 1
+                if n_add >= 14:
+                    break
+            log(f"PP sub bank: {n_add} standard Unders added to the pool")
+        except Exception as e:
+            log(f"PP sub bank failed, nothing else affected: {e}")
     for x in pool:
         x.pop("_code", None)
     conn.execute("DELETE FROM nba_friend.snapshot WHERE game_date=%s AND payload->>'app'=%s", (d, APP_KEY))
