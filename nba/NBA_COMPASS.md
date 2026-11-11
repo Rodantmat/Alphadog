@@ -822,7 +822,17 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    multiplier): Sleeper / Fliff hit >= .70 at 1.6-2.0x +9 / +14 / +13 (Sleeper) and +9 / +13 / +17 (Fliff); hit .55-.70 about break-even in history and negative this
    season; Betr every cell -21..-50%; the pool is supply-limited, lowering the Sleeper bar (p x m >= 1.0) would add losing cells. Not changed.
    PENDING (owner's call, options with numbers sent): (1) leave final_hp as is; (2) as-of slope on board standard lines for display / EV only; (3) slope +
-   thresholds re-derived. NOT YET DOCUMENTED HERE (to add): the 2026-11-08..10 live-check / auto-sub work - overlayLive marks every leg of every app
+   thresholds re-derived.
+    UPDATE 2026-11-11 (PHASE 1 / PHASE 2 FINDINGS, research only, production unchanged; runs 42945913842 factor scan, 42949618290 slope v1,
+    42953251765 slope v2, 42953451334 hit matrix, 42954683587 early weeks): (a) ROOT CAUSE of this season's tail over-dispersion: the board-cal tunable sets
+    (nba_score.final_hp_board_cal) stop at as_of 2026-10-23 (427 sets), trained through 2026-04-12 on tier_map_legs_sel_wo (2024-25 + 2025-26 only, no 2026-27
+    rows) - this season's graded legs have never fed the fit; history looks calibrated because the sets were fitted on it. (b) Calibration slope is SEASON-SPECIFIC
+    (standard lines .50 / .79 / .04 for the Under, 24-25 / 25-26 / 26-27; Over .78 -> .15): a slope learned on other seasons over-corrects (v1: 25-26 ECE .34 -> 1.34);
+    a season-local shrunk slope (v2, K=2000) cuts 26-27 ECE 3.98 -> 1.32 and log-loss .6990 -> .6945 at a ~.3 ECE cost in 25-26. A monotone layer cannot restore
+    ranking: 26-27 final_hp >= .65 hits .574 (12.6 legs/slate) and calibrated >= .65 .512 (4.0). Decision: selection stays on raw final_hp (slips / ROI unchanged),
+    the calibrated number is for DISPLAY only. (c) Phase 2 factor scan (rest, b2b, home, minutes trend, level, game number, weekday, line gap, L10 hit, volatility):
+    b2b / line gap / L10-hit residuals share a sign in all 3 seasons (Over -2..-5 pts on b2b and hot streaks) but add <= 3e-4 log-loss and do not replicate out of
+    sample; no factor added. (d) Goblin Over G1 hit 67.4 / 61.8 / 57.3 (24-25 / 25-26 / 26-27), all-props pooled. NOT YET DOCUMENTED HERE (to add): the 2026-11-08..10 live-check / auto-sub work - overlayLive marks every leg of every app
    live / missing / moved / side and drops started games; client auto-swap on the owner screen; Jessi (Worker jessiquinha v1.2.2) and Jon (Worker jstacks v1.7.2)
    pages with tick boxes + auto-sub from a live-confirmed pool; sub banks (Sleeper slip_leg_bank 15, Underdog T123, PrizePicks standard Unders p>=.55 via
    friend_engine, Fliff / Betr nba_friend.pairs kind main p>=.55 last resort); pairing deep links; game label on every leg (main-ui v1.4.99).
