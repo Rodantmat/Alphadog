@@ -784,7 +784,7 @@ def pick():
     log(f"snapshot written: {len(slips)} slips, {len(pool)} pool legs")
     if FAPP == "FLIFF" and TIER != "jessi":
         try:
-            mirror_fliff_to_owner(conn, d, rows, slips)
+            mirror_fliff_to_owner(conn, d, rows[:n_base], slips)     # the owner copies above are the owner's own slips - never mirrored back
         except Exception as e:
             log(f"owner Fliff mirror failed (friend slips unaffected): {e}")
             conn.rollback()
