@@ -832,7 +832,14 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
     ranking: 26-27 final_hp >= .65 hits .574 (12.6 legs/slate) and calibrated >= .65 .512 (4.0). Decision: selection stays on raw final_hp (slips / ROI unchanged),
     the calibrated number is for DISPLAY only. (c) Phase 2 factor scan (rest, b2b, home, minutes trend, level, game number, weekday, line gap, L10 hit, volatility):
     b2b / line gap / L10-hit residuals share a sign in all 3 seasons (Over -2..-5 pts on b2b and hot streaks) but add <= 3e-4 log-loss and do not replicate out of
-    sample; no factor added. (d) Goblin Over G1 hit 67.4 / 61.8 / 57.3 (24-25 / 25-26 / 26-27), all-props pooled. NOT YET DOCUMENTED HERE (to add): the 2026-11-08..10 live-check / auto-sub work - overlayLive marks every leg of every app
+    sample; no factor added. (d) Goblin Over G1 hit 67.4 / 61.8 / 57.3 (24-25 / 25-26 / 26-27), all-props pooled.
+    DECISION 2026-11-10 21:41 PT (owner: "preserve positive ROI to its highest, but in reality; make the grounded decision"): NO change to final_hp, its
+    thresholds, the score or any slip rule now - every selection stays on raw final_hp so ROI / slip counts / droughts are exactly as certified. Reasons: a
+    monotone layer cannot add ranking, it only moves thresholds (>= .60 legs/slate 39.2 -> 12.3, >= .65 12.6 -> 4.0, >= .70 7.7 -> 1.8) = less supply, and at
+    ~20 slates this season's own slope (.04-.15) is too noisy to fix. Re-test the season-local shrunk slope (research_slope_fix2.py) at >= 60 slates of
+    2026-27 (about 2026-12-20); if it still improves ECE and log-loss without hurting the history seasons, land it in final_hp_board_cal as a display / EV layer
+    with the one-number rule decided by the owner then. Confidence lift in score_and_edge: unmeasured on standard lines (coef -.01 / -.04 / -.09), score is not
+    a selection key in any live portfolio (rank_key final_hp), left as is until the lift is replaced by a measured one. NOT YET DOCUMENTED HERE (to add): the 2026-11-08..10 live-check / auto-sub work - overlayLive marks every leg of every app
    live / missing / moved / side and drops started games; client auto-swap on the owner screen; Jessi (Worker jessiquinha v1.2.2) and Jon (Worker jstacks v1.7.2)
    pages with tick boxes + auto-sub from a live-confirmed pool; sub banks (Sleeper slip_leg_bank 15, Underdog T123, PrizePicks standard Unders p>=.55 via
    friend_engine, Fliff / Betr nba_friend.pairs kind main p>=.55 last resort); pairing deep links; game label on every leg (main-ui v1.4.99).
