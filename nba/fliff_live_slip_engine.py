@@ -198,7 +198,7 @@ def grade(conn, day):
         if not st:
             print(f"FLIFF_GRADE|{d}: no box scores yet - left ungraded")
             continue
-        for name, lj, stake in conn.execute("SELECT strategy, legs_json, stake FROM nba_score.fliff_live_slips WHERE game_date = %s AND graded_at IS NULL", (d,)).fetchall():
+        for name, lj, stake, kk in conn.execute("SELECT strategy, legs_json, stake, k FROM nba_score.fliff_live_slips WHERE game_date = %s AND graded_at IS NULL", (d,)).fetchall():
             legs = lj if isinstance(lj, list) else json.loads(lj)
             for l in legs:
                 h = AF.outcome(st, l)
