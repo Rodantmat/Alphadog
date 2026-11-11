@@ -49,7 +49,7 @@ def key(l):
 def convert(sl):
     """saved (as-shown) leg -> live leg dict"""
     f = sl.get("leg_factor") if sl.get("leg_factor") is not None else sl.get("app_multiplier")
-    return {"player": sl.get("player_name"), "player_id": str(sl.get("player_id") or sl.get("mlb_player_id")),
+    return {"player": sl.get("player_name"), "player_id": str(pid_of(sl)),
             "prop": sl.get("canonical_prop_key"), "side": side_of(sl.get("selected_side")), "line": float(sl.get("line_value")),
             "factor": float(f) if f is not None else 1.0, "team": sl.get("team_id"), "event_id": sl.get("game_pk"),
             "matchup": sl.get("game_label"), "tier": sl.get("tier") or "R", "from_saved": True}
