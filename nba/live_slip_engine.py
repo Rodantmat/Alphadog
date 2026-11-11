@@ -1442,6 +1442,31 @@ def pick(conn, day, require_fresh=True):
                       "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick2), flush=True)
         except Exception as e:  # noqa: BLE001 - the tier-2 fallback must never take the main slips down with it
             print(f"  {day}: low-slip fallback (tier 2) failed ({type(e).__name__}: {e}) - the other slips are unaffected", flush=True)
+    # BIG-FLEX FALLBACKS (owner 2026-11-11 14:xx PT "why no more big slips from PP ... find fallback strategies for these structures with a low
+    # drawdown and high ROI"): B's 4/5/6-pick flex units (P_B4_4flex / P_B9_6flex / P_F5_5flex) share their top leg and ONE leg PrizePicks does
+    # not list as a standard line (Donovan Clingan steals 0.5 R today, Ace Bailey blocks 0.5 yesterday) makes the quote gate skip all of them.
+    # These tiers are built every night from the best standard UNDERS (final_hp >= .55, <= 1 leg a game, >= 2 teams) as 'placed_backup' only;
+    # apply_quote_gate promotes them to 'placed' when NO B flex slip of 4+ picks survived PrizePicks' quote.
+    # research_pp_fallback_more run 42981632173: U5 flex .55 x2 +16.8% / +39.3% (111 / 87 slips, dd 14.6u / 14.2u, 30% win, nights lost ~50%);
+    # U6 flex .55 x1 +94.7% / +202.1% (49 / 38 slips, dd 13.8u / 10.0u, 22-24% win). Config pp_fallback3 (5-pick) / pp_fallback4 (6-pick).
+    for fbkey in ('pp_fallback3', 'pp_fallback4'):
+        fbx = fallback_cfg(conn, fbkey)
+        if not (fbx.get('enabled') and pools.get('__pb__') is not None):
+            continue
+        try:
+            _bx, fx = fallback_slips(pools['__pb__'], fbx, extra=int(fbx.get('backups', 0)), force=True)
+            nmx = fbx.get('strategy', 'P_FB_U5flex')
+            for kx, pickx in enumerate(fx, start=1):
+                conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
+                                VALUES (%s,%s,%s,%s,%s,%s,'placed_backup',1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                             (day, nmx, kx, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
+                                                          'prop': l['prop'], 'tier': 'R', 'side': 'Under', 'line': float(l['line']),
+                                                          'factor': 1, 'event_id': l.get('event_id')} for l in pickx]),
+                              len(pickx), fbx.get('structure', 'flex'), "big-flex fallback backup: promoted by the quote gate when no 4+ pick B flex slip survives"))
+                print(f"  {day}: BIG-FLEX FALLBACK {nmx} k{kx} -> placed_backup: " +
+                      "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pickx), flush=True)
+        except Exception as e:  # noqa: BLE001 - never takes the main slips down
+            print(f"  {day}: big-flex fallback {fbkey} failed ({type(e).__name__}: {e}) - the other slips are unaffected", flush=True)
     conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
     conn.commit()
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
