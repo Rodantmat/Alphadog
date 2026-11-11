@@ -86,7 +86,7 @@ def main():
             _, i, ss, sl, sk = best; used.add((d, app, i))
             if sk == lk and len(sl) == len(live):
                 n_ok += 1; continue
-            bad = [l for l in sl if not l.get("player_id") and not l.get("mlb_player_id") or (l.get("canonical_prop_key") not in AF.STAT)]
+            bad = [l for l in sl if not pid_of(l) or (l.get("canonical_prop_key") not in AF.STAT)]
             if bad:
                 n_skip += 1
                 print(f"RECONCILE|UNGRADABLE {d} {app} {strat}: saved slip has legs the box-score grader cannot score ({', '.join((b.get('player_name') or '?') + ' ' + str(b.get('canonical_prop_key')) for b in bad)}) - left as generated, CHECK BY HAND")
