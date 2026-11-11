@@ -249,10 +249,10 @@ def portfolio_cfg(conn):
     return _PORTFOLIO
 
 
-def fallback_cfg(conn):
-    """classification_config['pp_fallback'] (thin-night fallback tunables) - {} when absent / unreadable"""
+def fallback_cfg(conn, key='pp_fallback'):
+    """classification_config['pp_fallback'] (thin-night fallback tunables; key 'pp_fallback2' = the low-slip tier) - {} when absent / unreadable"""
     try:
-        row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='pp_fallback'").fetchone()
+        row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key=%s", (key,)).fetchone()
         return (row[0] if isinstance(row[0], dict) else json.loads(row[0])) if row else {}
     except Exception:  # noqa: BLE001
         return {}
