@@ -56,6 +56,11 @@ def main():
     row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='pp_fallback'").fetchone()
     fbc = (row[0] if row and isinstance(row[0], dict) else json.loads(row[0])) if row else {}
     fb_strat, fb_n = fbc.get('strategy', 'P_FB_U3power'), int(fbc.get('slips', 2))
+    # the low-slip fallback tier 2 (classification_config['pp_fallback2'], live_slip_engine, 2026-11-11): walked on its own; placed only when
+    # the B slips that SURVIVE the quote number trigger_min..trigger (2..3)
+    row2 = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='pp_fallback2'").fetchone()
+    fb2c = (row2[0] if row2 and isinstance(row2[0], dict) else json.loads(row2[0])) if row2 else {}
+    fb2_strat, fb2_n = fb2c.get('strategy', 'P_FB_U3flex'), int(fb2c.get('slips', 2))
     slips = conn.execute("""SELECT strategy, k, legs_json, size, structure, status FROM nba_score.live_slips
                             WHERE game_date=%s AND status IN ('placed', 'placed_backup', 'placed_quote_skip')""", (day,)).fetchall()
     quotes = {}
