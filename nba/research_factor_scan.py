@@ -121,7 +121,7 @@ def main():
                         parts.append(f"{s}   n/a")
                 print(f"    {b:<14} " + " | ".join(parts))
     print("\n" + "=" * 150 + "\nMETRIC 2 - out-of-sample incremental log-loss (base = logit fh + Under; + factor linear term), lower is better; delta x1e4")
-    X = lambda rs, ex: np.array([[CA.lg(l["fh"]), 1.0 if l["side"] == "Under" else 0.0] + [f[e] for e in ex] for _s, l, f in rs])   # noqa: E731
+    X = lambda rs, ex: np.array([[CA.lg(l["fh"]), 1.0 if l["side"] == "Under" else 0.0] + [(1.0 if l["side"] == "Over" else -1.0) * f[e] for e in ex] for _s, l, f in rs])   # noqa: E731  (side-signed: the residual flips with the side)
     Y = lambda rs: np.array([l["hit"] for _s, l, f in rs], float)   # noqa: E731
     for test in CA.PERIODS:
         tr = [r for r in recs if r[0] != test] if test == "2026-27" else [r for r in recs if r[0] not in (test, "2026-27")]
