@@ -822,8 +822,10 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    multiplier): Sleeper / Fliff hit >= .70 at 1.6-2.0x +9 / +14 / +13 (Sleeper) and +9 / +13 / +17 (Fliff); hit .55-.70 about break-even in history and negative this
    season; Betr every cell -21..-50%; the pool is supply-limited, lowering the Sleeper bar (p x m >= 1.0) would add losing cells. Not changed.
    PENDING (owner's call, options with numbers sent): (1) leave final_hp as is; (2) as-of slope on board standard lines for display / EV only; (3) slope +
-   thresholds re-derived. The live-check / auto-sub / Jessi-Jon pages / friend and Jessi workers work of 2026-11-08..10 is documented in the ledger
-   of that date (main-ui v1.4.99, Jessi v1.2.2, Jon v1.7.2).
+   thresholds re-derived. NOT YET DOCUMENTED HERE (to add): the 2026-11-08..10 live-check / auto-sub work - overlayLive marks every leg of every app
+   live / missing / moved / side and drops started games; client auto-swap on the owner screen; Jessi (Worker jessiquinha v1.2.2) and Jon (Worker jstacks v1.7.2)
+   pages with tick boxes + auto-sub from a live-confirmed pool; sub banks (Sleeper slip_leg_bank 15, Underdog T123, PrizePicks standard Unders p>=.55 via
+   friend_engine, Fliff / Betr nba_friend.pairs kind main p>=.55 last resort); pairing deep links; game label on every leg (main-ui v1.4.99).
 
 ---
 
