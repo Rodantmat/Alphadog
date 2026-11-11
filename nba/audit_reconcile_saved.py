@@ -28,8 +28,18 @@ def side_of(s):
     return "Over" if s in ("more", "over", "o", "higher") else "Under" if s in ("less", "under", "u", "lower") else None
 
 
+def pid_of(l):
+    """2026-11-11: saved Fliff / Betr legs often carry no top-level player_id (Cedric Coward, a Fliff sub: only _g.player_id); fall back to _g, then
+    to the numeric id inside board_row_id (date~app~PID~prop~line~side)"""
+    p = l.get("player_id") or l.get("mlb_player_id") or (l.get("_g") or {}).get("player_id")
+    if not p or str(p) == "undefined":
+        parts = str(l.get("board_row_id") or "").split("~")
+        p = parts[2] if len(parts) > 2 and parts[2].isdigit() else None
+    return p
+
+
 def key(l):
-    pid = l.get("player_id") or l.get("mlb_player_id")
+    pid = pid_of(l)
     prop = l.get("prop") or l.get("canonical_prop_key")
     sd = side_of(l.get("side") or l.get("selected_side"))
     ln = l.get("line") if l.get("line") is not None else l.get("line_value")
