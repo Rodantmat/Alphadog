@@ -1417,6 +1417,31 @@ def pick(conn, day, require_fresh=True):
                           len(pick_), st_fb, f"thin-night fallback{' backup' if st_fb == 'placed_backup' else ''}: portfolio B built {built_b}"))
             print(f"  {day}: FALLBACK P_FB_U3power k{k_fb} (B built {built_b}) -> {st_fb}: " +
                   "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick_), flush=True)
+    # LOW-SLIP FALLBACK, TIER 2 (owner 2026-11-11 00:xx PT "extra pp fallbacks when low slips are formed, safer strategies";
+    # research_pp_fallback_more run 42981632173, same legs / grading / B count as the certified fallback rule): when portfolio B builds only
+    # trigger_min..trigger (2..3) slips, ADD fb2.slips (2) 3-pick FLEX slips of the best standard UNDERS (final_hp >= .55, <= 1 leg a game,
+    # >= 2 teams, different players): 2024-25 +7.4% (148 slips, dd 7u) / 2025-26 +18.4% (114, dd 5u) / this season +83% (6, dd 0), nights lost
+    # 39% / 32%. Outside the 2..3 window the slips are recorded as 'placed_backup' only. Config classification_config['pp_fallback2'].
+    fb2 = fallback_cfg(conn, 'pp_fallback2')
+    if fb2.get('enabled') and pools.get('__pb__') is not None:
+        try:
+            built2, f2 = fallback_slips(pools['__pb__'], fb2, extra=int(fb2.get('backups', 0)), force=True)
+            lo2, hi2, n2 = int(fb2.get('trigger_min', 2)), int(fb2.get('trigger', 3)), int(fb2.get('slips', 2))
+            on2 = lo2 <= built2 <= hi2
+            nm2 = fb2.get('strategy', 'P_FB_U3flex')
+            for k2, pick2 in enumerate(f2, start=1):
+                st2 = 'placed' if (k2 <= n2 and on2) else 'placed_backup'
+                conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
+                                VALUES (%s,%s,%s,%s,%s,%s,%s,1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                             (day, nm2, k2, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
+                                                          'prop': l['prop'], 'tier': 'R', 'side': 'Under', 'line': float(l['line']),
+                                                          'factor': 1, 'event_id': l.get('event_id')} for l in pick2]),
+                              len(pick2), fb2.get('structure', 'flex'), st2,
+                              f"low-slip fallback{' backup' if st2 == 'placed_backup' else ''}: portfolio B built {built2}"))
+                print(f"  {day}: LOW-SLIP FALLBACK {nm2} k{k2} (B built {built2}) -> {st2}: " +
+                      "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick2), flush=True)
+        except Exception as e:  # noqa: BLE001 - the tier-2 fallback must never take the main slips down with it
+            print(f"  {day}: low-slip fallback (tier 2) failed ({type(e).__name__}: {e}) - the other slips are unaffected", flush=True)
     conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
     conn.commit()
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
