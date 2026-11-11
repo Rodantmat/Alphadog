@@ -729,6 +729,16 @@ def pick():
         rows.append(dict(d=d, code=code, no=titles[size], st=st, size=size, legs=[leg_json(l) for l in s]))
         used |= {pid(l) for l in s}
         log(f"{code}: " + "; ".join(f"{x['player_name']} {x['canonical_prop_key']} {x['selected_side']} {x['line_value']}" for x in xs["legs"]))
+    n_base = len(rows)
+    # OWNER MIRROR (owner 2026-11-11 14:43 PT "extend it to Jessica and my friend, same for both, exact copies"; 14:44 "for tomorrow", never touch today): the slips the owner page
+    # deployed 2026-11-10/11 are copied EXACTLY onto this page too - PrizePicks 5/6-pick Under Flex fallbacks + quote-repaired slips, Fliff 3-pick/2-pick Max (UD-T1 legs),
+    # Underdog C4/C5/C6 (friend only: Jessi has no Underdog). From 2026-11-12 on, so today's pages and saves are never changed.
+    if d >= dt.date(2026, 11, 12):
+        try:
+            mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used)
+        except Exception as e:
+            log(f"owner mirror failed, base slips unaffected: {e}")
+            conn.rollback()
     # PRIZEPICKS NEVER EMPTY (owner 2026-11-10, Jessi had no PrizePicks slip on a thin board): with no slip built, the same thin-night rule the owner page uses - a
     # 3-pick POWER of the best standard Unders (final_hp >= 0.55), one leg a game, >= 2 teams, never a repeat of a slip already forbidden to this page
     if FAPP == "PP" and not slips:
