@@ -24326,8 +24326,8 @@
       "away_team_tricode": "MIL",
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24341,8 +24341,8 @@
       "away_team_tricode": "BOS",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24356,8 +24356,8 @@
       "away_team_tricode": "LAC",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24371,8 +24371,8 @@
       "away_team_tricode": "MIA",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24386,8 +24386,8 @@
       "away_team_tricode": "ORL",
       "arena_name": "Golden 1 Center",
       "arena_city": "Sacramento",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24401,8 +24401,8 @@
       "away_team_tricode": "OKC",
       "arena_name": "Moda Center",
       "arena_city": "Portland",
-      "game_status": 1,
-      "game_status_text": "11:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
