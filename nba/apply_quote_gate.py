@@ -91,7 +91,13 @@ def main():
         return True, f"PrizePicks {float(full):g}x vs backtest {mp:.2f}x"
 
     changes = []
-    port = [s for s in slips if (s[0] in order or s[0].startswith(PORTFOLIO_PREFIX)) and s[0] not in (fb_strat, fb2_strat)]
+    bigs = {}                                        # big-flex fallbacks (live_slip_engine pp_fallback3 / pp_fallback4): strategy -> slips cap
+    for bk in ('pp_fallback3', 'pp_fallback4'):
+        rb = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key=%s", (bk,)).fetchone()
+        bc = (rb[0] if isinstance(rb[0], dict) else json.loads(rb[0])) if rb else {}
+        if bc.get('enabled'):
+            bigs[bc.get('strategy', 'P_FB_U5flex')] = int(bc.get('slips', 1))
+    port = [s for s in slips if (s[0] in order or s[0].startswith(PORTFOLIO_PREFIX)) and s[0] not in (fb_strat, fb2_strat) and s[0] not in bigs]
     # the engine's own round robin: rank k first, then the unit order (live_slip_engine.portfolio_select)
     port.sort(key=lambda s: (s[1], order.index(s[0]) if s[0] in order else 99))
     fbs = sorted([s for s in slips if s[0] == fb_strat], key=lambda s: s[1])
