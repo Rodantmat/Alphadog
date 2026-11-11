@@ -104,12 +104,72 @@ def build(conn, day, cfg):
     return s, last, f"{note}; T1 qualified {len(c)}, on Fliff {len(priced)}, qualifying {len(cand)}"
 
 
+def extras(conn, day, cfg):
+    """2026-11-11 (owner 00:26 PT: prove Fliff on the other apps' approved legs over the full two history seasons): extra Fliff rules from
+    classification_config fliff_live.extra_rules = [{name, size, order src|p|pm, side, floor, mcap, skip, slips, enabled}] - the same Underdog T1
+    legs priced at Fliff's own line and multiplier, one leg per game, `slips` slips a slate with disjoint players (research_fliff_transfer
+    grid: UD-T1 3p max order=pm side=Under skip 0, 2 slips: 2024-25 +43.2% / 2025-26 +35.4% / this season +70.3% on 26). Rows k = 1..slips."""
+    rules = [r for r in (cfg.get("extra_rules") or []) if r.get("enabled", True)]
+    if not rules:
+        return
+    fl, last, note = board(conn, day)
+    if fl is None:
+        print(f"FLIFF_LIVE|{day} extra rules: {note}")
+        return
+    legs, rows = AF.load_ud(conn, day, {})
+    if not legs:
+        print(f"FLIFF_LIVE|{day} extra rules: no Underdog window board / final_hp for the slate")
+        return
+    c, _gc = ST.ud_lists(rows, legs)["T1"]
+    tm = SL.teams_of(conn, {str(x["player_id"]) for x in c if x.get("player_id") is not None}, day)
+    priced, seen = [], set()
+    for src in c:
+        pid = str(src["player_id"]) if src.get("player_id") is not None else None
+        f = fl.get((pid, src["prop"], src["side"]))
+        if f and (pid, src["prop"], src["side"]) not in seen:
+            seen.add((pid, src["prop"], src["side"]))
+            priced.append({"pid": pid, "player": f[0], "prop": src["prop"], "side": src["side"], "line": f[1], "m": f[2], "p": float(src["p"]),
+                           "team": tm.get(pid), "game": f[3], "match": f[4], "ud_line": float(src["line"])})
+    for r in rules:
+        order, side, k = r.get("order", "pm"), r.get("side", "any"), int(r.get("size", 3))
+        base = list(priced) if order == "src" else sorted(priced, key=(lambda x: -x["p"] * x["m"]) if order == "pm" else (lambda x: -x["p"]))
+        cand = [l for l in base if l["p"] >= float(r.get("floor", 0.0)) and l["m"] <= float(r.get("mcap", 99.0)) and (side == "any" or l["side"] == side)]
+        cand = cand[int(r.get("skip", 0)):]
+        used, built = set(), 0
+        for i in range(int(r.get("slips", 1))):
+            s = ST.pick([l for l in cand if l["pid"] not in used], k, 1)
+            if s is None:
+                break
+            used |= {l["pid"] for l in s}
+            lj = [{"player": l["player"], "player_id": l["pid"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": l["m"],
+                   "p": round(l["p"], 4), "team": l["team"], "event_id": l["game"], "matchup": l["match"], "tier": "R", "ud_line": l["ud_line"]} for l in s]
+            prod = 1.0
+            for l in s:
+                prod *= l["m"]
+            mult = floor2(prod)
+            conn.execute("""INSERT INTO nba_score.fliff_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
+                            VALUES (%s, %s, %s, 'max', %s, %s, 1, 'live', %s, %s)
+                            ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, model_multiplier = EXCLUDED.model_multiplier,
+                              board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
+                            WHERE nba_score.fliff_live_slips.graded_at IS NULL""", (day, r["name"], k, i + 1, json.dumps(lj), round(mult, 4), last))
+            built += 1
+            print(f"FLIFF_LIVE|{day} {r['name']} #{i + 1}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} @{l['m']}" for l in s) + f" = x{mult:.3f}")
+        if not built:
+            print(f"FLIFF_LIVE|{day} {r['name']}: no slip (qualifying {len(cand)})")
+    conn.commit()
+
+
 def pick(conn, day):
     cfg = SL.cfg(conn, "fliff_live")
     if not cfg.get("enabled"):
         print(f"FLIFF_LIVE|disabled (classification_config fliff_live.enabled) - nothing built for {day}")
         return
     conn.execute(DDL)
+    try:
+        extras(conn, day, cfg)
+    except Exception as e:                                  # an extra rule never stops the main Fliff slip
+        conn.rollback()
+        print(f"FLIFF_LIVE|{day} extra rules error: {e!r}")
     s, last, note = build(conn, day, cfg)
     print(f"FLIFF_LIVE|{day} {note}")
     if s is None:
