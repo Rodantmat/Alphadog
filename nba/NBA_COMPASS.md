@@ -798,6 +798,32 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
    live = research (U4 +125.0% / +187.5% / this season +100.0%). END TO END nba-integration-test run 41592624862 (rolled back):
    P_U4_4power placed on 2026-01-09; its two edge-monitor checks failed only because they expected a pre-season empty ledger
    (== 2 slates) - relaxed to >= 2.
+197. 🔬 **CALIBRATION AUDIT OF final_hp / SCORE / CONFIDENCE (2026-11-11; owner 2026-11-10 17:00 PT "be very granular ... 1% by 1% ... is the
+   confidence helping the score or damaging it ... find the root cause"; research only, nothing changed; scripts research_calib_audit.py run
+   42936217513, research_calib_fix.py run 42941681205, research_pool_roi.py runs 42933001534 / 42933006354 / 42933010664).**
+   (A) THE MODEL'S OWN NUMBER IS HONEST: nba_score.final_hp near-anchor half lines (|offset| <= 1, six main props, 1 in 3 days): 2024-25 .316->.322,
+   .424->.434, .477->.469, .524->.526, .573->.569, .624->.617, .716->.714; 2025-26 .311->.308 ... .716->.723 (baseline_hp alone is over-confident in
+   the tails: .719->.679 / .692); the calibration layers do their job. (B) ON THE BOARD'S STANDARD LINES (live engine's board, load_board_legs_live)
+   final_hp is right in the middle (.45-.55 within ~1 pt) but OVER-DISPERSED in the tails in every season: legs rated >= .60 hit 5-10 pts below
+   the number and >= .70 hit 10-20 below; legs <= .45 hit 1-10 above (slope 0.50 / 0.78 in history, 0.15 this season; this season's weekly
+   slope -0.15, 0.07, 0.10, 0.35 - recovering). Goblin / demon slopes .91-.98 are fine. ROOT CAUSE: selection, not arithmetic - the line-setters pick the standard
+   line, so where the model disagrees with them most it is most often wrong (winner's curse); the layers shift LEVEL only (ladder shift, board
+   centre) and nothing compresses the spread. (C) OUT-OF-SAMPLE SLOPE FIT (logistic on logit final_hp + Under): coefficients .71 (24-25 <- 25-26),
+   .48 (25-26 <- 24-25), .58 (26-27 <- both); log-loss .6931->.6916 (24-25), .6904->.6905 (25-26: over-corrects, its raw slope is .78), .6990->.6943
+   (26-27), ECE 3.98->1.74 pts this season; the ranking does not change (monotone): top-10 / 25 / 100 hit .605/.577/.546 -> .603/.577/.547 (24-25),
+   26-27 .575/.548/.502 -> .590/.560/.506. A static slope does not generalise across seasons; an as-of (expanding) slope this season: ECE 1.59.
+   (D) THE MARKET adds ~nothing on top at present: no-vig coverage of standard legs 97% / 87% / 27% (24-25 / 25-26 / 26-27); fitted weights fh .44-.82,
+   nv .63-.89; log-loss gain <= .002; this season's blend = slope-only. (E) CONFIDENCE: built from books count / line distance from the anchor / constants
+   (nba_score.confidence_model separation ~.003); on standard lines its effect is ~0 (hit ~ logit(fh) + conf: conf coefficient -.01 / -.04 / -.09;
+   corr(conf, hit - fh) +.01 / +.01 / +.02); on ALL lines this season the high-confidence third of every final_hp band hit worse (PrizePicks .85 band
+   .712 vs .801) - those are alternate / deep rungs the slips do not use. The score (final_hp lifted by confidence) ranks the same as final_hp
+   (top-N within noise). Slips rank by rank_key final_hp, so none of this reaches a live slip. (F) PLAYERS: Over legs only, z of player gaps sd 1.5-1.7
+   (same-player legs are correlated) and the gap does NOT persist (corr -.005 / +.10 / -.025) - no player-level correction. (G) SUB POOLS (single-leg ROI by hit x
+   multiplier): Sleeper / Fliff hit >= .70 at 1.6-2.0x +9 / +14 / +13 (Sleeper) and +9 / +13 / +17 (Fliff); hit .55-.70 about break-even in history and negative this
+   season; Betr every cell -21..-50%; the pool is supply-limited, lowering the Sleeper bar (p x m >= 1.0) would add losing cells. Not changed.
+   PENDING (owner's call, options with numbers sent): (1) leave final_hp as is; (2) as-of slope on board standard lines for display / EV only; (3) slope +
+   thresholds re-derived. The live-check / auto-sub / Jessi-Jon pages / friend and Jessi workers work of 2026-11-08..10 is documented in the ledger
+   of that date (main-ui v1.4.99, Jessi v1.2.2, Jon v1.7.2).
 
 ---
 
