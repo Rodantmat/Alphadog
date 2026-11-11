@@ -95,6 +95,7 @@ def main():
     # the engine's own round robin: rank k first, then the unit order (live_slip_engine.portfolio_select)
     port.sort(key=lambda s: (s[1], order.index(s[0]) if s[0] in order else 99))
     fbs = sorted([s for s in slips if s[0] == fb_strat], key=lambda s: s[1])
+    fbs2 = sorted([s for s in slips if s[0] == fb2_strat], key=lambda s: s[1])
 
     def walk(group, cap):
         placed = 0
