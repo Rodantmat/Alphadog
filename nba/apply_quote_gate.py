@@ -123,8 +123,12 @@ def main():
         print(f"QUOTE GATE {day}: thin-night fallback {fb_strat} placed {fb_placed} of {fb_cap} ({len(fbs)} built incl. backups)", flush=True)
         if fb_placed < fb_cap:
             print(f"::warning::quote gate: only {fb_placed} of {fb_cap} fallback slips passed PrizePicks' quote on {day}", flush=True)
+    if fbs2:
+        fb2_cap = fb2_n if int(fb2c.get('trigger_min', 2)) <= placed_n <= int(fb2c.get('trigger', 3)) else 0
+        fb2_placed = walk(fbs2, fb2_cap)
+        print(f"QUOTE GATE {day}: low-slip fallback {fb2_strat} placed {fb2_placed} of {fb2_cap} ({len(fbs2)} built incl. backups; B survivors {placed_n})", flush=True)
     for strategy, k, legs, size, structure, status in slips:
-        if (strategy, k) in {(p[0], p[1]) for p in port + fbs} or status != 'placed':
+        if (strategy, k) in {(p[0], p[1]) for p in port + fbs + fbs2} or status != 'placed':
             continue
         legs = legs if isinstance(legs, list) else json.loads(legs)
         ok, why = verdict(strategy, k, legs, size, structure)
