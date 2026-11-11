@@ -30,7 +30,7 @@ GRP = {"points": "mains", "rebounds": "mains", "assists": "mains", "threes_made"
        "pts_ast": "combos", "reb_ast": "combos", "steals": "low", "blocks": "low", "turnovers": "low", "stocks": "low"}
 LEVELS = {"ALL": {"R", "F", "B"}}
 SIDES = {"both": ("Over", "Under"), "More": ("Over",), "Less": ("Under",)}
-PROPS = {"all": None, "nolow": {"mains", "combos"}}
+PROPS = {"all": None, "nolow": {"mains", "combos"}, "low": {"low"}}
 # id -> (level set, side, props, rank floor, skip, picks, slips)
 UNITS = {
     "C1": ("ALL", "Less", "all", 0.535, 1, 2, 2),
