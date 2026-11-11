@@ -193,9 +193,12 @@ FLEX_SHORT = {"C3": "4-pick Flex, regular lines, More + Less, no low-volume prop
 
 def flex_slips(uid, legs):
     """the Flex unit's slips (list of lists of legs); one pick per player and per game inside a slip"""
-    lvs, sdn, prn, key, fl, sk, n, ns = FLEX_UNITS[uid]
+    spec = FLEX_UNITS[uid]
+    lvs, sdn, prn, key, fl, sk, n, ns = spec[:8]
+    fk = spec[8] if len(spec) > 8 else key
     pool = [l for l in legs if l["lv"] in lvs and l["side"] in SIDES[sdn] and (PROPS[prn] is None or l["g"] in PROPS[prn])]
-    cand = [l for l in sorted(pool, key=lambda l: -l[key]) if fl is None or l[key] >= fl][sk:]
+    cand = [l for l in sorted(pool, key=lambda l: -(l[key] if l.get(key) is not None else -1))
+            if fl is None or (l[fk] if l.get(fk) is not None else -1) >= fl][sk:]
     out, used = [], set()
     for _ in range(ns):
         s1, pl, gm = [], set(), set()
