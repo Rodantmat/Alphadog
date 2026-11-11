@@ -1061,6 +1061,10 @@ async function buildHighHit(sql, cfg, url, version) {
     for (const l of all) { const k = gk(l); if (k && l.official_game_time_utc && !tm.has(k)) tm.set(k, l.official_game_time_utc); }
     for (const l of all) { const k = gk(l); if (k && !l.official_game_time_utc && tm.has(k)) l.official_game_time_utc = tm.get(k); }
     for (const l of all) if (!l.game_label && l.matchup) l.game_label = String(l.matchup).replace(/\s*@\s*/, "  @  ");   // every leg shows its game (Fliff / Betr bank legs came without one)
+    // EVERY APP shows the game on every leg (owner 2026-11-10: "without the game I cannot find the leg"): the away @ home label when any leg of that game carries one, else TEAM vs OPP
+    const pk = l => (l.team_abbr && l.opponent_abbr) ? [l.team_abbr, l.opponent_abbr].sort().join("-") : null, lab = new Map();
+    for (const l of all) { const k = pk(l); if (k && l.game_label && /@/.test(l.game_label) && !lab.has(k)) lab.set(k, l.game_label); }
+    for (const l of all) if (!l.game_label) { const k = pk(l); if (k) l.game_label = lab.get(k) || (l.team_abbr + " vs " + l.opponent_abbr); }
   } catch (_e) { /* no times: the live check still drops a leg off the board */ }
   return { ok: true, data_ok: true, version, route: "/api/slips/high-hit", slate, source: eng.source, generated_slips: slips, test_only_recorded: testOnly.length, backup_pool: pool,
     unit_table: unitTable, hidden_notes: hiddenNotes,
