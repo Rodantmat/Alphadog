@@ -215,7 +215,7 @@ def grade(conn, day):
                 pay = 0.0
             hits = sum(1 for l in legs if l["hit"])
             conn.execute("""UPDATE nba_score.fliff_live_slips SET legs_json = %s, hits = %s, payout = %s, profit = %s, graded_at = now()
-                            WHERE game_date = %s AND strategy = %s AND k = 1""", (json.dumps(legs), hits, round(pay, 4), round(float(stake) * (pay - 1), 4), d, name))
+                            WHERE game_date = %s AND strategy = %s AND k = %s""", (json.dumps(legs), hits, round(pay, 4), round(float(stake) * (pay - 1), 4), d, name, kk))
             print(f"FLIFF_GRADE|{d} {name}: {hits}/{len(legs)} hit, payout {pay:.3f}x")
         conn.commit()
 
