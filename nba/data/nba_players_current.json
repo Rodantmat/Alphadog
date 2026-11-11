@@ -3657,14 +3657,14 @@
       "id": 1643133,
       "full_name": "Lawson Lovering",
       "last_comma_first": "Lovering, Lawson",
-      "roster_status": 1,
+      "roster_status": 0,
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "lawson_lovering",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
+      "team_id": null,
+      "team_city": "",
+      "team_name": "",
+      "team_abbreviation": ""
     },
     {
       "id": 1626168,
