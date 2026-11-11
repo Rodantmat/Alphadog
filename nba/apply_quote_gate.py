@@ -104,12 +104,40 @@ def main():
     fbs2 = sorted([s for s in slips if s[0] == fb2_strat], key=lambda s: s[1])
 
     placed_keys = []                                 # (strategy, k, size, structure) of every slip walk() placed
+    repairs = {}                                     # (strategy, k) -> (legs, size): slips kept by dropping the ONE unlisted leg
+
+    def repair(strategy, k, legs, size, structure):
+        # owner 2026-11-11 14:12 PT: one unlisted leg must not drop every slip that shares it. Backtest (research_pp_leg_repair, 2 seasons + this
+        # one): dropping the unlisted leg and keeping the rest (same structure, one pick fewer) stays +ROI at every size (3P 28%, 4P 72%, 4F 34%,
+        # 5F 78%, 6F 105%). Rebuilding with the next qualified leg beat it for 4F/5F but needs a fresh PrizePicks quote - not wired yet.
+        q = quotes.get((strategy, k))
+        if q is None or q[0] == 200:
+            return None
+        lg = q[3] if isinstance(q[3], (dict, list)) or q[3] is None else json.loads(q[3])
+        unm = [u.lower() for u in ((lg or {}).get('unmapped') or [])] if isinstance(lg, dict) else []
+        if not unm:
+            return None
+        drop = [i for i, l in enumerate(legs) if any(u.startswith((str(l.get('player', '')) + ' ' + str(l.get('prop', ''))).lower() + ' ') for u in unm)]
+        if len(drop) > 1:
+            return None
+        new = [l for i, l in enumerate(legs) if i not in drop]
+        if len(new) < (2 if structure == 'power' else 3):
+            return None
+        return new, len(new)
 
     def walk(group, cap):
         placed = 0
         for strategy, k, legs, size, structure, status in group:
             legs = legs if isinstance(legs, list) else json.loads(legs)
             ok, why = verdict(strategy, k, legs, size, structure)
+            if not ok and why.startswith("not on PrizePicks' board"):
+                rp = repair(strategy, k, legs, size, structure)
+                if rp:
+                    nl, ns = rp
+                    if ns != size:
+                        repairs[(strategy, k)] = (nl, ns)
+                    ok, why = True, f"kept as {ns}-pick {structure} (unlisted leg dropped): " + why
+                    legs, size = nl, ns
             if ok and placed < cap:
                 new = 'placed'
                 placed += 1
