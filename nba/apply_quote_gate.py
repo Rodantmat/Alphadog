@@ -124,6 +124,7 @@ def main():
         return placed
 
     placed_n = walk(port, n)
+    big_surv = sum(1 for p in placed_keys if p[2] >= 4 and p[3] == 'flex')     # B's 4/5/6-pick flex slips that SURVIVED PrizePicks' quote
     if fbs:
         # owner 2026-11-10: the trigger counts B slips that SURVIVE the quote (placed_n), not slips built - when B keeps more than the trigger the fallback
         # stays backup; when the gate skipped B down to the trigger or below, the fallback is placed (PrizePicks is never empty)
