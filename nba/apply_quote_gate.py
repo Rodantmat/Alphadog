@@ -137,8 +137,16 @@ def main():
         fb2_cap = fb2_n if int(fb2c.get('trigger_min', 2)) <= placed_n <= int(fb2c.get('trigger', 3)) else 0
         fb2_placed = walk(fbs2, fb2_cap)
         print(f"QUOTE GATE {day}: low-slip fallback {fb2_strat} placed {fb2_placed} of {fb2_cap} ({len(fbs2)} built incl. backups; B survivors {placed_n})", flush=True)
+    bigf = []
+    for bstrat, bcap in bigs.items():
+        grp = sorted([s for s in slips if s[0] == bstrat], key=lambda s: s[1])
+        bigf += grp
+        if grp:
+            cap_b = bcap if big_surv == 0 else 0
+            got = walk(grp, cap_b)
+            print(f"QUOTE GATE {day}: big-flex fallback {bstrat} placed {got} of {cap_b} ({len(grp)} built incl. backups; B big-flex survivors {big_surv})", flush=True)
     for strategy, k, legs, size, structure, status in slips:
-        if (strategy, k) in {(p[0], p[1]) for p in port + fbs + fbs2} or status != 'placed':
+        if (strategy, k) in {(p[0], p[1]) for p in port + fbs + fbs2 + bigf} or status != 'placed':
             continue
         legs = legs if isinstance(legs, list) else json.loads(legs)
         ok, why = verdict(strategy, k, legs, size, structure)
