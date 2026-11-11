@@ -172,8 +172,23 @@ def portfolio(legs):
 # skip the top 2, no floor. Walk-forward on 2024-25 + 2025-26 history (repriced to today's law): ROI +34.1% / +32.5% / this season +75.4%,
 # cash 45-62%, max drawdown 9.5u / 8.9u / 3.0u. It uses the 3+ pick Flex slot the owner's bonuses need.
 # id -> (level set, side, props, rank key, rank floor, skip, picks, slips)
-FLEX_UNITS = {"C3": ({"R"}, "both", "nolow", "ph", None, 2, 4, 1)}
-FLEX_SHORT = {"C3": "4-pick Flex, regular lines, More + Less, no low-volume props, p_hat rank, skip 2"}
+# C4 / C5 / C6 (owner 2026-11-11 00:xx PT "deploy 1,2,3 ... prove"; research_deploy_proof_ud.py run 42982453461, TODAY'S pricing law, history
+# repriced, this season real prices; 150-slate block-bootstrap simulation 3000 seasons). 9th tuple field = the floor key when it differs
+# from the rank key (default = rank key).
+#  C4 3-pick Flex, regular lines, Less, all props, rank r_hat (p_hat x m) >= .535, no skip: 24-25 +15.4% / 25-26 +17.0% / this season +14.6%;
+#     median season +19u, losing season 7.7%, dd median 8.7u.
+#  C5 4-pick Flex, regular + B lines, Less, low-volume props, rank final score, final_hp >= .55: +90.7% / +40.0% / +76.7% (35 / 15 / 15 slips);
+#     median +21.5u, losing season 6.5%, dd median 5.4u.
+#  C6 6-pick Flex, regular lines, Less, all props, rank baseline_hp, no floor: +90.3% / +73.0% / +195.4%; median +96u, losing season 2.1%,
+#     dd median 17u, ~75% losing days, longest dry run 11 days (history).
+FLEX_UNITS = {"C3": ({"R"}, "both", "nolow", "ph", None, 2, 4, 1),
+              "C4": ({"R"}, "Less", "all", "rh", 0.535, 0, 3, 1),
+              "C5": ({"R", "B"}, "Less", "low", "score", 0.55, 0, 4, 1, "p"),
+              "C6": ({"R"}, "Less", "all", "base", 0.0, 0, 6, 1, "p")}
+FLEX_SHORT = {"C3": "4-pick Flex, regular lines, More + Less, no low-volume props, p_hat rank, skip 2",
+              "C4": "3-pick Flex, regular lines, Less, all props, r_hat rank >= .535",
+              "C5": "4-pick Flex, regular + B lines, Less, low-volume props, score rank, final_hp >= .55",
+              "C6": "6-pick Flex, regular lines, Less, all props, baseline rank"}
 
 
 def flex_slips(uid, legs):
