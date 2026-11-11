@@ -132,7 +132,8 @@ def extras(conn, day, cfg):
                            "team": tm.get(pid), "game": f[3], "match": f[4], "ud_line": float(src["line"])})
     for r in rules:
         order, side, k = r.get("order", "pm"), r.get("side", "any"), int(r.get("size", 3))
-        base = list(priced) if order == "src" else sorted(priced, key=(lambda x: -x["p"] * x["m"]) if order == "pm" else (lambda x: -x["p"]))
+        base = (list(priced) if order == "src" else sorted(priced, key=(lambda x: (x["m"], -x["p"])) if order == "fav" else
+                (lambda x: -x["p"] * x["m"]) if order == "pm" else (lambda x: -x["p"])))
         cand = [l for l in base if l["p"] >= float(r.get("floor", 0.0)) and l["m"] <= float(r.get("mcap", 99.0)) and (side == "any" or l["side"] == side)]
         cand = cand[int(r.get("skip", 0)):]
         used, built = set(), 0
