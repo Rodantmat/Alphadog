@@ -91,7 +91,7 @@ def main():
         return True, f"PrizePicks {float(full):g}x vs backtest {mp:.2f}x"
 
     changes = []
-    port = [s for s in slips if (s[0] in order or s[0].startswith(PORTFOLIO_PREFIX)) and s[0] != fb_strat]
+    port = [s for s in slips if (s[0] in order or s[0].startswith(PORTFOLIO_PREFIX)) and s[0] not in (fb_strat, fb2_strat)]
     # the engine's own round robin: rank k first, then the unit order (live_slip_engine.portfolio_select)
     port.sort(key=lambda s: (s[1], order.index(s[0]) if s[0] in order else 99))
     fbs = sorted([s for s in slips if s[0] == fb_strat], key=lambda s: s[1])
