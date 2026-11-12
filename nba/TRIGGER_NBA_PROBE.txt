@@ -1,2 +1,2 @@
-script: probe_fliff_flex_map.py
-# fliff flex map 2026-11-12
+script: probe_fliff_pickem_quote.py
+# fliff quote reprobe 2026-11-12
