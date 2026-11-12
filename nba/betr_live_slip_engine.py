@@ -296,6 +296,7 @@ def select(legs, rule):
         idx = idx[:int(rule["pool"])]          # ROI rule: the slips are cut from the top `pool` legs only (BT-B: top 5 -> one 4-pick slip)
     if len(idx) < 2:
         return []
+    RANKED[rule.get("name")] = [base[i] for i in idx]      # owner 2026-11-12: the rule's ranked candidates for "sub the next ranked candidate"
     s1 = _greedy(base, idx, 6, set(), gc)[:k]
     if sd == "mix":
         s1 = _mix_fix(s1, base, idx, gc, set())
