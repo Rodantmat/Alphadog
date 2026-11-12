@@ -194,6 +194,8 @@ export function rowToApi(r, i, slate, games, insightCtx) {
   const oppAbbr = r.team_id ? (isHome ? r.away_team_tricode : r.home_team_tricode) : null;
   const gamePk = r.game_id || (r.team_id ? `${slate.date}-${r.team_id}` : `${slate.date}-${r.player_id}`);
   const { fliffDec, legFactor, breakeven } = legPricing(r, lt);
+  // LEG ROI (owner 2026-11-11): the implied ROI of this leg - the real hit rate estimate x the leg's own multiplier - 1 (see roi.js)
+  const roiR = legRoi({ app: r.app, lt, side: r.side, hp: num(r.final_hp), tier: r.app === "prizepicks" ? tierKey(lt, r.pp_tier) : null, conf: num(r.confidence) }, legFactor, breakeven);
   // THE NUMBER THE APP SHOWS (2026-10-18, owner: "scores does not match"): Underdog's pick screen shows a per-pick price
   // (1.87x on a balanced line, 4.42x / 1.15x on a ladder rung), not the payout modifier (1.00 / 2.36 / 0.62) the slip is priced
   // on (PP_PAYOUT_FINDINGS 0m). Our scraper archives that shown price (American) beside the modifier; the 2024-26 Odds API feed
