@@ -246,7 +246,7 @@ function canTake(s,c,extra){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)r
   if(k.some(function(x){return x.player===c.player}))return false;
   if(k.filter(function(x){return x.matchup&&x.matchup===c.matchup}).length>=(s.gcap||1)+(extra||0))return false;
   var tm=k.map(function(x){return x.team}).concat([c.team]);if(tm.every(Boolean)&&new Set(tm).size<2)return false;return true}
-function pickSub(s){var P=window.PD.pool||[];for(var i=0;i<P.length;i++){if(canTake(s,P[i]))return P.splice(i,1)[0]}return null}
+function pickSub(s){var P=window.PD.pool||[];for(var pass=0;pass<2;pass++){for(var i=0;i<P.length;i++){if(canTake(s,P[i],pass))return P.splice(i,1)[0]}}return null}
 function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
 function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
 function sweep(s){var ch=false;if(s.saved)return false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped||l.removed)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
