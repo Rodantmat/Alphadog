@@ -121,6 +121,11 @@ export function estimateHit(o, cfg = ROI_DEFAULT) {
 export function legRoi(o, legFactor, breakeven, cfg = ROI_DEFAULT) {
   if (o.hp == null) return null;
   if (o.app === "prizepicks" && o.lt !== "regular" && !(legFactor > 0)) return null;
+  // a PrizePicks leg the board calls regular but whose own factor is far from 1x is an unlabeled ladder rung (goblin / demon): its price
+  // says what it is, and a regular line it is not - no leg ROI for it (it must not pass as a regular line)
+  if (o.app === "prizepicks" && o.lt === "regular" && legFactor > 0 && Math.abs(Math.log(legFactor)) > 0.05) return null;
+  // longshots (pays 8x or more): the hit rate sits in the far tail where the calibration sample is thin - no reliable leg ROI
+  if (!(breakeven >= 0.12)) return null;
   const est = estimateHit({ ...o, kc: calKind(o.app, o.lt), be: breakeven }, cfg);
   if (!est) return null;
   return { roi: est.p / breakeven - 1, roi_lo: (est.p - cfg.z * est.se) / breakeven - 1, mult: 1 / breakeven, ...est };
