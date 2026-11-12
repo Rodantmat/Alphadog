@@ -75,6 +75,9 @@ def board(conn, day):
     return fl, last, f"board {len(fb)} sides, side check {agree}/{n}"
 
 
+LAST_CAND = []      # the main Fliff unit's ranked candidate list (for the next-ranked substitutes)
+
+
 def build(conn, day, cfg):
     fl, last, note = board(conn, day)
     if fl is None:
