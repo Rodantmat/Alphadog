@@ -89,7 +89,11 @@ async function data(env, token, save = true) {
     if (!(await tokenOk(sql, token))) return null;
     const today = ptDate();
     const snaps = await q(sql, "SELECT game_date::text d, payload FROM nba_friend.snapshot WHERE game_date = (SELECT max(game_date) FROM nba_friend.snapshot WHERE game_date <= $1::date)", [today], 8000);
-    const roi = await q(sql, `SELECT app, count(*)::int n, sum(profit)::float p FROM nba_friend.slips WHERE status='graded' AND game_date >= (SELECT season_start FROM nba_friend.season) GROUP BY app`, [], 8000);
+    // SEASON ROI (owner 2026-11-11): from 11-12 a day on which he saved slips counts HIS saved slips (nba_friend.saved); a day with no save still counts the slips as first shown (the auto-save fallback)
+    const roi = await q(sql, `SELECT app, count(*)::int n, sum(profit)::float p FROM (
+        SELECT s.app, s.profit FROM nba_friend.slips s WHERE s.status='graded' AND s.game_date >= (SELECT season_start FROM nba_friend.season)
+          AND NOT EXISTS (SELECT 1 FROM nba_friend.saved v WHERE v.game_date = s.game_date AND v.app = s.app)
+        UNION ALL SELECT v.app, v.profit FROM nba_friend.saved v WHERE v.status='graded' AND v.profit IS NOT NULL) x GROUP BY app`, [], 8000);
     const apps = {}; let n = 0, p = 0;
     for (const r of roi) { apps[r.app] = { n: r.n, roi: r.n ? r.p / r.n : null }; n += r.n; p += r.p; }
     const out = { ok: true, source: "live", generated_slips: [], backup_pool: [] };
