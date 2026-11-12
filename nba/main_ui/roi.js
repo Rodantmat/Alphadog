@@ -155,7 +155,7 @@ export function pickQuota(cands, apps, Q = QUOTA_DEFAULT) {
   const take = (name, list, n, flexible = false) => {
     const all = list.slice().sort(byRoi);
     const pos = all.filter(c => c.roi > 0).length;
-    const s = flexible ? all : all.filter(c => c.roi > 0);
+    const s = flexible === true ? all : all.filter(c => c.roi > 0 || (typeof flexible === "function" && flexible(c)));
     let got = 0;
     for (const c of s) { if (got >= n) break; if (!pick.has(c.key)) pick.set(c.key, { c, tags: [] }); pick.get(c.key).tags.push(name); got++; }
     status.push({ bucket: name, quota: n, available: all.length, positive: pos, taken: got, short: got < n });
