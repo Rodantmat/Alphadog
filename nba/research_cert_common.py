@@ -31,7 +31,9 @@ def stat(items):
             loss += 1
         worst = min(worst, x); best = max(best, x)
     vals = list(by.values())
-    return dict(n=n, slates=len(by), win=wins / n, roi=net / n, net=net, dd=dd, dry=dry, loss=loss / len(by), worst=worst, best=best, voids=voids,
+    top3 = sum(sorted((p for _, p, _ in items), reverse=True)[:3])
+    ex3 = (net - top3) / (n - 3) if n > 3 else 0.0      # ROI with the 3 biggest winning slips removed: how much of the edge is jackpot luck
+    return dict(ex3=ex3, n=n, slates=len(by), win=wins / n, roi=net / n, net=net, dd=dd, dry=dry, loss=loss / len(by), worst=worst, best=best, voids=voids,
                 last14=sum(vals[-14:]), perday=n / len(by))
 
 
