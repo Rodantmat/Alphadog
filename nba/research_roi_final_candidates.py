@@ -195,6 +195,7 @@ def main():
         else:
             M.PR = M.SL.pricing(conn)
             raw = M.build_sleeper_fliff(conn)
+        conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
         T = M.pp_tables(conn)
         for s in [x for x in ("2024-25", "2025-26", REAL) if raw.get(x)]:
             Ts = T[s] if s in T else T["all"]
