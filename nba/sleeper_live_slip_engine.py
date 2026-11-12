@@ -147,6 +147,7 @@ def build(conn, day):
                        "line": float(b["line"]), "m": float(b["m"]), "p": float(src["p"]), "team": tm.get(pid),
                        "game": src.get("event_id") or b.get("event_id"), "ud_line": float(src["line"])})
     cand = [l for l in sorted(priced, key=lambda x: -x["p"]) if l["m"] <= MCAP][SKIP:]
+    LAST["T1"] = cand
     out = {}
     for name, k, structure in STRATS:
         s = ST.pick(cand, k, gc)
