@@ -823,6 +823,19 @@ jobs:
           FL_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/fliff_live_slip_engine.py
 
+      # ROI-CANDIDATE SLIPS (owner 2026-11-11 20:54 PT: "Sleeper deploy all I recommend ... Fliff, all in exactly the way you said"): nba/roi_app_live_slip_engine.py,
+      # the research_roi_final_candidates rules for Sleeper (4) and Fliff (3), written to the apps' own live tables under their own strategy names.
+      # Gate classification_config roi_live. Nothing is sent to either app. Soft: never disturbs the picks above. Graded by P2A like the other slips.
+      - name: Sleeper and Fliff ROI-candidate slips
+        id: soft_roi_live
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RA_APP: "both"
+          RA_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/roi_app_live_slip_engine.py
+
       # BETR (owner 2026-10-26 18:31 PT: "Let's go b so, you can deploy it in the slip system"): read Betr's board RIGHT NOW without a
       # browser with the owner's own token (nba/betr_board_direct.py - the session renews itself) and archive it as this slate's 'window'
       # board, then the Betr slips (nba/betr_live_slip_engine.py; since 2026-11-01 betr_live.mode 'board': B_BRD_4dyn - two 4-pick Dynamic
