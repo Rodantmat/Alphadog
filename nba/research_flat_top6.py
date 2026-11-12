@@ -133,7 +133,7 @@ def main():
                     df = df.copy(); df["rand"] = 0.0; dd.append((d, df))
             seasons_days[s] = dd
         kindset = {"main"}
-        modes = ("perfect", "dynamic") if APP == "betr" else (("max", "flex") if APP == "sleeper" else ("max",))
+        modes = ("perfect", "dynamic") if APP == "betr" else (("max", "flex") if APP == "sleeper" else ("max", "flex", "superflex"))
     out = []
     for key in ("score_roi", "score_cert"):
         for roi_pos in (True, False):
