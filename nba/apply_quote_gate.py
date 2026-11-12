@@ -92,7 +92,7 @@ def main():
 
     changes = []
     bigs = {}                                        # big-flex fallbacks (live_slip_engine pp_fallback3 / pp_fallback4): strategy -> slips cap
-    for bk in ('pp_fallback3', 'pp_fallback4'):
+    for bk in ('pp_fallback3', 'pp_fallback4', 'pp_fallback5'):
         rb = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key=%s", (bk,)).fetchone()
         bc = (rb[0] if isinstance(rb[0], dict) else json.loads(rb[0])) if rb else {}
         if bc.get('enabled'):
