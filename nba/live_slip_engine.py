@@ -293,15 +293,15 @@ def store_next_legs(conn, day, strategy, k, cands, gc, fallback=False):
     (nba_score.slip_next_legs) so the PrizePicks slip-quote step, when a leg is pulled / moved off PrizePicks' board, brings in the next ranked candidate that IS on the
     board (a distinct player, the unit's game cap) instead of dropping the leg. Legs are in the slip-leg shape plus team_id; never raises."""
     try:
-        for r_, l in enumerate(cands[:NEXT_LEGS_N], start=1):
-            leg = {'cell': f"{l['prop']}_R" if fallback else l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'],
-                   'tier': 'R' if fallback else l['tier'], 'side': 'Under' if fallback else l['side'], 'line': float(l['line']),
-                   'factor': 1 if fallback else l['factor'], 'event_id': l.get('event_id'), 'team_id': l.get('team_id')}
-            conn.execute("""INSERT INTO nba_score.slip_next_legs (game_date, strategy, k, rank, leg, gc) VALUES (%s,%s,%s,%s,%s::jsonb,%s)
-                            ON CONFLICT (game_date, strategy, k, rank) DO NOTHING""", (day, strategy, k, r_, json.dumps(leg), int(gc)))
+        with conn.transaction():      # a savepoint: a failure here never rolls back the slips the pick has inserted
+            for r_, l in enumerate(cands[:NEXT_LEGS_N], start=1):
+                leg = {'cell': f"{l['prop']}_R" if fallback else l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'],
+                       'tier': 'R' if fallback else l['tier'], 'side': 'Under' if fallback else l['side'], 'line': float(l['line']),
+                       'factor': 1 if fallback else l['factor'], 'event_id': l.get('event_id'), 'team_id': l.get('team_id')}
+                conn.execute("""INSERT INTO nba_score.slip_next_legs (game_date, strategy, k, rank, leg, gc) VALUES (%s,%s,%s,%s,%s::jsonb,%s)
+                                ON CONFLICT (game_date, strategy, k, rank) DO NOTHING""", (day, strategy, k, r_, json.dumps(leg), int(gc)))
     except Exception as e:  # noqa: BLE001 - the slips never depend on the next-leg list
         print(f"  next-legs not stored for {strategy} k{k}: {type(e).__name__}: {e}", flush=True)
-        conn.rollback()
 
 
 def fallback_slips(prepared, fb, extra=0, force=False, roi=None):
