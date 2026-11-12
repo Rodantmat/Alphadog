@@ -200,7 +200,7 @@ async function data(env, token, save = true, preview = false) {
     const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !(l.source_key === "prizepicks" && ((l.kind && l.kind !== "standard") || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1 || l.want_odds)) && !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && !l.off)
       .map(l => ({ app: l.source_key, player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, team: l.team_abbr || null, lid: legLid(l), g: l._g || null, f: legF(l), p: Number(l.p) || (Number(l.estimated_hit_probability_0_100) / 100) || 0 })).sort((x, y) => y.p - x.p) : [];
     // SAVE SYSTEM (owner 2026-11-11, from 11-12): the pricing tables for the live multiplier, the slips he already saved today, and the slip history
-    const saveOn = today >= SAVE_FROM;
+    const saveOn = today >= SAVE_FROM || preview;   // ?preview=1 (owner only): shows every save control before the start date; the server still refuses to save
     let pricing = null, savedToday = [], history = [];
     if (saveOn) {
       try { pricing = pricingFrom(await loadConfig(sql)); } catch (e) { pricing = null; }
