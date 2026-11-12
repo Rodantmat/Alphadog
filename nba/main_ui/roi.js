@@ -161,7 +161,8 @@ export function pickQuota(cands, apps, Q = QUOTA_DEFAULT) {
     status.push({ bucket: name, quota: n, available: all.length, positive: pos, taken: got, short: got < n });
   };
   for (const k of Object.keys(Q.kind)) take("kind:" + k, cands.filter(c => c.lt === k), Q.kind[k], k !== "regular");
-  for (const a of apps) take("app:" + a, cands.filter(c => c.app === a), Q.app);
+  // PrizePicks may fill its 60 with goblins / demons (owner 17:58 rule); every other app takes positive-ROI legs only
+  for (const a of apps) take("app:" + a, cands.filter(c => c.app === a), typeof Q.app === "object" ? (Q.app[a] ?? 30) : Q.app, a === "prizepicks" ? (c => c.lt === "goblin" || c.lt === "demon") : false);
   for (const p of [...new Set(cands.map(c => c.prop))].sort()) take("prop:" + p, cands.filter(c => c.prop === p), Q.prop);
   take("side:more", cands.filter(c => c.over), Q.side);
   take("side:less", cands.filter(c => !c.over), Q.side);
