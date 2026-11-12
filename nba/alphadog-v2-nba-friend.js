@@ -166,7 +166,7 @@ async function data(env, token, save = true, preview = false) {
     }
     if (date && date === today) {
       try {
-        const pr = await q(sql, "SELECT app, kind, p::float p, leg FROM nba_friend.pairs WHERE game_date = $1::date ORDER BY app, rank", [today], 6000);
+        const pr = await q(sql, "SELECT app, kind, p::float p, leg FROM nba_friend.pairs WHERE game_date = $1::date AND app <> 'betr' ORDER BY app, rank", [today], 6000);
         const by = {};
         for (const r of pr) { const l = typeof r.leg === "string" ? JSON.parse(r.leg) : r.leg; l.p = r.p; l.kind = r.kind; if (r.app === "prizepicks" && r.kind !== "standard") l.want_odds = r.kind; (by[r.app] = by[r.app] || []).push(l); }
         for (const a of Object.keys(by)) out.generated_slips.push({ _pairs: true, source_key: a, name: "pairs", legs: by[a] });
