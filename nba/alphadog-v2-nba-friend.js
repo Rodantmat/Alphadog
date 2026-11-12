@@ -264,7 +264,7 @@ function legBody(l){return '<b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+
 function slipHtml(s,si){if(!SV)return slipHtmlOld(s,si);var k=alive(s);
   if(k.length<2&&!s.saved&&!s.legs.some(function(l){return l.removed}))return '<div class="slip" id="slip'+si+'" style="opacity:.55"><div class="hd"><h3>'+esc(s.name)+'</h3><span class="sub">Pulled</span></div><div class="sub">Not enough legs left to play this slip (a slip needs at least 2).</div></div>';var url=s.changed?lidUrl(s.app,k):s.url;var md=modeOf(s);var t=tiersOf(s);var ms=(typeof nbaModes==='function')?nbaModes(s.app,k.length):[];
   var h='<div class="slip" id="slip'+si+'"><div class="hd"><h3>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>'
-    +(s.saved?'<span class="saved">Saved ✓</span>':'<label class="sv"><input type="checkbox" class="sk" data-si="'+si+'"'+(s.save?' checked':'')+'> Save</label>')+'</div><div class="mrow">';
+    +(s.saved?'<span class="saved">Saved ✓</span>':(SAVEUI?'<label class="sv"><input type="checkbox" class="sk" data-si="'+si+'"'+(s.save?' checked':'')+'> Save</label>':''))+'</div><div class="mrow">';
   if(!s.saved&&ms.length>1)ms.forEach(function(m){h+='<label class="md"><input type="radio" class="mr" name="m'+si+'" data-si="'+si+'" value="'+m+'"'+(m===md?' checked':'')+'> '+esc(modeName(s.app,m))+'</label>'});
   else h+='<span>'+esc(modeName(s.app,md))+' · '+k.length+'-pick</span>';
   h+='<span class="mult">'+esc(tierTxt(t,k.length,md))+'</span></div>';
