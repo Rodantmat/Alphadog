@@ -33,7 +33,11 @@ def grade(slip, st):
 rec = collections.defaultdict(list)     # name -> [(season, day, profit, void)]
 daily_set = collections.defaultdict(float)
 nb = {}
+NID = CC.name_ids(conn, FE.norm)
 for season, d, prep in FE.pp_days(conn):
+    for l in prep:                       # history legs carry no player_id: U4's AEDGE needs it (the first run had none -> U4 ranked by final_hp only)
+        if not l.get("player_id"):
+            l["player_id"] = NID.get(FE.norm(l["player"]))
     try:
         PB.attach_aedge(prep, L.pb_last10(conn, d, {l["player_id"] for l in prep}))
     except Exception as e:
