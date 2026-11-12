@@ -453,6 +453,7 @@ export async function roiSnapshot(sql, cfg, slate, version) {
   const rows = [];
   for (const r of raw) {
     const lt = lineType(r);
+    if (lt === "unverified") continue;
     const { legFactor, breakeven } = legPricing(r, lt);
     if ((r.app === "sleeper" || r.app === "fliff") && !(legFactor > 0)) continue;
     const res = legRoi({ app: r.app, lt, side: r.side, hp: num(r.final_hp), tier: r.app === "prizepicks" ? tierKey(lt, r.pp_tier) : null, conf: num(r.confidence) }, legFactor, breakeven);
