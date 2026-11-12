@@ -227,7 +227,34 @@ def board_legs(conn, day, guard=True):
     return out, last, why
 
 
-ORDER_KEY = {"bl": lambda l: -(l["p"] + l["pf"]) / 2, "p": lambda l: -l["p"], "pf": lambda l: -l["pf"]}
+ORDER_KEY = {"bl": lambda l: -(l["p"] + l["pf"]) / 2, "p": lambda l: -l["p"], "pf": lambda l: -l["pf"],
+             "roi": lambda l: (-l.get("score_roi", -1.0), l["player"], l["prop"], l["line"])}
+
+
+def attach_roi(conn, legs):
+    """ROI-aware score of every Betr leg (owner 2026-11-11 21:03 PT, "Deploy the 4pick dynamic" = research_roi_final_candidates BT-B; same model as research_roi_slip_sweep_apps
+    for Betr): final_hp calibrated with the PrizePicks back data (gap by side x 20 hp buckets, interpolated), price layer toward .88 x break-even .56 (weight .4), ROI = p / .56 - 1,
+    floor ROI with the standard error, score_roi = .55 x certified score + .45 x profit(ROI). Display / ranking only - final_hp and the certified score are untouched."""
+    tab = {True: ([0.0] * 20, [0.0] * 20), False: ([0.0] * 20, [0.0] * 20)}
+    for ov, b, n, gp in conn.execute("""SELECT (lower(left(side, 1)) IN ('o', 'm', 'h')) ov, least(19, greatest(0, floor(hp * 20)))::int b, count(*)::float, sum(hit::int - hp)::float
+                                        FROM nba_score._mf_study_fs WHERE kind = 'standard' AND hp IS NOT NULL AND hit IS NOT NULL GROUP BY 1, 2""").fetchall():
+        tab[bool(ov)][0][b] = n; tab[bool(ov)][1][b] = gp
+    scs = sorted(l["sc"] for l in legs if l.get("sc") is not None)
+    med = scs[len(scs) // 2] if scs else 50.0
+    be = 0.56
+    for l in legs:
+        n, gp = tab[l["side"].lower()[0] in "omh"]
+        x = l["p"] * 20 - .5; i = int(math.floor(x)); t = x - i
+        i0 = min(19, max(0, i)); i1 = min(19, max(0, i + 1))
+        g0 = gp[i0] / n[i0] if n[i0] > 0 else None; g1 = gp[i1] / n[i1] if n[i1] > 0 else None
+        gap = g1 if g0 is None and g1 is not None else (g0 if g1 is None and g0 is not None else ((1 - t) * g0 + t * g1 if g0 is not None else 0.0))
+        nn = (1 - t) * n[i0] + t * n[i1] if (g0 is not None or g1 is not None) else 0.0
+        pc = min(.995, max(.005, l["p"] + (gap or 0.0)))
+        p = min(.995, max(.005, pc + 0.4 * (min(.99, .88 * be) - pc)))
+        se = math.sqrt(p * (1 - p) / (nn + 30) + 0.02 ** 2 * 0.8)
+        roi = p / be - 1; lo = (p - 1.28 * se) / be - 1
+        prof = min(100.0, max(0.0, 60.0 + 300.0 * (0.7 * roi + 0.3 * lo)))
+        l["roi"] = roi; l["score_roi"] = 0.55 * (l["sc"] if l.get("sc") is not None else med) + 0.45 * prof
 
 
 def _greedy(base, idx, k, banned, gc):
