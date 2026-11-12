@@ -195,6 +195,11 @@ def pick(conn, day):
                     ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, model_multiplier = EXCLUDED.model_multiplier,
                       board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
                     WHERE nba_score.fliff_live_slips.graded_at IS NULL""", (day, name, json.dumps(lj), round(mult, 4), last))
+    try:
+        import next_legs_store as NL
+        NL.store(conn, day, name, 1, [dict(l, player_id=l["pid"]) for l in LAST_CAND], exclude_players={x["player"] for x in s})
+    except Exception as e:  # noqa: BLE001
+        print(f"FLIFF_LIVE|{day} {name}: next-ranked list not stored ({e})")
     conn.commit()
     print(f"FLIFF_LIVE|{day} {name}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} @{l['m']}" for l in s) + f" = x{mult:.3f}")
 
