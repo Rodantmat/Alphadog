@@ -32,6 +32,7 @@ async function tokenOk(sql, token) {
   return !!(t && t.token && token && String(t.token) === String(token));
 }
 
+const legF = l => { const g = l._g || {}; const f = Number(g.factor != null ? g.factor : g.m); return Number.isFinite(f) && f > 0 ? f : 1; };
 const legLid = l => { const i = l.link && l.link.ids; if (!i) return null; if (l.source_key === "prizepicks") return i.projection_id ? i.projection_id + "-" + (l.selected_side === "less" ? "u" : "o") + "-" + l.line_value : null; return l.source_key === "sleeper" && i.line_id ? String(i.line_id) : null; };
 const startedMs = l => { const t = Date.parse((l.link && l.link.tip_utc) || l.official_game_time_utc || ""); return Number.isFinite(t) ? t : null; };
 const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok"));
