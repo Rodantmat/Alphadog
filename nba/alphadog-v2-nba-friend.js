@@ -85,6 +85,60 @@ function linkUrl(s, now) {
   return null;
 }
 
+// SLIP HISTORY (owner 2026-11-11): every graded slip of the season by date -> app. From 11-12 a day he saved shows HIS saved slips (their own legs, as he set them); every other day shows the slips as first shown.
+// Each leg: hit 1 / 0 / null (null = did not play or pushed). No amount, no unit - the multiplier only.
+async function historyOf(sql, today) {
+  const ss = (await q(sql, "SELECT season_start::text s FROM nba_friend.season LIMIT 1", [], 6000))[0].s;
+  const abbr = {};
+  for (const r of await q(sql, "SELECT team_id::text t, abbreviation a FROM nba_ref.teams", [], 6000)) abbr[r.t] = r.a;
+  const sv = await q(sql, "SELECT game_date::text d, app, slip_name, mode, structure, size, legs, mult::float m, tiers, status FROM nba_friend.saved ORDER BY game_date DESC, app, id", [], 8000);
+  const au = await q(sql, "SELECT game_date::text d, app, slip_no, structure, size, legs, multiplier::float m FROM nba_friend.slips WHERE status='graded' AND game_date >= $1::date AND game_date < $2::date ORDER BY game_date DESC, app, slip_no", [ss, today], 10000);
+  const seen = await q(sql, "SELECT game_date::text d, app, slip_name, legs FROM nba_friend.seen WHERE game_date >= $1::date", [ss], 8000);
+  const info = new Map();
+  for (const r of seen) { const m = new Map(); for (const l of J(r.legs) || []) { const pid = l._g && l._g.player_id; if (pid != null) m.set(String(pid), { name: l.player_name, matchup: l.matchup || null }); } info.set(r.d + "|" + r.app + "|" + r.slip_name, m); }
+  const side = s => (/^(under|less)$/i.test(String(s || "")) ? "less" : "more");
+  const days = new Map();
+  const put = (d, app, slip) => { if (!days.has(d)) days.set(d, new Map()); const a = days.get(d); if (!a.has(app)) a.set(app, []); a.get(app).push(slip); };
+  const hasSaved = new Set(sv.map(r => r.d + "|" + r.app));
+  for (const r of sv) {
+    const legs = (J(r.legs) || []).map(l => ({ player: l.player, prop: l.prop, side: side(l.side), line: l.line, matchup: l.matchup || null, hit: r.status === "graded" ? (l.hit == null ? null : Number(l.hit)) : undefined }));
+    put(r.d, r.app, { name: r.slip_name, mode: r.mode, structure: r.structure, size: r.size, mult: r.m, tiers: r.tiers ? J(r.tiers) : null, graded: r.status === "graded", mine: true, legs });
+  }
+  for (const r of au) {
+    if (hasSaved.has(r.d + "|" + r.app)) continue;
+    const nm = (APP_LABEL[r.app] || r.app) + " " + r.size + "-pick " + r.slip_no;
+    const m = info.get(r.d + "|" + r.app + "|" + nm) || new Map();
+    const legs = (J(r.legs) || []).map(l => { const x = m.get(String(l.player_id)) || {}; const tm = l.team || l.team_id; return { player: x.name || l.player, prop: l.prop, side: side(l.side), line: l.line, matchup: x.matchup || (tm && abbr[tm]) || null, hit: l.hit == null ? null : Number(l.hit) }; });
+    put(r.d, r.app, { name: nm, mode: r.structure, structure: null, size: r.size, mult: null, paid: r.m, tiers: null, graded: true, mine: false, legs });
+  }
+  return [...days.keys()].sort().reverse().map(d => ({ d, apps: APP_ORDER.filter(a => days.get(d).has(a)).map(a => ({ app: a, slips: days.get(d).get(a) })) }));
+}
+
+// SAVE (owner 2026-11-11): the slips he ticked, exactly as he set them (legs, swaps, X'd legs, Flex / Power). A slip saved again the same day replaces the earlier save until it is graded; an unticked one is deleted.
+async function saveSlips(env, token, body) {
+  return withPg(env, async sql => {
+    if (!(await tokenOk(sql, token))) return null;
+    const today = ptDate();
+    if (today < SAVE_FROM) return { ok: false, error: "Saving starts " + SAVE_FROM };
+    const items = Array.isArray(body && body.slips) ? body.slips.slice(0, 60) : [];
+    let saved = 0, removed = 0, skipped = 0;
+    for (const s of items) {
+      const app = String((s && s.app) || ""); const name = String((s && s.name) || "").slice(0, 80);
+      if (!APP_ORDER.includes(app) || !name) { skipped++; continue; }
+      if (s.save === false) { await q(sql, "DELETE FROM nba_friend.saved WHERE game_date=$1::date AND app=$2 AND slip_name=$3 AND status='saved_pending'", [today, app, name], 6000); removed++; continue; }
+      const legs = Array.isArray(s.legs) ? s.legs : [];
+      if (legs.length < 2 || legs.length > 6 || legs.some(l => !l || !l.g || l.g.player_id == null)) { skipped++; continue; }
+      const mode = s.mode === "flex" ? "flex" : "power";
+      const clean = legs.map(l => ({ player: String(l.player || "").slice(0, 60), prop: String(l.prop || ""), side: l.side === "less" ? "less" : "more", line: Number(l.line), matchup: l.matchup || null, tip: l.tip || null, team: l.team || null, lid: l.lid || null, f: Number(l.f) > 0 ? Number(l.f) : 1, sub: !!l.sub, g: l.g }));
+      const mult = Number(s.mult); const tiers = s.tiers && typeof s.tiers === "object" ? s.tiers : null;
+      await q(sql, "INSERT INTO nba_friend.saved (game_date, app, slip_name, mode, structure, size, legs, mult, tiers) VALUES ($1::date,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb) ON CONFLICT (game_date, app, slip_name) DO UPDATE SET mode=EXCLUDED.mode, structure=EXCLUDED.structure, size=EXCLUDED.size, legs=EXCLUDED.legs, mult=EXCLUDED.mult, tiers=EXCLUDED.tiers, saved_at=now() WHERE nba_friend.saved.status='saved_pending'",
+        [today, app, name, mode, String(s.structure || "").slice(0, 40), clean.length, JSON.stringify(clean), Number.isFinite(mult) ? mult : null, tiers ? JSON.stringify(tiers) : null], 8000);
+      saved++;
+    }
+    return { ok: true, saved, removed, skipped };
+  });
+}
+
 async function data(env, token, save = true) {
   return withPg(env, async sql => {
     if (!(await tokenOk(sql, token))) return null;
