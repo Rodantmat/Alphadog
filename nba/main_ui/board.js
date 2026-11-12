@@ -407,6 +407,7 @@ export async function roiBoard(sql, cfg, slate) {
   for (const r of raw) {
     // Betr pays a flat entry table (no per-leg price): its leg ROI is measured against the standard 0.56 break-even (approximate)
     const lt = lineType(r);
+    if (lt === "unverified") continue;   // a PrizePicks rung whose kind is unknown is never priced or shown as Regular
     const { legFactor, breakeven } = legPricing(r, lt);
     if ((r.app === "sleeper" || r.app === "fliff") && !(legFactor > 0)) continue;
     const res = legRoi({ app: r.app, lt, side: r.side, hp: num(r.final_hp), tier: r.app === "prizepicks" ? tierKey(lt, r.pp_tier) : null, conf: num(r.confidence) }, legFactor, breakeven);
