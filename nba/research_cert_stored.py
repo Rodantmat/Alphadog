@@ -79,6 +79,7 @@ for d in sorted(byday):
             mism_prof += 1
         void = abs(m - 1.0) < 1e-9 and sum(1 for l in legs2 if l["hit"] is not None) < 2
         recs.append((FE.SEASON_LABEL(d), code, d, m - 1.0, void, st, size))
+print(f"slips whose recomputed payout is NaN (a leg with no result in the law): {NANP[0]}", flush=True)
 print(f"unverified legs (name not resolvable to an NBA id, stored hit kept): {UNVER[0]}", flush=True)
 print(f"RE-GRADE: hit flags differing from the box score {mism_hit}; multipliers differing from the app law {mism_pay}; profit != multiplier-1 {mism_prof}", flush=True)
 for e in ex:
