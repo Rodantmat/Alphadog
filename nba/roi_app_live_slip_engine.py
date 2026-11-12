@@ -189,6 +189,14 @@ def pick(conn, day, apps, dry=False):
             got[name] = sl
             if not sl:
                 log(f"ROI_LIVE|{day} {name}: not enough qualifying legs - no slip")
+            if sl and not dry:      # owner 2026-11-12: the rule's ranked candidates (the slips' own players left out) for "sub the next ranked candidate"
+                try:
+                    import next_legs_store as NL
+                    on_slips = {l["player"] for s_ in sl for l in s_}
+                    for k_ in range(1, len(sl) + 1):
+                        NL.store(conn, day, name, k_, [dict(l, team=tm_get(l)) for l in TOPS.get((app, name), [])], exclude_players=on_slips)
+                except Exception as e:  # noqa: BLE001
+                    log(f"ROI_LIVE|{day} {name}: next-ranked list not stored ({e})")
             for k, s in enumerate(sl, start=1):
                 model = insert(conn, app, day, name, rule, k, s, pr) if not dry else float("nan")
                 log(f"ROI_LIVE|{day} {name} k{k} ({rule[5]}-pick {rule[6]}, model {model:.3f}x): " + "; ".join(
