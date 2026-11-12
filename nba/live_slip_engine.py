@@ -1511,6 +1511,7 @@ def pick(conn, day, require_fresh=True):
                               f"low-slip fallback{' backup' if st2 == 'placed_backup' else ''}: portfolio B built {built2}"))
                 print(f"  {day}: LOW-SLIP FALLBACK {nm2} k{k2} (B built {built2}) -> {st2}: " +
                       "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick2), flush=True)
+                store_next_legs(conn, day, nm2, k2, fallback_ranked(pools['__pb__'], fb2), 1, fallback=True)
         except Exception as e:  # noqa: BLE001 - the tier-2 fallback must never take the main slips down with it
             print(f"  {day}: low-slip fallback (tier 2) failed ({type(e).__name__}: {e}) - the other slips are unaffected", flush=True)
     # BIG-FLEX FALLBACKS (owner 2026-11-11 14:xx PT "why no more big slips from PP ... find fallback strategies for these structures with a low
