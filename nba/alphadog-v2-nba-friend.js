@@ -414,6 +414,49 @@ async function reportData(env, token) {
   });
 }
 
+// JON'S BOARD (owner 2026-11-11 17:38 / 17:59 PT): the owner's board client, served under Jon's own link (/<token>/board), with the ROI board,
+// the leg dossier and the player profile - and no menu (menus are the owner's), no slip builder. The client's /api/ and /js/ calls are pointed at
+// /<token>/b/..., and every route checks his token.
+async function boardRoute(request, env, url, seg) {
+  const base = "/" + seg[1] + "/b";
+  const H = (body, type, cache) => new Response(body, { headers: { "content-type": type, "cache-control": cache || "no-store" } });
+  const hash = VERSION.replace(/^.*-v/, "v");
+  if (seg[2] === "board") {
+    const btn = "class=\"btn\" style=\"flex:1;text-align:center;text-decoration:none\"";
+    const bar = "<div style=\"display:flex;gap:8px;margin:0 0 12px\"><a " + btn + " href=\"/" + seg[1] + "\">My slips</a><button " + btn + " onclick=\"document.getElementById('menuBoard').click()\">Board</button><button " + btn + " onclick=\"document.getElementById('menuPlayerProfile').click()\">Player Profile</button></div>";
+    const inject = "<script>window.__BASE__=" + JSON.stringify(base) + ";(function(){var f=window.fetch.bind(window);window.fetch=function(u,o){if(typeof u==='string'&&u.indexOf('/api/')===0)u=window.__BASE__+u;return f(u,o)}})();</script><style>.menuWrap,.pickBox,.slipFloat{display:none!important}</style>";
+    const tail = "<script>if(/open=profile/.test(location.search))window.addEventListener('load',function(){setTimeout(function(){document.getElementById('menuPlayerProfile').click()},400)})</script>";
+    const html = ASSETS["index.html"].replaceAll("{{ASSET_HASH}}", hash).replaceAll("/main_alphadog_", base + "/main_alphadog_")
+      .replace("<script src=\"/app.js?v=", "<script src=\"" + base + "/app.js?v=").replace("</head>", inject + "</head>")
+      .replace("<div class=\"wrap\">", "<div class=\"wrap\">" + bar).replace("</body>", tail + "</body>");
+    return H(html, "text/html; charset=utf-8");
+  }
+  if (seg[3] === "app.js") return H(ASSETS["core.js"].replace("s.src='/js/'", "s.src=(window.__BASE__||'')+'/js/'"), "application/javascript; charset=utf-8", "public, max-age=300");
+  if (seg[3] === "js" && seg[4]) {
+    const name = seg[4].replace(/\.js$/, "");
+    if (!["pricing", "dossier", "build", "slips", "profile", "admin"].includes(name)) return notFound();
+    return H(ASSETS[name + ".js"], "application/javascript; charset=utf-8", "public, max-age=300");
+  }
+  if (seg[3] && /^main_alphadog_/.test(seg[3])) {
+    const bin = Uint8Array.from(atob(ASSETS["logo.png.b64"]), c => c.charCodeAt(0));
+    return new Response(bin, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
+  }
+  if (seg[3] === "api") {
+    const path = "/api/" + seg.slice(4).join("/");
+    return withPg(env, async sql => {
+      const cfg = await loadConfig(sql);
+      const send = r => (r && r.status && r.body ? json(r.body, r.status) : json(r));
+      if (path === "/api/main-board/current") return send(await apiCurrent(sql, cfg, await resolveSlate(sql, cfg, url), url, VERSION));
+      if (path === "/api/main-board/filters") return send(await apiFilters(sql, cfg, await resolveSlate(sql, cfg, url), VERSION));
+      if (path === "/api/main-board/dossier") return send(await apiDossier(sql, cfg, url, VERSION));
+      if (path === "/api/player-search") return send(await apiPlayerSearch(sql, url, VERSION));
+      if (path === "/api/player-profile") return send(await apiPlayerProfile(sql, cfg, url, VERSION));
+      return json({ ok: false, error: "not_available" }, 404);
+    });
+  }
+  return notFound();
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
