@@ -437,7 +437,7 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
   // returns, the database query keeps running). Asked for while nba_main_ui.overview.enabled is not true = the whole board.
   const classic = url.searchParams.get("view") === "classic";
   const roiRes = classic ? null : await roiBoard(sql, cfg, slate);
-  const overview = overviewAsked && ((cfg.ui || {}).overview || {}).enabled === true;
+  const overview = false;
   const ovr = overview ? await overviewRows(sql, cfg, slate, minHp) : null;
   const rows = overview ? ovr.rows : await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
   // a leg without a hit probability is said on the board, never silent (2026-10-15; one number since 2026-10-23)
