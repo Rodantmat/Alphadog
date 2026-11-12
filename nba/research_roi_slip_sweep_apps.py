@@ -32,6 +32,37 @@ BOARD_SQL = SF.BOARD_SQL.replace("f.final_hp::float\nFROM", "f.final_hp::float, 
 assert BOARD_SQL != SF.BOARD_SQL
 BR = None
 PR = None
+CAL = (os.environ.get("SW_CAL") or "").lower()      # logit = per-app logistic recalibration: hit ~ logit(final_hp) + logit(1/m) + side + interaction
+FIT = None
+
+
+def _feats(p, m, over):
+    hp = np.clip(p, .02, .98); be = np.clip(1.0 / m, .02, .98)
+    lh = np.log(hp / (1 - hp)); lb = np.log(be / (1 - be))
+    return np.column_stack([np.ones(len(hp)), lh, lb, over.astype(float), lh * lb])
+
+
+def fit_from(raw, ss):
+    P, M, O, Y = [], [], [], []
+    for s in ss:
+        for d, legs in raw[s]:
+            for l in legs:
+                h = l.get("hit")
+                if h is None or h != h or l.get("p") is None:
+                    continue
+                P.append(l["p"]); M.append(l["m"]); O.append(str(l["side"]).lower()[0] in "omh"); Y.append(float(h))
+    P, M, O, Y = map(np.array, (P, M, O, Y))
+    if len(P) > 400000:
+        ix = np.random.RandomState(1).choice(len(P), 400000, replace=False); P, M, O, Y = P[ix], M[ix], O[ix], Y[ix]
+    X = _feats(P, M, O); w = np.zeros(X.shape[1])
+    for _ in range(30):
+        q = 1 / (1 + np.exp(-np.clip(X @ w, -30, 30))); g = X.T @ (Y - q) - 1e-3 * w
+        H = (X * (q * (1 - q))[:, None]).T @ X + 1e-3 * np.eye(len(w))
+        st = np.linalg.solve(H, g); w += st
+        if np.abs(st).max() < 1e-6:
+            break
+    log(f"  logit fit on {ss}: coef {np.round(w, 3)}, n={len(P)}, base hit {Y.mean():.3f}")
+    return w
 
 
 def log(m):
