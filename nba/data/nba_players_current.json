@@ -1304,14 +1304,14 @@
       "id": 1643721,
       "full_name": "Carson Cooper",
       "last_comma_first": "Cooper, Carson",
-      "roster_status": 0,
+      "roster_status": 1,
       "from_year": "2026",
       "to_year": "2026",
       "player_code": "carson_cooper",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1643595,
