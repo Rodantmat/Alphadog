@@ -10,7 +10,8 @@ import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
 // the owner's payout math, served to the page (same serialization as the owner UI's assets.js) so the multiplier follows every change to a slip
 const PRICING_JS = "var __name = typeof __name === 'function' ? __name : function (f) { return f; };\n" + Object.values(PRICING).filter(f => typeof f === "function").map(f => f.toString()).join("\n") + "\n";
-const SAVE_FROM = "2026-11-12";   // owner 2026-11-11: Jon's own save system (tick slips, X / swap legs, Flex or Power, Save) starts tomorrow
+const SAVE_FROM = "2026-11-11";   // owner 2026-11-11 16:53 PT: switched on today for testing (was 2026-11-12)
+const SAVE_FROM_WAS = "2026-11-12";   // owner 2026-11-11: Jon's own save system (tick slips, X / swap legs, Flex or Power, Save) starts tomorrow
 const pricingFrom = cfg => ({ pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sleeper || {}, betr: (cfg.pp || {}).betr_payout_v1 || null });
 const J = v => (typeof v === "string" ? JSON.parse(v) : v);
 
