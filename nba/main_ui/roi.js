@@ -28,7 +28,7 @@
 import { q } from "./common.js";
 
 const CAL = { map: null, at: 0, n: 0, inflight: null, error: null };
-export const QUOTA_DEFAULT = { kind: { goblin: 20, regular: 20, demon: 20 }, app: 30, prop: 5, side: 30, total_cap: 500 };
+export const QUOTA_DEFAULT = { kind: { goblin: 20, regular: 20, demon: 20 }, app: { prizepicks: 60, underdog: 50, sleeper: 50, betr: 35, fliff: 35 }, prop: 5, side: 30, total_cap: 500 };
 export const ROI_DEFAULT = { kappa: { standard: 0.89, goblin: 0.85, demon: 0.76, all: 0.88 }, price_w: { standard: 0.2, goblin: 0.6, demon: 0.6, all: 0.4 }, model_sd: 0.02, z: 1.28 };
 const KS = [0, 300, 200];            // how many legs a more specific group needs to count as much as the broader one
 const sideKey = s => /^(o|m|h)/i.test(String(s)) ? "over" : "under";
