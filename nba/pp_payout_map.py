@@ -822,10 +822,14 @@ def main():
                 out.append((day, strategy, k, rec.get("status"), len(picked), size, structure, json.dumps(rec.get("power")),
                             json.dumps(rec.get("flex")), rec.get("power_adj"), rec.get("flex_adj"), json.dumps(picked)))
             with psycopg.connect(url) as conn:
+                for nl, note, st_, k_ in sub_writes:
+                    conn.execute("""UPDATE nba_score.live_slips SET legs_json = %s::jsonb, streak_note = coalesce(streak_note || '; ', '') || %s
+                                    WHERE game_date = %s AND strategy = %s AND k = %s AND graded_at IS NULL""", (json.dumps(nl), note, day, st_, k_))
                 for o in out:
                     conn.execute("""INSERT INTO nba_score.live_slip_quotes (game_date, strategy, k, status, mapped, size, structure, power, flex,
                                     power_adj, flex_adj, legs, run_file) VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s::jsonb,%s)""", o + (out_path.name,))
                 conn.commit()
+            print(f"SLIPQ|{len(sub_writes)} slips rebuilt with the next ranked candidate", flush=True)
             print(f"SLIPQ|stored {len(out)} (quoted {sum(1 for o in out if o[3] == 200)}, unmapped {sum(1 for o in out if o[3] is None)})", flush=True)
             save("complete (slipq)")
             return 0
