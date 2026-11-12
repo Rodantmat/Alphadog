@@ -470,6 +470,12 @@ export default {
           icons: [{ src: "/icon.png", sizes: "192x192", type: "image/png", purpose: "any" }] }), { headers: { "content-type": "application/manifest+json", "cache-control": "no-store" } });
       }
       if (url.pathname === "/health") return json({ ok: true, worker: "alphadog-v2-nba-friend", version: VERSION, hyperdrive: !!env.HYPERDRIVE });
+      const seg = url.pathname.replace(/\/+$/, "").split("/");   // ["", token, "board"] or ["", token, "b", ...]
+      if (seg.length >= 3 && /^[A-Za-z0-9_-]{5,64}$/.test(seg[1]) && (seg[2] === "board" || seg[2] === "b")) {
+        const okB = await withPg(env, sql => tokenOk(sql, seg[1]));
+        if (!okB) return notFound();
+        return await boardRoute(request, env, url, seg);
+      }
       if (!m) return notFound();
       if (m[2] === "/report-data") { const d = await reportData(env, m[1]); return d ? json(d) : notFound(); }
       if (m[2] === "/report") { const ok2 = await withPg(env, sql => tokenOk(sql, m[1])); return ok2 ? new Response(REPORT.replaceAll("{{T}}", m[1]), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } }) : notFound(); }
