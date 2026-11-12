@@ -2,6 +2,16 @@
 import collections
 
 
+def name_ids(conn, norm):
+    """normalized player name -> NBA player id, only when the name maps to exactly one id (players + aliases)"""
+    by = {}
+    for fn, nid in conn.execute("SELECT full_name, nba_player_id::text FROM nba_ref.players WHERE nba_player_id IS NOT NULL").fetchall():
+        by.setdefault(norm(fn), set()).add(nid)
+    for al, nid in conn.execute("SELECT alias_value, nba_player_id::text FROM nba_ref.player_aliases WHERE nba_player_id IS NOT NULL").fetchall():
+        by.setdefault(norm(al), set()).add(nid)
+    return {k: next(iter(v)) for k, v in by.items() if len(v) == 1}
+
+
 def season_of(d):
     y = d.year if d.month >= 8 else d.year - 1
     return f"{y}-{str(y + 1)[2:]}"
