@@ -3,11 +3,18 @@
 // auto-swapped from the friend's own backup pool. Own tables (nba_friend.*), no save button, no units, no strategy text. Access: an unguessable token in the
 // path (nba_config.classification_config 'friend_page'.token); anything else is a plain 404. Reads nothing of the owner's UI, writes nothing.
 // DEPLOY NOTE: the deploy script redeploys a worker when THIS file changes - bump VERSION with any change.
-import { withPg, q } from "./main_ui/common.js";
+import { withPg, q, loadConfig } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
+import * as PRICING from "./main_ui/pricing.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-friend-v1.7.2";   // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
+// the owner's payout math, served to the page (same serialization as the owner UI's assets.js) so the multiplier follows every change to a slip
+const PRICING_JS = "var __name = typeof __name === 'function' ? __name : function (f) { return f; };\n" + Object.values(PRICING).filter(f => typeof f === "function").map(f => f.toString()).join("\n") + "\n";
+const SAVE_FROM = "2026-11-12";   // owner 2026-11-11: Jon's own save system (tick slips, X / swap legs, Flex or Power, Save) starts tomorrow
+const pricingFrom = cfg => ({ pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sleeper || {}, betr: (cfg.pp || {}).betr_payout_v1 || null });
+const J = v => (typeof v === "string" ? JSON.parse(v) : v);
+
+const VERSION = "alphadog-v2-nba-friend-v1.8.0";   // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
 // prior:
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
