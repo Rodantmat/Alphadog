@@ -23,6 +23,7 @@ Modes: BT_MODE=pick (BT_DATE or today PT) | grade (BT_DATE or every ungraded sla
 """
 import datetime as dt
 import json
+import math
 import os
 import sys
 from collections import defaultdict
