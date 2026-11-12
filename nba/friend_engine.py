@@ -1135,4 +1135,4 @@ def pairs_only():
 
 
 if __name__ == "__main__":
-    {"backfill": backfill, "pick": pick, "grade": grade, "pairs": pairs_only}[MODE]()
+    {"backfill": backfill, "pick": pick, "grade": grade, "pairs": pairs_only, "pool": pool_refresh}[MODE]()
