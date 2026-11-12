@@ -448,7 +448,7 @@ async function boardRoute(request, env, url, seg) {
       const cfg = { ...cfg0, ui: { ...cfg0.ui, apps: (cfg0.ui.apps || []).filter(a => a !== "betr") } };   // no Betr on Jon's board
       const send = r => (r && r.status && r.body ? json(r.body, r.status) : json(r));
       if (path === "/api/main-board/current") return send(await apiCurrent(sql, cfg, await resolveSlate(sql, cfg, url), url, VERSION));
-      if (path === "/api/main-board/filters") return send(await apiFilters(sql, cfg, await resolveSlate(sql, cfg, url), VERSION));
+      if (path === "/api/main-board/filters") { const fr = await apiFilters(sql, cfg, await resolveSlate(sql, cfg, url), VERSION); if (fr && fr.source_groups) fr.source_groups.betr = []; return send(fr); }
       if (path === "/api/main-board/dossier") return send(await apiDossier(sql, cfg, url, VERSION));
       if (path === "/api/player-search") return send(await apiPlayerSearch(sql, url, VERSION));
       if (path === "/api/player-profile") return send(await apiPlayerProfile(sql, cfg, url, VERSION));
