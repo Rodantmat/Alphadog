@@ -98,6 +98,7 @@ def build(conn, day, cfg):
     base = list(priced) if order == "src" else sorted(priced, key=lambda x: -x["p"])
     cand = [l for l in base if l["p"] >= float(cfg.get("floor", 0.56)) and l["m"] <= float(cfg.get("mcap", 1.85))
             and (side == "any" or l["side"] == side)]
+    LAST_CAND[:] = cand[int(cfg.get("skip", 1)):]
     s = ST.pick(cand[int(cfg.get("skip", 1)):], 2, gc)
     if s is not None and len({l["team"] for l in s}) < 2:
         s = None
