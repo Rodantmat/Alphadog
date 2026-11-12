@@ -373,7 +373,7 @@ function render(){
   var seasons=['all'].concat(D.seasons);var h='';
   var tot=0,tn=0;var cards='';
   D.order.forEach(function(a){var st=stats(rowsFor(a,'all'));tot+=st.hc;tn+=st.n;cards+='<div class="c"><span>'+esc(D.labels[a])+'</span><b class="'+cls(st.hc)+'">'+money(st.hc)+'</b><span>on '+st.n+' slips, after the 5% cut</span></div>'});
-  h+='<div class="cards">'+cards+'<div class="c"><span>All five apps</span><b class="'+cls(tot)+'">'+money(tot)+'</b><span>on '+tn+' slips, 1 dollar each</span></div></div>';
+  h+='<div class="cards">'+cards+'<div class="c"><span>All four apps</span><b class="'+cls(tot)+'">'+money(tot)+'</b><span>on '+tn+' slips, 1 dollar each</span></div></div>';
   h+='<h2>Summary by app</h2><div class="tabs">'+seasons.map(function(s){return '<button class="'+(s===SEAS?'on':'')+'" data-s="'+s+'">'+(s==='all'?'All seasons':s)+'</button>'}).join('')+'</div>';
   h+='<div class="wrap"><table><tr><th>App</th><th>Slips</th><th>Slips won</th><th>Profit</th><th>ROI</th><th>ROI after 5% cut</th><th>Max drawdown</th><th>Longest dry run (days)</th></tr>';
   var T=[];D.order.forEach(function(a){var rs=rowsFor(a,SEAS);if(!rs.length)return;T=T.concat(rs);var st=stats(rs);
