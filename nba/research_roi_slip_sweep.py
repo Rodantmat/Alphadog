@@ -46,6 +46,10 @@ def load(conn):
                             ORDER BY game_date, player, prop, side, line""", conn)
         df = df.merge(ev, on=["game_date", "player", "prop", "side", "line"], how="left")
         df["event_id"] = df["event_id"].astype(object)
+        print("price_source share:", df.groupby(["season", "kind"])["price_source"].apply(lambda x: round((x == "exact").mean(), 3)).to_dict(), flush=True)
+        if os.environ.get("PP_EXACT") == "1":
+            df = df[df["price_source"] == "exact"].copy()
+            print("PP_EXACT: kept", len(df), "exactly-priced legs", flush=True)
     else:
         L = pd.read_sql("""SELECT DISTINCT ON (game_date, player, prop, side, line) season, game_date, player, player_id, prop, side, line::float8 AS line,
                                   tier, factor, hit::int hit FROM nba_score.ud_tier_map_legs
