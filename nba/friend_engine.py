@@ -801,7 +801,102 @@ def pick():
 
 
 def mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used):
-    """copy the owner's newly deployed slips of the day onto this page, exact legs, appended after the page's own slips; a copy equal to a slip already on the page is skipped"""
+    """owner 2026-11-12 00:03 PT ("all 3 of us get all strategies now"): EVERY strategy slip the owner has live today on this app is copied onto this page. The owner keeps the originals;
+    when the app has MORE than 2 owner slips, exactly one copy (the one with the most legs) is changed: its lowest-ranked leg is skipped and replaced by the next best leg
+    (Jessi, VAR_IDX 0) or the second best backup leg (Jon, VAR_IDX 1) - same side / line type, a player not on the slip, one leg a game, two teams; no candidate = exact copy.
+    Betr stays off both pages and Underdog off Jessi's. Copies equal to a slip already on the page are skipped."""
+    if FAPP == "BETR" or (FAPP == "UD" and TIER == "jessi"):
+        return
+    if FAPP == "PP":
+        src = conn.execute("SELECT strategy, legs_json, structure FROM nba_score.live_slips WHERE game_date=%s AND status='placed' ORDER BY strategy, k", (d,)).fetchall()
+    elif FAPP == "SLEEPER":
+        src = conn.execute("SELECT strategy, legs_json, structure FROM nba_score.sleeper_live_slips WHERE game_date=%s AND status IN ('live','placed') ORDER BY strategy, k", (d,)).fetchall()
+    elif FAPP == "FLIFF":
+        src = conn.execute("SELECT strategy, legs_json, structure FROM nba_score.fliff_live_slips WHERE game_date=%s AND status IN ('live','placed') ORDER BY strategy, k", (d,)).fetchall()
+    elif FAPP == "UD":
+        src = conn.execute("SELECT composition, legs_json, structure FROM nba_score.ud_live_slips WHERE game_date=%s AND portfolio IN ('T','C') AND status='live' ORDER BY composition, k", (d,)).fetchall()
+    else:
+        return
+    board = {}
+    if FAPP != "FLIFF":
+        for l in legs:
+            board[(pid(l), l["prop"], l["side"], round(float(l["line"]), 2))] = l
+    have = [frozenset(lk(x) for x in [dict(player_id=y.get("player_id"), player=y.get("player_name"), prop=y.get("canonical_prop_key"), side={"more": "Over", "less": "Under"}.get(str(y.get("selected_side")).lower(), y.get("selected_side"))) for y in sl["legs"]]) for sl in slips]
+    copies = []
+    for strat, lj, owner_st in src:
+        arr = lj if isinstance(lj, list) else json.loads(lj)
+        s = []
+        for l in arr:
+            if FAPP == "FLIFF":
+                x = dict(l); x["m"] = l.get("factor"); x.setdefault("kind", "main")
+            else:
+                x = board.get((str(l.get("player_id")), l.get("prop"), l.get("side"), round(float(l["line"]), 2)))
+            if x is None:
+                s = None
+                break
+            s.append(x)
+        if not s or len(s) < 2:
+            log(f"owner copy {strat}: a leg is not on this page's board - skipped")
+            continue
+        fs = frozenset(lk(x) for x in s)
+        if fs in have or any(c[2] == fs for c in copies):
+            log(f"owner copy {strat}: already on this page - skipped")
+            continue
+        copies.append((strat, s, fs, owner_st))
+    vi = None
+    if len(copies) > 2:
+        vi = max(range(len(copies)), key=lambda i: (len(copies[i][1]), i))
+    var_idx = 1 if TIER == "friend" else 0
+    n = 0
+    for i, (strat, s, fs, owner_st) in enumerate(copies):
+        note = ""
+        if i == vi:
+            try:
+                def pv(x):
+                    try:
+                        return float(x.get("p"))
+                    except (TypeError, ValueError):
+                        return None
+                scored = [(pv(x), j) for j, x in enumerate(s) if pv(x) is not None]
+                if len(scored) == len(s):
+                    p0, j0 = min(scored)
+                    keep = [x for j, x in enumerate(s) if j != j0]
+                    out = s[j0]
+                    on = {pid(x) for x in s}
+                    evs = {x.get("event_id") for x in keep}
+                    cands = []
+                    for l in sorted(legs, key=lambda l: -(pv(l) or 0)):
+                        if pv(l) is None or pv(l) > p0 + 1e-9 or pid(l) in on or l.get("side") != out.get("side") or l.get("tier") != out.get("tier"):
+                            continue
+                        if FAPP == "PP" and l.get("tier") != "R":
+                            continue
+                        if l.get("event_id") is not None and l.get("event_id") in evs:
+                            continue
+                        if l.get("kind") != out.get("kind") and out.get("kind") is not None:
+                            continue
+                        if (len({tkey(x) for x in keep} | {tkey(l)}) < 2) and FAPP != "UD":
+                            continue
+                        cands.append(l)
+                    if len(cands) > var_idx:
+                        new = cands[var_idx]
+                        s = keep[:j0] + [new] + keep[j0:] if False else [new if j == j0 else x for j, x in enumerate(s)]
+                        note = f" (variant: {out.get('player')} -> {new.get('player')} {new.get('prop')} {new.get('line')})"
+            except Exception as e:  # noqa: BLE001 - a variant failure leaves the exact copy
+                log(f"variant failed ({e}) - exact copy")
+        st = "max" if FAPP == "FLIFF" else ("flex" if owner_st == "flex" else "power")
+        size = len(s)
+        titles[size] += 1
+        n += 1
+        slips.append({"source_key": APP_KEY, "name": f"{APP_LABEL} {size}-pick {titles[size]}", "structure_label": STRUCT_NAME[st], "size": size, "game_cap": 1,
+                      "legs": [deco(conn, ctx, l, d) for l in s]})
+        rows.append(dict(d=d, code=f"O{n}", no=titles[size], st=st, size=size, legs=[leg_json(l) for l in s]))
+        used |= {pid(l) for l in s}
+        have.append(frozenset(lk(x) for x in s))
+        log(f"owner copy {strat} -> O{n}{note}: " + "; ".join(f"{x['player_name']} {x['canonical_prop_key']} {x['selected_side']} {x['line_value']}" for x in slips[-1]["legs"]))
+
+
+def mirror_owner_new_2026_11_11(conn, ctx, d, legs, slips, rows, titles, used):
+    """(superseded 2026-11-12) copy the owner's newly deployed slips of the day onto this page, exact legs, appended after the page's own slips; a copy equal to a slip already on the page is skipped"""
     if FAPP == "PP":
         src = conn.execute("SELECT strategy, legs_json, structure FROM nba_score.live_slips WHERE game_date=%s AND status='placed' AND (strategy IN ('P_FB_U5flex','P_FB_U6flex') OR streak_note ILIKE %s) ORDER BY strategy, k", (d, "%repair%")).fetchall()
     elif FAPP == "FLIFF":
