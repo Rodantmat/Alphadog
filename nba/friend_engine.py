@@ -1052,6 +1052,66 @@ def grade_saved(conn, today):
     log(f"saved slips graded: {n_done} of {len(pend)}")
 
 
+def bank_add(conn, ctx, d, legs, pool, used, cap=60):
+    """owner 2026-11-11 17:06 PT (late in the day started legs were crossed out with no sub - the pool had run dry): a wide SUB BANK for every app - the board's regular
+    legs at hit chance >= 55%, best first, one per player, never a player on a slip of the page, added behind the legs the slip rules already put in the pool."""
+    have = {x.get("player_name") for x in pool}
+    inpool = {str((x.get("_g") or {}).get("player_id")) for x in pool}
+    if FAPP == "PP":
+        cand = [l for l in legs if l["tier"] == "R" and l["side"] == "Under" and float(l["p"]) >= 0.55]
+    else:
+        cand = [l for l in legs if float(l["p"]) >= 0.55 and str(l.get("tier") or "R") == "R" and str(l.get("kind") or "main") == "main"]
+    n_add = 0
+    seen = set()
+    for l in sorted(cand, key=lambda l: -float(l["p"])):
+        if pid(l) in used or pid(l) in inpool or pid(l) in seen:
+            continue
+        seen.add(pid(l))
+        x = deco(conn, ctx, l, d)
+        if x.get("player_name") in have:
+            continue
+        have.add(x.get("player_name")); x["_code"] = "BK"; pool.append(x); n_add += 1
+        if n_add >= cap:
+            break
+    log(f"sub bank: {n_add} legs added to the pool (pool now {len(pool)})")
+
+
+def pool_refresh():
+    """rebuild ONLY the backup pool of today's snapshot with the wide sub bank - the slips, the saved slips and the grading rows are not touched"""
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
+    d = dt.date.fromisoformat(os.environ.get("FR_DAY") or dt.datetime.now(PT).date().isoformat())
+    if FAPP == "PP":
+        PC.SE.flex_alt_tiers(); PC.SE.payout_v3_rules()
+        legs = pp_live_prep(conn, d)
+    elif FAPP == "UD":
+        legs, _rows = AF.load_ud(conn, d, {})
+    else:
+        legs = AA.live_legs(conn, d, {})
+        _tm = {}
+        for _p, _t in conn.execute("SELECT DISTINCT ON (nba_player_id) nba_player_id::text, team_id FROM nba_stats.player_game_log WHERE game_date < %s ORDER BY nba_player_id, game_date DESC", (d,)).fetchall():
+            _tm[_p] = _t
+        for l in legs:
+            if l.get("team") is None:
+                l["team"] = _tm.get(str(l.get("player_id")))
+        legs = [l for l in legs if l.get("p") is not None and l.get("team") is not None and l.get("event_id") is not None]
+    row = conn.execute("SELECT payload FROM nba_friend.snapshot WHERE game_date=%s AND payload->>'app'=%s", (d, APP_KEY)).fetchone()
+    if not row:
+        log(f"{d}: no snapshot for {APP_KEY} - nothing to refresh")
+        return
+    pl = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+    used = {str((x.get("_g") or {}).get("player_id")) for s in pl.get("slips", []) for x in s.get("legs", [])}
+    pool = list(pl.get("pool") or [])
+    ctx = decor_ctx(conn, d)
+    bank_add(conn, ctx, d, legs, pool, used)
+    for x in pool:
+        x.pop("_code", None)
+    pl["pool"] = pool
+    conn.execute("UPDATE nba_friend.snapshot SET payload=%s::jsonb WHERE game_date=%s AND payload->>'app'=%s", (json.dumps(pl), d, APP_KEY))
+    conn.commit()
+    log(f"{d}: pool refreshed - {len(pool)} legs, slips untouched ({len(pl.get('slips', []))})")
+
+
 def pairs_only():
     """rebuild only the day's best pairings for this app (the friend's slips of the day stay untouched)"""
     conn = psycopg.connect(os.environ["DATABASE_URL"])
