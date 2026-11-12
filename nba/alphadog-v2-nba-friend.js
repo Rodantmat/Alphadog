@@ -250,8 +250,8 @@ function pickSub(s){var P=window.PD.pool||[];for(var pass=0;pass<2;pass++){for(v
 function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
 function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
 function sweep(s){var ch=false;if(s.saved)return false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped||l.removed)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
-var SV=false;
-function initSwap(d){window.PD=d;SV=!!d.save_on;d.pool=(d.pool||[]).slice();var sv={};(d.saved||[]).forEach(function(x){sv[x.app+'|'+x.name]=x});
+var SV=true,SAVEUI=false;
+function initSwap(d){window.PD=d;SV=true;SAVEUI=!!d.save_on;d.pool=(d.pool||[]).slice();var sv={};(d.saved||[]).forEach(function(x){sv[x.app+'|'+x.name]=x});
   d.slips.forEach(function(s){s.save=true;var m0=String(s.structure||'').toLowerCase();s.mode=(m0.indexOf('flex')>=0||m0.indexOf('dynamic')>=0)?'flex':'power';
     var x=sv[s.app+'|'+s.name];if(SV&&x){s.legs=x.legs.slice();s.mode=x.mode;s.saved=true;s.wasSaved=true;s.changed=true;return}
     sweep(s)})}
