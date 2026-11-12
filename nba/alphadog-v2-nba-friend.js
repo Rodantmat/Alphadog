@@ -208,7 +208,7 @@ async function data(env, token, save = true, preview = false) {
     }
     try { history = await historyOf(sql, today); } catch (e) { history = []; }
     return { ok: true, version: VERSION, date, today, checked_at: new Date().toISOString(), live: out.pp_live ? { ms: out.pp_live.total_ms, flagged: out.pp_live.flagged.length } : null,
-      roi: { apps, total: n ? { n, roi: p / n } : null }, order: APP_ORDER, labels: APP_LABEL, slips, pairs: pairsOut(out, now, date === today), pool: cpool.filter(l => l.g), save_on: saveOn, pricing, saved: savedToday, history };
+      roi: { apps, total: n ? { n, roi: p / n } : null }, order: APP_ORDER, labels: APP_LABEL, slips, pairs: pairsOut(out, now, date === today), pool: cpool.filter(l => l.g), save_on: saveOn, preview: preview && today < SAVE_FROM, pricing, saved: savedToday, history };
   });
 }
 
