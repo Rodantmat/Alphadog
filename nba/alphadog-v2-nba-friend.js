@@ -321,8 +321,9 @@ function render(d){
   if(!d.slips.length)h+='<p class="sub" style="margin-top:16px">No slips right now. They appear here once the day\\'s lineups are set.</p>';
   for(const a of d.order){const ss=d.slips.filter(s=>s.app===a);if(!ss.length)continue;h+='<h2>'+esc(d.labels[a])+'</h2>';
     for(const s of ss){h+=slipHtml(s,d.slips.indexOf(s))}}
-  h+='<div id="pairsBox"></div>';
-  $('#app').innerHTML=h;window.PD=d;drawPairs()}
+  if(SV&&d.slips.length)h+='<div class="savebar"><button id="saveBtn">Save checked slips</button><div id="saveMsg" class="sub" style="margin-top:6px"></div></div>';
+  h+='<div id="pairsBox"></div><div id="histBox"></div>';
+  $('#app').innerHTML=h;window.PD=d;drawPairs();drawHist()}
 var SHOW={prizepicks:8,underdog:5,sleeper:5,fliff:3,betr:3};var pOpen={};
 function drawPairs(){var d=window.PD;if(!d)return;var box=document.getElementById('pairsBox');if(!box)return;
   var pr=d.pairs||{};var now=Date.now();var h='';var any=false;
