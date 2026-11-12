@@ -142,7 +142,7 @@ async function saveSlips(env, token, body) {
   });
 }
 
-async function data(env, token, save = true) {
+async function data(env, token, save = true, preview = false) {
   return withPg(env, async sql => {
     if (!(await tokenOk(sql, token))) return null;
     const today = ptDate();
