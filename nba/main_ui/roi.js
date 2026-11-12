@@ -122,6 +122,20 @@ export function legRoi(o, legFactor, breakeven, cfg = ROI_DEFAULT) {
   return { roi: est.p / breakeven - 1, roi_lo: (est.p - cfg.z * est.se) / breakeven - 1, mult: 1 / breakeven, ...est };
 }
 
+// THE ROI-AWARE SCORE (owner 2026-11-11 18:02: "the score should consider ROI ... a leg with strong hit probability, high confidence and
+// high ROI gets a very high score, up to 100; a high hit rate with a bad ROI is not a profitable leg and gets a lower score"). A DISPLAY
+// score for the boards: the stored certified score (board_scored.score, what the slip engine reads) is not touched. The certified score
+// keeps its weight (hit probability + confidence) and a profit component joins it: profit = 60 + 300 x blended ROI, clamped 0-100
+// (ROI 0 = 60, +13.3% or better = 100, -20% or worse = 0), where the blended ROI is 70% expected + 30% conservative floor so a thin
+// sample cannot reach the top. score_roi = (1 - w) x certified + w x profit, w = 0.45 (tunable nba_main_ui.roi.score).
+export function roiScore(score, roi, roiLo, cfg = ROI_DEFAULT) {
+  if (score == null || roi == null || !Number.isFinite(roi)) return null;
+  const sc = cfg.score || { w: 0.45, base: 60, slope: 300, floor_share: 0.3 };
+  const blend = (1 - sc.floor_share) * roi + sc.floor_share * (roiLo == null || !Number.isFinite(roiLo) ? roi : roiLo);
+  const profit = Math.min(100, Math.max(0, sc.base + sc.slope * blend));
+  return Math.min(100, Math.max(0, (1 - sc.w) * score + sc.w * profit));
+}
+
 // QUOTAS (owner 2026-11-11): at least 20 goblins, 20 regulars, 20 demons; 30 per app; 5 per prop; 30 More and 30 Less. Each bucket
 // takes its best-ROI legs. Owner 17:58: a negative-ROI leg does not belong on the board - only the goblin / demon buckets may be filled
 // with the best of the rest when there are not enough positive ones; every other bucket stays short and says so.
