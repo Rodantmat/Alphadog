@@ -173,7 +173,7 @@ def main():
         grp = sorted([s for s in slips if s[0] == bstrat], key=lambda s: s[1])
         bigf += grp
         if grp:
-            cap_b = bcap if big_surv == 0 else 0
+            cap_b = bcap if (big_surv == 0 or bstrat in actives) else 0
             got = walk(grp, cap_b)
             print(f"QUOTE GATE {day}: big-flex fallback {bstrat} placed {got} of {cap_b} ({len(grp)} built incl. backups; B big-flex survivors {big_surv})", flush=True)
     for strategy, k, legs, size, structure, status in slips:
