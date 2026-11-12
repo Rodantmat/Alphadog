@@ -256,6 +256,7 @@ def pick(conn, day):
                         WHERE nba_score.sleeper_live_slips.graded_at IS NULL""",
                      (day, name, k, structure, json.dumps(lj), round(model, 4), json.dumps(tiers) if tiers else None))
         print(f"SLEEPER_LIVE|{day} {name}: {k}-pick {structure}, Sleeper multipliers {ms}, model payout {model:.3f}x")
+        _store_next(conn, day, name, [s], LAST.get("T1", []))
     conn.commit()
 
 
