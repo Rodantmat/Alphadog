@@ -252,6 +252,8 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     roi_0_100: roiR ? r1(roiR.roi * 100) : null, roi_floor_0_100: roiR ? r1(roiR.roi_lo * 100) : null,
     roi_hit_rate_0_100: roiR ? r1(roiR.p * 100) : null, roi_model_hp_0_100: roiR ? r1(roiR.p_cal * 100) : null,
     roi_mult: roiR ? Math.round(roiR.mult * 100) / 100 : null, roi_sample_n: roiR ? roiR.n : null,
+    score_certified_0_100: score,
+    score_roi_0_100: roiR && score != null ? r1(roiScore(Number(score), roiR.roi, roiR.roi_lo)) : null,
     roi_tags: [],
     interpolated: !!r.interpolated,
     line_type: lt,
