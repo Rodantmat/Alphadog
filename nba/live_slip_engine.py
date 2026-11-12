@@ -842,6 +842,7 @@ def ensure_tables(conn):
     conn.execute("ALTER TABLE nba_score.live_slips ADD COLUMN IF NOT EXISTS stake_weight double precision DEFAULT 1.0")
     conn.execute("ALTER TABLE nba_score.live_slips ADD COLUMN IF NOT EXISTS streak_note text")   # 2026-10-17 streak flags
     conn.execute("ALTER TABLE nba_score.live_slips ADD COLUMN IF NOT EXISTS unit_usd double precision")   # 2026-10-18 the unit in force at pick
+    conn.execute(NEXT_LEGS_DDL)    # 2026-11-12: ranked candidates next to each PrizePicks slip (the quote step subs the next ranked leg)
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_unit_history (game_date date PRIMARY KEY, season_start date,
         season_profit double precision, season_high double precision, unit_from double precision, unit_usd double precision,
         reason text, updated_at timestamptz DEFAULT now())""")
