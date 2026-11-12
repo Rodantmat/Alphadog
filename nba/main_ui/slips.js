@@ -192,7 +192,7 @@ async function engineSlips(sql, cfg, slate) {
   const hasSl = (await q(sql, "SELECT to_regclass('nba_score.sleeper_live_slips') IS NOT NULL ok"))[0];
   if (hasSl && hasSl.ok) sl = await q(sql, `SELECT strategy, size, structure, k, legs_json, stake, status, hits, payout FROM nba_score.sleeper_live_slips WHERE game_date = $1::date ORDER BY strategy, k`, [slate.date]);
   return { source: "live", pp: pp.map(r => ({ ...r, app: "prizepicks", track: r.strategy })), ud: ud.map(r => ({ ...r, app: "underdog", track: `UD ${r.portfolio} ${r.composition} ${r.size}${r.structure === "flex" ? "F" : "S"}` })),
-           sl: sl.map(r => ({ ...r, app: "sleeper", track: `Sleeper ${r.size}-pick ${r.structure === "flex" ? "Flex" : "Max"} ${String(r.strategy || "").startsWith("S_ALL") ? `(all Sleeper legs, slip ${r.k})` : "(Underdog T1 legs)"}` })),
+           sl: sl.map(r => ({ ...r, app: "sleeper", track: `Sleeper ${r.size}-pick ${r.structure === "flex" ? "Flex" : "Max"} ${String(r.strategy || "").startsWith("S_ALL") ? `(all Sleeper legs, slip ${r.k})` : /^S_[BCDF]_/.test(String(r.strategy || "")) ? `(ROI rule ${String(r.strategy).slice(2)}, slip ${r.k})` : "(Underdog T1 legs)"}` })),
            fl: (await fliffLive(sql, slate)).map(r => ({ ...r, app: "fliff", track: `Fliff ${r.size}-pick Max (Underdog T1 legs)` })),
            bt: (await betrLive(sql, slate)).map(r => ({ ...r, app: "betr", track: String(r.strategy || "").startsWith("B_BRD") ? `Betr ${r.size}-pick Dynamic ${String(r.strategy).endsWith("_fb") ? "fallback " : ""}(Betr board, slip ${r.k})` : `Betr ${r.size}-pick Dynamic (Underdog T2+T3 legs)` })) };
 }
