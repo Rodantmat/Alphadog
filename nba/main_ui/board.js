@@ -252,6 +252,11 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     roi_0_100: roiR ? r1(roiR.roi * 100) : null, roi_floor_0_100: roiR ? r1(roiR.roi_lo * 100) : null,
     roi_hit_rate_0_100: roiR ? r1(roiR.p * 100) : null, roi_model_hp_0_100: roiR ? r1(roiR.p_cal * 100) : null,
     roi_mult: roiR ? Math.round(roiR.mult * 100) / 100 : null, roi_sample_n: roiR ? roiR.n : null,
+    // multiplier and tier (owner 2026-11-11 18:12): the leg's implied multiplier (1 / its break-even) on the card and in the dossier; a
+    // PrizePicks leg is Regular T0, Demon T1..Tn up, Goblin T1..Tn down
+    leg_mult_x: Math.round(100 / breakeven) / 100,
+    tier_n: r.app === "prizepicks" ? (lt === "regular" ? 0 : (Number.isFinite(Math.abs(Number(r.pp_tier))) ? Math.abs(Number(r.pp_tier)) : null)) : null,
+    tier_label: r.app === "prizepicks" ? (lt === "regular" ? "Regular T0" : (lt === "goblin" ? "Goblin" : "Demon") + " T" + (r.pp_tier == null ? "?" : Math.abs(Number(r.pp_tier)))) : null,
     score_certified_0_100: score,
     score_roi_0_100: roiR && score != null ? r1(roiScore(Number(score), roiR.roi, roiR.roi_lo)) : null,
     roi_tags: [],
