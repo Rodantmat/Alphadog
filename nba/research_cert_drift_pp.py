@@ -28,7 +28,12 @@ def season_of(d):
     return f"{y}-{str(y + 1)[2:]}"
 
 
+import research_cert_common as CC     # noqa: E402
+NID = CC.name_ids(conn, FE.norm)
 for season, d, prep in FE.pp_days(conn):
+    for l in prep:
+        if not l.get("player_id"):
+            l["player_id"] = NID.get(FE.norm(l["player"]))
     try:
         PB.attach_aedge(prep, L.pb_last10(conn, d, {l["player_id"] for l in prep}))
     except Exception:
