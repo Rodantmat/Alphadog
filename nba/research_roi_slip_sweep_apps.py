@@ -327,7 +327,7 @@ def main():
     log("\n##### bootstrap of the shortlist on the REAL season (resample slates, 2000x)")
     rng = np.random.RandomState(3)
     for _, r in short.iterrows():
-        dt = [(d, tops(g, r.key, r.kinds, r.roi_f, r.side, r.props)) for d, g in days[REAL]]
+        dt = [(d, tops(g, r.key, r.kinds, r.roi_f, r.side, r.props)) for d, g in days[PRIM]]
         rows = run(dt, int(r.N), int(r.k), r["mode"]); ds = sorted({d for d, _ in dt}); td = collections.defaultdict(float); nd = collections.defaultdict(int)
         for d, rr, w in rows:
             td[d] += rr; nd[d] += 1
