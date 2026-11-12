@@ -141,6 +141,7 @@ def build(conn, day, app, only=None):
         for s in sl:
             for l in s:
                 l["team"] = tm.get(str(l["player_id"]))
+        TOPS[(app, name)] = top
         out[name] = (rule, sl)
     return out, f"{app}: {len(legs)} legs with final_hp, {len(df)} scored"
 
