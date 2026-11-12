@@ -311,7 +311,7 @@ def main():
         log(f"  key {nm:12s}: mean ROI real {g[f'roi_{r_}'].mean():+.3f}  hist " + " ".join(f"{h}={g[f'roi_{h}'].mean():+.3f}" for h in h_) + f"   positive all seasons {(g.worst>0).mean():.3f}")
     log("\n##### factor effects (mean ROI, real keys)")
     for f in ["kinds", "roi_f", "side", "props", "N", "k", "mode"]:
-        log(f"-- {f}\n" + real.groupby(f)[[c for c in real.columns if c.startswith("roi_")]].mean().round(3).to_string())
+        log(f"-- {f}\n" + real.groupby(f)[[c for c in real.columns if c.startswith("roi_") and c != "roi_f"]].mean().round(3).to_string())
     cols = idx + [f"{a}_{s[-2:]}" for s in seasons[::-1] for a in ("n", "win", "roi")] + [f"dd_{r_}", f"per_day_{r_}"]
     log("\n##### top 40 by worst season ROI (real season first), real keys")
     log(real.sort_values("worst", ascending=False).head(40)[cols].round(3).to_string(index=False))
