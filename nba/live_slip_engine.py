@@ -1479,7 +1479,7 @@ def pick(conn, day, require_fresh=True):
         if not (fbx.get('enabled') and pools.get('__pb__') is not None):
             continue
         try:
-            _bx, fx = fallback_slips(pools['__pb__'], fbx, extra=int(fbx.get('backups', 0)), force=True)
+            _bx, fx = fallback_slips(pools['__pb__'], fbx, extra=int(fbx.get('backups', 0)), force=True, roi=roi_map)
             nmx = fbx.get('strategy', 'P_FB_U5flex')
             for kx, pickx in enumerate(fx, start=1):
                 conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
