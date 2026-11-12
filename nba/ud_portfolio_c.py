@@ -191,6 +191,9 @@ FLEX_SHORT = {"C3": "4-pick Flex, regular lines, More + Less, no low-volume prop
               "C6": "6-pick Flex, regular lines, Less, all props, baseline rank"}
 
 
+LAST_RANK = {}      # unit id -> the unit's ranked candidate list of the last flex_slips call
+
+
 def flex_slips(uid, legs):
     """the Flex unit's slips (list of lists of legs); one pick per player and per game inside a slip"""
     spec = FLEX_UNITS[uid]
