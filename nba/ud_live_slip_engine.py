@@ -434,6 +434,24 @@ def pick(conn, day):
                               1.0 if passed else 0.0, 'paper_post' if passed else 'shadow_post', False))
                 n_rows += 1
                 print(f"  {day}: {name} - {'PAPER' if passed else 'SHADOW'} slip of {len(slip)} (postseason verdict {verdict.get(name, 'none')})", flush=True)
+    # THIN-BOARD FALLBACK (owner 2026-11-12 00:03 PT: "anything under 50% ROI this becomes fallback on thin boards"; research_ud_thin run 43181485225): the main units
+    # (C5, C6) always play; T1 T2 T3 C3 C4 play only on a THIN board = a day on which neither main unit built a slip (78 of 327 replay slates). Otherwise they are recorded as shadow.
+    try:
+        r_ = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='ud_thin_fallback'").fetchone()
+        tcfg = (r_[0] if isinstance(r_[0], dict) else json.loads(r_[0])) if r_ else {}
+        if tcfg.get('enabled', True) and live_pf in ('T', 'C'):
+            mains = tcfg.get('mains', ['C5', 'C6']); fbs = tcfg.get('fallback', ['T1', 'T2', 'T3', 'C3', 'C4'])
+            lv_ = [c for (c,) in conn.execute("SELECT composition FROM nba_score.ud_live_slips WHERE game_date=%s AND status='live'", (day,)).fetchall()]
+            main_built = any(c.split(' ')[0] in mains for c in lv_)
+            if main_built:
+                n_off = 0
+                for u_ in fbs:
+                    n_off += conn.execute("UPDATE nba_score.ud_live_slips SET status='shadow' WHERE game_date=%s AND status='live' AND composition LIKE %s", (day, u_ + ' %')).rowcount
+                print(f"  {day}: Underdog thin-board fallback - a main unit ({'/'.join(mains)}) built, so {'/'.join(fbs)} are shadow ({n_off} slips)", flush=True)
+            else:
+                print(f"  {day}: Underdog THIN BOARD - no main unit built, {'/'.join(fbs)} play as the fallback", flush=True)
+    except Exception as e:  # noqa: BLE001 - never cost the slate its slips
+        print(f"  {day}: Underdog thin-board fallback skipped ({type(e).__name__}: {e}); every unit stays as built", flush=True)
     if os.environ.get('UDL_DRY') == '1':
         conn.rollback()
         print(f"  {day}: UDL_DRY=1 - {n_rows} slips built and ROLLED BACK (nothing written)", flush=True)
