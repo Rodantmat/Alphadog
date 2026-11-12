@@ -91,9 +91,12 @@ async function historyOf(sql, today) {
   const ss = (await q(sql, "SELECT season_start::text s FROM nba_friend.season LIMIT 1", [], 6000))[0].s;
   const abbr = {};
   for (const r of await q(sql, "SELECT team_id::text t, abbreviation a FROM nba_ref.teams", [], 6000)) abbr[r.t] = r.a;
-  const sv = await q(sql, "SELECT game_date::text d, app, slip_name, mode, structure, size, legs, mult::float m, tiers, status FROM nba_friend.saved ORDER BY game_date DESC, app, id", [], 8000);
-  const au = await q(sql, "SELECT game_date::text d, app, slip_no, structure, size, legs, multiplier::float m FROM nba_friend.slips WHERE status='graded' AND game_date >= $1::date AND game_date < $2::date ORDER BY game_date DESC, app, slip_no", [ss, today], 10000);
-  const seen = await q(sql, "SELECT game_date::text d, app, slip_name, legs FROM nba_friend.seen WHERE game_date >= $1::date", [ss], 8000);
+  // a rolling 7-day window (owner 2026-11-11 17:05 PT): yesterday and the 6 days before it
+  const dd = new Date(today + "T12:00:00Z"); dd.setUTCDate(dd.getUTCDate() - 7);
+  const from = dd.toISOString().slice(0, 10) > ss ? dd.toISOString().slice(0, 10) : ss;
+  const sv = await q(sql, "SELECT game_date::text d, app, slip_name, mode, structure, size, legs, mult::float m, tiers, status FROM nba_friend.saved WHERE game_date >= $1::date AND game_date < $2::date ORDER BY game_date DESC, app, id", [from, today], 8000);
+  const au = await q(sql, "SELECT game_date::text d, app, slip_no, structure, size, legs, multiplier::float m FROM nba_friend.slips WHERE status='graded' AND game_date >= $1::date AND game_date < $2::date ORDER BY game_date DESC, app, slip_no", [from, today], 10000);
+  const seen = await q(sql, "SELECT game_date::text d, app, slip_name, legs FROM nba_friend.seen WHERE game_date >= $1::date AND game_date < $2::date", [from, today], 8000);
   const info = new Map();
   for (const r of seen) { const m = new Map(); for (const l of J(r.legs) || []) { const pid = l._g && l._g.player_id; if (pid != null) m.set(String(pid), { name: l.player_name, matchup: l.matchup || null }); } info.set(r.d + "|" + r.app + "|" + r.slip_name, m); }
   const side = s => (/^(under|less)$/i.test(String(s || "")) ? "less" : "more");
