@@ -424,7 +424,7 @@ async function boardRoute(request, env, url, seg) {
   if (seg[2] === "board") {
     const btn = "class=\"btn\" style=\"flex:1;text-align:center;text-decoration:none\"";
     const bar = "<div style=\"display:flex;gap:8px;margin:0 0 12px\"><a " + btn + " href=\"/" + seg[1] + "\">My slips</a><button " + btn + " onclick=\"document.getElementById('menuBoard').click()\">Board</button><button " + btn + " onclick=\"document.getElementById('menuPlayerProfile').click()\">Player Profile</button></div>";
-    const inject = "<script>window.__BASE__=" + JSON.stringify(base) + ";(function(){var f=window.fetch.bind(window);window.fetch=function(u,o){if(typeof u==='string'&&u.indexOf('/api/')===0)u=window.__BASE__+u;return f(u,o)}})();</script><style>.menuWrap,.pickBox,.slipFloat{display:none!important}</style>";
+    const inject = "<script>window.__BASE__=" + JSON.stringify(base) + ";(function(){var f=window.fetch.bind(window);window.fetch=function(u,o){if(typeof u==='string'&&u.indexOf('/api/')===0)u=window.__BASE__+u;return f(u,o)}})();</script><style>.menuWrap,.pickBox,.slipFloat{display:none!important}.filterTitle:has(#betrGroup),#betrTypes,label:has(#filterBetr){display:none!important}</style>";
     const tail = "<script>if(/open=profile/.test(location.search))window.addEventListener('load',function(){setTimeout(function(){document.getElementById('menuPlayerProfile').click()},400)})</script>";
     const html = ASSETS["index.html"].replaceAll("{{ASSET_HASH}}", hash).replaceAll("/main_alphadog_", base + "/main_alphadog_")
       .replace("<script src=\"/app.js?v=", "<script src=\"" + base + "/app.js?v=").replace("</head>", inject + "</head>")
