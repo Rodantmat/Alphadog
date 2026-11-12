@@ -154,6 +154,11 @@ def extras(conn, day, cfg):
                               board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
                             WHERE nba_score.fliff_live_slips.graded_at IS NULL""", (day, r["name"], k, i + 1, json.dumps(lj), round(mult, 4), last))
             built += 1
+            try:     # owner 2026-11-12: this unit's ranked candidates (all slips' players left out) for "sub the next ranked candidate"
+                import next_legs_store as NL
+                NL.store(conn, day, r["name"], i + 1, [dict(l, player_id=l["pid"]) for l in cand], exclude_players={x["player"] for x in s} | {x["player"] for x in cand if x["pid"] in used})
+            except Exception as e:  # noqa: BLE001
+                print(f"FLIFF_LIVE|{day} {r['name']}: next-ranked list not stored ({e})")
             print(f"FLIFF_LIVE|{day} {r['name']} #{i + 1}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} @{l['m']}" for l in s) + f" = x{mult:.3f}")
         if not built:
             print(f"FLIFF_LIVE|{day} {r['name']}: no slip (qualifying {len(cand)})")
