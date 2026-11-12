@@ -132,7 +132,7 @@ async function saveSlips(env, token, body) {
       const mode = s.mode === "flex" ? "flex" : "power";
       const clean = legs.map(l => ({ player: String(l.player || "").slice(0, 60), prop: String(l.prop || ""), side: l.side === "less" ? "less" : "more", line: Number(l.line), matchup: l.matchup || null, tip: l.tip || null, team: l.team || null, lid: l.lid || null, f: Number(l.f) > 0 ? Number(l.f) : 1, sub: !!l.sub, g: l.g }));
       const mult = Number(s.mult); const tiers = s.tiers && typeof s.tiers === "object" ? s.tiers : null;
-      await q(sql, "INSERT INTO nba_friend.saved (game_date, app, slip_name, mode, structure, size, legs, mult, tiers) VALUES ($1::date,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb) ON CONFLICT (game_date, app, slip_name) DO UPDATE SET mode=EXCLUDED.mode, structure=EXCLUDED.structure, size=EXCLUDED.size, legs=EXCLUDED.legs, mult=EXCLUDED.mult, tiers=EXCLUDED.tiers, saved_at=now() WHERE nba_friend.saved.status='saved_pending'",
+      await q(sql, "INSERT INTO nba_friend.saved (game_date, app, slip_name, mode, structure, size, legs, mult, tiers) VALUES ($1::date,$2,$3,$4,$5,$6,$7::text::jsonb,$8,$9::text::jsonb) ON CONFLICT (game_date, app, slip_name) DO UPDATE SET mode=EXCLUDED.mode, structure=EXCLUDED.structure, size=EXCLUDED.size, legs=EXCLUDED.legs, mult=EXCLUDED.mult, tiers=EXCLUDED.tiers, saved_at=now() WHERE nba_friend.saved.status='saved_pending'",
         [today, app, name, mode, String(s.structure || "").slice(0, 40), clean.length, JSON.stringify(clean), Number.isFinite(mult) ? mult : null, tiers ? JSON.stringify(tiers) : null], 8000);
       saved++;
     }
