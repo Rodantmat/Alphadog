@@ -439,7 +439,7 @@ export async function apiCurrent(sql, cfg, slate, url, version) {
   const roiRes = classic ? null : await roiBoard(sql, cfg, slate);
   const overview = false;
   const ovr = null;
-  const rows = overview ? ovr.rows : await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
+  const rows = roiRes ? roiRes.rows : await loadLegs(sql, cfg, slate, { where: "AND b.score >= $6 AND b.final_hp * 100 >= $7", extra: [minScore, minHp], limit });
   // a leg without a hit probability is said on the board, never silent (2026-10-15; one number since 2026-10-23)
   const honestMissing = rows.filter(r => r.final_hp_raw == null).length;
   // the slate's games, how many have tipped, and the next slate - so an empty live board says WHY (all games started) and what is next
