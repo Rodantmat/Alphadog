@@ -157,7 +157,7 @@ async function data(env, token, save = true, preview = false) {
           AND NOT EXISTS (SELECT 1 FROM nba_friend.saved v WHERE v.game_date = s.game_date AND v.app = s.app)
         UNION ALL SELECT v.app, v.profit FROM nba_friend.saved v WHERE v.status='graded' AND v.profit IS NOT NULL) x GROUP BY app`, [], 8000);
     const apps = {}; let n = 0, p = 0;
-    for (const r of roi) { apps[r.app] = { n: r.n, roi: r.n ? r.p / r.n : null }; n += r.n; p += r.p; }
+    for (const r of roi.filter(x => x.app !== "betr")) { apps[r.app] = { n: r.n, roi: r.n ? r.p / r.n : null }; n += r.n; p += r.p; }
     const out = { ok: true, source: "live", generated_slips: [], backup_pool: [] };
     let date = null;
     for (const sn of snaps) {
