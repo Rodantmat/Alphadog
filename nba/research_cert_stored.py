@@ -33,6 +33,8 @@ for d in sorted(byday):
         legs2 = []
         for l in legs:
             l = dict(l)
+            if not l.get("player_id") and l.get("player"):
+                l["player_id"] = NAMEID.get(l["player"])
             h = FE.outcome(sbox, l)
             if (l.get("hit") if l.get("hit") is not None else None) != h:
                 mism_hit += 1
