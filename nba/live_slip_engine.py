@@ -1530,14 +1530,20 @@ def pick(conn, day, require_fresh=True):
             _bx, fx = fallback_slips(pools['__pb__'], fbx, extra=int(fbx.get('backups', 0)), force=True, roi=roi_map)
             nmx = fbx.get('strategy', 'P_FB_U5flex')
             for kx, pickx in enumerate(fx, start=1):
+                # owner 2026-11-12 00:03 PT ("Promote u6 to active"): a big-flex fallback with config active=true is a regular PLACED unit every night (its first `slips`
+                # slips), not a backup the gate promotes only when no 4+ pick B flex slip survives
+                act_x = bool(fbx.get('active')) and kx <= int(fbx.get('slips', 1))
+                st_x = 'placed' if act_x else 'placed_backup'
                 conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
-                                VALUES (%s,%s,%s,%s,%s,%s,'placed_backup',1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                                VALUES (%s,%s,%s,%s,%s,%s,%s,1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                              (day, nmx, kx, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'),
                                                           'prop': l['prop'], 'tier': 'R', 'side': 'Under', 'line': float(l['line']),
                                                           'factor': 1, 'event_id': l.get('event_id')} for l in pickx]),
-                              len(pickx), fbx.get('structure', 'flex'), "big-flex fallback backup: promoted by the quote gate when no 4+ pick B flex slip survives"))
-                print(f"  {day}: BIG-FLEX FALLBACK {nmx} k{kx} -> placed_backup: " +
+                              len(pickx), fbx.get('structure', 'flex'), st_x,
+                              "active unit (owner 2026-11-12)" if act_x else "big-flex fallback backup: promoted by the quote gate when no 4+ pick B flex slip survives"))
+                print(f"  {day}: BIG-FLEX FALLBACK {nmx} k{kx} -> {st_x}: " +
                       "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pickx), flush=True)
+                store_next_legs(conn, day, nmx, kx, fallback_ranked(pools['__pb__'], fbx, roi_map), 1, fallback=True)
         except Exception as e:  # noqa: BLE001 - never takes the main slips down
             print(f"  {day}: big-flex fallback {fbkey} failed ({type(e).__name__}: {e}) - the other slips are unaffected", flush=True)
     conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
