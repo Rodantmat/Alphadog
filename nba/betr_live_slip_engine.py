@@ -291,6 +291,8 @@ def select(legs, rule):
     if len(base) < 2:
         return []
     idx = [i for i, l in enumerate(base) if l["p"] >= fl][skp:]
+    if rule.get("pool"):
+        idx = idx[:int(rule["pool"])]          # ROI rule: the slips are cut from the top `pool` legs only (BT-B: top 5 -> one 4-pick slip)
     if len(idx) < 2:
         return []
     s1 = _greedy(base, idx, 6, set(), gc)[:k]
