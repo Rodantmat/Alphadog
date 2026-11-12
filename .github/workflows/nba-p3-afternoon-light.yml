@@ -919,6 +919,23 @@ jobs:
               sys.exit(1)
           EOF
 
+      # LEG ROI (owner 2026-11-11 18:10 PT: "all the pipelines score the ROI and the score with ROI"): every scored, priced leg of the slate gets its
+      # implied ROI, floor, estimated real hit rate and ROI-aware score stored in nba_score.board_roi (the UI worker's own code, same numbers the board
+      # shows live). Additive: final_hp, the certified score and the slips are untouched. Soft.
+      - name: Store leg ROI and ROI-aware score (nba_score.board_roi)
+        id: soft_roi
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' }}
+        continue-on-error: true
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/roi.json -w "%{http_code}" --max-time 120 -X POST -H "content-type: application/json" -d '{}' \
+              "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev/api/main-board/roi-snapshot") || code=000
+            echo "leg ROI snapshot (attempt $i): http $code $(cat /tmp/roi.json | head -c 300)"
+            [ "$code" = "200" ] && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
+
       # (2026-10-23) The BOARD HP step (nba/build_board_hp.py -> nba_score.board_hp, a parallel number beside final_hp) is RETIRED:
       # owner 21:01 PT - one number. final_hp itself carries the board-centred calibration (classification_config
       # ['final_hp_board_centre'], build_final_hp.py) and every app board leg shows it (score_board_legs.py step 4b).
