@@ -49,6 +49,28 @@ def tup(r):
     return (r.player, r.event_id, r.hit, r.m, r.side)
 
 
+def fliff_pay(slip, mode):
+    """Fliff Pick'Em, from Fliff's own web code (2026-11-12 probe_fliff_flex_code): Max pays prod(m) when all hit. Flex (min n-1 correct,
+    n >= 3) pays ONE multiplier = prod(m) / (1 + sum(m_i - 1)) [p_i = 1/m_i, price = prod(p) x (1 + sum((1-p)/p))]. SuperFlex (min n-2 correct)
+    pays 1 / (P(misses <= 2) x 1.0909^n) with p_i = (1/m_i)/1.0909. A flex price under 1.01 is not offered (the app falls back to Max)."""
+    n = len(slip); hits = sum(1 for l in slip if l[2]); ms = [float(l[3]) for l in slip]
+    mx = math.floor(math.prod(ms) * 100 + 1e-6) / 100
+    if mode == "flex" and n >= 3:
+        c = round(math.prod(ms) / (1 + sum(m - 1 for m in ms)), 2)
+        if c >= 1.01:
+            return c if hits >= n - 1 else 0.0
+    if mode == "superflex" and n >= 3:
+        p = [1 / m / 1.0909 for m in ms]; r = [1.0, 0.0, 0.0]
+        for a in p:
+            r = [r[0] * a, r[1] * a + r[0] * (1 - a), r[2] * a + r[1] * (1 - a)]
+        f = sum(r) * 1.0909 ** n
+        if 0 < f < 1:
+            c = round(1 / f, 2)
+            if c >= 1.01:
+                return c if hits >= n - 2 else 0.0
+    return mx if hits == n else 0.0
+
+
 def run(days, key, roi_pos, kindset, mode):
     rows = []
     for d, g in days:
