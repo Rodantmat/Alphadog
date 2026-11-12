@@ -1487,6 +1487,7 @@ def pick(conn, day, require_fresh=True):
                           len(pick_), st_fb, f"thin-night fallback{' backup' if st_fb == 'placed_backup' else ''}: portfolio B built {built_b}"))
             print(f"  {day}: FALLBACK P_FB_U3power k{k_fb} (B built {built_b}) -> {st_fb}: " +
                   "; ".join(f"{l['player']} {l['prop']} Under {float(l['line']):g} ({100 * float(l['p']):.0f}%)" for l in pick_), flush=True)
+            store_next_legs(conn, day, 'P_FB_U3power', k_fb, fallback_ranked(pools['__pb__'], fb), 1, fallback=True)
     # LOW-SLIP FALLBACK, TIER 2 (owner 2026-11-11 00:xx PT "extra pp fallbacks when low slips are formed, safer strategies";
     # research_pp_fallback_more run 42981632173, same legs / grading / B count as the certified fallback rule): when portfolio B builds only
     # trigger_min..trigger (2..3) slips, ADD fb2.slips (2) 3-pick FLEX slips of the best standard UNDERS (final_hp >= .55, <= 1 leg a game,
