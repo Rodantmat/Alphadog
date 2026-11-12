@@ -41,9 +41,27 @@ function lookupCtes(src, udBooks) {
               regexp_replace(t.base_market, ${NORM_RE}, '') bm
        FROM nba_market.board_tiers_v2 t
        WHERE t.game_date = $1::date AND t.bookmaker = 'prizepicks' AND t.player IN (SELECT DISTINCT player FROM ${src} WHERE app = 'prizepicks')),
-pk AS (SELECT DISTINCT ON (t.player, mk.prop, t.side, t.line) t.player, mk.prop, t.side, t.line, t.kind, t.tier, t.anchor_line, ${LKEY("t")} k
+pkt AS (SELECT DISTINCT ON (t.player, mk.prop, t.side, t.line) t.player, mk.prop, t.side, t.line, t.kind, t.tier, t.anchor_line
        FROM pk0 t JOIN mk ON mk.market_key = t.bm
        ORDER BY t.player, mk.prop, t.side, t.line, array_position($5::text[], t.snapshot_label) NULLS LAST, t.built_at DESC),
+-- PRIZEPICKS' OWN FLAG IS THE TRUTH (2026-11-12, owner: "labeling and parsing error can't be happening"): board_tiers_v2.kind is inferred from the
+-- ladder position and disagreed with PP's own board on ~15% of rungs (and said 'unknown' for 200+). The latest PP board of the slate day
+-- (nba_market.pp_board_row.odds = standard / goblin / demon) overrides the tier kind; the tier / anchor still come from board_tiers_v2.
+pbs AS (SELECT * FROM (VALUES ('Points','points'),('Pts+Rebs','pts_reb'),('Pts+Rebs+Asts','pra'),('Rebounds','rebounds'),('Pts+Asts','pts_ast'),('Rebs+Asts','reb_ast'),
+       ('Assists','assists'),('3-PT Made','threes_made'),('Steals','steals'),('Fantasy Score','fantasy_score'),('Blocked Shots','blocks'),('Blks+Stls','stocks'),
+       ('Double-Double','double_double'),('FG Attempted','fga'),('Offensive Rebounds','oreb'),('FG Made','fgm'),('3-PT Attempted','fg3a'),('Free Throws Made','ftm'),
+       ('Turnovers','turnovers'),('Free Throws Attempted','fta'),('Personal Fouls','personal_fouls'),('Defensive Rebounds','dreb')) v(stat, prop)),
+pbr AS MATERIALIZED (SELECT DISTINCT ON (p.player, s.prop, p.line) p.player, s.prop, p.line, p.odds
+       FROM nba_market.pp_board_row p JOIN pbs s ON s.stat = p.stat
+       WHERE (p.start_time::timestamptz AT TIME ZONE 'America/Los_Angeles')::date = $1::date AND p.odds IN ('standard', 'goblin', 'demon')
+         AND p.player IN (SELECT DISTINCT player FROM ${src} WHERE app = 'prizepicks')
+       ORDER BY p.player, s.prop, p.line, p.run_file DESC),
+pk AS (SELECT x.player, x.prop, x.side, x.line, x.kind, x.tier, x.anchor_line, concat_ws('|', x.player, x.prop, x.side, (x.line::float8)::text) k
+       FROM (SELECT t.player, t.prop, t.side, t.line, COALESCE(b.odds, t.kind) kind, t.tier, t.anchor_line
+             FROM pkt t LEFT JOIN pbr b ON b.player = t.player AND b.prop = t.prop AND b.line = t.line
+             UNION ALL
+             SELECT b.player, b.prop, 'Over', b.line, b.odds, NULL, NULL FROM pbr b
+             WHERE NOT EXISTS (SELECT 1 FROM pkt t WHERE t.player = b.player AND t.prop = b.prop AND t.line = b.line AND t.side = 'Over')) x),
 pf0 AS MATERIALIZED (SELECT p.player, p.side, p.line, p.factor, p.implied_p, p.snapshot_label, regexp_replace(p.base_market, ${NORM_RE}, '') bm
        FROM nba_market.pp_leg_price p
        WHERE p.game_date = $1::date AND p.factor IS NOT NULL AND p.player IN (SELECT DISTINCT player FROM ${src} WHERE app = 'prizepicks')),
