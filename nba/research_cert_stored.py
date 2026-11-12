@@ -34,6 +34,7 @@ if _names:
             NAMEID[nm] = next(iter(ids))
     print(f"names without player_id: {len(_names)}, resolved {len(NAMEID)}", flush=True)
 UNVER = [0]
+NANP = [0]
 byday = collections.defaultdict(list)
 for r in rows:
     byday[r[0]].append(r)
