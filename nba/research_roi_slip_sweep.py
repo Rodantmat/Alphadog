@@ -41,7 +41,7 @@ def load(conn):
     if APP == "pp":
         df = pd.read_sql("""SELECT season, game_date, player, prop, side, line::float8 AS line, kind, tier, factor, hit::int hit, hp, conf, score_cert
                             FROM nba_score._mf_study_fs WHERE hp IS NOT NULL AND hit IS NOT NULL AND score_cert IS NOT NULL AND factor > 0""", conn)
-        ev = pd.read_sql("""SELECT DISTINCT ON (game_date, player, prop, side, line) game_date, player, prop, side, line::float8 AS line, event_id
+        ev = pd.read_sql("""SELECT DISTINCT ON (game_date, player, prop, side, line) game_date, player, prop, side, line::float8 AS line, event_id, price_source
                             FROM nba_market.prop_universe WHERE line_source='real' AND game_date >= '2024-10-01'
                             ORDER BY game_date, player, prop, side, line""", conn)
         df = df.merge(ev, on=["game_date", "player", "prop", "side", "line"], how="left")
