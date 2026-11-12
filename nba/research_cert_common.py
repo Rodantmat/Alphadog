@@ -41,7 +41,7 @@ def line(label, s):
     if not s:
         return f"{label:34s} -"
     return (f"{label:34s} {s['n']:4d} sl {s['slates']:3d} slates {s['perday']:.1f}/day win {100 * s['win']:4.1f}% ROI {100 * s['roi']:+7.1f}% net {s['net']:+7.1f} "
-            f"dd {s['dd']:5.1f} drought {s['dry']:2d} losing {100 * s['loss']:4.1f}% worst {s['worst']:+5.1f} best {s['best']:+5.1f} voids {s['voids']} last14 {s['last14']:+5.1f}")
+            f"exTop3 {100 * s['ex3']:+6.1f}% dd {s['dd']:5.1f} drought {s['dry']:2d} losing {100 * s['loss']:4.1f}% worst {s['worst']:+5.1f} best {s['best']:+5.1f} voids {s['voids']} last14 {s['last14']:+5.1f}")
 
 
 def report(name, recs, seasons=None):
