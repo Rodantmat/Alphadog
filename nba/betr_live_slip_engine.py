@@ -388,6 +388,15 @@ def pick(conn, day):
             built.append((strategy, i))
             print(f"BETR_LIVE|{day} {strategy} k{i}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']}" for l in s)
                   + f" | Dynamic top x{mult}", flush=True)
+    try:     # owner 2026-11-12: "sub the next ranked candidate" - each rule's ranked list, the rule's own slips' players left out
+        import next_legs_store as NL
+        for strategy, slips in groups:
+            cl_ = RANKED.get(strategy) or []
+            on_ = {l["player"] for s_ in slips for l in s_}
+            for i in range(1, len(slips) + 1):
+                NL.store(conn, day, strategy, i, [dict(l, factor=1.0) for l in cl_], exclude_players=on_)
+    except Exception as e:  # noqa: BLE001
+        print(f"BETR_LIVE|{day} next-ranked lists not stored ({e})", flush=True)
     # a rebuild that now yields different slips leaves no stale ungraded slip behind
     for strat_, k_ in conn.execute("SELECT strategy, k FROM nba_score.betr_live_slips WHERE game_date=%s AND graded_at IS NULL", (day,)).fetchall():
         if (strat_, k_) not in built:
