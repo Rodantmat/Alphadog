@@ -984,6 +984,8 @@ jobs:
           [ "${{ steps.soft_slpick.outcome }}" = "failure" ] && L="$L sleeper-pick"
           [ "${{ steps.soft_flboard.outcome }}" = "failure" ] && L="$L fliff-pickem-board"
           [ "${{ steps.soft_flpick.outcome }}" = "failure" ] && L="$L fliff-pick"
+          [ "${{ steps.soft_roi_early.outcome }}" = "failure" ] && L="$L roi-before-pick"
+          [ "${{ steps.soft_roi_live.outcome }}" = "failure" ] && L="$L roi-live-slips"
           [ "${{ steps.soft_btpick.outcome }}" = "failure" ] && L="$L betr-pick"
           [ "${{ steps.soft_warm.outcome }}" = "failure" ] && L="$L slips-screen-warm"
           [ "${{ steps.soft_paper_al.outcome }}" = "failure" ] && L="$L paper-tracker"
