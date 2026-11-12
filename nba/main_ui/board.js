@@ -284,6 +284,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
 }
 
 export async function loadLegs(sql, cfg, slate, { where = "", extra = [], limit = 200, withInsight = true, screen = true } = {}) {
+  await loadCal(sql);
   const rows = await q(sql, legsSql(where, limit, screen), legParams(cfg, slate.date, extra), 90000);   // 2026-11-06: was 20 s; the rebuild after a code version change ran 25-40 s while research jobs shared the database and the screen failed (owner 15:31 PT)
   let games = new Map();
   if (withInsight && rows.length) {
