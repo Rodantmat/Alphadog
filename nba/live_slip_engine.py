@@ -273,6 +273,37 @@ def pp_roi_map(conn, day):
         return {}
 
 
+NEXT_LEGS_DDL = """CREATE TABLE IF NOT EXISTS nba_score.slip_next_legs (
+  game_date date NOT NULL, strategy text NOT NULL, k int NOT NULL, rank int NOT NULL, leg jsonb NOT NULL, gc int NOT NULL DEFAULT 1,
+  PRIMARY KEY (game_date, strategy, k, rank))"""
+NEXT_LEGS_N = 25
+
+
+def fallback_ranked(prepared, fb, roi=None):
+    """the fallback's ranked candidate list (standard Unders >= floor, best first; score_roi order when the slate has the score) - the exact list fallback_slips cuts its slips from"""
+    floor_ = float(fb.get('floor', 0.55))
+    cand = sorted([l for l in prepared if l['tier'] == 'R' and l['side'] == 'Under' and float(l['p']) >= floor_], key=lambda l: -float(l['p']))
+    if fb.get('rank') == 'score_roi' and roi:
+        cand = sorted([l for l in cand if _roi_key(l) in roi], key=lambda l: -roi[_roi_key(l)])
+    return cand
+
+
+def store_next_legs(conn, day, strategy, k, cands, gc, fallback=False):
+    """owner 2026-11-12 00:03 PT ("all strategies should work with sub the next ranked candidate"): the unit's ranked candidate legs are stored next to its slip
+    (nba_score.slip_next_legs) so the PrizePicks slip-quote step, when a leg is pulled / moved off PrizePicks' board, brings in the next ranked candidate that IS on the
+    board (a distinct player, the unit's game cap) instead of dropping the leg. Legs are in the slip-leg shape plus team_id; never raises."""
+    try:
+        for r_, l in enumerate(cands[:NEXT_LEGS_N], start=1):
+            leg = {'cell': f"{l['prop']}_R" if fallback else l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'],
+                   'tier': 'R' if fallback else l['tier'], 'side': 'Under' if fallback else l['side'], 'line': float(l['line']),
+                   'factor': 1 if fallback else l['factor'], 'event_id': l.get('event_id'), 'team_id': l.get('team_id')}
+            conn.execute("""INSERT INTO nba_score.slip_next_legs (game_date, strategy, k, rank, leg, gc) VALUES (%s,%s,%s,%s,%s::jsonb,%s)
+                            ON CONFLICT (game_date, strategy, k, rank) DO NOTHING""", (day, strategy, k, r_, json.dumps(leg), int(gc)))
+    except Exception as e:  # noqa: BLE001 - the slips never depend on the next-leg list
+        print(f"  next-legs not stored for {strategy} k{k}: {type(e).__name__}: {e}", flush=True)
+        conn.rollback()
+
+
 def fallback_slips(prepared, fb, extra=0, force=False, roi=None):
     """THE THIN-NIGHT FALLBACK (owner 2026-10-27 15:33 PT "Deploy it"; research_pp_fallback_rule run 40594721780). On portfolio B's
     prepared board: (B units that build a slip, [slips]). Slips only when B builds <= fb.trigger (1): 3-pick POWER of the best standard
