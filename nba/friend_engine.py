@@ -1011,6 +1011,40 @@ def grade():
         done += 1
     conn.commit()
     log(f"graded {done} of {len(pend)} pending slips")
+    try:
+        grade_saved(conn, today)
+    except Exception as e:
+        log(f"saved slips: {e}")
+        conn.rollback()
+
+
+def grade_saved(conn, today):
+    """owner 2026-11-11 (from 11-12): the slips Jon SAVED on his page (nba_friend.saved - his own legs, swaps, X'd legs, Flex / Power) are graded here;
+    a leg with no box score (did not play) or a push stays hit=None and is voided by the app's own payout rule. Friend tier only (Jessi has no save table)."""
+    if SCHEMA != "nba_friend":
+        return
+    pend = conn.execute("SELECT id, game_date, mode, legs FROM nba_friend.saved WHERE app=%s AND status='saved_pending' AND game_date < %s ORDER BY game_date", (APP_KEY, today)).fetchall()
+    n_done = 0
+    for sid, d, mode, legs in pend:
+        if not slate_finished(conn, d):
+            log(f"saved {d}: slate not final in the box score yet")
+            continue
+        sbox = box(conn, d)
+        legs = legs if isinstance(legs, list) else json.loads(legs)
+        gl = []
+        for x in legs:
+            g = dict(x["g"])
+            g["hit"] = outcome(sbox, g)
+            x["hit"] = None if g["hit"] is None else int(bool(g["hit"]))
+            gl.append(g)
+        st = "flex" if mode == "flex" else ("standard" if FAPP == "UD" else ("power" if FAPP == "PP" else "max"))
+        m = float(pay_of(gl, st))
+        hits = sum(1 for x in legs if x.get("hit") == 1)
+        conn.execute("UPDATE nba_friend.saved SET legs=%s::jsonb, status='graded', hits=%s, payout=%s, profit=%s, graded_at=now() WHERE id=%s",
+                     (json.dumps(legs), hits, m, m - 1.0, sid))
+        n_done += 1
+    conn.commit()
+    log(f"saved slips graded: {n_done} of {len(pend)}")
 
 
 def pairs_only():
