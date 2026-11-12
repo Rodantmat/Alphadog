@@ -246,7 +246,7 @@ function canTake(s,c){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return 
 function pickSub(s){var P=window.PD.pool||[];for(var i=0;i<P.length;i++){if(canTake(s,P[i]))return P.splice(i,1)[0]}return null}
 function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
 function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
-function sweep(s){var ch=false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
+function sweep(s){var ch=false;if(s.saved)return false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped||l.removed)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
 function initSwap(d){window.PD=d;d.pool=(d.pool||[]).slice();d.slips.forEach(function(s){sweep(s)})}
 function slipHtml(s,si){var k=alive(s);var url=s.changed?lidUrl(s.app,k):s.url;
   var h='<div class="slip" id="slip'+si+'"><h3>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>'+(s.bet!=null?'<div class="bet">Bet: '+money(s.bet)+'</div>':'');
