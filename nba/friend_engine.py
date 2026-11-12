@@ -1057,10 +1057,20 @@ def bank_add(conn, ctx, d, legs, pool, used, cap=30):
     legs at hit chance >= 55%, best first, one per player, never a player on a slip of the page, added behind the legs the slip rules already put in the pool."""
     have = {x.get("player_name") for x in pool}
     inpool = {str((x.get("_g") or {}).get("player_id")) for x in pool}
+    # owner 2026-11-11 17:15 PT: the bank follows the SAME criteria as the legs that qualify for the page's slips (each strategy's own tier / side / prop group / ranking),
+    # a little looser (the hit-chance floor 3 points lower, never under 50%); PrizePicks never takes a goblin / demon as a sub
+    cand = []
+    for code, size, st, rule in list(RULES) + list(globals().get("EXTRA") or []):
+        r = list(rule)
+        r[4] = max(0.50, float(r[4]) - 0.03)
+        try:
+            c = pp_cand(legs, tuple(r))[0] if FAPP == "PP" else ranked(legs, tuple(r))
+        except Exception as e:
+            log(f"sub bank {code}: {e}")
+            continue
+        cand.extend(c)
     if FAPP == "PP":
-        cand = [l for l in legs if l["tier"] == "R" and l["side"] == "Under" and float(l["p"]) >= 0.55]
-    else:
-        cand = [l for l in legs if float(l["p"]) >= 0.55 and str(l.get("tier") or "R") == "R" and str(l.get("kind") or "main") == "main"]
+        cand = [l for l in cand if l["tier"] == "R"]
     n_add = 0
     seen = set()
     for l in sorted(cand, key=lambda l: -float(l["p"])):
