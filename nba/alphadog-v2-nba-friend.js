@@ -337,7 +337,7 @@ function drawPairs(){var d=window.PD;if(!d)return;var box=document.getElementByI
     h+='</details>'});
   box.innerHTML=h;box.querySelectorAll('details.pair').forEach(function(el){el.addEventListener('toggle',function(){pOpen[el.dataset.a]=el.open})})}
 setInterval(drawPairs,60000);
-fetch(location.pathname.replace(/\\/$/,'')+'/data',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(render).catch(e=>{$('#app').innerHTML='<p class="flag">Could not load ('+esc(e)+'). Pull down to retry.</p>'});
+fetch(location.pathname.replace(/\\/$/,'')+'/data'+location.search,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(render).catch(e=>{$('#app').innerHTML='<p class="flag">Could not load ('+esc(e)+'). Pull down to retry.</p>'});
 </script></body></html>`;
 
 const REPORT = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>AlphaDog-JStacks Track Record</title>${HEAD_ICONS}
