@@ -20,6 +20,13 @@ TIER = FE.TIER
 rows = conn.execute("""SELECT game_date, strategy, slip_no, structure, size, legs, multiplier, profit FROM nba_friend.slips
                        WHERE app=%s AND status='graded' ORDER BY game_date, strategy, slip_no""", (FE.APP_KEY,)).fetchall()
 print(f"CERT {TIER} {FE.APP_KEY}: {len(rows)} graded slips", flush=True)
+NAMEID = {}
+_names = sorted({l.get("player") for r in rows for l in (r[5] if isinstance(r[5], list) else json.loads(r[5])) if l.get("player") and not l.get("player_id")})
+if _names:
+    for nm, nid in conn.execute("""SELECT n.n, p.nba_player_id::text FROM (SELECT x AS n, nba_ref.norm_name(x) AS k FROM unnest(%s::text[]) x) n
+                                   JOIN nba_ref.player_name_map m ON m.norm_name = n.k JOIN nba_ref.players p ON p.player_id = m.player_id""", (_names,)).fetchall():
+        NAMEID[nm] = nid
+    print(f"names without player_id: {len(_names)}, resolved {len(NAMEID)}", flush=True)
 byday = collections.defaultdict(list)
 for r in rows:
     byday[r[0]].append(r)
