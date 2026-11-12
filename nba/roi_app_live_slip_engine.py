@@ -104,7 +104,7 @@ def top_legs(df, rule):
         d = d[~d["over"]]
     elif side == "over":
         d = d[d["over"]]
-    return d.sort_values(key, ascending=False).head(30).to_dict("records")
+    return d.sort_values([key, "player", "prop", "line"], ascending=[False, True, True, True]).head(30).to_dict("records")   # ties (many legs share a final_hp) break the same way every run
 
 
 def groups(legs, N, k):
