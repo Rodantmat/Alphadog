@@ -180,6 +180,7 @@ def all_candidates(conn, day, rule):
 def build_all(conn, day, rule):
     """S_ALL rule: [slips] from every Sleeper window leg at its own line (research_app_allegs.live_legs + day(), order evbl)"""
     cand, n_legs = all_candidates(conn, day, rule)
+    LAST["ALL"] = cand
     legs = [None] * n_legs
     out, used = [], set()
     for _ in range(rule["slips"]):
