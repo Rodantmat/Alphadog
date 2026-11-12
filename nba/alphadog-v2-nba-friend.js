@@ -344,7 +344,7 @@ async function reportData(env, token) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const m = url.pathname.replace(/\/+$/, "").match(/^\/([A-Za-z0-9_-]{5,64})(\/data|\/report|\/report-data|\/manifest\.webmanifest)?$/);
+    const m = url.pathname.replace(/\/+$/, "").match(/^\/([A-Za-z0-9_-]{5,64})(\/data|\/save|\/report|\/report-data|\/manifest\.webmanifest)?$/);
     try {
       if (url.pathname === "/icon.png") { const bin = Uint8Array.from(atob(String(LOGO_B64).trim()), c => c.charCodeAt(0)); return new Response(bin, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } }); }
       if (m && m[2] === "/manifest.webmanifest") {
