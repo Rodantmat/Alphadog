@@ -86,6 +86,19 @@ function poolLegIsLegalForSlip(leg,keptLegs,slip){
 function poolEdge(l){const e=Number(l&&l.edge_0_100);return Number.isFinite(e)?e:-999}
 function takeBestPoolLeg(keptLegs,slip,removed){
   const want=(String(slip&&slip.source_key||'')==='prizepicks')?'regular':(removed&&removed.line_type?String(removed.line_type):null);
+  // owner 2026-11-12: SUB THE NEXT RANKED CANDIDATE of the slip's own strategy first (slip.next_ranked = the strategy's ranked board_row_ids, server-built); the generic edge order below is the fallback
+  if(slip&&Array.isArray(slip.next_ranked)){
+    const ppS=String(slip.source_key||'')==='prizepicks';
+    for(const id of slip.next_ranked){
+      const i=backupPool.findIndex(l=>String(l.board_row_id)===String(id));
+      if(i<0)continue;
+      const c=backupPool[i];
+      if(!poolLegIsLegalForSlip(c,keptLegs,slip))continue;
+      if(ppS&&(Number(c.is_goblin)===1||Number(c.is_demon)===1||String(c.line_type||'regular')!=='regular'))continue;
+      if(want&&String(c.line_type||'regular')!==want)continue;
+      return backupPool.splice(i,1)[0];
+    }
+  }
   let best=-1,bestAny=-1;
   for(let i=0;i<backupPool.length;i++){
     const l=backupPool[i];
