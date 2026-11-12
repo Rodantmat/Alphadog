@@ -357,10 +357,11 @@ export default {
       if (!m) return notFound();
       if (m[2] === "/report-data") { const d = await reportData(env, m[1]); return d ? json(d) : notFound(); }
       if (m[2] === "/report") { const ok2 = await withPg(env, sql => tokenOk(sql, m[1])); return ok2 ? new Response(REPORT.replaceAll("{{T}}", m[1]), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } }) : notFound(); }
+      if (m[2] === "/save") { if (request.method !== "POST") return notFound(); let b = {}; try { b = await request.json(); } catch (e) { b = {}; } const r = await saveSlips(env, m[1], b); return r ? json(r) : notFound(); }
       if (m[2]) { const d = await data(env, m[1], !url.searchParams.has("nosave")); return d ? json(d) : notFound(); }
       const ok = await withPg(env, sql => tokenOk(sql, m[1]));
       if (!ok) return notFound();
-      return new Response(PAGE.replaceAll("{{T}}", m[1]), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
+      return new Response(PAGE.replace("/*PRICING_JS*/", () => PRICING_JS).replaceAll("{{T}}", m[1]), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
     } catch (err) { return json({ ok: false, error: String(err && err.message || err).slice(0, 200) }, 500); }
   }
 };
