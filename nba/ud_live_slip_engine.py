@@ -441,6 +441,9 @@ def pick(conn, day):
         tcfg = (r_[0] if isinstance(r_[0], dict) else json.loads(r_[0])) if r_ else {}
         if tcfg.get('enabled', True) and live_pf in ('T', 'C'):
             mains = tcfg.get('mains', ['C5', 'C6']); fbs = tcfg.get('fallback', ['T1', 'T2', 'T3', 'C3', 'C4'])
+            for u_ in tcfg.get('disabled', []):     # owner 2026-11-12 00:34 PT: T3 and C4 disabled (recorded as shadow, never played)
+                conn.execute("UPDATE nba_score.ud_live_slips SET status='shadow' WHERE game_date=%s AND status='live' AND composition LIKE %s", (day, u_ + ' %'))
+            fbs = [u_ for u_ in fbs if u_ not in tcfg.get('disabled', [])]
             lv_ = [c for (c,) in conn.execute("SELECT composition FROM nba_score.ud_live_slips WHERE game_date=%s AND status='live'", (day,)).fetchall()]
             main_built = any(c.split(' ')[0] in mains for c in lv_)
             if main_built:
