@@ -244,7 +244,7 @@ function bettorDepthHtml(ctx,games,legs,opts){opts=opts||{};const abbr=opts.oppA
     +teamTrendsBlock(ctx.team_trends)+lineupsBlock(ctx.lineups)+careerBlock(ctx.career)+(a.length?section('Arena',a,'Where the game is played.'):'')+'</div>'
     +trackingBlock(ctx.tracking_skills)}
 // the dossier's line table gains each line's record (MLB shows the line's sample and hit-miss)
-function rowsForHpLines(ctx){const games=ctx.games_full||ctx.recent_games||[];return (ctx.hp_lines||[]).map(r=>({'Source':appLabel(r.source_key)+(r.line_type&&r.line_type!=='regular'?' '+lineLabel(r.line_type):''),'Prop':displayPropLabel(r.canonical_prop_key),'Side':String(r.selected_side||'').toUpperCase(),'Line':r.line_value,'HP':pctNum(r.estimated_hit_probability_0_100),'Conf':pctNum(r.probability_confidence_0_100),'Score':num(r.score_0_100),
+function rowsForHpLines(ctx){const games=ctx.games_full||ctx.recent_games||[];return (ctx.hp_lines||[]).map(r=>({'Source':appLabel(r.source_key)+(r.line_type&&r.line_type!=='regular'?' '+lineLabel(r.line_type):''),'Prop':displayPropLabel(r.canonical_prop_key),'Side':String(r.selected_side||'').toUpperCase(),'Line':r.line_value,'HP':pctNum(r.estimated_hit_probability_0_100),'Conf':pctNum(r.probability_confidence_0_100),'Score':num(r.score_roi_0_100!=null?r.score_roi_0_100:r.score_0_100),
   'L10 Hit-Miss':hitMiss(games,r.canonical_prop_key,Number(r.line_value),String(r.selected_side||'').toLowerCase(),10),'Season Hit-Miss':hitMiss(games,r.canonical_prop_key,Number(r.line_value),String(r.selected_side||'').toLowerCase(),null),
   'ROI':r.roi_0_100!=null?(r.roi_0_100>0?'+':'')+r.roi_0_100+'%':'—','Edge':r.edge_0_100!=null?(r.edge_0_100>0?'+':'')+r.edge_0_100:'—','Factor':r.leg_factor!=null?Number(r.leg_factor).toFixed(3)+'x':'—'}))}
 
