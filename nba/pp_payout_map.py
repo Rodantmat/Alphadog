@@ -773,8 +773,37 @@ def main():
             result["meta"].update({"mode": "slipq", "slate": day, "slips": len(slips)})
             print(f"SLIPQ|slate {day}|engine slips {len(slips)}|board rows {len(rows)}", flush=True)
             out = []
+            sub_writes = []                      # (legs, note, strategy, k): slips rebuilt with the next ranked candidate
+            try:
+                import slip_sub
+            except Exception as e:
+                slip_sub = None
+                print(f"SLIPQ|slip_sub import failed ({e}) - old path", flush=True)
+
+            def board_row(l):
+                t = str(l.get("tier") or "R")
+                odds = "standard" if t == "R" else ("goblin" if t.startswith("G") else "demon")
+                return idx.get((nm(l.get("player")), prop_stat.get(str(l.get("prop")), str(l.get("prop"))), float(l.get("line")), odds))
+            taken = {}                           # strategy -> k -> normalised players on that slip
+            for strategy, k, legs_json, size, structure in slips:
+                for l in (legs_json if isinstance(legs_json, list) else json.loads(legs_json)):
+                    taken.setdefault(strategy, {}).setdefault(k, set()).add(nm(l.get("player")))
             for strategy, k, legs_json, size, structure in slips:
                 legs_l = legs_json if isinstance(legs_json, list) else json.loads(legs_json)
+                try:        # a failure here must never cost the slip its quote: the old path (UNMAPPED -> the gate's repair) then applies
+                    miss_idx = [i for i, l in enumerate(legs_l) if board_row(l) is None]
+                    if miss_idx and nxt.get((strategy, k)):
+                        cl = nxt[(strategy, k)]
+                        others = set().union(*[v for kk, v in taken.get(strategy, {}).items() if kk != k]) if len(taken.get(strategy, {})) > 1 else set()
+                        new_legs, pairs = slip_sub.sub_missing(legs_l, miss_idx, [c for c, _g in cl], board_row, cl[0][1], others, nm)
+                        if new_legs:
+                            note = "quote sub: " + "; ".join(f"{a.get('player')} {a.get('prop')} {a.get('line')} -> {b.get('player')} {b.get('prop')} {b.get('line')}" for a, b in pairs)
+                            print(f"SLIPQ|{strategy}:{k}|SUB {note}", flush=True)
+                            sub_writes.append((new_legs, note, strategy, k))
+                            legs_l = new_legs
+                            taken.setdefault(strategy, {})[k] = {nm(l.get("player")) for l in new_legs}
+                except Exception as e:
+                    print(f"SLIPQ|{strategy}:{k}|sub failed ({type(e).__name__}: {e}) - old path", flush=True)
                 picked, miss = [], []
                 for l in legs_l:
                     t = str(l.get("tier") or "R")
