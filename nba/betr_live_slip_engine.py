@@ -231,7 +231,8 @@ def board_legs(conn, day, guard=True):
     return out, last, why
 
 
-ORDER_KEY = {"bl": lambda l: -(l["p"] + l["pf"]) / 2, "p": lambda l: -l["p"], "pf": lambda l: -l["pf"],
+ORDER_KEY = {"sc": lambda l: (-(l["sc"] if l.get("sc") is not None else -1.0), l["player"], l["prop"], l["line"]),   # certified score (research 'score_cert')
+             "bl": lambda l: -(l["p"] + l["pf"]) / 2, "p": lambda l: -l["p"], "pf": lambda l: -l["pf"],
              "roi": lambda l: (-l.get("score_roi", -1.0), l["player"], l["prop"], l["line"])}
 
 
