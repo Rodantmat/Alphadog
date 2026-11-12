@@ -97,6 +97,8 @@ def main():
         bc = (rb[0] if isinstance(rb[0], dict) else json.loads(rb[0])) if rb else {}
         if bc.get('enabled'):
             bigs[bc.get('strategy', 'P_FB_U5flex')] = int(bc.get('slips', 1))
+            if bc.get('active'):                         # owner 2026-11-12: an ACTIVE big-flex unit (U6) is placed every night, not only when no 4+ pick B flex survives
+                actives.add(bc.get('strategy', 'P_FB_U5flex'))
     port = [s for s in slips if (s[0] in order or s[0].startswith(PORTFOLIO_PREFIX)) and s[0] not in (fb_strat, fb2_strat) and s[0] not in bigs]
     # the engine's own round robin: rank k first, then the unit order (live_slip_engine.portfolio_select)
     port.sort(key=lambda s: (s[1], order.index(s[0]) if s[0] in order else 99))
