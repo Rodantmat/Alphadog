@@ -770,7 +770,7 @@ def pick():
                 if x.get("player_name") in inpool or x.get("player_name") in seen_pl:
                     continue
                 seen_pl.add(x.get("player_name")); x["_code"] = "BK"; pool.append(x); n_add += 1
-                if n_add >= 14:
+                if n_add >= 60:
                     break
             log(f"PP sub bank: {n_add} standard Unders added to the pool")
         except Exception as e:
