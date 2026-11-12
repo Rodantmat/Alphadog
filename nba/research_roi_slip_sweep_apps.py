@@ -294,6 +294,7 @@ def main():
     days = {}
     for s in seasons:
         Ts = T[s] if s in T else T["all"]
+        globals()["FIT"] = fit_from(raw, [x for x in seasons if x != s]) if (CAL == "logit" and APP != "betr") else None
         dd = []
         for d, legs in raw[s]:
             df = score_day(legs, Ts)
