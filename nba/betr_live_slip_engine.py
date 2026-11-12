@@ -320,6 +320,14 @@ def build_board(conn, day, cfg):
         return [], None, last, f"the newest Betr board is {age_h:.1f} h old (> {cfg.get('max_board_age_h', 3)} h) - no slip on a stale board"
     notes = [f"board {last:%H:%M}Z; {len(legs)} Betr legs with final_hp at Betr's line ({', '.join(f'{v} {k_}' for k_, v in why.items()) or 'none dropped'})"]
     groups, main_done = [], False
+    if any(r.get("order") == "roi" for r in cfg["rules"]):
+        try:
+            attach_roi(conn, legs)
+        except Exception as e:  # noqa: BLE001 - the ROI rule is additive: a failure here never takes the main Betr slips down
+            conn.rollback()
+            notes.append(f"ROI score failed ({type(e).__name__}: {e}) - the ROI rule builds nothing")
+            for l in legs:
+                l["score_roi"] = -1e9
     for rule in cfg["rules"]:
         if rule.get("add") or not main_done:      # 'add' rules (owner 2026-11-08: the 6-pick Dynamic) are built IN ADDITION to the main/fallback rule
             slips = select(legs, rule)
