@@ -220,7 +220,7 @@ def board_legs(conn, day, guard=True):
             why["game started before the Betr board"] += 1; continue
         pm = mk.get((pid, prop, side, line))
         l = {"player": nm, "player_id": pid, "prop": prop, "side": side, "line": line, "event_id": ev, "p": float(p),
-             "pf": float(sum(pm) / len(pm)) if pm else 0.5, "team": tm.get(pid)}
+             "pf": float(sum(pm) / len(pm)) if pm else 0.5, "team": tm.get(pid), "sc": scm.get((pid, prop, side, line))}
         if l["team"] is None or l["event_id"] is None:
             why["no team / game"] += 1; continue
         out.append(l)
