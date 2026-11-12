@@ -23,7 +23,7 @@ const VERSION = "alphadog-v2-nba-friend-v1.9.3";   // v1.9.0 (owner 2026-11-11):
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
 const APP_LABEL = { prizepicks: "PrizePicks", underdog: "Underdog", sleeper: "Sleeper", betr: "Betr", fliff: "Fliff" };
-const APP_ORDER = ["prizepicks", "underdog", "sleeper", "betr", "fliff"];
+const APP_ORDER = ["prizepicks", "underdog", "sleeper", "fliff"];   // owner 2026-11-11 20:42 PT: no Betr on Jon's screens or board
 
 const notFound = () => new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
 const json = (b, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
