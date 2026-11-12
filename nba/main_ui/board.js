@@ -406,7 +406,7 @@ export async function roiBoard(sql, cfg, slate) {
     cands.push({ key: legId(slate.date, r.app, r.player_id, r.prop, r.line, r.side), app: r.app, lt, prop: r.prop, over: /^(o|m|h)/i.test(String(r.side)),
                  roi: res.roi, score: num(r.score) || 0, r });
   }
-  const apps = ((cfg.ui || {}).apps || []).filter(a => a !== "betr");
+  const apps = (cfg.ui || {}).apps || [];
   const { picks, status } = pickQuota(cands, apps, Q);
   const final = new Map(picks);
   for (const c of cands) if (c.roi > 0 && c.score >= minScore && !final.has(c.key)) final.set(c.key, { c, tags: ["score"] });
