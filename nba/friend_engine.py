@@ -775,6 +775,11 @@ def pick():
             log(f"PP sub bank: {n_add} standard Unders added to the pool")
         except Exception as e:
             log(f"PP sub bank failed, nothing else affected: {e}")
+    if FAPP != "PP":
+        try:
+            bank_add(conn, ctx, d, legs, pool, used)
+        except Exception as e:
+            log(f"sub bank failed, nothing else affected: {e}")
     for x in pool:
         x.pop("_code", None)
     conn.execute("DELETE FROM nba_friend.snapshot WHERE game_date=%s AND payload->>'app'=%s", (d, APP_KEY))
