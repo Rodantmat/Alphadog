@@ -269,7 +269,7 @@ function slipHtml(s,si){if(!SV)return slipHtmlOld(s,si);var k=alive(s);var url=s
   h+='<span class="mult">'+esc(tierTxt(t,k.length,md))+'</span></div>';
   s.legs.forEach(function(l,li){var off=l.dropped||l.removed;
     if(s.saved){h+='<div class="leg">'+legBody(l)+'</div>';return}
-    h+='<div class="lr"><label class="leg" style="display:block'+(off?';opacity:.45;text-decoration:line-through':'')+'">'+(l.removed?'':'<input type="checkbox" class="kb" data-si="'+si+'" data-li="'+li+'"'+(l.dropped?'':' checked')+' style="float:right;width:20px;height:20px">')+legBody(l)+(l.dropped&&l.why?'<div class="flag">'+esc(l.why)+(l.sub_in?'':' - no sub left, the slip shrinks to '+k.length+' picks')+'</div>':'')+(l.removed?'<div class="flag">removed</div>':'')+'</label>'
+    h+='<div class="lr"><label class="leg" style="display:block'+(off?';opacity:.45;text-decoration:line-through':'')+'">'+(l.removed?'':'<input type="checkbox" class="kb" data-si="'+si+'" data-li="'+li+'"'+(l.dropped?'':' checked')+' style="float:right;width:20px;height:20px">')+legBody(l)+(l.dropped&&l.why?'<div class="flag">'+esc(l.why)+(l.sub_in?'':(k.length>=2?' - no sub left, the slip shrinks to '+k.length+' picks':' - no sub left, the slip needs at least 2 legs'))+'</div>':'')+(l.removed?'<div class="flag">removed</div>':'')+'</label>'
       +(l.removed?'<button class="rm" data-act="undo" data-si="'+si+'" data-li="'+li+'" title="Put the leg back">↺</button>':(l.dropped?'':'<button class="rm" data-si="'+si+'" data-li="'+li+'" title="Remove this leg (no substitute)">✕</button>'))+'</div>'});
   if(s.saved)h+='<button class="edit" data-si="'+si+'">Edit</button>';
   else if(k.length<2)h+='<div class="flag">A slip needs at least 2 legs to be saved</div>';
