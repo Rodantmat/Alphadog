@@ -242,7 +242,7 @@ function alive(s){return s.legs.filter(function(l){return !l.dropped&&!l.removed
 function lidUrl(app,ls){var ids=ls.map(function(l){return l.lid});if(ids.length<2||ids.some(function(x){return !x}))return null;
   if(app==='prizepicks')return 'https://app.prizepicks.com/board?projections='+ids.join(',');
   if(app==='sleeper')return 'https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1='+ids.join(',');return null}
-function canTake(s,c){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return false;
+function canTake(s,c,extra){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return false;
   if(k.some(function(x){return x.player===c.player}))return false;
   if(k.filter(function(x){return x.matchup&&x.matchup===c.matchup}).length>=(s.gcap||1))return false;
   var tm=k.map(function(x){return x.team}).concat([c.team]);if(tm.every(Boolean)&&new Set(tm).size<2)return false;return true}
