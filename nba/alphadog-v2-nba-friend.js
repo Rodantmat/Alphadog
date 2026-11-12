@@ -202,8 +202,8 @@ async function data(env, token, save = true, preview = false) {
     // SAVE SYSTEM (owner 2026-11-11, from 11-12): the pricing tables for the live multiplier, the slips he already saved today, and the slip history
     const saveOn = today >= SAVE_FROM || preview;   // ?preview=1 (owner only): shows every save control before the start date; the server still refuses to save
     let pricing = null, savedToday = [], history = [];
+    try { pricing = pricingFrom(await loadConfig(sql)); } catch (e) { pricing = null; }   // the multiplier / Flex-Power / X controls work from today; only SAVING waits for SAVE_FROM
     if (saveOn) {
-      try { pricing = pricingFrom(await loadConfig(sql)); } catch (e) { pricing = null; }
       try { savedToday = (await q(sql, "SELECT app, slip_name name, mode, structure, legs FROM nba_friend.saved WHERE game_date = $1::date AND status = 'saved_pending'", [today], 6000)).map(r => ({ app: r.app, name: r.name, mode: r.mode, structure: r.structure, legs: J(r.legs) })); } catch (e) { savedToday = []; }
     }
     try { history = await historyOf(sql, today); } catch (e) { history = []; }
