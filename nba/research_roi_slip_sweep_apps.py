@@ -294,7 +294,8 @@ def main():
     for s in seasons:
         x = R[R.season == s].drop(columns="season").rename(columns={c: f"{c}_{s[-2:]}" for c in ["n", "per_day", "roi", "win", "dd"]})
         M = x if M is None else M.merge(x, on=idx, how="outer")
-    r_, h_ = REAL[-2:], [s[-2:] for s in seasons if s != REAL]
+    PRIM = REAL if REAL in seasons else seasons[-1]
+    r_, h_ = PRIM[-2:], [s[-2:] for s in seasons if s != PRIM]
     minreal = 20; minhist = 100
     M = M[M[f"n_{r_}"].fillna(0) >= minreal].copy()
     for h in h_:
