@@ -225,6 +225,8 @@ def pick(conn, day):
                   + f" -> Flex tiers {tiers}")
         if not aslips:
             print(f"SLEEPER_LIVE|{day} {ALL_RULE['name']}: not enough qualifying legs - no slip")
+        else:
+            _store_next(conn, day, ALL_RULE["name"], aslips, LAST.get("ALL", []))
     if not any(n in rules for n, _k, _s in STRATS):
         conn.commit()
         return
