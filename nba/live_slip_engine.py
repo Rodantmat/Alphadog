@@ -285,10 +285,19 @@ def fallback_slips(prepared, fb, extra=0, force=False, roi=None):
         return built_b, []
     size, floor_, nsl = int(fb.get('size', 3)), float(fb.get('floor', 0.55)), int(fb.get('slips', 2))
     cand = sorted([l for l in prepared if l['tier'] == 'R' and l['side'] == 'Under' and float(l['p']) >= floor_], key=lambda l: -float(l['p']))
+    pool_n = int(fb.get('pool', 0) or 0)
+    if fb.get('rank') == 'score_roi':
+        # owner 2026-11-11 20:54 PT ("PP the 5-pick flex and the 4-pick flex as a fallback"; research_roi_final_candidates PP-C / PP-D): standard Unders ranked by the
+        # ROI-aware score (nba_score.board_roi), the main slips cut from the top `pool` (5-pick top 15 -> 3 slips, 4-pick top 10 -> 2 slips); the backups come from the rest.
+        # No score stored for the slate -> the certified final_hp order, no pool cut.
+        if roi:
+            cand = sorted([l for l in cand if _roi_key(l) in roi], key=lambda l: -roi[_roi_key(l)])
+        else:
+            pool_n = 0
     used, out = set(), []
-    for _ in range(nsl + max(0, int(extra))):
+    for i_ in range(nsl + max(0, int(extra))):
         pick_, players, games = [], set(), set()
-        for l in cand:
+        for l in (cand[:pool_n] if pool_n and i_ < nsl else cand):
             if l['player'] in used or l['player'] in players or l['event_id'] in games:
                 continue
             pick_.append(l); players.add(l['player']); games.add(l['event_id'])
