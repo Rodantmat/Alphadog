@@ -65,6 +65,11 @@ for d in sorted(byday):
             m = float("nan")
             if len(ex) < 12:
                 ex.append(f"PAY ERR {d} {code}#{no}: {e}")
+        if m != m:
+            NANP[0] += 1
+            if NANP[0] <= 8:
+                ex.append(f"NaN PAYOUT {d} {code}#{no} {st} stored mult {mult} hits {[l.get('hit') for l in legs2]} stored hits {[l.get('hit') for l in legs]}")
+            m = float(mult) if mult is not None else 1.0       # keep the stored payout in the metrics, counted above
         if mult is None or abs(float(mult) - m) > 1e-6:
             mism_pay += 1
             if len(ex) < 12:
