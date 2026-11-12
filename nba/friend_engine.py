@@ -759,7 +759,7 @@ def pick():
             log(f"FB fallback failed, nothing else affected: {e}")
     # PRIZEPICKS SUB BANK (owner 2026-11-10: "subs for everybody, every app"): the standard Unders (final_hp >= 0.55, the same legs the owner screen offers as subs) that are on no slip of
     # this page fill the pool, best hit chance first - a pulled / drifted / started PrizePicks leg always has a sub. Never a goblin / demon (tier R standard lines only).
-    if FAPP == "PP":
+    if False:   # replaced by bank_add (owner 2026-11-11: the bank follows the strategies' own leg criteria)
         try:
             inpool = {pid(x) for x in pool} if False else {x.get("player_name") for x in pool}
             bank = sorted([l for l in legs if l["tier"] == "R" and l["side"] == "Under" and float(l["p"]) >= 0.55 and pid(l) not in used], key=lambda l: -float(l["p"]))
