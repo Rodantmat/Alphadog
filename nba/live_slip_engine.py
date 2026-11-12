@@ -1473,7 +1473,8 @@ def pick(conn, day, require_fresh=True):
     # apply_quote_gate promotes them to 'placed' when NO B flex slip of 4+ picks survived PrizePicks' quote.
     # research_pp_fallback_more run 42981632173: U5 flex .55 x2 +16.8% / +39.3% (111 / 87 slips, dd 14.6u / 14.2u, 30% win, nights lost ~50%);
     # U6 flex .55 x1 +94.7% / +202.1% (49 / 38 slips, dd 13.8u / 10.0u, 22-24% win). Config pp_fallback3 (5-pick) / pp_fallback4 (6-pick).
-    for fbkey in ('pp_fallback3', 'pp_fallback4'):
+    roi_map = pp_roi_map(conn, day)       # pp_fallback5 (4-pick flex, 2026-11-11 20:54 PT) joins the 5-pick (3) and the 6-pick (4)
+    for fbkey in ('pp_fallback3', 'pp_fallback4', 'pp_fallback5'):
         fbx = fallback_cfg(conn, fbkey)
         if not (fbx.get('enabled') and pools.get('__pb__') is not None):
             continue
