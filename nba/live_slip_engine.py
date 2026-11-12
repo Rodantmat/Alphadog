@@ -258,7 +258,22 @@ def fallback_cfg(conn, key='pp_fallback'):
         return {}
 
 
-def fallback_slips(prepared, fb, extra=0, force=False):
+def _roi_key(l):
+    return (str(l.get('player_id')), l['prop'], round(float(l['line']), 2))
+
+
+def pp_roi_map(conn, day):
+    """{(player_id, prop, line): ROI-aware score} of the slate's PrizePicks Under legs (nba_score.board_roi, stored before the pick since 2026-11-11 20:54 PT) - {} when absent"""
+    try:
+        rows = conn.execute("SELECT player_id, prop, line::float, score_roi FROM nba_score.board_roi WHERE game_date=%s AND app='prizepicks' AND lower(side)='under' AND score_roi IS NOT NULL",
+                            (day,)).fetchall()
+        return {(str(p), pr, round(ln, 2)): float(s) for p, pr, ln, s in rows}
+    except Exception:  # noqa: BLE001 - the table may not exist yet; the fallback then keeps the certified order
+        conn.rollback()
+        return {}
+
+
+def fallback_slips(prepared, fb, extra=0, force=False, roi=None):
     """THE THIN-NIGHT FALLBACK (owner 2026-10-27 15:33 PT "Deploy it"; research_pp_fallback_rule run 40594721780). On portfolio B's
     prepared board: (B units that build a slip, [slips]). Slips only when B builds <= fb.trigger (1): 3-pick POWER of the best standard
     UNDERS - final_hp >= fb.floor (0.55), best final_hp first, <= 1 leg a game, >= 2 teams, fb.slips (2) slips from different players.
