@@ -397,7 +397,7 @@ export async function roiBoard(sql, cfg, slate) {
   const raw = await q(sql, roiCandSql(), legParams(cfg, slate.date), 90000);
   const cands = [];
   for (const r of raw) {
-    if (r.app === "betr") continue;                                       // Betr pays a flat entry table: no per-leg price, no leg ROI
+    // Betr pays a flat entry table (no per-leg price): its leg ROI is measured against the standard 0.56 break-even (approximate)
     const lt = lineType(r);
     const { legFactor, breakeven } = legPricing(r, lt);
     if ((r.app === "sleeper" || r.app === "fliff") && !(legFactor > 0)) continue;
