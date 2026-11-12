@@ -420,8 +420,12 @@ export async function roiBoard(sql, cfg, slate) {
               pgArr(pick.map(r => String(r.line))), pgArr(pick.map(r => r.side))], limit: pick.length + 10 });
     const by = new Map(chosen.map(x => [x.c.key, x]));
     rows = full.filter(r => by.has(r.final_board_row_id));
-    for (const r of rows) r.roi_tags = by.get(r.final_board_row_id).tags;
-    rows.sort((a, b) => (by.get(b.final_board_row_id).c.roi) - (by.get(a.final_board_row_id).c.roi));
+    for (const r of rows) {
+      r.roi_tags = by.get(r.final_board_row_id).tags;
+      // the board's score is the ROI-aware one (owner 18:02); the certified score stays in score_certified_0_100
+      if (r.score_roi_0_100 != null) { r.score_0_100 = r.score_roi_0_100; r.overall_score_0_100 = r.score_roi_0_100; }
+    }
+    rows.sort((a, b) => (b.score_0_100 - a.score_0_100) || (b.roi_0_100 - a.roi_0_100));
     rows.forEach((r, i) => { r.rank_order = i + 1; });
   }
   const val = { rows, info: { candidates: cands.length, positive: cands.filter(c => c.roi > 0).length, shown: rows.length, min_score: minScore, quota: status,
