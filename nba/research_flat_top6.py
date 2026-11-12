@@ -84,7 +84,7 @@ def run(days, key, roi_pos, kindset, mode):
         slip = [tup(r) for r in pk]
         if any(l[2] is None or l[2] != l[2] for l in slip):
             continue
-        p = M.pay(slip, m)
+        p = fliff_pay(slip, m) if APP == "fliff" else M.pay(slip, m)
         rows.append((d, k, p - 1.0, 1 if p > 0 else 0))
     return rows
 
