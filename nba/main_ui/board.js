@@ -362,6 +362,72 @@ async function overviewRows(sql, cfg, slate, minHp) {
   return { rows: full, candidates: cand.length, settings: ov };
 }
 
+// THE ROI BOARD (owner 2026-11-11 17:38 / 17:58 PT; replaces the Overview). The board every screen opens on: legs ordered by implied ROI.
+// A leg is on it when its ROI is positive AND (its score clears the board bar OR it is needed for a quota) - a negative-ROI leg is never
+// shown, except goblins / demons filling their kind quota when there are not enough positive ones. Quotas (tunable nba_main_ui.roi.quota):
+// 20 goblins, 20 regulars, 20 demons, 30 per app, 5 per prop, 30 More, 30 Less. Started games are left out by the candidate query.
+// A short bucket is reported in info.quota (positive = how many positive legs existed), never padded with negative legs.
+const ROI_BOARD = { at: 0, key: "", val: null };
+function roiCandSql() {
+  return `
+WITH ${STARTED_CTE},
+mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop)),
+c AS MATERIALIZED (SELECT b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.final_hp, b0.confidence, b0.score,
+             concat_ws('|', b0.player, b0.prop, b0.side, (b0.line::float8)::text) k
+      FROM nba_score.board_scored b0
+      WHERE b0.game_date = $1::date AND b0.app = ANY($2::text[]) AND b0.final_hp IS NOT NULL
+        AND NOT ${UD_HIDE("b0")} ${NOT_STARTED("b0")}),
+${lookupCtes("c", "'underdog', 'sleeper', 'fliff'")}
+SELECT c.app, c.player_id, c.player, c.prop, c.line::float line, c.side, c.final_hp::float final_hp, c.confidence::float confidence, c.score::float score,
+       pk.kind pp_kind, pk.tier pp_tier, pf.factor::float pp_factor, um.multiplier::float app_mult, um.price app_price
+FROM c
+LEFT JOIN pk ON c.app = 'prizepicks' AND pk.k = c.k
+LEFT JOIN pf ON c.app = 'prizepicks' AND pf.k = c.k
+LEFT JOIN um ON um.bookmaker = c.app AND um.k = c.k`;
+}
+export async function roiBoard(sql, cfg, slate) {
+  const key = slate.date + "|" + slate.mode;
+  if (ROI_BOARD.val && ROI_BOARD.key === key && Date.now() - ROI_BOARD.at < 90000) return ROI_BOARD.val;
+  const cal = await loadCal(sql);
+  const rc = (cfg.ui || {}).roi || {};
+  const Q = { ...QUOTA_DEFAULT, ...(rc.quota || {}), kind: { ...QUOTA_DEFAULT.kind, ...((rc.quota || {}).kind || {}) } };
+  const minScore = Number(rc.min_score ?? 80);
+  const raw = await q(sql, roiCandSql(), legParams(cfg, slate.date), 90000);
+  const cands = [];
+  for (const r of raw) {
+    if (r.app === "betr") continue;                                       // Betr pays a flat entry table: no per-leg price, no leg ROI
+    const lt = lineType(r);
+    const { legFactor, breakeven } = legPricing(r, lt);
+    if ((r.app === "sleeper" || r.app === "fliff") && !(legFactor > 0)) continue;
+    const res = legRoi({ app: r.app, lt, side: r.side, hp: num(r.final_hp), tier: r.app === "prizepicks" ? tierKey(lt, r.pp_tier) : null, conf: num(r.confidence) }, legFactor, breakeven);
+    if (!res) continue;
+    cands.push({ key: legId(slate.date, r.app, r.player_id, r.prop, r.line, r.side), app: r.app, lt, prop: r.prop, over: /^(o|m|h)/i.test(String(r.side)),
+                 roi: res.roi, score: num(r.score) || 0, r });
+  }
+  const apps = ((cfg.ui || {}).apps || []).filter(a => a !== "betr");
+  const { picks, status } = pickQuota(cands, apps, Q);
+  const final = new Map(picks);
+  for (const c of cands) if (c.roi > 0 && c.score >= minScore && !final.has(c.key)) final.set(c.key, { c, tags: ["score"] });
+  const chosen = [...final.values()].sort((a, b) => b.c.roi - a.c.roi).slice(0, Number(Q.total_cap) || 500);
+  let rows = [];
+  if (chosen.length) {
+    const pick = chosen.map(x => x.c.r);
+    const full = await loadLegs(sql, cfg, slate, {
+      where: "AND (b.app, b.player_id, b.prop, b.line, b.side) IN (SELECT * FROM unnest($6::text[], $7::text[], $8::text[], $9::numeric[], $10::text[]))",
+      extra: [pgArr(pick.map(r => r.app)), pgArr(pick.map(r => String(r.player_id))), pgArr(pick.map(r => r.prop)),
+              pgArr(pick.map(r => String(r.line))), pgArr(pick.map(r => r.side))], limit: pick.length + 10 });
+    const by = new Map(chosen.map(x => [x.c.key, x]));
+    rows = full.filter(r => by.has(r.final_board_row_id));
+    for (const r of rows) r.roi_tags = by.get(r.final_board_row_id).tags;
+    rows.sort((a, b) => (by.get(b.final_board_row_id).c.roi) - (by.get(a.final_board_row_id).c.roi));
+    rows.forEach((r, i) => { r.rank_order = i + 1; });
+  }
+  const val = { rows, info: { candidates: cands.length, positive: cands.filter(c => c.roi > 0).length, shown: rows.length, min_score: minScore, quota: status,
+                              cal_legs: cal.n, cal_error: cal.error } };
+  ROI_BOARD.key = key; ROI_BOARD.val = val; ROI_BOARD.at = Date.now();
+  return val;
+}
+
 export async function apiCurrent(sql, cfg, slate, url, version) {
   const limit = clampLimit(cfg, url.searchParams.get("limit"));
   const minScore = num(url.searchParams.get("min_score"), 0) || 0;
