@@ -725,6 +725,22 @@ jobs:
       #    this run just scored and certified, through the certified slip rules. The freshness gate inside the engine
       #    re-checks that board_scored, final_hp and the priced window legs all exist for the slate before building.
       #    Regular season only (preseason is not a slate; the engine's own calendar handles week 2 and the final week).
+      # LEG ROI BEFORE THE PICK (owner 2026-11-11 20:54 PT: PrizePicks 5-pick / 4-pick Flex fallbacks rank by the ROI-aware score): the same snapshot as the
+      # soft step further down, run once here so the live pick can read nba_score.board_roi. Soft - if it fails the fallbacks keep the certified order.
+      - name: Store leg ROI and ROI-aware score before the pick
+        id: soft_roi_early
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/roi_early.json -w "%{http_code}" --max-time 150 -X POST -H "content-type: application/json" -d '{}' \
+              "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev/api/main-board/roi-snapshot") || code=000
+            echo "leg ROI snapshot before the pick (attempt $i): http $code $(cat /tmp/roi_early.json | head -c 300)"
+            [ "$code" = "200" ] && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
+
       - name: Slip pick (live slip engine, section 29)
         if: ${{ steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
         env:
