@@ -235,7 +235,7 @@ const tipFmt=t=>{if(!t)return'';const d=new Date(t);return isNaN(d)?'':d.toLocal
 const propName=p=>String(p).replace(/_/g,' ').replace('threes made','3-pointers made').replace(/\\b\\w/g,c=>c.toUpperCase());
 var DL=String.fromCharCode(36);var money=function(v){return v==null?'—':DL+Number(v).toFixed(2)};
 function started(l){var t=l.tip?Date.parse(l.tip):NaN;return !!t&&t<=Date.now()}
-function alive(s){return s.legs.filter(function(l){return !l.dropped})}
+function alive(s){return s.legs.filter(function(l){return !l.dropped&&!l.removed})}
 function lidUrl(app,ls){var ids=ls.map(function(l){return l.lid});if(ids.length<2||ids.some(function(x){return !x}))return null;
   if(app==='prizepicks')return 'https://app.prizepicks.com/board?projections='+ids.join(',');
   if(app==='sleeper')return 'https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1='+ids.join(',');return null}
