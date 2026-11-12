@@ -273,6 +273,26 @@ def pp_roi_map(conn, day):
         return {}
 
 
+def pp_top6_slip(conn, day, prepared, cfg):
+    """owner 2026-11-12 14:52 PT ("Deploy just the PP"; research_flat_top6): the day's ONE PrizePicks top-N Flex - the best REGULAR (standard-line) legs of either side by the
+    ROI-aware score (nba_score.board_roi.score_roi), implied ROI > roi_min, one player and one game per slip, N = size (6) shrinking to 5/4/3/2 when fewer qualify (< min = no slip).
+    Returns (slip legs, [ranked candidates]) - the candidates feed slip_next_legs so the quote gate can swap a pulled leg."""
+    size, mn, rmin = int(cfg.get('size', 6)), int(cfg.get('min', 2)), float(cfg.get('roi_min', 0.0))
+    rows = conn.execute("""SELECT player_id, prop, line::float, lower(side), score_roi FROM nba_score.board_roi
+                           WHERE game_date=%s AND app='prizepicks' AND line_type='regular' AND roi > %s AND score_roi IS NOT NULL""", (day, rmin)).fetchall()
+    rk = {(str(p), pr, round(ln, 2), sd): float(sc) for p, pr, ln, sd, sc in rows}
+    cand = [l for l in prepared if l['tier'] == 'R' and (str(l.get('player_id')), l['prop'], round(float(l['line']), 2), str(l['side']).lower()) in rk]
+    cand.sort(key=lambda l: -rk[(str(l.get('player_id')), l['prop'], round(float(l['line']), 2), str(l['side']).lower())])
+    pick_, pl, ev = [], set(), set()
+    for l in cand:
+        if l['player'] in pl or l.get('event_id') in ev:
+            continue
+        pick_.append(l); pl.add(l['player']); ev.add(l.get('event_id'))
+        if len(pick_) == size:
+            break
+    return (pick_ if len(pick_) >= mn else []), cand
+
+
 NEXT_LEGS_DDL = """CREATE TABLE IF NOT EXISTS nba_score.slip_next_legs (
   game_date date NOT NULL, strategy text NOT NULL, k int NOT NULL, rank int NOT NULL, leg jsonb NOT NULL, gc int NOT NULL DEFAULT 1,
   PRIMARY KEY (game_date, strategy, k, rank))"""
