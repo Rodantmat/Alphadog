@@ -104,7 +104,11 @@ export function estimateHit(o, cfg = ROI_DEFAULT) {
   const be = o.be;
   let priced = false;
   if (be != null && Number.isFinite(be) && be > 0 && be < 1) {
-    const pf = Math.min(0.99, ((cfg.kappa && cfg.kappa[kc]) ?? 0.88) * be), w = (cfg.price_w && cfg.price_w[kc]) ?? 0.4;
+    // the other apps have no graded price history: the further a leg's price sits from a standard leg (0.56), the more the price - not the
+    // model - is trusted (a 2.36x Underdog modifier leg read +73% ROI on the flat 0.40 weight; the PrizePicks demons / goblins settled at 0.60)
+    let w = (cfg.price_w && cfg.price_w[kc]) ?? 0.4;
+    if (kc === "all") w = Math.min(0.85, w + 0.5 * Math.abs(Math.log(be / 0.56)));
+    const pf = Math.min(0.99, ((cfg.kappa && cfg.kappa[kc]) ?? 0.88) * be);
     p = p + w * (pf - p); priced = true;
   }
   p = Math.min(0.995, Math.max(0.005, p));
