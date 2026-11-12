@@ -382,12 +382,13 @@ def pick(conn, day):
         for i, s in enumerate(slips, start=1):
             lj = [{"player": l["player"], "player_id": l["pid"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": 1.0,
                    "p": round(l["p"], 4), "pf": round(l["pf"], 4), "team": l["team"], "event_id": l["game"], "tier": "REGULAR"} for l in s]
-            mult = top_multiplier(len(s), s, rj)
+            stc = {r["name"]: r.get("structure", "dynamic") for r in (cfg.get("rules") or [])}.get(strategy, "dynamic")
+            mult = top_multiplier(len(s), s, rj, stc)
             conn.execute("""INSERT INTO nba_score.betr_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
-                            VALUES (%s, %s, %s, 'dynamic', %s, %s, 1, 'live', %s, %s)
-                            ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, size = EXCLUDED.size,
+                            VALUES (%s, %s, %s, %s, %s, %s, 1, 'live', %s, %s)
+                            ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, size = EXCLUDED.size, structure = EXCLUDED.structure,
                               model_multiplier = EXCLUDED.model_multiplier, board_ts = EXCLUDED.board_ts, status = EXCLUDED.status, built_at = now()
-                            WHERE nba_score.betr_live_slips.graded_at IS NULL""", (day, strategy, len(s), i, json.dumps(lj), mult, last))
+                            WHERE nba_score.betr_live_slips.graded_at IS NULL""", (day, strategy, len(s), stc, i, json.dumps(lj), mult, last))
             built.append((strategy, i))
             print(f"BETR_LIVE|{day} {strategy} k{i}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']}" for l in s)
                   + f" | Dynamic top x{mult}", flush=True)
