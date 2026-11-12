@@ -110,6 +110,8 @@ def score_day(legs, T):
     be = np.where(df["m"].values > 0, 1.0 / df["m"].values, 1.0) if APP != "betr" else np.full(len(df), .56)
     w = np.minimum(.85, .4 + .5 * np.abs(np.log(np.maximum(be, 1e-3) / .56)))
     p = np.clip(pc + w * (np.minimum(.99, KAP * be) - pc), .005, .995)
+    if FIT is not None:
+        p = np.clip(1 / (1 + np.exp(-np.clip(_feats(df["p"].values, df["m"].values, df["over"].values) @ FIT, -30, 30))), .005, .995)
     se = np.sqrt(p * (1 - p) / (n + 30) + MODEL_SD ** 2 * 0.8)
     df["be"] = be; df["roi"] = p / be - 1; df["roi_lo"] = (p - Z * se) / be - 1
     df = df[df["be"] >= .12].copy()
