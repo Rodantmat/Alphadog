@@ -1052,7 +1052,7 @@ def grade_saved(conn, today):
     log(f"saved slips graded: {n_done} of {len(pend)}")
 
 
-def bank_add(conn, ctx, d, legs, pool, used, cap=60):
+def bank_add(conn, ctx, d, legs, pool, used, cap=30):
     """owner 2026-11-11 17:06 PT (late in the day started legs were crossed out with no sub - the pool had run dry): a wide SUB BANK for every app - the board's regular
     legs at hit chance >= 55%, best first, one per player, never a player on a slip of the page, added behind the legs the slip rules already put in the pool."""
     have = {x.get("player_name") for x in pool}
