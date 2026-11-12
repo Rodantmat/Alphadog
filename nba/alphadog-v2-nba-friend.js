@@ -247,8 +247,66 @@ function pickSub(s){var P=window.PD.pool||[];for(var i=0;i<P.length;i++){if(canT
 function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
 function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
 function sweep(s){var ch=false;if(s.saved)return false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped||l.removed)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
-function initSwap(d){window.PD=d;d.pool=(d.pool||[]).slice();d.slips.forEach(function(s){sweep(s)})}
-function slipHtml(s,si){var k=alive(s);var url=s.changed?lidUrl(s.app,k):s.url;
+var SV=false;
+function initSwap(d){window.PD=d;SV=!!d.save_on;d.pool=(d.pool||[]).slice();var sv={};(d.saved||[]).forEach(function(x){sv[x.app+'|'+x.name]=x});
+  d.slips.forEach(function(s){s.save=true;var m0=String(s.structure||'').toLowerCase();s.mode=(m0.indexOf('flex')>=0||m0.indexOf('dynamic')>=0)?'flex':'power';
+    var x=sv[s.app+'|'+s.name];if(SV&&x){s.legs=x.legs.slice();s.mode=x.mode;s.saved=true;s.wasSaved=true;s.changed=true;return}
+    sweep(s)})}
+function legObj(l){return {factor:l.f==null?1:l.f,selected_side:l.side,side:l.side,event_id:l.matchup||null}}
+function modeOf(s){var k=alive(s).length;var ms=(typeof nbaModes==='function')?nbaModes(s.app,k):[];if(!ms.length)return 'power';return ms.indexOf(s.mode)>=0?s.mode:ms[0]}
+function tiersOf(s){var k=alive(s);if(k.length<2||!window.PD.pricing||typeof nbaTiers!=='function')return null;try{return nbaTiers(window.PD.pricing,s.app,modeOf(s),k.map(legObj))}catch(e){return null}}
+function tierTxt(t,n,mode){if(!t)return '—';var ks=Object.keys(t).map(Number).sort(function(a,b){return b-a});if(!ks.length)return '—';if(mode==='flex'&&ks.length>1)return ks.map(function(x){return x+'/'+n+' '+t[x]+'x'}).join(' · ');return (t[n]||t[ks[0]])+'x'}
+function modeName(app,m){if(app==='fliff')return 'Max';if(app==='underdog')return m==='flex'?'Flex':'Standard';if(app==='betr')return m==='flex'?'Dynamic':'Perfect';return m==='flex'?'Flex':'Power'}
+function legBody(l){return '<b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+(l.sub?' · SUB':'')+'</div>'}
+function slipHtml(s,si){if(!SV)return slipHtmlOld(s,si);var k=alive(s);var url=s.changed?lidUrl(s.app,k):s.url;var md=modeOf(s);var t=tiersOf(s);var ms=(typeof nbaModes==='function')?nbaModes(s.app,k.length):[];
+  var h='<div class="slip" id="slip'+si+'"><div class="hd"><h3>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>'
+    +(s.saved?'<span class="saved">Saved ✓</span>':'<label class="sv"><input type="checkbox" class="sk" data-si="'+si+'"'+(s.save?' checked':'')+'> Save</label>')+'</div><div class="mrow">';
+  if(!s.saved&&ms.length>1)ms.forEach(function(m){h+='<label class="md"><input type="radio" class="mr" name="m'+si+'" data-si="'+si+'" value="'+m+'"'+(m===md?' checked':'')+'> '+esc(modeName(s.app,m))+'</label>'});
+  else h+='<span>'+esc(modeName(s.app,md))+' · '+k.length+'-pick</span>';
+  h+='<span class="mult">'+esc(tierTxt(t,k.length,md))+'</span></div>';
+  s.legs.forEach(function(l,li){var off=l.dropped||l.removed;
+    if(s.saved){h+='<div class="leg">'+legBody(l)+'</div>';return}
+    h+='<div class="lr"><label class="leg" style="display:block'+(off?';opacity:.45;text-decoration:line-through':'')+'">'+(l.removed?'':'<input type="checkbox" class="kb" data-si="'+si+'" data-li="'+li+'"'+(l.dropped?'':' checked')+' style="float:right;width:20px;height:20px">')+legBody(l)+(l.dropped&&l.why?'<div class="flag">'+esc(l.why)+'</div>':'')+(l.removed?'<div class="flag">removed</div>':'')+'</label>'
+      +(l.removed?'<button class="rm" data-act="undo" data-si="'+si+'" data-li="'+li+'" title="Put the leg back">↺</button>':'<button class="rm" data-si="'+si+'" data-li="'+li+'" title="Remove this leg (no substitute)">✕</button>')+'</div>'});
+  if(s.saved)h+='<button class="edit" data-si="'+si+'">Edit</button>';
+  else if(k.length<2)h+='<div class="flag">A slip needs at least 2 legs to be saved</div>';
+  return h+'</div>'}
+function leanLeg(l){return {player:l.player,prop:l.prop,side:l.side,line:l.line,matchup:l.matchup,tip:l.tip,team:l.team,lid:l.lid,f:l.f,sub:!!l.sub,g:l.g}}
+function doSave(){var d=window.PD,out=[],refs=[],bad=0;var msg=document.getElementById('saveMsg');
+  d.slips.forEach(function(s){if(s.saved)return;var k=alive(s);
+    if(!s.save){if(s.wasSaved){out.push({app:s.app,name:s.name,save:false});refs.push(s)}return}
+    if(k.length<2){bad++;return}
+    var t=tiersOf(s),md=modeOf(s);out.push({app:s.app,name:s.name,save:true,mode:md,structure:modeName(s.app,md)+' '+k.length+'-pick',legs:k.map(leanLeg),mult:t?(t[k.length]||0):null,tiers:t});refs.push(s)});
+  if(!out.length){msg.textContent=bad?'A slip needs at least 2 legs to be saved.':'Nothing new to save.';return}
+  var b=document.getElementById('saveBtn');b.disabled=true;msg.textContent='Saving…';
+  fetch(location.pathname.replace(/[/]$/,'')+'/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slips:out})}).then(function(r){return r.ok?r.json():Promise.reject(r.status)}).then(function(r){
+    if(!r||!r.ok)throw new Error(r&&r.error||'failed');
+    out.forEach(function(o,i){var s=refs[i],si=d.slips.indexOf(s);if(o.save){s.legs=alive(s).map(leanLeg);s.saved=true;s.wasSaved=true;s.changed=true}else{s.wasSaved=false}redraw(si)});
+    msg.textContent='Saved '+r.saved+(r.removed?' · removed '+r.removed:'')+(r.skipped?' · '+r.skipped+' not saved':'')+'.';b.disabled=false}).catch(function(e){msg.textContent='Could not save ('+e+'). Try again.';b.disabled=false})}
+document.addEventListener('click',function(e){var t=e.target;if(!t||!t.classList)return;
+  if(t.classList.contains('rm')){var si=+t.dataset.si,li=+t.dataset.li,s=window.PD.slips[si],l=s.legs[li];if(t.dataset.act==='undo'){l.removed=false}else{if(l.dropped)restoreLeg(s,l);l.removed=true}s.changed=true;redraw(si)}
+  else if(t.classList.contains('edit')){var s2=window.PD.slips[+t.dataset.si];s2.saved=false;s2.wasSaved=true;redraw(+t.dataset.si)}
+  else if(t.id==='saveBtn'){doSave()}});
+document.addEventListener('change',function(e){var t=e.target;if(!t||!t.classList)return;var si=+t.dataset.si;
+  if(t.classList.contains('sk')){window.PD.slips[si].save=t.checked}
+  else if(t.classList.contains('mr')){window.PD.slips[si].mode=t.value;redraw(si)}});
+var hOpen={};
+function dayFmt(d){var x=new Date(d+'T12:00:00');return isNaN(x)?d:x.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}
+function legIcon(l,graded){if(l.hit===1)return '<span class="ic pos">✓</span>';if(l.hit===0)return '<span class="ic neg">✕</span>';return graded?'<span class="ic mut" title="Did not play">–</span>':'<span class="ic mut">·</span>'}
+function histSlip(s,app){var n=s.legs.length,hits=s.legs.filter(function(l){return l.hit===1}).length;
+  var mt=s.tiers?tierTxt(s.tiers,n,s.mode):(s.paid!=null?'paid '+(+s.paid).toFixed(2)+'x':'');
+  var h='<div class="slip"><h3>'+n+'-pick '+esc(modeName(app,s.mode))+'<span class="tag">'+(s.graded?hits+' of '+n+' hit':'pending')+(mt?' · '+esc(mt):'')+'</span></h3>';
+  s.legs.forEach(function(l){h+='<div class="leg">'+legIcon(l,s.graded)+'<b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub" style="margin-left:20px">'+esc(l.matchup||'')+'</div></div>'});
+  return h+'</div>'}
+function drawHist(){var d=window.PD,box=document.getElementById('histBox');if(!d||!box)return;var H=d.history||[];if(!H.length){box.innerHTML='';return}
+  var h='<h2>Slip history</h2><p class="sub">Tap a date, then an app. Green check = hit, red X = miss, gray dash = did not play.</p>';
+  H.forEach(function(day){var cnt=0;day.apps.forEach(function(a){cnt+=a.slips.length});
+    h+='<details class="pair hday" data-k="'+day.d+'"'+(hOpen[day.d]?' open':'')+'><summary>'+esc(dayFmt(day.d))+'<span class="tag">'+cnt+' slips</span></summary>';
+    day.apps.forEach(function(a){var k=day.d+'|'+a.app;h+='<details class="pair happ" data-k="'+k+'"'+(hOpen[k]?' open':'')+'><summary>'+esc(d.labels[a.app])+'<span class="tag">'+a.slips.length+' slips</span></summary>';
+      a.slips.forEach(function(s){h+=histSlip(s,a.app)});h+='</details>'});
+    h+='</details>'});
+  box.innerHTML=h;box.querySelectorAll('details').forEach(function(el){el.addEventListener('toggle',function(){hOpen[el.dataset.k]=el.open})})}
+function slipHtmlOld(s,si){var k=alive(s);var url=s.changed?lidUrl(s.app,k):s.url;
   var h='<div class="slip" id="slip'+si+'"><h3>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>'+(s.bet!=null?'<div class="bet">Bet: '+money(s.bet)+'</div>':'');
   s.legs.forEach(function(l,li){h+='<label class="leg" style="display:block'+(l.dropped?';opacity:.45;text-decoration:line-through':'')+'"><input type="checkbox" class="kb" data-si="'+si+'" data-li="'+li+'"'+(l.dropped?'':' checked')+' style="float:right;width:20px;height:20px"><b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+(l.sub?' · SUB':'')+'</div>'+(l.dropped&&l.why?'<div class="flag">'+esc(l.why)+'</div>':'')+'</label>'});
   if(k.length<2)h+='<div class="flag">Not enough legs kept (min 2)</div>';return h+'</div>'}
