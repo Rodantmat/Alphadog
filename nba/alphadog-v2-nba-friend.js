@@ -318,7 +318,7 @@ document.addEventListener('change',function(e){var t=e.target;if(!t||!t.classLis
 setInterval(function(){if(!window.PD)return;window.PD.slips.forEach(function(s,si){if(sweep(s))redraw(si)})},60000);
 function render(d){
   initSwap(d);
-  let h='<table><tr><th>Season so far</th><th>ROI</th></tr>';
+  let h=(d.preview?'<p class="flag" style="margin:0 0 10px">PREVIEW - the save controls show, but saving starts tomorrow.</p>':'')+'<table><tr><th>Season so far</th><th>ROI</th></tr>';
   for(const a of d.order){const r=d.roi.apps[a];h+='<tr><td>'+esc(d.labels[a])+'</td><td class="'+cls(r&&r.roi)+'">'+pct(r&&r.roi)+'</td></tr>'}
   h+='<tr class="tot"><td>Total</td><td class="'+cls(d.roi.total&&d.roi.total.roi)+'">'+pct(d.roi.total&&d.roi.total.roi)+'</td></tr></table>';
   if(!d.slips.length)h+='<p class="sub" style="margin-top:16px">No slips right now. They appear here once the day\\'s lineups are set.</p>';
