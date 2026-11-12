@@ -434,6 +434,45 @@ export async function roiBoard(sql, cfg, slate) {
   return val;
 }
 
+// ROI SNAPSHOT (owner 2026-11-11 18:10: "all the pipelines now score the ROI and the score with ROI ... ROIs for all legs"). P3 calls this once
+// the slate's legs are scored (POST /api/main-board/roi-snapshot): every scored, priced leg of the slate gets its implied ROI, the conservative
+// floor, the estimated real hit rate and the ROI-aware score stored in nba_score.board_roi (one row per leg and day; the certified score and
+// final_hp in board_scored are untouched). The board reads the same numbers live from the same code (roi.js), so the two always agree.
+export async function roiSnapshot(sql, cfg, slate, version) {
+  await loadCal(sql);
+  const raw = await q(sql, roiCandSql(), legParams(cfg, slate.date), 90000);
+  const rows = [];
+  for (const r of raw) {
+    if (r.app === "betr") continue;
+    const lt = lineType(r);
+    const { legFactor, breakeven } = legPricing(r, lt);
+    if ((r.app === "sleeper" || r.app === "fliff") && !(legFactor > 0)) continue;
+    const res = legRoi({ app: r.app, lt, side: r.side, hp: num(r.final_hp), tier: r.app === "prizepicks" ? tierKey(lt, r.pp_tier) : null, conf: num(r.confidence) }, legFactor, breakeven);
+    const sc = num(r.score);
+    if (!res || sc == null) continue;
+    rows.push({ r, lt, res, breakeven, sc, sr: roiScore(sc, res.roi, res.roi_lo) });
+  }
+  await q(sql, `CREATE TABLE IF NOT EXISTS nba_score.board_roi (game_date date NOT NULL, app text NOT NULL, player_id text NOT NULL, prop text NOT NULL, line numeric NOT NULL, side text NOT NULL,
+      line_type text, hit_prob float8, hit_rate_est float8, roi float8, roi_floor float8, mult float8, breakeven float8, score_certified float8, score_roi float8, sample_n int, built_at timestamptz DEFAULT now(),
+      PRIMARY KEY (game_date, app, player_id, prop, line, side))`, [], 30000);
+  let written = 0;
+  for (let i = 0; i < rows.length; i += 400) {
+    const c = rows.slice(i, i + 400);
+    const A = f => pgArr(c.map(f));
+    await q(sql, `INSERT INTO nba_score.board_roi (game_date, app, player_id, prop, line, side, line_type, hit_prob, hit_rate_est, roi, roi_floor, mult, breakeven, score_certified, score_roi, sample_n, built_at)
+      SELECT $1::date, a, b, c, d::numeric, e, f, g::float8, h::float8, i::float8, j::float8, k::float8, l::float8, m::float8, n::float8, o::int, now()
+      FROM unnest($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], $11::text[], $12::text[], $13::text[], $14::text[], $15::text[], $16::text[]) AS t(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
+      ON CONFLICT (game_date, app, player_id, prop, line, side) DO UPDATE SET line_type = EXCLUDED.line_type, hit_prob = EXCLUDED.hit_prob, hit_rate_est = EXCLUDED.hit_rate_est,
+        roi = EXCLUDED.roi, roi_floor = EXCLUDED.roi_floor, mult = EXCLUDED.mult, breakeven = EXCLUDED.breakeven, score_certified = EXCLUDED.score_certified,
+        score_roi = EXCLUDED.score_roi, sample_n = EXCLUDED.sample_n, built_at = now()`,
+      [slate.date, A(x => x.r.app), A(x => String(x.r.player_id)), A(x => x.r.prop), A(x => String(x.r.line)), A(x => x.r.side), A(x => x.lt), A(x => String(num(x.r.final_hp))),
+       A(x => String(x.res.p)), A(x => String(x.res.roi)), A(x => String(x.res.roi_lo)), A(x => String(x.res.mult)), A(x => String(x.breakeven)), A(x => String(x.sc)), A(x => String(x.sr)), A(x => String(x.res.n))], 60000);
+    written += c.length;
+  }
+  return { ok: true, version, route: "/api/main-board/roi-snapshot", slate: slate.date, legs_read: raw.length, rows_written: written,
+           positive: rows.filter(x => x.res.roi > 0).length, writes_performed: written };
+}
+
 export async function apiCurrent(sql, cfg, slate, url, version) {
   const limit = clampLimit(cfg, url.searchParams.get("limit"));
   const minScore = num(url.searchParams.get("min_score"), 0) || 0;
