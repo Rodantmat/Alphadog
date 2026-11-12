@@ -38,7 +38,7 @@ for d in days:
                     pay = 1.0
                 else:
                     hits = sum(1 for _, h, _ in live if h)
-                    if rule[6] == "max":
+                    if rule[6] == "max" or (app == "sleeper" and len(live) == 2):
                         pay = E.floor2(math.prod(m for m, _, _ in live)) if hits == len(live) else 0.0
                     else:
                         pay = float(SL.flex_tiers([m for m, _, _ in live], pr[1], pr[2]).get(hits, 0.0))
