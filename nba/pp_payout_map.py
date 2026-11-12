@@ -762,6 +762,14 @@ def main():
                 slips = conn.execute("""SELECT strategy, k, legs_json, size, structure FROM nba_score.live_slips
                                         WHERE game_date = %s AND status LIKE 'placed%%' AND status NOT LIKE '%%shadow%%' ORDER BY strategy, k""",
                                      (day,)).fetchall()
+                # owner 2026-11-12 00:03 PT ("all strategies should work with sub the next ranked candidate"): each unit's ranked candidates (live_slip_engine.store_next_legs)
+                nxt = {}
+                try:
+                    for st_, k_, leg_, gc_ in conn.execute("SELECT strategy, k, leg, gc FROM nba_score.slip_next_legs WHERE game_date = %s ORDER BY strategy, k, rank", (day,)).fetchall():
+                        nxt.setdefault((st_, k_), []).append((leg_ if isinstance(leg_, dict) else json.loads(leg_), gc_))
+                except Exception as e:
+                    conn.rollback()
+                    print(f"SLIPQ|no next-leg lists ({type(e).__name__}) - a missing leg falls back to the gate's repair", flush=True)
             result["meta"].update({"mode": "slipq", "slate": day, "slips": len(slips)})
             print(f"SLIPQ|slate {day}|engine slips {len(slips)}|board rows {len(rows)}", flush=True)
             out = []
