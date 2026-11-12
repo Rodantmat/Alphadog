@@ -126,6 +126,9 @@ def groups(legs, N, k):
     return out
 
 
+TOPS = {}      # (app, rule name) -> the rule's ranked candidate list of the day (for the next-ranked substitutes)
+
+
 def build(conn, day, app, only=None):
     legs = load_legs(conn, day, app)
     if not legs:
