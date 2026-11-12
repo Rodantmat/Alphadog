@@ -284,6 +284,9 @@ def _mix_fix(s, base, idx, gc, banned):
     return s
 
 
+RANKED = {}      # rule name -> the rule's ranked candidate list of the day
+
+
 def select(legs, rule):
     """research_app_allegs.day() for one rule (props 'all'): -> up to 2 slips"""
     sd, k, gc, fl = rule.get("side", "mix"), int(rule["k"]), int(rule.get("game_cap", 1)), float(rule.get("floor", 0.60))
