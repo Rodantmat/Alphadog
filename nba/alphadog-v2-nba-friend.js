@@ -162,7 +162,7 @@ async function data(env, token, save = true, preview = false) {
     let date = null;
     for (const sn of snaps) {
       const pl = typeof sn.payload === "string" ? JSON.parse(sn.payload) : sn.payload;
-      date = sn.d; out.generated_slips.push(...(pl.slips || [])); out.backup_pool.push(...(pl.pool || []));
+      date = sn.d; out.generated_slips.push(...(pl.slips || []).filter(x => x.source_key !== "betr")); out.backup_pool.push(...(pl.pool || []).filter(x => x.source_key !== "betr"));
     }
     if (date && date === today) {
       try {
