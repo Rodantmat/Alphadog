@@ -90,7 +90,7 @@ def real_pp(conn):
             continue
         legs = {}
         for l in L.load_board_legs_live(conn, d):
-            if l.get("whole_number") or l["rank_key"] not in ("final_hp", "final_score"):
+            if l.get("whole_number") or l["rank_key"] not in ("final_hp", "final_score") or l["prop"] not in AF.STAT:
                 continue
             k = (l["player_id"], l["prop"], l["side"], float(l["line"]), l["tier"])
             e = legs.setdefault(k, dict(game_date=d, player=l["player"], player_id=l["player_id"], prop=l["prop"], side=l["side"], line=float(l["line"]),
