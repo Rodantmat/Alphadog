@@ -3,7 +3,11 @@
 // auto-swapped from the friend's own backup pool. Own tables (nba_friend.*), no save button, no units, no strategy text. Access: an unguessable token in the
 // path (nba_config.classification_config 'friend_page'.token); anything else is a plain 404. Reads nothing of the owner's UI, writes nothing.
 // DEPLOY NOTE: the deploy script redeploys a worker when THIS file changes - bump VERSION with any change.
-import { withPg, q, loadConfig } from "./main_ui/common.js";
+import { withPg, q, loadConfig, resolveSlate } from "./main_ui/common.js";
+import { ASSETS } from "./main_ui/assets.js";
+import { apiCurrent, apiFilters } from "./main_ui/board.js";
+import { apiDossier } from "./main_ui/dossier.js";
+import { apiPlayerSearch, apiPlayerProfile } from "./main_ui/profile.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import * as PRICING from "./main_ui/pricing.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
