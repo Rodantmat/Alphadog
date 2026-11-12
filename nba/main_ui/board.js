@@ -5,7 +5,7 @@
 // Underdog / Sleeper payout multipliers (board_snapshots), and the player's recent box scores for the card's scouting line.
 import { q, pgArr, num, r1, isoDate, legId, sideOut, propLabel, propFamily, appLabel, lineTypeLabel, cap } from "./common.js";
 import { composeLegInsight } from "./insight.js";
-import { loadCal, legRoi, pickQuota, tierKey, QUOTA_DEFAULT, ROI_DEFAULT } from "./roi.js";
+import { loadCal, legRoi, pickQuota, tierKey, roiScore, QUOTA_DEFAULT, ROI_DEFAULT } from "./roi.js";
 
 const STATS_COLS = "min, pts, reb, ast, fg3m, fg3a, stl, blk, tov, fgm, fga, ftm, fta, oreb, dreb, pf, plus_minus";
 
