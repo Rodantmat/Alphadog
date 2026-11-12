@@ -443,7 +443,6 @@ export async function roiSnapshot(sql, cfg, slate, version) {
   const raw = await q(sql, roiCandSql(), legParams(cfg, slate.date), 90000);
   const rows = [];
   for (const r of raw) {
-    if (r.app === "betr") continue;
     const lt = lineType(r);
     const { legFactor, breakeven } = legPricing(r, lt);
     if ((r.app === "sleeper" || r.app === "fliff") && !(legFactor > 0)) continue;
