@@ -1053,6 +1053,55 @@ async function buildHighHit(sql, cfg, url, version) {
       }
     }
   } catch (_e) { /* no pairs: the bank stays as built */ }
+  // SUB THE NEXT RANKED CANDIDATE OF THE SLIP'S OWN STRATEGY (owner 2026-11-12 00:03 PT: "all strategies should work with sub the next ranked candidate"): every engine writes the ranked
+  // candidates of each unit at pick time (nba_score.slip_next_legs, strategy + k + rank). Each slip gets next_ranked = the board_row_ids of those candidates that are on the
+  // board now, in rank order (a candidate missing from the pool is added, except PrizePicks where only confirmed standard pool legs count); the screen takes the first legal one
+  // and only then falls back to the generic pool. Nothing here can fail the build: no table / no rows / no match leaves the slips as they were.
+  try {
+    const nx = await q(sql, "SELECT strategy, k, rank, leg FROM nba_score.slip_next_legs WHERE game_date = $1 ORDER BY strategy, k, rank", [slate.date], 4000);
+    if (nx && nx.length) {
+      const nrm2 = x => String(x == null ? "" : x).toLowerCase().replace(/[^a-z0-9]/g, "");
+      const byPid = new Map(), byName = new Map();
+      const addIdx = (l, from) => {
+        const tail = "|" + nrm2(l.canonical_prop_key) + "|" + nrm2(sideIn(l.selected_side)) + "|" + Number(l.line_value);
+        const a = l.source_key;
+        if (l.player_id != null) byPid.set(a + "|" + String(l.player_id) + tail, from === "pool" ? l : (byPid.get(a + "|" + String(l.player_id) + tail) || l));
+        byName.set(a + "|" + nrm2(l.player_name) + tail, from === "pool" ? l : (byName.get(a + "|" + nrm2(l.player_name) + tail) || l));
+      };
+      for (const l of board) if (!inSlip.has(l.final_board_row_id) && !(l.source_key === "underdog" && l.ud_hidden)) addIdx(l, "board");
+      const poolById = new Map(pool.map(l => [String(l.board_row_id), l]));
+      const poolIdx = new Map();
+      for (const l of pool) poolIdx.set(l.source_key + "|" + nrm2(l.player_name) + "|" + nrm2(l.canonical_prop_key) + "|" + nrm2(sideIn(l.selected_side)) + "|" + Number(l.line_value), l);
+      const grp = new Map();
+      for (const r of nx) { const key = r.strategy + "|" + r.k; if (!grp.has(key)) grp.set(key, []); grp.get(key).push(typeof r.leg === "string" ? JSON.parse(r.leg) : r.leg); }
+      let nSlips = 0;
+      for (const s of slips) {
+        const lst = grp.get(String(s.strategy) + "|" + s.k);
+        if (!lst) continue;
+        const app = s.source_key, ids = [], seen = new Set();
+        for (const bl of lst) {
+          const tail = "|" + nrm2(bl.prop) + "|" + nrm2(bl.side) + "|" + Number(bl.line);
+          let pl = poolIdx.get(app + "|" + nrm2(bl.player) + tail);
+          if (!pl && app !== "prizepicks") {
+            const b = (bl.player_id != null ? byPid.get(app + "|" + String(bl.player_id) + tail) : null) || byName.get(app + "|" + nrm2(bl.player) + tail);
+            if (b) {
+              pl = poolById.get(String(b.final_board_row_id));
+              if (!pl) {
+                pl = slipLeg(b, { board_percentile: percentile(app, Number(b.score_0_100)), ...riskFor(risk, b.player_name),
+                  link: linkLegFor(app, { player: b.player_name, prop: b.canonical_prop_key, side: b.selected_side, line: b.line_value }, linkMap, b.official_game_time_utc) });
+                pool.push(pl); poolById.set(String(pl.board_row_id), pl);
+              }
+            }
+          }
+          if (!pl || seen.has(String(pl.board_row_id))) continue;
+          seen.add(String(pl.board_row_id)); ids.push(String(pl.board_row_id));
+          if (ids.length >= 25) break;
+        }
+        if (ids.length) { s.next_ranked = ids; nSlips++; }
+      }
+      if (nSlips) notes.push(`Substitutes: ${nSlips} slips carry their own strategy's ranked candidate list.`);
+    }
+  } catch (_e) { /* no slip_next_legs: the pools above stay */ }
   // START TIMES FOR EVERY LEG (owner 2026-11-10: a leg whose game started is scratched and a sub pops up): stored slip legs (Fliff, Underdog...) carry only their game label, so the
   // tip-off comes from any other leg of the same game that has one; the screen's started-leg swap reads official_game_time_utc.
   try {
