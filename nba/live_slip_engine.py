@@ -1566,6 +1566,27 @@ def pick(conn, day, require_fresh=True):
                 store_next_legs(conn, day, nmx, kx, fallback_ranked(pools['__pb__'], fbx, roi_map), 1, fallback=True)
         except Exception as e:  # noqa: BLE001 - never takes the main slips down
             print(f"  {day}: big-flex fallback {fbkey} failed ({type(e).__name__}: {e}) - the other slips are unaffected", flush=True)
+    # PP TOP-6 FLEX (owner 2026-11-12 14:52 PT "Deploy just the PP"): one flat slip a night, the top regular legs by score_roi (ROI > 0), shrinking 6 -> 2
+    t6 = fallback_cfg(conn, 'pp_top6')
+    if t6.get('enabled') and pools.get('__pb__') is not None:
+        try:
+            with conn.transaction():      # a savepoint: a failure never rolls back the slips already inserted
+                pk6, cand6 = pp_top6_slip(conn, day, pools['__pb__'], t6)
+                if pk6:
+                    nm6 = t6.get('strategy', 'P_T6_flex')
+                    st6 = 'placed' if t6.get('active', True) else 'placed_backup'
+                    struct6 = t6.get('structure', 'flex') if len(pk6) >= 3 else 'power'
+                    conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight, streak_note)
+                                    VALUES (%s,%s,%s,%s,%s,%s,%s,1.0,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                                 (day, nm6, 1, json.dumps([{'cell': f"{l['prop']}_R", 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': 'R',
+                                                             'side': l['side'], 'line': float(l['line']), 'factor': 1, 'event_id': l.get('event_id')} for l in pk6]),
+                                  len(pk6), struct6, st6, "top-6 flex by ROI score (owner 2026-11-12)"))
+                    print(f"  {day}: PP TOP-{len(pk6)} {struct6} {nm6} -> {st6}: " + "; ".join(f"{l['player']} {l['prop']} {l['side']} {float(l['line']):g}" for l in pk6), flush=True)
+                    store_next_legs(conn, day, nm6, 1, cand6, 1, fallback=False)
+                else:
+                    print(f"  {day}: PP top-6 flex - fewer than {t6.get('min', 2)} qualifying legs, no slip", flush=True)
+        except Exception as e:  # noqa: BLE001
+            print(f"  {day}: PP top-6 flex failed ({type(e).__name__}: {e}) - the other slips are unaffected", flush=True)
     conn.execute("UPDATE nba_score.live_slips SET unit_usd=%s WHERE game_date=%s AND unit_usd IS NULL", (float(stake_unit(conn)['unit_usd']), day))
     conn.commit()
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
