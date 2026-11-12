@@ -194,7 +194,7 @@ def pick(conn, day, apps, dry=False):
                     import next_legs_store as NL
                     on_slips = {l["player"] for s_ in sl for l in s_}
                     for k_ in range(1, len(sl) + 1):
-                        NL.store(conn, day, name, k_, [dict(l, team=tm_get(l)) for l in TOPS.get((app, name), [])], exclude_players=on_slips)
+                        NL.store(conn, day, name, k_, [dict(l) for l in TOPS.get((app, name), [])], exclude_players=on_slips)
                 except Exception as e:  # noqa: BLE001
                     log(f"ROI_LIVE|{day} {name}: next-ranked list not stored ({e})")
             for k, s in enumerate(sl, start=1):
