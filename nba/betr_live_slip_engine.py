@@ -194,6 +194,8 @@ def board_legs(conn, day, guard=True):
                            WHERE b.bookmaker='betr' AND b.game_date=%s AND b.snapshot_ts=%s AND b.market_key = ANY(%s)""",
                         (day, last, list(RSD.MK))).fetchall()
     hp = {(r[0], r[1], r[2], float(r[3])): r[4] for r in conn.execute(RSH.FSQL, (day,)).fetchall()}
+    scm = {(r[0], r[1], r[2], float(r[3])): r[4] for r in conn.execute(
+        "SELECT player_id::text, prop, side, line::float, score::float FROM nba_score.final_hp WHERE game_date=%s AND score IS NOT NULL", (day,)).fetchall()}
     evs = dict(conn.execute("""SELECT DISTINCT ON (nm.player_id) nm.player_id::text, b.event_id FROM nba_market.board_snapshots b
                                JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
                                WHERE b.bookmaker='underdog' AND b.game_date=%s ORDER BY nm.player_id, b.snapshot_ts DESC""", (day,)).fetchall())
