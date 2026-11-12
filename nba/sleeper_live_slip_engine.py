@@ -156,6 +156,19 @@ def build(conn, day):
     return out, f"T1 qualified {len(c)}, on Sleeper {len(priced)}, after cap/skip {len(cand)}"
 
 
+LAST = {}      # the day's ranked candidate lists (S_ALL / T1) for the next-ranked substitutes (nba/next_legs_store.py)
+
+
+def _store_next(conn, day, name, slips, cand):
+    try:
+        import next_legs_store as NL
+        on = {l["player"] for s_ in slips for l in s_}
+        for k_ in range(1, len(slips) + 1):
+            NL.store(conn, day, name, k_, [dict(l, player_id=l.get("pid")) for l in cand], exclude_players=on)
+    except Exception as e:  # noqa: BLE001
+        print(f"SLEEPER_LIVE|{day} {name}: next-ranked list not stored ({e})")
+
+
 def all_candidates(conn, day, rule):
     """S_ALL rule: the ranked candidate list (every Sleeper window leg that passes the rule's floor / gate / cap, best first) + the count of legs with final_hp.
     build_all slices the slips off the top of THIS list; the substitute bank (owner 2026-11-10) is the rest of it, so a substitute is a leg the rule itself would play."""
