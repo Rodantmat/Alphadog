@@ -284,7 +284,7 @@ function doSave(){var d=window.PD,out=[],refs=[],bad=0;var msg=document.getEleme
     out.forEach(function(o,i){var s=refs[i],si=d.slips.indexOf(s);if(o.save){s.legs=alive(s).map(leanLeg);s.saved=true;s.wasSaved=true;s.changed=true}else{s.wasSaved=false}redraw(si)});
     msg.textContent='Saved '+r.saved+(r.removed?' · removed '+r.removed:'')+(r.skipped?' · '+r.skipped+' not saved':'')+'.';b.disabled=false}).catch(function(e){msg.textContent='Could not save ('+e+'). Try again.';b.disabled=false})}
 document.addEventListener('click',function(e){var t=e.target;if(!t||!t.classList)return;
-  if(t.classList.contains('rm')){var si=+t.dataset.si,li=+t.dataset.li,s=window.PD.slips[si],l=s.legs[li];if(t.dataset.act==='undo'){l.removed=false}else{if(l.dropped)restoreLeg(s,l);l.removed=true}s.changed=true;redraw(si)}
+  if(t.classList.contains('rm')){var si=+t.dataset.si,li=+t.dataset.li,s=window.PD.slips[si],l=s.legs[li];if(t.dataset.act==='undo'){l.removed=false;sweep(s)}else{if(l.dropped)return;l.removed=true}s.changed=true;redraw(si)}
   else if(t.classList.contains('edit')){var s2=window.PD.slips[+t.dataset.si];s2.saved=false;s2.wasSaved=true;redraw(+t.dataset.si)}
   else if(t.id==='saveBtn'){doSave()}});
 document.addEventListener('change',function(e){var t=e.target;if(!t||!t.classList)return;var si=+t.dataset.si;
