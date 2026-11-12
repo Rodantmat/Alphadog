@@ -221,7 +221,13 @@ td,th{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}th{co
 .spin{display:flex;gap:10px;align-items:center;color:var(--mut);padding:24px 0}.dot{width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:r 0.8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
 h2{font-size:15px;margin:18px 0 4px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
 .pair{background:var(--card);border-radius:12px;padding:10px 14px;margin:8px 0}.pair summary{cursor:pointer;font-weight:600;list-style:none}.pair summary::-webkit-details-marker{display:none}.pair[open] summary{margin-bottom:6px}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.hd h3{margin:0 0 8px}.sv{white-space:nowrap;font-size:13px;color:var(--mut);display:flex;gap:6px;align-items:center}.sv input{width:20px;height:20px}.saved{color:var(--ok);font-size:13px;white-space:nowrap}
+.mrow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:0 0 6px;font-size:13px}.md{display:flex;gap:5px;align-items:center;color:var(--ink)}.mult{margin-left:auto;font-weight:700}
+.lr{display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--line)}.lr .leg{border-top:0;flex:1;min-width:0}.rm,.edit,#saveBtn{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font:inherit;font-size:13px;cursor:pointer;margin-top:6px}
+.savebar{margin:16px 0}#saveBtn{width:100%;background:var(--acc);color:#071018;border-color:var(--acc);font-weight:700;padding:12px;font-size:15px;margin:0}#saveBtn:disabled{opacity:.5}
+.ic{display:inline-block;width:20px;font-weight:700}.ic.pos{color:var(--ok)}.ic.neg{color:var(--bad)}.ic.mut{color:var(--mut)}.hday>summary,.happ>summary{display:flex;justify-content:space-between}.happ{background:var(--bg);margin:8px 0}
 </style></head><body>${BRAND}<div id="app"><div class="spin"><div class="dot"></div><span>Checking every leg on every app…</span></div></div>
+<script>/*PRICING_JS*/</script>
 <script>
 const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(v>=0?'+':'')+(v*100).toFixed(1)+'%';const cls=v=>v==null?'':(v>=0?'pos':'neg');
