@@ -49,6 +49,9 @@ for d in sorted(byday):
             if not l.get("player_id") and l.get("player"):
                 l["player_id"] = NAMEID.get(l["player"])
             h = FE.outcome(sbox, l)
+            if h is None and not l.get("player_id") and l.get("hit") is not None:
+                UNVER[0] += 1
+                h = l.get("hit")          # the name could not be resolved to an NBA id: the stored hit stays, counted as unverified
             if (l.get("hit") if l.get("hit") is not None else None) != h:
                 mism_hit += 1
                 if len(ex) < 12:
