@@ -259,7 +259,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     // PrizePicks leg is Regular T0, Demon T1..Tn up, Goblin T1..Tn down
     leg_mult_x: Math.round(100 / breakeven) / 100,
     tier_n: r.app === "prizepicks" ? (lt === "regular" ? 0 : (Number.isFinite(Math.abs(Number(r.pp_tier))) ? Math.abs(Number(r.pp_tier)) : null)) : null,
-    tier_label: r.app === "prizepicks" ? (lt === "regular" ? "Regular T0" : (lt === "goblin" ? "Goblin" : "Demon") + " T" + (r.pp_tier == null ? "?" : Math.abs(Number(r.pp_tier)))) : null,
+    tier_label: r.app === "prizepicks" ? (lt === "unverified" ? "Kind unverified" : lt === "regular" ? "Regular T0" : (lt === "goblin" ? "Goblin" : "Demon") + " T" + (r.pp_tier == null ? "?" : Math.abs(Number(r.pp_tier)))) : null,
     score_certified_0_100: score,
     score_roi_0_100: roiR && score != null ? r1(roiScore(Number(score), roiR.roi, roiR.roi_lo)) : null,
     roi_tags: [],
