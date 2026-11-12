@@ -59,6 +59,7 @@ async function api(path, request, env, url) {
     const send = r => (r && r.status && r.body ? jsonResponse(r.body, r.status) : jsonResponse(r));
     if (get && path === "/api/main-board/current") return send(await apiCurrent(sql, cfg, await resolveSlate(sql, cfg, url), url, VERSION));
     if (get && path === "/api/main-board/filters") return send(await apiFilters(sql, cfg, await resolveSlate(sql, cfg, url), VERSION));
+    if (post && path === "/api/main-board/roi-snapshot") return send(await roiSnapshot(sql, cfg, await resolveSlate(sql, cfg, url), VERSION));
     if (get && path === "/api/main-board/dossier") return send(await apiDossier(sql, cfg, url, VERSION));
     if (get && path === "/api/main-board/health") return send(await apiHealth(sql, cfg, url, VERSION));
     if (post && path === "/api/main-board/health/rerun") return send(await apiHealthRerun(sql, cfg, env, await readJsonSafe(request), VERSION));
