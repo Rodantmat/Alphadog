@@ -1444,6 +1444,20 @@ def pick(conn, day, require_fresh=True):
             print(f"  {day}: PORTFOLIO {name} k{k} {size}-pick {structure} -> {st}: " +
                   "; ".join(f"{l['player']} {l['prop']} {l['side']} {float(l['line']):g}" for l in slip), flush=True)
             n += 1
+            if PORTFOLIO_UNITS[name][0].startswith('pb:') and pools.get('__pb__') is not None:
+                try:
+                    uid_ = PORTFOLIO_UNITS[name][0].split(':', 1)[1]
+                    c_, gc_, _pc = PB.candidates(pools['__pb__'], uid_)
+                    if uid_ in PB.BANS:
+                        ban_ = set()
+                        for b_ in PB.BANS[uid_]:
+                            sb_ = PB.unit_slip(pools['__pb__'], b_)
+                            if sb_:
+                                ban_ |= {x['player'] for x in sb_}
+                        c_ = [x for x in c_ if x['player'] not in ban_]
+                    store_next_legs(conn, day, name, k, c_, gc_)
+                except Exception as e:  # noqa: BLE001
+                    print(f"  next-legs failed for {name}: {type(e).__name__}: {e}", flush=True)
     # THIN-NIGHT FALLBACK (owner 2026-10-27 15:33 PT "Deploy it" - the best balance of research_pp_fallback_rule run 40594721780):
     # when portfolio B builds <= trigger slips (1) its units are replaced by 3-pick POWER slips of the board's best UNDERS - standard
     # lines, any prop, final_hp >= floor (0.55), best final_hp first, <= 1 leg a game, >= 2 teams, 2 slips from different players,
