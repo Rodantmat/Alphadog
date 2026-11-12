@@ -155,7 +155,10 @@ export async function recentGames(sql, pids, beforeDate, n = 10) {
 export function lineType(r) {
   if (r.app === "prizepicks") {
     const k = String(r.pp_kind || "").toLowerCase();
-    return k === "goblin" ? "goblin" : k === "demon" ? "demon" : "regular";
+    // 2026-11-12 (owner: "labeling and parsing error can't be happening"): board_tiers_v2 stores kind 'unknown' (no anchor) for rungs it
+    // cannot classify, and a missing tier row is null - both used to fall through to "regular", so goblins showed as Regular T0 (Goodwin
+    // steals 0.5, Maxey turnovers 1.5, Aldama FTA 0.5). A leg is Regular only when the tier table says standard; anything else is unverified.
+    return k === "goblin" ? "goblin" : k === "demon" ? "demon" : (k === "standard" || k === "regular") ? "regular" : "unverified";
   }
   if (r.app === "underdog") {
     const m = num(r.app_mult);
