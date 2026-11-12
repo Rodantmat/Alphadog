@@ -199,6 +199,7 @@ def flex_slips(uid, legs):
     pool = [l for l in legs if l["lv"] in lvs and l["side"] in SIDES[sdn] and (PROPS[prn] is None or l["g"] in PROPS[prn])]
     cand = [l for l in sorted(pool, key=lambda l: -(l[key] if l.get(key) is not None else -1))
             if fl is None or (l[fk] if l.get(fk) is not None else -1) >= fl][sk:]
+    LAST_RANK[uid] = cand      # owner 2026-11-12: the unit's ranked candidates for "sub the next ranked candidate"
     out, used = [], set()
     for _ in range(ns):
         s1, pl, gm = [], set(), set()
