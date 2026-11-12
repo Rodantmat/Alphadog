@@ -65,7 +65,10 @@ def payout(legs, rj, structure="dynamic"):
     return float((tab.get(str(n)) or {}).get(str(sum(1 for l in live if l["hit"])), 0.0))
 
 
-def top_multiplier(n, legs, rj):
+def top_multiplier(n, legs, rj, structure="dynamic"):
+    if structure == "perfect":      # owner 2026-11-12: Perfect rule shown on the screen (all legs must hit)
+        tab = rj["perfect_all_less"] if all(l["side"] == "Under" for l in legs) else rj["perfect_regular"]
+        return float(tab[str(n)])
     tab = rj["dynamic_all_less"] if all(l["side"] == "Under" for l in legs) else rj["dynamic_regular"]
     return float(tab[str(n)][str(n)])
 
