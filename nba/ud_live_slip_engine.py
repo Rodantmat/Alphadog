@@ -275,6 +275,12 @@ def insert_flex(conn, day, craw, fresh, teams, t_sd):
                          (day, 'C', f"{uid} {UPC.FLEX_SHORT[uid]}", len(slip), 'flex', k, json.dumps(UPC.slip_json(uid, slip)),
                           0.0 if t_sd else 1.0, f"stand_down:{t_sd}" if t_sd else 'live', flag))
             n_rows += 1
+            try:     # owner 2026-11-12: this unit's ranked candidates for "sub the next ranked candidate" (strategy key = the Slips screen's track label for the row)
+                import next_legs_store as NL
+                NL.store(conn, day, f"UD C {uid} {UPC.FLEX_SHORT[uid]} {len(slip)}F", k, [dict(l, unit=uid) for l in UPC.LAST_RANK.get(uid, [])],
+                         exclude_players={x['player'] for s_ in sl for x in s_})
+            except Exception as e:  # noqa: BLE001
+                print(f"  {day}: C {uid} next-ranked list not stored ({e})", flush=True)
             print(f"  {day}: C {uid} Flex slip {k}: " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} m {l['m']} p_hat {l['ph']:.3f}" for l in slip), flush=True)
     return n_rows
 
