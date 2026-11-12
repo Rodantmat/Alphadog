@@ -249,6 +249,10 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     calibration_shift_logit: num(r.cal_shift),
     edge_0_100: hp == null ? null : r1(hp - 100 * breakeven),     // hit probability minus the leg's own break-even, in points
     breakeven_0_100: r1(100 * breakeven),
+    roi_0_100: roiR ? r1(roiR.roi * 100) : null, roi_floor_0_100: roiR ? r1(roiR.roi_lo * 100) : null,
+    roi_hit_rate_0_100: roiR ? r1(roiR.p * 100) : null, roi_model_hp_0_100: roiR ? r1(roiR.p_cal * 100) : null,
+    roi_mult: roiR ? Math.round(roiR.mult * 100) / 100 : null, roi_sample_n: roiR ? roiR.n : null,
+    roi_tags: [],
     interpolated: !!r.interpolated,
     line_type: lt,
     line_type_label: lineTypeLabel(lt),
