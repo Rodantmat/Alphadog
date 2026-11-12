@@ -775,7 +775,7 @@ def pick():
             log(f"PP sub bank: {n_add} standard Unders added to the pool")
         except Exception as e:
             log(f"PP sub bank failed, nothing else affected: {e}")
-    if FAPP != "PP":
+    if True:
         try:
             bank_add(conn, ctx, d, legs, pool, used)
         except Exception as e:
