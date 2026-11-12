@@ -279,7 +279,7 @@ function leanLeg(l){return {player:l.player,prop:l.prop,side:l.side,line:l.line,
 function doSave(){var d=window.PD,out=[],refs=[],bad=0;var msg=document.getElementById('saveMsg');
   d.slips.forEach(function(s){if(s.saved)return;var k=alive(s);
     if(!s.save){if(s.wasSaved){out.push({app:s.app,name:s.name,save:false});refs.push(s)}return}
-    if(k.length<2){bad++;return}
+    if(k.length<2){if(s.legs.some(function(l){return l.removed}))bad++;return}
     var t=tiersOf(s),md=modeOf(s);out.push({app:s.app,name:s.name,save:true,mode:md,structure:modeName(s.app,md)+' '+k.length+'-pick',legs:k.map(leanLeg),mult:t?(t[k.length]||0):null,tiers:t});refs.push(s)});
   if(!out.length){msg.textContent=bad?'A slip needs at least 2 legs to be saved.':'Nothing new to save.';return}
   var b=document.getElementById('saveBtn');b.disabled=true;msg.textContent='Saving…';
