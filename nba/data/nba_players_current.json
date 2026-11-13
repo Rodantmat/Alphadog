@@ -4811,6 +4811,19 @@
       "team_abbreviation": "SAC"
     },
     {
+      "id": 203486,
+      "full_name": "Mason Plumlee",
+      "last_comma_first": "Plumlee, Mason",
+      "roster_status": 1,
+      "from_year": "2013",
+      "to_year": "2026",
+      "player_code": "mason_plumlee",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
+    },
+    {
       "id": 1641764,
       "full_name": "Brandin Podziemski",
       "last_comma_first": "Podziemski, Brandin",
