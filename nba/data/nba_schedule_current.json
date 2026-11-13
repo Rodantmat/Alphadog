@@ -24566,8 +24566,8 @@
       "away_team_tricode": "TOR",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24581,8 +24581,8 @@
       "away_team_tricode": "DET",
       "arena_name": "Capital One Arena",
       "arena_city": "Washington",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT2",
       "game_label": ""
     },
     {
@@ -24596,8 +24596,8 @@
       "away_team_tricode": "DAL",
       "arena_name": "Target Center",
       "arena_city": "Minneapolis",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24611,8 +24611,8 @@
       "away_team_tricode": "CHA",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
