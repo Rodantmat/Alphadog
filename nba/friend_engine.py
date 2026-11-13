@@ -739,6 +739,27 @@ def pick():
         except Exception as e:
             log(f"owner mirror failed, base slips unaffected: {e}")
             conn.rollback()
+    # JESSI CAP (owner 2026-11-13 14:17 PT: "for Jessi limit to the 5 best slips on the day, the ones with the most potential"): her page keeps at most 5 slips per app, ranked by the
+    # full slip's potential = chance every leg hits x the full-slip payout (product of leg p x leg multiplier). From the 2026-11-14 slate; today's pages and saves are never changed.
+    if TIER == "jessi" and d >= dt.date(2026, 11, 14) and len(slips) > 5 and len(slips) == len(rows):
+        try:
+            def _pot(r):
+                v = 1.0
+                for l_ in r["legs"]:
+                    m_ = l_.get("m") or l_.get("factor") or 1.8
+                    v *= float(l_.get("p") or 0.5) * float(m_)
+                return v
+            keep = sorted(sorted(range(len(rows)), key=lambda i: -_pot(rows[i]))[:5])
+            log(f"Jessi cap: {len(rows)} slips -> 5 (dropped potentials " + ", ".join(f"{rows[i]['code']}={_pot(rows[i]):.2f}" for i in range(len(rows)) if i not in keep) + ")")
+            slips[:] = [slips[i] for i in keep]
+            rows[:] = [rows[i] for i in keep]
+            cnt = defaultdict(int)
+            for sl_, r_ in zip(slips, rows):
+                cnt[r_["size"]] += 1
+                r_["no"] = cnt[r_["size"]]
+                sl_["name"] = f"{APP_LABEL} {r_['size']}-pick {cnt[r_['size']]}"
+        except Exception as e:  # noqa: BLE001
+            log(f"Jessi cap failed, all slips kept: {e}")
     # PRIZEPICKS NEVER EMPTY (owner 2026-11-10, Jessi had no PrizePicks slip on a thin board): with no slip built, the same thin-night rule the owner page uses - a
     # 3-pick POWER of the best standard Unders (final_hp >= 0.55), one leg a game, >= 2 teams, never a repeat of a slip already forbidden to this page
     if FAPP == "PP" and not slips:
