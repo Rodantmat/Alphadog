@@ -4,7 +4,7 @@ import json
 import urllib.request
 
 URL = "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev/api/slips/high-hit?refresh=1"
-req = urllib.request.Request(URL, data=b"{}", method="POST", headers={"content-type": "application/json"})
+req = urllib.request.Request(URL, data=b"{}", method="POST", headers={"content-type": "application/json", "user-agent": "curl/8.5.0", "accept": "*/*"})
 j = json.load(urllib.request.urlopen(req, timeout=150))
 print("snapshot", j.get("snapshot"), "slips", len(j.get("generated_slips") or []), "slate", (j.get("slate") or {}).get("date"))
 pl = j.get("pp_live") or {}
