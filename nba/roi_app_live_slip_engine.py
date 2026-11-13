@@ -155,6 +155,14 @@ def insert(conn, app, day, name, rule, k, s, pr):
     lj = [{"player": l["player"], "player_id": l["player_id"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": l["m"],
            "p": round(l["p"], 4), "team": l.get("team"), "event_id": l["event_id"], "tier": "R", "kind": l["kind"],
            "roi": round(float(l["roi"]), 4), "score_roi": round(float(l["score_roi"]), 2)} for l in s]
+    if app == "fliff":   # owner 2026-11-13 13:46 PT: the Slips screen finds a Fliff leg by its game (matchup); legs stored without it were all shown OFF BOARD
+        mu = {r[0]: r[1] for r in conn.execute("""SELECT DISTINCT ON (nba_ref.norm_name(player)) nba_ref.norm_name(player), matchup FROM nba_market.fliff_pickem_board
+                                                  WHERE game_date = %s AND snapshot_ts = (SELECT max(snapshot_ts) FROM nba_market.fliff_pickem_board WHERE game_date = %s)
+                                                  ORDER BY nba_ref.norm_name(player)""", (day, day)).fetchall()}
+        for l_ in lj:
+            m_ = mu.get(conn.execute("SELECT nba_ref.norm_name(%s)", (l_["player"],)).fetchone()[0])
+            if m_:
+                l_["matchup"] = m_
     if app == "sleeper":
         tiers = SL.flex_tiers(ms, pr[1], pr[2])
         model, extra = tiers[size], json.dumps(tiers)
