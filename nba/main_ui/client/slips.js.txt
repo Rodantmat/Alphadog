@@ -379,7 +379,7 @@ function autoSwapStartedLegs(){
     if(!slipUnchecked.has(slipIdx))slipUnchecked.set(slipIdx,new Set());
     const subs=slipSubs.get(slipIdx),un=slipUnchecked.get(slipIdx);
     for(let li=0;li<slip.legs.length;li++){   // legs grow as substitutes are appended, so a started substitute is swapped too
-      if(un.has(li)||!(legStarted(slip.legs[li],now)||ppChanged(slip.legs[li])))continue;
+      if(un.has(li)||!(legStarted(slip.legs[li],now)||ppChanged(slip.legs[li],slip)))continue;
       un.add(li);autoSwapped.add(slipIdx+'|'+li);changed=true;
       const kept=slip.legs.filter((l,i)=>!un.has(i));
       const sub=takeBestPoolLeg(kept,slip,slip.legs[li]);
