@@ -98,7 +98,7 @@ bs AS (
   FROM (SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.baseline_hp, b0.cal_shift, b0.confidence,
                b0.interpolated, b0.built_at, b0.final_hp, b0.score,
                b0.edge, b0.final_hp model_hp, b0.score model_score, th.market_hp, th.anchor hp_anchor,
-               th.dk_line, th.dk_p, th.pp_line, th.fit_set true_fit, ${UD_HIDE("b0")} ud_hide
+               th.dk_line, th.dk_p, th.pp_line, th.fit_set true_fit, ${UD_HIDE("b0")} ud_hide, ${UD_PRED("b0")} ud_pred
         FROM nba_score.board_scored b0
         LEFT JOIN nba_score.board_true_hp th ON th.game_date = b0.game_date AND th.player_id = b0.player_id AND th.prop = b0.prop
                                             AND th.line = b0.line AND th.side = b0.side
