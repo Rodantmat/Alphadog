@@ -77,7 +77,7 @@ def enforce(slips, cands, cfg):
         # legs to replace: any at the cap, then the surplus of repeated legs beyond reuse_max (the most-used first, the later leg first)
         bad = [i for i, l in enumerate(legs) if count[pid_of(l)] >= cap]
         rest = [i for i, l in enumerate(legs) if 0 < count[pid_of(l)] < cap]
-        surplus = max(0, len(rest) - max(0, reuse_max - 0))
+        surplus = max(0, len(rest) - reuse_max)
         rest.sort(key=lambda i: (-count[pid_of(legs[i])], -i))
         bad += rest[:surplus]
         used_pids = {pid_of(l) for i, l in enumerate(legs) if i not in bad}
