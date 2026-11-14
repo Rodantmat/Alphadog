@@ -1,0 +1,46 @@
+name: NBA Slip Exposure (manual)
+
+# Runs nba/slip_exposure_coordinator.py on a slate (dry run prints only). The scheduled run is a step inside the afternoon pipeline (P3).
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "slate date YYYY-MM-DD (blank = today PT)"
+        default: ""
+        required: false
+      apps:
+        description: "comma list: prizepicks,underdog,sleeper,fliff,betr (blank = all)"
+        default: ""
+        required: false
+      dry:
+        description: "1 = print only, write nothing"
+        default: "1"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-slip-exposure
+  cancel-in-progress: false
+
+jobs:
+  exposure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" numpy pandas
+      - name: Enforce per-app exposure rules
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EXP_DATE: ${{ github.event.inputs.date }}
+          EXP_APPS: ${{ github.event.inputs.apps }}
+          EXP_DRY: ${{ github.event.inputs.dry }}
+          EXP_FORCE: "1"
+        run: python -u nba/slip_exposure_coordinator.py
