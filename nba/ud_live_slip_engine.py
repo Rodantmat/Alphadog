@@ -146,7 +146,9 @@ def load_legs(conn, day):
       WITH b AS (
         SELECT b.event_id, nba_ref.norm_name(b.player) pn, b.player, b.market_key, b.side, b.line,
                coalesce(b.multiplier, round(((CASE WHEN b.price < 0 THEN 1 + 100.0/(-b.price) ELSE 1 + b.price/100.0 END)/sqrt(3))::numeric, 2))::float m,
-               replace(replace(b.market_key,'_alternate',''),'player_','') mk
+               replace(replace(b.market_key,'_alternate',''),'player_','') mk,
+               EXISTS (SELECT 1 FROM nba_market.ud_line_flags pf WHERE pf.game_date=b.game_date AND pf.snapshot_label='window'
+                       AND pf.market_key=b.market_key AND pf.player=b.player AND pf.line=b.line AND pf.prediction_market) pm
         FROM nba_market.board_snapshots b
         WHERE b.bookmaker='underdog' AND b.snapshot_label='window' AND b.game_date=%s
           AND NOT (%s::boolean AND b.side='Under' AND b.market_key IN ('player_blocks','player_blocks_alternate'))
