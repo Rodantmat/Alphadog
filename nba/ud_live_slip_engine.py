@@ -152,7 +152,7 @@ def load_legs(conn, day):
           AND NOT (%s::boolean AND b.side='Under' AND b.market_key IN ('player_blocks','player_blocks_alternate'))
           AND NOT (%s::boolean AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf WHERE uf.game_date=b.game_date AND uf.snapshot_label='window'
                                            AND uf.market_key=b.market_key AND uf.player=b.player AND uf.line=b.line AND uf.hide)))
-      SELECT b.event_id, b.pn, nm.player_id, b.mk, b.market_key, b.side, b.line, b.m,
+      SELECT b.event_id, b.pn, nm.player_id, b.mk, b.market_key, b.side, b.line, b.m, b.pm,
              f.final_hp::float, f.baseline_hp::float, f.score::float, left(pl.position,1), f.confidence::float, f.c_market::float
       FROM b JOIN nba_ref.player_name_map nm ON nm.norm_name = b.pn
       JOIN nba_score.final_hp f ON f.game_date=%s AND f.player_id=nm.player_id AND f.side=b.side AND f.line=b.line
