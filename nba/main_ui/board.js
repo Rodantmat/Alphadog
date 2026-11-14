@@ -129,7 +129,7 @@ mk AS (SELECT * FROM unnest($3::text[], $4::text[]) AS m(market_key, prop)),
 ${lookupCtes("bs", "'underdog', 'sleeper', 'fliff'")}
 SELECT bs.game_date::text game_date, bs.app, bs.player_id, bs.player, bs.prop, bs.line::float line, bs.side, bs.final_hp::float final_hp,
        bs.model_hp::float model_hp, bs.model_score::float model_score, bs.market_hp::float market_hp, bs.hp_anchor, bs.dk_line::float dk_line,
-       bs.dk_p::float dk_p, bs.pp_line::float pp_line, bs.true_fit, bs.ud_hide,
+       bs.dk_p::float dk_p, bs.pp_line::float pp_line, bs.true_fit, bs.ud_hide, bs.ud_pred,
        bs.baseline_hp::float baseline_hp, bs.cal_shift::float cal_shift, bs.confidence::float confidence, bs.score::float score, bs.edge::float edge,
        bs.interpolated, bs.built_at, tm.team_id, tm.position, t.abbreviation team_abbr, t.full_name team_name, gc.n games_365,
        g.game_id, g.game_datetime_utc, g.home_team_id, g.away_team_id, ht.full_name home_name, at.full_name away_name,
