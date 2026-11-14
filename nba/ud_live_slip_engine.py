@@ -412,7 +412,7 @@ def pick(conn, day):
     # (the config row says T today); rows are portfolio 'C', structure 'flex', status 'live'
     if live_pf in ('T', 'C'):
         try:
-            fraw = UPC.calibrate([dict(l) for l in UPT.raw_legs(legs)], UPC.consensus(conn, day))
+            fraw = UPC.calibrate([dict(l) for l in UPT.raw_legs(legs_flex)], UPC.consensus(conn, day))
         except Exception as e:  # noqa: BLE001 - the Flex unit must never take the other slips down with it
             print(f"  {day}: portfolio C Flex - calibration failed ({e}); the other slips are unaffected", flush=True)
             fraw = []
