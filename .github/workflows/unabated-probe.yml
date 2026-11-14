@@ -4,36 +4,87 @@ on:
     inputs:
       step:
         description: "probe step"
-        default: "1"
+        default: "2"
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
-      - name: Probe Unabated API
+      - name: Probe Unabated API (step 2)
         env:
           UNABATED_API_KEY: ${{ secrets.UNABATED_API_KEY }}
         run: |
-          cat > probe.py <<'EOF'
-          import os, json, urllib.request, urllib.error, time
+          cat > probe2.py <<'EOF'
+          import os, json, time, urllib.request, urllib.error, urllib.parse
           B = "https://data.unabated.com"
-          K = os.environ.get("UNABATED_API_KEY", "")
-          print("key present:", bool(K), "len:", len(K))
-          def get(path, n=1800):
-              req = urllib.request.Request(B + path, headers={"X-Api-Key": K, "Accept": "application/json"})
+          K = os.environ["UNABATED_API_KEY"]
+          def call(path, method="GET", data=None, timeout=60):
+              h = {"X-Api-Key": K, "Accept": "application/json"}
+              body = None
+              if data is not None:
+                  body = json.dumps(data).encode(); h["Content-Type"] = "application/json"
+              req = urllib.request.Request(B + path, data=body, headers=h, method=method)
               try:
-                  with urllib.request.urlopen(req, timeout=30) as r:
-                      body = r.read().decode()
-                      print("GET", path, r.status, len(body)); print(body[:n]); return body
+                  with urllib.request.urlopen(req, timeout=timeout) as r:
+                      return r.status, r.read().decode()
               except urllib.error.HTTPError as e:
-                  body = e.read().decode()
-                  print("GET", path, e.code, body[:600]); return None
-              finally:
-                  time.sleep(5.5)
-          get("/league")
-          for lg in ("nba",):
-              for mt in ("straight", "props"):
-                  get(f"/market/{lg}/{mt}/sources", 2500)
-          get("/market/nba/props/odds", 2500)
+                  return e.code, e.read().decode()
+              except Exception as e:
+                  return -1, repr(e)
+          st, txt = call("/market/nba/props/odds", timeout=120)
+          print("odds", st, len(txt))
+          d = json.loads(txt)
+          found = {73: [], 121: []}
+          def walk(o):
+              if isinstance(o, dict):
+                  if "marketSourceLines" in o:
+                      for sid, ln in o["marketSourceLines"].items():
+                          if int(sid) in found and len(found[int(sid)]) < 4 and not ln.get("disabled"):
+                              found[int(sid)].append(ln)
+                  for v in o.values(): walk(v)
+              elif isinstance(o, list):
+                  for v in o: walk(v)
+          walk(d)
+          for sid, lines in found.items():
+              print("SOURCE", sid, "lines found:", len(lines))
+              for ln in lines:
+                  print(json.dumps({k: ln.get(k) for k in ("deepLink","marketLineId","points","price")}))
+          time.sleep(6)
+          ids = [str(l["marketLineId"]) for l in found[73][:3]]
+          pts = [str(l["points"]) for l in found[73][:3]]
+          if ids:
+              q = "ids=" + ",".join(ids) + "&points=" + ",".join(pts)
+              st, txt = call("/deeplink?" + q)
+              print("DEEPLINK multi", st, txt[:2500])
+              time.sleep(6)
+              st, txt = call("/deeplink?ids=%s&points=%s" % (ids[0], pts[0]))
+              print("DEEPLINK single", st, txt[:2500])
+          # betslip text generation
+          time.sleep(6)
+          st, txt = call("/api/v1/bet/generate", "POST", {"type": "text", "content": {"text": "LeBron James over 25.5 points, Stephen Curry over 4.5 threes"}, "generateMobileLinks": True})
+          print("BETGEN", st, txt[:1500])
+          try:
+              guid = json.loads(txt).get("requestId")
+          except Exception:
+              guid = None
+          if guid:
+              for _ in range(6):
+                  time.sleep(6)
+                  st, t2 = call("/api/v1/bet/status/" + str(guid))
+                  print("BETSTATUS", st, t2[:3000])
+                  if '"Complete"' in t2 or '"Error"' in t2: break
+          json.dump({"found": {str(k): [x.get("deepLink") for x in v] for k, v in found.items()}}, open("urls.json", "w"))
           EOF
-          python3 probe.py
+          python3 -u probe2.py
+      - name: Resolve gambly links (redirect chain)
+        run: |
+          python3 - <<'EOF'
+          import json, subprocess
+          urls = []
+          for v in json.load(open("urls.json"))["found"].values(): urls += v[:2]
+          for u in urls:
+              print("URL", u)
+              for ua in ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1", "curl/8"):
+                  r = subprocess.run(["curl","-sS","-L","--max-redirs","6","-m","25","-A",ua,"-o","/dev/null","-D","-","-w","FINAL %{url_effective} %{http_code}\n",u],capture_output=True,text=True)
+                  print((r.stdout + r.stderr)[:2500].replace("set-cookie","set-c"))
+          EOF
