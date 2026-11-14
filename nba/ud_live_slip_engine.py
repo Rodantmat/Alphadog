@@ -173,7 +173,7 @@ def load_legs(conn, day):
     for b in best.values():
         for rk, s in (('final_hp', b['s_f']), ('baseline_hp', b['s_b']), ('final_score', b['s_s'])):
             legs.append({'rank_key': rk, 'game_date': None, 'player': b['player'], 'player_id': b['player_id'], 'prop': b['prop'],
-                         'tier': tier_of(b['m']), 'side': b['side'], 'line': b['line'], 'factor': b['m'], 'kind': b['kind'],
+                         'tier': tier_of(b['m']), 'side': b['side'], 'line': b['line'], 'factor': b['m'], 'kind': b['kind'], 'pred': b['pred'],
                          'hit': None, 'score': s, 'event_id': b['event_id'], 'position': b['position'],
                          'min_trend': None, 'form_gap': None, 'nv_window': None, 'fresh_out': None, 'n_rank': None})
     groups = defaultdict(list)
