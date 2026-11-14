@@ -20,6 +20,10 @@ on:
         description: "1 = pick mode only: add portfolio C's Flex unit to an already-logged slate (touches nothing else)"
         default: "0"
         required: false
+      dry:
+        description: "1 = build and print everything, then ROLL BACK (nothing written)"
+        default: "0"
+        required: false
 
 permissions:
   contents: read
