@@ -51,4 +51,5 @@ jobs:
           UDL_DATE: ${{ github.event.inputs.date }}
           UDL_FORCE: ${{ github.event.inputs.force }}
           UDL_ADD_FLEX: ${{ github.event.inputs.add_flex }}
+          UDL_DRY: ${{ github.event.inputs.dry }}
         run: python -u nba/ud_live_slip_engine.py
