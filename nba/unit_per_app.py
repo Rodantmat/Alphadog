@@ -115,6 +115,16 @@ def update(conn, last):
             u = n
         out[app] = {"unit": u, "profit": round(prof, 2), "next_raise_at": round(up_x * u * (u + 1) / 2, 2) if u + 1 <= max_ else None,
                     "step_down_below": round(up_x * (u - 1) * u / 2, 2) if u - 1 >= floor_ else None, "up_x": up_x}
+    flat = pa.get("flat")      # owner 2026-11-13 19:37 PT: flat units, no ladder - PrizePicks / Sleeper $10, Underdog / Fliff / Betr $5; the owner changes them by hand
+    if flat:
+        ff = dt.date.fromisoformat(str(flat.get("from") or pa["from"])[:10])
+        for a in APPS:
+            if flat.get(a) is None:
+                continue
+            fu = float(flat[a])
+            conn.execute("UPDATE nba_score.live_unit_app SET unit_usd = %s WHERE app = %s AND game_date >= %s", (fu, a, ff))
+            if a in out:
+                out[a].update({"unit": fu, "next_raise_at": None, "step_down_below": None})
     conn.execute("""UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{per_app,units}', %s::jsonb)
                     WHERE config_key = 'stake_unit'""", (json.dumps({UI_NAME[a]: v for a, v in out.items()}),))
     for a, v in out.items():
