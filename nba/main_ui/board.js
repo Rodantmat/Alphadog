@@ -273,6 +273,7 @@ export function rowToApi(r, i, slate, games, insightCtx) {
     hp_anchor: r.hp_anchor || null, dk_line: num(r.dk_line), dk_p_over_0_100: r.dk_p == null ? null : r1(num(r.dk_p) * 100), pp_line: num(r.pp_line),
     hp_fit_set: r.true_fit || null, hp_is_market_anchored: 0,
     ud_hidden: r.ud_hide === true,
+    ud_prediction: r.ud_pred === true,
     calibration_shift_logit: num(r.cal_shift),
     edge_0_100: hp == null ? null : r1(hp - 100 * breakeven),     // hit probability minus the leg's own break-even, in points
     breakeven_0_100: r1(100 * breakeven),
