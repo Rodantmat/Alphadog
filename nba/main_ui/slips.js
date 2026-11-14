@@ -372,6 +372,7 @@ async function backtestContext(sql, cfg, names) {
   if (pa && pa.enabled && pa.units) {
     unit.byApp = Object.fromEntries(Object.entries(pa.units).map(([a, v]) => [a, Number(v && v.unit)]));
     unit.perApp = pa.units;
+    unit.flat = !!pa.flat;
     try {
       const ch = await q(sql, `SELECT app, unit_from f, unit_usd u, reason FROM nba_score.live_unit_app
                                WHERE game_date = (SELECT max(game_date) FROM nba_score.live_unit_app) AND unit_usd <> unit_from ORDER BY app`);
