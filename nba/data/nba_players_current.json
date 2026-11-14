@@ -729,6 +729,19 @@
       "team_abbreviation": "PHX"
     },
     {
+      "id": 1641780,
+      "full_name": "Johni Broome",
+      "last_comma_first": "Broome, Johni",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "johni_broome",
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
+    },
+    {
       "id": 1627759,
       "full_name": "Jaylen Brown",
       "last_comma_first": "Brown, Jaylen",
@@ -5277,6 +5290,19 @@
       "team_city": "Boston",
       "team_name": "Celtics",
       "team_abbreviation": "BOS"
+    },
+    {
+      "id": 1631115,
+      "full_name": "Orlando Robinson",
+      "last_comma_first": "Robinson, Orlando",
+      "roster_status": 1,
+      "from_year": "2022",
+      "to_year": "2026",
+      "player_code": "orlando_robinson",
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
     },
     {
       "id": 1631157,
