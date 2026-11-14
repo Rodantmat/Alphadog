@@ -358,7 +358,7 @@ def pick(conn, day):
     for pf, spec in PORTFOLIOS.items():
         seen = set()
         for comp, size, structure, cap in spec:
-            for k, slip in enumerate(E.build_day_slips(pool, comp, size, cap), start=1):
+            for k, slip in enumerate(E.build_day_slips(pool_flex if structure == 'flex' else pool, comp, size, cap), start=1):
                 key = (size, structure, tuple(sorted((l['player'], l['prop'], l['side'], l['line']) for l in slip)))
                 if key in seen:
                     continue
