@@ -94,7 +94,7 @@ bs AS (
   -- board_true_hp (2026-10-14 .. 10-22 main number) is no longer the main number: its fields stay beside it for reference only.
   SELECT b.game_date, b.app, b.player_id, b.player, b.prop, b.line, b.side, b.final_hp, b.baseline_hp, b.cal_shift,
          b.confidence, b.score, b.edge, b.interpolated, b.built_at, b.model_hp, b.model_score, b.market_hp, b.hp_anchor,
-         b.dk_line, b.dk_p, b.pp_line, b.true_fit, b.ud_hide
+         b.dk_line, b.dk_p, b.pp_line, b.true_fit, b.ud_hide, b.ud_pred
   FROM (SELECT b0.game_date, b0.app, b0.player_id, b0.player, b0.prop, b0.line, b0.side, b0.baseline_hp, b0.cal_shift, b0.confidence,
                b0.interpolated, b0.built_at, b0.final_hp, b0.score,
                b0.edge, b0.final_hp model_hp, b0.score model_score, th.market_hp, th.anchor hp_anchor,
