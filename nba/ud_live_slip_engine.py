@@ -346,6 +346,12 @@ def pick(conn, day):
     fresh = fresh_absences(conn, day)
     teams = leg_team(conn, day, {l['player_id'] for l in legs})
     pool = E.eligible_legs(legs)
+    # PREDICTION LEGS ARE POWER-ONLY (owner 2026-11-14): Underdog's app refuses Flex when any pick is a Prediction (udx / prediction_market) -
+    # 2026-11-14 C5 slip held Peyton Watson steals (udx) and could not be placed as a Flex. Flex builds use regular lines only.
+    legs_flex = [l for l in legs if not l.get('pred')]
+    pool_flex = E.eligible_legs(legs_flex)
+    print(f"  {day}: Underdog Prediction legs: {len({(l['player_id'], l['prop'], l['side'], l['line']) for l in legs if l.get('pred')})} unique "
+          f"(kept for Standard/Power, left out of every Flex)", flush=True)
     live_pf = ud_live_portfolio(conn)
     conn.execute("DELETE FROM nba_score.ud_live_slips WHERE game_date=%s", (day,))
     n_rows = 0
