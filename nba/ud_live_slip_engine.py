@@ -160,7 +160,7 @@ def load_legs(conn, day):
       LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = nm.player_id::text
       WHERE f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL AND b.m > 0""", (day, hide_bu, hide, day)).fetchall()
     best = {}
-    for ev, pn, pid, mk, mkey, side, line, m, s_f, s_b, s_s, pos, conf, cm in rows:
+    for ev, pn, pid, mk, mkey, side, line, m, pm, s_f, s_b, s_s, pos, conf, cm in rows:
         prop = MKT.get(mk)
         if not prop:
             continue
