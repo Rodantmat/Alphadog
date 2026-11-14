@@ -27,7 +27,15 @@ def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     a = L.unit_auto_cfg(conn)
     if not a.get('enabled'):
-        print("unit: earn the raise is off (a hand-set unit) - nothing to do", flush=True)
+        # owner 2026-11-13: flat hand-set units. The per-app record (live_unit_app) must still be rebuilt after every grade - the
+        # "Yesterday Results" text and the screen read it - so only the all-app ladder is skipped.
+        print("unit: earn the raise is off (a hand-set unit) - all-app ladder skipped, per-app record still updated", flush=True)
+        import unit_per_app as UPA0
+        UPA0.update(conn, last)
+        if os.environ.get('UNIT_DRY') == '1':
+            conn.rollback()
+        else:
+            conn.commit()
         return
     s0, _u, _h = L.unit_season_state(conn, last)
     days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM (
