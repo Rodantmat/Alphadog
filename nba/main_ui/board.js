@@ -17,6 +17,12 @@ const UD_HIDE = a => `(${a}.app = 'underdog'
           AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf JOIN unnest($3::text[], $4::text[]) um0(market_key, prop) ON um0.market_key = uf.base_market
                       WHERE uf.game_date = ${a}.game_date AND uf.hide AND uf.player = ${a}.player AND uf.line = ${a}.line AND um0.prop = ${a}.prop))`;
 
+// UNDERDOG PREDICTION LEGS (2026-11-14, owner: Flex is refused when any pick is a Prediction - they are Power / Standard only): a leg whose
+// (market, player, line) is flagged prediction_market in ud_line_flags. The Slips screen never offers one as a substitute for a Flex slip.
+const UD_PRED = a => `(${a}.app = 'underdog'
+          AND EXISTS (SELECT 1 FROM nba_market.ud_line_flags uf JOIN unnest($3::text[], $4::text[]) um1(market_key, prop) ON um1.market_key = uf.base_market
+                      WHERE uf.game_date = ${a}.game_date AND uf.prediction_market AND uf.player = ${a}.player AND uf.line = ${a}.line AND um1.prop = ${a}.prop))`;
+
 // Builds the enriched-leg query. `where` is extra SQL on board_scored alias b (its params start at $6). `screen` false keeps the unplaceable Underdog legs (flagged ud_hide).
 // STARTED GAMES (owner 2026-10-20 19:44 PT: "it should not show started legs/games"): on a LIVE slate (today or later, Pacific) a leg
 // whose game has tipped is no longer playable - the server leaves it out of the board AND of the filter counts (the browser's own
