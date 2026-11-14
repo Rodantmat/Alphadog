@@ -874,6 +874,16 @@ jobs:
           fi
           python -u nba/betr_live_slip_engine.py
 
+      # EXPOSURE RULES, THE OTHER FOUR APPS (owner 2026-11-13): after every engine has written, before the screen is built. Soft.
+      - name: Exposure rules (Underdog, Sleeper, Fliff, Betr)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EXP_DATE: ${{ steps.d.outputs.asof }}
+          EXP_APPS: "underdog,sleeper,fliff,betr"
+        run: python -u nba/slip_exposure_coordinator.py
+
       # THE SLIPS SCREEN, PRECOMPUTED (owner 2026-10-26 18:31 PT: "it should run in a pipeline before and just be retrieved by the ui"):
       # every app's picks are in - the UI worker builds the screen once and stores it; the owner's views read the stored copy. Soft.
       - name: Warm the Slips screen (precomputed snapshot)
