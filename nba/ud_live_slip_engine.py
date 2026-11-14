@@ -303,7 +303,7 @@ def add_flex(conn, day):
     sd = stand_down(conn, day)
     fresh = fresh_absences(conn, day)
     teams = leg_team(conn, day, {l['player_id'] for l in legs})
-    craw = UPC.calibrate([dict(l) for l in UPT.raw_legs(legs)], UPC.consensus(conn, day))
+    craw = UPC.calibrate([dict(l) for l in UPT.raw_legs([l for l in legs if not l.get('pred')])], UPC.consensus(conn, day))
     n = insert_flex(conn, day, craw, fresh, teams, sd if sd in ('final_week', 'postseason') else None)
     if os.environ.get('UDL_DRY') == '1':
         conn.rollback(); print(f"  {day}: UDL_DRY=1 - {n} Flex slip(s) built and ROLLED BACK", flush=True); return
