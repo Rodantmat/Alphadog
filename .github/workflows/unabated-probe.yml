@@ -1,0 +1,39 @@
+name: unabated-probe
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "probe step"
+        default: "1"
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe Unabated API
+        env:
+          UNABATED_API_KEY: ${{ secrets.UNABATED_API_KEY }}
+        run: |
+          cat > probe.py <<'EOF'
+          import os, json, urllib.request, urllib.error, time
+          B = "https://data.unabated.com"
+          K = os.environ.get("UNABATED_API_KEY", "")
+          print("key present:", bool(K), "len:", len(K))
+          def get(path, n=1800):
+              req = urllib.request.Request(B + path, headers={"X-Api-Key": K, "Accept": "application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      body = r.read().decode()
+                      print("GET", path, r.status, len(body)); print(body[:n]); return body
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  print("GET", path, e.code, body[:600]); return None
+              finally:
+                  time.sleep(5.5)
+          get("/league")
+          for lg in ("nba",):
+              for mt in ("straight", "props"):
+                  get(f"/market/{lg}/{mt}/sources", 2500)
+          get("/market/nba/props/odds", 2500)
+          EOF
+          python3 probe.py
