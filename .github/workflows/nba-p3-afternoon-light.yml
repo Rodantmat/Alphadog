@@ -749,6 +749,17 @@ jobs:
           LS_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/live_slip_engine.py
 
+      # EXPOSURE RULES, PRIZEPICKS (owner 2026-11-13: leg in 2 slips max, 2 repeated legs per slip, no slip pair sharing more than 2, per app):
+      # nba/slip_exposure_coordinator.py swaps / drops before the quote step prices the slips. Soft; gate classification_config slip_exposure_v2.
+      - name: Exposure rules (PrizePicks)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EXP_DATE: ${{ steps.d.outputs.asof }}
+          EXP_APPS: "prizepicks"
+        run: python -u nba/slip_exposure_coordinator.py
+
       # PRIZEPICKS' OWN PRICE FOR EVERY SLIP (2026-10-18, owner: "be sure we are using the proper multipliers"): the payout map
       # in SLIPQ mode quotes each engine slip on PrizePicks' quote endpoint (nothing is placed) and stores the exact tiers in
       # nba_score.live_slip_quotes - the Slips screen shows PrizePicks' number and the grade pays it. Dispatched (soft, its own
