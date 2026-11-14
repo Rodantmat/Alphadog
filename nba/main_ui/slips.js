@@ -1030,6 +1030,7 @@ async function buildHighHit(sql, cfg, url, version) {
                next_at: v.next_raise_at != null ? Number(v.next_raise_at) : null, accumulated: Number(v.profit),
                down_below: v.step_down_below != null ? Number(v.step_down_below) : null, changed_from: chg.has(a) ? chg.get(a) : null };
     });
+    if (bt.unit.flat) unitTable = null;   // owner 2026-11-13: flat units by hand - no unit table on top, each slip shows its own bet amount
     hiddenNotes = notes.slice();
     notes.length = 0;
   }
