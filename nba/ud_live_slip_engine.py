@@ -167,7 +167,7 @@ def load_legs(conn, day):
         key = (pn, prop, side, float(line))
         if key not in best or m < best[key]['m']:      # duplicates keep the LOWEST modifier, as certified
             best[key] = dict(event_id=ev, player=pn, player_id=str(pid), prop=prop, side=side, line=float(line), m=m,
-                             kind='alt' if mkey.endswith('_alternate') else 'main', s_f=s_f, s_b=s_b,
+                             kind='alt' if mkey.endswith('_alternate') else 'main', pred=bool(pm), s_f=s_f, s_b=s_b,
                              s_s=market_free_score(conn, s_s, s_f, conf, cm), position=pos)
     legs = []
     for b in best.values():
