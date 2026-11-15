@@ -66,7 +66,17 @@ function markPP(l, ix) {
   if (byId && near(byId.line, line) && byId.odds === want) res = byId;
   const cand = ix.byKey.get(normName(l.player_name) + "|" + String(l.canonical_prop_key)) || [];
   if (!res) res = cand.find(r => near(r.line, line) && r.odds === want) || null;
-  if (res) { l.pp_now = want; l.live_now = "ok"; }
+  // 2026-11-14 (owner 19:30 PT: three regular legs turned into demons - same player, stat, line, More - and the stored link said "lineup not available"):
+  // a Power-slip leg whose regular projection is gone but which sits at the SAME line as a demon on the board is KEPT as that demon and the deep link is rebuilt
+  // with the demon's own projection id. Only More (a demon takes More only), only Power slips (l._keepDemon, set in overlayLive); everything else swaps as before.
+  let demonKept = false;
+  if (!res && want === "standard" && l._keepDemon && sideOf(l) === "more") {
+    const cand0 = ix.byKey.get(normName(l.player_name) + "|" + String(l.canonical_prop_key)) || [];
+    const dm = cand0.find(r => near(r.line, line) && r.odds === "demon");
+    if (dm) { res = dm; demonKept = true; }
+  }
+  if (res && demonKept) { l.pp_now = "standard"; l.live_now = "ok"; l.demon_kept = true; l.is_demon = 1; l.is_goblin = 0; l.line_type = "demon"; }
+  else if (res) { l.pp_now = want; l.live_now = "ok"; }
   else {
     const same = cand.find(r => near(r.line, line));
     l.pp_now = same ? same.odds : (cand.length ? "moved" : "missing");
