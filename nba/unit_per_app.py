@@ -122,7 +122,10 @@ def update(conn, last):
             if flat.get(a) is None:
                 continue
             fu = float(flat[a])
-            conn.execute("UPDATE nba_score.live_unit_app SET unit_usd = %s WHERE app = %s AND game_date >= %s", (fu, a, ff))
+            # per-app start (2026-11-15: Underdog $5 -> $10 from 11-15 on; earlier slates keep the unit they were played at)
+            fa = (flat.get("from_by_app") or {}).get(a)
+            fa = dt.date.fromisoformat(str(fa)[:10]) if fa else ff
+            conn.execute("UPDATE nba_score.live_unit_app SET unit_usd = %s WHERE app = %s AND game_date >= %s", (fu, a, fa))
             if a in out:
                 out[a].update({"unit": fu, "next_raise_at": None, "step_down_below": None})
     conn.execute("""UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{per_app,units}', %s::jsonb)
