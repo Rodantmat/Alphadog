@@ -162,7 +162,25 @@ def run_app(conn, app, day, cfg, dry):
         fl_mu = {r[0]: r[1] for r in conn.execute("""SELECT DISTINCT ON (nba_ref.norm_name(player)) nba_ref.norm_name(player), matchup FROM nba_market.fliff_pickem_board
                   WHERE game_date = %s AND snapshot_ts = (SELECT max(snapshot_ts) FROM nba_market.fliff_pickem_board WHERE game_date = %s)
                   ORDER BY nba_ref.norm_name(player)""", (day, day)).fetchall()}
-    res = enforce(slips, cands, cfg)
+    if app == "fliff":
+        # every Fliff leg and candidate gets its matchup BEFORE the rule runs, so the one-leg-per-game test compares like with like
+        _nn = {}
+        def _mu(l):
+            if l.get("matchup"):
+                return
+            p = str(l.get("player") or "")
+            if p not in _nn:
+                _nn[p] = conn.execute("SELECT nba_ref.norm_name(%s)", (p,)).fetchone()[0]
+            m = fl_mu.get(_nn[p])
+            if m:
+                l["matchup"] = m
+        for s in slips:
+            for l in s["legs"]:
+                _mu(l)
+        for cl in cands.values():
+            for l in cl:
+                _mu(l)
+    res = enforce(slips, cands, cfg, one_per_game=(app == "fliff"))
     kept = changed = dropped = 0
     for s, legs, changes in res:
         tag = f"{s['sname']} k{s['k']}"
