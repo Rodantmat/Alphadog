@@ -100,7 +100,7 @@ def enforce(slips, cands, cfg, one_per_game=False):
                     continue
                 if str(c.get("side", "")).lower()[:1] != str(old.get("side", "")).lower()[:1]:
                     continue
-                if distinct_ev and c.get("event_id") in used_ev:
+                if distinct_ev and game_key(c) in used_ev:
                     continue
                 pick = c
                 break
