@@ -258,6 +258,18 @@ def leg_team(conn, day, pids):
     return out
 
 
+def drop_started(conn, day, legs):
+    """Owner rule 2026-11-15: a late run still builds - minus every leg whose game has already tipped (today only)."""
+    from live_slip_engine import started_team_ids
+    st = started_team_ids(conn, day)
+    if not st or not legs:
+        return legs
+    teams = leg_team(conn, day, {l['player_id'] for l in legs})
+    kept = [l for l in legs if str(teams.get(str(l['player_id']))) not in st]
+    print(f"  {day}: {len(legs) - len(kept)} Underdog leg rows dropped - their game has already started", flush=True)
+    return kept
+
+
 def insert_flex(conn, day, craw, fresh, teams, t_sd):
     """portfolio C's Flex unit(s) (UPC.FLEX_UNITS): rows portfolio 'C', structure 'flex', status 'live'; returns the rows written"""
     n_rows = 0
