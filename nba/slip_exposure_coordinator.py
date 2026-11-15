@@ -90,7 +90,7 @@ def enforce(slips, cands, cfg, one_per_game=False):
         rest.sort(key=lambda i: (-count[pid_of(legs[i])], -i))
         bad += rest[:surplus]
         used_pids = {pid_of(l) for i, l in enumerate(legs) if i not in bad}
-        used_ev = {l.get("event_id") for i, l in enumerate(legs) if i not in bad}
+        used_ev = {game_key(l) for i, l in enumerate(legs) if i not in bad}
         ok = True
         for i in sorted(bad):
             old = legs[i]
