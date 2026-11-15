@@ -65,14 +65,23 @@ def as_leg(cand, replaced):
     return l
 
 
-def enforce(slips, cands, cfg):
-    """slips: ordered list of {'id','legs'}; cands: id -> ranked candidate dicts. Returns [(slip, new_legs|None, [changes])] in the same order."""
+def game_key(l):
+    """One key per game whatever the leg's source: the matchup (spaces removed, e.g. 'DAL@BOS') when the leg carries one, else its event id.
+    2026-11-15: a Fliff substitute (Cooper Flagg) joined a slip that already held the same game (Jayson Tatum, DAL@BOS) because the candidate's
+    event id did not equal the slip leg's - Fliff then paid the pair 2.96x instead of 3.79x."""
+    m = str(l.get("matchup") or "").replace(" ", "").upper()
+    return m or l.get("event_id")
+
+
+def enforce(slips, cands, cfg, one_per_game=False):
+    """slips: ordered list of {'id','legs'}; cands: id -> ranked candidate dicts. Returns [(slip, new_legs|None, [changes])] in the same order.
+    one_per_game=True (Fliff: same-game legs are paid at a discount) never lets a substitute share a game with a kept leg."""
     cap, reuse_max = int(cfg["max_slips_per_leg"]), int(cfg["max_reuse_per_slip"])
     count = collections.Counter()
     out = []
     for s in slips:
         legs = [dict(l) for l in s["legs"]]
-        distinct_ev = len({l.get("event_id") for l in legs}) == len(legs)
+        distinct_ev = one_per_game or len({game_key(l) for l in legs}) == len(legs)
         changes = []
         # legs to replace: any at the cap, then the surplus of repeated legs beyond reuse_max (the most-used first, the later leg first)
         bad = [i for i, l in enumerate(legs) if count[pid_of(l)] >= cap]
