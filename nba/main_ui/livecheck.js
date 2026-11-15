@@ -386,6 +386,25 @@ export async function overlayLive(sql, out, ppFallback) {
   }
   if (ppFresh && want.prizepicks.length) { want.prizepicks.forEach(l => markPP(l, PP_IX)); apps.prizepicks = { ok: true, ms: 0, cached_s: Math.round((Date.now() - PP_AT) / 1000) }; }
   if (apps.prizepicks && !apps.prizepicks.ok && ppFallback) { await ppFallback(sql, out); apps.prizepicks.fallback = "stored board"; apps.prizepicks.ok = !!(out.pp_live && !out.pp_live.error); }
+  // kept demons (see markPP): price each from the demon rung's own factor so the card's multiplier follows the real payout
+  const demonKeptNotes = [];
+  try {
+    const dk = want.prizepicks.filter(l => l.demon_kept);
+    if (dk.length) {
+      const PROP_MKT = { points: "player_points", rebounds: "player_rebounds", assists: "player_assists", threes_made: "player_threes", blocks: "player_blocks", steals: "player_steals",
+        turnovers: "player_turnovers", stocks: "player_blocks_steals", pra: "player_points_rebounds_assists", pts_reb: "player_points_rebounds", pts_ast: "player_points_assists",
+        reb_ast: "player_rebounds_assists", personal_fouls: "player_personal_fouls", fantasy_score: "player_fantasy_points" };
+      const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+      const rows = await q(sql, "SELECT nm, base_market, line::float8 AS line, factor::float8 AS factor FROM nba_market.pp_leg_price WHERE game_date >= $1::date - 1 AND kind = 'demon' AND side = 'Over' AND nm = ANY($2) ORDER BY game_date DESC, price_id DESC",
+        [day, [...new Set(dk.map(l => normName(l.player_name)))]], 6000);
+      for (const l of dk) {
+        const nm = normName(l.player_name), mk = PROP_MKT[l.canonical_prop_key];
+        const r = rows.find(x => x.nm === nm && near(x.line, l.line_value) && (!mk || x.base_market === mk)) || rows.find(x => x.nm === nm && near(x.line, l.line_value));
+        if (r && Number(r.factor) > 0) l.leg_factor = Number(r.factor);
+        demonKeptNotes.push(`${l.player_name} ${l.line_value} ${l.canonical_prop_key}: regular line is now a demon - kept, link rebuilt` + (r ? ` (factor ${Number(r.factor).toFixed(3)})` : " (factor not found - multiplier shown unadjusted)"));
+      }
+    }
+  } catch (_e) { /* the legs stay kept and linked; only their factor is left as is */ }
   // OWNER RULE (2026-11-10): on EVERY screen (owner, Jessi, Jon) and for every app, a leg that is not confirmed on its app's own board - slip leg, pairing or sub - is not shown
   // as playable. An app whose board was read leaves no leg unchecked: a leg it did not find is "missing" and the screen scratches it and subs.
   for (const l of legs) { const a = l.source_key; if (!l.live_now && apps[a] && apps[a].ok) l.live_now = "missing"; }
