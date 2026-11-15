@@ -62,6 +62,12 @@ def main():
     games = [X.game_key(l) for l in (new3 or [])]
     check("Fliff substitute skips a game the slip already holds", new3 is not None and len(set(games)) == len(games) and any(l["player"] == "P5" for l in new3),
           f"({[l['player'] for l in (new3 or [])]})")
+    # 4. the quote gate runs clean in dry mode (2026-11-15 quoter-outage rule: a batch with no usable answer makes it stand down)
+    import subprocess
+    env = dict(os.environ, QG_DRY="1", QG_DATE=day.isoformat())
+    r = subprocess.run([sys.executable, "-u", os.path.join(os.path.dirname(os.path.abspath(__file__)), "apply_quote_gate.py")], env=env, capture_output=True, text=True)
+    print(r.stdout[-1500:], flush=True)
+    check("quote gate dry run exits clean", r.returncode == 0, r.stderr[-400:])
     if fails:
         print(f"AUDIT FAILED: {fails}", flush=True)
         sys.exit(1)
