@@ -1169,9 +1169,10 @@ def postseason_slate(conn, day):
 def pick(conn, day, require_fresh=True):
     ensure_tables(conn)
     # round-2 P3#5 (2026-10-08): §29z-d "P3 never after the first tip" - the engine refuses on its own, whatever dispatched it
+    # OWNER RULE 2026-11-15 ("they must build slips anyway, just remove the started legs"): a run after the first tip no longer
+    # refuses - it builds from the games that have NOT started (started_team_ids drops every leg of a game already tipped).
     if post_tip(conn, day):
-        print(f"  {day}: the first tip has passed - a post-tip pick is never placed (§29z-d); nothing built", flush=True)
-        return
+        print(f"  {day}: the first tip has passed - building from the games not yet started (owner rule 2026-11-15)", flush=True)
     if require_fresh:
         scored = conn.execute("SELECT count(*) FROM nba_score.board_scored WHERE game_date=%s", (day,)).fetchone()[0]
         fhp = conn.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date=%s AND final_hp IS NOT NULL", (day,)).fetchone()[0]
