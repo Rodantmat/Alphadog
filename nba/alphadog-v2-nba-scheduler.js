@@ -64,16 +64,20 @@ function runKey(pipeline, ms) { const d = ptDate(ms); return pipeline === "P1" ?
 function computePlan(dateStr, firstTipMs) {
   const cutoff = ptWall(dateStr, "13:15");
   const p3cut = firstTipMs ? Math.min(cutoff, firstTipMs - 30 * MIN) : cutoff;
-  const p3 = p3cut + 1 * MIN;
+  const ov = firstTipMs ? P3_OVERRIDES[dateStr] : null;            // one-day owner override (see P3_OVERRIDES)
+  const p3 = ov ? ptWall(dateStr, ov.p3) : p3cut + 1 * MIN;
   const p2b = Math.min(ptWall(dateStr, "08:05"), p3 - 110 * MIN);
   const p2a = Math.min(ptWall(dateStr, "03:30"), p2b - 60 * MIN);
   return {
     date: dateStr, first_tip: firstTipMs, p2a, p2b, p3,
     p2b_latest: p3 - 110 * MIN,                                   // the latest P2B start that still beats P3
-    p3_deadline: firstTipMs ? firstTipMs - 30 * MIN : p3,           // P3 stops waiting for P2B here
-    p3_never_after: firstTipMs || null,                             // P3 never starts after the first tip
+    p3_deadline: ov ? p3 + 30 * MIN : (firstTipMs ? firstTipMs - 30 * MIN : p3),   // P3 stops waiting for P2B here
+    p3_never_after: ov ? ptWall(dateStr, ov.never_after) : (firstTipMs || null),   // P3 never starts after the first tip
   };
 }
+// One-day owner overrides (date -> Pacific wall times). Only the listed dates change; every other day uses the rule above.
+// 2026-11-15: P3 at 12:20 PM PT so most injury reports are in (owner request 2026-11-14); the 10:00 AM game has tipped by then.
+const P3_OVERRIDES = { "2026-11-15": { p3: "12:20", never_after: "13:00" } };
 const DONE = (s) => !!s && s !== "claimed";   // success / failure / cancelled / "success/success" (P1)
 
 // ---------- pure decision ----------
