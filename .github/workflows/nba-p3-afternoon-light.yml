@@ -216,7 +216,10 @@ jobs:
               # window label exists to prevent.
               print(f"::notice::Slate already scored ({scored} legs) - this later run is a no-op.")
               out.write("late=0\nhas_games=0\n"); raise SystemExit(0)
-          if now > first_tip:
+          # ONE-DAY OWNER OVERRIDE (2026-11-14): P3 for 2026-11-15 runs at 12:20 PM PT (injury reports), after the
+          # 10:00 AM game tipped. Not late until 13:00 PT (next tip); every other slate is unchanged.
+          p3_ov_ok = slate == "2026-11-15" and now < datetime.fromisoformat(f"{slate}T13:00:00").replace(tzinfo=PT).astimezone(timezone.utc)
+          if now > first_tip and not p3_ov_ok:
               # ROUND-2 P3#5 (2026-10-08): "a late fallback pick is worse than no pick" (header) and §29z-d "P3 never
               # after the first tip". The warning used to be the only effect - a forced run after tip re-scored the
               # slate (overwriting the pre-tip decision snapshot) and wrote post-tip paper slips as 'placed'. Now a late
