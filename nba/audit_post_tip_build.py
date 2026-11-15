@@ -49,11 +49,12 @@ def main():
         conn.rollback()
     # 3. synthetic Fliff case
     cfg = {"max_slips_per_leg": 2, "max_reuse_per_slip": 2}
-    s1 = {"id": ("A", 1), "legs": [{"player": "P1", "player_id": "1", "side": "Under", "matchup": "DAL@BOS", "event_id": "e1"},
-                                   {"player": "P2", "player_id": "2", "side": "Under", "matchup": "OKC@SAC", "event_id": "e2"},
-                                   {"player": "P3", "player_id": "3", "side": "Under", "matchup": "NYK@TOR", "event_id": "e3"}]}
-    s2 = {"id": ("A", 2), "legs": [dict(l) for l in s1["legs"]]}
-    s3 = {"id": ("A", 3), "legs": [dict(l) for l in s1["legs"]]}
+    def lg(n, mu, ev):
+        return {"player": "P" + str(n), "player_id": str(n), "side": "Under", "matchup": mu, "event_id": ev}
+    s1 = {"id": ("A", 1), "legs": [lg(1, "OKC@SAC", "e1"), lg(2, "ATL@MIL", "e2"), lg(3, "CHA@LAC", "e3")]}
+    s2 = {"id": ("A", 2), "legs": [lg(1, "OKC@SAC", "e1"), lg(8, "SAS@UTA", "e8"), lg(9, "LAL@PHX", "e9")]}
+    # slip 3: P1 is at the cap (2 slips) and must be replaced; P6 (DAL@BOS) and P7 stay
+    s3 = {"id": ("A", 3), "legs": [lg(1, "OKC@SAC", "e1"), lg(6, "DAL@BOS", "e6"), lg(7, "NYK@TOR", "e7")]}
     cands = {("A", 3): [{"player": "P4", "player_id": "4", "side": "Under", "matchup": "DAL @ BOS", "event_id": "zzz"},
                         {"player": "P5", "player_id": "5", "side": "Under", "matchup": "HOU@WAS", "event_id": "e5"}]}
     res = X.enforce([s1, s2, s3], cands, cfg, one_per_game=True)
