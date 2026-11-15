@@ -784,6 +784,15 @@ async function buildHighHit(sql, cfg, url, version) {
                                         to_char(quoted_at AT TIME ZONE 'America/Los_Angeles', 'FMHH12:MI AM') t
                                  FROM nba_score.live_slip_quotes WHERE game_date = $1::date ORDER BY strategy, k, quoted_at DESC`, [slate.date]);
         const byK = new Map(qs.map(r => [r.strategy + ":" + r.k, r]));
+        // QUOTE TIMEOUT (owner 2026-11-15 13:10 PT "what needs to happen for it to work? get it to work now"): the quote run hung for 20+ minutes
+        // after a late pick and the PrizePicks slips never reached the screen. A slip picked more than QUOTE_WAIT_MIN minutes ago with no quote
+        // is shown at the model's multiplier (named on the card); the live check on every load still validates each leg on PrizePicks' board.
+        const QUOTE_WAIT_MIN = 10;
+        let overdue = new Set();
+        try {
+          overdue = new Set((await q(sql, `SELECT strategy, k FROM nba_score.live_slips WHERE game_date = $1::date
+                                           AND placed_at < now() - ($2 || ' minutes')::interval`, [slate.date, String(QUOTE_WAIT_MIN)])).map(r => r.strategy + ":" + r.k));
+        } catch (_e) { overdue = new Set(); }
         for (const x of slips) {
           if (x.source_key !== "prizepicks") continue;
           const r = byK.get(x.strategy + ":" + x.k);
