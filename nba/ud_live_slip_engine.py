@@ -315,9 +315,10 @@ def pick(conn, day):
     conn.execute(DDL)
     # round-2 P3#5 (2026-10-08): never a post-tip pick (§29z-d) - same rule as the PrizePicks engine
     from live_slip_engine import post_tip
+    # OWNER RULE 2026-11-15 ("they must build slips anyway, just remove the started legs"): no refusal after the first tip -
+    # legs of games already started are dropped below (drop_started) and the slips are built from the rest.
     if post_tip(conn, day):
-        print(f"  {day}: the first tip has passed - a post-tip Underdog pick is never placed; nothing built", flush=True)
-        return
+        print(f"  {day}: the first tip has passed - building from the games not yet started (owner rule 2026-11-15)", flush=True)
     if os.environ.get('UDL_ADD_FLEX') == '1':
         return add_flex(conn, day)
     if conn.execute("SELECT count(*) FROM nba_score.ud_live_slips WHERE game_date=%s", (day,)).fetchone()[0] and os.environ.get('UDL_FORCE') != '1':
