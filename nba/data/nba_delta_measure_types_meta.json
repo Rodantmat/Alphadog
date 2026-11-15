@@ -1,13 +1,13 @@
 {
-  "fetched_at": "2026-11-14T11:33:29Z",
+  "fetched_at": "2026-11-15T12:18:35Z",
   "seasons": [
     "2026-27"
   ],
   "results": {
-    "player_usage_2026_27": 4126,
-    "player_scoring_2026_27": 4126,
-    "team_scoring_2026_27": 366,
-    "team_four_factors_2026_27": 366
+    "player_usage_2026_27": 4233,
+    "player_scoring_2026_27": 4233,
+    "team_scoring_2026_27": 376,
+    "team_four_factors_2026_27": 376
   },
   "errors": []
 }
