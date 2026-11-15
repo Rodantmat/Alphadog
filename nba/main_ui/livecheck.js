@@ -430,6 +430,6 @@ export async function overlayLive(sql, out, ppFallback) {
       flagged.push(...s.pp_alert.map(a => `${s.structure_label || s.slip_type}: ${a}`));
     }
   }
-  out.pp_live = { checked_at: new Date().toISOString(), legs_checked: legs.length, flagged, apps, total_ms: Date.now() - t0, live: true };
+  out.pp_live = { checked_at: new Date().toISOString(), legs_checked: legs.length, flagged, apps, total_ms: Date.now() - t0, live: true, demon_kept: demonKeptNotes };
   return out;
 }
