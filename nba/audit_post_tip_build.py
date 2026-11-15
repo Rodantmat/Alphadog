@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""
+READ-ONLY AUDIT of the owner rule of 2026-11-15 ("they must build slips anyway, just remove the started legs"):
+  1. PrizePicks engine: post_tip() no longer stops pick(); started_team_ids() names the teams whose game has tipped; the board legs
+     minus those teams still hold legs, and none of a started game.
+  2. Underdog engine: drop_started() removes every leg of a started game and keeps the rest.
+  3. Exposure coordinator: a Fliff substitute never shares a game with a kept leg (synthetic case = the 2026-11-15 Tatum / Flagg slip).
+Writes nothing (the connection is rolled back). Env: DATABASE_URL, AUD_DATE (default today PT).
+"""
+import datetime as dt
+import os
+import sys
+
+import psycopg
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import live_slip_engine as L          # noqa: E402
+import ud_live_slip_engine as U       # noqa: E402
+import slip_exposure_coordinator as X  # noqa: E402
+
+fails = []
+
+
+def check(name, ok, detail=""):
+    print(f"  {'ok  ' if ok else 'FAIL'} {name} {detail}", flush=True)
+    if not ok:
+        fails.append(name)
+
+
+def main():
+    ds = (os.environ.get("AUD_DATE") or "").strip()
+    day = dt.date.fromisoformat(ds) if ds else L.pt_today()
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        st = L.started_team_ids(conn, day)
+        print(f"AUDIT|{day} post_tip={L.post_tip(conn, day)} started teams={sorted(st)}", flush=True)
+        legs = L.load_board_legs(conn, day)
+        kept = [l for l in legs if str(l.get("team_id")) not in st]
+        check("PrizePicks board legs loaded", len(legs) > 0, f"({len(legs)} rows)")
+        check("PrizePicks legs remain after dropping started games", len(kept) > 0, f"({len(legs) - len(kept)} dropped, {len(kept)} kept)")
+        check("PrizePicks: no kept leg belongs to a started game", all(str(l.get("team_id")) not in st for l in kept))
+        if st:
+            check("PrizePicks: started games did carry legs (the filter does something)", len(legs) > len(kept))
+        ul = U.load_legs(conn, day)
+        uk = U.drop_started(conn, day, ul)
+        teams = U.leg_team(conn, day, {l["player_id"] for l in uk}) if uk else {}
+        check("Underdog legs loaded", len(ul) > 0, f"({len(ul)} rows)")
+        check("Underdog legs remain after dropping started games", len(uk) > 0, f"({len(ul) - len(uk)} dropped, {len(uk)} kept)")
+        check("Underdog: no kept leg belongs to a started game", all(str(teams.get(str(l["player_id"]))) not in st for l in uk))
+        conn.rollback()
+    # 3. synthetic Fliff case
+    cfg = {"max_slips_per_leg": 2, "max_reuse_per_slip": 2}
+    s1 = {"id": ("A", 1), "legs": [{"player": "P1", "player_id": "1", "side": "Under", "matchup": "DAL@BOS", "event_id": "e1"},
+                                   {"player": "P2", "player_id": "2", "side": "Under", "matchup": "OKC@SAC", "event_id": "e2"},
+                                   {"player": "P3", "player_id": "3", "side": "Under", "matchup": "NYK@TOR", "event_id": "e3"}]}
+    s2 = {"id": ("A", 2), "legs": [dict(l) for l in s1["legs"]]}
+    s3 = {"id": ("A", 3), "legs": [dict(l) for l in s1["legs"]]}
+    cands = {("A", 3): [{"player": "P4", "player_id": "4", "side": "Under", "matchup": "DAL @ BOS", "event_id": "zzz"},
+                        {"player": "P5", "player_id": "5", "side": "Under", "matchup": "HOU@WAS", "event_id": "e5"}]}
+    res = X.enforce([s1, s2, s3], cands, cfg, one_per_game=True)
+    new3 = res[2][1]
+    games = [X.game_key(l) for l in (new3 or [])]
+    check("Fliff substitute skips a game the slip already holds", new3 is not None and len(set(games)) == len(games) and any(l["player"] == "P5" for l in new3),
+          f"({[l['player'] for l in (new3 or [])]})")
+    if fails:
+        print(f"AUDIT FAILED: {fails}", flush=True)
+        sys.exit(1)
+    print("AUDIT PASSED", flush=True)
+
+
+if __name__ == "__main__":
+    main()
