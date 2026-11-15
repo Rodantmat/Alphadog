@@ -53,7 +53,9 @@ def board(conn, day):
         return None, None, "no Fliff Pick'Em board captured for the slate"
     fb = conn.execute("""SELECT b.player, nm.player_id::text, b.prop, b.line::float, b.option_type, b.multiplier::float, b.fliff_game, b.matchup, b.tip_utc
                          FROM nba_market.fliff_pickem_board b LEFT JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
-                         WHERE b.game_date = %s AND b.snapshot_ts = %s""", (day, last)).fetchall()
+                         WHERE b.game_date = %s AND b.snapshot_ts = %s
+                           -- owner rule 2026-11-15: a late run still builds, minus the legs of games already started (today only; replays keep all)
+                           AND (b.tip_utc IS NULL OR b.tip_utc > now() OR %s::date < (now() AT TIME ZONE 'America/Los_Angeles')::date)""", (day, last, day)).fetchall()
     _sl, mk, _ml, _a, _b = RSD.load(conn, day)
     by = {}
     for nm, pid, prop, line, ot, m, g, match, tip in fb:
