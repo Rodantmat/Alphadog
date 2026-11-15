@@ -1159,6 +1159,18 @@ def post_tip(conn, day):
     return bool(first) and dt.datetime.now(dt.timezone.utc) >= first
 
 
+def started_team_ids(conn, day):
+    """Team ids (as strings) whose game on `day` has already tipped - only when `day` is today (Pacific); replays get none.
+    Owner rule 2026-11-15: a late run still builds slips, minus every leg of a started game."""
+    if day != pt_today():
+        return set()
+    out = set()
+    for h, a in conn.execute("""SELECT home_team_id, away_team_id FROM nba_calendar.slate_games
+                                WHERE game_date=%s AND game_datetime_utc <= now()""", (day,)).fetchall():
+        out.add(str(h)); out.add(str(a))
+    return out
+
+
 def postseason_slate(conn, day):
     """§31w: the slate is a play-in (005) / playoff (004) slate - by the league's own game-id prefix in the schedule."""
     r = conn.execute("""SELECT count(*) FROM nba_calendar.games WHERE game_date=%s
