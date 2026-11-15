@@ -401,7 +401,10 @@ function poolLegIsLegalForSlip(leg,keptLegs,slip){
   const pid=String(leg.mlb_player_id||leg.player_id),side=String(leg.selected_side||'').toLowerCase();
   for(const s of (lastRawSlips||[]))for(const l of (s.legs||[])){if(String(l.mlb_player_id||l.player_id)===pid&&String(l.selected_side||'').toLowerCase()!==side)return false}
   let sameGame=0;
-  for(const l of keptLegs){ if(String(l.game_pk)===String(leg.game_pk))sameGame++; }
+  // same game = same game_pk, or (when either leg has none, e.g. a Fliff leg) the same two teams - 2026-11-15: a Fliff substitute landed in a game
+  // the slip already held and Fliff paid the pair at a discount (Fliff is now 1 leg per game, backup_pool.max_per_game.fliff)
+  const gk=l=>{const a=String(l.team_abbr||''),b=String(l.opponent_abbr||'');return a&&b?[a,b].sort().join('-'):String(l.game_label||'').replace(/[^A-Za-z]/g,' ').trim().split(/\s+/).filter(t=>t.length<=3&&t===t.toUpperCase()).sort().join('-')};
+  for(const l of keptLegs){ const p1=l.game_pk,p2=leg.game_pk; if((p1!=null&&p2!=null&&String(p1)===String(p2))||(gk(l)&&gk(l)===gk(leg)))sameGame++; }
   const cap=Number((NBA_MAX_PER_GAME||{})[String(slip&&slip.source_key||'')]||2);
   if(sameGame>=cap)return false;
   // a slip must keep players from at least two teams
