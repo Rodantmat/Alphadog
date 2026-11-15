@@ -70,6 +70,28 @@ def main():
         quotes[(strategy, k)] = (status, power, flex, legs)
     print(f"QUOTE GATE {day}: {len(slips)} placed / backup / gate-skipped PrizePicks slips, {len(quotes)} quoted; n {n}, min ratio {ratio}", flush=True)
 
+    # QUOTER OUTAGE (2026-11-15): the quote run took 24 minutes and came back with status -1 for ALL 17 slips - not one answer from
+    # PrizePicks, and no leg named as unmapped. The gate read that as 17 failures, demoted every placed slip and the PrizePicks card
+    # was empty for the day. A batch with NO usable answer (no 200, no unmapped verdict) is the quoter failing, not PrizePicks
+    # refusing the slips: the gate stands down, the slips stay as the engine placed them, and the screen shows them at the model's
+    # multiplier (named on each card) with every leg re-checked on PrizePicks' board when the page loads.
+    def _usable(qv):
+        st, _p, _f, ql = qv
+        if st == 200:
+            return True
+        ql = ql if isinstance(ql, (dict, list)) or ql is None else json.loads(ql)
+        return isinstance(ql, dict) and bool(ql.get('unmapped'))
+    if slips and not any(_usable(qv) for qv in quotes.values()):
+        print(f"::warning::QUOTE GATE {day}: QUOTER OUTAGE - {len(quotes)} quotes, none usable (no 200, no unmapped verdict). "
+              f"Gate stands down: the engine's placed slips are kept and shown at the model's multiplier.", flush=True)
+        back = conn.execute("""UPDATE nba_score.live_slips SET status='placed', streak_note = coalesce(streak_note || '; ', '') || 'quote gate: quoter outage - restored'
+                               WHERE game_date=%s AND status='placed_quote_skip' AND streak_note LIKE '%%PrizePicks did not quote it%%'
+                                 AND graded_at IS NULL""", (day,)).rowcount if not dry else 0
+        if back:
+            print(f"QUOTE GATE {day}: {back} slip(s) demoted by an earlier outage batch restored to placed", flush=True)
+        conn.commit()
+        return
+
     def verdict(strategy, k, legs, size, structure):
         q = quotes.get((strategy, k))
         if q is None:
