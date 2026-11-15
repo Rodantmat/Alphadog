@@ -219,7 +219,12 @@ jobs:
           # ONE-DAY OWNER OVERRIDE (2026-11-14): P3 for 2026-11-15 runs at 12:20 PM PT (injury reports), after the
           # 10:00 AM game tipped. Not late until 13:00 PT (next tip); every other slate is unchanged.
           p3_ov_ok = slate == "2026-11-15" and now < datetime.fromisoformat(f"{slate}T13:00:00").replace(tzinfo=PT).astimezone(timezone.utc)
-          if now > first_tip and not p3_ov_ok:
+          # OWNER RULE 2026-11-15 ("they must build slips anyway, just remove the started legs"): a run after the first tip is
+          # no longer 'late' - it scores and picks, and the PrizePicks / Underdog engines drop every leg of a started game
+          # (live_slip_engine.started_team_ids). The late=1 branch below is kept but can no longer be reached.
+          if now > first_tip:
+              print(f"::warning::First game tipped at {first_tip} UTC, before this run - building from the games not yet started.")
+          if False and now > first_tip and not p3_ov_ok:
               # ROUND-2 P3#5 (2026-10-08): "a late fallback pick is worse than no pick" (header) and §29z-d "P3 never
               # after the first tip". The warning used to be the only effect - a forced run after tip re-scored the
               # slate (overwriting the pre-tip decision snapshot) and wrote post-tip paper slips as 'placed'. Now a late
