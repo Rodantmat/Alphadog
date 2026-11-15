@@ -72,7 +72,10 @@ function computePlan(dateStr, firstTipMs) {
     date: dateStr, first_tip: firstTipMs, p2a, p2b, p3,
     p2b_latest: p3 - 110 * MIN,                                   // the latest P2B start that still beats P3
     p3_deadline: ov ? p3 + 30 * MIN : (firstTipMs ? firstTipMs - 30 * MIN : p3),   // P3 stops waiting for P2B here
-    p3_never_after: ov ? ptWall(dateStr, ov.never_after) : (firstTipMs || null),   // P3 never starts after the first tip
+    // OWNER RULE 2026-11-15 ("they must build slips anyway, just remove the started legs"): a P3 that could not start before the first tip
+    // (P2B late, GitHub down) is still dispatched - the engines drop the started games' legs. It is 'missed' only after 7:30 PM PT,
+    // when the day's last games have tipped. Was: never after the first tip.
+    p3_never_after: firstTipMs ? Math.max(firstTipMs, ptWall(dateStr, "19:30")) : null,
   };
 }
 // One-day owner overrides (date -> Pacific wall times). Only the listed dates change; every other day uses the rule above.
