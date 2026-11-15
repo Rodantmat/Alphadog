@@ -1181,6 +1181,11 @@ def pick(conn, day, require_fresh=True):
             print(f"  {day}: P3 has not finished this slate (board_scored {scored}, final_hp {fhp}, priced window legs {priced}) - REFUSING to pick from a stale/empty board", flush=True)
             sys.exit(2)
     legs = load_board_legs(conn, day)
+    _st = started_team_ids(conn, day)
+    if _st:
+        _n0 = len(legs)
+        legs = [l for l in legs if str(l.get('team_id')) not in _st]
+        print(f"  {day}: {_n0 - len(legs)} leg rows dropped - their game has already started ({len(_st)} teams)", flush=True)
     if not legs:
         print(f"  {day}: no scored window board legs - nothing to pick", flush=True)
         return
