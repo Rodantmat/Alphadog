@@ -109,7 +109,7 @@ def enforce(slips, cands, cfg, one_per_game=False):
                 break
             new = as_leg(pick, old)
             legs[i] = new
-            used_pids.add(pid_of(new)); used_ev.add(new.get("event_id"))
+            used_pids.add(pid_of(new)); used_ev.add(game_key(new))
             changes.append(f"{old.get('player')} {old.get('prop')} {old.get('side')} {old.get('line')} -> {new.get('player')} {new.get('prop')} {new.get('side')} {new.get('line')}")
         if not ok:
             out.append((s, None, changes))
