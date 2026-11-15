@@ -799,9 +799,8 @@ async function buildHighHit(sql, cfg, url, version) {
           if (!r) {
             // 2026-10-22 (owner: nothing on the screen unless PrizePicks' own quote confirms it): a slip to PLAY that PrizePicks has not
             // quoted yet is held back until the quote and the quote gate (nba/apply_quote_gate.py) have run - recorded, not shown
-            // 2026-11-15 ONLY (owner 13:10 PT "get it to work now"): the late rebuild's quote run was slow and the next tip was minutes away -
-            // today's unquoted slips are shown at the model's multiplier; the live check on every load still validates each leg on PrizePicks' board.
-            if (String(slate.date) !== "2026-11-15" && String(x.stake_label || "").startsWith("PLAY")) { x.stake_label = "SKIP - waiting for PrizePicks' quote"; x.play_usd = null; x.awaiting_quote = true; }
+            if (overdue.has(x.strategy + ":" + x.k)) { if (String(x.stake_label || "").startsWith("PLAY")) x.quote_failed = true; continue; }   // quote timeout: shown at the model's multiplier
+            if (String(x.stake_label || "").startsWith("PLAY")) { x.stake_label = "SKIP - waiting for PrizePicks' quote"; x.play_usd = null; x.awaiting_quote = true; }
             continue;
           }
           const js = v => (typeof v === "string" ? JSON.parse(v) : v);
