@@ -324,7 +324,7 @@ def pick(conn, day):
     if conn.execute("SELECT count(*) FROM nba_score.ud_live_slips WHERE game_date=%s", (day,)).fetchone()[0] and os.environ.get('UDL_FORCE') != '1':
         print(f"  {day}: Underdog paper slips already logged - first log wins (UDL_FORCE=1 to rebuild)", flush=True)
         return
-    legs = load_legs(conn, day)
+    legs = drop_started(conn, day, load_legs(conn, day))
     # §31s: Underdog posted whole-number lines only until 2025-02 (2,744 legs, none since - none in 2025-26 or on the 2026-27
     # boards), so there is no second season to gate them on and the certified Underdog build has none. They cannot join final_hp
     # (half-point rungs) and are left out - said out loud, never silently: if Underdog brings them back this line is the signal.
