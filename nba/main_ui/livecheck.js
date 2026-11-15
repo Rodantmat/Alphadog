@@ -347,7 +347,7 @@ export async function overlayLive(sql, out, ppFallback) {
   const by = k => legs.filter(l => l.source_key === k);
   const want = { prizepicks: by("prizepicks"), betr: by("betr"), sleeper: by("sleeper") };
   if (!legs.length) return out;
-  for (const s of slips) if (s.source_key === "prizepicks" && String(s.entry_mode) === "power") for (const l of s.legs || []) l._keepDemon = true;
+  for (const s of slips) if (s.source_key === "prizepicks") for (const l of s.legs || []) l._keepDemon = true;   // owner 2026-11-14 19:35 PT: a leg that turns demon is kept on any slip; a goblin is subbed
   const apps = {};
   const jobs = [];
   if (want.prizepicks.length && !ppFresh) jobs.push(getText("https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
