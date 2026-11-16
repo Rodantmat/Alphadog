@@ -792,7 +792,7 @@ async function buildHighHit(sql, cfg, url, version) {
         let overdue = new Set();
         try {
           overdue = new Set((await q(sql, `SELECT strategy, k FROM nba_score.live_slips WHERE game_date = $1::date
-                                           AND placed_at < now() - ($2 || ' minutes')::interval`, [slate.date, String(QUOTE_WAIT_MIN)])).map(r => r.strategy + ":" + r.k));
+                                           AND placed_at < now() - make_interval(mins => ${Number(QUOTE_WAIT_MIN) || 10})`, [slate.date])).map(r => r.strategy + ":" + r.k));
         } catch (_e) { overdue = new Set(); }
         for (const x of slips) {
           if (x.source_key !== "prizepicks") continue;
