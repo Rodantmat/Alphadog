@@ -24836,8 +24836,8 @@
       "away_team_tricode": "IND",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "1:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24851,8 +24851,8 @@
       "away_team_tricode": "LAL",
       "arena_name": "Mortgage Matchup Center",
       "arena_city": "Phoenix",
-      "game_status": 1,
-      "game_status_text": "4:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24866,8 +24866,8 @@
       "away_team_tricode": "CHA",
       "arena_name": "Intuit Dome",
       "arena_city": "Inglewood",
-      "game_status": 1,
-      "game_status_text": "4:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24881,8 +24881,8 @@
       "away_team_tricode": "SAS",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "5:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24896,8 +24896,8 @@
       "away_team_tricode": "DAL",
       "arena_name": "TD Garden",
       "arena_city": "Boston",
-      "game_status": 1,
-      "game_status_text": "6:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24911,8 +24911,8 @@
       "away_team_tricode": "NYK",
       "arena_name": "Scotiabank Arena",
       "arena_city": "Toronto",
-      "game_status": 1,
-      "game_status_text": "6:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": ""
     },
     {
@@ -24926,8 +24926,8 @@
       "away_team_tricode": "HOU",
       "arena_name": "Capital One Arena",
       "arena_city": "Washington",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24941,8 +24941,8 @@
       "away_team_tricode": "ATL",
       "arena_name": "Fiserv Forum",
       "arena_city": "Milwaukee",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -24956,8 +24956,8 @@
       "away_team_tricode": "OKC",
       "arena_name": "Golden 1 Center",
       "arena_city": "Sacramento",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
