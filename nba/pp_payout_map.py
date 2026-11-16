@@ -396,6 +396,22 @@ class BrowserQuoter(Quoter):
                 "game_mode": "prizepools"}
         opts = {"method": "POST", "credentials": "include",
                 "headers": {"accept": "application/json", "content-type": "application/json"}, "body": json.dumps(body)}
+        if self.gone:
+            return -1, "browser dead - restart budget spent"
+        try:                                   # cheap liveness check: a reload can "succeed" against a dead driver
+            self.sb.driver.current_url
+        except Exception as exc0:  # noqa: BLE001
+            if self.restarts >= self.MAX_RESTARTS:
+                self.gone = True
+                print("BROWSER|dead and the restart budget is spent - remaining quotes fail fast", flush=True)
+                return -1, "browser dead - restart budget spent"
+            self.restarts += 1
+            self.ti += 1
+            print(f"BROWSER|restart {self.restarts}/{self.MAX_RESTARTS}|driver not answering ({type(exc0).__name__})", flush=True)
+            try:
+                self.new_session()
+            except Exception as exc2:  # noqa: BLE001
+                print(f"BROWSER|restart failed|{type(exc2).__name__}: {str(exc2)[:120]}", flush=True)
         for attempt in (1, 2):
             try:
                 self.sb.driver.set_script_timeout(60)
@@ -408,9 +424,41 @@ class BrowserQuoter(Quoter):
                 if attempt == 2:
                     return -1, f"page fetch error: {type(exc).__name__}: {str(exc)[:160]}"
                 print(f"RETRY|pp quote (browser)|attempt 1/2|{type(exc).__name__}: {str(exc)[:80]}|reload app", flush=True)
-                self._open_alive(self.sb, "https://app.prizepicks.com/", "pp app (retry)", tries=4)
+                # A dead Chrome / chromedriver (connection refused on localhost - run 43960196602, 2026-11-16: the first
+                # failed fetch killed the browser and all 24 quotes then failed against the corpse, 68 s each) cannot be
+                # reloaded: start a whole new browser on a new proxy session instead. Budgeted so it can never loop.
+                dead = self._driver_dead(exc)
+                reopened = False
+                if not dead:
+                    try:
+                        reopened = bool(self._open_alive(self.sb, "https://app.prizepicks.com/", "pp app (retry)", tries=4))
+                    except Exception:  # noqa: BLE001
+                        reopened = False
+                if dead or not reopened:
+                    if self.restarts >= self.MAX_RESTARTS:
+                        self.gone = True
+                        print("BROWSER|dead and the restart budget is spent - remaining quotes fail fast", flush=True)
+                        return -1, "browser dead - restart budget spent"
+                    self.restarts += 1
+                    self.ti += 1
+                    print(f"BROWSER|restart {self.restarts}/{self.MAX_RESTARTS}|new Chrome + new proxy session", flush=True)
+                    try:
+                        self.new_session()
+                    except Exception as exc2:  # noqa: BLE001
+                        print(f"BROWSER|restart failed|{type(exc2).__name__}: {str(exc2)[:120]}", flush=True)
                 time.sleep(4)
         return -1, "unreachable"
+
+    MAX_RESTARTS = 4
+    restarts = 0
+    gone = False
+
+    @staticmethod
+    def _driver_dead(exc):
+        t = f"{type(exc).__name__}: {exc}".lower()
+        return any(k in t for k in ("maxretryerror", "connection refused", "newconnectionerror", "invalid session",
+                                    "no such window", "chrome not reachable", "disconnected", "session deleted",
+                                    "remotedisconnected", "target window already closed"))
 
 
 def make_quoter(px, probe=None):
