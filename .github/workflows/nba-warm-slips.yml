@@ -1,0 +1,31 @@
+name: NBA Warm Slips Screen (manual)
+
+# Rebuilds the stored Slips screen (POST /api/slips/high-hit?refresh=1) and prints how many slips each app shows - a check tool.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Warm and summarise
+        run: |
+          code=$(curl -s -o /tmp/warm.json -w "%{http_code}" --max-time 150 -X POST -H "content-type: application/json" -d '{}' \
+            "https://alphadog-v2-nba-main-ui.rodolfoaamattos.workers.dev/api/slips/high-hit?refresh=1") || code=000
+          echo "http $code"
+          python3 - <<'EOF'
+          import json, collections
+          j = json.load(open('/tmp/warm.json'))
+          c = collections.Counter(s.get('source_key') for s in j.get('generated_slips') or [])
+          print('SLIPS_BY_APP', dict(c), 'slate', (j.get('slate') or {}).get('date'))
+          for s in j.get('generated_slips') or []:
+              if s.get('source_key') == 'prizepicks':
+                  print('PP', s.get('strategy'), '|', s.get('stake_label'), '|', (s.get('quote_note') or '')[:90])
+          for n in (j.get('hidden_notes') or j.get('notes') or []):
+              if 'PrizePicks' in n:
+                  print('NOTE', n[:260])
+          EOF
