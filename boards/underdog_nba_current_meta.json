@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-11-15T20:22:34Z",
-  "fetched_at": "2026-11-15T20:24:46Z",
+  "started_at": "2026-11-16T21:18:42Z",
+  "fetched_at": "2026-11-16T21:21:05Z",
   "categories": [
     "1H 3-Pointers Made",
     "1H Assists",
@@ -36,121 +36,81 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      40
+      41
     ],
     [
       "matches",
-      22,
+      25,
       "today",
-      9,
+      8,
       "other",
-      13,
+      17,
       "target",
-      "2026-11-15"
+      "2026-11-16"
     ],
     [
-      "lines[match=212112]",
+      "lines[match=212122]",
       20
     ],
     [
-      "pills[match=212112]",
-      78
+      "pills[match=212122]",
+      121
     ],
     [
-      "lines[match=212113]",
+      "lines[match=212123]",
       20
     ],
     [
-      "pills[match=212113]",
-      124
+      "pills[match=212123]",
+      120
     ],
     [
-      "lines[match=212114]",
+      "lines[match=212121]",
       20
     ],
     [
-      "pills[match=212114]",
-      137
+      "pills[match=212121]",
+      135
     ],
     [
-      "lines[match=212115]",
+      "lines[match=212125]",
       20
     ],
     [
-      "pills[match=212115]",
-      110
+      "pills[match=212125]",
+      138
     ],
     [
-      "lines[match=212116]",
+      "lines[match=212124]",
       20
     ],
     [
-      "pills[match=212116]",
-      119
+      "pills[match=212124]",
+      139
     ],
     [
-      "lines[match=212117]",
+      "lines[match=212127]",
       20
     ],
     [
-      "pills[match=212117]",
-      129
+      "pills[match=212127]",
+      159
     ],
     [
-      "lines[match=212118]",
+      "lines[match=212126]",
       20
     ],
     [
-      "pills[match=212118]",
+      "pills[match=212126]",
       144
     ],
     [
-      "lines[match=212119]",
+      "lines[match=212128]",
       20
     ],
     [
-      "pills[match=212119]",
-      146
-    ],
-    [
-      "lines[match=212120]",
-      20
-    ],
-    [
-      "pills[match=212120]",
-      114
-    ],
-    [
-      "lines[match=212121,other-day]",
-      0
-    ],
-    [
-      "lines[match=212122,other-day]",
-      0
-    ],
-    [
-      "lines[match=212123,other-day]",
-      0
-    ],
-    [
-      "lines[match=212124,other-day]",
-      0
-    ],
-    [
-      "lines[match=212125,other-day]",
-      0
-    ],
-    [
-      "lines[match=212126,other-day]",
-      0
-    ],
-    [
-      "lines[match=212127,other-day]",
-      0
-    ],
-    [
-      "lines[match=212128,other-day]",
-      0
+      "pills[match=212128]",
+      132
     ],
     [
       "lines[match=212129,other-day]",
@@ -173,16 +133,64 @@
       0
     ],
     [
+      "lines[match=212134,other-day]",
+      0
+    ],
+    [
+      "lines[match=212135,other-day]",
+      0
+    ],
+    [
+      "lines[match=212136,other-day]",
+      0
+    ],
+    [
+      "lines[match=212137,other-day]",
+      0
+    ],
+    [
+      "lines[match=212138,other-day]",
+      0
+    ],
+    [
+      "lines[match=212139,other-day]",
+      0
+    ],
+    [
+      "lines[match=212140,other-day]",
+      0
+    ],
+    [
+      "lines[match=212141,other-day]",
+      0
+    ],
+    [
+      "lines[match=212143,other-day]",
+      0
+    ],
+    [
+      "lines[match=212142,other-day]",
+      0
+    ],
+    [
+      "lines[match=212144,other-day]",
+      0
+    ],
+    [
+      "lines[match=212145,other-day]",
+      0
+    ],
+    [
       "lines_with_stats[players]",
-      4,
-      126
+      3,
+      114
     ],
     [
       "alternate_projections",
-      869,
-      3749,
+      913,
+      3909,
       0,
-      "deduped 7"
+      "deduped 13"
     ],
     [
       "lines[mass=true]",
@@ -193,62 +201,62 @@
       0
     ]
   ],
-  "lines": 1325,
-  "legs": 1325,
-  "ladder_legs": 3749,
-  "ladder_lines_with_alternates": 869,
-  "players": 126,
-  "pregame_legs": 1254,
-  "live_legs": 71,
+  "lines": 1292,
+  "legs": 1292,
+  "ladder_legs": 3909,
+  "ladder_lines_with_alternates": 913,
+  "players": 114,
+  "pregame_legs": 1292,
+  "live_legs": 0,
   "by_stat": {
-    "Points": 124,
-    "Pts + Rebs + Asts": 122,
-    "Rebounds": 119,
-    "Steals": 118,
-    "3-Pointers Made": 110,
-    "Points + Rebounds": 101,
-    "To Record a Double Double": 93,
-    "Assists": 91,
-    "Points + Assists": 91,
-    "Rebounds + Assists": 68,
-    "1Q Rebounds": 61,
+    "Pts + Rebs + Asts": 114,
+    "Steals": 114,
+    "Points": 112,
+    "Rebounds": 111,
+    "3-Pointers Made": 106,
+    "Points + Rebounds": 98,
+    "Points + Assists": 93,
+    "To Record a Double Double": 89,
+    "Assists": 88,
+    "Rebounds + Assists": 69,
+    "1Q Rebounds": 57,
     "1Q Points": 51,
-    "Fantasy Points": 32,
-    "To Record a Triple Double": 24,
-    "Moneyline": 22,
-    "Blocks + Steals": 19,
-    "Blocks": 19,
-    "1H Pts + Rebs + Asts": 19,
-    "1H Points": 18,
-    "Margin of Victory": 9,
-    "Total Points": 9,
+    "Fantasy Points": 34,
+    "Blocks + Steals": 27,
+    "Moneyline": 25,
+    "1H Pts + Rebs + Asts": 23,
+    "To Record a Triple Double": 21,
+    "Blocks": 20,
+    "1H Points": 19,
+    "Margin of Victory": 8,
+    "Total Points": 8,
     "1Q Assists": 5
   },
   "by_line_type": {
-    "balanced": 1325
+    "balanced": 1292
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 412,
-    "0.95": 34,
-    "None": 31,
-    "1.09": 30,
-    "1.05": 27,
-    "0.99": 26,
-    "0.84": 25,
-    "0.97": 23,
-    "1.12": 22,
-    "1.03": 21,
-    "1.07": 19,
-    "0.85": 18,
-    "0.88": 15,
-    "1.23": 15,
-    "0.73": 14
+    "1.0": 359,
+    "1.09": 34,
+    "1.07": 34,
+    "None": 33,
+    "0.95": 25,
+    "1.05": 24,
+    "1.2": 21,
+    "0.84": 20,
+    "0.97": 19,
+    "1.17": 19,
+    "0.85": 19,
+    "1.12": 19,
+    "0.8": 19,
+    "0.99": 18,
+    "1.08": 18
   },
-  "github_run_id": "43757559950",
-  "target_date_et": "2026-11-15",
+  "github_run_id": "43958468681",
+  "target_date_et": "2026-11-16",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 131.5
+  "elapsed_s": 141.9
 }
