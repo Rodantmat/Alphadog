@@ -852,10 +852,10 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
   Fliff UDT1 units (no real gain: +28.0 / +38.3 / +26.1% vs +27.5 / +38.3 / +25.3%), roi-app units (earlier S5 test neutral or worse). PrizePicks units
   already carry floors >= .62 except J3 (.58).
 - CROSS-APP CAP (live): `slip_exposure_v2.cross = {enabled, cap 5, key player, substitute true, order prizepicks > underdog > fliff > betr > sleeper}` -
-  a player sits in at most 5 played slips across ALL apps; a leg over the cap is substituted from slip_next_legs (slip dropped when no substitute).
+  a player sits in at most 5 played slips across ALL apps; a leg over the cap is substituted from slip_next_legs (slip dropped when no substitute; a slip with NO substitute pool at all - Fliff F_FR units, Underdog T units - is exempt but still counts).
   Code `slip_exposure_coordinator.py` (cross_counts / enforce glob). Chosen from 690 variants (cap 1-8, player vs leg, substitute vs drop, share-of-day
   caps, 24 app orders) on 5,633 replay slips / 332 slates dumped by `CERT_DUMP=1` (research_cert_common.xdump, research_xdump_roi.py):
-  ALL +75.4% / +3,969u / dd 20.4 vs per-app rule alone +74.1% / +3,936u / dd 21.0; 2026-27 +55.0% / dd 12.8 vs +52.5% / dd 14.8; max player exposure
+  ALL +75.3% / +3,965u / dd 20.4 vs per-app rule alone +74.1% / +3,936u / dd 21.0; 2026-27 +55.0% / dd 12.8 vs +52.5% / dd 14.8; max player exposure
   5 vs 8. Tight caps lose money (cap 2 substitute: +3,094u, 2026-27 +33.6%). Undo: `cross.enabled=false`. Check script `research_xcap_check.py`.
   Sim limits: Fliff F_FR units, Betr 6-pick add and PP fallback units are not in the dumps; history boards for Sleeper / Fliff / Betr are modeled.
 

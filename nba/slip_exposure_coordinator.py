@@ -117,7 +117,8 @@ def enforce(slips, cands, cfg, one_per_game=False, glob=None, gcap=None, gkind="
         distinct_ev = one_per_game or len({game_key(l) for l in legs}) == len(legs)
         changes = []
         # legs to replace: any at the cap, then the surplus of repeated legs beyond reuse_max (the most-used first, the later leg first)
-        gbad = {i for i, l in enumerate(legs) if gon and glob[gkey_of(l, gkind)] >= gcap}
+        # a slip with NO substitute pool (Fliff F_FR units, Underdog T units) is exempt from the cross-app cap - it would only be dropped - but still counts
+        gbad = {i for i, l in enumerate(legs) if gon and cands.get(s["id"]) and glob[gkey_of(l, gkind)] >= gcap}
         if gbad and not gsub:
             out.append((s, None, ["cross-app cap"]))
             continue
