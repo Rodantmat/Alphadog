@@ -13,6 +13,9 @@ candidates of its OWN strategy (nba_score.slip_next_legs, rank order, same side/
 slip was built that way). A slip with no legal substitute is dropped (deleted when ungraded) - a smaller clean card beats a correlated one.
 Fliff / Sleeper multipliers are recomputed from the new legs. Graded rows and shadow / backup slips are never touched.
 Gate: classification_config['slip_exposure_v2'] {enabled, apps, max_slips_per_leg, max_reuse_per_slip, order: {app: [strategy,...]}}.
+CROSS-APP CAP (owner 2026-11-16 23:13 PT, after Jokic Unders sat in 7 slips across apps): slip_exposure_v2.cross {enabled, cap, key: player|leg,
+substitute, order: [apps]} - a player already in `cap` kept slips on the apps earlier in `order` is swapped for the strategy's next-ranked candidate
+(or the slip is dropped); absent / disabled = the per-app rule alone, unchanged.
 Env: DATABASE_URL, EXP_DATE (default today PT), EXP_APPS (comma list, default all), EXP_DRY=1 prints and writes nothing, EXP_FORCE=1 ignores the gate.
 """
 import collections
@@ -73,19 +76,53 @@ def game_key(l):
     return m or l.get("event_id")
 
 
-def enforce(slips, cands, cfg, one_per_game=False):
+def name_key(l):
+    """one key per player ACROSS apps (player ids differ by app): the name lower-cased, accents and punctuation removed, Jr / Sr / II-IV dropped"""
+    import unicodedata
+    t = unicodedata.normalize("NFKD", str(l.get("player") or "")).encode("ascii", "ignore").decode().lower()
+    w = [x for x in "".join(ch if ch.isalnum() else " " for ch in t).split() if x not in ("jr", "sr", "ii", "iii", "iv")]
+    return "".join(w)
+
+
+def gkey_of(l, kind):
+    """the cross-app exposure key of a leg: 'player' = the player (any prop / side), 'leg' = player + prop + side"""
+    return name_key(l) if kind != "leg" else (name_key(l), str(l.get("prop")), str(l.get("side", "")).lower()[:1])
+
+
+def cross_counts(conn, day, app, cross):
+    """slips already kept today on the apps BEFORE `app` in the cross-app order, per exposure key (played rows, graded or not)"""
+    order = list(cross.get("order") or DEFAULTS["apps"])
+    glob = collections.Counter()
+    for a in order[:order.index(app)] if app in order else []:
+        table, where, _keys, _strat = APPS[a]
+        for (legs,) in conn.execute(f"SELECT legs_json FROM {table} WHERE game_date = %s AND {where}", (day,)).fetchall():
+            legs = legs if isinstance(legs, list) else json.loads(legs)
+            for gk in {gkey_of(l, cross.get("key", "player")) for l in legs}:
+                glob[gk] += 1
+    return glob
+
+
+def enforce(slips, cands, cfg, one_per_game=False, glob=None, gcap=None, gkind="player", gsub=True):
     """slips: ordered list of {'id','legs'}; cands: id -> ranked candidate dicts. Returns [(slip, new_legs|None, [changes])] in the same order.
-    one_per_game=True (Fliff: same-game legs are paid at a discount) never lets a substitute share a game with a kept leg."""
+    one_per_game=True (Fliff: same-game legs are paid at a discount) never lets a substitute share a game with a kept leg.
+    CROSS-APP CAP (owner 2026-11-16 23:13 PT): glob = a Counter of the slips ALREADY kept on the apps processed earlier today, keyed by gkey_of;
+    a leg whose key already sits in gcap slips across apps is replaced like a leg at the per-app cap (gsub=False: the slip is dropped instead),
+    and a substitute must itself be under gcap. glob is updated in place with the kept slips. glob None / gcap None = the per-app rule alone."""
     cap, reuse_max = int(cfg["max_slips_per_leg"]), int(cfg["max_reuse_per_slip"])
     count = collections.Counter()
+    gon = glob is not None and gcap is not None
     out = []
     for s in slips:
         legs = [dict(l) for l in s["legs"]]
         distinct_ev = one_per_game or len({game_key(l) for l in legs}) == len(legs)
         changes = []
         # legs to replace: any at the cap, then the surplus of repeated legs beyond reuse_max (the most-used first, the later leg first)
-        bad = [i for i, l in enumerate(legs) if count[pid_of(l)] >= cap]
-        rest = [i for i, l in enumerate(legs) if 0 < count[pid_of(l)] < cap]
+        gbad = {i for i, l in enumerate(legs) if gon and glob[gkey_of(l, gkind)] >= gcap}
+        if gbad and not gsub:
+            out.append((s, None, ["cross-app cap"]))
+            continue
+        bad = [i for i, l in enumerate(legs) if count[pid_of(l)] >= cap or i in gbad]
+        rest = [i for i, l in enumerate(legs) if 0 < count[pid_of(l)] < cap and i not in gbad]
         surplus = max(0, len(rest) - reuse_max)
         rest.sort(key=lambda i: (-count[pid_of(legs[i])], -i))
         bad += rest[:surplus]
@@ -97,6 +134,8 @@ def enforce(slips, cands, cfg, one_per_game=False):
             pick = None
             for c in cands.get(s["id"], []):
                 if pid_of(c) in used_pids or count[pid_of(c)] > 0:
+                    continue
+                if gon and glob[gkey_of(c, gkind)] >= gcap:
                     continue
                 if str(c.get("side", "")).lower()[:1] != str(old.get("side", "")).lower()[:1]:
                     continue
@@ -116,6 +155,9 @@ def enforce(slips, cands, cfg, one_per_game=False):
             continue
         for l in legs:
             count[pid_of(l)] += 1
+        if glob is not None:
+            for gk in {gkey_of(l, gkind) for l in legs}:
+                glob[gk] += 1
         out.append((s, legs, changes))
     return out
 
@@ -180,7 +222,15 @@ def run_app(conn, app, day, cfg, dry):
         for cl in cands.values():
             for l in cl:
                 _mu(l)
-    res = enforce(slips, cands, cfg, one_per_game=(app == "fliff"))
+    cross = cfg.get("cross") or {}
+    if cross.get("enabled") and cross.get("cap"):
+        # CROSS-APP CAP (owner 2026-11-16 23:13 PT): a player already in `cap` slips on the apps built earlier today is swapped out here
+        glob = cross_counts(conn, day, app, cross)
+        res = enforce(slips, cands, cfg, one_per_game=(app == "fliff"), glob=glob, gcap=int(cross["cap"]), gkind=cross.get("key", "player"),
+                      gsub=bool(cross.get("substitute", True)))
+        log(f"EXPOSURE|{day} {app}: cross-app cap {cross['cap']} per {cross.get('key', 'player')} on ({len(glob)} keys already used on earlier apps)")
+    else:
+        res = enforce(slips, cands, cfg, one_per_game=(app == "fliff"))
     kept = changed = dropped = 0
     for s, legs, changes in res:
         tag = f"{s['sname']} k{s['k']}"
@@ -227,6 +277,8 @@ def main():
             log("EXPOSURE|disabled (classification_config slip_exposure_v2.enabled) - nothing changed")
             return
         apps = [a.strip() for a in (os.environ.get("EXP_APPS") or ",".join(cfg["apps"])).split(",") if a.strip()]
+        xo = list((cfg.get("cross") or {}).get("order") or DEFAULTS["apps"])
+        apps.sort(key=lambda a: xo.index(a) if a in xo else 99)      # the cross-app cap counts the apps in this order
         for app in apps:
             try:
                 run_app(conn, app, day, cfg, dry)
