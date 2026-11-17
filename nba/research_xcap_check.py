@@ -15,6 +15,12 @@ def main():
             print(f"XCAP|{day} before {app}: {len(g)} players on earlier apps, at/over cap {sum(1 for v in g.values() if v >= int(cross['cap']))}, top {top}")
         os.environ["EXP_DRY"] = "1"; os.environ["EXP_DATE"] = str(day)
         X.main()
+        print("XCAP|---- same day, cross-app cap OFF (per-app rule alone) ----")
+        _lc = X.load_cfg
+        def _nocross(conn, force):
+            c = _lc(conn, force); c.pop("cross", None); return c
+        X.load_cfg = _nocross
+        X.main()
 
 if __name__ == "__main__":
     main()
