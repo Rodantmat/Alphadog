@@ -92,19 +92,6 @@
       "team_abbreviation": "DAL"
     },
     {
-      "id": 1641725,
-      "full_name": "Trey Alexander",
-      "last_comma_first": "Alexander, Trey",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2026",
-      "player_code": "trey_alexander",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
-    },
-    {
       "id": 1629638,
       "full_name": "Nickeil Alexander-Walker",
       "last_comma_first": "Alexander-Walker, Nickeil",
@@ -2118,19 +2105,6 @@
       "team_city": "Chicago",
       "team_name": "Bulls",
       "team_abbreviation": "CHI"
-    },
-    {
-      "id": 1642933,
-      "full_name": "Keshon Gilbert",
-      "last_comma_first": "Gilbert, Keshon",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2026",
-      "player_code": "keshon_gilbert",
-      "team_id": 1610612737,
-      "team_city": "Atlanta",
-      "team_name": "Hawks",
-      "team_abbreviation": "ATL"
     },
     {
       "id": 1628983,
