@@ -909,3 +909,5 @@ M1 wiring, D1 referee capture, scenario precompute, freshness gates.
 4. NBA game-id join for `game_lines_closing` and `board_snapshots`; coach-change dates 2023-24/2024-25; All-Star/All-NBA lists; national-TV flag; daily referee-assignments scraper.
 5. Replay 2026-03-15 WITH the injury report present; re-certify v30; M1 harness integration once train-season shards exist.
 6. Outcome grader → enrichment engine (`enrichment_profile_cells` pattern) → slip engine with correlation copula; derived-Sleeper calibration against the two-season PP/UD snapshots; live board archiving from opening day.
+
+- 2026-11-17: owner order 2026-11-16 23:13 PT executed - Betr ROI slips cut; 62% floor deployed on Betr only (other apps neutral/worse in replay); cross-app exposure cap live (player <= 5 slips across apps, substitute; best of 690 simulated variants). Details NBA_COMPASS.md 3b (2026-11-17).
