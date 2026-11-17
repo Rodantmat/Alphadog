@@ -261,6 +261,9 @@ class Acc:
         a[5] = max(a[5], a[4]); a[6] = max(a[6], a[5] - a[4])
 
 
+HOOK = None      # research_cert_owner_betr CERT_DUMP: called with (key, slip 1, slip 2 | None, ranked candidates)
+
+
 def day(acc, si, legs):
     for l in legs:
         l["_g"] = AF.GRP.get(l["prop"])
@@ -287,6 +290,8 @@ def day(acc, si, legs):
                 if sd == "mix":
                     s2 = mix_fix(s2, base, idx, gc, {l["player_id"] for l in s1})
                 s2 = s2 if len(s2) == k and len({l["team"] for l in s2}) >= 2 else None
+                if HOOK is not None:
+                    HOOK((o, sd, pr, kd, fl, g, mc, k), s1, s2, [base[i] for i in idx])
                 for st in ("max", "flex"):
                     if (k, st) not in STRUCTS:
                         continue

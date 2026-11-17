@@ -18,8 +18,11 @@ conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_
 K4 = ("bl", "mix", "all", "gc1", 0.60, 0.0, 99.0, 4, "flex", 2)
 K3 = ("bl", "mix", "all", "gc2", 0.60, 0.0, 99.0, 3, "flex", 2)
 rec = collections.defaultdict(list)
+CAP = {}
+A.HOOK = (lambda key, s1, s2, cand: CAP.__setitem__(key, (s1, s2, cand))) if os.environ.get("CERT_DUMP") == "1" else None
 for season, d, legs in FE.app_days(conn):
     acc = A.Acc()
+    CAP.clear()
     A.day(acc, 0, legs)
     got = {}
     for name, key in (("B_BRD_4dyn", K4), ("B_BRD_3dyn_fb", K3)):
@@ -38,6 +41,13 @@ for season, d, legs in FE.app_days(conn):
     casc = got["B_BRD_4dyn"] if got["B_BRD_4dyn"][0] else got["B_BRD_3dyn_fb"]
     for _ in range(casc[0]):
         rec["CASCADE"].append((season, d, casc[1] / casc[0], False))
+    if CAP:
+        nm, kk = ("B_BRD_4dyn", K4) if got["B_BRD_4dyn"][0] else ("B_BRD_3dyn_fb", K3)
+        c_ = CAP.get(kk[:8])
+        if c_ and casc[0]:
+            for sx in (c_[0], c_[1]):
+                if sx:
+                    CC.xdump("betr", nm, season, d, "dynamic", A.pay(sx, "flex") - 1.0, sx, c_[2])
 for name in ("B_BRD_4dyn", "B_BRD_3dyn_fb", "B_BRD_4dyn_floor_only", "CASCADE"):
     if not rec[name]:
         continue

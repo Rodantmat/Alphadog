@@ -35,6 +35,7 @@ for season, d, legs in FE.app_days(conn):
         banned |= {FE.pid(l) for l in s}
         m = float(FE.pay_of(s, "flex"))
         live = sum(1 for l in s if l.get("hit") is not None)
+        CC.xdump("sleeper", "S_ALL_5flex", season, d, "flex", m - 1.0, s, cand)
         for tag, hc in (("raw", 1.0), ("h5", 0.95), ("h10", 0.90), ("h15", 0.85)):
             pm = (m * hc) if m > 1.0 else m      # haircut the payout only when the slip pays more than a refund
             rec[tag].append((season, d, pm - 1.0, live < 2))

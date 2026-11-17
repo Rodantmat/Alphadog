@@ -59,6 +59,9 @@ def several(c, k, gc, n):
     return out
 
 
+HOOK = None      # research_cert_owner_fliff CERT_DUMP: called with (season, day, comp, slips, ranked candidates)
+
+
 class SmallBook(ST.Book):
     def day(self, season, d, src, qualified, gc, pricer):
         if os.environ.get("ST_SPLIT") == "half":         # owner 2026-10-26: how each setup holds early (Oct-Dec) vs late (Jan on) in a season
@@ -83,6 +86,8 @@ class SmallBook(ST.Book):
                     if len(ss) < ns:
                         continue
                     comp = (src, how, fl, side, mc, sk, ns, k)
+                    if HOOK is not None:
+                        HOOK(season, d, comp, ss, c)
                     for s in ss:
                         if ST.APP == "betr":
                             # BETR (research only - parked): its flat table (pp_slip_rules betr_payout_v1, Betr's own pricing query):

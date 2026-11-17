@@ -41,6 +41,7 @@ for i, d in enumerate(days):
         if sh:
             lg = [{**l, "hit": hits.get((l["player"], l["prop"], l["side"], l["line"]))} for l in sh]
             rec[u].append((s, d, tpay(lg, "factor"), sum(1 for l in lg if l["hit"] is not None) < 2))
+            CC.xdump("ud", u, s, d, "standard", tpay(lg, "factor"), lg, [])
     lg2 = [l for l in legs if l.get("hit") is not None]
     lg2.sort(key=lambda l: (str(l["player"]), l["prop"], l["side"], l["line"]))
     fair = C.consensus(conn, d)
@@ -66,6 +67,7 @@ for i, d in enumerate(days):
             xs = xs + [x for x in base_x if not ({l["player"] for l in x} & pl)][:len(base_x) - len(xs)]
         for x in xs:
             rec[uid].append((s, d, P.pay(x, "flex") - 1.0, sum(1 for l in x if l.get("hit") is not None) < 2))
+            CC.xdump("ud", uid, s, d, "flex", P.pay(x, "flex") - 1.0, x, C.LAST_RANK.get(uid) or [])
     if i % 40 == 39:
         conn.close(); conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
 print(f"slates: {len(days)}", flush=True)

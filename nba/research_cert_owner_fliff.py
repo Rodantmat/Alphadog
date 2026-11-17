@@ -3,6 +3,7 @@
 Fliff's own line and multiplier. History (2024-25, 2025-26) = the books' consensus main line x the measured Pick'Em margin (K_F 1.0971) = MODELLED boards; 2026-27 = Fliff's real
 Pick'Em board (sportsbook feed 10-20..10-25). Max = product of the multipliers. READ-ONLY, flat 1u a slip. Reports ROI, net, drawdown, drought like the PrizePicks / Underdog tables."""
 import datetime as dt
+import math
 import os
 import sys
 
@@ -20,7 +21,18 @@ KEYS = {
 }
 
 
+def _hook(season, d, comp, ss, c):
+    for name, key in list(KEYS.items())[:3]:
+        if comp == key[:8]:
+            for sx in ss:
+                live = [l for l in sx if l["hit"] is not None]
+                pay = 1.0 if len(live) < 2 else (math.prod(float(l["m"]) for l in live) if all(l["hit"] for l in live) else 0.0)
+                CC.xdump("fliff", name.split()[0], season, d, "max", pay - 1.0, sx, c)
+
+
 def main():
+    if os.environ.get("CERT_DUMP") == "1":
+        FT.RSS.HOOK = _hook
     conn = ST.connect()
     bk = FT.Book()
     today = dt.datetime.now(ST.AF.UDL.PT).date()

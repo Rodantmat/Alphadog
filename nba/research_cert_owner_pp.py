@@ -55,6 +55,10 @@ for season, d, prep in FE.pp_days(conn):
         live = sum(1 for l in s if l.get("hit") is not None)
         p = grade(s, st)
         rec[uid].append((season, d, p, live < 2)); daily_set[(season, d)] += p; built += 1
+        try:
+            CC.xdump("pp", uid, season, d, st, p, s, PB.candidates(prep, uid)[0])
+        except Exception as e:
+            print("xdump", uid, d, e, flush=True)
     nb[(season, d)] = built
     built_all = sum(1 for u in PB.UNITS if PB.unit_slip(prep, u) is not None)
     for name, fb in FALL.items():
