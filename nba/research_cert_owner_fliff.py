@@ -39,6 +39,16 @@ def main():
             print(f"{name}: no slips in the grid", flush=True)
             continue
         CC.report(f"FLIFF {name}"[:60], [(s, d, p - 1.0, False) for (s, d, p) in v])
+    CF = float(os.environ.get("CERT_FLOOR") or 0)
+    if CF:
+        print(f"\n=== floor {CF} with per-day fallback to the deployed rule ===", flush=True)
+        for name, key in list(KEYS.items())[:3]:
+            kf = (key[0], key[1], CF) + key[3:]
+            vf, vb = bk.slips.get(kf, []), bk.slips.get(key, [])
+            df = {d for (_s, d, _p) in vf}
+            mix = list(vf) + [x for x in vb if x[1] not in df]
+            CC.report(f"FLIFF floor-only {name}"[:60], [(s, d, p - 1.0, False) for (s, d, p) in vf])
+            CC.report(f"FLIFF floor+fb   {name}"[:60], [(s, d, p - 1.0, False) for (s, d, p) in mix])
     print("done", flush=True)
 
 

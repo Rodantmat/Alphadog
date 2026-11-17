@@ -23,9 +23,13 @@ for season, d, legs in FE.app_days(conn):
         continue
     o, sd, pr, kd0, fl, g, sk, k, ns = RULE
     cand = FE.ranked(legs, (o, sd, pr, kd0, fl, g, sk))
+    CF = float(os.environ.get("CERT_FLOOR") or 0)
+    candf = FE.ranked(legs, (o, sd, pr, kd0, max(fl, CF), g, sk)) if CF else None
     banned = set()
     for i in range(ns):
-        s = FE.build(cand, k, 1, set(), frozenset(banned))
+        s = FE.build(candf, k, 1, set(), frozenset(banned)) if candf is not None else None
+        if not s:                        # per-slip fallback: the deployed rule
+            s = FE.build(cand, k, 1, set(), frozenset(banned))
         if not s:
             break
         banned |= {FE.pid(l) for l in s}

@@ -28,8 +28,17 @@ for season, d, legs in FE.app_days(conn):
         got[name] = (n, pl)
         for _ in range(n):
             rec[name].append((season, d, pl / n, False))
+    CF = float(os.environ.get("CERT_FLOOR") or 0)
+    if CF:                               # floor with fallback: 4dyn at the floor, else the deployed cascade
+        a = acc.d.get(("bl", "mix", "all", "gc1", CF, 0.0, 99.0, 4, "flex", 2))
+        if a is not None and int(a[0][0]):
+            got["B_BRD_4dyn"] = (int(a[0][0]), float(a[0][1]))
+            for _ in range(int(a[0][0])):
+                rec["B_BRD_4dyn_floor_only"].append((season, d, float(a[0][1]) / int(a[0][0]), False))
     casc = got["B_BRD_4dyn"] if got["B_BRD_4dyn"][0] else got["B_BRD_3dyn_fb"]
     for _ in range(casc[0]):
         rec["CASCADE"].append((season, d, casc[1] / casc[0], False))
-for name in ("B_BRD_4dyn", "B_BRD_3dyn_fb", "CASCADE"):
+for name in ("B_BRD_4dyn", "B_BRD_3dyn_fb", "B_BRD_4dyn_floor_only", "CASCADE"):
+    if not rec[name]:
+        continue
     CC.report(f"BETR {name}", rec[name])

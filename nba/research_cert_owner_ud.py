@@ -19,6 +19,7 @@ import research_cert_common as CC            # noqa: E402
 E = AF.E
 conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
 days = AF.slate_days(conn)
+CF = float(os.environ.get("CERT_FLOOR") or 0)
 rec = collections.defaultdict(list)
 tpay = lambda sl, fk: (lambda p: (1.0 if p is None else p) - 1.0)(AF.UDL.payout("standard", [{"hit": l["hit"], "factor": float(l[fk])} for l in sl if l["hit"] is not None]))
 for i, d in enumerate(days):
@@ -32,7 +33,11 @@ for i, d in enumerate(days):
     hits = {(l["player"], l["prop"], l["side"], l["line"]): l["hit"] for l in legs}
     sl_legs = PT.raw_legs(rows); pool = E.eligible_legs(rows)
     for u in PT.UNITS:
-        sh = PT.unit_slip(u, sl_legs, pool, E)
+        sh = None
+        if CF and PT.UNITS[u][0] == "grid":
+            sh = PT.unit_slip(u, [l for l in sl_legs if l["p"] >= CF], pool, E)
+        if not sh:
+            sh = PT.unit_slip(u, sl_legs, pool, E)
         if sh:
             lg = [{**l, "hit": hits.get((l["player"], l["prop"], l["side"], l["line"]))} for l in sh]
             rec[u].append((s, d, tpay(lg, "factor"), sum(1 for l in lg if l["hit"] is not None) < 2))
@@ -54,7 +59,12 @@ for i, d in enumerate(days):
         lg2 = keep
     cl = C.calibrate(lg2, fair, P.COEF[s], fill=not hist)
     for uid in ("C3", "C4", "C5", "C6"):
-        for x in C.flex_slips(uid, cl):
+        xs = C.flex_slips(uid, [l for l in cl if l["p"] >= CF]) if CF else []
+        base_x = C.flex_slips(uid, cl)
+        if len(xs) < len(base_x):          # per-unit fallback: the deployed rule fills what the floor cannot build
+            pl = {l["player"] for x in xs for l in x}
+            xs = xs + [x for x in base_x if not ({l["player"] for l in x} & pl)][:len(base_x) - len(xs)]
+        for x in xs:
             rec[uid].append((s, d, P.pay(x, "flex") - 1.0, sum(1 for l in x if l.get("hit") is not None) < 2))
     if i % 40 == 39:
         conn.close(); conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
