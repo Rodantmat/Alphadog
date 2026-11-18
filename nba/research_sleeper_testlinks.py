@@ -67,6 +67,12 @@ def main():
         games[l["g"]].append(l)
     print(f"TL|usable legs {len(legs)} in {len(games)} games")
 
+    if os.getenv("TL_PLAN") == "2":
+        legs[:] = [l for l in legs if not str(l["prop"]).startswith("first_") and l["prop"] != "double_double"]   # the lines that were pulled / moved most in batch 1
+        games.clear()
+        for l in legs:
+            games[l["g"]].append(l)
+
     def pick(n, lo, hi, sg=None, big=False):
         """n legs, multipliers in [lo, hi], one per game and player; sg='T' / 'O' = the first two legs share a game (same team / other team)"""
         for _ in range(4000):
@@ -76,7 +82,11 @@ def main():
                 c = [l for l in games[g] if lo <= l["m"] <= hi]
                 rnd.shuffle(c)
                 a = c[0] if c else None
-                b = next((l for l in c[1:] if l["pid"] != a["pid"] and ((l["team"] == a["team"]) == (sg == "T"))), None) if a else None
+                sgk = sg[0]
+                want = {"TO": "over", "TU": "under"}.get(sg)
+                if want and a and a["side"] != want:
+                    continue
+                b = next((l for l in c[1:] if l["pid"] != a["pid"] and ((l["team"] == a["team"]) == (sgk == "T")) and (not want or l["side"] == want)), None) if a else None
                 if not b:
                     continue
                 out, usedg, usedp = [a, b], {g}, {a["pid"], b["pid"]}
@@ -103,6 +113,12 @@ def main():
             ("H", 5, 1.4, 2.2, None, True, "5-pick, mixed with one 3x+ leg"), ("I", 6, 1.25, 1.6, None, False, "6-pick, low"), ("J", 6, 1.7, 2.4, None, False, "6-pick, high"),
             ("K", 5, 1.4, 2.3, "T", False, "5-pick, two legs SAME GAME same team"), ("L", 5, 1.4, 2.3, "O", False, "5-pick, two legs SAME GAME opposite teams"),
             ("M", 6, 1.4, 2.2, "T", False, "6-pick, two legs SAME GAME same team"), ("N", 3, 1.4, 2.2, "O", False, "3-pick, two legs SAME GAME opposite teams")]
+    if os.getenv("TL_PLAN") == "2":
+        plan = [("P", 4, 1.2, 1.5, None, False, "4-pick, low"), ("Q", 4, 1.6, 1.9, None, False, "4-pick, middle"), ("R", 4, 2.0, 2.7, None, False, "4-pick, high"),
+                ("S", 5, 1.2, 1.5, None, False, "5-pick, low"), ("T", 5, 2.3, 3.3, None, False, "5-pick, very high"),
+                ("U", 6, 1.2, 1.45, None, False, "6-pick, low"), ("V", 6, 1.5, 1.8, None, False, "6-pick, middle"), ("W", 6, 2.0, 2.7, None, False, "6-pick, high"),
+                ("X", 5, 1.5, 2.2, "TO", False, "5-pick, SAME GAME same team, both Over"), ("Y", 5, 1.5, 2.2, "TU", False, "5-pick, SAME GAME same team, both Under"),
+                ("Z", 4, 1.5, 2.2, "TO", False, "4-pick, SAME GAME same team, both Over"), ("ZA", 3, 1.11, 1.22, None, False, "3-pick, very low")]
     for tag, n, lo, hi, sg, big, desc in plan:
         s = pick(n, lo, hi, sg, big)
         if not s:

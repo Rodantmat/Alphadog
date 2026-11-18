@@ -36,7 +36,7 @@ def tiers(m):
 
 
 def main():
-    slips = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "sleeper_testlinks_1118.json")))
+    slips = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.getenv("TC_FILE") or "sleeper_testlinks_1118.json")))
     doc = get("https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true")
     pl = get("https://api.sleeper.app/v1/players/nba")
     byid, bykey = {}, {}
