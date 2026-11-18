@@ -102,6 +102,11 @@ def main():
                          AF.season_of(d), str(l.get("kind") or "main")))
     A0 = np.array([r[:11] for r in rows], dtype=float)
     S0 = np.array([r[11] for r in rows]); K0 = np.array([r[12] for r in rows])
+    try:
+        conn.close()
+    except Exception:
+        pass
+    conn = psycopg.connect(os.environ["DATABASE_URL"])            # the row loop is long and the idle connection gets closed
     T = M.pp_tables(conn)["all"]
     subsets = [("ALL LEGS", np.ones(len(A0), bool))]
     if len(set(K0)) > 1:
