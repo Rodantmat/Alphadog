@@ -865,6 +865,17 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 (Worker TOP_N; engine cap 5 -> 4 with the same measure from the 2026-11-19 slate; today's 5th slip per app set status='capped' so it is neither shown nor graded); her unit is
 capped at $3 on every app from 2026-11-18 (UNIT_MAX, the ladder replay caps only from that date so the past is unchanged).
 
+**2026-11-18 - SLEEPER FLEX TIERS, SHARE MODEL (owner 14:19 PT: full hit shown low, partial hits shown high, a pattern not drift).** Cause: the 2026-10-26 fixed ratios
+T1/T0, T2/T0 were fitted on low-multiplier slips; on today's ~2x legs the 5-pick full hit read 14-17% LOW and the 1 / 2-miss tiers 10-20% HIGH (3 / 4 / 6-pick 1-5%).
+Sleeper's real rule (research_sleeper_tiers.py, 168 of the owner's Flex entries, runs 44411138419 / 44411987487; clean entries reproduced to the cent): with u_i = 1 - 1/m_i,
+2-miss EV share = b e2(u); 1-miss share = a e1(u) - 2b e2(u); full-hit share = EV - both; tier = share / chance of that outcome at q = 1/m.
+EV / a / b: 3-pick 1.0011 / 0.3341 / 0; 4-pick 1.0801 / 0.2698 / 0; 5-pick 1.1461 / 0.3266 / 0.0723; 6-pick 1.1969 / 0.1995 / 0.0402
+(`sleeper_payout.true_pricing.flex_share` + `flex_ev`; remove flex_share to fall back to flex_ratio). Code: main_ui/pricing.js nbaPayout (main-ui v1.5.6, friend v1.9.7),
+sleeper_live_slip_engine.flex_tiers (also used by roi_app engine + exposure coordinator + grading), research_sleeper_transfer.pay_flex_ev (ST_FLEX_OLD=1 = old).
+NOT modelled: SAME-GAME pairs - Sleeper often (not always) cuts the full hit ~5% and the 1-miss tier ~3% per same-game pair (varies by pair; 48 entries).
+Re-grade audit research_sleeper_regrade.py (dry; REGRADE_APPLY=1 writes): this season's 62 graded live Flex slips +8.92u -> +11.63u. Replays re-run with the corrected
+payouts: cert_sl3 44412521915, rv_sleeper2 44412535906.
+
 ---
 
 ## 4. Where everything lives
