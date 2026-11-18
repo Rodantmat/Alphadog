@@ -876,6 +876,13 @@ NOT modelled: SAME-GAME pairs - Sleeper often (not always) cuts the full hit ~5%
 Re-grade audit research_sleeper_regrade.py (dry; REGRADE_APPLY=1 writes): this season's 62 graded live Flex slips +8.92u -> +11.63u. Replays re-run with the corrected
 payouts: cert_sl3 44412521915, rv_sleeper2 44412535906.
 
+**2026-11-18 - SLEEPER SHARE MODEL CHECKED ON FRESH SLIPS (owner's app screenshots of 13 no-submit test slips, research_sleeper_testlinks.py + research_sleeper_testcheck.py).**
+Sleeper Picks is app-only (no web board), so the test = deep links -> screenshots. Flex, at the multipliers on the board: 3-pick 1.96 / 0.65 and 4.02 / 1.34 exact;
+5-pick 10.31 / 2.02 / 0.41 and 11.03 / 2.12 / 0.42 exact, 15.14 / 2.64 / 0.49 vs 15.16 / 2.65 / 0.50, 8.98 / 1.81 / 0.37 vs 8.94 / 1.80 / 0.37; 6-pick 38.09 / 2.68 / 0.54 vs
+38.08 / 2.68 / 0.53. The four slips with a SAME-GAME pair (same team and opposite teams) matched too - no same-game discount on those pairs. MAX bonus re-measured:
+3-pick 1.079 (unchanged), 5-pick 1.123 (was 1.174), 6-pick 1.12 (was 1.276) -> `sleeper_payout.true_pricing.max_bonus` and research_sleeper_transfer.BONUS_TRUE.
+4-pick Max not re-measured (no clean screenshot). Slips with a pulled leg were left out.
+
 ---
 
 ## 4. Where everything lives
