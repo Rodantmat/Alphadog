@@ -2,65 +2,45 @@
   "ok": true,
   "source": "betr graphql getUpcomingEventsV2, owner token, no browser (proxy)",
   "league": "NBA",
-  "started_at": "2026-11-17T21:20:40Z",
-  "fetched_at": "2026-11-17T21:20:42Z",
-  "legs": 2847,
-  "alt_legs": 2100,
-  "players": 67,
-  "events": 5,
+  "started_at": "2026-11-18T21:20:42Z",
+  "fetched_at": "2026-11-18T21:20:44Z",
+  "legs": 6502,
+  "alt_legs": 4804,
+  "players": 145,
+  "events": 12,
   "board_op": "getUpcomingEventsV2",
   "partial_lobby": false,
   "token_expires_at": "2026-12-14T21:19:27Z",
   "tier_samples": {
     "REGULAR": {
-      "marketId": "1032611162874170912",
+      "marketId": "1032611182874506373",
       "marketStatus": "OPENED",
       "isLive": false,
       "type": "REGULAR",
-      "label": "1H Pts+Reb+Ast",
-      "name": "1st Half Pts+Reb+Ast",
-      "key": "1ST_HALF_PRA",
-      "order": 33,
-      "value": 8.5,
+      "label": "1H Points",
+      "name": "1st Half Points",
+      "key": "1ST_HALF_POINTS",
+      "order": 32,
+      "value": 6.5,
       "nonRegularPercentage": 0,
       "nonRegularValue": 0.0,
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "1032611162935479337",
+          "marketOptionId": "1032611182936104865",
           "outcome": "MORE"
         },
         {
-          "marketOptionId": "1032611162935479338",
+          "marketOptionId": "1032611182936104866",
           "outcome": "LESS"
         }
       ]
     },
-    "EDGE_4": {
-      "marketId": "1032611162874163048",
+    "EDGE_1": {
+      "marketId": "1032611172874412358",
       "marketStatus": "OPENED",
       "isLive": false,
-      "type": "EDGE_4",
-      "label": "3PT Made",
-      "name": "3PT Made",
-      "key": "THREE_POINTERS_MADE",
-      "order": 9,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 0.5,
-      "currentValue": null,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032611162935468911",
-          "outcome": "MORE"
-        }
-      ]
-    },
-    "MINI_BOOSTED": {
-      "marketId": "1032611162874162955",
-      "marketStatus": "OPENED",
-      "isLive": false,
-      "type": "MINI_BOOSTED",
+      "type": "EDGE_1",
       "label": "3PT Made",
       "name": "3PT Made",
       "key": "THREE_POINTERS_MADE",
@@ -71,16 +51,16 @@
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "1032611162935468801",
+          "marketOptionId": "1032611182935942382",
           "outcome": "MORE"
         }
       ]
     },
-    "SUPER_BOOSTED": {
-      "marketId": "1032611162874163049",
+    "MINI_BOOSTED": {
+      "marketId": "1032611172874418743",
       "marketStatus": "OPENED",
       "isLive": false,
-      "type": "SUPER_BOOSTED",
+      "type": "MINI_BOOSTED",
       "label": "3PT Made",
       "name": "3PT Made",
       "key": "THREE_POINTERS_MADE",
@@ -91,73 +71,53 @@
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "1032611162935468912",
+          "marketOptionId": "1032611182935960013",
+          "outcome": "MORE"
+        }
+      ]
+    },
+    "SUPER_BOOSTED": {
+      "marketId": "1032611172874418744",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "SUPER_BOOSTED",
+      "label": "3PT Made",
+      "name": "3PT Made",
+      "key": "THREE_POINTERS_MADE",
+      "order": 9,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 3.5,
+      "currentValue": null,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032611182935960014",
           "outcome": "MORE"
         }
       ]
     },
     "EDGE_3": {
-      "marketId": "1032611162874164969",
+      "marketId": "1032611172874393560",
       "marketStatus": "OPENED",
       "isLive": false,
       "type": "EDGE_3",
-      "label": "Assists",
-      "name": "Assists",
-      "key": "ASSISTS",
-      "order": 4,
+      "label": "Fouls",
+      "name": "Fouls",
+      "key": "FOULS",
+      "order": 24,
       "value": 0.5,
       "nonRegularPercentage": 0,
-      "nonRegularValue": 2.5,
+      "nonRegularValue": 1.5,
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "1032611162935470971",
-          "outcome": "MORE"
-        }
-      ]
-    },
-    "BOOSTED": {
-      "marketId": "1032611162874164974",
-      "marketStatus": "OPENED",
-      "isLive": false,
-      "type": "BOOSTED",
-      "label": "Assists",
-      "name": "Assists",
-      "key": "ASSISTS",
-      "order": 4,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 5.5,
-      "currentValue": null,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032611162935470977",
-          "outcome": "MORE"
-        }
-      ]
-    },
-    "BOOSTED_4": {
-      "marketId": "1032611162874164976",
-      "marketStatus": "OPENED",
-      "isLive": false,
-      "type": "BOOSTED_4",
-      "label": "Assists",
-      "name": "Assists",
-      "key": "ASSISTS",
-      "order": 4,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 6.5,
-      "currentValue": null,
-      "allowedOptions": [
-        {
-          "marketOptionId": "1032611162935470979",
+          "marketOptionId": "1032611172935920789",
           "outcome": "MORE"
         }
       ]
     },
     "EDGE_2": {
-      "marketId": "1032611162874165002",
+      "marketId": "1032611172874400426",
       "marketStatus": "OPENED",
       "isLive": false,
       "type": "EDGE_2",
@@ -167,37 +127,97 @@
       "order": 2,
       "value": 0.5,
       "nonRegularPercentage": 0,
-      "nonRegularValue": 6.5,
+      "nonRegularValue": 11.5,
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "1032611162935471009",
+          "marketOptionId": "1032611172935925616",
           "outcome": "MORE"
         }
       ]
     },
-    "EDGE_1": {
-      "marketId": "1032611162874163014",
+    "BOOSTED": {
+      "marketId": "1032611172874400431",
       "marketStatus": "OPENED",
       "isLive": false,
-      "type": "EDGE_1",
-      "label": "Pts+Reb+Ast",
-      "name": "Pts+Rebs+Asst",
-      "key": "POINTS_REBOUNDS_ASSISTS",
-      "order": 5,
+      "type": "BOOSTED",
+      "label": "Points",
+      "name": "Points",
+      "key": "POINTS",
+      "order": 2,
       "value": 0.5,
       "nonRegularPercentage": 0,
-      "nonRegularValue": 16.5,
+      "nonRegularValue": 17.5,
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "1032611162935468869",
+          "marketOptionId": "1032611172935925621",
+          "outcome": "MORE"
+        }
+      ]
+    },
+    "BOOSTED_4": {
+      "marketId": "1032611172874418795",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "BOOSTED_4",
+      "label": "Points",
+      "name": "Points",
+      "key": "POINTS",
+      "order": 2,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 23.5,
+      "currentValue": null,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032611182935960065",
+          "outcome": "MORE"
+        }
+      ]
+    },
+    "EDGE_4": {
+      "marketId": "1032611182874487584",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "EDGE_4",
+      "label": "Blocks",
+      "name": "Blocks",
+      "key": "BLOCKS",
+      "order": 19,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 0.5,
+      "currentValue": null,
+      "allowedOptions": [
+        {
+          "marketOptionId": "1032611182936075535",
+          "outcome": "MORE"
+        }
+      ]
+    },
+    "NUKE": {
+      "marketId": "NmFlMmM0ZmFhMTQzODhhMDAzMTJiYjFmOjY0OGEwNzcwNmNkNWU1Mjc0MGEzZmVjYjpQT0lOVFNfUkVCT1VORFM6MjUuNTpOVUtF",
+      "marketStatus": "OPENED",
+      "isLive": false,
+      "type": "NUKE",
+      "label": "Pts+Reb",
+      "name": "PTS+REB",
+      "key": "POINTS_REBOUNDS",
+      "order": 6,
+      "value": 0.5,
+      "nonRegularPercentage": 0,
+      "nonRegularValue": 25.5,
+      "currentValue": null,
+      "allowedOptions": [
+        {
+          "marketOptionId": "NmFlMmM0ZmFhMTQzODhhMDAzMTJiYjFmOjY0OGEwNzcwNmNkNWU1Mjc0MGEzZmVjYjpQT0lOVFNfUkVCT1VORFM6MjUuNTpOVUtFOk1PUkU=",
           "outcome": "MORE"
         }
       ]
     },
     "SPECIAL": {
-      "marketId": "NmFlMTczNjkwYmE2MGJmYWUxNDVhNGU2OjY0OGEwNzZkNmNkNWU1Mjc0MGEzZmUzZTpQT0lOVFM6MjMuNTpTUEVDSUFM",
+      "marketId": "NmFlMmM0ZmFhMTQzODhhMDAzMTJiYjI3OjY4NWQzYjdhNDRlMzYwMDMwNzMwZGM2YzpQT0lOVFM6MjEuNTpTUEVDSUFM",
       "marketStatus": "OPENED",
       "isLive": false,
       "type": "SPECIAL",
@@ -205,33 +225,13 @@
       "name": "Points",
       "key": "POINTS",
       "order": 2,
-      "value": 25.5,
-      "nonRegularPercentage": -8,
-      "nonRegularValue": 23.5,
+      "value": 23.5,
+      "nonRegularPercentage": -9,
+      "nonRegularValue": 21.5,
       "currentValue": null,
       "allowedOptions": [
         {
-          "marketOptionId": "NmFlMTczNjkwYmE2MGJmYWUxNDVhNGU2OjY0OGEwNzZkNmNkNWU1Mjc0MGEzZmUzZTpQT0lOVFM6MjMuNTpTUEVDSUFMOk1PUkU=",
-          "outcome": "MORE"
-        }
-      ]
-    },
-    "NUKE": {
-      "marketId": "NmFlMTczNjkwYmE2MGJmYWUxNDVhNGU2OjY0OTYxODI4M2Q2MzMxNDRlNTZjOGFmNTpQT0lOVFNfQVNTSVNUUzozNS41Ok5VS0U=",
-      "marketStatus": "OPENED",
-      "isLive": false,
-      "type": "NUKE",
-      "label": "Pts+Ast",
-      "name": "PTS+AST",
-      "key": "POINTS_ASSISTS",
-      "order": 7,
-      "value": 0.5,
-      "nonRegularPercentage": 0,
-      "nonRegularValue": 35.5,
-      "currentValue": null,
-      "allowedOptions": [
-        {
-          "marketOptionId": "NmFlMTczNjkwYmE2MGJmYWUxNDVhNGU2OjY0OTYxODI4M2Q2MzMxNDRlNTZjOGFmNTpQT0lOVFNfQVNTSVNUUzozNS41Ok5VS0U6TU9SRQ==",
+          "marketOptionId": "NmFlMmM0ZmFhMTQzODhhMDAzMTJiYjI3OjY4NWQzYjdhNDRlMzYwMDMwNzMwZGM2YzpQT0lOVFM6MjEuNTpTUEVDSUFMOk1PUkU=",
           "outcome": "MORE"
         }
       ]
