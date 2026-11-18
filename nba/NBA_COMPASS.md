@@ -882,6 +882,9 @@ Sleeper Picks is app-only (no web board), so the test = deep links -> screenshot
 38.08 / 2.68 / 0.53. The four slips with a SAME-GAME pair (same team and opposite teams) matched too - no same-game discount on those pairs. MAX bonus re-measured:
 3-pick 1.079 (unchanged), 5-pick 1.123 (was 1.174), 6-pick 1.12 (was 1.276) -> `sleeper_payout.true_pricing.max_bonus` and research_sleeper_transfer.BONUS_TRUE.
 4-pick Max not re-measured (no clean screenshot). Slips with a pulled leg were left out.
+BATCH 2 (same day, sleeper_testlinks_1118b.json; 8 screenshots): Flex exact or within a cent on 4-pick low / middle / high (5.12 / 1.11, 5.73 / 1.43, 11.21 / 2.77), 5-pick
+with a same-team both-Over pair (12.81 / 2.40 / 0.48), 6-pick middle; the very-high 5-pick and the low / high 6-picks agree once the drift between build and screenshot is
+allowed for. MAX bonus 4-pick = 1.04 (three slips: 1.039 / 1.039 / 1.040; was 1.101) -> config + BONUS_TRUE; 5-pick 1.123 and 6-pick 1.12 hold from low to very high legs.
 
 ---
 

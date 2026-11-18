@@ -54,7 +54,7 @@ BONUS_LOW = {2: 1.0, 3: 1.0797, 4: 1.102, 5: 1.10, 6: 1.135}
 # 2026-10-26 - SLEEPER'S OWN NUMBERS (probe_sleeper_payout_fit run 40375790579, 454 of the owner's entries read from Sleeper's API):
 # Max bonus with every leg in a different game (or opposite-side same-game pairs) = 1.0 / 1.0797 / 1.101 / 1.174 / 1.276 for 2-6 picks;
 # Flex tiers are set so the entry's EV at Sleeper's implied chances (q = 1/m) hits a size target, split by size ratios T1/T0, T2/T0
-BONUS_TRUE = {2: 1.0, 3: 1.0797, 4: 1.101, 5: 1.123, 6: 1.12}   # 5 / 6 re-measured 2026-11-18 on the owner's no-submit test slips (were 1.174 / 1.276: 4% / 13% high)
+BONUS_TRUE = {2: 1.0, 3: 1.0797, 4: 1.04, 5: 1.123, 6: 1.12}   # 4 (was 1.101) / 5 / 6 re-measured 2026-11-18 on the owner's no-submit test slips (were 1.174 / 1.276: 4% / 13% high)
 FLEX_EV = {3: 1.0012, 4: 1.0801, 5: 1.148, 6: 1.197}
 FLEX_R = {3: (0.3287, 0.0), 4: (0.2474, 0.0), 5: (0.235, 0.049), 6: (0.096, 0.0193)}
 # 2026-11-18 share model (research_sleeper_tiers.py; 91 clean Flex entries of the owner, exact to the cent on almost all): EV and (a, b) by size
