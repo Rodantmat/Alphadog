@@ -18,7 +18,8 @@ const SAVE_FROM = "2026-11-11";   // owner 2026-11-11 16:58 PT: today stays as f
 const pricingFrom = cfg => ({ pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sleeper || {}, betr: (cfg.pp || {}).betr_payout_v1 || null });
 const J = v => (typeof v === "string" ? JSON.parse(v) : v);
 
-const VERSION = "alphadog-v2-nba-friend-v1.9.4";   // v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
+const TIER1_N = 4;   // owner 2026-11-18: Tier 1 = the 4 strongest slips per app (always open), Tier 2 = the rest (always collapsed, not pre-checked for Save)
+const VERSION = "alphadog-v2-nba-friend-v1.9.5";   // v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
 // prior:
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
@@ -200,6 +201,16 @@ async function data(env, token, save = true, preview = false) {
     const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: linkUrl(s, now),
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
         sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now, status: l.source_key === "prizepicks" ? l.pp_now || null : l.live_now || null, team: l.team_abbr || null, lid: legLid(l), g: l._g || null, f: legF(l) })), gcap: s.game_cap || 1 }));
+    // TIERS (owner 2026-11-18 13:52 PT: "limit at 4 slips per app, the top/strongest ... tier 1, this always come visible ... the rest ... tier 2, always collapsed"):
+    // per app the 4 strongest slips of the day are Tier 1, the rest Tier 2. Strength = the slip's per-leg edge, the geometric mean of (leg hit chance x leg multiplier)
+    // from nba_friend.slips (so a bigger slip is not ranked higher just for having more legs). No tier data -> every slip is Tier 1.
+    try {
+      const tr = await q(sql, "SELECT app, size, slip_no, legs FROM nba_friend.slips WHERE game_date = $1::date", [today], 6000);
+      const byA = {}, tOf = {};
+      for (const r of tr) { const ls = J(r.legs) || []; let v = 0; for (const l of ls) v += Math.log(Math.max((Number(l.p) || 0.5) * (Number(l.m) || 1.8), 1e-6)); (byA[r.app] = byA[r.app] || []).push({ k: r.app + "|" + r.size + "|" + r.slip_no, v: ls.length ? v / ls.length : -99 }); }
+      for (const a of Object.keys(byA)) byA[a].sort((x, y) => y.v - x.v).forEach((x, i) => { tOf[x.k] = i < TIER1_N ? 1 : 2; });
+      for (const s of slips) { const m = /(\d+)-pick (\d+)/.exec(s.name || ""); s.tier = (m && tOf[s.app + "|" + m[1] + "|" + m[2]]) || 1; }
+    } catch (e) { for (const s of slips) s.tier = 1; }
     const pairLegs = (out.generated_slips || []).filter(x => x._pairs).flatMap(x => x.legs);
     const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !(l.source_key === "prizepicks" && ((l.kind && l.kind !== "standard") || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1 || l.want_odds)) && !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && !l.off)
       .map(l => ({ app: l.source_key, player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, team: l.team_abbr || null, lid: legLid(l), g: l._g || null, f: legF(l), p: Number(l.p) || (Number(l.estimated_hit_probability_0_100) / 100) || 0 })).sort((x, y) => y.p - x.p) : [];
@@ -227,7 +238,7 @@ td,th{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}th{co
 .leg{padding:7px 0;border-top:1px solid var(--line)}.leg:first-of-type{border-top:0}.leg b{font-weight:600}.sub{color:var(--mut);font-size:12.5px}.flag{color:var(--bad);font-size:12px}
 .spin{display:flex;gap:10px;align-items:center;color:var(--mut);padding:24px 0}.dot{width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:r 0.8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
 h2{font-size:15px;margin:18px 0 4px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
-.pair{background:var(--card);border-radius:12px;padding:10px 14px;margin:8px 0}.pair summary{cursor:pointer;font-weight:600;list-style:none}.pair summary::-webkit-details-marker{display:none}.pair[open] summary{margin-bottom:6px}
+.pair{background:var(--card);border-radius:12px;padding:10px 14px;margin:8px 0}.pair summary{cursor:pointer;font-weight:600;list-style:none}.pair summary::-webkit-details-marker{display:none}.pair[open] summary{margin-bottom:6px}.tier{background:transparent;padding:0;margin:6px 0 14px}.tier>summary{display:flex;justify-content:space-between;align-items:center;background:var(--card);border-radius:10px;padding:10px 14px}
 .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.hd h3{margin:0 0 8px}.sv{white-space:nowrap;font-size:13px;color:var(--mut);display:flex;gap:6px;align-items:center}.sv input{width:20px;height:20px}.saved{color:var(--ok);font-size:13px;white-space:nowrap}
 .mrow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:0 0 6px;font-size:13px}.md{display:flex;gap:5px;align-items:center;color:var(--ink)}.mult{margin-left:auto;font-weight:700}
 .lr{display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--line)}.lr .leg{border-top:0;flex:1;min-width:0}.rm,.edit,#saveBtn{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font:inherit;font-size:13px;cursor:pointer;margin-top:6px}
@@ -256,7 +267,7 @@ function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.in
 function sweep(s){var ch=false;if(s.saved)return false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped||l.removed)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
 var SV=true,SAVEUI=false;
 function initSwap(d){window.PD=d;SV=true;SAVEUI=!!d.save_on;d.pool=(d.pool||[]).slice();var sv={};(d.saved||[]).forEach(function(x){sv[x.app+'|'+x.name]=x});
-  d.slips.forEach(function(s){s.save=true;var m0=String(s.structure||'').toLowerCase();s.mode=(m0.indexOf('flex')>=0||m0.indexOf('dynamic')>=0)?'flex':'power';
+  d.slips.forEach(function(s){s.save=(s.tier||1)===1;var m0=String(s.structure||'').toLowerCase();s.mode=(m0.indexOf('flex')>=0||m0.indexOf('dynamic')>=0)?'flex':'power';
     var x=sv[s.app+'|'+s.name];if(SV&&x){s.legs=x.legs.slice();s.mode=x.mode;s.saved=true;s.wasSaved=true;s.changed=true;return}
     sweep(s)})}
 function legObj(l){return {factor:l.f==null?1:l.f,selected_side:l.side,side:l.side,event_id:l.matchup||null}}
@@ -328,7 +339,9 @@ function render(d){
   h+='<tr class="tot"><td>Total</td><td class="'+cls(d.roi.total&&d.roi.total.roi)+'">'+pct(d.roi.total&&d.roi.total.roi)+'</td></tr></table>';
   if(!d.slips.length)h+='<p class="sub" style="margin-top:16px">No slips right now. They appear here once the day\\'s lineups are set.</p>';
   for(const a of d.order){const ss=d.slips.filter(s=>s.app===a);if(!ss.length)continue;h+='<h2>'+esc(d.labels[a])+'</h2>';
-    for(const s of ss){h+=slipHtml(s,d.slips.indexOf(s))}}
+    [1,2].forEach(function(tn){var g=ss.filter(function(s){return (s.tier||1)===tn});if(!g.length)return;
+      h+='<details class="pair tier"'+(tn===1?' open':'')+'><summary>Tier '+tn+'<span class="tag">'+g.length+(g.length===1?' slip':' slips')+'</span></summary>';
+      g.forEach(function(s){h+=slipHtml(s,d.slips.indexOf(s))});h+='</details>'})}
   if(SAVEUI&&d.slips.length)h+='<div class="savebar"><button id="saveBtn">Save checked slips</button><div id="saveMsg" class="sub" style="margin-top:6px"></div></div>';
   h+='<div id="pairsBox"></div><div id="histBox"></div>';
   $('#app').innerHTML=h;window.PD=d;drawPairs();drawHist()}
