@@ -53,6 +53,19 @@
       "team_abbreviation": "MIA"
     },
     {
+      "id": 1643265,
+      "full_name": "Jonas Aidoo",
+      "last_comma_first": "Aidoo, Jonas",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jonas_aidoo",
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
+    },
+    {
       "id": 1642369,
       "full_name": "Michael Ajayi",
       "last_comma_first": "Ajayi, Michael",
@@ -1052,6 +1065,19 @@
       "team_city": "Orlando",
       "team_name": "Magic",
       "team_abbreviation": "ORL"
+    },
+    {
+      "id": 1643572,
+      "full_name": "Rafael Castro",
+      "last_comma_first": "Castro, Rafael",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "rafael_castro",
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 1643416,
