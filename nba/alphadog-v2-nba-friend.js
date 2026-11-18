@@ -19,7 +19,7 @@ const pricingFrom = cfg => ({ pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sle
 const J = v => (typeof v === "string" ? JSON.parse(v) : v);
 
 const TIER1_N = 4;   // owner 2026-11-18: Tier 1 = the 4 strongest slips per app (always open), Tier 2 = the rest (always collapsed, not pre-checked for Save)
-const VERSION = "alphadog-v2-nba-friend-v1.9.5";   // v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
+const VERSION = "alphadog-v2-nba-friend-v1.9.6";   // v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
 // prior:
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
@@ -208,8 +208,12 @@ async function data(env, token, save = true, preview = false) {
       const tr = await q(sql, "SELECT app, size, slip_no, legs FROM nba_friend.slips WHERE game_date = $1::date", [today], 6000);
       const byA = {}, tOf = {};
       for (const r of tr) { const ls = J(r.legs) || []; let v = 0; for (const l of ls) v += Math.log(Math.max((Number(l.p) || 0.5) * (Number(l.m) || 1.8), 1e-6)); (byA[r.app] = byA[r.app] || []).push({ k: r.app + "|" + r.size + "|" + r.slip_no, v: ls.length ? v / ls.length : -99 }); }
-      for (const a of Object.keys(byA)) byA[a].sort((x, y) => y.v - x.v).forEach((x, i) => { tOf[x.k] = i < TIER1_N ? 1 : 2; });
-      for (const s of slips) { const m = /(\d+)-pick (\d+)/.exec(s.name || ""); s.tier = (m && tOf[s.app + "|" + m[1] + "|" + m[2]]) || 1; }
+      const rOf = {};
+      for (const a of Object.keys(byA)) byA[a].sort((x, y) => y.v - x.v).forEach((x, i) => { tOf[x.k] = i < TIER1_N ? 1 : 2; rOf[x.k] = i; });
+      for (const s of slips) { const m = /(\d+)-pick (\d+)/.exec(s.name || ""); const k = m ? s.app + "|" + m[1] + "|" + m[2] : ""; s.tier = tOf[k] || 1; s.rank = k in rOf ? rOf[k] : 999; }
+      // BEST FIRST (owner 2026-11-18 14:15 PT "on the order from best to less good. So the top one is always the best"): inside each app the slips are listed strongest first
+      const ai = {}; slips.forEach(s => { if (!(s.app in ai)) ai[s.app] = Object.keys(ai).length; });
+      slips.sort((x, y) => ai[x.app] - ai[y.app] || x.rank - y.rank);
     } catch (e) { for (const s of slips) s.tier = 1; }
     const pairLegs = (out.generated_slips || []).filter(x => x._pairs).flatMap(x => x.legs);
     const cpool = date === today ? [...(out.backup_pool || []), ...pairLegs].filter(l => !(l.source_key === "prizepicks" && ((l.kind && l.kind !== "standard") || Number(l.is_goblin) === 1 || Number(l.is_demon) === 1 || l.want_odds)) && !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now) && !l.off)

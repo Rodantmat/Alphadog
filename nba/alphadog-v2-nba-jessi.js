@@ -7,7 +7,9 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const VERSION = "alphadog-v2-nba-jessi-v1.2.2";   // v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const TOP_N = 4;   // owner 2026-11-18: only the 4 strongest slips per app, best first, no tiers
+const UNIT_MAX = 3, UNIT_CAP_FROM = "2026-11-18";   // owner 2026-11-18 14:15 PT "limit her slips at $3 max per app": the unit never goes above $3 on any app, from this date on
+const VERSION = "alphadog-v2-nba-jessi-v1.2.3";   // v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -75,9 +77,9 @@ function slipUrl(s, now) {
 function unitFor(acc, upx) { let n = 1; while (upx * (n + 1) * n / 2 <= acc + 1e-9) n++; return n; }
 function ladder(rows, app) {
   const upx = UPX[app]; let acc = 0;
-  for (const r of rows) { if (r.app !== app) continue; acc += unitFor(acc, upx) * r.p; }
-  const u = unitFor(acc, upx);
-  return { unit: u, acc: Math.round(acc * 100) / 100, next_at: Math.round(upx * u * (u + 1) / 2 * 100) / 100, down_below: u > 1 ? Math.round(upx * (u - 1) * u / 2 * 100) / 100 : null };
+  for (const r of rows) { if (r.app !== app) continue; let u0 = unitFor(acc, upx); if (String(r.d) >= UNIT_CAP_FROM) u0 = Math.min(u0, UNIT_MAX); acc += u0 * r.p; }
+  const uf = unitFor(acc, upx); const u = Math.min(uf, UNIT_MAX);
+  return { unit: u, capped: uf >= UNIT_MAX, acc: Math.round(acc * 100) / 100, next_at: Math.round(upx * u * (u + 1) / 2 * 100) / 100, down_below: u > 1 ? Math.round(upx * (u - 1) * u / 2 * 100) / 100 : null };
 }
 
 async function data(env, token, save = true) {
@@ -134,6 +136,20 @@ async function data(env, token, save = true) {
       .map(l => Object.assign(mapLeg(l), { app: l.source_key, p: Number(l.p) || (Number(l.estimated_hit_probability_0_100) / 100) || 0 })).sort((x, y) => y.p - x.p) : [];
     const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, gcap: s.game_cap || 1, structure: s.structure_label, url: slipUrl(s, now), bet: units[s.source_key] ? units[s.source_key].unit : null,
       legs: s.legs.map(l => Object.assign(mapLeg(l), { sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now })) }));
+    // TOP 4, BEST FIRST (owner 2026-11-18 14:15 / 14:16 PT: "just put the top ones ... the top 4 per app", "no tier 1 and tier 2. Just the top 4, best 4, that's it", best first):
+    // per app only the TOP_N strongest slips show, strongest first. Strength = per-leg edge, the geometric mean of (leg hit chance x leg multiplier) from nba_jessi.slips -
+    // the same measure as Jon's page. A slip whose row is not 'placed' / 'graded' (capped) never shows. No data -> the slips show as built.
+    try {
+      const tr = await q(sql, "SELECT app, size, slip_no, legs, status FROM nba_jessi.slips WHERE game_date = $1::date", [today], 6000);
+      const sc = {};
+      for (const r of tr) { const ls = (typeof r.legs === "string" ? JSON.parse(r.legs) : r.legs) || []; let v = 0; for (const l of ls) v += Math.log(Math.max((Number(l.p) || 0.5) * (Number(l.m) || 1.8), 1e-6)); sc[r.app + "|" + r.size + "|" + r.slip_no] = { v: ls.length ? v / ls.length : -99, ok: r.status === "placed" || r.status === "graded" }; }
+      if (tr.length) {
+        for (const s of slips) { const m = /(\d+)-pick (\d+)/.exec(s.name || ""); const x = m && sc[s.app + "|" + m[1] + "|" + m[2]]; s.rank_v = x ? x.v : -99; s.rank_ok = x ? x.ok : true; }
+        const keep = []; const apps = []; slips.forEach(s => { if (!apps.includes(s.app)) apps.push(s.app); });
+        for (const a of apps) keep.push(...slips.filter(s => s.app === a && s.rank_ok).sort((x, y) => y.rank_v - x.rank_v).slice(0, TOP_N));
+        slips.splice(0, slips.length, ...keep);
+      }
+    } catch (e) { /* the slips show as built */ }
     const pairs = {};
     if (date === today) for (const s of out.generated_slips) {
       if (!s._pairs) continue;
@@ -186,7 +202,7 @@ setInterval(function(){if(!window.PD)return;window.PD.slips.forEach(function(s,s
 function render(d){
   initSwap(d);
   let h='<table><tr><th>App</th><th>Unit</th><th>Next increase</th><th>Accumulated</th></tr>';
-  for(const a of d.order){const u=d.units[a];h+='<tr><td>'+esc(d.labels[a])+'</td><td>'+money(u.unit)+'</td><td>'+money(u.unit+1)+' at '+money(u.next_at)+'</td><td>'+money(u.acc)+'</td></tr>'}
+  for(const a of d.order){const u=d.units[a];h+='<tr><td>'+esc(d.labels[a])+'</td><td>'+money(u.unit)+'</td><td>'+(u.capped?'Max':money(u.unit+1)+' at '+money(u.next_at))+'</td><td>'+money(u.acc)+'</td></tr>'}
   h+='</table>';
   if(!d.slips.length)h+='<p class="sub" style="margin-top:16px">No slips right now. They appear here once the day\\'s lineups are set.</p>';
   for(const a of d.order){const ss=d.slips.filter(s=>s.app===a);if(!ss.length)continue;h+='<h2>'+esc(d.labels[a])+'</h2>';

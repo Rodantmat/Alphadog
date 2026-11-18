@@ -859,6 +859,12 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
   5 vs 8. Tight caps lose money (cap 2 substitute: +3,094u, 2026-27 +33.6%). Undo: `cross.enabled=false`. Check script `research_xcap_check.py`.
   Sim limits: Fliff F_FR units, Betr 6-pick add and PP fallback units are not in the dumps; history boards for Sleeper / Fliff / Betr are modeled.
 
+**2026-11-18 - friend pages (owner 13:52 / 14:15 / 14:16 PT).** Strength of a slip = per-leg edge, the geometric mean of (leg p x leg multiplier) from `nba_friend.slips` /
+`nba_jessi.slips` (computed in the Workers at page load). JON (`alphadog-v2-nba-friend` v1.9.6): per app the 4 strongest slips are "Tier 1" (collapsible, always open), the rest
+"Tier 2" (always collapsed, Save not pre-ticked); slips listed best first. JESSI (`alphadog-v2-nba-jessi` v1.2.3): no tiers, only the 4 strongest slips per app, best first
+(Worker TOP_N; engine cap 5 -> 4 with the same measure from the 2026-11-19 slate; today's 5th slip per app set status='capped' so it is neither shown nor graded); her unit is
+capped at $3 on every app from 2026-11-18 (UNIT_MAX, the ladder replay caps only from that date so the past is unchanged).
+
 ---
 
 ## 4. Where everything lives

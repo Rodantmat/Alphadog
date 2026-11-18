@@ -741,16 +741,19 @@ def pick():
             conn.rollback()
     # JESSI CAP (owner 2026-11-13 14:17 PT: "for Jessi limit to the 5 best slips on the day, the ones with the most potential"): her page keeps at most 5 slips per app, ranked by the
     # full slip's potential = chance every leg hits x the full-slip payout (product of leg p x leg multiplier). From the 2026-11-14 slate; today's pages and saves are never changed.
-    if TIER == "jessi" and d >= dt.date(2026, 11, 14) and len(slips) > 5 and len(slips) == len(rows):
+    # owner 2026-11-18 14:15 / 14:16 PT ("just put the top ones ... the top 4 per app", "Just the top 4, best 4, that's it"): from the 2026-11-19 slate the cap is 4 and the rank
+    # is the per-leg edge (geometric mean of leg p x leg multiplier), the same measure Jon's tiers and both pages' best-first order use.
+    JCAP = 4 if d >= dt.date(2026, 11, 19) else 5
+    if TIER == "jessi" and d >= dt.date(2026, 11, 14) and len(slips) > JCAP and len(slips) == len(rows):
         try:
             def _pot(r):
                 v = 1.0
                 for l_ in r["legs"]:
                     m_ = l_.get("m") or l_.get("factor") or 1.8
                     v *= float(l_.get("p") or 0.5) * float(m_)
-                return v
-            keep = sorted(sorted(range(len(rows)), key=lambda i: -_pot(rows[i]))[:5])
-            log(f"Jessi cap: {len(rows)} slips -> 5 (dropped potentials " + ", ".join(f"{rows[i]['code']}={_pot(rows[i]):.2f}" for i in range(len(rows)) if i not in keep) + ")")
+                return v ** (1.0 / max(1, len(r["legs"]))) if JCAP == 4 else v
+            keep = sorted(sorted(range(len(rows)), key=lambda i: -_pot(rows[i]))[:JCAP])
+            log(f"Jessi cap: {len(rows)} slips -> {JCAP} (dropped potentials " + ", ".join(f"{rows[i]['code']}={_pot(rows[i]):.2f}" for i in range(len(rows)) if i not in keep) + ")")
             slips[:] = [slips[i] for i in keep]
             rows[:] = [rows[i] for i in keep]
             cnt = defaultdict(int)
