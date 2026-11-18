@@ -165,6 +165,17 @@ def main():
                 return t0, t0 * r1, (t0 * r2 if n >= 5 else None)
             print(f"  B EV {ev_n:.4f} with r1 = {c1[0]:+.5f} x (p1/pall) {c1[1]:+.4f}" + (f", r2 = {c2[0]:+.6f} x (p1/pall) {c2[1]:+.4f}" if n >= 5 else ""))
             print("     " + score(modB))
+            # D: the SHARE model (2026-11-18): 2-miss share = b e2(u), 1-miss share = a e1(u) - 2b e2(u), full = EV - both, u = 1 - 1/m
+            SH = {3: (1.0011, 0.3341, 0.0), 4: (1.0801, 0.2698, 0.0), 5: (1.1461, 0.3266, 0.0723), 6: (1.1969, 0.1995, 0.0402)}[n]
+            def modD(m):
+                pall, p1, p2 = probs(m)
+                u = [1 - 1 / x for x in m]
+                e1 = sum(u); e2 = esym(u, 2)
+                s2 = SH[2] * e2; s1 = SH[1] * e1 - 2 * SH[2] * e2; s0 = SH[0] - s1 - s2
+                return s0 / pall, s1 / p1, (s2 / p2 if n >= 5 else None)
+            cents = [sum(abs(modD(r["m"])[j] - r[k]) <= 0.0151 for r in v if r[k]) for j, k in enumerate(("T0", "T1", "T2"))]
+            print(f"  D SHARE MODEL (fixed constants {SH}): within 1 cent full {cents[0]}/{len(v)}, 1 miss {cents[1]}/{len(v)}" + (f", 2 miss {cents[2]}/{len(v)}" if n >= 5 else ""))
+            print("     " + score(modD))
             # C: the deployed shape refitted on these entries (EV median, median ratios)
             r1m = stx.median(t10); r2m = stx.median([r["T2"] / r["T0"] for r in v if r["T2"]]) if n >= 5 else 0.0
             def modC(m):

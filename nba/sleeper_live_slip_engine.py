@@ -61,8 +61,13 @@ def cfg(conn, key):
     return r[0] if isinstance(r[0], dict) else json.loads(r[0])
 
 
+FLEX_SHARE = {}   # {size: (a, b)} - the share model (2026-11-18), loaded by pricing(); empty = the old fixed-ratio tiers
+
+
 def pricing(conn):
     tp = cfg(conn, "sleeper_payout").get("true_pricing") or {}
+    FLEX_SHARE.clear()
+    FLEX_SHARE.update({int(k): (float(v[0]), float(v[1])) for k, v in (tp.get("flex_share") or {}).items()})
     return ({int(k): float(v) for k, v in (tp.get("max_bonus") or {}).items()},
             {int(k): float(v) for k, v in (tp.get("flex_ev") or {}).items()},
             {int(k): tuple(float(x) for x in v) for k, v in (tp.get("flex_ratio") or {}).items()})
@@ -75,6 +80,22 @@ def flex_tiers(ms, flex_ev, flex_ratio):
     pall = math.prod(q)
     p1 = sum(pall / q[i] * (1 - q[i]) for i in range(n))
     p2 = sum(pall / (q[i] * q[k]) * (1 - q[i]) * (1 - q[k]) for i, k in itertools.combinations(range(n), 2))
+    if n in FLEX_SHARE and n in flex_ev:
+        # SHARE MODEL (2026-11-18; research_sleeper_tiers.py, the owner's own entries reproduced to the cent): each tier's share of the entry's EV follows the miss chances
+        # u = 1 - 1/m: 2-miss share = b e2(u), 1-miss share = a e1(u) - 2b e2(u), full hit = EV - both; tier = share / chance of that outcome. The fixed ratios below
+        # were fitted on low-multiplier slips and read the full hit 14-17% low (partials 10-20% high) on 2x legs.
+        sa, sb = FLEX_SHARE[n]
+        u = [1 - x for x in q]
+        e1 = sum(u)
+        e2 = sum(u[i] * u[k] for i, k in itertools.combinations(range(n), 2))
+        s2 = sb * e2
+        s1 = sa * e1 - 2 * sb * e2
+        s0 = flex_ev[n] - s1 - s2
+        if s0 > 0 and s1 > 0 and p1 > 0:
+            out = {n: round(s0 / pall, 4), n - 1: round(s1 / p1, 4)}
+            if sb > 0 and p2 > 0:
+                out[n - 2] = round(s2 / p2, 4)
+            return out
     r1, r2 = flex_ratio[n]
     t0 = flex_ev[n] / (pall + r1 * p1 + r2 * p2)
     out = {n: round(t0, 4), n - 1: round(t0 * r1, 4)}

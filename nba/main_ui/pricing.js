@@ -152,9 +152,21 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
       const prod = f.reduce((a, b) => a * b, 1);
       if (mode === "power" || n < 3) return misses === 0 ? prod * Number(tp.max_bonus[String(n)] || 1) : 0;
       const ev = Number((tp.flex_ev || {})[String(n)]), rr = (tp.flex_ratio || {})[String(n)];
-      if (!(ev > 0) || !rr) return null;
       const qv = f.map(x => 1 / x);
       const pall = qv.reduce((a, b) => a * b, 1);
+      // SHARE MODEL (2026-11-18, owner: "the full hit is always a little under, the partial hits a little over" - research_sleeper_tiers.py on 168 of his Flex entries,
+      // exact to the cent on almost all of them): each tier's share of the entry's EV follows the legs' miss chances u = 1 - 1/m:
+      // 2-miss share = b x e2(u), 1-miss share = a x e1(u) - 2b x e2(u), full-hit share = EV - both; tier = share / chance of that outcome at q = 1/m.
+      // The old fixed T1/T0, T2/T0 ratios were right only for low-multiplier slips (they were fitted on those): on 2x legs the full hit read 14-17% low.
+      const sh = (tp.flex_share || {})[String(n)];
+      if (sh && ev > 0) {
+        let e1 = 0, e2 = 0, d1 = 0, d2 = 0;
+        for (let i = 0; i < n; i++) { e1 += 1 - qv[i]; d1 += f[i] - 1; for (let k = i + 1; k < n; k++) { e2 += (1 - qv[i]) * (1 - qv[k]); d2 += (f[i] - 1) * (f[k] - 1); } }
+        const sa = Number(sh[0]), sb = Number(sh[1]) || 0;
+        const s2 = sb * e2, s1 = sa * e1 - 2 * sb * e2, s0 = ev - s1 - s2;
+        if (s0 > 0 && s1 > 0 && d1 > 0) return misses === 0 ? s0 / pall : misses === 1 ? s1 / (pall * d1) : (misses === 2 && sb > 0 && d2 > 0) ? s2 / (pall * d2) : 0;
+      }
+      if (!(ev > 0) || !rr) return null;
       let p1 = 0, p2 = 0;
       for (let i = 0; i < n; i++) p1 += pall / qv[i] * (1 - qv[i]);
       for (let i = 0; i < n; i++) for (let k = i + 1; k < n; k++) p2 += pall / (qv[i] * qv[k]) * (1 - qv[i]) * (1 - qv[k]);

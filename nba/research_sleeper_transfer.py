@@ -57,6 +57,9 @@ BONUS_LOW = {2: 1.0, 3: 1.0797, 4: 1.102, 5: 1.10, 6: 1.135}
 BONUS_TRUE = {2: 1.0, 3: 1.0797, 4: 1.101, 5: 1.174, 6: 1.276}
 FLEX_EV = {3: 1.0012, 4: 1.0801, 5: 1.148, 6: 1.197}
 FLEX_R = {3: (0.3287, 0.0), 4: (0.2474, 0.0), 5: (0.235, 0.049), 6: (0.096, 0.0193)}
+# 2026-11-18 share model (research_sleeper_tiers.py; 91 clean Flex entries of the owner, exact to the cent on almost all): EV and (a, b) by size
+FLEX_EV2 = {3: 1.0011, 4: 1.0801, 5: 1.1461, 6: 1.1969}
+FLEX_SHARE = {3: (0.3341, 0.0), 4: (0.2698, 0.0), 5: (0.3266, 0.0723), 6: (0.1995, 0.0402)}
 
 
 def pay_flex_ev(sl):
@@ -71,9 +74,20 @@ def pay_flex_ev(sl):
     pall = float(np.prod(q))
     p1 = sum(pall / q[i] * (1 - q[i]) for i in range(n))
     p2 = sum(pall / (q[i] * q[k]) * (1 - q[i]) * (1 - q[k]) for i, k in itertools.combinations(range(n), 2))
+    miss = sum(1 for l in live if not l["hit"])
+    if os.environ.get("ST_FLEX_OLD") != "1":
+        # SHARE MODEL (2026-11-18, research_sleeper_tiers.py): the fixed ratios below read the full hit 14-17% low and the partials 10-20% high on 2x legs
+        sa, sb = FLEX_SHARE[n]
+        u = [1 - x for x in q]
+        e1 = sum(u)
+        e2 = sum(u[i] * u[k] for i, k in itertools.combinations(range(n), 2))
+        s2 = sb * e2
+        s1 = sa * e1 - 2 * sb * e2
+        s0 = FLEX_EV2[n] - s1 - s2
+        if s0 > 0 and s1 > 0 and p1 > 0:
+            return s0 / pall if miss == 0 else s1 / p1 if miss == 1 else (s2 / p2 if miss == 2 and sb > 0 and p2 > 0 else 0.0)
     r1, r2 = FLEX_R[n]
     t0 = FLEX_EV[n] / (pall + r1 * p1 + r2 * p2)
-    miss = sum(1 for l in live if not l["hit"])
     return t0 if miss == 0 else t0 * r1 if miss == 1 else t0 * r2 if miss == 2 else 0.0
 # Flex tiers as a share of the entry's Max, read off the same screens (3: 3.14 / 1.05 of 6.02; 4: 6.09 / 1.52 of 11.06; 5: 9.42 /
 # 1.92 / 0.39 of 20.43; 6: 21.67 / 1.86 / 0.37 of 39.01) - 5 and 6 pay 2 misses (Sleeper's help centre: "two incorrect picks ...
