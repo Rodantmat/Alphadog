@@ -25091,8 +25091,8 @@
       "away_team_tricode": "NYK",
       "arena_name": "Scotiabank Arena",
       "arena_city": "Toronto",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -25106,8 +25106,8 @@
       "away_team_tricode": "POR",
       "arena_name": "Target Center",
       "arena_city": "Minneapolis",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -25121,8 +25121,8 @@
       "away_team_tricode": "DET",
       "arena_name": "Frost Bank Center",
       "arena_city": "San Antonio",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
@@ -25136,8 +25136,8 @@
       "away_team_tricode": "CHA",
       "arena_name": "Crypto.com Arena",
       "arena_city": "Los Angeles",
-      "game_status": 1,
-      "game_status_text": "11:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final/OT",
       "game_label": ""
     },
     {
@@ -25151,8 +25151,8 @@
       "away_team_tricode": "UTA",
       "arena_name": "Intuit Dome",
       "arena_city": "Inglewood",
-      "game_status": 1,
-      "game_status_text": "10:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": ""
     },
     {
