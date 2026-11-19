@@ -21,9 +21,14 @@ import numpy as np
 import pandas as pd
 import psycopg
 
-STD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}
-FLEX = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 7.2, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5, (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25}
-TOPS = (6, 8, 10, 12, 16, 20, 30); NSL = (1, 2, 3, 5)
+APP = (os.environ.get("UN_APP") or "underdog").lower()          # underdog | prizepicks (regular lines, PrizePicks tables)
+if APP == "prizepicks":
+    STD = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
+    FLEX = {(3, 0): 3.0, (3, 1): 1.0, (4, 0): 6.0, (4, 1): 1.5, (5, 0): 10.0, (5, 1): 2.0, (5, 2): 0.4, (6, 0): 25.0, (6, 1): 2.0, (6, 2): 0.4}
+else:
+    STD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}
+    FLEX = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 7.2, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5, (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25}
+TOPS = (4, 5, 6, 8, 10, 12, 16, 20, 30); NSL = (1, 2, 3, 5)
 STRUCTS = [("power", k) for k in range(2, 7)] + [("flex", k) for k in range(3, 7)]
 rng = np.random.default_rng(23)
 
@@ -47,15 +52,21 @@ def phase(gd):
 
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
-    h = pd.read_sql("""SELECT season, game_date::text gd, player_id, prop, line::float8 line, hit::int hit, ph::float8 ph FROM nba_score._lr_legs_h
-                       WHERE app = 'underdog' AND kind = 'R' AND m BETWEEN 1.86 AND 1.88 AND lower(left(side, 1)) NOT IN ('o', 'h', 'm') AND hit IS NOT NULL""", conn)
-    a = pd.read_sql("""SELECT game_date::text gd, player player_id, prop, line::float8 line, p::float8 p FROM nba_score._lr_app_legs
-                       WHERE app = 'underdog' AND left(tier, 1) = 'R' AND season = '2026-27' AND lower(left(side, 1)) NOT IN ('o', 'h', 'm') AND p IS NOT NULL""", conn)
+    if APP == "prizepicks":
+        h = pd.read_sql("""SELECT season, game_date::text gd, player_id, prop, line::float8 line, hit::int hit, ph::float8 ph FROM nba_score._lr_legs_h
+                           WHERE app = 'prizepicks' AND kind = 'standard' AND tier NOT LIKE '%%-u' AND side = 'Under' AND hit IS NOT NULL""", conn)
+        a = pd.read_sql("""SELECT game_date::text gd, player player_id, prop, line::float8 line, p::float8 p FROM nba_score._lr_app_legs
+                           WHERE app = 'pp26' AND season = '2026-27' AND side = 'Under' AND p IS NOT NULL""", conn)
+    else:
+        h = pd.read_sql("""SELECT season, game_date::text gd, player_id, prop, line::float8 line, hit::int hit, ph::float8 ph FROM nba_score._lr_legs_h
+                           WHERE app = 'underdog' AND kind = 'R' AND m BETWEEN 1.86 AND 1.88 AND lower(left(side, 1)) NOT IN ('o', 'h', 'm') AND hit IS NOT NULL""", conn)
+        a = pd.read_sql("""SELECT game_date::text gd, player player_id, prop, line::float8 line, p::float8 p FROM nba_score._lr_app_legs
+                           WHERE app = 'underdog' AND left(tier, 1) = 'R' AND season = '2026-27' AND lower(left(side, 1)) NOT IN ('o', 'h', 'm') AND p IS NOT NULL""", conn)
     gl = pd.read_sql("SELECT nba_player_id::text player_id, game_date::text gd, game_id::text game_id FROM nba_stats.player_game_log WHERE game_date >= '2024-10-01'", conn)
     conn.close()
     h = h.merge(a.drop_duplicates(["gd", "player_id", "prop", "line"]), on=["gd", "player_id", "prop", "line"], how="left")
     h = h.merge(gl.drop_duplicates(["player_id", "gd"]), on=["player_id", "gd"], how="left"); h["game_id"] = h["game_id"].fillna("g" + h["player_id"])
-    print(f"UN|Underdog regular Under legs {len(h):,} on {h['gd'].nunique()} slates; hit {h['hit'].mean():.3f}; with honest baseline {100 * h['ph'].notna().mean():.0f}%; "
+    print(f"UN|{APP} regular Under legs {len(h):,} on {h['gd'].nunique()} slates; hit {h['hit'].mean():.3f}; with honest baseline {100 * h['ph'].notna().mean():.0f}%; "
           f"with stored production number (this season) {int(h['p'].notna().sum()):,}", flush=True)
     print("UN|break-even per leg: " + ", ".join(f"{k}-pick {st} {breakeven(st, k):.4f}" for st, k in STRUCTS), flush=True)
     for score in ("ph", "p"):
@@ -116,7 +127,7 @@ def main():
                         line = (f"UN|  {s} {ph_:7s} | top {top:2d} | {ns} a slate | {k}-pick {st:5s} | slips {int(n.sum()):5,} | leg hit {hits / (k * n.sum()):.3f} | ROI {100 * roi:+6.1f}% [{100 * lo:+.1f}% .. {100 * hi:+.1f}%] | "
                                 f"units {prof.sum():+7.1f} | drawdown {dd:5.1f} | drought {dr}")
                         best[(s, ph_)].append((roi, lo, line))
-                        if ph_ == "ALL" and ns in (1, 3) and top in (8, 12, 20):
+                        if ph_ == "ALL" and ((ns == 1 and top in (4, 5, 6)) or (ns in (2, 3) and top in (6, 8, 12))):
                             print(line, flush=True)
         print("UN|--- per period: the 6 best by the LOW end of the range (steady first), any pool / count / structure ---", flush=True)
         for key in sorted(best):
