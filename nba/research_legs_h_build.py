@@ -76,10 +76,38 @@ def write(conn, df, where, params):
     conn.commit()
 
 
+LATE_SQL = """
+WITH tip AS (SELECT game_date, nba_ref.norm_name(player) nm, min(commence_time) tip FROM nba_market.board_snapshots
+             WHERE snapshot_label = 'window' AND commence_time IS NOT NULL AND game_date >= %(d0)s GROUP BY 1, 2),
+     snap AS (SELECT game_date, bookmaker, max(snapshot_ts) ts FROM nba_market.board_snapshots
+              WHERE snapshot_label = 'window' AND bookmaker IN ('prizepicks', 'underdog', 'sleeper', 'fliff') AND game_date >= %(d0)s GROUP BY 1, 2)
+SELECT s.bookmaker app, t.game_date, nm.player_id::text player_id
+FROM tip t JOIN snap s USING (game_date) JOIN nba_ref.player_name_map nm ON nm.norm_name = t.nm WHERE s.ts >= t.tip"""
+
+
+def drop_late(conn, d0="2026-10-01"):
+    """Certification A3: a board captured after a game tipped holds in-play lines for that game. Drop every leg of a player whose game had already
+    started when the app's window board of that day was captured (tip = earliest commence_time any book gives for the player that day)."""
+    late = conn.execute(LATE_SQL, {"d0": d0}).fetchall()
+    n = 0
+    with conn.cursor() as cur:
+        cur.execute("CREATE TEMP TABLE _late (app text, game_date date, player_id text) ON COMMIT DROP")
+        cur.executemany("INSERT INTO _late VALUES (%s, %s, %s)", late)
+        for tbl, col in (("nba_score._lr_legs_h", "player_id"), ("nba_score._lr_app_legs", "player")):
+            cur.execute(f"""DELETE FROM {tbl} x USING _late l WHERE x.game_date = l.game_date AND x.{col} = l.player_id
+                            AND (x.app = l.app OR (x.app = 'pp26' AND l.app = 'prizepicks'))""")
+            n += cur.rowcount
+    conn.commit()
+    days = sorted({str(r[1]) for r in late})
+    print(f"LH|in-play guard: {len(late)} app-player-days whose game had tipped before the board was captured (days {days}); legs removed {n:,}", flush=True)
+
+
 def main():
     global APP
     for APP in APPS:
         run_app()
+    conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
+    drop_late(conn); conn.close()
     print("LH|DONE", flush=True)
 
 

@@ -67,8 +67,11 @@ def main():
                        FROM nba_market.board_snapshots WHERE snapshot_label = 'window' AND game_date >= '2024-10-01' GROUP BY 1, 2 ORDER BY 1, 2""", conn)
     for r in t.itertuples():
         print(f"AI|  A3 {r.bookmaker:14s} {r.season}: window rows {r.n:10,} | captured at or after tip {r.late:8,} on {r.late_days} days (worst {0 if r.worst_min != r.worst_min else r.worst_min:.0f} min) | no tip time {r.no_tip:,}", flush=True)
-    main_apps = t[t["bookmaker"].isin(["prizepicks", "underdog", "sleeper", "fliff", "betr_us_dfs"])]
-    verdict("A3 boards captured before tip", bool(main_apps["late"].sum() == 0), f"rows at or after tip on the five apps: {int(main_apps['late'].sum()):,} of {int(main_apps['n'].sum()):,}")
+    # the test that matters: legs still in the leg tables for a player whose game had tipped before the app's board of that day was captured
+    late = pd.DataFrame(conn.execute(LH.LATE_SQL, {"d0": "2024-10-01"}).fetchall(), columns=["app", "game_date", "player_id"]); late["gd"] = late["game_date"].astype(str)
+    left = legs.merge(late[["app", "gd", "player_id"]].drop_duplicates(), on=["app", "gd", "player_id"], how="inner")
+    verdict("A3 no leg from a board captured after its game tipped", bool(len(left) == 0),
+            f"app-player-days with a late board: {len(late):,} on days {sorted(late['gd'].unique())[:8]}; legs of those still in the leg table: {len(left):,}")
     # ---- A4 prices
     u = pd.read_sql("""SELECT CASE WHEN game_date < '2025-08-01' THEN '2024-25' WHEN game_date < '2026-08-01' THEN '2025-26' ELSE '2026-27' END season,
                               count(*) n, count(multiplier) with_mult,
@@ -81,9 +84,9 @@ def main():
     for r in u.itertuples():
         print(f"AI|  A4 underdog {r.season}: rows {r.n:,} | with the app's own multiplier {100 * r.with_mult / r.n:5.1f}% | rows with both {r.both_:,}: derived within 0.01 of stored "
               f"{(100 * r.within1) if r.within1 is not None else float('nan'):.1f}%, mean gap {r.mad if r.mad is not None else float('nan'):.4f}, worst {r.worst if r.worst is not None else float('nan'):.2f}", flush=True)
-        if r.both_ and r.within1 is not None and r.within1 < 0.98:
+        if r.with_mult < r.n and (not r.both_ or r.within1 is None or r.within1 < 0.98):      # a season that needs the derived multiplier must show it equals the stored one
             okp = False
-    verdict("A4 Underdog derived multiplier equals the stored one", okp, "see rows above (seasons without stored multipliers rely on this equality)")
+    verdict("A4 Underdog multipliers", okp, "a season with the app's own multiplier on every row uses it; a season without (2024-25) uses the derived one, which equals the stored one wherever both exist")
     pk = legs[legs["app"] == "prizepicks"].groupby(["season", "kind"]).size().unstack(fill_value=0)
     print("AI|  A4 prizepicks legs by kind (goblin / demon history prices are MODELLED - rule C9, real quotes only since 2026-09-21): " + "; ".join(f"{s}: {dict(r)}" for s, r in pk.iterrows()), flush=True)
     sf = legs[legs["app"].isin(["sleeper", "fliff"])].groupby(["app", "season", "src"]).size()
