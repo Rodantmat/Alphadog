@@ -127,12 +127,16 @@ def run_app():
                     x = x + b[c] * (pr == p_)
                 x = x + b[9] * np.isin(pr, list(COMBO))
                 m[k] = np.exp(x)
+            # Under alternates (new this season): the STACKED fit was trained on Over rungs only. 111 real Under quotes (2026-10-20..11-19) show the stored
+            # factor reads 0.93-0.97 of the real 2-pick factor (mean abs error 7.5%) -> re-centre by 0.95 and convert to the sharp 6-pick read. Tier gets "-u".
+            ua = (df["kind"].isin(["goblin", "demon"]) & ~df["side"].str.lower().str.startswith("o")).values
+            m[ua] = (np.exp(lfm[ua]) / 0.95 * 3.0 / 2.99) ** (1 / 0.904)
             df["m"] = m
             H = ladders(conn, s)
             over = df["side"].str.lower().str.startswith("o").values
             df["ph"] = attach(df["gd"].values, df["player_id"].values, df["prop"].values, df["line"].values, over, H); del H
             df["app"] = "prizepicks"; df["src"] = "real"; df["season"] = s; df["game_date"] = df["gd"]; df["p_stored"] = np.nan
-            df["tier"] = df["tier"].fillna(0).astype(int).astype(str) + np.where(df["has_std"], "", "-ns")
+            df["tier"] = df["tier"].fillna(0).astype(int).astype(str) + np.where(df["has_std"], "", "-ns") + np.where(ua, "-u", "")
             write(conn, df, "app = 'prizepicks' AND season = %s", (s,))
             log(f"prizepicks {s}: board rungs {n0:,}; graded {len(df):,} on {df['gd'].nunique()} slates; with honest probability {int(df['ph'].notna().sum()):,} "
                 f"({100 * df['ph'].notna().mean():.0f}%); by kind {df['kind'].value_counts().to_dict()}; price median by kind {df.groupby('kind')['m'].median().round(3).to_dict()}")
