@@ -119,6 +119,29 @@ def main():
             print(f"RQ|  {' / '.join(keys):12s} {str(kv):32s} legs {len(g):6,} hit {g['hit'].mean():.3f} real price {g['real'].median():.3f} | return at real {100 * g['r_real'].mean():+6.1f}% (+- {100 * se:.1f}) | "
                   f"at modelled {100 * g['r_mod'].mean():+6.1f}% | modelled / real {np.median(g['modelled'] / g['real']):.3f}", flush=True)
 
+    print("\nRQ|=== E  the SPORTSBOOK chance at the rung's own line against the REAL price (nba_market.market_consensus, window) ===")
+    mc = pd.read_sql("""SELECT game_date::text gd, nba_ref.norm_name(player) nm, market_key base_market, line::float8 line, books, p_over_mean::float8 po
+                        FROM nba_market.market_consensus WHERE snapshot_label = 'window' AND game_date >= '2026-09-15'""", conn).drop_duplicates(["gd", "nm", "base_market", "line"])
+    j = j.merge(mc, on=["gd", "nm", "base_market", "line"], how="left"); j["pb"] = np.where(j["over"], j["po"], 1 - j["po"])
+    e = j[j["pb"].notna()].copy(); e["br"] = e["pb"] * e["real"] / BASE - 1; e["brm"] = e["pb"] * e["modelled"] / BASE - 1
+    print(f"RQ|  rungs with a sportsbook number {len(e):,} of {len(j):,} ({e.groupby('kind').size().to_dict()}); with >= 2 books {int((e['books'] >= 2).sum()):,}", flush=True)
+    for kd in ("goblin", "demon"):
+        g = e[e["kind"] == kd]
+        for lo, hi in ((0, .3), (.3, .4), (.4, .5), (.5, .55), (.55, .6), (.6, .65), (.65, .7), (.7, 1.01)):
+            x = g[(g["pb"] >= lo) & (g["pb"] < hi)]
+            if len(x) >= 40:
+                print(f"RQ|  calibration {kd} book {lo:.2f}-{hi:.2f}: legs {len(x):5,} book {x['pb'].mean():.3f} hit {x['hit'].mean():.3f} | real price {x['real'].median():.3f} needs {BASE / x['real'].median():.3f}", flush=True)
+    for col, nm_ in (("br", "REAL price"), ("brm", "modelled price")):
+        for th in (0.0, .03, .06, .10):
+            for kd in ("goblin", "demon"):
+                for mb in (1, 2):
+                    x = e[(e[col] > th) & (e["kind"] == kd) & (e["books"] >= mb)]
+                    if len(x) >= 15:
+                        r = x["r_real"].values; dd = x["gd"].values; u = np.unique(dd)
+                        bs = [np.concatenate([r[dd == d_] for d_ in rng.choice(u, len(u))]).mean() for _ in range(400)]
+                        print(f"RQ|  book-implied return at the {nm_} > {100 * th:+.0f}%, {kd}, >= {mb} book(s): legs {len(x):5,} ({len(x) / j['gd'].nunique():.1f} a day) book {x['pb'].mean():.3f} hit {x['hit'].mean():.3f} "
+                              f"| return at the real price {100 * r.mean():+.1f}% [{100 * np.quantile(bs, .05):+.1f}% .. {100 * np.quantile(bs, .95):+.1f}%] | modelled / real {np.median(x['modelled'] / x['real']):.3f}", flush=True)
+
     print("\nRQ|=== C  model fitted on HISTORY legs (modelled prices, before 2026-09-15 for a clean split), applied to the real-quote rungs ===")
     h = pd.read_sql("""SELECT game_date::text gd, prop, side, kind, m, hit, ph FROM nba_score._lr_legs_h WHERE app = 'prizepicks' AND game_date < '2026-09-15'""", conn)
     conn.close()
