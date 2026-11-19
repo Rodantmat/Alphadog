@@ -1011,3 +1011,21 @@ Whenever a phase closes or a decision changes: update the relevant checkpoint se
 - Corrections: plain BLEND is as honest as ISO / LIN and simpler; ISO flattens the top, LIN over-predicts the top on Underdog. Weak spots of BLEND: combo props on
   PrizePicks (+4.1% -> +0.8%), Underdog legs outside 1.5-1.9x (positive legs -0.6% to -22%).
 - Coefficients (last fit): Underdog model .49 / price .52; PrizePicks model .29 / price .38 (+ kind terms); Sleeper .06 / .98; Fliff .06 / 1.01.
+
+## 2026-11-19 (morning) - 🔑 WHY THE PER-LEG ROI MODEL FAILS THIS SEASON: THE HISTORY'S MODEL PROBABILITY CARRIES FUTURE INFORMATION (research only, nothing changed)
+Scripts: research_leg_roi_cache.py (scratch table nba_score._lr_app_legs: underdog 3 seasons, fliff real + derived, pp26 = PrizePicks regular lines this season),
+research_leg_roi_diag.py, research_leg_roi_diag2.py. Owner chose "hold deployment, keep testing until it works".
+- PrizePicks REGULAR lines, weight of the model in a logistic fit inside each period / hit of the model's top fifth minus bottom fifth:
+  2024-25 +0.26 / +9.4 pts; 2025-26 +0.28 / +11.0 pts; 2026-27 (29 slates, live) +0.07 / about 0. Every month of history is positive (+0.11 .. +0.47), including each
+  season's first month; this season 2026-10 -0.01, 2026-11 +0.13. The model's spread this season is half of history's (0.25 vs 0.50 in log-odds).
+  baseline_hp: history separates .43 -> .57; this season .48 -> .52 (nothing). Underdog shows the same break (model weight .48 / .68 -> .21; baseline .25 / .28 -> .07).
+- Not the market: naive form numbers built only from earlier games (last-10 average against the line, last-20 over rate) predict NOTHING in all three seasons
+  (top-bottom fifth +0.8 / +0.9 / +2.1 pts) - the lines were always efficient against plain form, and did not get sharper.
+- LEAK EVIDENCE: after removing everything past (form over 3/5/10/20/40 games, season to date, last season, minutes trend) the rest of the historical model still tracks the
+  player's NEXT 20 games: +0.110 (2024-25), +0.103 (2025-26); strongest early in each season (+0.16 / +0.18 in the first 28 slates; 2025-11 +0.22) and fading to +0.03 by
+  April - the fingerprint of a whole-season quantity sliced per date. Live this season: -0.026 (zero). No leak through that game's minutes (-0.003).
+- CONSEQUENCE: every backtest that ranks by the historical final_hp / baseline_hp / score (strategies, leg ROI, slip ROI) is flattered; this season's live numbers are the
+  honest ones. The per-leg ROI proof on 2024-25 / 2025-26 does not count.
+- Honest price-side facts that do not need the model: PrizePicks regular Less hit .506 / .516 / .526 (2024-25 / 2025-26 / 2026-27) against More .494 / .484 / .474.
+- NEXT: (1) find which input of the backfill is whole-season (rate cells / dispersion / Platt / factor coefficients "history as-of" are the suspects), (2) rebuild an honest
+  history (point-in-time) for final_hp, (3) refit the per-leg ROI model on honest inputs, (4) re-check live strategies against this season only.
