@@ -73,6 +73,8 @@ def main():
         used += 1
         sg = len({l["game"] for l in legs}) < n
         for (structure, h), v in sorted(PP.tiers({"power": pw, "flex": fx}, n).items()):
+            if structure == "flex" and n == 2:
+                continue                                      # 2-pick Flex is not a structure the engine builds or prices
             g = PP.grader(structure, f, h)
             r = g / v
             S[(n, structure, n - h)].append(r)
