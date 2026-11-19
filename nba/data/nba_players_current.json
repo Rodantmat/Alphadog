@@ -222,6 +222,19 @@
       "team_abbreviation": "NYK"
     },
     {
+      "id": 1643113,
+      "full_name": "Zack Austin",
+      "last_comma_first": "Austin, Zack",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "zack_austin",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
+    },
+    {
       "id": 1630166,
       "full_name": "Deni Avdija",
       "last_comma_first": "Avdija, Deni",
@@ -4125,14 +4138,14 @@
       "id": 1642434,
       "full_name": "Riley Minix",
       "last_comma_first": "Minix, Riley",
-      "roster_status": 1,
+      "roster_status": 0,
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "riley_minix",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": null,
+      "team_city": "",
+      "team_name": "",
+      "team_abbreviation": ""
     },
     {
       "id": 1631169,
@@ -6203,8 +6216,8 @@
     },
     {
       "id": 1643640,
-      "full_name": "Ernest Udeh, Jr.",
-      "last_comma_first": "Udeh, Jr., Ernest",
+      "full_name": "Ernest Udeh Jr.",
+      "last_comma_first": "Udeh Jr., Ernest",
       "roster_status": 1,
       "from_year": "2026",
       "to_year": "2026",
