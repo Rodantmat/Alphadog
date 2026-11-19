@@ -1,0 +1,5900 @@
+{
+  "factor_fits": {
+    "points": {
+      "f_pace": 1.2465,
+      "f_opp_def": 1.0538,
+      "f_impl_own": -0.5182,
+      "f_impl_opp": 0.1668,
+      "is_home": 0.0247,
+      "is_b2b": 0.0626
+    },
+    "season_phase": {
+      "points": {
+        "APR": 1.0845,
+        "MAY": 1.0069,
+        "MID": 1.0298,
+        "NOV": 1.0031,
+        "OCT": 0.9475
+      },
+      "rebounds": {
+        "APR": 1.0685,
+        "MAY": 1.0,
+        "MID": 1.0058,
+        "NOV": 0.9712,
+        "OCT": 0.9295
+      }
+    },
+    "rebounds": {
+      "f_pace": 0.6656,
+      "f_opp_miss": 0.3317,
+      "f_opp_oreb": -0.1907,
+      "f_impl_own": -0.0935,
+      "f_impl_opp": -0.0512,
+      "is_home": 0.0039,
+      "is_b2b": 0.0445
+    }
+  },
+  "leg_level": {
+    "confidence_bands_by_prop_side": [
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "50-55",
+        "n": 2766,
+        "mean_pred": 0.5319741843,
+        "hit_rate": 0.5943600868,
+        "gap_pp": 6.2385902434
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "55-60",
+        "n": 1667,
+        "mean_pred": 0.5747047874,
+        "hit_rate": 0.6172765447,
+        "gap_pp": 4.2571757326
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "60-65",
+        "n": 2772,
+        "mean_pred": 0.6176722116,
+        "hit_rate": 0.6673881674,
+        "gap_pp": 4.9715955751
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "65-70",
+        "n": 3268,
+        "mean_pred": 0.6749173466,
+        "hit_rate": 0.7135862913,
+        "gap_pp": 3.8668944665
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "70-75",
+        "n": 2843,
+        "mean_pred": 0.725305252,
+        "hit_rate": 0.7706647907,
+        "gap_pp": 4.5359538689
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "75-80",
+        "n": 3435,
+        "mean_pred": 0.7711579616,
+        "hit_rate": 0.8061135371,
+        "gap_pp": 3.4955575546
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "80-85",
+        "n": 4526,
+        "mean_pred": 0.8248529899,
+        "hit_rate": 0.8501988511,
+        "gap_pp": 2.5345861168
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "85-90",
+        "n": 5748,
+        "mean_pred": 0.8757502771,
+        "hit_rate": 0.8902226862,
+        "gap_pp": 1.4472409014
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "90-95",
+        "n": 6877,
+        "mean_pred": 0.9234719681,
+        "hit_rate": 0.9360186128,
+        "gap_pp": 1.2546644668
+      },
+      {
+        "prop": "points",
+        "side": "less",
+        "conf_band": "95+",
+        "n": 855,
+        "mean_pred": 0.9563749298,
+        "hit_rate": 0.9707602339,
+        "gap_pp": 1.4385304088
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "50-55",
+        "n": 2359,
+        "mean_pred": 0.5251038051,
+        "hit_rate": 0.4578211106,
+        "gap_pp": -6.7282694473
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "55-60",
+        "n": 2327,
+        "mean_pred": 0.5760156751,
+        "hit_rate": 0.4929093253,
+        "gap_pp": -8.3106349823
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "60-65",
+        "n": 2224,
+        "mean_pred": 0.6250982593,
+        "hit_rate": 0.5678956835,
+        "gap_pp": -5.7202575799
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "65-70",
+        "n": 3871,
+        "mean_pred": 0.673063087,
+        "hit_rate": 0.6339447171,
+        "gap_pp": -3.9118369839
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "70-75",
+        "n": 3417,
+        "mean_pred": 0.7250533575,
+        "hit_rate": 0.6701785192,
+        "gap_pp": -5.4874838363
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "75-80",
+        "n": 4341,
+        "mean_pred": 0.7790178977,
+        "hit_rate": 0.7136604469,
+        "gap_pp": -6.535745078
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "80-85",
+        "n": 3426,
+        "mean_pred": 0.8291912039,
+        "hit_rate": 0.7802101576,
+        "gap_pp": -4.898104626
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "85-90",
+        "n": 4664,
+        "mean_pred": 0.8768301035,
+        "hit_rate": 0.8361921098,
+        "gap_pp": -4.0637993701
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "90-95",
+        "n": 3587,
+        "mean_pred": 0.9230520889,
+        "hit_rate": 0.8851407862,
+        "gap_pp": -3.7911302717
+      },
+      {
+        "prop": "points",
+        "side": "more",
+        "conf_band": "95+",
+        "n": 694,
+        "mean_pred": 0.9564659989,
+        "hit_rate": 0.9121037464,
+        "gap_pp": -4.4362252483
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "50-55",
+        "n": 1022,
+        "mean_pred": 0.5360959946,
+        "hit_rate": 0.5332681018,
+        "gap_pp": -0.2827892858
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "55-60",
+        "n": 1823,
+        "mean_pred": 0.5763103055,
+        "hit_rate": 0.5957213385,
+        "gap_pp": 1.9411032978
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "60-65",
+        "n": 397,
+        "mean_pred": 0.6195796686,
+        "hit_rate": 0.5919395466,
+        "gap_pp": -2.7640121978
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "65-70",
+        "n": 1066,
+        "mean_pred": 0.6743274619,
+        "hit_rate": 0.6547842402,
+        "gap_pp": -1.9543221793
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "70-75",
+        "n": 1345,
+        "mean_pred": 0.7215881594,
+        "hit_rate": 0.7167286245,
+        "gap_pp": -0.4859534853
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "75-80",
+        "n": 1732,
+        "mean_pred": 0.7706921273,
+        "hit_rate": 0.7644341801,
+        "gap_pp": -0.6257947116
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "80-85",
+        "n": 1826,
+        "mean_pred": 0.8277301325,
+        "hit_rate": 0.8105147864,
+        "gap_pp": -1.7215346093
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "85-90",
+        "n": 2485,
+        "mean_pred": 0.876828832,
+        "hit_rate": 0.8744466801,
+        "gap_pp": -0.2382151874
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "90-95",
+        "n": 3917,
+        "mean_pred": 0.9278933724,
+        "hit_rate": 0.92672964,
+        "gap_pp": -0.1163732385
+      },
+      {
+        "prop": "rebounds",
+        "side": "less",
+        "conf_band": "95+",
+        "n": 18624,
+        "mean_pred": 0.9859184112,
+        "hit_rate": 0.9853414948,
+        "gap_pp": -0.0576916328
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "50-55",
+        "n": 151,
+        "mean_pred": 0.5112028936,
+        "hit_rate": 0.6026490066,
+        "gap_pp": 9.1446113004
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "55-60",
+        "n": 630,
+        "mean_pred": 0.5933197293,
+        "hit_rate": 0.5619047619,
+        "gap_pp": -3.1414967421
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "60-65",
+        "n": 2434,
+        "mean_pred": 0.6192644564,
+        "hit_rate": 0.6105176664,
+        "gap_pp": -0.8746789986
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "65-70",
+        "n": 1350,
+        "mean_pred": 0.6697201831,
+        "hit_rate": 0.6903703704,
+        "gap_pp": 2.0650187276
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "70-75",
+        "n": 1794,
+        "mean_pred": 0.7299436017,
+        "hit_rate": 0.7814938685,
+        "gap_pp": 5.1550266754
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "75-80",
+        "n": 3253,
+        "mean_pred": 0.7754525806,
+        "hit_rate": 0.7574546572,
+        "gap_pp": -1.7997923337
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "80-85",
+        "n": 2061,
+        "mean_pred": 0.8267685272,
+        "hit_rate": 0.8301795245,
+        "gap_pp": 0.3410997324
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "85-90",
+        "n": 3938,
+        "mean_pred": 0.8810442546,
+        "hit_rate": 0.8649060437,
+        "gap_pp": -1.6138210952
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "90-95",
+        "n": 6354,
+        "mean_pred": 0.9275900644,
+        "hit_rate": 0.905886056,
+        "gap_pp": -2.1704008361
+      },
+      {
+        "prop": "rebounds",
+        "side": "more",
+        "conf_band": "95+",
+        "n": 9456,
+        "mean_pred": 0.972720333,
+        "hit_rate": 0.9568527919,
+        "gap_pp": -1.5867541122
+      }
+    ],
+    "variation_x_direction_x_rung": [
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -7,
+        "n": 265,
+        "mean_pred": 0.1164991722,
+        "hit_rate": 0.1169811321,
+        "gap_pp": 0.0481959846
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -6,
+        "n": 500,
+        "mean_pred": 0.1474629021,
+        "hit_rate": 0.168,
+        "gap_pp": 2.0537097866
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -5,
+        "n": 696,
+        "mean_pred": 0.1864508563,
+        "hit_rate": 0.2586206897,
+        "gap_pp": 7.2169833405
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -4,
+        "n": 862,
+        "mean_pred": 0.2411872593,
+        "hit_rate": 0.3178654292,
+        "gap_pp": 7.6678169897
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -3,
+        "n": 1025,
+        "mean_pred": 0.3014514224,
+        "hit_rate": 0.3863414634,
+        "gap_pp": 8.4890041063
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -2,
+        "n": 1140,
+        "mean_pred": 0.3717255306,
+        "hit_rate": 0.4570175439,
+        "gap_pp": 8.529201323
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -1,
+        "n": 1198,
+        "mean_pred": 0.4524980375,
+        "hit_rate": 0.5333889816,
+        "gap_pp": 8.0890944121
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 0,
+        "n": 1206,
+        "mean_pred": 0.5367315226,
+        "hit_rate": 0.6086235489,
+        "gap_pp": 7.1892026354
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 1,
+        "n": 1206,
+        "mean_pred": 0.6112844916,
+        "hit_rate": 0.6849087894,
+        "gap_pp": 7.3624297764
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 2,
+        "n": 1206,
+        "mean_pred": 0.6791879405,
+        "hit_rate": 0.7454394693,
+        "gap_pp": 6.6251528783
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 3,
+        "n": 1206,
+        "mean_pred": 0.7394086176,
+        "hit_rate": 0.7943615257,
+        "gap_pp": 5.4952908105
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 4,
+        "n": 1206,
+        "mean_pred": 0.7879739065,
+        "hit_rate": 0.8366500829,
+        "gap_pp": 4.8676176432
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 5,
+        "n": 1206,
+        "mean_pred": 0.8308898435,
+        "hit_rate": 0.8764510779,
+        "gap_pp": 4.556123442
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 6,
+        "n": 1206,
+        "mean_pred": 0.8669725081,
+        "hit_rate": 0.9029850746,
+        "gap_pp": 3.6012566545
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 7,
+        "n": 1206,
+        "mean_pred": 0.8950643724,
+        "hit_rate": 0.9262023217,
+        "gap_pp": 3.113794934
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 8,
+        "n": 1206,
+        "mean_pred": 0.9188028016,
+        "hit_rate": 0.9444444444,
+        "gap_pp": 2.564164282
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 9,
+        "n": 1206,
+        "mean_pred": 0.9369570988,
+        "hit_rate": 0.9552238806,
+        "gap_pp": 1.8266781805
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 10,
+        "n": 1206,
+        "mean_pred": 0.9523551519,
+        "hit_rate": 0.9684908789,
+        "gap_pp": 1.6135727061
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -10,
+        "n": 1206,
+        "mean_pred": 0.8255565435,
+        "hit_rate": 0.8092868988,
+        "gap_pp": -1.626964466
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -9,
+        "n": 1206,
+        "mean_pred": 0.8245346361,
+        "hit_rate": 0.8092868988,
+        "gap_pp": -1.5247737289
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -8,
+        "n": 1206,
+        "mean_pred": 0.8222192633,
+        "hit_rate": 0.8092868988,
+        "gap_pp": -1.29323645
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -7,
+        "n": 1206,
+        "mean_pred": 0.8157741906,
+        "hit_rate": 0.8084577114,
+        "gap_pp": -0.7316479139
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -6,
+        "n": 1206,
+        "mean_pred": 0.8035299118,
+        "hit_rate": 0.7893864013,
+        "gap_pp": -1.4143510463
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -5,
+        "n": 1206,
+        "mean_pred": 0.7825254873,
+        "hit_rate": 0.7421227197,
+        "gap_pp": -4.040276757
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -4,
+        "n": 1206,
+        "mean_pred": 0.745441214,
+        "hit_rate": 0.688225539,
+        "gap_pp": -5.721567505
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -3,
+        "n": 1206,
+        "mean_pred": 0.6951673719,
+        "hit_rate": 0.6252072968,
+        "gap_pp": -6.9960075073
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -2,
+        "n": 1206,
+        "mean_pred": 0.628926129,
+        "hit_rate": 0.552238806,
+        "gap_pp": -7.6687323015
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -1,
+        "n": 1206,
+        "mean_pred": 0.5477563958,
+        "hit_rate": 0.4676616915,
+        "gap_pp": -8.0094704252
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 0,
+        "n": 1206,
+        "mean_pred": 0.4632684774,
+        "hit_rate": 0.3913764511,
+        "gap_pp": -7.1892026354
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 1,
+        "n": 1206,
+        "mean_pred": 0.3887155084,
+        "hit_rate": 0.3150912106,
+        "gap_pp": -7.3624297764
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 2,
+        "n": 1206,
+        "mean_pred": 0.3208120595,
+        "hit_rate": 0.2545605307,
+        "gap_pp": -6.6251528783
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 3,
+        "n": 1206,
+        "mean_pred": 0.2605913824,
+        "hit_rate": 0.2056384743,
+        "gap_pp": -5.4952908105
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 4,
+        "n": 1206,
+        "mean_pred": 0.2120260935,
+        "hit_rate": 0.1633499171,
+        "gap_pp": -4.8676176432
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 5,
+        "n": 1206,
+        "mean_pred": 0.1691101565,
+        "hit_rate": 0.1235489221,
+        "gap_pp": -4.556123442
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 6,
+        "n": 1206,
+        "mean_pred": 0.1330274919,
+        "hit_rate": 0.0970149254,
+        "gap_pp": -3.6012566545
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 7,
+        "n": 1206,
+        "mean_pred": 0.1049356276,
+        "hit_rate": 0.0737976783,
+        "gap_pp": -3.113794934
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 8,
+        "n": 1206,
+        "mean_pred": 0.0811971984,
+        "hit_rate": 0.0555555556,
+        "gap_pp": -2.564164282
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 9,
+        "n": 1206,
+        "mean_pred": 0.0630429012,
+        "hit_rate": 0.0447761194,
+        "gap_pp": -1.8266781805
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 10,
+        "n": 1206,
+        "mean_pred": 0.0476448481,
+        "hit_rate": 0.0315091211,
+        "gap_pp": -1.6135727061
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -10,
+        "n": 881,
+        "mean_pred": 0.0583036836,
+        "hit_rate": 0.0908059024,
+        "gap_pp": 3.2502218755
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -9,
+        "n": 1088,
+        "mean_pred": 0.0791446049,
+        "hit_rate": 0.1185661765,
+        "gap_pp": 3.9421571608
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -8,
+        "n": 1330,
+        "mean_pred": 0.104607493,
+        "hit_rate": 0.1571428571,
+        "gap_pp": 5.2535364146
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -7,
+        "n": 1330,
+        "mean_pred": 0.1409790652,
+        "hit_rate": 0.2142857143,
+        "gap_pp": 7.3306649099
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -6,
+        "n": 1330,
+        "mean_pred": 0.184739941,
+        "hit_rate": 0.2857142857,
+        "gap_pp": 10.0974344757
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -5,
+        "n": 1330,
+        "mean_pred": 0.2351829767,
+        "hit_rate": 0.3458646617,
+        "gap_pp": 11.0681684925
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -4,
+        "n": 1330,
+        "mean_pred": 0.2913748591,
+        "hit_rate": 0.3977443609,
+        "gap_pp": 10.6369501824
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -3,
+        "n": 1330,
+        "mean_pred": 0.3529537884,
+        "hit_rate": 0.4631578947,
+        "gap_pp": 11.0204106343
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -2,
+        "n": 1330,
+        "mean_pred": 0.4173119931,
+        "hit_rate": 0.5338345865,
+        "gap_pp": 11.6522593334
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -1,
+        "n": 1330,
+        "mean_pred": 0.4822422856,
+        "hit_rate": 0.5834586466,
+        "gap_pp": 10.1216361041
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 0,
+        "n": 1330,
+        "mean_pred": 0.5451920835,
+        "hit_rate": 0.6308270677,
+        "gap_pp": 8.5634984126
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 1,
+        "n": 1330,
+        "mean_pred": 0.6038175836,
+        "hit_rate": 0.6706766917,
+        "gap_pp": 6.68591081
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 2,
+        "n": 1330,
+        "mean_pred": 0.6613424195,
+        "hit_rate": 0.7172932331,
+        "gap_pp": 5.5950813554
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 3,
+        "n": 1330,
+        "mean_pred": 0.7119117377,
+        "hit_rate": 0.7639097744,
+        "gap_pp": 5.1998036729
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 4,
+        "n": 1330,
+        "mean_pred": 0.7582339442,
+        "hit_rate": 0.8015037594,
+        "gap_pp": 4.3269815208
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 5,
+        "n": 1330,
+        "mean_pred": 0.8025337049,
+        "hit_rate": 0.830075188,
+        "gap_pp": 2.7541483118
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 6,
+        "n": 1330,
+        "mean_pred": 0.8390882042,
+        "hit_rate": 0.8593984962,
+        "gap_pp": 2.0310292082
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 7,
+        "n": 1330,
+        "mean_pred": 0.8683724965,
+        "hit_rate": 0.8812030075,
+        "gap_pp": 1.2830511041
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 8,
+        "n": 1330,
+        "mean_pred": 0.8939449041,
+        "hit_rate": 0.9060150376,
+        "gap_pp": 1.2070133527
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 9,
+        "n": 1330,
+        "mean_pred": 0.9155147051,
+        "hit_rate": 0.930075188,
+        "gap_pp": 1.4560482872
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 10,
+        "n": 1330,
+        "mean_pred": 0.9331162743,
+        "hit_rate": 0.9473684211,
+        "gap_pp": 1.425214679
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -10,
+        "n": 1330,
+        "mean_pred": 0.9413320534,
+        "hit_rate": 0.9112781955,
+        "gap_pp": -3.005385796
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -9,
+        "n": 1330,
+        "mean_pred": 0.9221360558,
+        "hit_rate": 0.8894736842,
+        "gap_pp": -3.2662371564
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -8,
+        "n": 1330,
+        "mean_pred": 0.895392507,
+        "hit_rate": 0.8428571429,
+        "gap_pp": -5.2535364146
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -7,
+        "n": 1330,
+        "mean_pred": 0.8590209348,
+        "hit_rate": 0.7857142857,
+        "gap_pp": -7.3306649099
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -6,
+        "n": 1330,
+        "mean_pred": 0.815260059,
+        "hit_rate": 0.7142857143,
+        "gap_pp": -10.0974344757
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -5,
+        "n": 1330,
+        "mean_pred": 0.7648170233,
+        "hit_rate": 0.6541353383,
+        "gap_pp": -11.0681684925
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -4,
+        "n": 1330,
+        "mean_pred": 0.7086251409,
+        "hit_rate": 0.6022556391,
+        "gap_pp": -10.6369501824
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -3,
+        "n": 1330,
+        "mean_pred": 0.6470462116,
+        "hit_rate": 0.5368421053,
+        "gap_pp": -11.0204106343
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -2,
+        "n": 1330,
+        "mean_pred": 0.5826880069,
+        "hit_rate": 0.4661654135,
+        "gap_pp": -11.6522593334
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -1,
+        "n": 1330,
+        "mean_pred": 0.5177577144,
+        "hit_rate": 0.4165413534,
+        "gap_pp": -10.1216361041
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 0,
+        "n": 1330,
+        "mean_pred": 0.4548079165,
+        "hit_rate": 0.3691729323,
+        "gap_pp": -8.5634984126
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 1,
+        "n": 1330,
+        "mean_pred": 0.3961824164,
+        "hit_rate": 0.3293233083,
+        "gap_pp": -6.68591081
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 2,
+        "n": 1330,
+        "mean_pred": 0.3386575805,
+        "hit_rate": 0.2827067669,
+        "gap_pp": -5.5950813554
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 3,
+        "n": 1330,
+        "mean_pred": 0.2880882623,
+        "hit_rate": 0.2360902256,
+        "gap_pp": -5.1998036729
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 4,
+        "n": 1330,
+        "mean_pred": 0.2417660558,
+        "hit_rate": 0.1984962406,
+        "gap_pp": -4.3269815208
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 5,
+        "n": 1330,
+        "mean_pred": 0.1974662951,
+        "hit_rate": 0.169924812,
+        "gap_pp": -2.7541483118
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 6,
+        "n": 1330,
+        "mean_pred": 0.1609117958,
+        "hit_rate": 0.1406015038,
+        "gap_pp": -2.0310292082
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 7,
+        "n": 1330,
+        "mean_pred": 0.1316275035,
+        "hit_rate": 0.1187969925,
+        "gap_pp": -1.2830511041
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 8,
+        "n": 1330,
+        "mean_pred": 0.1060550959,
+        "hit_rate": 0.0939849624,
+        "gap_pp": -1.2070133527
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 9,
+        "n": 1330,
+        "mean_pred": 0.0844852949,
+        "hit_rate": 0.069924812,
+        "gap_pp": -1.4560482872
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 10,
+        "n": 1330,
+        "mean_pred": 0.0668837257,
+        "hit_rate": 0.0526315789,
+        "gap_pp": -1.425214679
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -10,
+        "n": 32,
+        "mean_pred": 0.1139743092,
+        "hit_rate": 0.21875,
+        "gap_pp": 10.4775690844
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -9,
+        "n": 32,
+        "mean_pred": 0.1430818549,
+        "hit_rate": 0.25,
+        "gap_pp": 10.6918145074
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -8,
+        "n": 32,
+        "mean_pred": 0.1776522057,
+        "hit_rate": 0.28125,
+        "gap_pp": 10.3597794349
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -7,
+        "n": 32,
+        "mean_pred": 0.2147824774,
+        "hit_rate": 0.3125,
+        "gap_pp": 9.7717522594
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -6,
+        "n": 32,
+        "mean_pred": 0.2551543964,
+        "hit_rate": 0.34375,
+        "gap_pp": 8.8595603598
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -5,
+        "n": 32,
+        "mean_pred": 0.2974569022,
+        "hit_rate": 0.34375,
+        "gap_pp": 4.6293097777
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -4,
+        "n": 32,
+        "mean_pred": 0.3405658018,
+        "hit_rate": 0.40625,
+        "gap_pp": 6.5684198246
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -3,
+        "n": 32,
+        "mean_pred": 0.3916443191,
+        "hit_rate": 0.40625,
+        "gap_pp": 1.460568092
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -2,
+        "n": 32,
+        "mean_pred": 0.4463847164,
+        "hit_rate": 0.4375,
+        "gap_pp": -0.8884716435
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": -1,
+        "n": 32,
+        "mean_pred": 0.4979174439,
+        "hit_rate": 0.4375,
+        "gap_pp": -6.0417443921
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 0,
+        "n": 32,
+        "mean_pred": 0.546428369,
+        "hit_rate": 0.53125,
+        "gap_pp": -1.5178369019
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 1,
+        "n": 32,
+        "mean_pred": 0.5996117794,
+        "hit_rate": 0.5625,
+        "gap_pp": -3.7111779391
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 2,
+        "n": 32,
+        "mean_pred": 0.6455729336,
+        "hit_rate": 0.5625,
+        "gap_pp": -8.3072933577
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 3,
+        "n": 32,
+        "mean_pred": 0.6927972219,
+        "hit_rate": 0.65625,
+        "gap_pp": -3.6547221882
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 4,
+        "n": 32,
+        "mean_pred": 0.7340385197,
+        "hit_rate": 0.71875,
+        "gap_pp": -1.5288519676
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 5,
+        "n": 32,
+        "mean_pred": 0.772685016,
+        "hit_rate": 0.71875,
+        "gap_pp": -5.393501603
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 6,
+        "n": 32,
+        "mean_pred": 0.8083534577,
+        "hit_rate": 0.71875,
+        "gap_pp": -8.9603457745
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 7,
+        "n": 32,
+        "mean_pred": 0.8378582318,
+        "hit_rate": 0.71875,
+        "gap_pp": -11.9108231818
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 8,
+        "n": 32,
+        "mean_pred": 0.8666558213,
+        "hit_rate": 0.75,
+        "gap_pp": -11.6655821314
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 9,
+        "n": 32,
+        "mean_pred": 0.8893629708,
+        "hit_rate": 0.78125,
+        "gap_pp": -10.8112970772
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "less",
+        "offset": 10,
+        "n": 32,
+        "mean_pred": 0.9105115785,
+        "hit_rate": 0.78125,
+        "gap_pp": -12.9261578455
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -10,
+        "n": 32,
+        "mean_pred": 0.8860256908,
+        "hit_rate": 0.78125,
+        "gap_pp": -10.4775690844
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -9,
+        "n": 32,
+        "mean_pred": 0.8569181451,
+        "hit_rate": 0.75,
+        "gap_pp": -10.6918145074
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -8,
+        "n": 32,
+        "mean_pred": 0.8223477943,
+        "hit_rate": 0.71875,
+        "gap_pp": -10.3597794349
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -7,
+        "n": 32,
+        "mean_pred": 0.7852175226,
+        "hit_rate": 0.6875,
+        "gap_pp": -9.7717522594
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -6,
+        "n": 32,
+        "mean_pred": 0.7448456036,
+        "hit_rate": 0.65625,
+        "gap_pp": -8.8595603598
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -5,
+        "n": 32,
+        "mean_pred": 0.7025430978,
+        "hit_rate": 0.65625,
+        "gap_pp": -4.6293097777
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -4,
+        "n": 32,
+        "mean_pred": 0.6594341982,
+        "hit_rate": 0.59375,
+        "gap_pp": -6.5684198246
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -3,
+        "n": 32,
+        "mean_pred": 0.6083556809,
+        "hit_rate": 0.59375,
+        "gap_pp": -1.460568092
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -2,
+        "n": 32,
+        "mean_pred": 0.5536152836,
+        "hit_rate": 0.5625,
+        "gap_pp": 0.8884716435
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": -1,
+        "n": 32,
+        "mean_pred": 0.5020825561,
+        "hit_rate": 0.5625,
+        "gap_pp": 6.0417443921
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 0,
+        "n": 32,
+        "mean_pred": 0.453571631,
+        "hit_rate": 0.46875,
+        "gap_pp": 1.5178369019
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 1,
+        "n": 32,
+        "mean_pred": 0.4003882206,
+        "hit_rate": 0.4375,
+        "gap_pp": 3.7111779391
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 2,
+        "n": 32,
+        "mean_pred": 0.3544270664,
+        "hit_rate": 0.4375,
+        "gap_pp": 8.3072933577
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 3,
+        "n": 32,
+        "mean_pred": 0.3072027781,
+        "hit_rate": 0.34375,
+        "gap_pp": 3.6547221882
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 4,
+        "n": 32,
+        "mean_pred": 0.2659614803,
+        "hit_rate": 0.28125,
+        "gap_pp": 1.5288519676
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 5,
+        "n": 32,
+        "mean_pred": 0.227314984,
+        "hit_rate": 0.28125,
+        "gap_pp": 5.393501603
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 6,
+        "n": 32,
+        "mean_pred": 0.1916465423,
+        "hit_rate": 0.28125,
+        "gap_pp": 8.9603457745
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 7,
+        "n": 32,
+        "mean_pred": 0.1621417682,
+        "hit_rate": 0.28125,
+        "gap_pp": 11.9108231818
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 8,
+        "n": 32,
+        "mean_pred": 0.1333441787,
+        "hit_rate": 0.25,
+        "gap_pp": 11.6655821314
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 9,
+        "n": 32,
+        "mean_pred": 0.1106370292,
+        "hit_rate": 0.21875,
+        "gap_pp": 10.8112970772
+      },
+      {
+        "prop": "points",
+        "var_band": "STAR",
+        "side": "more",
+        "offset": 10,
+        "n": 32,
+        "mean_pred": 0.0894884215,
+        "hit_rate": 0.21875,
+        "gap_pp": 12.9261578455
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -10,
+        "n": 558,
+        "mean_pred": 0.0974684276,
+        "hit_rate": 0.1039426523,
+        "gap_pp": 0.6474224744
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -9,
+        "n": 558,
+        "mean_pred": 0.1263588763,
+        "hit_rate": 0.1254480287,
+        "gap_pp": -0.0910847613
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -8,
+        "n": 558,
+        "mean_pred": 0.1574900466,
+        "hit_rate": 0.1594982079,
+        "gap_pp": 0.2008161298
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -7,
+        "n": 558,
+        "mean_pred": 0.1926154003,
+        "hit_rate": 0.1971326165,
+        "gap_pp": 0.4517216154
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -6,
+        "n": 558,
+        "mean_pred": 0.2341841895,
+        "hit_rate": 0.2437275986,
+        "gap_pp": 0.9543409044
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -5,
+        "n": 558,
+        "mean_pred": 0.2780340317,
+        "hit_rate": 0.29390681,
+        "gap_pp": 1.5872778367
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -4,
+        "n": 558,
+        "mean_pred": 0.3265185498,
+        "hit_rate": 0.3602150538,
+        "gap_pp": 3.3696503958
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -3,
+        "n": 558,
+        "mean_pred": 0.3773673677,
+        "hit_rate": 0.3978494624,
+        "gap_pp": 2.0482094629
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -2,
+        "n": 558,
+        "mean_pred": 0.4343103657,
+        "hit_rate": 0.4426523297,
+        "gap_pp": 0.8341964061
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -1,
+        "n": 558,
+        "mean_pred": 0.4865905091,
+        "hit_rate": 0.4713261649,
+        "gap_pp": -1.5264344194
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 0,
+        "n": 558,
+        "mean_pred": 0.5391499645,
+        "hit_rate": 0.5286738351,
+        "gap_pp": -1.0476129387
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 1,
+        "n": 558,
+        "mean_pred": 0.5931550306,
+        "hit_rate": 0.5842293907,
+        "gap_pp": -0.8925639884
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 2,
+        "n": 558,
+        "mean_pred": 0.6434051376,
+        "hit_rate": 0.6308243728,
+        "gap_pp": -1.2580764842
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 3,
+        "n": 558,
+        "mean_pred": 0.6906881987,
+        "hit_rate": 0.6666666667,
+        "gap_pp": -2.4021532002
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 4,
+        "n": 558,
+        "mean_pred": 0.7334921454,
+        "hit_rate": 0.7258064516,
+        "gap_pp": -0.768569383
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 5,
+        "n": 558,
+        "mean_pred": 0.7726559119,
+        "hit_rate": 0.7795698925,
+        "gap_pp": 0.6913980611
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 6,
+        "n": 558,
+        "mean_pred": 0.8083011429,
+        "hit_rate": 0.8100358423,
+        "gap_pp": 0.1734699372
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 7,
+        "n": 558,
+        "mean_pred": 0.8401745342,
+        "hit_rate": 0.835125448,
+        "gap_pp": -0.5049086151
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 8,
+        "n": 558,
+        "mean_pred": 0.8686712561,
+        "hit_rate": 0.853046595,
+        "gap_pp": -1.5624661098
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 9,
+        "n": 558,
+        "mean_pred": 0.893643495,
+        "hit_rate": 0.8781362007,
+        "gap_pp": -1.5507294331
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": 10,
+        "n": 558,
+        "mean_pred": 0.9127629718,
+        "hit_rate": 0.8996415771,
+        "gap_pp": -1.3121394745
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -10,
+        "n": 558,
+        "mean_pred": 0.9025315724,
+        "hit_rate": 0.8960573477,
+        "gap_pp": -0.6474224744
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -9,
+        "n": 558,
+        "mean_pred": 0.8736411237,
+        "hit_rate": 0.8745519713,
+        "gap_pp": 0.0910847613
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -8,
+        "n": 558,
+        "mean_pred": 0.8425099534,
+        "hit_rate": 0.8405017921,
+        "gap_pp": -0.2008161298
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -7,
+        "n": 558,
+        "mean_pred": 0.8073845997,
+        "hit_rate": 0.8028673835,
+        "gap_pp": -0.4517216154
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -6,
+        "n": 558,
+        "mean_pred": 0.7658158105,
+        "hit_rate": 0.7562724014,
+        "gap_pp": -0.9543409044
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -5,
+        "n": 558,
+        "mean_pred": 0.7219659683,
+        "hit_rate": 0.70609319,
+        "gap_pp": -1.5872778367
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -4,
+        "n": 558,
+        "mean_pred": 0.6734814502,
+        "hit_rate": 0.6397849462,
+        "gap_pp": -3.3696503958
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -3,
+        "n": 558,
+        "mean_pred": 0.6226326323,
+        "hit_rate": 0.6021505376,
+        "gap_pp": -2.0482094629
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -2,
+        "n": 558,
+        "mean_pred": 0.5656896343,
+        "hit_rate": 0.5573476703,
+        "gap_pp": -0.8341964061
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -1,
+        "n": 558,
+        "mean_pred": 0.5134094909,
+        "hit_rate": 0.5286738351,
+        "gap_pp": 1.5264344194
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 0,
+        "n": 558,
+        "mean_pred": 0.4608500355,
+        "hit_rate": 0.4713261649,
+        "gap_pp": 1.0476129387
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 1,
+        "n": 558,
+        "mean_pred": 0.4068449694,
+        "hit_rate": 0.4157706093,
+        "gap_pp": 0.8925639884
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 2,
+        "n": 558,
+        "mean_pred": 0.3565948624,
+        "hit_rate": 0.3691756272,
+        "gap_pp": 1.2580764842
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 3,
+        "n": 558,
+        "mean_pred": 0.3093118013,
+        "hit_rate": 0.3333333333,
+        "gap_pp": 2.4021532002
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 4,
+        "n": 558,
+        "mean_pred": 0.2665078546,
+        "hit_rate": 0.2741935484,
+        "gap_pp": 0.768569383
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 5,
+        "n": 558,
+        "mean_pred": 0.2273440881,
+        "hit_rate": 0.2204301075,
+        "gap_pp": -0.6913980611
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 6,
+        "n": 558,
+        "mean_pred": 0.1916988571,
+        "hit_rate": 0.1899641577,
+        "gap_pp": -0.1734699372
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 7,
+        "n": 558,
+        "mean_pred": 0.1598254658,
+        "hit_rate": 0.164874552,
+        "gap_pp": 0.5049086151
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 8,
+        "n": 558,
+        "mean_pred": 0.1313287439,
+        "hit_rate": 0.146953405,
+        "gap_pp": 1.5624661098
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 9,
+        "n": 558,
+        "mean_pred": 0.106356505,
+        "hit_rate": 0.1218637993,
+        "gap_pp": 1.5507294331
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": 10,
+        "n": 558,
+        "mean_pred": 0.0872370282,
+        "hit_rate": 0.1003584229,
+        "gap_pp": 1.3121394745
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -10,
+        "n": 1,
+        "mean_pred": 0.1206074115,
+        "hit_rate": 0.0,
+        "gap_pp": -12.0607411514
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -9,
+        "n": 1,
+        "mean_pred": 0.147993953,
+        "hit_rate": 0.0,
+        "gap_pp": -14.7993952985
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -8,
+        "n": 1,
+        "mean_pred": 0.181118627,
+        "hit_rate": 0.0,
+        "gap_pp": -18.1118626955
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -7,
+        "n": 1,
+        "mean_pred": 0.2188260589,
+        "hit_rate": 0.0,
+        "gap_pp": -21.882605892
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -6,
+        "n": 1,
+        "mean_pred": 0.2588740311,
+        "hit_rate": 0.0,
+        "gap_pp": -25.8874031119
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -5,
+        "n": 1,
+        "mean_pred": 0.3010019396,
+        "hit_rate": 0.0,
+        "gap_pp": -30.100193957
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -4,
+        "n": 1,
+        "mean_pred": 0.3430992547,
+        "hit_rate": 0.0,
+        "gap_pp": -34.3099254689
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -3,
+        "n": 1,
+        "mean_pred": 0.3942621444,
+        "hit_rate": 0.0,
+        "gap_pp": -39.4262144429
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -2,
+        "n": 1,
+        "mean_pred": 0.4489727415,
+        "hit_rate": 0.0,
+        "gap_pp": -44.8972741504
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": -1,
+        "n": 1,
+        "mean_pred": 0.5009242097,
+        "hit_rate": 0.0,
+        "gap_pp": -50.0924209655
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 0,
+        "n": 1,
+        "mean_pred": 0.5479782325,
+        "hit_rate": 0.0,
+        "gap_pp": -54.7978232531
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 1,
+        "n": 1,
+        "mean_pred": 0.6012960185,
+        "hit_rate": 0.0,
+        "gap_pp": -60.129601848
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 2,
+        "n": 1,
+        "mean_pred": 0.6464778312,
+        "hit_rate": 0.0,
+        "gap_pp": -64.647783118
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 3,
+        "n": 1,
+        "mean_pred": 0.6926002896,
+        "hit_rate": 0.0,
+        "gap_pp": -69.2600289595
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 4,
+        "n": 1,
+        "mean_pred": 0.7351815246,
+        "hit_rate": 0.0,
+        "gap_pp": -73.5181524564
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 5,
+        "n": 1,
+        "mean_pred": 0.7741799339,
+        "hit_rate": 0.0,
+        "gap_pp": -77.4179933916
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 6,
+        "n": 1,
+        "mean_pred": 0.8103440976,
+        "hit_rate": 0.0,
+        "gap_pp": -81.0344097603
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 7,
+        "n": 1,
+        "mean_pred": 0.8384322903,
+        "hit_rate": 0.0,
+        "gap_pp": -83.8432290345
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 8,
+        "n": 1,
+        "mean_pred": 0.8667746931,
+        "hit_rate": 0.0,
+        "gap_pp": -86.6774693138
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 9,
+        "n": 1,
+        "mean_pred": 0.8896258918,
+        "hit_rate": 0.0,
+        "gap_pp": -88.9625891806
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "less",
+        "offset": 10,
+        "n": 1,
+        "mean_pred": 0.9108992684,
+        "hit_rate": 1.0,
+        "gap_pp": 8.9100731562
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -10,
+        "n": 1,
+        "mean_pred": 0.8793925885,
+        "hit_rate": 1.0,
+        "gap_pp": 12.0607411514
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -9,
+        "n": 1,
+        "mean_pred": 0.852006047,
+        "hit_rate": 1.0,
+        "gap_pp": 14.7993952985
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -8,
+        "n": 1,
+        "mean_pred": 0.818881373,
+        "hit_rate": 1.0,
+        "gap_pp": 18.1118626955
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -7,
+        "n": 1,
+        "mean_pred": 0.7811739411,
+        "hit_rate": 1.0,
+        "gap_pp": 21.882605892
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -6,
+        "n": 1,
+        "mean_pred": 0.7411259689,
+        "hit_rate": 1.0,
+        "gap_pp": 25.8874031119
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -5,
+        "n": 1,
+        "mean_pred": 0.6989980604,
+        "hit_rate": 1.0,
+        "gap_pp": 30.100193957
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -4,
+        "n": 1,
+        "mean_pred": 0.6569007453,
+        "hit_rate": 1.0,
+        "gap_pp": 34.3099254689
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -3,
+        "n": 1,
+        "mean_pred": 0.6057378556,
+        "hit_rate": 1.0,
+        "gap_pp": 39.4262144429
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -2,
+        "n": 1,
+        "mean_pred": 0.5510272585,
+        "hit_rate": 1.0,
+        "gap_pp": 44.8972741504
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": -1,
+        "n": 1,
+        "mean_pred": 0.4990757903,
+        "hit_rate": 1.0,
+        "gap_pp": 50.0924209655
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 0,
+        "n": 1,
+        "mean_pred": 0.4520217675,
+        "hit_rate": 1.0,
+        "gap_pp": 54.7978232531
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 1,
+        "n": 1,
+        "mean_pred": 0.3987039815,
+        "hit_rate": 1.0,
+        "gap_pp": 60.129601848
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 2,
+        "n": 1,
+        "mean_pred": 0.3535221688,
+        "hit_rate": 1.0,
+        "gap_pp": 64.647783118
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 3,
+        "n": 1,
+        "mean_pred": 0.3073997104,
+        "hit_rate": 1.0,
+        "gap_pp": 69.2600289595
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 4,
+        "n": 1,
+        "mean_pred": 0.2648184754,
+        "hit_rate": 1.0,
+        "gap_pp": 73.5181524564
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 5,
+        "n": 1,
+        "mean_pred": 0.2258200661,
+        "hit_rate": 1.0,
+        "gap_pp": 77.4179933916
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 6,
+        "n": 1,
+        "mean_pred": 0.1896559024,
+        "hit_rate": 1.0,
+        "gap_pp": 81.0344097603
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 7,
+        "n": 1,
+        "mean_pred": 0.1615677097,
+        "hit_rate": 1.0,
+        "gap_pp": 83.8432290345
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 8,
+        "n": 1,
+        "mean_pred": 0.1332253069,
+        "hit_rate": 1.0,
+        "gap_pp": 86.6774693138
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 9,
+        "n": 1,
+        "mean_pred": 0.1103741082,
+        "hit_rate": 1.0,
+        "gap_pp": 88.9625891806
+      },
+      {
+        "prop": "points",
+        "var_band": "SUPERSTAR",
+        "side": "more",
+        "offset": 10,
+        "n": 1,
+        "mean_pred": 0.0891007316,
+        "hit_rate": 0.0,
+        "gap_pp": -8.9100731562
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -9,
+        "n": 3,
+        "mean_pred": 0.0075097363,
+        "hit_rate": 0.0,
+        "gap_pp": -0.7509736273
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -8,
+        "n": 55,
+        "mean_pred": 0.0117441663,
+        "hit_rate": 0.0,
+        "gap_pp": -1.1744166311
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -7,
+        "n": 55,
+        "mean_pred": 0.0173791351,
+        "hit_rate": 0.0181818182,
+        "gap_pp": 0.0802683068
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -6,
+        "n": 55,
+        "mean_pred": 0.0366832994,
+        "hit_rate": 0.0181818182,
+        "gap_pp": -1.8501481185
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -5,
+        "n": 55,
+        "mean_pred": 0.0592495407,
+        "hit_rate": 0.0545454545,
+        "gap_pp": -0.4704086165
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -4,
+        "n": 55,
+        "mean_pred": 0.1020953373,
+        "hit_rate": 0.0909090909,
+        "gap_pp": -1.1186246373
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -3,
+        "n": 55,
+        "mean_pred": 0.1823942267,
+        "hit_rate": 0.1454545455,
+        "gap_pp": -3.6939681272
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -2,
+        "n": 55,
+        "mean_pred": 0.2752840488,
+        "hit_rate": 0.2,
+        "gap_pp": -7.5284048756
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": -1,
+        "n": 55,
+        "mean_pred": 0.3771020367,
+        "hit_rate": 0.2909090909,
+        "gap_pp": -8.619294578
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 0,
+        "n": 55,
+        "mean_pred": 0.4846992843,
+        "hit_rate": 0.3454545455,
+        "gap_pp": -13.9244738798
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 1,
+        "n": 55,
+        "mean_pred": 0.6072802013,
+        "hit_rate": 0.4909090909,
+        "gap_pp": -11.6371110394
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 2,
+        "n": 55,
+        "mean_pred": 0.7021089203,
+        "hit_rate": 0.5454545455,
+        "gap_pp": -15.6654374823
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 3,
+        "n": 55,
+        "mean_pred": 0.7876864524,
+        "hit_rate": 0.5636363636,
+        "gap_pp": -22.4050088764
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 4,
+        "n": 55,
+        "mean_pred": 0.8511524338,
+        "hit_rate": 0.6727272727,
+        "gap_pp": -17.8425161098
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 5,
+        "n": 55,
+        "mean_pred": 0.8976404519,
+        "hit_rate": 0.7818181818,
+        "gap_pp": -11.5822270054
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 6,
+        "n": 55,
+        "mean_pred": 0.935459941,
+        "hit_rate": 0.8727272727,
+        "gap_pp": -6.2732668265
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 7,
+        "n": 55,
+        "mean_pred": 0.9566971218,
+        "hit_rate": 0.9090909091,
+        "gap_pp": -4.7606212722
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 8,
+        "n": 55,
+        "mean_pred": 0.9745958197,
+        "hit_rate": 0.9090909091,
+        "gap_pp": -6.5504910591
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 9,
+        "n": 55,
+        "mean_pred": 0.9868206103,
+        "hit_rate": 0.9454545455,
+        "gap_pp": -4.1366064848
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "less",
+        "offset": 10,
+        "n": 55,
+        "mean_pred": 0.9939045096,
+        "hit_rate": 0.9818181818,
+        "gap_pp": -1.2086327786
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -10,
+        "n": 55,
+        "mean_pred": 0.9919483563,
+        "hit_rate": 1.0,
+        "gap_pp": 0.80516437
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -9,
+        "n": 55,
+        "mean_pred": 0.9915333852,
+        "hit_rate": 1.0,
+        "gap_pp": 0.8466614755
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -8,
+        "n": 55,
+        "mean_pred": 0.9882558337,
+        "hit_rate": 1.0,
+        "gap_pp": 1.1744166311
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -7,
+        "n": 55,
+        "mean_pred": 0.9826208649,
+        "hit_rate": 0.9818181818,
+        "gap_pp": -0.0802683068
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -6,
+        "n": 55,
+        "mean_pred": 0.9633167006,
+        "hit_rate": 0.9818181818,
+        "gap_pp": 1.8501481185
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -5,
+        "n": 55,
+        "mean_pred": 0.9407504593,
+        "hit_rate": 0.9454545455,
+        "gap_pp": 0.4704086165
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -4,
+        "n": 55,
+        "mean_pred": 0.8979046627,
+        "hit_rate": 0.9090909091,
+        "gap_pp": 1.1186246373
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -3,
+        "n": 55,
+        "mean_pred": 0.8176057733,
+        "hit_rate": 0.8545454545,
+        "gap_pp": 3.6939681272
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -2,
+        "n": 55,
+        "mean_pred": 0.7247159512,
+        "hit_rate": 0.8,
+        "gap_pp": 7.5284048756
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": -1,
+        "n": 55,
+        "mean_pred": 0.6228979633,
+        "hit_rate": 0.7090909091,
+        "gap_pp": 8.619294578
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 0,
+        "n": 55,
+        "mean_pred": 0.5153007157,
+        "hit_rate": 0.6545454545,
+        "gap_pp": 13.9244738798
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 1,
+        "n": 55,
+        "mean_pred": 0.3927197987,
+        "hit_rate": 0.5090909091,
+        "gap_pp": 11.6371110394
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 2,
+        "n": 55,
+        "mean_pred": 0.2978910797,
+        "hit_rate": 0.4545454545,
+        "gap_pp": 15.6654374823
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 3,
+        "n": 55,
+        "mean_pred": 0.2123135476,
+        "hit_rate": 0.4363636364,
+        "gap_pp": 22.4050088764
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 4,
+        "n": 55,
+        "mean_pred": 0.1488475662,
+        "hit_rate": 0.3272727273,
+        "gap_pp": 17.8425161098
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 5,
+        "n": 55,
+        "mean_pred": 0.1023595481,
+        "hit_rate": 0.2181818182,
+        "gap_pp": 11.5822270054
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 6,
+        "n": 55,
+        "mean_pred": 0.064540059,
+        "hit_rate": 0.1272727273,
+        "gap_pp": 6.2732668265
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 7,
+        "n": 55,
+        "mean_pred": 0.0433028782,
+        "hit_rate": 0.0909090909,
+        "gap_pp": 4.7606212722
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 8,
+        "n": 55,
+        "mean_pred": 0.0254041803,
+        "hit_rate": 0.0909090909,
+        "gap_pp": 6.5504910591
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 9,
+        "n": 55,
+        "mean_pred": 0.0131793897,
+        "hit_rate": 0.0545454545,
+        "gap_pp": 4.1366064848
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "ELITE",
+        "side": "more",
+        "offset": 10,
+        "n": 55,
+        "mean_pred": 0.0060954904,
+        "hit_rate": 0.0181818182,
+        "gap_pp": 1.2086327786
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": -7,
+        "n": 33,
+        "mean_pred": 0.0125461176,
+        "hit_rate": 0.0303030303,
+        "gap_pp": 1.7756912727
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": -6,
+        "n": 177,
+        "mean_pred": 0.0238197391,
+        "hit_rate": 0.0395480226,
+        "gap_pp": 1.5728283482
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": -5,
+        "n": 436,
+        "mean_pred": 0.0407016986,
+        "hit_rate": 0.0711009174,
+        "gap_pp": 3.0399218804
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": -4,
+        "n": 436,
+        "mean_pred": 0.0780756314,
+        "hit_rate": 0.1169724771,
+        "gap_pp": 3.8896845686
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": -3,
+        "n": 436,
+        "mean_pred": 0.1550438729,
+        "hit_rate": 0.1834862385,
+        "gap_pp": 2.844236562
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": -2,
+        "n": 436,
+        "mean_pred": 0.2623340951,
+        "hit_rate": 0.2775229358,
+        "gap_pp": 1.5188840688
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": -1,
+        "n": 436,
+        "mean_pred": 0.3953053279,
+        "hit_rate": 0.378440367,
+        "gap_pp": -1.6864960896
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 0,
+        "n": 436,
+        "mean_pred": 0.5304914846,
+        "hit_rate": 0.4862385321,
+        "gap_pp": -4.4252952449
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 1,
+        "n": 436,
+        "mean_pred": 0.6553855809,
+        "hit_rate": 0.5963302752,
+        "gap_pp": -5.905530565
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 2,
+        "n": 436,
+        "mean_pred": 0.756502401,
+        "hit_rate": 0.6949541284,
+        "gap_pp": -6.154827253
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 3,
+        "n": 436,
+        "mean_pred": 0.8379826014,
+        "hit_rate": 0.7912844037,
+        "gap_pp": -4.6698197763
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 4,
+        "n": 436,
+        "mean_pred": 0.8945909131,
+        "hit_rate": 0.8646788991,
+        "gap_pp": -2.9912013978
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 5,
+        "n": 436,
+        "mean_pred": 0.9319114276,
+        "hit_rate": 0.9082568807,
+        "gap_pp": -2.3654546854
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 6,
+        "n": 436,
+        "mean_pred": 0.9580119836,
+        "hit_rate": 0.9357798165,
+        "gap_pp": -2.2232167085
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 7,
+        "n": 436,
+        "mean_pred": 0.9746068866,
+        "hit_rate": 0.9518348624,
+        "gap_pp": -2.2772024198
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 8,
+        "n": 436,
+        "mean_pred": 0.9848762065,
+        "hit_rate": 0.9724770642,
+        "gap_pp": -1.2399142293
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 9,
+        "n": 436,
+        "mean_pred": 0.9914819155,
+        "hit_rate": 0.9816513761,
+        "gap_pp": -0.9830539311
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "less",
+        "offset": 10,
+        "n": 436,
+        "mean_pred": 0.9950632235,
+        "hit_rate": 0.995412844,
+        "gap_pp": 0.0349620553
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -10,
+        "n": 436,
+        "mean_pred": 0.9840855659,
+        "hit_rate": 0.9747706422,
+        "gap_pp": -0.9314923681
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -9,
+        "n": 436,
+        "mean_pred": 0.9839969954,
+        "hit_rate": 0.9747706422,
+        "gap_pp": -0.9226353162
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -8,
+        "n": 436,
+        "mean_pred": 0.9833819866,
+        "hit_rate": 0.9747706422,
+        "gap_pp": -0.8611344427
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -7,
+        "n": 436,
+        "mean_pred": 0.9817672621,
+        "hit_rate": 0.9724770642,
+        "gap_pp": -0.9290197876
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -6,
+        "n": 436,
+        "mean_pred": 0.9752309865,
+        "hit_rate": 0.9633027523,
+        "gap_pp": -1.192823422
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -5,
+        "n": 436,
+        "mean_pred": 0.9592983014,
+        "hit_rate": 0.9288990826,
+        "gap_pp": -3.0399218804
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -4,
+        "n": 436,
+        "mean_pred": 0.9219243686,
+        "hit_rate": 0.8830275229,
+        "gap_pp": -3.8896845686
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -3,
+        "n": 436,
+        "mean_pred": 0.8449561271,
+        "hit_rate": 0.8165137615,
+        "gap_pp": -2.844236562
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -2,
+        "n": 436,
+        "mean_pred": 0.7376659049,
+        "hit_rate": 0.7224770642,
+        "gap_pp": -1.5188840688
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": -1,
+        "n": 436,
+        "mean_pred": 0.6046946721,
+        "hit_rate": 0.621559633,
+        "gap_pp": 1.6864960896
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 0,
+        "n": 436,
+        "mean_pred": 0.4695085154,
+        "hit_rate": 0.5137614679,
+        "gap_pp": 4.4252952449
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 1,
+        "n": 436,
+        "mean_pred": 0.3446144191,
+        "hit_rate": 0.4036697248,
+        "gap_pp": 5.905530565
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 2,
+        "n": 436,
+        "mean_pred": 0.243497599,
+        "hit_rate": 0.3050458716,
+        "gap_pp": 6.154827253
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 3,
+        "n": 436,
+        "mean_pred": 0.1620173986,
+        "hit_rate": 0.2087155963,
+        "gap_pp": 4.6698197763
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 4,
+        "n": 436,
+        "mean_pred": 0.1054090869,
+        "hit_rate": 0.1353211009,
+        "gap_pp": 2.9912013978
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 5,
+        "n": 436,
+        "mean_pred": 0.0680885724,
+        "hit_rate": 0.0917431193,
+        "gap_pp": 2.3654546854
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 6,
+        "n": 436,
+        "mean_pred": 0.0419880164,
+        "hit_rate": 0.0642201835,
+        "gap_pp": 2.2232167085
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 7,
+        "n": 436,
+        "mean_pred": 0.0253931134,
+        "hit_rate": 0.0481651376,
+        "gap_pp": 2.2772024198
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 8,
+        "n": 436,
+        "mean_pred": 0.0151237935,
+        "hit_rate": 0.0275229358,
+        "gap_pp": 1.2399142293
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 9,
+        "n": 436,
+        "mean_pred": 0.0085180845,
+        "hit_rate": 0.0183486239,
+        "gap_pp": 0.9830539311
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "offset": 10,
+        "n": 436,
+        "mean_pred": 0.0049367765,
+        "hit_rate": 0.004587156,
+        "gap_pp": -0.0349620553
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": -1,
+        "n": 688,
+        "mean_pred": 0.3747172767,
+        "hit_rate": 0.3837209302,
+        "gap_pp": 0.9003653582
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 0,
+        "n": 852,
+        "mean_pred": 0.5858276517,
+        "hit_rate": 0.6208920188,
+        "gap_pp": 3.5064367099
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 1,
+        "n": 861,
+        "mean_pred": 0.7508426404,
+        "hit_rate": 0.7770034843,
+        "gap_pp": 2.6160843891
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 2,
+        "n": 861,
+        "mean_pred": 0.8578560092,
+        "hit_rate": 0.8780487805,
+        "gap_pp": 2.0192771299
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 3,
+        "n": 861,
+        "mean_pred": 0.9212534229,
+        "hit_rate": 0.9384436702,
+        "gap_pp": 1.7190247274
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 4,
+        "n": 861,
+        "mean_pred": 0.9578316451,
+        "hit_rate": 0.9674796748,
+        "gap_pp": 0.9648029683
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 5,
+        "n": 861,
+        "mean_pred": 0.9783464709,
+        "hit_rate": 0.9837398374,
+        "gap_pp": 0.5393366495
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 6,
+        "n": 861,
+        "mean_pred": 0.988107976,
+        "hit_rate": 0.9907084785,
+        "gap_pp": 0.2600502501
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 7,
+        "n": 861,
+        "mean_pred": 0.9932788997,
+        "hit_rate": 0.9953542393,
+        "gap_pp": 0.2075339593
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 8,
+        "n": 861,
+        "mean_pred": 0.9961598008,
+        "hit_rate": 0.9976771196,
+        "gap_pp": 0.1517318836
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 9,
+        "n": 861,
+        "mean_pred": 0.9976053201,
+        "hit_rate": 0.9988385598,
+        "gap_pp": 0.1233239693
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 10,
+        "n": 861,
+        "mean_pred": 0.9989162784,
+        "hit_rate": 1.0,
+        "gap_pp": 0.1083721609
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -10,
+        "n": 861,
+        "mean_pred": 0.8156770103,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -2.1251923171
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -9,
+        "n": 861,
+        "mean_pred": 0.8156465019,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -2.1221414788
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -8,
+        "n": 861,
+        "mean_pred": 0.8156300733,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -2.1204986224
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -7,
+        "n": 861,
+        "mean_pred": 0.8155704694,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -2.1145382291
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -6,
+        "n": 861,
+        "mean_pred": 0.8154633894,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -2.103830229
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -5,
+        "n": 861,
+        "mean_pred": 0.8151441861,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -2.0719099036
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -4,
+        "n": 861,
+        "mean_pred": 0.8140056169,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -1.9580529753
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -3,
+        "n": 861,
+        "mean_pred": 0.8091849236,
+        "hit_rate": 0.7944250871,
+        "gap_pp": -1.4759836445
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -2,
+        "n": 861,
+        "mean_pred": 0.7704218882,
+        "hit_rate": 0.7944250871,
+        "gap_pp": 2.4003198926
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": -1,
+        "n": 861,
+        "mean_pred": 0.6272928263,
+        "hit_rate": 0.6271777003,
+        "gap_pp": -0.0115125923
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 0,
+        "n": 861,
+        "mean_pred": 0.4141766629,
+        "hit_rate": 0.3786295006,
+        "gap_pp": -3.5547162348
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 1,
+        "n": 861,
+        "mean_pred": 0.2491573596,
+        "hit_rate": 0.2229965157,
+        "gap_pp": -2.6160843891
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 2,
+        "n": 861,
+        "mean_pred": 0.1421439908,
+        "hit_rate": 0.1219512195,
+        "gap_pp": -2.0192771299
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 3,
+        "n": 861,
+        "mean_pred": 0.0787465771,
+        "hit_rate": 0.0615563298,
+        "gap_pp": -1.7190247274
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 4,
+        "n": 861,
+        "mean_pred": 0.0421683549,
+        "hit_rate": 0.0325203252,
+        "gap_pp": -0.9648029683
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 5,
+        "n": 861,
+        "mean_pred": 0.0216535291,
+        "hit_rate": 0.0162601626,
+        "gap_pp": -0.5393366495
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 6,
+        "n": 861,
+        "mean_pred": 0.011892024,
+        "hit_rate": 0.0092915215,
+        "gap_pp": -0.2600502501
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 7,
+        "n": 861,
+        "mean_pred": 0.0067211003,
+        "hit_rate": 0.0046457607,
+        "gap_pp": -0.2075339593
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 8,
+        "n": 861,
+        "mean_pred": 0.0038401992,
+        "hit_rate": 0.0023228804,
+        "gap_pp": -0.1517318836
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 9,
+        "n": 861,
+        "mean_pred": 0.0023946799,
+        "hit_rate": 0.0011614402,
+        "gap_pp": -0.1233239693
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 10,
+        "n": 861,
+        "mean_pred": 0.0010837216,
+        "hit_rate": 0.0,
+        "gap_pp": -0.1083721609
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": -4,
+        "n": 368,
+        "mean_pred": 0.0643064539,
+        "hit_rate": 0.0951086957,
+        "gap_pp": 3.080224179
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": -3,
+        "n": 946,
+        "mean_pred": 0.1244295622,
+        "hit_rate": 0.1532769556,
+        "gap_pp": 2.8847393392
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": -2,
+        "n": 1775,
+        "mean_pred": 0.2285086937,
+        "hit_rate": 0.2591549296,
+        "gap_pp": 3.0646235844
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": -1,
+        "n": 1775,
+        "mean_pred": 0.3892340413,
+        "hit_rate": 0.4236619718,
+        "gap_pp": 3.4427930564
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 0,
+        "n": 1775,
+        "mean_pred": 0.5578159812,
+        "hit_rate": 0.5690140845,
+        "gap_pp": 1.1198103322
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 1,
+        "n": 1775,
+        "mean_pred": 0.6994695683,
+        "hit_rate": 0.6969014085,
+        "gap_pp": -0.2568159818
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 2,
+        "n": 1775,
+        "mean_pred": 0.8068672456,
+        "hit_rate": 0.8,
+        "gap_pp": -0.6867245575
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 3,
+        "n": 1775,
+        "mean_pred": 0.8808969245,
+        "hit_rate": 0.8833802817,
+        "gap_pp": 0.2483357194
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 4,
+        "n": 1775,
+        "mean_pred": 0.9281663803,
+        "hit_rate": 0.9284507042,
+        "gap_pp": 0.028432395
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 5,
+        "n": 1775,
+        "mean_pred": 0.9574085317,
+        "hit_rate": 0.9583098592,
+        "gap_pp": 0.090132741
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 6,
+        "n": 1775,
+        "mean_pred": 0.9747742676,
+        "hit_rate": 0.974084507,
+        "gap_pp": -0.0689760557
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 7,
+        "n": 1775,
+        "mean_pred": 0.9856346162,
+        "hit_rate": 0.9870422535,
+        "gap_pp": 0.1407637286
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 8,
+        "n": 1775,
+        "mean_pred": 0.9914716172,
+        "hit_rate": 0.9932394366,
+        "gap_pp": 0.1767819395
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 9,
+        "n": 1775,
+        "mean_pred": 0.9950811787,
+        "hit_rate": 0.9966197183,
+        "gap_pp": 0.1538539616
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": 10,
+        "n": 1775,
+        "mean_pred": 0.9973251977,
+        "hit_rate": 0.9994366197,
+        "gap_pp": 0.2111422042
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -10,
+        "n": 1775,
+        "mean_pred": 0.9409976206,
+        "hit_rate": 0.9363380282,
+        "gap_pp": -0.4659592428
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -9,
+        "n": 1775,
+        "mean_pred": 0.9409778074,
+        "hit_rate": 0.9363380282,
+        "gap_pp": -0.4639779263
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -8,
+        "n": 1775,
+        "mean_pred": 0.9408119741,
+        "hit_rate": 0.9363380282,
+        "gap_pp": -0.4473945882
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -7,
+        "n": 1775,
+        "mean_pred": 0.9405451689,
+        "hit_rate": 0.9363380282,
+        "gap_pp": -0.420714071
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -6,
+        "n": 1775,
+        "mean_pred": 0.939451532,
+        "hit_rate": 0.9363380282,
+        "gap_pp": -0.3113503878
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -5,
+        "n": 1775,
+        "mean_pred": 0.9357364136,
+        "hit_rate": 0.9363380282,
+        "gap_pp": 0.0601614588
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -4,
+        "n": 1775,
+        "mean_pred": 0.9229497862,
+        "hit_rate": 0.923943662,
+        "gap_pp": 0.0993875809
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -3,
+        "n": 1775,
+        "mean_pred": 0.8811166153,
+        "hit_rate": 0.8771830986,
+        "gap_pp": -0.3933516665
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -2,
+        "n": 1775,
+        "mean_pred": 0.7714913063,
+        "hit_rate": 0.7408450704,
+        "gap_pp": -3.0646235844
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -1,
+        "n": 1775,
+        "mean_pred": 0.6107659587,
+        "hit_rate": 0.5763380282,
+        "gap_pp": -3.4427930564
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 0,
+        "n": 1775,
+        "mean_pred": 0.4421840188,
+        "hit_rate": 0.4309859155,
+        "gap_pp": -1.1198103322
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 1,
+        "n": 1775,
+        "mean_pred": 0.3005304317,
+        "hit_rate": 0.3030985915,
+        "gap_pp": 0.2568159818
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 2,
+        "n": 1775,
+        "mean_pred": 0.1931327544,
+        "hit_rate": 0.2,
+        "gap_pp": 0.6867245575
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 3,
+        "n": 1775,
+        "mean_pred": 0.1191030755,
+        "hit_rate": 0.1166197183,
+        "gap_pp": -0.2483357194
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 4,
+        "n": 1775,
+        "mean_pred": 0.0718336197,
+        "hit_rate": 0.0715492958,
+        "gap_pp": -0.028432395
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 5,
+        "n": 1775,
+        "mean_pred": 0.0425914683,
+        "hit_rate": 0.0416901408,
+        "gap_pp": -0.090132741
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 6,
+        "n": 1775,
+        "mean_pred": 0.0252257324,
+        "hit_rate": 0.025915493,
+        "gap_pp": 0.0689760557
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 7,
+        "n": 1775,
+        "mean_pred": 0.0143653838,
+        "hit_rate": 0.0129577465,
+        "gap_pp": -0.1407637286
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 8,
+        "n": 1775,
+        "mean_pred": 0.0085283828,
+        "hit_rate": 0.0067605634,
+        "gap_pp": -0.1767819395
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 9,
+        "n": 1775,
+        "mean_pred": 0.0049188213,
+        "hit_rate": 0.0033802817,
+        "gap_pp": -0.1538539616
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": 10,
+        "n": 1775,
+        "mean_pred": 0.0026748023,
+        "hit_rate": 0.0005633803,
+        "gap_pp": -0.2111422042
+      }
+    ],
+    "worst_cells_gap_gt_2p5_n_ge_500": [
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -2,
+        "n": 1330,
+        "mean_pred": 0.5826880069,
+        "hit_rate": 0.4661654135,
+        "gap_pp": -11.6522593334
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -2,
+        "n": 1330,
+        "mean_pred": 0.4173119931,
+        "hit_rate": 0.5338345865,
+        "gap_pp": 11.6522593334
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -5,
+        "n": 1330,
+        "mean_pred": 0.7648170233,
+        "hit_rate": 0.6541353383,
+        "gap_pp": -11.0681684925
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -5,
+        "n": 1330,
+        "mean_pred": 0.2351829767,
+        "hit_rate": 0.3458646617,
+        "gap_pp": 11.0681684925
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -3,
+        "n": 1330,
+        "mean_pred": 0.6470462116,
+        "hit_rate": 0.5368421053,
+        "gap_pp": -11.0204106343
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -3,
+        "n": 1330,
+        "mean_pred": 0.3529537884,
+        "hit_rate": 0.4631578947,
+        "gap_pp": 11.0204106343
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -4,
+        "n": 1330,
+        "mean_pred": 0.2913748591,
+        "hit_rate": 0.3977443609,
+        "gap_pp": 10.6369501824
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -4,
+        "n": 1330,
+        "mean_pred": 0.7086251409,
+        "hit_rate": 0.6022556391,
+        "gap_pp": -10.6369501824
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -1,
+        "n": 1330,
+        "mean_pred": 0.4822422856,
+        "hit_rate": 0.5834586466,
+        "gap_pp": 10.1216361041
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -1,
+        "n": 1330,
+        "mean_pred": 0.5177577144,
+        "hit_rate": 0.4165413534,
+        "gap_pp": -10.1216361041
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -6,
+        "n": 1330,
+        "mean_pred": 0.184739941,
+        "hit_rate": 0.2857142857,
+        "gap_pp": 10.0974344757
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -6,
+        "n": 1330,
+        "mean_pred": 0.815260059,
+        "hit_rate": 0.7142857143,
+        "gap_pp": -10.0974344757
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 0,
+        "n": 1330,
+        "mean_pred": 0.4548079165,
+        "hit_rate": 0.3691729323,
+        "gap_pp": -8.5634984126
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 0,
+        "n": 1330,
+        "mean_pred": 0.5451920835,
+        "hit_rate": 0.6308270677,
+        "gap_pp": 8.5634984126
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -2,
+        "n": 1140,
+        "mean_pred": 0.3717255306,
+        "hit_rate": 0.4570175439,
+        "gap_pp": 8.529201323
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -3,
+        "n": 1025,
+        "mean_pred": 0.3014514224,
+        "hit_rate": 0.3863414634,
+        "gap_pp": 8.4890041063
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -1,
+        "n": 1198,
+        "mean_pred": 0.4524980375,
+        "hit_rate": 0.5333889816,
+        "gap_pp": 8.0890944121
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -1,
+        "n": 1206,
+        "mean_pred": 0.5477563958,
+        "hit_rate": 0.4676616915,
+        "gap_pp": -8.0094704252
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -2,
+        "n": 1206,
+        "mean_pred": 0.628926129,
+        "hit_rate": 0.552238806,
+        "gap_pp": -7.6687323015
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -4,
+        "n": 862,
+        "mean_pred": 0.2411872593,
+        "hit_rate": 0.3178654292,
+        "gap_pp": 7.6678169897
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 1,
+        "n": 1206,
+        "mean_pred": 0.3887155084,
+        "hit_rate": 0.3150912106,
+        "gap_pp": -7.3624297764
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 1,
+        "n": 1206,
+        "mean_pred": 0.6112844916,
+        "hit_rate": 0.6849087894,
+        "gap_pp": 7.3624297764
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -7,
+        "n": 1330,
+        "mean_pred": 0.1409790652,
+        "hit_rate": 0.2142857143,
+        "gap_pp": 7.3306649099
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -7,
+        "n": 1330,
+        "mean_pred": 0.8590209348,
+        "hit_rate": 0.7857142857,
+        "gap_pp": -7.3306649099
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": -5,
+        "n": 696,
+        "mean_pred": 0.1864508563,
+        "hit_rate": 0.2586206897,
+        "gap_pp": 7.2169833405
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 0,
+        "n": 1206,
+        "mean_pred": 0.5367315226,
+        "hit_rate": 0.6086235489,
+        "gap_pp": 7.1892026354
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 0,
+        "n": 1206,
+        "mean_pred": 0.4632684774,
+        "hit_rate": 0.3913764511,
+        "gap_pp": -7.1892026354
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -3,
+        "n": 1206,
+        "mean_pred": 0.6951673719,
+        "hit_rate": 0.6252072968,
+        "gap_pp": -6.9960075073
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 1,
+        "n": 1330,
+        "mean_pred": 0.3961824164,
+        "hit_rate": 0.3293233083,
+        "gap_pp": -6.68591081
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 1,
+        "n": 1330,
+        "mean_pred": 0.6038175836,
+        "hit_rate": 0.6706766917,
+        "gap_pp": 6.68591081
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 2,
+        "n": 1206,
+        "mean_pred": 0.6791879405,
+        "hit_rate": 0.7454394693,
+        "gap_pp": 6.6251528783
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 2,
+        "n": 1206,
+        "mean_pred": 0.3208120595,
+        "hit_rate": 0.2545605307,
+        "gap_pp": -6.6251528783
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -4,
+        "n": 1206,
+        "mean_pred": 0.745441214,
+        "hit_rate": 0.688225539,
+        "gap_pp": -5.721567505
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 2,
+        "n": 1330,
+        "mean_pred": 0.3386575805,
+        "hit_rate": 0.2827067669,
+        "gap_pp": -5.5950813554
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 2,
+        "n": 1330,
+        "mean_pred": 0.6613424195,
+        "hit_rate": 0.7172932331,
+        "gap_pp": 5.5950813554
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 3,
+        "n": 1206,
+        "mean_pred": 0.7394086176,
+        "hit_rate": 0.7943615257,
+        "gap_pp": 5.4952908105
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 3,
+        "n": 1206,
+        "mean_pred": 0.2605913824,
+        "hit_rate": 0.2056384743,
+        "gap_pp": -5.4952908105
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -8,
+        "n": 1330,
+        "mean_pred": 0.104607493,
+        "hit_rate": 0.1571428571,
+        "gap_pp": 5.2535364146
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -8,
+        "n": 1330,
+        "mean_pred": 0.895392507,
+        "hit_rate": 0.8428571429,
+        "gap_pp": -5.2535364146
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 3,
+        "n": 1330,
+        "mean_pred": 0.2880882623,
+        "hit_rate": 0.2360902256,
+        "gap_pp": -5.1998036729
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 3,
+        "n": 1330,
+        "mean_pred": 0.7119117377,
+        "hit_rate": 0.7639097744,
+        "gap_pp": 5.1998036729
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 4,
+        "n": 1206,
+        "mean_pred": 0.7879739065,
+        "hit_rate": 0.8366500829,
+        "gap_pp": 4.8676176432
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 4,
+        "n": 1206,
+        "mean_pred": 0.2120260935,
+        "hit_rate": 0.1633499171,
+        "gap_pp": -4.8676176432
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 5,
+        "n": 1206,
+        "mean_pred": 0.1691101565,
+        "hit_rate": 0.1235489221,
+        "gap_pp": -4.556123442
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 5,
+        "n": 1206,
+        "mean_pred": 0.8308898435,
+        "hit_rate": 0.8764510779,
+        "gap_pp": 4.556123442
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 4,
+        "n": 1330,
+        "mean_pred": 0.7582339442,
+        "hit_rate": 0.8015037594,
+        "gap_pp": 4.3269815208
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 4,
+        "n": 1330,
+        "mean_pred": 0.2417660558,
+        "hit_rate": 0.1984962406,
+        "gap_pp": -4.3269815208
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": -5,
+        "n": 1206,
+        "mean_pred": 0.7825254873,
+        "hit_rate": 0.7421227197,
+        "gap_pp": -4.040276757
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -9,
+        "n": 1088,
+        "mean_pred": 0.0791446049,
+        "hit_rate": 0.1185661765,
+        "gap_pp": 3.9421571608
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 6,
+        "n": 1206,
+        "mean_pred": 0.8669725081,
+        "hit_rate": 0.9029850746,
+        "gap_pp": 3.6012566545
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 6,
+        "n": 1206,
+        "mean_pred": 0.1330274919,
+        "hit_rate": 0.0970149254,
+        "gap_pp": -3.6012566545
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 0,
+        "n": 861,
+        "mean_pred": 0.4141766629,
+        "hit_rate": 0.3786295006,
+        "gap_pp": -3.5547162348
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 0,
+        "n": 852,
+        "mean_pred": 0.5858276517,
+        "hit_rate": 0.6208920188,
+        "gap_pp": 3.5064367099
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": -1,
+        "n": 1775,
+        "mean_pred": 0.3892340413,
+        "hit_rate": 0.4236619718,
+        "gap_pp": 3.4427930564
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -1,
+        "n": 1775,
+        "mean_pred": 0.6107659587,
+        "hit_rate": 0.5763380282,
+        "gap_pp": -3.4427930564
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "less",
+        "offset": -4,
+        "n": 558,
+        "mean_pred": 0.3265185498,
+        "hit_rate": 0.3602150538,
+        "gap_pp": 3.3696503958
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "offset": -4,
+        "n": 558,
+        "mean_pred": 0.6734814502,
+        "hit_rate": 0.6397849462,
+        "gap_pp": -3.3696503958
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -9,
+        "n": 1330,
+        "mean_pred": 0.9221360558,
+        "hit_rate": 0.8894736842,
+        "gap_pp": -3.2662371564
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": -10,
+        "n": 881,
+        "mean_pred": 0.0583036836,
+        "hit_rate": 0.0908059024,
+        "gap_pp": 3.2502218755
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 7,
+        "n": 1206,
+        "mean_pred": 0.1049356276,
+        "hit_rate": 0.0737976783,
+        "gap_pp": -3.113794934
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 7,
+        "n": 1206,
+        "mean_pred": 0.8950643724,
+        "hit_rate": 0.9262023217,
+        "gap_pp": 3.113794934
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": -2,
+        "n": 1775,
+        "mean_pred": 0.2285086937,
+        "hit_rate": 0.2591549296,
+        "gap_pp": 3.0646235844
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "offset": -2,
+        "n": 1775,
+        "mean_pred": 0.7714913063,
+        "hit_rate": 0.7408450704,
+        "gap_pp": -3.0646235844
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": -10,
+        "n": 1330,
+        "mean_pred": 0.9413320534,
+        "hit_rate": 0.9112781955,
+        "gap_pp": -3.005385796
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "less",
+        "offset": -3,
+        "n": 946,
+        "mean_pred": 0.1244295622,
+        "hit_rate": 0.1532769556,
+        "gap_pp": 2.8847393392
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "offset": 5,
+        "n": 1330,
+        "mean_pred": 0.1974662951,
+        "hit_rate": 0.169924812,
+        "gap_pp": -2.7541483118
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "offset": 5,
+        "n": 1330,
+        "mean_pred": 0.8025337049,
+        "hit_rate": 0.830075188,
+        "gap_pp": 2.7541483118
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "offset": 1,
+        "n": 861,
+        "mean_pred": 0.2491573596,
+        "hit_rate": 0.2229965157,
+        "gap_pp": -2.6160843891
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "offset": 1,
+        "n": 861,
+        "mean_pred": 0.7508426404,
+        "hit_rate": 0.7770034843,
+        "gap_pp": 2.6160843891
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "offset": 8,
+        "n": 1206,
+        "mean_pred": 0.0811971984,
+        "hit_rate": 0.0555555556,
+        "gap_pp": -2.564164282
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "offset": 8,
+        "n": 1206,
+        "mean_pred": 0.9188028016,
+        "hit_rate": 0.9444444444,
+        "gap_pp": 2.564164282
+      }
+    ],
+    "variation_x_direction_x_confidence_worst": [
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "75-80",
+        "n": 1367,
+        "mean_pred": 0.7764278886,
+        "hit_rate": 0.6656912948,
+        "gap_pp": -11.0736593755
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "55-60",
+        "n": 1162,
+        "mean_pred": 0.578346667,
+        "hit_rate": 0.4681583477,
+        "gap_pp": -11.0188319278
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "65-70",
+        "n": 949,
+        "mean_pred": 0.6725089663,
+        "hit_rate": 0.5637513172,
+        "gap_pp": -10.8757649084
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "70-75",
+        "n": 1259,
+        "mean_pred": 0.7225827824,
+        "hit_rate": 0.6179507546,
+        "gap_pp": -10.4632027851
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "50-55",
+        "n": 1163,
+        "mean_pred": 0.5208165297,
+        "hit_rate": 0.4213241617,
+        "gap_pp": -9.9492368002
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "conf_band": "50-55",
+        "n": 1047,
+        "mean_pred": 0.5332061127,
+        "hit_rate": 0.6322827125,
+        "gap_pp": 9.9076599772
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "80-85",
+        "n": 1383,
+        "mean_pred": 0.8287780346,
+        "hit_rate": 0.7346348518,
+        "gap_pp": -9.4143182784
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "50-55",
+        "n": 630,
+        "mean_pred": 0.5285392466,
+        "hit_rate": 0.4444444444,
+        "gap_pp": -8.4094802201
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "60-65",
+        "n": 959,
+        "mean_pred": 0.6289479615,
+        "hit_rate": 0.5453597497,
+        "gap_pp": -8.3588211805
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "55-60",
+        "n": 753,
+        "mean_pred": 0.5741960849,
+        "hit_rate": 0.4913678619,
+        "gap_pp": -8.2828223036
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "conf_band": "70-75",
+        "n": 776,
+        "mean_pred": 0.7302020373,
+        "hit_rate": 0.8054123711,
+        "gap_pp": 7.5210333843
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "conf_band": "70-75",
+        "n": 899,
+        "mean_pred": 0.7235113079,
+        "hit_rate": 0.7986651835,
+        "gap_pp": 7.515387559
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "conf_band": "50-55",
+        "n": 1129,
+        "mean_pred": 0.5356582308,
+        "hit_rate": 0.6067316209,
+        "gap_pp": 7.1073390139
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "conf_band": "60-65",
+        "n": 1095,
+        "mean_pred": 0.6133335553,
+        "hit_rate": 0.6840182648,
+        "gap_pp": 7.0684709532
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "conf_band": "65-70",
+        "n": 1203,
+        "mean_pred": 0.6792647344,
+        "hit_rate": 0.7456359102,
+        "gap_pp": 6.6371175804
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "conf_band": "90-95",
+        "n": 1576,
+        "mean_pred": 0.9239922219,
+        "hit_rate": 0.8578680203,
+        "gap_pp": -6.6124201549
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "85-90",
+        "n": 1912,
+        "mean_pred": 0.8779638008,
+        "hit_rate": 0.8132845188,
+        "gap_pp": -6.4679281982
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "conf_band": "55-60",
+        "n": 918,
+        "mean_pred": 0.5753088398,
+        "hit_rate": 0.6383442266,
+        "gap_pp": 6.3035386807
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "conf_band": "60-65",
+        "n": 1167,
+        "mean_pred": 0.6206563296,
+        "hit_rate": 0.6786632391,
+        "gap_pp": 5.8006909457
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "conf_band": "65-70",
+        "n": 1253,
+        "mean_pred": 0.6711573242,
+        "hit_rate": 0.724660814,
+        "gap_pp": 5.3503489883
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "conf_band": "85-90",
+        "n": 1393,
+        "mean_pred": 0.8794507167,
+        "hit_rate": 0.8262742283,
+        "gap_pp": -5.3176488409
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "60-65",
+        "n": 676,
+        "mean_pred": 0.6225825188,
+        "hit_rate": 0.5695266272,
+        "gap_pp": -5.3055891564
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "75-80",
+        "n": 2383,
+        "mean_pred": 0.7804248654,
+        "hit_rate": 0.7284934956,
+        "gap_pp": -5.1931369758
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "conf_band": "75-80",
+        "n": 1206,
+        "mean_pred": 0.7696307552,
+        "hit_rate": 0.8208955224,
+        "gap_pp": 5.12647672
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "conf_band": "70-75",
+        "n": 1405,
+        "mean_pred": 0.7212845098,
+        "hit_rate": 0.7722419929,
+        "gap_pp": 5.0957483045
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "MID",
+        "side": "more",
+        "conf_band": "70-75",
+        "n": 533,
+        "mean_pred": 0.7414947065,
+        "hit_rate": 0.7898686679,
+        "gap_pp": 4.8373961375
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "conf_band": "55-60",
+        "n": 764,
+        "mean_pred": 0.5835708139,
+        "hit_rate": 0.6269633508,
+        "gap_pp": 4.3392536873
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "90-95",
+        "n": 2375,
+        "mean_pred": 0.9261556529,
+        "hit_rate": 0.8829473684,
+        "gap_pp": -4.3208284518
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "more",
+        "conf_band": "95+",
+        "n": 615,
+        "mean_pred": 0.956764571,
+        "hit_rate": 0.9138211382,
+        "gap_pp": -4.2943432779
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "conf_band": "80-85",
+        "n": 1551,
+        "mean_pred": 0.8230227853,
+        "hit_rate": 0.863313991,
+        "gap_pp": 4.0291205672
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "conf_band": "75-80",
+        "n": 1466,
+        "mean_pred": 0.7704347485,
+        "hit_rate": 0.8083219645,
+        "gap_pp": 3.7887216033
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "90-95",
+        "n": 785,
+        "mean_pred": 0.920647304,
+        "hit_rate": 0.8828025478,
+        "gap_pp": -3.7844756187
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "less",
+        "conf_band": "75-80",
+        "n": 573,
+        "mean_pred": 0.7611137815,
+        "hit_rate": 0.797556719,
+        "gap_pp": 3.644293749
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "HIGH",
+        "side": "more",
+        "conf_band": "90-95",
+        "n": 616,
+        "mean_pred": 0.9295252801,
+        "hit_rate": 0.8944805195,
+        "gap_pp": -3.5044760571
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "less",
+        "conf_band": "85-90",
+        "n": 2107,
+        "mean_pred": 0.8752303394,
+        "hit_rate": 0.9084005695,
+        "gap_pp": 3.317023017
+      },
+      {
+        "prop": "points",
+        "var_band": "STARTER",
+        "side": "more",
+        "conf_band": "65-70",
+        "n": 711,
+        "mean_pred": 0.6784317986,
+        "hit_rate": 0.6455696203,
+        "gap_pp": -3.2862178362
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "80-85",
+        "n": 1261,
+        "mean_pred": 0.8310781388,
+        "hit_rate": 0.7993655829,
+        "gap_pp": -3.1712555891
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "85-90",
+        "n": 1813,
+        "mean_pred": 0.8786202208,
+        "hit_rate": 0.8483177055,
+        "gap_pp": -3.0302515349
+      },
+      {
+        "prop": "points",
+        "var_band": "ROLE",
+        "side": "less",
+        "conf_band": "80-85",
+        "n": 2023,
+        "mean_pred": 0.8252513606,
+        "hit_rate": 0.8546712803,
+        "gap_pp": 2.9419919659
+      },
+      {
+        "prop": "points",
+        "var_band": "FRINGE",
+        "side": "more",
+        "conf_band": "70-75",
+        "n": 1530,
+        "mean_pred": 0.7232607141,
+        "hit_rate": 0.6941176471,
+        "gap_pp": -2.9143067022
+      },
+      {
+        "prop": "rebounds",
+        "var_band": "LOW",
+        "side": "more",
+        "conf_band": "75-80",
+        "n": 1634,
+        "mean_pred": 0.7752465584,
+        "hit_rate": 0.7496940024,
+        "gap_pp": -2.5552555912
+      }
+    ]
+  },
+  "platt_fits": [],
+  "role_minutes_multiplier_train_fit": {
+    "BENCH": 1.0027,
+    "FRINGE": 0.9834,
+    "HIGH_USAGE_STARTER": 0.9987,
+    "IRON_MAN": 0.9917,
+    "ROTATION": 0.9968,
+    "STARTER": 0.9984
+  },
+  "generated_at": "2026-11-19",
+  "train_seasons": [
+    "2023-24",
+    "2024-25",
+    "2025-26"
+  ],
+  "test_season": [
+    "2026-27"
+  ],
+  "props": [
+    "points",
+    "rebounds"
+  ],
+  "ladder_steps": 6,
+  "per_offset": [
+    {
+      "prop": "points",
+      "offset": -10,
+      "n": 3127,
+      "mean_pred": 0.8892,
+      "actual_over": 0.8679,
+      "gap_pp": -2.12,
+      "brier": 0.1121,
+      "brier_param_only": 0.1176,
+      "logloss": 0.3834,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -9,
+      "n": 3127,
+      "mean_pred": 0.8752,
+      "actual_over": 0.8545,
+      "gap_pp": -2.07,
+      "brier": 0.1227,
+      "brier_param_only": 0.1256,
+      "logloss": 0.4117,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -8,
+      "n": 3127,
+      "mean_pred": 0.857,
+      "actual_over": 0.8283,
+      "gap_pp": -2.87,
+      "brier": 0.1423,
+      "brier_param_only": 0.1415,
+      "logloss": 0.4616,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -7,
+      "n": 3127,
+      "mean_pred": 0.8323,
+      "actual_over": 0.7966,
+      "gap_pp": -3.57,
+      "brier": 0.1632,
+      "brier_param_only": 0.1606,
+      "logloss": 0.5104,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -6,
+      "n": 3127,
+      "mean_pred": 0.8012,
+      "actual_over": 0.7502,
+      "gap_pp": -5.09,
+      "brier": 0.1907,
+      "brier_param_only": 0.1885,
+      "logloss": 0.573,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -5,
+      "n": 3127,
+      "mean_pred": 0.7633,
+      "actual_over": 0.6975,
+      "gap_pp": -6.59,
+      "brier": 0.2164,
+      "brier_param_only": 0.2173,
+      "logloss": 0.6281,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -4,
+      "n": 3127,
+      "mean_pred": 0.716,
+      "actual_over": 0.6421,
+      "gap_pp": -7.39,
+      "brier": 0.236,
+      "brier_param_only": 0.2388,
+      "logloss": 0.6674,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -3,
+      "n": 3127,
+      "mean_pred": 0.6608,
+      "actual_over": 0.5833,
+      "gap_pp": -7.75,
+      "brier": 0.2494,
+      "brier_param_only": 0.2514,
+      "logloss": 0.6934,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -2,
+      "n": 3127,
+      "mean_pred": 0.5972,
+      "actual_over": 0.5168,
+      "gap_pp": -8.04,
+      "brier": 0.2559,
+      "brier_param_only": 0.2569,
+      "logloss": 0.7053,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": -1,
+      "n": 3127,
+      "mean_pred": 0.5284,
+      "actual_over": 0.4579,
+      "gap_pp": -7.04,
+      "brier": 0.2527,
+      "brier_param_only": 0.254,
+      "logloss": 0.6986,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 0,
+      "n": 3127,
+      "mean_pred": 0.4591,
+      "actual_over": 0.3972,
+      "gap_pp": -6.19,
+      "brier": 0.2429,
+      "brier_param_only": 0.2443,
+      "logloss": 0.679,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 1,
+      "n": 3127,
+      "mean_pred": 0.3952,
+      "actual_over": 0.3406,
+      "gap_pp": -5.47,
+      "brier": 0.2271,
+      "brier_param_only": 0.2278,
+      "logloss": 0.6467,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 2,
+      "n": 3127,
+      "mean_pred": 0.3351,
+      "actual_over": 0.2891,
+      "gap_pp": -4.6,
+      "brier": 0.2067,
+      "brier_param_only": 0.2071,
+      "logloss": 0.604,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 3,
+      "n": 3127,
+      "mean_pred": 0.2815,
+      "actual_over": 0.243,
+      "gap_pp": -3.84,
+      "brier": 0.1842,
+      "brier_param_only": 0.1847,
+      "logloss": 0.5552,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 4,
+      "n": 3127,
+      "mean_pred": 0.235,
+      "actual_over": 0.1996,
+      "gap_pp": -3.54,
+      "brier": 0.1599,
+      "brier_param_only": 0.1602,
+      "logloss": 0.5004,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 5,
+      "n": 3127,
+      "mean_pred": 0.1922,
+      "actual_over": 0.1625,
+      "gap_pp": -2.97,
+      "brier": 0.1358,
+      "brier_param_only": 0.1357,
+      "logloss": 0.4429,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 6,
+      "n": 3127,
+      "mean_pred": 0.156,
+      "actual_over": 0.1343,
+      "gap_pp": -2.17,
+      "brier": 0.1158,
+      "brier_param_only": 0.1154,
+      "logloss": 0.3925,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 7,
+      "n": 3127,
+      "mean_pred": 0.1267,
+      "actual_over": 0.1116,
+      "gap_pp": -1.51,
+      "brier": 0.0984,
+      "brier_param_only": 0.098,
+      "logloss": 0.3465,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 8,
+      "n": 3127,
+      "mean_pred": 0.1013,
+      "actual_over": 0.0905,
+      "gap_pp": -1.08,
+      "brier": 0.0815,
+      "brier_param_only": 0.081,
+      "logloss": 0.299,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 9,
+      "n": 3127,
+      "mean_pred": 0.0804,
+      "actual_over": 0.0713,
+      "gap_pp": -0.91,
+      "brier": 0.0656,
+      "brier_param_only": 0.0653,
+      "logloss": 0.253,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "points",
+      "offset": 10,
+      "n": 3127,
+      "mean_pred": 0.0633,
+      "actual_over": 0.0547,
+      "gap_pp": -0.86,
+      "brier": 0.0513,
+      "brier_param_only": 0.051,
+      "logloss": 0.2083,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -10,
+      "n": 3127,
+      "mean_pred": 0.9134,
+      "actual_over": 0.9037,
+      "gap_pp": -0.97,
+      "brier": 0.0822,
+      "brier_param_only": 0.0963,
+      "logloss": 0.2917,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -9,
+      "n": 3127,
+      "mean_pred": 0.9134,
+      "actual_over": 0.9037,
+      "gap_pp": -0.96,
+      "brier": 0.0822,
+      "brier_param_only": 0.0963,
+      "logloss": 0.2917,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -8,
+      "n": 3127,
+      "mean_pred": 0.9131,
+      "actual_over": 0.9037,
+      "gap_pp": -0.94,
+      "brier": 0.0822,
+      "brier_param_only": 0.0963,
+      "logloss": 0.2915,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -7,
+      "n": 3127,
+      "mean_pred": 0.9126,
+      "actual_over": 0.9031,
+      "gap_pp": -0.95,
+      "brier": 0.0828,
+      "brier_param_only": 0.0967,
+      "logloss": 0.2941,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -6,
+      "n": 3127,
+      "mean_pred": 0.9107,
+      "actual_over": 0.9018,
+      "gap_pp": -0.89,
+      "brier": 0.084,
+      "brier_param_only": 0.0975,
+      "logloss": 0.2983,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -5,
+      "n": 3127,
+      "mean_pred": 0.9059,
+      "actual_over": 0.8964,
+      "gap_pp": -0.95,
+      "brier": 0.0889,
+      "brier_param_only": 0.1009,
+      "logloss": 0.3141,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -4,
+      "n": 3127,
+      "mean_pred": 0.8924,
+      "actual_over": 0.8823,
+      "gap_pp": -1.01,
+      "brier": 0.1009,
+      "brier_param_only": 0.1094,
+      "logloss": 0.3497,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -3,
+      "n": 3127,
+      "mean_pred": 0.8552,
+      "actual_over": 0.8455,
+      "gap_pp": -0.96,
+      "brier": 0.1288,
+      "brier_param_only": 0.1318,
+      "logloss": 0.4239,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -2,
+      "n": 3127,
+      "mean_pred": 0.7657,
+      "actual_over": 0.7541,
+      "gap_pp": -1.16,
+      "brier": 0.1844,
+      "brier_param_only": 0.1842,
+      "logloss": 0.5547,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": -1,
+      "n": 3127,
+      "mean_pred": 0.6147,
+      "actual_over": 0.599,
+      "gap_pp": -1.57,
+      "brier": 0.2403,
+      "brier_param_only": 0.2411,
+      "logloss": 0.6736,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 0,
+      "n": 3127,
+      "mean_pred": 0.4396,
+      "actual_over": 0.432,
+      "gap_pp": -0.75,
+      "brier": 0.2433,
+      "brier_param_only": 0.2443,
+      "logloss": 0.6797,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 1,
+      "n": 3127,
+      "mean_pred": 0.2942,
+      "actual_over": 0.2987,
+      "gap_pp": 0.45,
+      "brier": 0.2056,
+      "brier_param_only": 0.2056,
+      "logloss": 0.6006,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 2,
+      "n": 3127,
+      "mean_pred": 0.188,
+      "actual_over": 0.1976,
+      "gap_pp": 0.97,
+      "brier": 0.1551,
+      "brier_param_only": 0.1542,
+      "logloss": 0.4863,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 3,
+      "n": 3127,
+      "mean_pred": 0.1156,
+      "actual_over": 0.1199,
+      "gap_pp": 0.43,
+      "brier": 0.1023,
+      "brier_param_only": 0.1021,
+      "logloss": 0.3521,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 4,
+      "n": 3127,
+      "mean_pred": 0.0697,
+      "actual_over": 0.0742,
+      "gap_pp": 0.45,
+      "brier": 0.0668,
+      "brier_param_only": 0.0668,
+      "logloss": 0.2521,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 5,
+      "n": 3127,
+      "mean_pred": 0.0414,
+      "actual_over": 0.0448,
+      "gap_pp": 0.33,
+      "brier": 0.0418,
+      "brier_param_only": 0.0418,
+      "logloss": 0.1731,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 6,
+      "n": 3127,
+      "mean_pred": 0.0246,
+      "actual_over": 0.0285,
+      "gap_pp": 0.39,
+      "brier": 0.0272,
+      "brier_param_only": 0.0272,
+      "logloss": 0.1227,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 7,
+      "n": 3127,
+      "mean_pred": 0.0143,
+      "actual_over": 0.0169,
+      "gap_pp": 0.26,
+      "brier": 0.0165,
+      "brier_param_only": 0.0165,
+      "logloss": 0.0815,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 8,
+      "n": 3127,
+      "mean_pred": 0.0085,
+      "actual_over": 0.0099,
+      "gap_pp": 0.15,
+      "brier": 0.0097,
+      "brier_param_only": 0.0097,
+      "logloss": 0.0529,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 9,
+      "n": 3127,
+      "mean_pred": 0.0049,
+      "actual_over": 0.0058,
+      "gap_pp": 0.09,
+      "brier": 0.0057,
+      "brier_param_only": 0.0057,
+      "logloss": 0.0337,
+      "emp_share": 1.0
+    },
+    {
+      "prop": "rebounds",
+      "offset": 10,
+      "n": 3127,
+      "mean_pred": 0.0026,
+      "actual_over": 0.0013,
+      "gap_pp": -0.13,
+      "brier": 0.0013,
+      "brier_param_only": 0.0013,
+      "logloss": 0.0096,
+      "emp_share": 1.0
+    }
+  ],
+  "reliability_deciles": [
+    {
+      "prop": "points",
+      "bin": "(-0.001, 0.1]",
+      "n": 7732,
+      "mean_pred": 0.0728896418,
+      "actual": 0.0601396793,
+      "gap_pp": -1.2749962542
+    },
+    {
+      "prop": "points",
+      "bin": "(0.1, 0.2]",
+      "n": 10274,
+      "mean_pred": 0.1466714789,
+      "actual": 0.1274089936,
+      "gap_pp": -1.9262485367
+    },
+    {
+      "prop": "points",
+      "bin": "(0.2, 0.3]",
+      "n": 6278,
+      "mean_pred": 0.2496064942,
+      "actual": 0.2099394712,
+      "gap_pp": -3.9667023016
+    },
+    {
+      "prop": "points",
+      "bin": "(0.3, 0.4]",
+      "n": 6040,
+      "mean_pred": 0.3513547584,
+      "actual": 0.307615894,
+      "gap_pp": -4.3738864322
+    },
+    {
+      "prop": "points",
+      "bin": "(0.4, 0.5]",
+      "n": 4433,
+      "mean_pred": 0.4519572582,
+      "actual": 0.3970223325,
+      "gap_pp": -5.4934925692
+    },
+    {
+      "prop": "points",
+      "bin": "(0.5, 0.6]",
+      "n": 4686,
+      "mean_pred": 0.5503859053,
+      "actual": 0.4752454119,
+      "gap_pp": -7.5140493448
+    },
+    {
+      "prop": "points",
+      "bin": "(0.6, 0.7]",
+      "n": 6095,
+      "mean_pred": 0.6555612368,
+      "actual": 0.6098441345,
+      "gap_pp": -4.5717102251
+    },
+    {
+      "prop": "points",
+      "bin": "(0.7, 0.8]",
+      "n": 7758,
+      "mean_pred": 0.7552492932,
+      "actual": 0.694508894,
+      "gap_pp": -6.0740399139
+    },
+    {
+      "prop": "points",
+      "bin": "(0.8, 0.9]",
+      "n": 8090,
+      "mean_pred": 0.8566557067,
+      "actual": 0.8124845488,
+      "gap_pp": -4.4171157863
+    },
+    {
+      "prop": "points",
+      "bin": "(0.9, 1.0]",
+      "n": 4281,
+      "mean_pred": 0.9284688732,
+      "actual": 0.8895117963,
+      "gap_pp": -3.8957076867
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(-0.001, 0.1]",
+      "n": 22541,
+      "mean_pred": 0.0241647296,
+      "actual": 0.0248436183,
+      "gap_pp": 0.0678888667
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.1, 0.2]",
+      "n": 4311,
+      "mean_pred": 0.1439677872,
+      "actual": 0.1526327998,
+      "gap_pp": 0.8665012613
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.2, 0.3]",
+      "n": 3077,
+      "mean_pred": 0.2507719081,
+      "actual": 0.2564185895,
+      "gap_pp": 0.5646681437
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.3, 0.4]",
+      "n": 1463,
+      "mean_pred": 0.3405289112,
+      "actual": 0.3622693096,
+      "gap_pp": 2.1740398398
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.4, 0.5]",
+      "n": 2854,
+      "mean_pred": 0.4380614831,
+      "actual": 0.426419061,
+      "gap_pp": -1.1642422085
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.5, 0.6]",
+      "n": 781,
+      "mean_pred": 0.5774431068,
+      "actual": 0.5697823303,
+      "gap_pp": -0.7660776455
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.6, 0.7]",
+      "n": 3784,
+      "mean_pred": 0.6372653103,
+      "actual": 0.6390063425,
+      "gap_pp": 0.174103224
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.7, 0.8]",
+      "n": 5047,
+      "mean_pred": 0.7592760186,
+      "actual": 0.7659996037,
+      "gap_pp": 0.6723585088
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.8, 0.9]",
+      "n": 5999,
+      "mean_pred": 0.8623974344,
+      "actual": 0.8529754959,
+      "gap_pp": -0.942193853
+    },
+    {
+      "prop": "rebounds",
+      "bin": "(0.9, 1.0]",
+      "n": 15810,
+      "mean_pred": 0.9545825894,
+      "actual": 0.9363693865,
+      "gap_pp": -1.8213202908
+    }
+  ],
+  "anchor_by_role_tier": [
+    {
+      "prop": "points",
+      "role_tier": "BENCH",
+      "n": 607,
+      "mean_pred": 0.4610803772,
+      "mean_raw": 0.4610803772,
+      "actual": 0.3690280066,
+      "gap_pp": -9.2052370631,
+      "gap_raw_pp": -9.2052370631
+    },
+    {
+      "prop": "points",
+      "role_tier": "FRINGE",
+      "n": 372,
+      "mean_pred": 0.4715163409,
+      "mean_raw": 0.4715163409,
+      "actual": 0.435483871,
+      "gap_pp": -3.6032469892,
+      "gap_raw_pp": -3.6032469892
+    },
+    {
+      "prop": "points",
+      "role_tier": "HIGH_USAGE_STARTER",
+      "n": 474,
+      "mean_pred": 0.4536561288,
+      "mean_raw": 0.4536561288,
+      "actual": 0.4345991561,
+      "gap_pp": -1.9056972675,
+      "gap_raw_pp": -1.9056972675
+    },
+    {
+      "prop": "points",
+      "role_tier": "IRON_MAN",
+      "n": 179,
+      "mean_pred": 0.4481890591,
+      "mean_raw": 0.4481890591,
+      "actual": 0.4357541899,
+      "gap_pp": -1.2434869134,
+      "gap_raw_pp": -1.2434869134
+    },
+    {
+      "prop": "points",
+      "role_tier": "ROTATION",
+      "n": 773,
+      "mean_pred": 0.4601183869,
+      "mean_raw": 0.4601183869,
+      "actual": 0.3428201811,
+      "gap_pp": -11.7298205804,
+      "gap_raw_pp": -11.7298205804
+    },
+    {
+      "prop": "points",
+      "role_tier": "STARTER",
+      "n": 722,
+      "mean_pred": 0.4563804972,
+      "mean_raw": 0.4563804972,
+      "actual": 0.4252077562,
+      "gap_pp": -3.1172740927,
+      "gap_raw_pp": -3.1172740927
+    },
+    {
+      "prop": "rebounds",
+      "role_tier": "BENCH",
+      "n": 607,
+      "mean_pred": 0.4312955809,
+      "mean_raw": 0.4312955809,
+      "actual": 0.392092257,
+      "gap_pp": -3.9203323891,
+      "gap_raw_pp": -3.9203323891
+    },
+    {
+      "prop": "rebounds",
+      "role_tier": "FRINGE",
+      "n": 372,
+      "mean_pred": 0.4190192416,
+      "mean_raw": 0.4190192416,
+      "actual": 0.4059139785,
+      "gap_pp": -1.310526308,
+      "gap_raw_pp": -1.310526308
+    },
+    {
+      "prop": "rebounds",
+      "role_tier": "HIGH_USAGE_STARTER",
+      "n": 474,
+      "mean_pred": 0.4463671491,
+      "mean_raw": 0.4463671491,
+      "actual": 0.4556962025,
+      "gap_pp": 0.9329053391,
+      "gap_raw_pp": 0.9329053391
+    },
+    {
+      "prop": "rebounds",
+      "role_tier": "IRON_MAN",
+      "n": 179,
+      "mean_pred": 0.4325058541,
+      "mean_raw": 0.4325058541,
+      "actual": 0.4245810056,
+      "gap_pp": -0.7924848552,
+      "gap_raw_pp": -0.7924848552
+    },
+    {
+      "prop": "rebounds",
+      "role_tier": "ROTATION",
+      "n": 773,
+      "mean_pred": 0.4430214141,
+      "mean_raw": 0.4430214141,
+      "actual": 0.4191461837,
+      "gap_pp": -2.3875230369,
+      "gap_raw_pp": -2.3875230369
+    },
+    {
+      "prop": "rebounds",
+      "role_tier": "STARTER",
+      "n": 722,
+      "mean_pred": 0.4507012287,
+      "mean_raw": 0.4507012287,
+      "actual": 0.4792243767,
+      "gap_pp": 2.8523147991,
+      "gap_raw_pp": 2.8523147991
+    }
+  ]
+}

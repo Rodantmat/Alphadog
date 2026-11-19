@@ -54,7 +54,7 @@ def log(m):
 def main():
     src = (HERE / "backtest" / "classification_ladder_v12.py").read_text()
     assert TL.OLD in src, "tier block not found - the harness changed"
-    hfile = HERE / "backtest" / "_cl_honest.py"; hfile.write_text(src.replace(TL.OLD, TL.NEW))
+    hfile = HERE / "backtest" / "_cl_honest.py"; hfile.write_text(TL.honest(src))
     bsrc = (HERE / "baseline" / "build_baseline_history.py").read_text()
     anchor = 'SRC = Path("nba/backtest/classification_ladder_v12.py").read_text()'
     assert anchor in bsrc, "history builder changed"

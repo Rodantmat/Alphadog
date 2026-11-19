@@ -63,7 +63,7 @@ def build(tag, fixed, cut):
     src = (HERE / "backtest" / "classification_ladder_v12.py").read_text()
     assert TL.OLD in src and A1 in src and A2 in src, "harness anchors changed"
     if fixed:
-        src = src.replace(TL.OLD, TL.NEW)
+        src = TL.honest(src)
     src = src.replace(A1, B1).replace(A2, B2)
     hf = HERE / "backtest" / f"_cl_tv_{tag}.py"; hf.write_text(src)
     bsrc = (HERE / "baseline" / "build_baseline_history.py").read_text(); assert ANCH in bsrc

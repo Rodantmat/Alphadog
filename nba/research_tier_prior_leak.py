@@ -30,6 +30,21 @@ TEST = os.environ.get("BT_TEST") or "2025-26"
 TRAIN = os.environ.get("BT_TRAIN") or {"2024-25": "2023-24", "2025-26": "2023-24,2024-25"}.get(TEST, "2023-24,2024-25,2025-26")
 PROPS = os.environ.get("TL_PROPS") or "points,rebounds"
 
+# RESIDUAL LOOK-AHEAD found by the truncation-invariance test (2026-11-19): two league constants were taken over ALL rows, the test season's future included.
+LG_OLD = 'LG = {c_: float(tf[c_].mean()) for c_ in FCOLS}'
+LG_NEW = 'LG = {c_: float(tf[tf["season"].isin(TRAIN)][c_].mean()) for c_ in FCOLS}'
+IMPL_OLD = '_LG_IMPL = float(np.nanmedian(pg["implied_own"])) if pg["implied_own"].notna().any() else 114.0'
+IMPL_NEW = '_LG_IMPL = float(np.nanmedian(pg[pg["season"].isin(TRAIN)]["implied_own"])) if pg[pg["season"].isin(TRAIN)]["implied_own"].notna().any() else 114.0'
+
+
+def honest(src):
+    """The full honest recipe: as-of tier + TRAIN-only league constants. Asserts every anchor."""
+    for a, b in ((OLD, NEW), (LG_OLD, LG_NEW), (IMPL_OLD, IMPL_NEW)):
+        assert src.count(a) == 1, "harness anchor changed: " + a[:60]
+        src = src.replace(a, b)
+    return src
+
+
 OLD = '''    for (s, ym, role), grp in d.groupby(["season", "ym", "role_tier"]):
         pop = grp.groupby("PLAYER_ID")["rate36"].last()
         n = len(pop); total_tiers = max(1, min(MAX_TIERS, n // MIN_PER_TIER))
