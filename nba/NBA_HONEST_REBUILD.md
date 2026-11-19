@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 13:13 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 13:34 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -273,6 +273,35 @@ Owner 12:52 PT: "no stop, keep working". `research_cell_scan_honest.py` (runs cs
 The 5 Underdog cells are what luck alone produces. VERDICT: no describable cell of regular legs has a repeatable edge on either app.
 What the single-feature tables show (three seasons): every bucket sits at 0.49-0.54. Injury context is already in the lines - teammates' Overs when 40+ fresh minutes are out: 0.479 / 0.468 / 0.394 (Underdog), 0.478 / 0.468 / 0.433 (PrizePicks); the player's own "Questionable" tag: Under 0.506 / 0.528 / 0.586, not above break-even in history. The other app's line: no usable pattern. The model's top 5% of a slate, Unders: Underdog 0.517 / 0.542 / 0.618, PrizePicks 0.500 / 0.530 / 0.545 - rising by season but not past break-even in all three (it is the 8g lead; it stays a lead). The only buckets at 0.57+ in history are the sportsbook's: Underdog regular Under where a book puts the side at 0.54-0.56: 0.577 / 0.579 (about 220 legs a season, 1.4 a slate).
 External reading for this batch (what winning players describe): edges on pick'em apps are a few points wide, come from sharp-book lines the app has not matched, and mostly live in the minutes after news before the app reprices; apps cap stakes per market (~$250-500) - https://www.stokastic.com/articles/dfs-strategy/how-to-find-value-on-prizepicks , https://www.4for4.com/2023/preseason/how-win-money-playing-pick-em-sites . Our boards are pulled once (P3) after the injury report, when the apps have already repriced - consistent with every finding above.
+
+## 8i. WHAT A LEG HIT RATE IS WORTH BY APP AND STRUCTURE (exact arithmetic on the real tables, regular legs, independent legs; 13:34 PT)
+
+| app | structure | break-even per leg | slip return at leg hit 0.50 | 0.52 | 0.54 | 0.56 | 0.58 |
+|---|---|---|---|---|---|---|---|
+| PrizePicks | 2-pick Power | 0.5774 | -25.0% | -18.9% | -12.5% | -5.9% | +0.9% |
+| PrizePicks | 3-pick Power | 0.5503 | -25.0% | -15.6% | -5.5% | +5.4% | +17.1% |
+| PrizePicks | 4-pick Power | 0.5623 | -37.5% | -26.9% | -15.0% | -1.7% | +13.2% |
+| PrizePicks | 5-pick Power | 0.5493 | -37.5% | -24.0% | -8.2% | +10.1% | +31.3% |
+| PrizePicks | 6-pick Power | 0.5466 | -41.4% | -25.9% | -7.0% | +15.7% | +42.8% |
+| PrizePicks | 3-pick Flex | 0.5774 | -25.0% | -18.9% | -12.5% | -5.9% | +0.9% |
+| PrizePicks | 4-pick Flex | 0.5503 | -25.0% | -15.6% | -5.5% | +5.4% | +17.1% |
+| PrizePicks | 5-pick Flex | 0.5425 | -25.0% | -13.9% | -1.6% | +11.9% | +26.9% |
+| PrizePicks | 6-pick Flex | 0.5421 | -32.8% | -18.6% | -1.9% | +17.6% | +40.2% |
+| Underdog | 2-pick Power | 0.5345 | -12.5% | -5.4% | +2.1% | +9.8% | +17.7% |
+| Underdog | 3-pick Power | 0.5358 | -18.8% | -8.6% | +2.4% | +14.2% | +26.8% |
+| Underdog | 4-pick Power | 0.5373 | -25.0% | -12.3% | +2.0% | +18.0% | +35.8% |
+| Underdog | 5-pick Power | 0.5493 | -37.5% | -24.0% | -8.2% | +10.1% | +31.3% |
+| Underdog | 6-pick Power | 0.5529 | -45.3% | -30.8% | -13.2% | +7.9% | +33.2% |
+| Underdog | 3-pick Flex | 0.5539 | -18.5% | -11.9% | -5.0% | +2.2% | +9.6% |
+| Underdog | 4-pick Flex | 0.5370 | -20.0% | -9.6% | +1.8% | +14.1% | +27.4% |
+| Underdog | 5-pick Flex | 0.5475 | -29.7% | -18.1% | -5.2% | +9.2% | +25.0% |
+| Underdog | 6-pick Flex | 0.5382 | -30.7% | -15.8% | +1.7% | +22.0% | +45.7% |
+
+Reading with the measured leg rates: all regular Unders hit 0.51-0.53 on every app; legs actually played this season hit PrizePicks 0.536 (+-0.033), Underdog 0.557 (+-0.041), Sleeper 0.540, Fliff 0.569, Betr 0.542.
+- The app decides more than the leg: at a 0.54 leg, PrizePicks loses in EVERY structure (-1.6% to -15%), Underdog is about level or slightly ahead in 2 / 3 / 4-pick Power and 4 / 6-pick Flex (+1.7% to +2.4%).
+- On PrizePicks the least bad are 5-pick Flex and 6-pick Flex (break-even 0.5425 / 0.5421); 2-pick Power and 3-pick Flex are the worst (0.5774).
+- On Underdog 2-pick Power is the cheapest (0.5345), then 3-pick Power, 4-pick Flex, 4-pick Power, 6-pick Flex; 3-pick Flex (0.5539), 5-pick Power and 6-pick Power are the expensive ones. (Owner rule: no Underdog Power above 2 picks - kept; the table is information.)
+- Betr boards carry Underdog's lines (event ids "live-underdog-..."), priced on Betr's own table: no separate honest history; its verdict follows Underdog's regular legs and the referee's played line.
 
 ## 9. Open items and owner decisions pending
 
