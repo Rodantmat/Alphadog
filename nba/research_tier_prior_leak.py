@@ -65,6 +65,7 @@ _gd = pg[["GAME_ID", "PLAYER_ID", "GAME_DATE"]].drop_duplicates(["GAME_ID", "PLA
 _out = rel[["prop", "offset", "p_over", "p_raw", "actual", "anchor", "line", "PLAYER_ID", "GAME_ID"]].merge(_gd, on=["GAME_ID", "PLAYER_ID"], how="left")
 _out.to_pickle(os.environ["TL_OUT"])
 print("TL saved", len(_out), flush=True)
+d[["PLAYER_ID", "GAME_ID", "GAME_DATE", "season", "rate36", "shrunk36", "tier_prior", "n_rate", "proj_min", "proj_mean", "anchor", "role_tier"]].to_pickle(os.environ["TL_OUT"] + ".d")
 '''
 STAT = {"points": 0, "rebounds": 1, "assists": 2, "threes_made": 3, "steals": 4, "blocks": 5, "turnovers": 6}
 
@@ -211,8 +212,31 @@ def main():
                   f"spread {dd_.std():.2f} | error vs the real result: production anchor {np.abs(k['anchor'] - k['actual']).mean():.2f}, harness anchor {np.abs(k['anchor_h'] - k['actual']).mean():.2f} | "
                   f"minutes: production projected vs played {np.abs(k['proj_min'] - k['min_act']).mean():.2f}, plain last-10 average vs played {np.abs(k['min_l10'] - k['min_act']).mean():.2f}, "
                   f"production projected minus last-10 {(k['proj_min'] - k['min_l10']).mean():+.2f} | recipe {k['recipe'].mode().iat[0] if k['recipe'].notna().any() else None}", flush=True)
+    # PARITY 2 (one prop): production's projected minutes and rate against the harness for the same game AND for the player's previous game (stale-data test)
+    try:
+        D_ = pd.read_pickle(str(ROOT / "_tl_honest.pkl") + ".d"); D_ = D_[D_["season"] == TEST].copy()
+        D_["PLAYER_ID"] = D_["PLAYER_ID"].astype(str); D_["GAME_DATE"] = pd.to_datetime(D_["GAME_DATE"]).dt.date
+        D_ = D_.sort_values(["PLAYER_ID", "GAME_DATE"]); gD = D_.groupby("PLAYER_ID")
+        for c in ("rate36", "proj_min", "anchor"):
+            D_[c + "_prev"] = gD[c].shift(1); D_[c + "_prev2"] = gD[c].shift(2)
+        lastp = PROPS.split(",")[-1]
+        P2 = prod[prod["prop"] == lastp].merge(D_, left_on=["pid", "GAME_DATE"], right_on=["PLAYER_ID", "GAME_DATE"], suffixes=("", "_h"))
+        print(f"TL|=== PARITY 2 {TEST} {lastp}: production vs harness components, {len(P2):,} player-games ===")
+        for c, tol in (("rate36", 0.05), ("proj_min", 0.15), ("anchor", 0.01)):
+            a = P2[c].astype(float); parts = []
+            for suf, nm_ in (("_h", "same game"), ("_prev", "his previous game"), ("_prev2", "two games back")):
+                b = P2[c + suf].astype(float); ok = a.notna() & b.notna()
+                parts.append(f"{nm_}: equal {100 * ((a - b).abs()[ok] < tol).mean():3.0f}%, mean abs diff {(a - b).abs()[ok].mean():.3f}")
+            print(f"TL|parity2 {c:9s} production against the harness value for " + " | ".join(parts), flush=True)
+        P2["month"] = P2["GAME_DATE"].astype(str).str[:7]
+        for mo in sorted(P2["month"].unique()):
+            k = P2[P2["month"] == mo]
+            print(f"TL|parity2 {mo}: n {len(k):5,} | production minus harness: projected minutes {(k['proj_min'].astype(float) - k['proj_min_h']).mean():+.2f} (spread {(k['proj_min'].astype(float) - k['proj_min_h']).std():.2f}), "
+                  f"rate per 36 {(k['rate36'].astype(float) - k['rate36_h']).mean():+.3f} (spread {(k['rate36'].astype(float) - k['rate36_h']).std():.3f}) | role tier equal {100 * (k['role_tier'] == k['role_tier_h']).mean():.0f}%", flush=True)
+    except Exception as exc:
+        print("TL|parity 2 skipped:", repr(exc)[:300], flush=True)
     for tag in ("stored", "honest"):
-        for ext in ("py", "pkl"):
+        for ext in ("py", "pkl", "pkl.d"):
             try:
                 (ROOT / f"_tl_{tag}.{ext}").unlink()
             except OSError:
