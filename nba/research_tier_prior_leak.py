@@ -148,7 +148,11 @@ def main():
     conn.close()
     pp["PLAYER_ID"] = pp["player"].astype(str) if TEST == "2026-27" else [names.get(nk(x), "") for x in pp["player"]]; pp["GAME_DATE"] = pd.to_datetime(pp["game_date"]).dt.date
     M["PLAYER_ID"] = M["PLAYER_ID"].astype(str); M["GAME_DATE"] = pd.to_datetime(M["GAME_DATE"]).dt.date
-    J = pp.merge(M[["prop", "PLAYER_ID", "GAME_DATE", "line", "p_over_s", "p_over_h"]], on=["prop", "PLAYER_ID", "GAME_DATE", "line"], how="inner")
+    # each run is matched to the real line through ITS OWN rungs (the two runs have different anchors, so the same offset is a different line)
+    for _F in (A, B):
+        _F["PLAYER_ID"] = _F["PLAYER_ID"].astype(str); _F["GAME_DATE"] = pd.to_datetime(_F["GAME_DATE"]).dt.date
+    _k = ["prop", "PLAYER_ID", "GAME_DATE", "line"]
+    J = pp.merge(A[_k + ["p_over"]].rename(columns={"p_over": "p_over_s"}), on=_k, how="inner").merge(B[_k + ["p_over"]].rename(columns={"p_over": "p_over_h"}), on=_k, how="inner")
     print(f"TL|=== real PrizePicks REGULAR lines {TEST} matched to a harness rung: {len(J):,} of {len(pp):,} over legs ===")
     if len(J) > 1500:
         y = J["hit"].values
