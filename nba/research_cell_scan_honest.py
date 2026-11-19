@@ -25,6 +25,7 @@ import psycopg
 
 APP = (os.environ.get("CS_APP") or "underdog").lower()
 MINL = int(os.environ.get("CS_MIN") or 150); MIN3 = int(os.environ.get("CS_MIN3") or 60)
+ALT = (os.environ.get("CS_KIND") or "regular").lower() == "alt"
 BE = 0.5345 if APP == "underdog" else 0.542
 STATCOL = {"points": ["pts"], "rebounds": ["reb"], "assists": ["ast"], "threes_made": ["fg3m"], "steals": ["stl"], "blocks": ["blk"], "turnovers": ["tov"],
            "stocks": ["stl", "blk"], "pts_reb": ["pts", "reb"], "pts_ast": ["pts", "ast"], "reb_ast": ["reb", "ast"], "pra": ["pts", "reb", "ast"]}
@@ -41,9 +42,15 @@ def bucket(x, edges, labels):
 
 def load(conn):
     kind = "R" if APP == "underdog" else "standard"
-    df = pd.read_sql("""SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, hit::int hit, ph::float8 ph FROM nba_score._lr_legs_h
-                        WHERE app = %s AND kind = %s AND hit IS NOT NULL""" + (" AND m BETWEEN 1.86 AND 1.88" if APP == "underdog" else " AND tier NOT LIKE '%%-u'"),
-                     conn, params=(APP, kind))
+    if ALT:                                                  # Underdog alternates (tiers F / B) at their REAL multipliers
+        df = pd.read_sql("""SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, hit::int hit, ph::float8 ph, m::float8 m, tier FROM nba_score._lr_legs_h
+                            WHERE app = 'underdog' AND kind IN ('F', 'B') AND hit IS NOT NULL AND m > 0""", conn)
+    else:
+        df = pd.read_sql("""SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, hit::int hit, ph::float8 ph, 0::float8 m, tier FROM nba_score._lr_legs_h
+                            WHERE app = %s AND kind = %s AND hit IS NOT NULL""" + (" AND m BETWEEN 1.86 AND 1.88" if APP == "underdog" else " AND tier NOT LIKE '%%-u'"),
+                         conn, params=(APP, kind))
+        df["m"] = 1 / BE
+    df["val"] = df["hit"] * df["m"]
     df = df[df["prop"].isin(STATCOL)].copy(); df["under"] = ~df["side"].str.lower().str[0].isin(["o", "m", "h"]); df["sd"] = np.where(df["under"], "Under", "Over")
     # honest model context
     hb = pd.read_sql("SELECT game_date::text gd, player_id, prop, anchor::float8 anchor, role_tier, var_band, proj_min::float8 proj_min FROM nba_score.baseline_history_h", conn)
@@ -82,6 +89,11 @@ def load(conn):
     sgn = np.where(df["under"], 1.0, -1.0)                   # every "lean" is signed so that POSITIVE = favours the leg's own side
     F = pd.DataFrame(index=df.index)
     F["prop"] = df["prop"]
+    if ALT:
+        F["tier"] = df["tier"].astype(str).str[:2]
+        F["multiplier"] = bucket(df["m"] / 1.8708, [0, .5, .65, .8, .92, 1.08, 1.3, 1.7, 2.5, 99], ["<.5x", ".5-.65x", ".65-.8x", ".8-.92x", ".92-1.08x", "1.08-1.3x", "1.3-1.7x", "1.7-2.5x", "2.5x+"])
+        F["book return"] = bucket(df["pb"] * df["m"] - 1, [-9, -.15, -.08, -.03, 0, .03, .08, 9], ["< -15%", "-15..-8%", "-8..-3%", "-3..0%", "0..+3%", "+3..+8%", "> +8%"])
+        F["model return"] = bucket(df["ph"] * df["m"] - 1, [-9, -.3, -.1, 0, .1, .3, 9], ["< -30%", "-30..-10%", "-10..0%", "0..+10%", "+10..+30%", "> +30%"])
     F["line size"] = bucket(df["line"], [0, 1, 2.6, 5.6, 9.6, 14.6, 19.6, 26, 99], ["0.5", "1.5-2.5", "3-5.5", "6-9.5", "10-14.5", "15-19.5", "20-25.5", "26+"])
     F["phase"] = df["gd"].str[5:7].map(lambda m: "Oct-Nov" if m in ("10", "11") else "Dec-Jan" if m in ("12", "01") else "Feb+")
     F["weekday"] = pd.to_datetime(df["gd"]).dt.day_name().str[:3]
@@ -159,7 +171,7 @@ def injury_context(conn, gl):
 def scan(df, F, hitcol, label, verbose=True):
     """returns kept cells; prints when verbose. Counts by np.bincount over coded features; slates are re-drawn only for cells that pass every season."""
     kept = []; scanned = 0
-    seas = df["season"].values; hit = df[hitcol].values.astype(float); sd = df["sd"].values; gd = df["gd"].values
+    seas = df["season"].values; hit = df[hitcol].values.astype(float); BE1 = 1.0; sd = df["sd"].values; gd = df["gd"].values
     nsl = {s: df.loc[df["season"] == s, "gd"].nunique() for s in SEAS}
     sidx = np.array([SEAS.index(x) if x in SEAS else -1 for x in seas]); need = np.array([MINL, MINL, MIN3])
     cols = list(F.columns); codes = {}; labels = {}
@@ -170,7 +182,7 @@ def scan(df, F, hitcol, label, verbose=True):
         hh = hit[mask]; dd = gd[mask]; u, inv = np.unique(dd, return_inverse=True)
         sums = np.bincount(inv, weights=hh, minlength=len(u)); cnts = np.bincount(inv, minlength=len(u))
         ix = rng.integers(len(u), size=(200, len(u))); bs = sums[ix].sum(1) / cnts[ix].sum(1); lo = float(np.quantile(bs, .05))
-        if lo > BE:
+        if lo > BE1:
             kept.append((hh.mean(), lo, name, st, int(mask.sum()), sum(n / nsl[s_] for (n, _), s_ in zip(st, SEAS)) / 3))
 
     for side in ("Under", "Over"):
@@ -180,24 +192,24 @@ def scan(df, F, hitcol, label, verbose=True):
             n = np.bincount(key, minlength=3 * K).reshape(3, K); h = np.bincount(key, weights=hit[ok], minlength=3 * K).reshape(3, K)
             return n, h
         ones = np.zeros(len(df), dtype=np.int64); n, h = table(ones, 1); scanned += 1
-        if (n[:, 0] >= need).all() and (h[:, 0] / np.maximum(1, n[:, 0]) > BE).all():
+        if (n[:, 0] >= need).all() and (h[:, 0] / np.maximum(1, n[:, 0]) > BE1).all():
             finish(sm, f"{side} | all", [(int(n[q, 0]), h[q, 0] / n[q, 0]) for q in range(3)])
         for c in cols:
             K = len(labels[c]); n, h = table(codes[c], K); scanned += K
-            good = (n >= need[:, None]).all(0) & (h / np.maximum(1, n) > BE).all(0)
+            good = (n >= need[:, None]).all(0) & (h / np.maximum(1, n) > BE1).all(0)
             for v in np.where(good)[0]:
                 finish(sm & (codes[c] == v), f"{side} | {c} = {labels[c][v]}", [(int(n[q, v]), h[q, v] / n[q, v]) for q in range(3)])
         for c1, c2 in combinations(cols, 2):
             K1, K2 = len(labels[c1]), len(labels[c2]); both = np.where((codes[c1] >= 0) & (codes[c2] >= 0), codes[c1] * K2 + codes[c2], -1)
             n, h = table(both, K1 * K2); scanned += K1 * K2
-            good = (n >= need[:, None]).all(0) & (h / np.maximum(1, n) > BE).all(0)
+            good = (n >= need[:, None]).all(0) & (h / np.maximum(1, n) > BE1).all(0)
             for v in np.where(good)[0]:
                 finish(sm & (both == v), f"{side} | {c1} = {labels[c1][v // K2]} & {c2} = {labels[c2][v % K2]}", [(int(n[q, v]), h[q, v] / n[q, v]) for q in range(3)])
     if verbose:
-        print(f"CS|{label}: cells scanned {scanned:,}; KEPT {len(kept)} (each season above {BE} with enough legs, pooled lower 90% bound above {BE})", flush=True)
+        print(f"CS|{label}: cells scanned {scanned:,}; KEPT {len(kept)} (each season returns above zero with enough legs, pooled lower 90% bound above zero)", flush=True)
         for h_, lo, name, st, n_, per in sorted(kept, key=lambda x: -x[1])[:90]:
-            print(f"CS|  {name:92s} legs {n_:6,} ({per:5.1f} a slate) hit {h_:.3f} (low {lo:.3f}) return {100 * (h_ / BE - 1):+5.1f}% | " +
-                  " / ".join(f"{s_[2:]} {x[1]:.3f} n{x[0]:,}" for x, s_ in zip(st, SEAS)), flush=True)
+            print(f"CS|  {name:92s} legs {n_:6,} ({per:5.1f} a slate) return {100 * (h_ - 1):+5.1f}% (low {100 * (lo - 1):+.1f}%) | " +
+                  " / ".join(f"{s_[2:]} {100 * (x[1] - 1):+.1f}% n{x[0]:,}" for x, s_ in zip(st, SEAS)), flush=True)
     return kept, scanned
 
 
@@ -214,14 +226,14 @@ def main():
                 parts = []
                 for s in SEAS:
                     k = (F[c].values == v) & (df["sd"].values == side) & (df["season"].values == s)
-                    parts.append(f"{df['hit'].values[k].mean():.3f} n{int(k.sum()):,}" if k.sum() >= 40 else "-")
+                    parts.append((f"{df['hit'].values[k].mean():.3f}" if not ALT else f"{100 * (df['val'].values[k].mean() - 1):+.1f}%") + f" n{int(k.sum()):,}" if k.sum() >= 40 else "-")
                 cells.append(" / ".join(parts))
             print(f"CS|  {c:20s} {str(v):16s} Under {cells[0]:48s} | Over {cells[1]}", flush=True)
-    kept, scanned = scan(df, F, "hit", "REAL results")
+    kept, scanned = scan(df, F, "val", "REAL results")
     # false-positive yardstick: shuffle results inside each slate x side (keeps every slate's hit rate, destroys every link to the features)
     fp = []
     for i in range(5):
-        d2 = df.copy(); d2["hs"] = d2.groupby(["gd", "sd"])["hit"].transform(lambda x: rng.permutation(x.values))
+        d2 = df.copy(); d2["hs"] = d2.groupby(["gd", "sd"])["hit"].transform(lambda x: rng.permutation(x.values)) * d2["m"]
         k2, _ = scan(d2, F, "hs", "shuffled", verbose=False); fp.append(len(k2))
     print(f"CS|false-positive yardstick: the same scan on results shuffled inside each slate keeps {fp} cells (5 shuffles) against {len(kept)} on the real results", flush=True)
     print("CS|DONE", flush=True)

@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 12:48 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 13:13 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -263,6 +263,17 @@ READING: positive in two of three seasons, negative in 2024-25 (its model had on
 
 **Open (O13) - the number on the board.** The leg ROI shown today overstates by 13-22 points on every app (referee table, 8f). The honest formula is ready (8d). Showing it is a change to the slip screen and may move ROI-aware strategies, so it is NOT switched: next step is a shadow column written at P3 next to the current number, compared daily by the referee; the switch is the owner's call once he has seen both side by side.
 
+## 8h. HONEST CELL SCAN OF REGULAR LEGS - 43,016 cells, nothing beyond chance (2026-11-19 13:13 PT)
+
+Owner 12:52 PT: "no stop, keep working". `research_cell_scan_honest.py` (runs cs2_ud 44615367861, cs2_pp 44615381505). Every pre-game describable cell of REGULAR legs on three seasons, honest inputs only: 26 features (prop, line size, phase, weekday; honest model: rank in the slate, chance, lean against the line, role, variance band, projected minutes; market: sportsbook chance at the exact line, number of books, the other app's line; form from the game log before the game: season average and last 5 against the line, hot / cold, games played, minutes trend, rest days, home / away; injury report AT PICK TIME (latest snapshot not later than 12:20 PST): the player's own listing, teammates' minutes listed out, the FRESH part (absent player played the previous game), questionable minutes, opponent minutes out and fresh). Single buckets and every pair of buckets, by side. A cell is kept only if EACH season beats break-even with enough legs (150 / 150 / 60) and the pooled lower 90% bound beats break-even. Yardstick: the same scan with results shuffled inside each slate.
+| app | legs | cells | kept on real results | kept on 5 shuffles |
+|---|---|---|---|---|
+| Underdog regular (break-even 0.5345) | 203,387 | 21,508 | 5 | 2, 1, 1, 1, 5 |
+| PrizePicks regular (break-even 0.542) | 351,637 | 21,508 | 0 | 1, 2, 0, 0, 0 |
+The 5 Underdog cells are what luck alone produces. VERDICT: no describable cell of regular legs has a repeatable edge on either app.
+What the single-feature tables show (three seasons): every bucket sits at 0.49-0.54. Injury context is already in the lines - teammates' Overs when 40+ fresh minutes are out: 0.479 / 0.468 / 0.394 (Underdog), 0.478 / 0.468 / 0.433 (PrizePicks); the player's own "Questionable" tag: Under 0.506 / 0.528 / 0.586, not above break-even in history. The other app's line: no usable pattern. The model's top 5% of a slate, Unders: Underdog 0.517 / 0.542 / 0.618, PrizePicks 0.500 / 0.530 / 0.545 - rising by season but not past break-even in all three (it is the 8g lead; it stays a lead). The only buckets at 0.57+ in history are the sportsbook's: Underdog regular Under where a book puts the side at 0.54-0.56: 0.577 / 0.579 (about 220 legs a season, 1.4 a slate).
+External reading for this batch (what winning players describe): edges on pick'em apps are a few points wide, come from sharp-book lines the app has not matched, and mostly live in the minutes after news before the app reprices; apps cap stakes per market (~$250-500) - https://www.stokastic.com/articles/dfs-strategy/how-to-find-value-on-prizepicks , https://www.4for4.com/2023/preseason/how-win-money-playing-pick-em-sites . Our boards are pulled once (P3) after the injury report, when the apps have already repriced - consistent with every finding above.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -319,3 +330,5 @@ External (read for this work):
 - **2026-11-19 12:28-12:36 PT** - Dry-run of the tier fix in the production builder (C10: ready, not switched). Off-market sportsbook test (C11). Section 8e. Running: `research_pp_stack_structure.py` (run ss 44609896286) - correlated stacks of regular lines against the Power / Flex tables, results only.
 - **2026-11-19 12:36-12:44 PT** - Stack-structure test (no lift). Daily referee built, run twice, scheduled (new workflow `nba-honest-referee.yml`). Underdog early-season regular-Under lead found and logged. Section 8f. NEXT: fix the Underdog played-slip read in the referee ("dnp"); add the Underdog-Under lead as its own referee line; then S6 on Underdog only (the one app with a lead), honest inputs, real multipliers.
 - **2026-11-19 12:44-12:48 PT** - Referee fixed for Underdog played slips and given the regular-Under line; Underdog lead tested as slips on three seasons (section 8g): two seasons positive, one negative, pooled not proven. Stopped new runs before the P3 window (13:17-13:35). NEXT after 13:40: shadow honest leg ROI written at P3 beside the board's number (O13); Betr on honest inputs; keep the referee running.
+- **2026-11-19 12:52 PT** - Owner: "I already told you, no stop! Keep working." Standing: do not end a turn while work remains; keep going through pipeline windows with work that does not load the database.
+- **2026-11-19 12:52-13:13 PT** - Honest cell scan built (26 features incl. injury report at pick time, shuffle yardstick), run on Underdog and PrizePicks regular legs: nothing beyond chance (section 8h). Online reading added. NEXT (after the P3 window, 13:36): the same scan on Underdog alternates at their real multipliers (CS_KIND=alt); line-movement features (morning board to P3 board); Betr.
