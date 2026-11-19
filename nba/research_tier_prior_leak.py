@@ -228,6 +228,21 @@ def main():
                 b = P2[c + suf].astype(float); ok = a.notna() & b.notna()
                 parts.append(f"{nm_}: equal {100 * ((a - b).abs()[ok] < tol).mean():3.0f}%, mean abs diff {(a - b).abs()[ok].mean():.3f}")
             print(f"TL|parity2 {c:9s} production against the harness value for " + " | ".join(parts), flush=True)
+        # where do the two differ, and who is right there?
+        P2["adiff"] = P2["anchor"].astype(float) - P2["anchor_h"]; P2["dom"] = [d.day for d in P2["GAME_DATE"]]
+        for lab, msk in (("day 1-5 of the month", P2["dom"] <= 5), ("day 6-15", (P2["dom"] > 5) & (P2["dom"] <= 15)), ("day 16+", P2["dom"] > 15),
+                         ("fewer than 8 games this season", P2["n_rate"] < 8), ("8-15 games", (P2["n_rate"] >= 8) & (P2["n_rate"] < 16)), ("16+ games", P2["n_rate"] >= 16)):
+            k = P2[msk]
+            if len(k) > 100:
+                print(f"TL|parity2 {lab:32s} n {len(k):5,} | anchors equal {100 * (k['adiff'].abs() < .01).mean():3.0f}% | production minus harness {k['adiff'].mean():+.2f} (spread {k['adiff'].std():.2f}) | "
+                      f"tier prior (harness) {k['tier_prior'].mean():.2f} | production rate {k['rate36'].astype(float).mean():.2f}", flush=True)
+        JJ = J[J["prop"] == lastp].merge(P2[["pid", "GAME_DATE", "adiff"]], left_on=["PLAYER_ID", "GAME_DATE"], right_on=["pid", "GAME_DATE"])
+        for lab, msk in (("anchors EQUAL", JJ["adiff"].abs() < .01), ("anchors DIFFER", JJ["adiff"].abs() >= .01), ("production anchor HIGHER", JJ["adiff"] >= .01), ("production anchor LOWER", JJ["adiff"] <= -.01)):
+            k = JJ[msk]
+            if len(k) > 150 and k["live_base"].notna().any():
+                print(f"TL|parity2 real lines, {lab}: " + skill("LIVE baseline", k["live_base"].values, k["hit"].values), flush=True)
+                print(f"TL|parity2 real lines, {lab}: " + skill("harness honest", k["p_over_h"].values, k["hit"].values), flush=True)
+                print(f"TL|parity2 real lines, {lab}: over hit {k['hit'].mean():.3f}; live baseline says {k['live_base'].mean():.3f}, harness honest says {k['p_over_h'].mean():.3f}, live final_hp says {k['hp'].mean():.3f}", flush=True)
         P2["month"] = P2["GAME_DATE"].astype(str).str[:7]
         for mo in sorted(P2["month"].unique()):
             k = P2[P2["month"] == mo]
