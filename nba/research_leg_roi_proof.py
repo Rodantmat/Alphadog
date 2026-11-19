@@ -2,7 +2,8 @@
 """
 PROOF SUITE FOR THE PER-LEG ROI MODEL (owner 2026-11-18 23:28 PT: "extremely deep understanding, simulation, backtest and proof of success before deployment").
 READ-ONLY. Same data, loaders and walk-forward rule as research_leg_roi_model.py (everything fitted only on slates before the slate being scored).
-Candidates:  BOARD   the board formula as deployed
+LR_SRC=h reads the HONEST legs (nba_score._lr_legs_h; LR_HSRC = real | derived | all).
+Candidates:  BOARD   the board formula as deployed (on the honest input when LR_SRC=h); PRICE = price terms only (no model); MODEL = the model number as is
              BLEND   model log-odds + price log-odds + side + kind + per-kind price slope + prop family (logistic, optional pull toward LP_PRIOR)
              FINAL-ISO / FINAL-LIN   BLEND with the top-leg correction: its raw ROI mapped to the real return of earlier legs, monotone (ISO) or straight line (LIN), per kind
 Sections:
@@ -115,7 +116,7 @@ def pct90(a):
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
-    df, KP, WB, GAPFIX = R.load_pp(conn) if APP == "prizepicks" else R.load_app(conn)
+    df, KP, WB, GAPFIX = R.load_h(conn) if os.environ.get("LR_SRC") == "h" else (R.load_pp(conn) if APP == "prizepicks" else R.load_app(conn))
     try:
         conn.close()
     except Exception:
@@ -144,6 +145,8 @@ def main():
     ret = y * m - 1
     lhp = lg(hp); lbe = lg(be)
     X = np.column_stack([one, lhp, lbe, ov, isg, isd, lbe * isg, lbe * isd, lhp * isg, lhp * isd, ov * isg, combo, lowc, lowc * isd])
+    XP = np.column_stack([one, lbe, ov, isg, isd, lbe * isg, lbe * isd, ov * isg, combo, lowc, lowc * isd])        # the same without any model term
+    pP = np.full(len(df), np.nan)
     w0 = np.zeros(X.shape[1])
     if PRIOR:
         w0[:len(PRIOR)] = PRIOR[:X.shape[1]]
@@ -164,6 +167,7 @@ def main():
         pc = np.clip(hp[te] + gap, .005, .995)
         pB[te] = np.clip(pc + WB[te] * (np.minimum(.99, KP[te] * be[te]) - pc), .005, .995)
         wv = fit(X[tr], y[tr], w0, LAM); pN[te] = 1 / (1 + np.exp(-X[te] @ wv)); coefs.append(wv)
+        wp = fit(XP[tr], y[tr], np.zeros(XP.shape[1]), 0.0); pP[te] = 1 / (1 + np.exp(-XP[te] @ wp))
         if SEASK:                                             # this season only once it has SEASK slates behind it, pulled toward the all-history fit by LP_LAM
             cur = sea_all[te][0]; trs = tr & (sea_all == cur)
             ws = fit(X[trs], y[trs], wv, LAM) if len(set(di[trs])) >= SEASK else wv
@@ -191,7 +195,7 @@ def main():
                 fi = fi or iso_fit(rawN[tr], ret[tr]); fl = fl or lin_fit(rawN[tr], ret[tr])
             fI[b] = fi(rawN[b]) if fi else rawN[b]; fL[b] = fl(rawN[b]) if fl else rawN[b]
     ev = np.isfinite(fI) & np.isfinite(fL)
-    V = {"BOARD": pB * m - 1, "BLEND": rawN, "FINAL-ISO": fI, "FINAL-LIN": fL}
+    V = {"BOARD": pB * m - 1, "PRICE": pP * m - 1, "MODEL": np.clip(hp, .005, .995) * m - 1, "BLEND": rawN, "FINAL-ISO": fI, "FINAL-LIN": fL}
     if SEASK:
         V["SEASON"] = pS * m - 1; c = np.array(coefS)
         print("LP|SEASON model / price weight by fit: " + " ".join(f"{a:+.2f}/{b:+.2f}" for a, b in c[:: max(1, len(c) // 20), 1:3]), flush=True)

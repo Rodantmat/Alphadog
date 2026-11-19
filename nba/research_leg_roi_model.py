@@ -98,6 +98,23 @@ def load_pp(conn):
     return df, kp, w, None
 
 
+def load_h(conn):
+    """HONEST legs (nba_score._lr_legs_h, built by research_legs_h_build.py): hp = the honest model probability of the leg's side at its own line."""
+    src = os.environ.get("LR_HSRC") or "all"
+    df = pd.read_sql("""SELECT season, game_date, player_id player, prop, side, kind, tier, m::float8 m0, hit::int hit, ph::float8 hp, src FROM nba_score._lr_legs_h
+                        WHERE app = %s AND ph IS NOT NULL AND hit IS NOT NULL AND m > 0""" + ("" if src == "all" else " AND src = %(s)s").replace("%(s)s", "'" + src + "'"),
+                     conn, params=(APP,))
+    df["over"] = df["side"].str.lower().str[0].isin(["o", "m", "h"]).astype(float)
+    if APP == "prizepicks":
+        df["m"] = df["m0"] / BASE
+    else:
+        df["m"] = df["m0"]; df["kind"] = df["kind"].map({"R": "standard", "F": "goblin", "B": "demon", "main": "standard", "alt": "alt"}).fillna("standard")
+    df["be"] = np.minimum(.99, 1.0 / df["m"])
+    kmap = {"standard": "standard", "goblin": "goblin", "demon": "demon", "alt": "goblin"}
+    kp = df["kind"].map(kmap).map(KAPPA).values; w = df["kind"].map(kmap).map(PW).values
+    return df, kp, w, None
+
+
 def load_app(conn):
     """Sleeper / Fliff / Underdog: the app's own graded boards (same loaders as research_leg_roi_calibration.py)."""
     import sys
