@@ -67,6 +67,19 @@ def load(conn):
     ol = pd.read_sql("SELECT DISTINCT game_date::text gd, player_id, prop, line::float8 oline FROM nba_score._lr_legs_h WHERE app = %s AND kind = %s",
                      conn, params=(other, "standard" if other == "prizepicks" else "R")).drop_duplicates(["gd", "player_id", "prop"])
     df = df.merge(ol, on=["gd", "player_id", "prop"], how="left")
+    # line movement between the morning board and the pick-time (window) board - PrizePicks regular lines only (nba_market.pp_leg_price keeps both)
+    df["mline"] = np.nan; df["had_morning"] = False
+    if APP == "prizepicks" and not ALT:
+        try:
+            mo = pd.read_sql("""SELECT DISTINCT game_date::text gd, nm, base_market, line::float8 mline FROM nba_market.pp_leg_price
+                                WHERE snapshot_label = 'morning' AND kind = 'standard' AND side = 'Over'""", conn)
+            mo["player_id"] = mo["nm"].map(ids); mo["prop"] = mo["base_market"].map(inv)
+            mo = mo[mo["player_id"].notna() & mo["prop"].notna()].drop_duplicates(["gd", "player_id", "prop"])[["gd", "player_id", "prop", "mline"]]
+            df = df.drop(columns=["mline"]).merge(mo, on=["gd", "player_id", "prop"], how="left")
+            df["had_morning"] = df["gd"].isin(set(mo["gd"]))
+            print(f"CS|morning boards on {mo['gd'].nunique()} dates; regular legs with a morning line {100 * df['mline'].notna().mean():.0f}%", flush=True)
+        except Exception as ex:
+            conn.rollback(); print(f"CS|morning lines not available: {str(ex)[:160]}", flush=True)
     # form from the game log (strictly earlier games of the same season)
     gl = pd.read_sql("""SELECT nba_player_id::text player_id, game_date::text gd, season, matchup, team_id::text team_id, game_id::text game_id, min::float8 mn, pts::float8 pts, reb::float8 reb, ast::float8 ast, fg3m::float8 fg3m,
                                stl::float8 stl, blk::float8 blk, tov::float8 tov FROM nba_stats.player_game_log WHERE game_date >= '2024-10-01'""", conn)
@@ -113,6 +126,10 @@ def load(conn):
     F["minutes trend"] = bucket(df["mn_5"] - df["mn_s"], [-99, -4, -1.5, 1.5, 4, 99], ["down 4+", "down 1.5-4", "level", "up 1.5-4", "up 4+"])
     F["rest days"] = bucket(df["rest"], [0, 1, 2, 3, 6, 400], ["back-to-back", "1 day", "2 days", "3-5 days", "6+"])
     F["home"] = np.where(df["home"].isna(), None, np.where(df["home"].fillna(False), "home", "away"))
+    if df["mline"].notna().any():                            # signed: "for" = the line moved in the direction that helps the leg's side
+        mv = np.where(df["under"], 1.0, -1.0) * (df["line"] - df["mline"])
+        lab = bucket(pd.Series(mv), [-99, -.99, -.01, .01, .99, 99], ["against by 1+", "against by .5", "no move", "for by .5", "for by 1+"]).values
+        F["line move since morning"] = np.where(df["mline"].isna().values, np.where(df["had_morning"].values, "new at pick time", None), lab)
     if INJ is not None:
         own, team = INJ
         df = df.merge(own, on=["gd", "player_id"], how="left").merge(team, on=["gd", "team_id"], how="left")
