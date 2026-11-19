@@ -29,6 +29,7 @@ import research_leg_roi_model as R                         # noqa: E402
 SIM = int(os.environ.get("LP_SIM") or 0)
 BOOT = int(os.environ.get("LP_BOOT") or 300)
 LAM = float(os.environ.get("LP_LAM") or 0)
+SEASK = int(os.environ.get("LP_SEASON") or 0)
 HALF = [float(x) for x in (os.environ.get("LP_HALF") or "").split(",") if x.strip()]
 PRIOR = [float(x) for x in (os.environ.get("LP_PRIOR") or "").split(",") if x.strip()]
 RNG = np.random.default_rng(20261118)
@@ -149,6 +150,7 @@ def main():
     log(f"{APP} legs {len(df):,} on {len(days)} slates {days[0]} .. {days[-1]}; warm-up {WARM}, refit every {STEP}; parameters {X.shape[1]}; pull {LAM} toward {PRIOR or 'none'}")
     pB = np.full(len(df), np.nan); pN = np.full(len(df), np.nan); coefs = []
     pH = {h: np.full(len(df), np.nan) for h in HALF}; coefH = {h: [] for h in HALF}
+    pS = np.full(len(df), np.nan); coefS = []; sea_all = df["season"].values
     hb = np.clip(np.floor(hp * 20), 0, 19).astype(int)
     for start in range(WARM, len(days), STEP):
         tr = di < start; te = (di >= start) & (di < start + STEP)
@@ -162,6 +164,10 @@ def main():
         pc = np.clip(hp[te] + gap, .005, .995)
         pB[te] = np.clip(pc + WB[te] * (np.minimum(.99, KP[te] * be[te]) - pc), .005, .995)
         wv = fit(X[tr], y[tr], w0, LAM); pN[te] = 1 / (1 + np.exp(-X[te] @ wv)); coefs.append(wv)
+        if SEASK:                                             # this season only once it has SEASK slates behind it, pulled toward the all-history fit by LP_LAM
+            cur = sea_all[te][0]; trs = tr & (sea_all == cur)
+            ws = fit(X[trs], y[trs], wv, LAM) if len(set(di[trs])) >= SEASK else wv
+            pS[te] = 1 / (1 + np.exp(-X[te] @ ws)); coefS.append(ws)
         for H_ in HALF:                                       # recent slates count more (half-life H_ slates), pulled toward the all-history fit by LP_LAM
             sw = 0.5 ** ((start - 1 - di[tr]) / H_)
             wh = fit(X[tr], y[tr], wv, LAM, sw); pH[H_][te] = 1 / (1 + np.exp(-X[te] @ wh)); coefH[H_].append(wh)
@@ -186,6 +192,9 @@ def main():
             fI[b] = fi(rawN[b]) if fi else rawN[b]; fL[b] = fl(rawN[b]) if fl else rawN[b]
     ev = np.isfinite(fI) & np.isfinite(fL)
     V = {"BOARD": pB * m - 1, "BLEND": rawN, "FINAL-ISO": fI, "FINAL-LIN": fL}
+    if SEASK:
+        V["SEASON"] = pS * m - 1; c = np.array(coefS)
+        print("LP|SEASON model / price weight by fit: " + " ".join(f"{a:+.2f}/{b:+.2f}" for a, b in c[:: max(1, len(c) // 20), 1:3]), flush=True)
     for h in HALF:
         V[f"RECENT-{h:g}"] = pH[h] * m - 1; c = np.array(coefH[h])
         print(f"LP|RECENT-{h:g} model / price weight by fit: " + " ".join(f"{a:+.2f}/{b:+.2f}" for a, b in c[:: max(1, len(c) // 14), 1:3]), flush=True)
