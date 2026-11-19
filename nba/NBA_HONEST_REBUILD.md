@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 14:16 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 14:24 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -374,6 +374,21 @@ Runs um 44625721011 (`research_ud_regular_meta.py`), hr6 44626379616 (referee), 
   PrizePicks, top 6, 1 slip a slate: 2-pick Power -25.9% / -1.2% / +3.4%; 3-pick Power -31.2% / +31.2% / -17.2%; 4-pick Power -41.9% / +9.7% / -65.5%; 5-pick Power -85.1% / +5.3% / -100%; 6-pick Power -100% / +40.6% / -100%; 3-pick Flex -21.7% / +1.9% / -24.1%; 4-pick Flex -21.6% / +17.1% / -32.8%; 5-pick Flex -34.3% / +5.6% / -26.2%; 6-pick Flex -70.4% / +33.7% / -46.1%. With the production number this season (29 slips): 2-pick Power +24.1%, 3-pick Power +44.8%, 4-pick Flex +24.1%, 5-pick Flex -10.8%, 6-pick Flex -44.0%. Not consistent - PrizePicks' break-even is too high for a 0.55 leg.
 - READING: one honest pattern survives everything - a few regular Unders at the very top of the system's list, best expressed on Underdog (lowest break-even) as a single 2-pick. Two seasons of three; this season agrees on every app. Still a lead: the referee decides, daily.
 
+## 8m. WHO THE TOP-OF-LIST UNDERS ARE, AND WHERE THE PLAYED LEGS SIT IN THE LIST (14:24 PT)
+
+Runs tp_ud 44627236092, tp_pp 44627249296 (`research_top_under_profile.py`), pr 44628030675 (`research_played_legs_rank.py`). Checked first: the honest baseline uses only the player's own past games (no teammate-absence or final-injury input), so the top of its list is not fed by late information.
+- **Profile (three seasons, honest model).** The top 6 Unders of a slate are legs whose line sits ~45% above the model's own anchor (all Unders: 0%). Against all Unders they are far more often: bench / fringe roles (36% vs 15%), projected under 18 minutes (9% vs 3%), minutes up 4+ over the last five (30% vs 12%), last five 25%+ hotter than the season (28% vs 14%), on a team with 80+ minutes listed out (35% vs 18%) or 40+ FRESH minutes out (9% vs 4%). In one sentence: **players whose line was pushed up by a recent role bump** - the model, anchored on history, says Under; in the last two seasons that Under hit 0.55-0.58. PrizePicks top 10 shows the same profile (bench 20% vs 11%, minutes up 4+ 26% vs 13%, 80+ out 33% vs 19%).
+- By rank inside the top 6 (Underdog): 2024-25 0.503 / 0.484 / 0.529 / 0.490 / 0.574 / 0.535; 2025-26 0.571 / 0.603 / 0.545 / 0.596 / 0.545 / 0.526; 2026-27 0.552 / 0.690 / 0.552 / 0.621 / 0.621 / 0.448. No sub-slice is pursued (samples of 25-100 a season).
+- **The legs actually played this season, by their rank in the system's list of regular legs (production number, one leg per player, unique legs, all statuses):**
+| app | Unders rank 1-6 | Unders rank 7-20 | Unders rank 21-50 | other |
+|---|---|---|---|---|
+| PrizePicks | 0.565 (294 legs, +-0.029) | 0.504 (232, +-0.033) | 0.482 (56) | Overs rank 1-6 0.596 (141), alternates Over 0.409 (154) |
+| Underdog | 0.637 (80, +-0.054) | 0.485 (68, +-0.061) | 0.679 (28) | alternates Under 0.493 (144) |
+| Sleeper | 0.678 (59, +-0.061) | 0.500 (84, +-0.055) | 0.433 (60) | - |
+| Fliff | 0.712 (52, +-0.063) | 0.508 (65, +-0.062) | 0.457 (46) | - |
+  Pooled Unders: rank 1-6 0.602 (485 legs), rank 7-20 0.501 (449 legs) - the same legs often sit on two apps, so the samples overlap; the direction is the same on all four. The played record's profit comes from the first six names of the list; ranks 7-20 are a coin flip at prices that need 0.53-0.58.
+- **What it suggests (OWNER DECISION, O15):** cut every live strategy's leg pool to the first 6 regular legs of the side (today: 10-30), fewer slips a slate, and prefer Underdog / 2-pick where the break-even is lowest (8i). Evidence: this season on four apps (above), two of three history seasons (8l). Against: the first history season shows nothing, 29 slates are loud (8l placebo), and fewer slips means longer droughts (Underdog 1 slip a slate: longest run without a winner 4-17 slates).
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -437,3 +452,4 @@ External (read for this work):
 - **2026-11-19 13:57 PT** - RETRACTION of 8j: the half-point lead was produced by joining to an outcome-filtered table (ties dropped). Found while checking the mechanism (identical hit rates of two different bets), proven with the unfiltered board (-5% / -12% / -13%). Rule C12 added. Scripts fixed. Nothing had been reported or wired.
 - **2026-11-19 13:57-14:06 PT** - Clean re-run of the three cell scans with a price-matched shuffle yardstick; referee gets the two standing Underdog leads with an unfiltered PrizePicks reference; Underdog payout probe confirms prediction-pick entries are priced ~3% above our table (section 8k).
 - **2026-11-19 14:06-14:16 PT** - Combiner test (fails; placebo shows the noise of 29 slates), top-of-list Unders measured on both history apps and, live, on all four; slips for every structure on Underdog and PrizePicks (section 8l). Referee carries "system top 6 / top 10 regular Unders" for every app. Section 1 rewritten to the present state.
+- **2026-11-19 14:16-14:24 PT** - Profile of the top-of-list Unders (role-bump players) and rank split of the played legs on four apps (section 8m). O15 raised for the owner: cut pools to the first 6 legs.
