@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 12:55 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 12:45 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -223,7 +223,7 @@ Runs: s5_pp 44605663555, s5_sl 44605680141, s5_fl 44605696659, rq 44606558507, r
 - Underdog, book-implied return > 0: 2024-25 31.5 legs a slate, real +7.0% [+5.0 .. +9.1]; 2025-26 7.8 a slate, +0.9% [-3.5 .. +5.3]; 2026-27 45 a slate "predicted +24%" real -14.6% - this season's picks are dominated by one-book, off-line B-tier numbers that are wrong (>= 2 books: 6.9 a slate, -2.5%). The 2024-25 edge was real and has been priced out.
 - This season's sportsbook feed is thin (1.1-1.7 books a rung, 36-48% of legs covered against 70-93% before). RULE (C11): a book number counts only with >= 2 books or an exact-line match; never extrapolated from one book.
 
-## 8f. STRUCTURE TEST, THE DAILY REFEREE, AND ONE LEAD (2026-11-19 12:36-12:55 PT)
+## 8f. STRUCTURE TEST, THE DAILY REFEREE, AND ONE LEAD (2026-11-19 12:36-12:44 PT)
 
 **S6a - correlated stacks of PrizePicks regular lines** (`research_pp_stack_structure.py`, run ss 44609896286; results only, 351,637 legs, 354 slates, 2,655 games; real Power / Flex tables).
 P(all hit) against the product of single rates ("lift"): same game all Under 1.00x (2-3 picks) to 0.95x (6); same team all Over 0.97x (3) down to 0.65x (6) - teammates' Overs fight each other; one team Over + other team Under 0.95-1.00x. No stack type is lifted above independence.
@@ -295,4 +295,4 @@ External (read for this work):
 - **2026-11-19 12:14-12:26 PT** - S5 finished on all four apps and refereed on real quotes; sportsbook tested as third input (new scripts `research_pp_realquote_edge.py`, `research_book_edge.py`); live record reconciled on unique legs. Verdict in section 8d: no proven per-leg edge at real prices; the model adds nothing beyond the market; goblin "edge" on history was a modelled-price artifact (C9). Reported to the owner with options (O12). Engineering that does not depend on his answer continues after the P3 window: one-block harness fix with dry-run, shadow honest leg-ROI table.
 - **2026-11-19 12:27 PT** - OWNER DECISION D7 (answer to O12): option 3 - keep playing as now, full stake, all apps; continue the work. O12 closed. Live strategies, stakes and the slip screen stay as they are until the honest pipeline has a proven replacement. NEXT (in order): (a) one-block tier fix in the two harness files + guard test + dry-run against production output; (b) shadow table of the honest leg ROI (sportsbook chance at the line x real price), written daily, nothing on the board changes; (c) S6 structure effects (same-game correlation, Flex tiers) and Betr on honest inputs; (d) search for a real edge led by the sportsbook signal.
 - **2026-11-19 12:28-12:36 PT** - Dry-run of the tier fix in the production builder (C10: ready, not switched). Off-market sportsbook test (C11). Section 8e. Running: `research_pp_stack_structure.py` (run ss 44609896286) - correlated stacks of regular lines against the Power / Flex tables, results only.
-- **2026-11-19 12:36-12:55 PT** - Stack-structure test (no lift). Daily referee built, run twice, scheduled (new workflow `nba-honest-referee.yml`). Underdog early-season regular-Under lead found and logged. Section 8f. NEXT: fix the Underdog played-slip read in the referee ("dnp"); add the Underdog-Under lead as its own referee line; then S6 on Underdog only (the one app with a lead), honest inputs, real multipliers.
+- **2026-11-19 12:36-12:44 PT** - Stack-structure test (no lift). Daily referee built, run twice, scheduled (new workflow `nba-honest-referee.yml`). Underdog early-season regular-Under lead found and logged. Section 8f. NEXT: fix the Underdog played-slip read in the referee ("dnp"); add the Underdog-Under lead as its own referee line; then S6 on Underdog only (the one app with a lead), honest inputs, real multipliers.
