@@ -6,7 +6,8 @@ through the engines, a few seconds from this table.
   underdog : the app's own archived boards, three seasons (tier R / F1-3 / B1-3, final_hp, baseline_hp, score)
   sleeper / fliff : src 'real' = the app's own boards this season; src 'derived' = earlier seasons priced from sportsbook lines through the app's price model
                     (research_roi_slip_sweep_apps.build_sleeper_fliff)
-Env: DATABASE_URL, LR_APP (underdog | sleeper | fliff).
+  pp26 : PrizePicks this season, regular lines only (board snapshot x final_hp); m holds the price factor 1.0
+Env: DATABASE_URL, LR_APP (underdog | sleeper | fliff | pp26).
 """
 import os
 import sys
@@ -35,7 +36,25 @@ def main():
             rows.append((APP, src, AF.season_of(d), d, str(l.get("player_id") or l.get("player") or ""), l["prop"], str(l["side"]), float(l.get("line") or 0),
                          str(l.get("tier") or ""), str(l.get("kind") or ""), float(l["m"]), float(l["p"]),
                          None if l.get("base") is None else float(l["base"]), None if l.get("score") is None else float(l["score"]), int(h)))
-    if APP == "underdog":
+    if APP == "pp26":                                        # PrizePicks this season, REGULAR lines only (a line offered both More and Less; price factor 1)
+        q = conn.execute("""
+          WITH b AS (SELECT DISTINCT ON (game_date, nba_ref.norm_name(player), market_key, side, line) game_date, nba_ref.norm_name(player) pn, market_key, side, line
+                     FROM nba_market.board_snapshots WHERE bookmaker='prizepicks' AND snapshot_label='window' AND game_date >= '2026-10-20'
+                       AND market_key = ANY(%s) ORDER BY game_date, nba_ref.norm_name(player), market_key, side, line, snapshot_ts DESC),
+               two AS (SELECT game_date, pn, market_key, line FROM b GROUP BY 1, 2, 3, 4 HAVING count(DISTINCT side) = 2)
+          SELECT b.game_date, nm.player_id::text, b.market_key, b.side, b.line::float, f.final_hp::float, f.baseline_hp::float, f.score::float
+          FROM b JOIN two USING (game_date, pn, market_key, line) JOIN nba_ref.player_name_map nm ON nm.norm_name = b.pn
+          JOIN nba_score.final_hp f ON f.game_date = b.game_date AND f.player_id = nm.player_id AND f.side = b.side AND f.line = b.line
+            AND f.prop = (CASE b.market_key """ + " ".join(f"WHEN '{k}' THEN '{v}'" for k, v in AF.MK.items()) + """ END)
+          WHERE f.final_hp IS NOT NULL AND b.game_date < current_date""", (list(AF.MK),)).fetchall()
+        boxes = {}
+        for d, pid, mk, side, line, fh, bh, sc in q:
+            if d not in boxes:
+                boxes[d] = AF.box(conn, d)
+            l = {"player_id": pid, "prop": AF.MK[mk], "side": side, "line": line, "tier": "R", "kind": "standard", "m": 1.0, "p": fh, "base": bh, "score": sc}
+            l["hit"] = AF.outcome(boxes[d], l)
+            add("real", d, [l])
+    elif APP == "underdog":
         for i, d in enumerate(AF.slate_days(conn)):
             st = AF.box(conn, d)
             if st:
