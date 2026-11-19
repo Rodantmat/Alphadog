@@ -17,6 +17,8 @@ import numpy as np
 import pandas as pd
 import psycopg
 
+RNG = np.random.default_rng(7)
+
 STAT = {"points": lambda s: s[0], "rebounds": lambda s: s[1], "assists": lambda s: s[2], "threes_made": lambda s: s[3], "steals": lambda s: s[4],
         "blocks": lambda s: s[5], "turnovers": lambda s: s[6], "pra": lambda s: s[0] + s[1] + s[2], "pts_reb": lambda s: s[0] + s[1],
         "pts_ast": lambda s: s[0] + s[2], "reb_ast": lambda s: s[1] + s[2], "stocks": lambda s: s[4] + s[5]}
@@ -66,6 +68,17 @@ def block(k, label):
         print(f"L2|   leak check 2 {label:14s} after removing EVERYTHING past (form over 3/5/10/20/40 games, season to date, last season, minutes trend): what is left of the model "
               f"still tracks his NEXT 20 games by {np.corrcoef(rm, rf)[0, 1]:+.3f} (an honest model: about 0); past explains {100 * (1 - rm.var() / lm.var()):.0f}% of the model; "
               f"model weight on top of all past numbers {wr[-1]:+.2f}", flush=True)
+        if label.startswith("season"):
+            cands = [("OUR MODEL", lm)] + [(nm_, kk[f"ctl{j}"].values) for j, nm_ in enumerate(("control honest (recency-weighted past)", "control honest (other mix + noise)",
+                                                                                               "control LEAKY (25% whole-season mean)", "control LEAKY (window includes the game)"))]
+            for nm_, x in cands:
+                g = np.isfinite(x) & np.all(np.isfinite(kk[[f"lag{j}" for j in range(4)]].values), axis=1)
+                if g.sum() < 1500:
+                    continue
+                Rg = R_[g]; bx, *_ = np.linalg.lstsq(Rg, x[g], rcond=None); rx = x[g] - Rg @ bx; parts = []
+                for j, ln_ in enumerate(("the game itself", "next game", "games +2..+5", "games +6..+20")):
+                    t = kk[f"lag{j}"].values[g]; bt, *_ = np.linalg.lstsq(Rg, t, rcond=None); parts.append(f"{ln_} {np.corrcoef(rx, t - Rg @ bt)[0, 1]:+.3f}")
+                print(f"L2|   lag profile {label:16s} {nm_:42s} leftover after all past numbers vs: " + " | ".join(parts), flush=True)
         w1, _ = fit(np.column_stack([o1, lm]), yy); w2, _ = fit(np.column_stack([o1, lm, dm]), yy); w3, _ = fit(np.column_stack([o1, lm, dm, zf]), yy)
         print(f"L2|   leak check {label:16s} corr(model, minutes played above his usual THAT game) {np.corrcoef(lm, dm)[0, 1]:+.3f}; the part of the model not explained by "
               f"past form: corr with that-game minutes {np.corrcoef(res, dm)[0, 1]:+.3f}, with his NEXT 20 games {np.corrcoef(res, zf)[0, 1]:+.3f}, with past form {np.corrcoef(res, zp)[0, 1]:+.3f} | "
@@ -88,7 +101,7 @@ def main():
                        WHERE app = 'pp26' AND lower(left(side, 1)) IN ('o', 'm', 'h')""", conn)
     conn.close()
     df = pd.concat([a[["season", "game_date", "pid", "prop", "line", "p", "hit"]], b], ignore_index=True)
-    z10 = np.full(len(df), np.nan); r20 = np.full(len(df), np.nan); gp = np.zeros(len(df)); dmin = np.full(len(df), np.nan); zfut = np.full(len(df), np.nan); PAST = np.full((len(df), 7), np.nan)
+    z10 = np.full(len(df), np.nan); r20 = np.full(len(df), np.nan); gp = np.zeros(len(df)); dmin = np.full(len(df), np.nan); zfut = np.full(len(df), np.nan); PAST = np.full((len(df), 7), np.nan); LAG = np.full((len(df), 4), np.nan); CTL = np.full((len(df), 4), np.nan)
     cache = {}
     for i, (pid, pr, ln, d) in enumerate(zip(df["pid"], df["prop"], df["line"], df["game_date"])):
         f = STAT.get(pr); g = logs.get(pid)
@@ -107,7 +120,20 @@ def main():
         PAST[i] = [(vs[max(0, n - 3):n].mean() - ln) / sd, (vs[max(0, n - 5):n].mean() - ln) / sd, (v20.mean() - ln) / sd, (vs[max(0, n - 40):n].mean() - ln) / sd,
                    ((sea.mean() if len(sea) else v20.mean()) - ln) / sd, ((prev.mean() if len(prev) >= 10 else v20.mean()) - ln) / sd,
                    (ms[max(0, n - 3):n].mean() - ms[max(0, n - 20):n].mean()) / 5.0]
+        ew = 0.5 ** (np.arange(n - 1, -1, -1) / 8.0); ewm = (vs[:n] * ew).sum() / ew.sum()
+        e1 = cut.replace(year=cut.year + 1); s1 = int(np.searchsorted(ds, e1)); full = vs[s0:s1]
+        CTL[i, 0] = (ewm - ln) / sd                                                    # honest: recency-weighted past only
+        CTL[i, 1] = (0.6 * ewm + 0.4 * (prev.mean() if len(prev) >= 10 else ewm) - ln) / sd + RNG.normal(0, .35)   # honest, other mix + noise
+        CTL[i, 2] = (0.75 * v20.mean() + 0.25 * (full.mean() if len(full) else v20.mean()) - ln) / sd                # LEAKY: a quarter whole-season mean
         if n < len(ds) and ds[n] == d:                          # the game of the slate itself and the games after it
+            CTL[i, 3] = (vs[max(0, n - 9):n + 1].mean() - ln) / sd                    # LEAKY: last 10 INCLUDING the game itself
+            LAG[i, 0] = (vs[n] - ln) / sd
+            if n + 1 < len(ds):
+                LAG[i, 1] = (vs[n + 1] - ln) / sd
+            if n + 5 < len(ds):
+                LAG[i, 2] = (vs[n + 2:n + 6].mean() - ln) / sd
+            if n + 20 < len(ds):
+                LAG[i, 3] = (vs[n + 6:n + 21].mean() - ln) / sd
             dmin[i] = ms[n] - ms[max(0, n - 10):n].mean()
             fut = vs[n + 1:n + 21]
             if len(fut) >= 5:
@@ -115,6 +141,8 @@ def main():
     df["z10"] = z10; df["r20"] = r20; df["dmin"] = dmin; df["zfut"] = zfut
     for j in range(7):
         df[f"pc{j}"] = np.clip(PAST[:, j], -4, 4)
+    for j in range(4):
+        df[f"lag{j}"] = np.clip(LAG[:, j], -4, 4); df[f"ctl{j}"] = np.clip(CTL[:, j], -4, 4)
     ok = np.isfinite(z10)
     print(f"L2|legs {len(df):,}; with at least 5 earlier games {int(ok.sum()):,}", flush=True)
     df = df[ok].copy(); df["month"] = df["game_date"].astype(str).str[:7]
