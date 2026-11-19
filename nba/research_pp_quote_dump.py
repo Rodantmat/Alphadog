@@ -36,9 +36,9 @@ def main():
                 if p is None:
                     ok = False
                     break
-                parts.append(f"{p:g}:{l['odds'][0]}{'u' if l.get('side') == 'under' else 'o'}")
+                parts.append(f"{p:g}:{l['odds'][0]}{'u' if l.get('side') == 'under' else 'o'}:{l['id']}:{str(l.get('stat') or '').replace(' ', '_').replace(',', '')}:{l.get('line')}")
             else:
-                parts.append("3:s" + ("u" if l.get("side") == "under" else "o"))
+                parts.append("3:s" + ("u" if l.get("side") == "under" else "o") + f":{l['id']}:{str(l.get('stat') or '').replace(' ', '_').replace(',', '')}:{l.get('line')}")
         if not ok:
             continue
         sg = int(len({l["game"] for l in legs}) < n)
