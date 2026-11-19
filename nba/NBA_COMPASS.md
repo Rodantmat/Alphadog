@@ -1029,3 +1029,12 @@ research_leg_roi_diag.py, research_leg_roi_diag2.py. Owner chose "hold deploymen
 - Honest price-side facts that do not need the model: PrizePicks regular Less hit .506 / .516 / .526 (2024-25 / 2025-26 / 2026-27) against More .494 / .484 / .474.
 - NEXT: (1) find which input of the backfill is whole-season (rate cells / dispersion / Platt / factor coefficients "history as-of" are the suspects), (2) rebuild an honest
   history (point-in-time) for final_hp, (3) refit the per-leg ROI model on honest inputs, (4) re-check live strategies against this season only.
+
+## 2026-11-19 09:40 PT - PrizePicks LADDER2 on the full board (run 44579105817, 402 quotes; dump pd5, analysis scratchpad/ppfit l5.py). Research only.
+- Controls exact: a ladder's own regular line in the rung's seat quotes 3 / 10 / 37.5 (2 / 4 / 6 picks, 12 of 12); anchors alone 3 / 6 / 10 / 20.
+- One hidden price per rung holds on 63 rungs / 48 ladders: 6-pick -> 4-pick within 4% on 67%, -> 2-pick within one rounding step on 69%; the round-1 constants read 3.5%
+  high (mean ratio 0.965) because the 6-pick lineup here has two players from one game (same-game discount on the 6-pick read) - re-centre before use.
+- Ladders with NO regular line follow the same law (15 rungs, mean 0.969-0.971).
+- Two alternates multiply: exponents .880 / .926 / .967 / .982 / .998 for 2-6 picks (round 1: .904 / .936 / .969 / .986 / 1.0); within 6% on 76 / 81 / 95 / 100 / 100% (21 pairs).
+- Leg price vs a regular leg (6-pick read): G1 0.71 (0.61-0.90), G2 0.77, G3 0.62, D1 1.12 (1.03-2.08), D2 2.17 (1.42-3.39), D3 6.11 (4.50-7.22).
+- NOT switched: the mechanistic grader stays on hold (owner 09:04 PT: hold deployment); open: same-game term for the 6-pick read, triples (32 quotes collected), Flex.
