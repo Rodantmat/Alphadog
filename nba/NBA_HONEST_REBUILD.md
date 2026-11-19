@@ -4,13 +4,20 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 14:06 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 14:16 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
-## 1. One-paragraph state
+## 1. State (rewritten 14:16 PT, 2026-11-19 - read this first)
 
-The two past seasons of model probabilities (2024-25, 2025-26) that every backtest ranks by contain information from after each game. Cause: one block in the certified backtest harness gives every game of a calendar month the player's rate tier computed at his LAST game of that month. With that fixed, the model shows no skill against PrizePicks regular lines (points, rebounds) in any of the three seasons; the live pipeline was already honest and matches the fixed replay. The owner chose (11:05 PT) to rebuild an honest history into SEPARATE tables and leave production alone. The honest baseline for the single-stat props is BUILT in `nba_score.baseline_history_h` (three seasons, 8 props) and the first measurement is in (section 8a): about a third of the skill history claimed is real, it sits on goblins / demons / Underdog alternates and on threes, and almost none on regular lines. Nothing in production has been changed by this adjustment. Leg-ROI deployment is on hold (owner 09:04 PT).
+1. **Cause (proven):** the certified backtest harness gave every game of a month the player's month-END rate tier, so the two past seasons of model numbers carried the future. Live production was always honest. Honest history now lives in `nba_score.baseline_history_h` (15 props, three seasons); one honest leg table for four apps in `nba_score._lr_legs_h` (rule C12: an outcome table - never a lookup for another leg).
+2. **Verdict at real prices (8d):** no proven per-leg edge on any app. The model adds almost nothing beyond the market (weight 0.03-0.06). PrizePicks goblins -10%, demons -37%, regular lines -4% to -12%; Sleeper / Fliff ~ -5% to -12%; Underdog ~0 to slightly negative. The board's leg ROI overstates by 13-22 points on every app (8f). Structure cannot create an edge (8f, 8i); 66,000+ cells scanned on three seasons with a shuffle yardstick: nothing repeatable (8h, 8k).
+3. **Owner decision D7 (12:27 PT):** keep playing as now. Nothing live was changed by this work.
+4. **What is LIVE from this work:** the daily referee (`nba-honest-referee.yml`, 04:37 PT, table `nba_score.honest_referee`) - the out-of-sample scoreboard at real prices.
+5. **The one family that keeps showing up (8g, 8l) - not proven:** the very top of the system's list of REGULAR UNDERS (2-10 legs a slate). Honest model, three seasons, top 6: Underdog 0.519 / 0.565 / 0.580, PrizePicks 0.503 / 0.548 / 0.580 (first season = model with one training season). This season with the production number, top 6 a slate: Underdog 0.621 (+16.1% [+5 .. +28]), Fliff 0.724 at its prices (+11.6% [+2 .. +21]), Sleeper 0.730 (+8.9% [+0 .. +18]), PrizePicks 0.552 (+1.8%). It dies quickly with list length (top fifth: PrizePicks -6%, Sleeper -8%, Fliff -5%, Underdog +8.5%). Best playable form found: Underdog, ONE 2-pick Standard a slate from the top 2: +1.6% / +36.9% [+14 .. +61] / +56.9% over 155 / 156 / 29 slips.
+6. **Retraction on file (8j):** a "half point below the market" lead was my own join artifact (ties filtered); caught and removed before any report.
+7. **Ready, not switched:** the one-block tier fix in production (dry-run clean, +3-4 s; C10); the honest leg-ROI formula (book chance at the line x real price; O13).
+8. **Open for the owner when he wants them:** O13 (show the honest leg ROI on the board), promotion of the top-of-list Unders to a tracked paper strategy / pool-size cut of the live strategies, O14 (Underdog prediction-pick payouts ~3% above our table; exact pricing needs his logged-in quote).
 
 ## 2. How we got here (chain of evidence, in order)
 
@@ -351,6 +358,22 @@ Runs cs4_alt 44624022627, cs4_ud 44624035898, cs4_pp 44624049968 (other-app line
 - Standing leads after all scans: (1) 8g - Underdog regular Unders at the very top of the system's list; (2) Underdog regular Unders whose line is 1+ above PrizePicks'. Both small (about 6 legs a slate), both around +2% to +8% a leg, neither proven. The referee now carries both ("regular Unders, system top 6 a slate"; "regular Unders, line 1+ above PrizePicks").
 - **O14 answered (probe udq, 40 entries, no login):** an Underdog entry that contains a PREDICTION-market pick is not priced by our table: 3-pick Standard quotes are 0.936x to 1.048x of ours, median 1.030x, 0 of 14 within 0.5%; 2-pick entries with a prediction pick cannot be quoted without login. Today's real 2-pick paid 3.27x against our 3.13x (+4.5%). So graded Underdog slips that hold prediction picks are under-stated by about 3% on average; the per-leg return of B-tier / prediction legs in sections 8d-8k is under-stated by roughly the same. It does not rescue any cell (the gaps are 5-15%). To price them exactly the probe needs the logged-in quote (RX_AUTH) - owner's session; queued, not run.
 
+## 8l. ADDING THE WEAK SIGNALS UP, AND THE TOP-OF-LIST UNDERS ON EVERY APP (14:16 PT)
+
+Runs um 44625721011 (`research_ud_regular_meta.py`), hr6 44626379616 (referee), un_pp 44626707113 / un_ud2 44626721831 (`research_ud_under_slips.py`, now with a PrizePicks mode).
+- **Combiner (walk-forward ridge logistic on all 26 features, fitted on earlier seasons only, with a shuffled-training placebo):** does NOT work. Top 6 a slate: 0.516 (2025-26), 0.500 (2026-27); slope of real on predicted 0.44 / 0.29. The placebo on this season's 29 slates scored 0.655 on its top 2 (58 legs) - a reminder of how loud 29 slates are. The honest model ALONE on Unders beats the combiner: top 2 a slate 0.587 [0.535 .. 0.632] (2025-26), top 6 0.565 [0.537 .. 0.591].
+- **Top of the honest model's Under list, legs a slate (hit rate; Underdog break-even 0.5345, PrizePicks 0.542-0.577):**
+| | 2024-25 | 2025-26 | 2026-27 |
+|---|---|---|---|
+| Underdog top 2 / 6 / 10 / 20 / 40 | 0.494 / 0.520 / 0.526 / 0.521 / 0.528 | 0.587 / 0.565 / 0.560 / 0.536 / 0.532 | 0.621 / 0.580 / 0.588 / 0.543 / 0.527 |
+| PrizePicks top 2 / 6 / 10 / 20 / 40 | 0.497 / 0.503 / 0.516 / 0.518 / 0.518 | 0.550 / 0.548 / 0.553 / 0.541 / 0.535 | 0.552 / 0.580 / 0.569 / 0.560 / 0.541 |
+  Same picture on both apps: nothing in the first season, 0.55-0.59 at the top in the next two, fading with list length.
+- **This season, production number (referee, 29 slates), regular Unders:** top 6 a slate - PrizePicks 0.552 (+1.8% [-9 .. +14]), Underdog 0.621 (+16.1% [+5 .. +28]), Sleeper 0.730 at its prices (+8.9% [+0 .. +18]), Fliff 0.724 (+11.6% [+2 .. +21]); top 10 - +1.8% / +9.4% / +0.9% / +3.6%; top fifth - -6.2% / +8.5% / -7.6% / -4.8%. The value is in the first handful of legs; the live strategies draw from pools of 10-30.
+- **As slips (honest model, three seasons):**
+  Underdog, 1 slip a slate, 2-pick Standard from the top 2: +1.6% (155 slips, dd 17, drought 17) / +36.9% [+14 .. +61] (156, +57.5u, dd 10, drought 10) / +56.9% (29, +16.5u, dd 5.5, drought 4). 2 a slate from the top 4-6: -8.5% / +14.4% / +14.7%. 3 a slate from the top 6: -5.9% / +9.2% / +28.7%. 3-pick Flex 1 a slate: -6.5% / +9.3% / +8.7%; 4-pick Flex from the top 4: -10.9% / +26.0% / +14.6%.
+  PrizePicks, top 6, 1 slip a slate: 2-pick Power -25.9% / -1.2% / +3.4%; 3-pick Power -31.2% / +31.2% / -17.2%; 4-pick Power -41.9% / +9.7% / -65.5%; 5-pick Power -85.1% / +5.3% / -100%; 6-pick Power -100% / +40.6% / -100%; 3-pick Flex -21.7% / +1.9% / -24.1%; 4-pick Flex -21.6% / +17.1% / -32.8%; 5-pick Flex -34.3% / +5.6% / -26.2%; 6-pick Flex -70.4% / +33.7% / -46.1%. With the production number this season (29 slips): 2-pick Power +24.1%, 3-pick Power +44.8%, 4-pick Flex +24.1%, 5-pick Flex -10.8%, 6-pick Flex -44.0%. Not consistent - PrizePicks' break-even is too high for a 0.55 leg.
+- READING: one honest pattern survives everything - a few regular Unders at the very top of the system's list, best expressed on Underdog (lowest break-even) as a single 2-pick. Two seasons of three; this season agrees on every app. Still a lead: the referee decides, daily.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -413,3 +436,4 @@ External (read for this work):
 - **2026-11-19 13:36-13:54 PT** - Alternates scan and half-point map / slips run in the background; second lead found and documented (section 8j); referee gets its line. PrizePicks line-move scan: nothing.
 - **2026-11-19 13:57 PT** - RETRACTION of 8j: the half-point lead was produced by joining to an outcome-filtered table (ties dropped). Found while checking the mechanism (identical hit rates of two different bets), proven with the unfiltered board (-5% / -12% / -13%). Rule C12 added. Scripts fixed. Nothing had been reported or wired.
 - **2026-11-19 13:57-14:06 PT** - Clean re-run of the three cell scans with a price-matched shuffle yardstick; referee gets the two standing Underdog leads with an unfiltered PrizePicks reference; Underdog payout probe confirms prediction-pick entries are priced ~3% above our table (section 8k).
+- **2026-11-19 14:06-14:16 PT** - Combiner test (fails; placebo shows the noise of 29 slates), top-of-list Unders measured on both history apps and, live, on all four; slips for every structure on Underdog and PrizePicks (section 8l). Referee carries "system top 6 / top 10 regular Unders" for every app. Section 1 rewritten to the present state.
