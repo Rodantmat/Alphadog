@@ -747,16 +747,39 @@ def main():
             cands.sort(key=lambda c: c[2])                      # ladders with no regular line first (they are rare)
             anchors_all = sorted([r for r in std if r["allow"] in ("", "over", "under_or_over")], key=lambda r: (r["game"], r["player"], r["stat"]))
 
+            base_done = set()
+
             def anchors_for(avoid_games, avoid_players):
-                out, seen = [], set(avoid_games)
+                # five regular More legs of five different players, never from the alternates' own games; one per game first, then
+                # (2026-11-18 evening: a late board has 3 games left) more players from those same games. Every anchor set is quoted
+                # ALONE once (section LADB, 2-5 picks) so a set PrizePicks cuts for same-game legs is seen and set aside.
+                out, seen_g, seen_p = [], set(avoid_games), set(avoid_players)
                 for x in anchors_all:
-                    if x["game"] in seen or x["player"] in avoid_players:
+                    if x["game"] in seen_g or x["player"] in seen_p:
                         continue
-                    out.append(leg(x))
-                    seen.add(x["game"])
+                    out.append(x)
+                    seen_g.add(x["game"])
+                    seen_p.add(x["player"])
                     if len(out) == 5:
                         break
-                return out
+                per_game = {}
+                for x in out:
+                    per_game[x["game"]] = 1
+                for x in anchors_all:
+                    if len(out) == 5:
+                        break
+                    if x["game"] in avoid_games or x["player"] in seen_p or per_game.get(x["game"], 0) >= 3:
+                        continue
+                    out.append(x)
+                    seen_p.add(x["player"])
+                    per_game[x["game"]] = per_game.get(x["game"], 0) + 1
+                legs_ = [leg(x) for x in out]
+                key_ = tuple(l["id"] for l in legs_)
+                if len(legs_) >= 2 and key_ not in base_done:
+                    base_done.add(key_)
+                    for k in range(2, len(legs_) + 1):
+                        run("LADB", legs_[:k], "anchors alone")
+                return legs_
             budget_a = int(MAX_Q * 0.5)
             read, players_done, stats_n, n_ns = [], set(), {}, 0
             for key, l0, has_std, gs_, ds_ in cands:

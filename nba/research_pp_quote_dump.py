@@ -45,7 +45,7 @@ def main():
         t = PP.tiers({"power": pw, "flex": fx}, n)
         pall = t.get(("power", n), 0)
         fl = ";".join(f"{h}={v:g}" for (s, h), v in sorted(t.items()) if s == "flex")
-        print(f"PD|{rf[-21:-5]}|{sec}|{n}|{sg}|{','.join(parts)}|{pall:g}|{fl}|{(note or '') if sec in ('LAD', 'LAD2') else ''}")
+        print(f"PD|{rf[-21:-5]}|{sec}|{n}|{sg}|{','.join(parts)}|{pall:g}|{fl}|{(note or '') if sec in ('LAD', 'LAD2', 'LADB') else ''}")
         out += 1
     print(f"PDN|{out} lineups", flush=True)
     conn.close()
