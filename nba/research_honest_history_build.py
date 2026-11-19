@@ -5,7 +5,9 @@ Runs the SAME day-by-day history builder as production (nba/baseline/build_basel
 the player's monthly rate tier is taken day by day (what production can see on that date) instead of from his last game of the calendar month
 (root cause proven 2026-11-19, research_tier_prior_leak.py). Nothing in production is read-modified: output goes ONLY to nba_score.baseline_history_h, one row
 per player-game-prop with the whole ladder in arrays (offsets, lines, p_more, p_raw), about 20x smaller than the row-per-rung production table.
-Env: DATABASE_URL, BT_TEST (season), HH_PAIRS (prop pairs, ':' between pairs, ',' inside; default the four board pairs), BT_LADDER_STEPS (10).
+HH_MODE=combos builds pra / pts_reb / pts_ast / reb_ast / stocks / fantasy_score / double_double: honest components from the singles harness, then the
+combos recipe (nba/backtest/combos_ladder_v1.py), which has its OWN copy of the month-end tier block, fixed the same way.
+Env: DATABASE_URL, BT_TEST (season), HH_MODE (singles | combos), HH_PAIRS (prop pairs, ':' between pairs, ',' inside; default the four board pairs), BT_LADDER_STEPS (10).
 """
 import json
 import os
@@ -25,7 +27,24 @@ import research_tier_prior_leak as TL                       # noqa: E402  (OLD /
 TEST = os.environ.get("BT_TEST") or "2025-26"
 TRAIN = os.environ.get("BT_TRAIN") or {"2024-25": "2023-24", "2025-26": "2023-24,2024-25"}.get(TEST, "2023-24,2024-25,2025-26")
 PAIRS = (os.environ.get("HH_PAIRS") or "points,rebounds:assists,steals:blocks,turnovers:threes_made,fg3a").split(":")
+MODE = (os.environ.get("HH_MODE") or "singles").lower()
 T0 = time.time()
+COMBO_OLD = '''    for (s, ym, role), grp in x.groupby(["season", "ym_s", "role_tier"]):
+        pop = grp.groupby("PLAYER_ID")["rate36"].last(); n = len(pop); tt = max(1, min(MAX_TIERS, n // MIN_PER_TIER))
+        ranks = pop.rank(pct=True, method="first"); tier_of = np.minimum(tt, np.floor(ranks * tt) + 1).astype(int)
+        for pid, t in tier_of.items(): tp[(s, ym, role, pid)] = int(t)
+    x["tier"] = [tp.get((s, y_, r, p)) for s, y_, r, p in zip(x["season"], x["ym_s"], x["role_tier"], x["PLAYER_ID"])]
+'''
+COMBO_NEW = '''    _trow = {}
+    for (s, ym, role), grp in x.groupby(["season", "ym_s", "role_tier"]):
+        _latest = {}
+        for _dte, _day in grp.sort_values("GAME_DATE").groupby("GAME_DATE", sort=True):
+            for _pid, _r in zip(_day["PLAYER_ID"], _day["rate36"]): _latest[_pid] = _r
+            pop = pd.Series(_latest); n = len(pop); tt = max(1, min(MAX_TIERS, n // MIN_PER_TIER))
+            ranks = pop.rank(pct=True, method="first"); tier_of = np.minimum(tt, np.floor(ranks * tt) + 1).astype(int)
+            for _ix, _pid in zip(_day.index, _day["PLAYER_ID"]): _trow[_ix] = int(tier_of[_pid])
+    x["tier"] = [_trow.get(i) for i in x.index]
+'''
 
 
 def log(m):
@@ -46,6 +65,50 @@ def main():
                     built_at timestamptz DEFAULT now())""")
     conn.execute("CREATE INDEX IF NOT EXISTS baseline_history_h_i ON nba_score.baseline_history_h (game_date, player_id, prop)")
     conn.commit(); conn.close()
+    if MODE == "combos":
+        # 1) full-season components from the HONEST singles harness, 2) the combos recipe with its own copy of the same tier block fixed
+        for pair in ("points,rebounds", "assists,steals", "blocks,turnovers"):
+            env = dict(os.environ, BT_TEST=TEST, BT_TRAIN=TRAIN, BT_PROPS=pair, BT_LADDER_STEPS="10", BT_INJURY="1", BT_SAVE_COMPONENTS="1", BT_TAG="hh")
+            r = subprocess.run([sys.executable, str(hfile)], cwd=str(ROOT), env=env, capture_output=True, text=True)
+            if r.returncode != 0:
+                print(r.stderr[-3000:], flush=True); raise SystemExit(f"components failed for {pair}")
+            log(f"{TEST} components {pair} done")
+        csrc = (HERE / "backtest" / "combos_ladder_v1.py").read_text()
+        assert COMBO_OLD in csrc, "combo tier block not found - the combos recipe changed"
+        cfile = HERE / "backtest" / "_co_honest.py"; cfile.write_text(csrc.replace(COMBO_OLD, COMBO_NEW))
+        cb = (HERE / "baseline" / "build_combos_history.py").read_text(); canchor = 'SRC = Path("nba/backtest/combos_ladder_v1.py").read_text()'
+        assert canchor in cb, "combos history builder changed"
+        cbf = HERE / "baseline" / "_cbh_honest.py"; cbf.write_text(cb.replace(canchor, 'SRC = Path("nba/backtest/_co_honest.py").read_text()'))
+        env = dict(os.environ, BT_TEST=TEST, BT_TRAIN=TRAIN, BT_INJURY="1"); env.pop("BT_LADDER_STEPS", None); env.pop("BT_PROPS", None)
+        r = subprocess.run([sys.executable, str(cbf)], cwd=str(ROOT), env=env, capture_output=True, text=True)
+        if r.returncode != 0:
+            print(r.stderr[-3000:], flush=True); raise SystemExit("combos builder failed")
+        f = ROOT / "nba" / "data" / f"nba_baseline_history_{TEST.replace('-', '_')}_combos.json"
+        doc = json.load(open(f)); rows = doc["rows"]; f.unlink()
+        g = defaultdict(list)
+        for x in rows:
+            g[(x["game_date"], x["player_id"], x["game_id"], x["prop"])].append(x)
+        out = []
+        for (gd, pid, gid, prop), xs in g.items():
+            xs.sort(key=lambda x: x["line"]); x0 = xs[0]
+            out.append((TEST, gd, pid, gid, prop, x0["anchor"], x0["role_tier"], x0["var_band"], None, None,
+                        [int(x["offset"]) for x in xs], [float(x["line"]) for x in xs], [float(x["p_more"]) for x in xs], [float(x["p_raw"]) for x in xs]))
+        props_c = sorted({o[4] for o in out})
+        conn = psycopg.connect(os.environ["DATABASE_URL"])
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM nba_score.baseline_history_h WHERE season = %s AND prop = ANY(%s)", (TEST, props_c))
+            with cur.copy("""COPY nba_score.baseline_history_h (season, game_date, player_id, game_id, prop, anchor, role_tier, var_band, proj_min, rate36,
+                             offs, lines, p_more, p_raw) FROM STDIN""") as cp:
+                for row in out:
+                    cp.write_row(row)
+        conn.commit(); conn.close()
+        log(f"{TEST} combos: {len(rows):,} rungs -> {len(out):,} player-game-prop rows loaded ({props_c}) | {r.stdout.strip().splitlines()[-1][:160]}")
+        for p in (cfile, cbf):
+            try:
+                p.unlink()
+            except OSError:
+                pass
+        PAIRS.clear()
     for pair in PAIRS:
         env = dict(os.environ, BT_TEST=TEST, BT_TRAIN=TRAIN, BT_PROPS=pair, BT_LADDER_STEPS=os.environ.get("BT_LADDER_STEPS") or "10", BT_INJURY="1", BT_TAG="hh")
         r = subprocess.run([sys.executable, str(bfile)], cwd=str(ROOT), env=env, capture_output=True, text=True)
