@@ -742,7 +742,7 @@ def main():
                 l0 = st_[0]["line"] if st_ else (max(r["line"] for r in gs_) + min(r["line"] for r in ds_)) / 2.0
                 gs_.sort(key=lambda r: abs(r["line"] - l0))
                 ds_.sort(key=lambda r: abs(r["line"] - l0))
-                cands.append((key, l0, bool(st_), gs_[:3], ds_[:3]))
+                cands.append((key, l0, bool(st_), gs_[:3], ds_[:3], st_[0] if st_ else None))
             rng.shuffle(cands)
             cands.sort(key=lambda c: c[2])                      # ladders with no regular line first (they are rare)
             anchors_all = sorted([r for r in std if r["allow"] in ("", "over", "under_or_over")], key=lambda r: (r["game"], r["player"], r["stat"]))
@@ -782,7 +782,7 @@ def main():
                 return legs_
             budget_a = int(MAX_Q * 0.5)
             read, players_done, stats_n, n_ns = [], set(), {}, 0
-            for key, l0, has_std, gs_, ds_ in cands:
+            for key, l0, has_std, gs_, ds_, st0_ in cands:
                 if getattr(q, "n", 0) >= budget_a:
                     break
                 if key[0] in players_done or stats_n.get(key[1], 0) >= 3 or (not has_std and n_ns >= 4):
@@ -793,6 +793,9 @@ def main():
                 players_done.add(key[0])
                 stats_n[key[1]] = stats_n.get(key[1], 0) + 1
                 n_ns += 0 if has_std else 1
+                if st0_ is not None:                              # the ladder's own regular line in the rung's seat: the exact 1.00 for these anchors
+                    for k in (1, 3, 5):
+                        run("LAD", [leg(st0_)] + anc[:k], f"S0|+0|{l0:g}|{key[0]} | {key[1]}")
                 for kind_, rr in (("G", gs_), ("D", ds_)):
                     for i, r in enumerate(rr):
                         tier_ = f"{'' if has_std else 'NS-'}{kind_}{i + 1}"
