@@ -90,7 +90,7 @@ export function nbaPayout(pricing, app, mode, legs, hit) {
       if (n === 2) return nbaCompress(pricing, 3 * fprod);
       const r = (pp.power_alt_v3 || {})[String(n)];
       if (!r) return null;
-      return nbaGridDown(Number(r.b) * Math.pow(fprod, Number(r.a)));
+      return Math.min(2000, nbaGridDown(Number(r.b) * Math.pow(fprod, Number(r.a))));   // PrizePicks' ceiling is 2000x
     }
     let base;
     if (n === 2) base = Number((pp.flex_2pick_base || {})[String(hits)] || 0);

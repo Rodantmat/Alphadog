@@ -971,3 +971,9 @@ allowed for. MAX bonus 4-pick = 1.04 (three slips: 1.039 / 1.039 / 1.040; was 1.
 ## 7. Maintenance rule
 
 Whenever a phase closes or a decision changes: update the relevant checkpoint section, add a `NBA_PROJECT_LOG.md` entry, update the config key, and update §2/§3/§6 of this file. This file is the map; the checkpoints are the territory.
+
+### 2026-11-18 (evening) - PrizePicks goblin / demon multiplier rounds (owner 15:26 PT)
+- Three fresh quote rounds from PrizePicks' own quote engine (runs 44420821327 grid, 44420833807 stack, 44426135310 grid; 977 lineups, 2-6 picks, Power + Flex, every goblin / demon rung, More and Less), checked with `research_pp_round_check.py` (per tier, size, structure) and `research_pp_quote_dump.py` (offline fit).
+- All-standard lineups: exact (Power 3 / 6 / 10 / 20 / 37.5 and every Flex tier). With alternates the grader stays a LOWER bound by design (Power mean 0.93-0.96 of the quote); PrizePicks' alternate price is not a function of the legs' own prices alone (best central law lands within 6% on 74-89% of lineups), so only the quote of the real slip is exact - which is what the live screen shows and grades on (SLIPQ + quote gate).
+- Found and fixed: Power with alternates had no ceiling (a 6-demon lineup priced 4,581x, PrizePicks pays 2,000x max) - capped at 2000 in `build_slip_engine.pp_payout`, `nba_market.pp_payout_v3` and `main_ui/pricing.js` (main UI v1.5.7).
+- Known, left as is: stacked lineups of 3+ demons can price up to +20-39% above the quote on 5-17% of such lineups (a refit with a per-alternate term did not fix it out of sample); the quote gate (quote >= 0.95 x model) keeps them off the screen.

@@ -183,7 +183,7 @@ def pp_payout(k, hits, structure, fprod, alt, same_game=False):
         if k == 2:
             return compress(3.0 * fprod)
         b, a = payout_v3_rules()['power_alt'][k]
-        return grid_down(b * fprod ** a)
+        return min(2000.0, grid_down(b * fprod ** a))      # PrizePicks' ceiling: no lineup is quoted above 2000x (3 quote rounds 2026-11-18)
     base = FLEX.get((k, hits), 0.0)
     if base <= 0:
         return 0.0

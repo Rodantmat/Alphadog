@@ -451,7 +451,7 @@ BEGIN
     END IF;
     SELECT rule_json->(p_n::text) INTO r FROM nba_config.pp_slip_rules WHERE rule_key = 'power_alt_v3';
     IF r IS NULL THEN RAISE EXCEPTION 'pp_slip_rules power_alt_v3 has no size % - never guessed', p_n; END IF;
-    RETURN nba_market.pp_grid_down((r->>'b')::float8 * power(fp, (r->>'a')::float8));
+    RETURN least(2000, nba_market.pp_grid_down((r->>'b')::float8 * power(fp, (r->>'a')::float8)));
   END IF;
   base := CASE (p_n, p_hits) WHEN (2,2) THEN 2 WHEN (2,1) THEN 0.5 WHEN (3,3) THEN 3 WHEN (3,2) THEN 1 WHEN (4,4) THEN 6 WHEN (4,3) THEN 1.5
                WHEN (5,5) THEN 10 WHEN (5,4) THEN 2 WHEN (5,3) THEN 0.4 WHEN (6,6) THEN 25 WHEN (6,5) THEN 2 WHEN (6,4) THEN 0.4 ELSE 0 END;
