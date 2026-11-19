@@ -261,7 +261,8 @@ def main():
     # false-positive yardstick: shuffle results inside each slate x side (keeps every slate's hit rate, destroys every link to the features)
     fp = []
     for i in range(5):
-        d2 = df.copy(); d2["hs"] = d2.groupby(["gd", "sd"])["hit"].transform(lambda x: rng.permutation(x.values)) * d2["m"]
+        d2 = df.copy(); d2["_pb"] = np.round(d2["m"] / 1.8708 / 0.03).astype(int) if ALT else 0     # priced legs: shuffle only among legs of the same price (0.03x steps)
+        d2["hs"] = d2.groupby(["gd", "sd", "_pb"])["hit"].transform(lambda x: rng.permutation(x.values)) * d2["m"]
         k2, _ = scan(d2, F, "hs", "shuffled", verbose=False); fp.append(len(k2))
     print(f"CS|false-positive yardstick: the same scan on results shuffled inside each slate keeps {fp} cells (5 shuffles) against {len(kept)} on the real results", flush=True)
     print("CS|DONE", flush=True)
