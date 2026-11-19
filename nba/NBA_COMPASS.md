@@ -1061,3 +1061,5 @@ Script: research_tier_prior_leak.py (runs nba/backtest/classification_ladder_v12
 - ALSO: production's empirical cells are trained on earlier months whose tiers are month-end (train / serve skew) - same one-block fix.
 - NEXT (owner decision needed before anything is written): rebuild an honest history into PARALLEL tables (baseline_history and the chain after it), ~3 min a prop pair a
   season to build; then re-measure everything on it - which props / line types (alternates, low-count props) keep real skill, then the leg ROI model, then the strategies.
+
+- 2026-11-19 11:45 PT: the honest-rebuild adjustment has its own working document, NBA_HONEST_REBUILD.md (state, decisions with reasons and sources, parallel tables, scripts, target, open items, log). It is updated after every move and every owner interaction (owner 11:20 PT). Read it first for anything about the rebuild.
