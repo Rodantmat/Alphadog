@@ -90,7 +90,7 @@ def iso_fit(raw, ret, nb=120):
 
 
 def load_pp(conn):
-    df = pd.read_sql("""SELECT season, game_date, prop, side, kind, factor::float8 factor, hit::int hit, hp::float8 hp
+    df = pd.read_sql("""SELECT season, game_date, player, prop, side, kind, factor::float8 factor, hit::int hit, hp::float8 hp
                         FROM nba_score._mf_study_fs WHERE hp IS NOT NULL AND hit IS NOT NULL AND factor > 0 AND kind IN ('standard', 'goblin', 'demon')""", conn)
     df["over"] = df["side"].str.lower().str[0].isin(["o", "m", "h"]).astype(float)
     df["be"] = np.minimum(.99, BASE / df["factor"]); df["m"] = 1.0 / df["be"]
@@ -121,8 +121,8 @@ def load_app(conn):
                 continue
             mm = float(l["m"]) * (1.8708 if APP == "underdog" else 1.0)
             rows.append((AF.season_of(d), d, l["prop"], float(str(l["side"]).lower()[0] in "omh"), "standard" if str(l.get("kind") or "main") == "main" else "alt",
-                         mm, int(h), float(l["p"])))
-    df = pd.DataFrame(rows, columns=["season", "game_date", "prop", "over", "kind", "m", "hit", "hp"])
+                         mm, int(h), float(l["p"]), str(l.get("player_id") or l.get("player") or "")))
+    df = pd.DataFrame(rows, columns=["season", "game_date", "prop", "over", "kind", "m", "hit", "hp", "player"])
     df["be"] = 1.0 / df["m"]
     try:
         conn.close()
