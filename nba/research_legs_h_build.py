@@ -101,6 +101,7 @@ def run_app():
             if not len(df):
                 continue
             df = df.drop_duplicates(["gd", "nm", "base_market", "side", "line"])
+            df = df[(df["kind"] == "standard") | df["f_model"].notna()].copy()          # an alternate with no stored price cannot be priced
             df["prop"] = df["base_market"].map(MK); df["player_id"] = df["nm"].map(ids)
             std = df[df["kind"] == "standard"].groupby(["gd", "nm", "base_market"])["line"].first().rename("std_line")
             df = df.join(std, on=["gd", "nm", "base_market"]); df["std_line"] = df["std_line"].fillna(df["anchor_line"])
