@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 12:55 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 12:25 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -179,6 +179,22 @@ Anomaly to check: Underdog R this season (3,107 legs) shows +11.7 for the honest
 
 Pipeline windows measured 11-17..11-19 (PT): P2A 03:31-03:46, P2B 08:06-09:15, P3 13:17-13:35.
 
+## 8c. RESULTS OF S2-S5 SO FAR (2026-11-19, real clock checked with the time tool)
+
+**S2 DONE - combos.** `baseline_history_h` now holds, per season (2024-25 / 2025-26 / 2026-27): singles (points, rebounds, assists, steals, blocks, turnovers, threes_made, fg3a) 23,585 / 24,369 / 4,401 rows per prop; combos (pra, pts_reb, pts_ast, reb_ast, stocks, fantasy_score, double_double) 165,095 / 170,583 / 30,807 rows.
+
+**S3 DONE - stored PrizePicks leg prices against real quotes** (`research_pp_price_validate.py`, runs pv / pv2; 10,200 real rungs on 29 dates). Stored model price / real: median 0.961 on the 2-pick read; on the sharp 6-pick read goblins 0.980, demons 0.871 (demons under-priced by the stored model). STACKED re-centring (stored price as an input + distance + level + tier + prop group, whole days held out): unbiased, mean abs error 4.7% goblins, 8.5% demons. Coefficients (const, log stored, (log stored)^2, distance, level, tier, rebounds, assists, threes, combo): goblin 0.1629, 0.4040, -0.5178, 0.5156, -0.0533, -0.0042, 0.0833, 0.0861, 0.3101, -0.0215; demon -0.0381, 1.1421, -0.0682, 0.0040, 0.0247, 0.0186, -0.1103, -0.1355, -0.1589, 0.0102. DECISION C7: history uses the STACKED price; LIVE must use real quotes (the quote tool), never the modelled price.
+- Under alternates are NEW this season (first seen 2026-10-21; 17,264 graded legs). The STACKED fit was trained on Over rungs only and mis-prices them (it produced a fake +17% "goblin Under" return). 111 real Under quotes: stored factor = 0.93-0.97 of real, mean abs error 7.5%. DECISION C8: Under alternates are priced stored / 0.95 and tagged "-u"; they stay OUT of strategy search until real Under quotes are in the hundreds per kind (one season, small sample, weak price).
+
+**S4 DONE - one honest leg table** `nba_score._lr_legs_h` (`research_legs_h_build.py`): PrizePicks 271,475 / 663,363 / 147,077 graded legs (85% / 94% / 92% with honest probability); Underdog 214,758 / 191,147 / 65,747; Sleeper 636,345 derived / 1,081,079 derived / 76,376 real; Fliff 636,345 derived / 1,081,079 derived / 42,206 real.
+
+**S5 - proof on honest inputs.**
+- Underdog (run s5_ud): in the blend the model gets weight 0.03-0.06, the price 0.50-0.55. BLEND is honest (slope 1.16 all history; 0.91 this season). This season: top 5 legs a slate predicted +4.5% -> real +4.0%; all positive legs (19 a slate) +2.6% -> +0.5%. On history only ~6 legs a slate are rated positive (+1.9% -> +0.3%). The board formula is still badly overstated (positive legs +18.6% predicted -> -17.6% real).
+- PrizePicks plain hit rates, regular lines (no model, `_lr_legs_h`): every prop, every season, Unders hit 0.50-0.53 and Overs 0.46-0.50; break-even is 0.542 (5/6-pick Flex) to 0.577 (2-pick Power). NO regular-line cell clears break-even on price alone. By kind (return at the leg's own price): regular Over -9% / -11% / -12%, regular Under -6% / -5% / -4%, goblin Over -0.3% / -2.9% / -5.0%, demon Over -18% / -20% / -33%. The honest baseline is biased to Unders on regular lines (says 0.53-0.58, real 0.50-0.53) -> must be re-centred by the blend, never used raw.
+- PrizePicks / Sleeper / Fliff proof runs s5_pp / s5_sl / s5_fl dispatched 12:10 PT.
+
+**Real live record this season (from 2026-10-20), for reconciliation.** PrizePicks live 116 slips +42.4u, shadow 578 +148.3u, backup 92 -28.3u; Underdog live 60 +21.7u, shadow 183 +24.2u, paper 32 -17.0u; Sleeper live 75 +14.2u; Fliff live 73 +26.1u; Betr live 34 -12.5u. PrizePicks live legs are mostly regular low-count lines (steals Under .529 n121, turnovers Under .505 n99, stocks Under .537 n95, turnovers Over .593 n81, blocks Under .633 n49; SE .05-.07). OPEN (O11): these hit rates are at or below break-even on average, so the positive units come from slip-level variance and a few high-pay hits, or from the correlation / structure of the slips - to be settled in S6 with the certified graders, not assumed.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -225,6 +241,8 @@ External (read for this work):
 - **2026-11-19 09:55 PT** - Owner: be sure, test / debug / simulate, pair with research (D3). Leak test validated with controls. Root cause located in the harness tier block. Proof on three seasons (v25 / v26 / v27). Own matching error found and fixed before reporting. Compass updated; three options offered.
 - **2026-11-19 11:05 PT** - Owner: option 1, parallel rebuild (D4). `research_honest_history_build.py` written, smoke-tested locally (assists+steals 2025-26: 595,253 rungs, 163 dates, 516 players, 300 s), three season builds dispatched (runs 44595794080 / 44595809486 / 44595823851). `research_honest_history_measure.py` written.
 - **2026-11-19 11:20 PT** - Owner asks for this document (D5). Created. NEXT: read the three builds, run the measurement, record the skill map here (section 8.2), then combos.
-- **2026-11-19 12:25 PT** - All three honest builds landed (178 MB). First measurement run hm (44598649248) recorded in section 8a: honest skill beyond the price is +3 to +6 pts on goblins / demons / Underdog alternates, +1 to +2 on PrizePicks regular lines; raw probability x multiplier loses on its top 5%. NEXT: (1) combos honest build (O2); (2) leg-ROI blend on honest inputs (O10); (3) Underdog R anomaly (O9); then strategies.
+- **2026-11-19 11:28 PT** (was mis-stamped 12:25) - All three honest builds landed (178 MB). First measurement run hm (44598649248) recorded in section 8a: honest skill beyond the price is +3 to +6 pts on goblins / demons / Underdog alternates, +1 to +2 on PrizePicks regular lines; raw probability x multiplier loses on its top 5%. NEXT: (1) combos honest build (O2); (2) leg-ROI blend on honest inputs (O10); (3) Underdog R anomaly (O9); then strategies.
 - **2026-11-19 11:34 PT** - Owner: continue non-stop until done and wired live; report only for decisions that truly need him; goals for strategies: highest steady ROI first, then low drawdown and droughts (D6).
-- **2026-11-19 12:55 PT** - Found a SECOND copy of the month-end tier block in `nba/backtest/combos_ladder_v1.py` (lines 108-112); combos build extended and dispatched for three seasons (S2). Found `nba_market.board_tiers_v2` = PrizePicks board with kind / tier for all three seasons, no price -> stage S3 (price model on real quotes) added. Work plan written (section 8b).
+- **2026-11-19 11:38 PT** (was mis-stamped 12:55) - Found a SECOND copy of the month-end tier block in `nba/backtest/combos_ladder_v1.py` (lines 108-112); combos build extended and dispatched for three seasons (S2). Found `nba_market.board_tiers_v2` = PrizePicks board with kind / tier for all three seasons, no price -> stage S3 (price model on real quotes) added. Work plan written (section 8b).
+- **2026-11-19 11:40-12:05 PT** - S2 combos landed for three seasons. S3: stored PrizePicks prices validated against 10,200 real quotes and re-centred (STACKED, C7). S4: `_lr_legs_h` built for four apps (deadlock from concurrent index builds fixed by running apps in one job; unpriced alternates dropped; `hit` cast). S5 Underdog read. Real live record and PrizePicks live-leg audit pulled. All in section 8c.
+- **2026-11-19 12:08-12:25 PT** - Plain hit-rate scan of PrizePicks regular lines: no price-only edge anywhere. Found Under alternates (new this season) mis-priced by the Over-trained fit -> fixed in the build (C8), rebuild queued behind s5_pp. Proof runs s5_pp / s5_sl / s5_fl dispatched. Doc timestamps corrected (two entries were stamped an hour late).
