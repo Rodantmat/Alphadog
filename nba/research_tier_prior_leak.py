@@ -253,8 +253,8 @@ def main():
             def tb(x):
                 q = np.quantile(x, [.2, .8]); return 100 * (y_[x >= q[1]].mean() - y_[x <= q[0]].mean())
             fr = (k["proj_mean"] - (k["anchor_h"] + 0.5)).values
-            print(f"TL|rung {off:+d}: n {len(k):4d} hit {y_.mean():.3f} | live baseline mean {k['live_base'].mean():.3f} spread {xl.std():.3f} top-bottom {tb(xl.values):+5.1f} | "
-                  f"harness honest mean {k['p_over_h'].mean():.3f} spread {xh.std():.3f} top-bottom {tb(xh.values):+5.1f} | corr of the two {np.corrcoef(xl, xh)[0, 1]:+.2f} | "
+            print(f"TL|rung {off:+d}: n {len(k):4d} hit {y_.mean():.3f} | live baseline mean {k['live_base'].mean():.3f} spread {xl.std():.3f} top-bottom {tb(np.asarray(xl)):+5.1f} | "
+                  f"harness honest mean {k['p_over_h'].mean():.3f} spread {xh.std():.3f} top-bottom {tb(np.asarray(xh)):+5.1f} | corr of the two {np.corrcoef(xl, xh)[0, 1]:+.2f} | "
                   f"harness p vs: projected mean inside the rung {np.corrcoef(xh, fr)[0, 1]:+.2f}, tier prior {np.corrcoef(xh, k['tier_prior'])[0, 1]:+.2f}, games played {np.corrcoef(xh, k['n_rate'])[0, 1]:+.2f}", flush=True)
         _s = JE.sort_values("p_over_h"); _c = ["GAME_DATE", "PLAYER_ID", "line", "anchor_h", "off", "live_base", "p_over_h", "p_over_s", "hp", "hit", "proj_mean", "tier_prior", "n_rate"]
         print("TL|sample rows (lowest / highest harness p at rung 0):"); print(_s[_s["off"] == 0][_c].head(6).to_string()); print(_s[_s["off"] == 0][_c].tail(6).to_string(), flush=True)
