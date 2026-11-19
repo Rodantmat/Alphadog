@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 13:34 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 13:54 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -303,6 +303,33 @@ Reading with the measured leg rates: all regular Unders hit 0.51-0.53 on every a
 - On Underdog 2-pick Power is the cheapest (0.5345), then 3-pick Power, 4-pick Flex, 4-pick Power, 6-pick Flex; 3-pick Flex (0.5539), 5-pick Power and 6-pick Power are the expensive ones. (Owner rule: no Underdog Power above 2 picks - kept; the table is information.)
 - Betr boards carry Underdog's lines (event ids "live-underdog-..."), priced on Betr's own table: no separate honest history; its verdict follows Underdog's regular legs and the referee's played line.
 
+## 8j. SECOND LEAD, THE STRONGEST SO FAR - Underdog Unders half a point below the market (2026-11-19 13:54 PT)
+
+Runs: cs3_alt 44620445xxx (`research_cell_scan_honest.py CS_KIND=alt`, Underdog alternates at REAL multipliers, 268,265 legs, 30,158 cells), cs3_pp 44620459760 (PrizePicks with line move since morning: 0 cells kept, 0-1 on shuffles; morning boards exist on 30 dates only), hu 44622145818 (`research_ud_halfpoint_under.py`).
+- Alternates scan kept 31 cells; 28 of them are slices of ONE family: an **Under on an Underdog line that sits half a point BELOW PrizePicks' regular line for the same player / prop / day, paid above 1.0x** (tier B1; in practice Underdog's main line shaded half a point down with the Under paying ~1.07x). No model involved. (The shuffle yardstick of that run is not valid for priced legs - noted; the evidence is below.)
+- Per leg, real multipliers: all such legs 9,771 on 338 slates (28 a slate): **+3.5% [+0.8 .. +6.4] / +2.5% [-0.3 .. +5.3] / +6.5% [-0.2 .. +13.8]** by season, pooled +3.0% [+1.2 .. +4.6]; by phase +2.6% / +3.2% / +3.8% (not an early-season effect). Dose-response with the price: paid 1.01-1.04x +0.7%, 1.05-1.08x +1.3%, 1.09-1.12x +10.0% [+5.6 .. +14.4] (+11.0 / +7.8 / +3.8 by season), 1.13-1.20x +9.7%. By prop: assists +9.4% (+16.8 / +3.6 / +5.3), rebounds +6.4% (+10.3 / +4.5 / +1.8), reb_ast +0.3%, points -1.7%, pra -1.5%, pts_ast -8.0%. Line 3-5.5: +8.0% (+14.4 / +4.3 / +2.8).
+- It is specific: the same Under ONE full point below PrizePicks loses (-12.5%); at the same line paying 1.0-1.08x it is flat (+0.7%); B1 Unders as a whole lose (-5.9 / -8.1 / -9.3%). Overs: nothing.
+- Checks: board snapshots of both apps carry the same timestamp, 22:40 UTC, before the first tip, in both history seasons (5 dates sampled, 0 rows after tip) - not an in-play artifact. 2024-25 multipliers are derived from the feed price, 2025-26 and 2026-27 are Underdog's own stored multipliers; the effect holds in the real-multiplier seasons (+2.5%, +6.5%). Luck check: about 500 single cells were looked at and this one is ~2.9 standard errors - on its own borderline; what lifts it is the dose-response, the three-season sign, the mechanism, and the fact that the deployed Underdog "T1 weighted:rebounds_B1_U" strategy came from model-free cell research on the same family and is positive live (Underdog live 60 slips +21.7u).
+- As slips (pool = the family's legs of the slate, one per player, max 2 of a game, highest multiplier first; real tables and leg factors; three seasons, ALL = pooled):
+| slips a slate | structure | 2024-25 | 2025-26 | 2026-27 | ALL |
+|---|---|---|---|---|---|
+| 1 | 2-pick Standard | +13.9% | +10.1% | +16.4% | 337 slips +12.4% [-6 .. +29], +41.8u, dd 24.1, drought 13 |
+| 3 | 2-pick Standard | +19.4% [+5 .. +36] | +20.9% [+5 .. +38] | +29.3% [-10 .. +62] | 999 slips **+20.9% [+10 .. +32]**, +209.2u, dd 21.1, drought 5 |
+| 5 | 2-pick Standard | +28.0% | +6.4% | +29.2% | 1,599 slips +18.1% [+11 .. +26], +288.7u, dd 44.3, drought 3 |
+| 3 | 3-pick Standard | +52.9% | +41.5% | +88.2% | 951 slips +50.4% [+33 .. +68], +479.1u, dd 30.0, drought 10 |
+| 3 | 4-pick Standard | +46.1% | +2.5% | +105.9% | 895 slips +28.8% [+5 .. +56], dd 64.2, drought 18 |
+| 3 | 5-pick Standard | +43.2% | -21.2% | +129.2% | 814 slips +17.1% [-13 .. +51], dd 105.4, drought 26 |
+| 3 | 6-pick Standard | +15.9% | +5.5% | +67.5% | 740 slips +13.5% [-34 .. +62], dd 169.1, drought 43 |
+| 3 | 3-pick Flex | +28.4% | +15.6% | +33.8% | 951 slips +22.8% [+16 .. +31], +217.1u, dd 10.7, drought 2 |
+| 3 | 4-pick Flex | +42.5% | +11.9% | +82.5% | 895 slips +30.3% [+17 .. +46], dd 29.8, drought 3 |
+| 3 | 5-pick Flex | +39.8% | -0.2% | +98.3% | 814 slips +23.9% [+6 .. +44], dd 33.7, drought 6 |
+| 3 | 6-pick Flex | +37.3% | +23.7% | +106.8% | 740 slips +34.2% [+3 .. +62], dd 47.2, drought 9 |
+  Only legs paid 1.08x and more, 3 a slate, 2-pick Standard: 607 slips +26.1% [+12 .. +40] (+17.7 / +39.3 / +62.6), dd 24.1, drought 6.
+  Playability: these legs are often Underdog "prediction" lines (today's slip screen marks one "PREDICTION - NO FLEX"), and the owner's rule is no Underdog Standard above 2 picks -> the playable form today is **2-pick Standard, 3 a slate**. The larger sizes are information for his decision.
+- STATUS: lead with three-season support, NOT yet a certified strategy. Next: referee line added (this section's cell, daily); then walk-forward confirmation with the selection rule frozen today (the next slates are the test), a check of how many of these legs are prediction-market lines per slate, overlap with the live T1 portfolio, and exposure rules. Nothing live changes.
+
+**O14 (new, from placing today's slips with the owner 13:41-13:52 PT):** Underdog paid 3.27x on the 2-pick Standard Cam Spencer 3.5 Reb Under (0.8x) + Donovan Clingan 1.5 Blk Under (1.12x); our table gives 3.5 x 0.8 x 1.12 = 3.13x. The 3-pick Flex of regular legs matched (3.25 / 1.09). The Underdog grader may under-pay mixed-factor 2-picks by ~4% - probe with `ud_payout_quotes` before the 8j slips are priced for real. Fliff: 5 slips placed at $10; one leg price had moved (Wells 0.5 Steals More 1.70x -> 1.60x, slip 6.42x -> 6.04x).
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -361,3 +388,5 @@ External (read for this work):
 - **2026-11-19 12:44-12:48 PT** - Referee fixed for Underdog played slips and given the regular-Under line; Underdog lead tested as slips on three seasons (section 8g): two seasons positive, one negative, pooled not proven. Stopped new runs before the P3 window (13:17-13:35). NEXT after 13:40: shadow honest leg ROI written at P3 beside the board's number (O13); Betr on honest inputs; keep the referee running.
 - **2026-11-19 12:52 PT** - Owner: "I already told you, no stop! Keep working." Standing: do not end a turn while work remains; keep going through pipeline windows with work that does not load the database.
 - **2026-11-19 12:52-13:13 PT** - Honest cell scan built (26 features incl. injury report at pick time, shuffle yardstick), run on Underdog and PrizePicks regular legs: nothing beyond chance (section 8h). Online reading added. NEXT (after the P3 window, 13:36): the same scan on Underdog alternates at their real multipliers (CS_KIND=alt); line-movement features (morning board to P3 board); Betr.
+- **2026-11-19 13:36-13:52 PT** - Owner interaction: asked for help placing today's slips ("continue with your work on the background, but help me get the slips done first"). Built 5 Fliff slips and 2 Underdog entries in his Chrome ($10 each); he pressed Submit / Play himself each time. Fliff cart driven through the page's own app frame (mouse clicks time out on that small window). O14 logged.
+- **2026-11-19 13:36-13:54 PT** - Alternates scan and half-point map / slips run in the background; second lead found and documented (section 8j); referee gets its line. PrizePicks line-move scan: nothing.
