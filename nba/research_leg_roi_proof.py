@@ -13,7 +13,8 @@ Sections:
                (product of the legs' own multipliers): predicted vs real
 LP_SIM = 1   planted truth: results are re-drawn from a KNOWN hit chance; the suite must recover the true ROI (checks the code itself, no leak, no bias)
 LP_SIM = 2   placebo: the model probability is shuffled inside each slate (it carries no information); the suite must give it ~zero weight and find no false edge
-Env: DATABASE_URL, LR_APP, LR_BASE, LR_WARM, LR_STEP, LR_MAXM, LP_SIM, LP_BOOT (300), LP_PRIOR (comma list, BLEND coefficients to pull toward), LP_LAM (pull strength, 0).
+Env: DATABASE_URL, LR_APP, LR_BASE, LR_WARM, LR_STEP, LR_MAXM, LP_SIM, LP_BOOT (300), LP_PRIOR (comma list, BLEND coefficients to pull toward), LP_LAM (pull strength, 0),
+LP_HALF (comma list of half-lives in slates: extra versions RECENT-h whose fit weights recent slates more and is pulled by LP_LAM toward the all-history fit).
 """
 import os
 import sys
@@ -28,6 +29,7 @@ import research_leg_roi_model as R                         # noqa: E402
 SIM = int(os.environ.get("LP_SIM") or 0)
 BOOT = int(os.environ.get("LP_BOOT") or 300)
 LAM = float(os.environ.get("LP_LAM") or 0)
+HALF = [float(x) for x in (os.environ.get("LP_HALF") or "").split(",") if x.strip()]
 PRIOR = [float(x) for x in (os.environ.get("LP_PRIOR") or "").split(",") if x.strip()]
 RNG = np.random.default_rng(20261118)
 PP_A = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
@@ -35,11 +37,11 @@ PP_E = {2: .904, 3: .936, 4: .969, 5: .986, 6: 1.0}
 log = R.log; lg = R.lg; APP = R.APP; WARM = R.WARM; STEP = R.STEP
 
 
-def fit(X, y, w0, lam):
-    w = w0.copy()
+def fit(X, y, w0, lam, sw=None):
+    w = w0.copy(); sw = np.ones(len(y)) if sw is None else sw
     for _ in range(50):
-        p = 1 / (1 + np.exp(-X @ w)); W = p * (1 - p) + 1e-9
-        g = X.T @ (y - p) - (lam + 1e-3) * (w - w0); H = (X * W[:, None]).T @ X + (lam + 1e-3) * np.eye(X.shape[1])
+        p = 1 / (1 + np.exp(-X @ w)); W = sw * (p * (1 - p) + 1e-9)
+        g = X.T @ (sw * (y - p)) - (lam + 1e-3) * (w - w0); H = (X * W[:, None]).T @ X + (lam + 1e-3) * np.eye(X.shape[1])
         step = np.linalg.solve(H, g); w = w + step
         if np.abs(step).max() < 1e-7:
             break
@@ -146,6 +148,7 @@ def main():
         w0[:len(PRIOR)] = PRIOR[:X.shape[1]]
     log(f"{APP} legs {len(df):,} on {len(days)} slates {days[0]} .. {days[-1]}; warm-up {WARM}, refit every {STEP}; parameters {X.shape[1]}; pull {LAM} toward {PRIOR or 'none'}")
     pB = np.full(len(df), np.nan); pN = np.full(len(df), np.nan); coefs = []
+    pH = {h: np.full(len(df), np.nan) for h in HALF}; coefH = {h: [] for h in HALF}
     hb = np.clip(np.floor(hp * 20), 0, 19).astype(int)
     for start in range(WARM, len(days), STEP):
         tr = di < start; te = (di >= start) & (di < start + STEP)
@@ -159,6 +162,9 @@ def main():
         pc = np.clip(hp[te] + gap, .005, .995)
         pB[te] = np.clip(pc + WB[te] * (np.minimum(.99, KP[te] * be[te]) - pc), .005, .995)
         wv = fit(X[tr], y[tr], w0, LAM); pN[te] = 1 / (1 + np.exp(-X[te] @ wv)); coefs.append(wv)
+        for H_ in HALF:                                       # recent slates count more (half-life H_ slates), pulled toward the all-history fit by LP_LAM
+            sw = 0.5 ** ((start - 1 - di[tr]) / H_)
+            wh = fit(X[tr], y[tr], wv, LAM, sw); pH[H_][te] = 1 / (1 + np.exp(-X[te] @ wh)); coefH[H_].append(wh)
     coefs = np.array(coefs)
     names = ["const", "model", "price", "over", "gob/alt", "demon", "price*gob", "price*dem", "model*gob", "model*dem", "over*gob", "combo", "lowcount", "lowc*dem"]
     print("LP|BLEND coefficients (first fit / last fit / spread across fits): " + "; ".join(
@@ -180,6 +186,11 @@ def main():
             fI[b] = fi(rawN[b]) if fi else rawN[b]; fL[b] = fl(rawN[b]) if fl else rawN[b]
     ev = np.isfinite(fI) & np.isfinite(fL)
     V = {"BOARD": pB * m - 1, "BLEND": rawN, "FINAL-ISO": fI, "FINAL-LIN": fL}
+    for h in HALF:
+        V[f"RECENT-{h:g}"] = pH[h] * m - 1; c = np.array(coefH[h])
+        print(f"LP|RECENT-{h:g} model / price weight by fit: " + " ".join(f"{a:+.2f}/{b:+.2f}" for a, b in c[:: max(1, len(c) // 14), 1:3]), flush=True)
+    c = coefs
+    print("LP|BLEND (all history) model / price weight by fit: " + " ".join(f"{a:+.2f}/{b:+.2f}" for a, b in c[:: max(1, len(c) // 14), 1:3]), flush=True)
     dsc = np.unique(di[ev]); remap = {d: i for i, d in enumerate(dsc)}; dd = np.array([remap[d] for d in di[ev]]); nd = len(dsc)
     rr = ret[ev]; yy = y[ev]; mm = m[ev]; kk = kind[ev]
     log(f"scored {int(ev.sum()):,} legs on {nd} slates; hit {yy.mean():.3f}; all legs return {100 * rr.mean():+.1f}%")
@@ -199,10 +210,20 @@ def main():
         r = res[name]; b = bt[name]
         print(f"LP|{name:10s} top 5 a slate: predicted {100 * r[3]:+6.1f}% real {100 * r[2]:+6.1f}% {pct90(b[:, 2])} | rated positive: {r[6]:6.1f} legs a slate, "
               f"predicted {100 * r[5]:+5.1f}% real {100 * r[4]:+5.1f}% {pct90(b[:, 4])}", flush=True)
-    for name in ("BLEND", "FINAL-ISO", "FINAL-LIN"):
+    for name in [k for k in V if k != "BOARD"]:
         d5 = bt[name][:, 2] - bt["BOARD"][:, 2]; dp = bt[name][:, 4] - bt["BOARD"][:, 4]
         print(f"LP|{name:10s} minus BOARD: top 5 a slate {100 * (res[name][2] - res['BOARD'][2]):+6.1f} pts {pct90(d5)}, better in {100 * (d5 > 0).mean():3.0f}% of draws | "
               f"rated-positive legs {100 * (res[name][4] - res['BOARD'][4]):+6.1f} pts {pct90(dp)}, better in {100 * (dp > 0).mean():3.0f}% of draws", flush=True)
+    seas = df["season"].values[ev]; sea_of = {}
+    for s_, d_ in zip(seas, dd):
+        sea_of[d_] = s_
+    sea_arr = np.array([sea_of[i] for i in range(nd)])
+    print(f"\nLP|=== 2b BY SEASON - {APP.upper()}: slope | top 5 a slate predicted -> real | rated positive (legs a slate) predicted -> real ===")
+    for sname in sorted(set(sea_arr)):
+        idx = np.flatnonzero(sea_arr == sname)
+        for name, roi_all in V.items():
+            roi = roi_all[ev]; qe = np.quantile(roi, np.linspace(0, 1, 41)[1:-1]); r = summarize(slate_stats(roi, rr, dd, nd, qe), idx)
+            print(f"LP|  {sname} ({len(idx):3d} slates) {name:10s} slope {r[0]:5.2f} | top 5: {100 * r[3]:+6.1f}% -> {100 * r[2]:+6.1f}% | positive ({r[6]:6.1f}): {100 * r[5]:+5.1f}% -> {100 * r[4]:+5.1f}%", flush=True)
     if SIM == 1:
         tr_roi = (p_true * m - 1)[ev]
         print("\nLP|=== PLANTED TRUTH CHECK: predicted ROI against the TRUE ROI that generated the results ===")
@@ -235,7 +256,7 @@ def main():
     # ---------- 4: slips
     pl = df["player"].astype(str).values[ev]
     print(f"\nLP|=== 4 SLIPS - {APP.upper()}: slips from each version's best legs (one leg a player, non-overlapping). Payout = {'real Power table x (leg prices)^e' if APP == 'prizepicks' else 'product of the legs own multipliers'} ===")
-    for name in ("BOARD", "BLEND", "FINAL-ISO", "FINAL-LIN"):
+    for name in V:
         roi = V[name][ev]; order = np.lexsort((-roi, dd)); bounds = np.flatnonzero(np.r_[True, dd[order][1:] != dd[order][:-1], True])
         picks = []
         for a_, b_ in zip(bounds[:-1], bounds[1:]):
