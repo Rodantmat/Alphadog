@@ -667,6 +667,61 @@ def main():
             save("complete (grid)")
             return 0
 
+        if MODE == "ladder":
+            # LADDER (2026-11-18, owner 16:39 PT: "the tier 1 goblin is a little under the regular - understand how much; the same
+            # for demons, tier 2, tier 3, tier 4 ... different structures, compositions, prop lines, tiers"). A CONTROLLED program:
+            # whole ladders (every goblin and demon rung of one player's stat), each rung quoted as the ONLY alternate beside the
+            # same regular More legs from other games, at 2, 3, 4, 5 and 6 picks (Power + Flex tiers each) - so the only thing that
+            # changes between quotes is the rung. More on every rung, Less where PrizePicks opens it. Section LAD (note = tier,
+            # rungs from the regular line, regular line, player | stat). Deepest ladders first, at most 2 per stat.
+            lad = {}
+            for r in rows:
+                lad.setdefault((r["player"], r["stat"]), []).append(r)
+            cands = []
+            for key, v in lad.items():
+                st_ = [r for r in v if r["odds"] == "standard"]
+                if len(st_) != 1:
+                    continue
+                l0 = st_[0]["line"]
+                gs = sorted([r for r in v if r["odds"] == "goblin"], key=lambda r: abs(r["line"] - l0))
+                ds = sorted([r for r in v if r["odds"] == "demon"], key=lambda r: abs(r["line"] - l0))
+                if gs and ds:
+                    cands.append((len(gs) + len(ds), key, st_[0], gs, ds))
+            cands.sort(key=lambda c: (-c[0], c[1]))
+            anchors_all = sorted([r for r in std if r["allow"] in ("", "over", "under_or_over")], key=lambda r: (r["game"], r["player"], r["stat"]))
+            per_stat, done_l = {}, 0
+            result["meta"].update({"mode": "ladder", "ladders_available": len(cands)})
+            print(f"LADDER|ladders with goblins and demons={len(cands)}|budget={MAX_Q}", flush=True)
+            for _n, key, st0, gs, ds in cands:
+                if getattr(q, "n", 0) >= MAX_Q - 5:
+                    break
+                if per_stat.get(key[1], 0) >= 2:
+                    continue
+                anchors, seen_g = [], {st0["game"]}
+                for x in anchors_all:
+                    if x["game"] in seen_g or x["player"] == key[0]:
+                        continue
+                    anchors.append(leg(x))
+                    seen_g.add(x["game"])
+                    if len(anchors) == 5:
+                        break
+                if len(anchors) < 2:
+                    continue
+                per_stat[key[1]] = per_stat.get(key[1], 0) + 1
+                done_l += 1
+                rungs = [("S0", st0)] + [(f"G{i + 1}", r) for i, r in enumerate(gs)] + [(f"D{i + 1}", r) for i, r in enumerate(ds)]
+                for tier_, r in rungs:
+                    sides = ["over"] + (["under"] if r["allow"] == "under_or_over" else [])
+                    for side in sides:
+                        for k in range(1, len(anchors) + 1):
+                            if getattr(q, "n", 0) >= MAX_Q:
+                                break
+                            run("LAD", [leg(r, side)] + anchors[:k],
+                                f"{tier_}{'u' if side == 'under' else ''}|{r['line'] - st0['line']:+g}|{st0['line']:g}|{key[0]} | {key[1]}")
+            result["meta"]["ladders_done"] = done_l
+            save("complete (ladder)")
+            return 0
+
         if MODE == "stack":
             # STACK (2026-10-20): slips made MOSTLY or ONLY of alternates - the large factor products the grid (<= 3 alternates)
             # never reaches. The research favours 5-6 goblins / demons taken Less (fp up to ~8); their payouts must be PrizePicks'

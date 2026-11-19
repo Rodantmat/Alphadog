@@ -16,17 +16,17 @@ import research_payout_proof as PP  # noqa: E402
 def main():
     since = os.environ.get("PR_SINCE") or "2026-10-18"
     conn = psycopg.connect(os.environ["DATABASE_URL"])
-    rows = conn.execute("""SELECT run_file, section, n, power, flex, legs FROM nba_market.pp_quote
+    rows = conn.execute("""SELECT run_file, section, n, power, flex, legs, note FROM nba_market.pp_quote
                            WHERE league = 7 AND status = 200 AND quoted_at >= %s ORDER BY run_file, seq""", (since,)).fetchall()
     fac = {}
-    for rf, sec, n, pw, fx, legs in rows:
-        if sec in ("LEG", "DRIFT", "LESS") and n == 2:
+    for rf, sec, n, pw, fx, legs, note in rows:
+        if sec in ("LEG", "DRIFT", "LESS", "LAD") and n == 2:
             alt = [l for l in legs if l.get("odds") in ("goblin", "demon")]
             p = ((pw or {}).get("2") or {}).get("2")
             if len(alt) == 1 and p:
                 fac[(rf, str(alt[0]["id"]), alt[0].get("side", "over"))] = float(p)
     out = 0
-    for rf, sec, n, pw, fx, legs in rows:
+    for rf, sec, n, pw, fx, legs, note in rows:
         if sec in ("LEG", "DRIFT", "LESS", "SLIPQ") or n < 2:
             continue
         parts, ok = [], True
@@ -45,7 +45,7 @@ def main():
         t = PP.tiers({"power": pw, "flex": fx}, n)
         pall = t.get(("power", n), 0)
         fl = ";".join(f"{h}={v:g}" for (s, h), v in sorted(t.items()) if s == "flex")
-        print(f"PD|{rf[-21:-5]}|{sec}|{n}|{sg}|{','.join(parts)}|{pall:g}|{fl}")
+        print(f"PD|{rf[-21:-5]}|{sec}|{n}|{sg}|{','.join(parts)}|{pall:g}|{fl}|{(note or '') if sec == 'LAD' else ''}")
         out += 1
     print(f"PDN|{out} lineups", flush=True)
     conn.close()
