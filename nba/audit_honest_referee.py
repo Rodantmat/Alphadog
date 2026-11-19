@@ -110,12 +110,14 @@ def main():
                 if len(un) >= 100:
                     put(app, win, "regular Unders, system top fifth", un[un["p"] >= un["p"].quantile(.8)], pcol="pred")
                     put(app, win, "regular Unders, all", un)
-            if app == "underdog" and len(s):                 # 8g lead as it would be played: the 6 regular Unders the system likes most each slate
-                un6 = s[(~s["side"].str.lower().str[0].isin(["o", "m", "h"])) & s["tier"].astype(str).str[:1].eq("R")].sort_values("p", ascending=False)
-                un6 = un6.drop_duplicates(["gd", "player_id"]).groupby("gd").head(6)
-                v6 = put(app, win, "regular Unders, system top 6 a slate", f(un6), pcol="pred")
+            if len(s):                                       # 8g / 8l lead as it would be played: the regular Unders the system likes most each slate
+                reg = s[(~s["side"].str.lower().str[0].isin(["o", "m", "h"])) & (s["tier"].astype(str).str[:1].isin(["R", ""]) | s["kind"].astype(str).isin(["standard", "main"]))]
+                reg = reg.sort_values("p", ascending=False).drop_duplicates(["gd", "player_id"])
+                v6 = put(app, win, "regular Unders, system top 6 a slate", f(reg.groupby("gd").head(6)), pcol="pred")
+                put(app, win, "regular Unders, system top 10 a slate", f(reg.groupby("gd").head(10)), pcol="pred")
                 if win == "season":
-                    verdict[(app, "8g top6")] = v6
+                    verdict[(app, "top6 U")] = v6
+            if app == "underdog":
                 shop = d[(d["kind"] == "standard") & (~d["over"])].merge(PPREG, on=["gd", "player_id", "prop"], how="inner")
                 put(app, win, "regular Unders, line 1+ above PrizePicks", f(shop[shop["line"] - shop["ppl"] >= .99]))
             v = put(app, win, "book rates positive (exact line)", f(d[d["br"] > 0]), pcol="br")
