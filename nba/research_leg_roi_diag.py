@@ -52,14 +52,14 @@ def block(df, label):
     v = lg(df["p"].values); d = v - lg(be)
     out.append(f"model-minus-price spread {d.std():.2f} (corr model/price {np.corrcoef(v, lg(be))[0, 1]:+.2f})")
     # ranking power inside price bands
-    q = pd.qcut(m, 10, labels=False, duplicates="drop"); gaps = []; wts = []
+    q = pd.qcut(m, 10, labels=False, duplicates="drop") if np.ptp(m) > 1e-6 else np.zeros(len(m)); q = np.nan_to_num(np.asarray(q, float)); gaps = []; wts = []
     for b in np.unique(q):
         k = q == b; r = d[k]
         if k.sum() < 200:
             continue
         hi = r >= np.quantile(r, .8); lo = r <= np.quantile(r, .2)
         gaps.append(y[k][hi].mean() - y[k][lo].mean()); wts.append(k.sum())
-    out.append(f"top-fifth minus bottom-fifth hit by model, same price: {100 * np.average(gaps, weights=wts):+5.1f} pts")
+    out.append(f"top-fifth minus bottom-fifth hit by model, same price: {100 * np.average(gaps, weights=wts) if wts else float('nan'):+5.1f} pts")
     print("LD|" + " | ".join(out), flush=True)
 
 
