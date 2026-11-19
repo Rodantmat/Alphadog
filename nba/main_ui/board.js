@@ -320,12 +320,16 @@ export function rowToApi(r, i, slate, games, insightCtx) {
 
 export async function loadLegs(sql, cfg, slate, { where = "", extra = [], limit = 200, withInsight = true, screen = true } = {}) {
   await loadCal(sql);
-  const rows = await q(sql, legsSql(where, limit, screen), legParams(cfg, slate.date, extra), 90000);   // 2026-11-06: was 20 s; the rebuild after a code version change ran 25-40 s while research jobs shared the database and the screen failed (owner 15:31 PT)
+  let rows = await q(sql, legsSql(where, limit, screen), legParams(cfg, slate.date, extra), 90000);   // 2026-11-06: was 20 s; the rebuild after a code version change ran 25-40 s while research jobs shared the database and the screen failed (owner 15:31 PT)
   let games = new Map();
   if (withInsight && rows.length) {
     const pids = [...new Set(rows.map(r => String(r.player_id)).filter(p => /^\d+$/.test(p)))];
     games = await recentGames(sql, pids, slate.date, 10);
   }
+  // 2026-11-18 (owner: "all legs can, should and must be parsed properly"): a PrizePicks leg PrizePicks' own board no longer carries at
+  // that line (kind unverified) is not placeable - left off the board when PrizePicks' board was read for the slate (a small remainder).
+  const ppAll = rows.filter(r => r.app === "prizepicks"), ppUnv = ppAll.filter(r => lineType(r) === "unverified");
+  if (screen && ppAll.length && ppUnv.length / ppAll.length < 0.10) rows = rows.filter(r => !(r.app === "prizepicks" && lineType(r) === "unverified"));
   return rows.map((r, i) => rowToApi(r, i, slate, games));
 }
 
@@ -553,20 +557,35 @@ export async function apiFilters(sql, cfg, slate, version) {
            FROM nba_market.board_tiers_v2 t JOIN mk ON mk.market_key = regexp_replace(t.base_market, '_(alternate|promo)$', '')
            WHERE t.game_date = $1::date AND t.bookmaker = 'prizepicks'
            ORDER BY t.player, mk.prop, t.side, t.line, array_position($5::text[], t.snapshot_label) NULLS LAST, t.built_at DESC),
+    -- 2026-11-18 (owner: "there are unverified legs in PP and that should not happen"): the counts read PrizePicks' OWN flag
+    -- (pp_board_row.odds) first, exactly as the board does - they used the inferred tier kind alone and showed ~200 "Unverified".
+    pbs AS (SELECT * FROM (VALUES ('Points','points'),('Pts+Rebs','pts_reb'),('Pts+Rebs+Asts','pra'),('Rebounds','rebounds'),('Pts+Asts','pts_ast'),('Rebs+Asts','reb_ast'),
+           ('Assists','assists'),('3-PT Made','threes_made'),('Steals','steals'),('Fantasy Score','fantasy_score'),('Blocked Shots','blocks'),('Blks+Stls','stocks'),
+           ('Double-Double','double_double'),('FG Attempted','fga'),('Offensive Rebounds','oreb'),('FG Made','fgm'),('3-PT Attempted','fg3a'),('Free Throws Made','ftm'),
+           ('Turnovers','turnovers'),('Free Throws Attempted','fta'),('Personal Fouls','personal_fouls'),('Defensive Rebounds','dreb')) v(stat, prop)),
+    pbr AS MATERIALIZED (SELECT DISTINCT ON (p.player, s.prop, p.line) p.player, s.prop, p.line, p.odds
+           FROM nba_market.pp_board_row p JOIN pbs s ON s.stat = p.stat
+           WHERE (p.start_time::timestamptz AT TIME ZONE 'America/Los_Angeles')::date = $1::date AND p.odds IN ('standard', 'goblin', 'demon')
+           ORDER BY p.player, s.prop, p.line, p.run_file DESC),
     um AS (SELECT DISTINCT ON (s.bookmaker, s.player, mk.prop, s.side, s.line) s.bookmaker, s.player, mk.prop, s.side, s.line, s.multiplier
            FROM nba_market.board_snapshots s JOIN mk ON mk.market_key = regexp_replace(s.market_key, '_(alternate|promo)$', '')
            WHERE s.game_date = $1::date AND s.bookmaker IN ('underdog', 'sleeper')
            ORDER BY s.bookmaker, s.player, mk.prop, s.side, s.line, array_position($5::text[], s.snapshot_label) NULLS LAST, s.fetched_at DESC)
-    SELECT bs.app, bs.prop, pk.kind pp_kind, um.multiplier::float app_mult, count(*)::int n,
+    SELECT bs.app, bs.prop, COALESCE(pb.odds, pk.kind) pp_kind, um.multiplier::float app_mult, count(*)::int n,
            max(bs.final_hp)::float max_hp, min(bs.final_hp)::float min_hp, max(bs.score)::float max_score, min(bs.score)::float min_score,
            max(bs.confidence)::float max_conf, min(bs.confidence)::float min_conf
     FROM bs
     LEFT JOIN pk ON bs.app = 'prizepicks' AND pk.player = bs.player AND pk.prop = bs.prop AND pk.side = bs.side AND pk.line = bs.line
+    LEFT JOIN pbr pb ON bs.app = 'prizepicks' AND pb.player = bs.player AND pb.prop = bs.prop AND pb.line = bs.line
     LEFT JOIN um ON um.bookmaker = bs.app AND um.player = bs.player AND um.prop = bs.prop AND um.side = bs.side AND um.line = bs.line
     GROUP BY 1, 2, 3, 4`, legParams(cfg, slate.date), 20000);
   const props = new Map(), types = new Map();
   const summary = { total_rows: 0, max_hp: 0, min_hp: 100, max_score: 0, min_score: 100, max_certainty: 0, min_certainty: 100 };
+  const ppN = rows.filter(r => r.app === "prizepicks").reduce((t, r) => t + r.n, 0);
+  const ppU = rows.filter(r => r.app === "prizepicks" && lineType(r) === "unverified").reduce((t, r) => t + r.n, 0);
+  const dropUnverified = ppN > 0 && ppU / ppN < 0.10;   // PrizePicks' board was read for this slate: the few legs it no longer carries are gone, not "unverified"
   for (const r of rows) {
+    if (dropUnverified && r.app === "prizepicks" && lineType(r) === "unverified") continue;
     const fam = propFamily(r.prop) === "single" ? "hitter" : "pitcher";
     if (!props.has(r.prop)) props.set(r.prop, { prop_family: fam, canonical_prop_key: r.prop, label: propLabel(r.prop), rows: 0 });
     props.get(r.prop).rows += r.n;
