@@ -722,6 +722,75 @@ def main():
             save("complete (ladder)")
             return 0
 
+        if MODE == "ladder2":
+            # LADDER2 (2026-11-18, owner 17:08 PT: "go as far as possible ... the most accurate number and logic"). Round 1 showed one
+            # hidden price per rung, read sharply by its 6-pick quote. This round: (A) MANY players - one ladder per player, the three
+            # nearest goblins and demons, More only, each at 2, 4 and 6 picks beside the same regular legs (section LAD; ladders with
+            # NO regular line included, note tier NS-G / NS-D by distance from the ladder's middle); (B) PAIRS - two rungs of different
+            # players and games in one slip at 2, 3, 4, 5, 6 picks (section LAD2, note = both tiers), every rung already read in (A).
+            rng = random.Random(int(os.getenv("PP_GRID_SEED", str(int(time.time()) // 3600))))
+            lad = {}
+            for r in rows:
+                lad.setdefault((r["player"], r["stat"]), []).append(r)
+            cands = []
+            for key, v in lad.items():
+                st_ = [r for r in v if r["odds"] == "standard"]
+                gs_ = [r for r in v if r["odds"] == "goblin"]
+                ds_ = [r for r in v if r["odds"] == "demon"]
+                if not gs_ or not ds_ or len(st_) > 1:
+                    continue
+                l0 = st_[0]["line"] if st_ else (max(r["line"] for r in gs_) + min(r["line"] for r in ds_)) / 2.0
+                gs_.sort(key=lambda r: abs(r["line"] - l0))
+                ds_.sort(key=lambda r: abs(r["line"] - l0))
+                cands.append((key, l0, bool(st_), gs_[:3], ds_[:3]))
+            rng.shuffle(cands)
+            cands.sort(key=lambda c: c[2])                      # ladders with no regular line first (they are rare)
+            anchors_all = sorted([r for r in std if r["allow"] in ("", "over", "under_or_over")], key=lambda r: (r["game"], r["player"], r["stat"]))
+
+            def anchors_for(avoid_games, avoid_players):
+                out, seen = [], set(avoid_games)
+                for x in anchors_all:
+                    if x["game"] in seen or x["player"] in avoid_players:
+                        continue
+                    out.append(leg(x))
+                    seen.add(x["game"])
+                    if len(out) == 5:
+                        break
+                return out
+            budget_a = int(MAX_Q * 0.5)
+            read, players_done, stats_n, n_ns = [], set(), {}, 0
+            for key, l0, has_std, gs_, ds_ in cands:
+                if getattr(q, "n", 0) >= budget_a:
+                    break
+                if key[0] in players_done or stats_n.get(key[1], 0) >= 3 or (not has_std and n_ns >= 4):
+                    continue
+                anc = anchors_for({(gs_ + ds_)[0]["game"]}, {key[0]})
+                if len(anc) < 5:
+                    continue
+                players_done.add(key[0])
+                stats_n[key[1]] = stats_n.get(key[1], 0) + 1
+                n_ns += 0 if has_std else 1
+                for kind_, rr in (("G", gs_), ("D", ds_)):
+                    for i, r in enumerate(rr):
+                        tier_ = f"{'' if has_std else 'NS-'}{kind_}{i + 1}"
+                        for k in (1, 3, 5):
+                            run("LAD", [leg(r)] + anc[:k], f"{tier_}|{r['line'] - l0:+g}|{l0:g}|{key[0]} | {key[1]}")
+                        read.append((tier_, r))
+            print(f"LADDER2|rungs read={len(read)}|players={len(players_done)}|ladders with no regular line={n_ns}", flush=True)
+            pairs = [(a_, b_) for i, a_ in enumerate(read) for b_ in read[i + 1:]
+                     if a_[1]["player"] != b_[1]["player"] and a_[1]["game"] != b_[1]["game"]]
+            rng.shuffle(pairs)
+            for (ta, ra), (tb, rb) in pairs:
+                if getattr(q, "n", 0) >= MAX_Q - 5:
+                    break
+                anc = anchors_for({ra["game"], rb["game"]}, {ra["player"], rb["player"]})
+                if len(anc) < 4:
+                    continue
+                for k in range(0, 5):
+                    run("LAD2", [leg(ra), leg(rb)] + anc[:k], f"{ta}+{tb}")
+            save("complete (ladder2)")
+            return 0
+
         if MODE == "stack":
             # STACK (2026-10-20): slips made MOSTLY or ONLY of alternates - the large factor products the grid (<= 3 alternates)
             # never reaches. The research favours 5-6 goblins / demons taken Less (fp up to ~8); their payouts must be PrizePicks'
