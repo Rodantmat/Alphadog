@@ -30,6 +30,8 @@ BOOT = int(os.environ.get("LP_BOOT") or 300)
 LAM = float(os.environ.get("LP_LAM") or 0)
 PRIOR = [float(x) for x in (os.environ.get("LP_PRIOR") or "").split(",") if x.strip()]
 RNG = np.random.default_rng(20261118)
+PP_A = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
+PP_E = {2: .904, 3: .936, 4: .969, 5: .986, 6: 1.0}
 log = R.log; lg = R.lg; APP = R.APP; WARM = R.WARM; STEP = R.STEP
 
 
@@ -232,7 +234,7 @@ def main():
                       f"positive {int(ps_.sum()):7,}: predicted {100 * roi[ps_].mean() if ps_.any() else 0:+5.1f}% real {100 * rr[ps_].mean() if ps_.any() else 0:+6.1f}%", flush=True)
     # ---------- 4: slips
     pl = df["player"].astype(str).values[ev]
-    print(f"\nLP|=== 4 SLIPS - {APP.upper()}: slips from each version's best legs (one leg a player, non-overlapping). Payout = product of the legs' own multipliers ===")
+    print(f"\nLP|=== 4 SLIPS - {APP.upper()}: slips from each version's best legs (one leg a player, non-overlapping). Payout = {'real Power table x (leg prices)^e' if APP == 'prizepicks' else 'product of the legs own multipliers'} ===")
     for name in ("BOARD", "BLEND", "FINAL-ISO", "FINAL-LIN"):
         roi = V[name][ev]; order = np.lexsort((-roi, dd)); bounds = np.flatnonzero(np.r_[True, dd[order][1:] != dd[order][:-1], True])
         picks = []
@@ -254,7 +256,12 @@ def main():
                         s_ = sel[j * n:(j + 1) * n]
                         if len(s_) < n:
                             break
-                        rows.append((d_, np.prod(1 + roi[s_]) - 1, np.prod(yy[s_] * mm[s_]) - 1, float(yy[s_].all())))
+                        if APP == "prizepicks":                       # the real Power table with the 2026-11-18 alternate-leg law: A_n x (product of leg prices)^e_n
+                            pay = PP_A[n] * float(np.prod(mm[s_] * R.BASE)) ** PP_E[n]
+                            pred = float(np.prod((1 + roi[s_]) / mm[s_])) * pay - 1; real = (pay if yy[s_].all() else 0.0) - 1
+                        else:
+                            pred = np.prod(1 + roi[s_]) - 1; real = np.prod(yy[s_] * mm[s_]) - 1
+                        rows.append((d_, pred, real, float(yy[s_].all())))
                 a = np.array(rows)
                 daily = pd.DataFrame({"r": a[:, 2], "d": a[:, 0]}).groupby("d")["r"].agg(["sum", "count"])
                 tot = daily["sum"].sum() / daily["count"].sum(); se = np.sqrt(((daily["sum"] - tot * daily["count"]) ** 2).sum()) / daily["count"].sum()
