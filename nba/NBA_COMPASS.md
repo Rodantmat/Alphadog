@@ -995,3 +995,19 @@ Whenever a phase closes or a decision changes: update the relevant checkpoint se
 - Gemini cross-check: kept logit pooling, ROI recalibration, per-kind longshot slope; rejected its per-leg multiplier (ignored Flex partial tiers), its
   f-exponent formula and "slip ROI is lower than leg ROI".
 - NOT deployed. Open: owner decision to replace the board's leg ROI formula with the fitted blend on Sleeper / Underdog / Fliff (and demons on PrizePicks).
+
+## 2026-11-19 (early) - Per-leg ROI model: proof suite (research_leg_roi_proof.py). Owner chose "replace on all four apps", proof first. NOT deployed.
+- Code checks PASS: planted truth (results re-drawn from a known hit chance) recovered with slope 1.00 and 0.1 pt gap; placebo (model shuffled inside
+  each slate) gives the model 0.00 weight and rates no leg positive, while the board formula on the same placebo rates 202 legs a slate positive (+10.8%) that lose 24.7%.
+- New vs board formula (slate re-draws): PrizePicks rated-positive legs +2.5 pts (better in 100% of draws), top 5 a slate +11 pts (91%); Underdog +18 pts / +12.8 pts
+  (100% / 100%); Sleeper top 5 +67 pts (99%); Fliff top 5 +29 pts (95%, 16 slates).
+- Two past seasons, honest and positive: PrizePicks (base 0.542) BLEND slope 1.05, positive legs +4.6% -> +3.2% [+0.7 .. +5.4], top 5 a slate +18.3% -> +17.9%; positive in
+  7 of 9 months. Underdog BLEND slope 0.96, positive +3.8% -> +2.4% [+0.9 .. +4.0], top 5 +15.9% -> +10.5%; positive in all 11 months of 2024-25 and 2025-26.
+  Slips (5 a slate): Underdog 2-pick +15.7% +-6.2 (1,295 slips), PrizePicks Power with the real table 2-pick +13.0% +-10.5, 5-pick +36.7% +-69.
+- FAILS THIS SEASON (Underdog 2026-27, 28 slates): positive legs predicted +5.7% -> real -5.9% (board formula: +7.0% -> -18.4%), slope 0.47. Not fixed by weighting recent
+  slates (half-life 60/30/15/8/4), nor by a this-season-only fit (model weight only falls to 0.25; positive legs -7.1%), nor by the ISO / LIN corrections.
+  Sleeper / Fliff fits (this season only) give the model weight 0.06 and rate almost nothing positive. Same root cause as fact on this season's calibration slope
+  (model signal weak in 2026-27; re-test scheduled at 60 slates).
+- Corrections: plain BLEND is as honest as ISO / LIN and simpler; ISO flattens the top, LIN over-predicts the top on Underdog. Weak spots of BLEND: combo props on
+  PrizePicks (+4.1% -> +0.8%), Underdog legs outside 1.5-1.9x (positive legs -0.6% to -22%).
+- Coefficients (last fit): Underdog model .49 / price .52; PrizePicks model .29 / price .38 (+ kind terms); Sleeper .06 / .98; Fliff .06 / 1.01.
