@@ -243,6 +243,21 @@ def main():
                 print(f"TL|parity2 real lines, {lab}: " + skill("LIVE baseline", k["live_base"].values, k["hit"].values), flush=True)
                 print(f"TL|parity2 real lines, {lab}: " + skill("harness honest", k["p_over_h"].values, k["hit"].values), flush=True)
                 print(f"TL|parity2 real lines, {lab}: over hit {k['hit'].mean():.3f}; live baseline says {k['live_base'].mean():.3f}, harness honest says {k['p_over_h'].mean():.3f}, live final_hp says {k['hp'].mean():.3f}", flush=True)
+        JE = J[J["prop"] == lastp].merge(P2[["pid", "GAME_DATE", "adiff", "anchor_h", "tier_prior", "rate36_h", "n_rate", "proj_mean"]], left_on=["PLAYER_ID", "GAME_DATE"], right_on=["pid", "GAME_DATE"])
+        JE = JE[JE["adiff"].abs() < .01].copy(); JE["off"] = (JE["line"] - JE["anchor_h"]).round().astype(int)
+        print(f"TL|=== same anchor, same line ({len(JE):,} legs): the two probabilities by rung ===")
+        for off, k in JE.groupby("off"):
+            if len(k) < 120:
+                continue
+            xl = lg(k["live_base"]); xh = lg(k["p_over_h"]); y_ = k["hit"].values.astype(float)
+            def tb(x):
+                q = np.quantile(x, [.2, .8]); return 100 * (y_[x >= q[1]].mean() - y_[x <= q[0]].mean())
+            fr = (k["proj_mean"] - (k["anchor_h"] + 0.5)).values
+            print(f"TL|rung {off:+d}: n {len(k):4d} hit {y_.mean():.3f} | live baseline mean {k['live_base'].mean():.3f} spread {xl.std():.3f} top-bottom {tb(xl.values):+5.1f} | "
+                  f"harness honest mean {k['p_over_h'].mean():.3f} spread {xh.std():.3f} top-bottom {tb(xh.values):+5.1f} | corr of the two {np.corrcoef(xl, xh)[0, 1]:+.2f} | "
+                  f"harness p vs: projected mean inside the rung {np.corrcoef(xh, fr)[0, 1]:+.2f}, tier prior {np.corrcoef(xh, k['tier_prior'])[0, 1]:+.2f}, games played {np.corrcoef(xh, k['n_rate'])[0, 1]:+.2f}", flush=True)
+        _s = JE.sort_values("p_over_h"); _c = ["GAME_DATE", "PLAYER_ID", "line", "anchor_h", "off", "live_base", "p_over_h", "p_over_s", "hp", "hit", "proj_mean", "tier_prior", "n_rate"]
+        print("TL|sample rows (lowest / highest harness p at rung 0):"); print(_s[_s["off"] == 0][_c].head(6).to_string()); print(_s[_s["off"] == 0][_c].tail(6).to_string(), flush=True)
         P2["month"] = P2["GAME_DATE"].astype(str).str[:7]
         for mo in sorted(P2["month"].unique()):
             k = P2[P2["month"] == mo]
