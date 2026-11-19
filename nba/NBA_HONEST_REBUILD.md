@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 13:57 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 14:06 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -338,6 +338,19 @@ Runs: cs3_alt 44620444723 (`research_cell_scan_honest.py CS_KIND=alt`, Underdog 
 
 **O14 (new, from placing today's slips with the owner 13:41-13:52 PT):** Underdog paid 3.27x on the 2-pick Standard Cam Spencer 3.5 Reb Under (0.8x) + Donovan Clingan 1.5 Blk Under (1.12x); our table gives 3.5 x 0.8 x 1.12 = 3.13x. The 3-pick Flex of regular legs matched (3.25 / 1.09). The Underdog grader may under-pay mixed-factor 2-picks by ~4% - probe with `ud_payout_quotes` before the 8j slips are priced for real. Fliff: 5 slips placed at $10; one leg price had moved (Wells 0.5 Steals More 1.70x -> 1.60x, slip 6.42x -> 6.04x).
 
+## 8k. CELL SCANS RE-RUN CLEAN (after C12) AND THE UNDERDOG PAYOUT PROBE (14:06 PT)
+
+Runs cs4_alt 44624022627, cs4_ud 44624035898, cs4_pp 44624049968 (other-app line from the unfiltered boards; priced legs shuffled only among legs of the same price), hr4 44624062009, udq 44624138440.
+| scan | legs | cells | kept on real results | kept on 5 shuffles |
+|---|---|---|---|---|
+| Underdog alternates (real multipliers) | 268,265 | 30,158 | 2 | 0, 0, 0, 1, 0 |
+| Underdog regular | 203,387 | 21,508 | 6 | 0, 0, 0, 0, 0 |
+| PrizePicks regular (+ line move since morning) | 351,637 | 23,308 | 0 | 0, 0, 0, 0, 0 |
+- Underdog alternates: the two cells are small and unrelated (B1 Under where a book has the side at 0.50-0.52: 1,718 legs +6.7%; "Questionable" + minutes up: 803 legs). Other-app line on alternates, clean: every bucket loses (-1% to -19%). No lead.
+- Underdog regular, the 6 kept cells (2-11 legs a slate, +2.6% to +10.7%): Under with Underdog's line 1+ ABOVE PrizePicks' and no teammate out (578 legs, +12.0 / +8.3 / +16.5); the system's top 5% Unders with no opponent out (1,281 legs, +6.5 / +3.8 / +13.9 = the 8g family); Under where the book has it 0.52-0.54 on one day of rest (4,765 legs, +1.3 / +4.1 / +15.3); three odd ones. Single features, clean: Under with Underdog's regular line 1+ above PrizePicks' regular line hits 0.519 / 0.555 / 0.586 (668 / 1,218 / 152 legs; pooled 0.545, break-even 0.5345) - plain line shopping, about +2% a leg, 6 legs a slate at most. CORRECTION to 8f: "same lines as PrizePicks 0.500 / 0.534 / 0.570" used the filtered join; ignore that sentence.
+- Standing leads after all scans: (1) 8g - Underdog regular Unders at the very top of the system's list; (2) Underdog regular Unders whose line is 1+ above PrizePicks'. Both small (about 6 legs a slate), both around +2% to +8% a leg, neither proven. The referee now carries both ("regular Unders, system top 6 a slate"; "regular Unders, line 1+ above PrizePicks").
+- **O14 answered (probe udq, 40 entries, no login):** an Underdog entry that contains a PREDICTION-market pick is not priced by our table: 3-pick Standard quotes are 0.936x to 1.048x of ours, median 1.030x, 0 of 14 within 0.5%; 2-pick entries with a prediction pick cannot be quoted without login. Today's real 2-pick paid 3.27x against our 3.13x (+4.5%). So graded Underdog slips that hold prediction picks are under-stated by about 3% on average; the per-leg return of B-tier / prediction legs in sections 8d-8k is under-stated by roughly the same. It does not rescue any cell (the gaps are 5-15%). To price them exactly the probe needs the logged-in quote (RX_AUTH) - owner's session; queued, not run.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -399,3 +412,4 @@ External (read for this work):
 - **2026-11-19 13:36-13:52 PT** - Owner interaction: asked for help placing today's slips ("continue with your work on the background, but help me get the slips done first"). Built 5 Fliff slips and 2 Underdog entries in his Chrome ($10 each); he pressed Submit / Play himself each time. Fliff cart driven through the page's own app frame (mouse clicks time out on that small window). O14 logged.
 - **2026-11-19 13:36-13:54 PT** - Alternates scan and half-point map / slips run in the background; second lead found and documented (section 8j); referee gets its line. PrizePicks line-move scan: nothing.
 - **2026-11-19 13:57 PT** - RETRACTION of 8j: the half-point lead was produced by joining to an outcome-filtered table (ties dropped). Found while checking the mechanism (identical hit rates of two different bets), proven with the unfiltered board (-5% / -12% / -13%). Rule C12 added. Scripts fixed. Nothing had been reported or wired.
+- **2026-11-19 13:57-14:06 PT** - Clean re-run of the three cell scans with a price-matched shuffle yardstick; referee gets the two standing Underdog leads with an unfiltered PrizePicks reference; Underdog payout probe confirms prediction-pick entries are priced ~3% above our table (section 8k).

@@ -68,6 +68,11 @@ def main():
                        WHERE m.two_pick_power > 0 AND m.base_market = ANY(%s)""", conn, params=(list(LH.MK),))
     q = q.sort_values("quoted_at").drop_duplicates(["gd", "nm", "base_market", "line", "side"], keep="last")
     q["player_id"] = q["nm"].map(ids); q["prop"] = q["base_market"].map(LH.MK); q["real_m"] = (q["p2"] / 2.99) ** (1 / 0.904)
+    # PrizePicks regular lines from the UNFILTERED board (rule C12: never from a graded table)
+    PPREG = pd.read_sql("""SELECT DISTINCT game_date::text gd, nm, base_market, line::float8 ppl FROM nba_market.pp_leg_price
+                           WHERE snapshot_label = 'window' AND kind = 'standard' AND game_date >= %s""", conn, params=(SINCE,))
+    PPREG["player_id"] = PPREG["nm"].map(ids); PPREG["prop"] = PPREG["base_market"].map(LH.MK)
+    PPREG = PPREG[PPREG["player_id"].notna() & PPREG["prop"].notna()].drop_duplicates(["gd", "player_id", "prop"])[["gd", "player_id", "prop", "ppl"]]
     verdict = {}
     for app in ("prizepicks", "underdog", "sleeper", "fliff"):
         d = legs[legs["app"] == app].copy()
@@ -105,6 +110,14 @@ def main():
                 if len(un) >= 100:
                     put(app, win, "regular Unders, system top fifth", un[un["p"] >= un["p"].quantile(.8)], pcol="pred")
                     put(app, win, "regular Unders, all", un)
+            if app == "underdog" and len(s):                 # 8g lead as it would be played: the 6 regular Unders the system likes most each slate
+                un6 = s[(~s["side"].str.lower().str[0].isin(["o", "m", "h"])) & s["tier"].astype(str).str[:1].eq("R")].sort_values("p", ascending=False)
+                un6 = un6.drop_duplicates(["gd", "player_id"]).groupby("gd").head(6)
+                v6 = put(app, win, "regular Unders, system top 6 a slate", f(un6), pcol="pred")
+                if win == "season":
+                    verdict[(app, "8g top6")] = v6
+                shop = d[(d["kind"] == "standard") & (~d["over"])].merge(PPREG, on=["gd", "player_id", "prop"], how="inner")
+                put(app, win, "regular Unders, line 1+ above PrizePicks", f(shop[shop["line"] - shop["ppl"] >= .99]))
             v = put(app, win, "book rates positive (exact line)", f(d[d["br"] > 0]), pcol="br")
             v2 = put(app, win, "book rates positive, >= 2 books", f(d[(d["br"] > 0) & (d["books"] >= 2)]), pcol="br")
             if win == "season":
