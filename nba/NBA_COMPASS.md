@@ -1038,3 +1038,26 @@ research_leg_roi_diag.py, research_leg_roi_diag2.py. Owner chose "hold deploymen
 - Two alternates multiply: exponents .880 / .926 / .967 / .982 / .998 for 2-6 picks (round 1: .904 / .936 / .969 / .986 / 1.0); within 6% on 76 / 81 / 95 / 100 / 100% (21 pairs).
 - Leg price vs a regular leg (6-pick read): G1 0.71 (0.61-0.90), G2 0.77, G3 0.62, D1 1.12 (1.03-2.08), D2 2.17 (1.42-3.39), D3 6.11 (4.50-7.22).
 - NOT switched: the mechanistic grader stays on hold (owner 09:04 PT: hold deployment); open: same-game term for the 6-pick read, triples (32 quotes collected), Flex.
+
+## 2026-11-19 (midday) - 🔑🔑 ROOT CAUSE FOUND AND PROVEN: THE MONTH-END PLAYER TIER IN THE CERTIFIED HARNESS (research only; production tables untouched)
+Script: research_tier_prior_leak.py (runs nba/backtest/classification_ladder_v12.py twice - untouched, and with the tier taken day by day - and compares). Runs v25 / v26 / v27.
+- THE LINE: `pop = grp.groupby("PLAYER_ID")["rate36"].last()` inside `for (s, ym, role), grp in d.groupby(["season", "ym", "role_tier"])`. Every game of a calendar month gets
+  the player's rate tier (and the tier mean, weight k / (n + k), k 20-50, so strongest early in a season) computed from his rate at his LAST game of that month. The tier also
+  keys the empirical cells. Production (one day at a time) can only see up to today, so the live number is honest; the two-season history (nba_score.baseline_history ->
+  final_hp -> tier maps -> every backtest) is not.
+- PROOF on real PrizePicks REGULAR lines, points + rebounds over legs (hit of the model's top fifth minus bottom fifth / log-loss gain x10,000):
+    2024-25 (12,551 legs): harness as stored +7.8 pts / 18.9 -> honest tier +0.3 / 0.1
+    2025-26 (16,510 legs): harness as stored +10.4 / 24.0 -> honest tier +1.5 / 0.6
+    2026-27 ( 3,478 legs): harness as stored (replayed) +7.9 / 30.6 -> honest tier -0.7 / 0.8; LIVE production baseline -2.9 / 0.2 (correlation with the honest replay 0.946)
+  The stored harness reproduces the stored final_hp (weights +0.22 / +0.24 vs +0.25 / +0.27). Replaying the leaky version on THIS season re-creates the same +7.9 pts.
+- Leak test (what is left of the number after all past form, against the player's own game / next 5 / games +6..+20): stored +0.10 / +0.14-0.17 / +0.08-0.11;
+  honest tier +0.01 / +0.01-0.02 / +0.03 - the same as deliberately honest control predictors (<= 0.045); deliberately leaky controls +0.18 .. +0.77.
+  Component view (local, points 2025-26): tier_prior leftover vs future rate +0.28 / +0.43 / +0.28 stored -> +0.01 / +0.03 / +0.04 honest.
+- Production parity this season: rate36 equal to the replay on 97% of player-games, projected minutes 81% (mean abs diff 0.10), role tier 100%, anchors 67% (vs honest replay).
+  NO production defect: the live pipeline is the honest version of the model. (An earlier reading that "an honest replay keeps +6-8 pts" was a matching error in the test -
+  the honest run was read at the leaky run's rungs - found and fixed before reporting.)
+- CONSEQUENCE: on regular lines the baseline has shown NO skill against PrizePicks in any of the three seasons once the future is removed. Every result that ranks by the
+  historical baseline_hp / final_hp / score is void until history is rebuilt: strategy backtests, tier maps, calibration layers, leg ROI, slip ROI, the 2-season proofs.
+- ALSO: production's empirical cells are trained on earlier months whose tiers are month-end (train / serve skew) - same one-block fix.
+- NEXT (owner decision needed before anything is written): rebuild an honest history into PARALLEL tables (baseline_history and the chain after it), ~3 min a prop pair a
+  season to build; then re-measure everything on it - which props / line types (alternates, low-count props) keep real skill, then the leg ROI model, then the strategies.
