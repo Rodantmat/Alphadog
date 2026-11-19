@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 12:25 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 12:55 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -69,6 +69,7 @@ Earlier documentation already names this class of bug as "the recurring bug of t
 | D3 | 11-19 09:55 | Be sure before expanding; test, debug, simulate always; pair with online research | owner standing rule for this work | owner message |
 | D4 | 11-19 11:05 | Rebuild honest history into SEPARATE tables; production untouched; live slips keep running meanwhile | measure before touching anything the live system reads | owner message ("1") to the three options offered |
 | D5 | 11-19 11:20 | This document; updated after every move and every interaction | "so we don't lose anything" | owner message |
+| D6 | 11-19 11:34 | Continue non-stop until the work is done AND wired live; report only when a decision is truly needed from the owner; every system decision grounded on debug, data and online research; focus on precision of ROI, hit rate and accuracy; for slips and strategies the order of goals is 1) highest steady ROI, 2) low drawdown and droughts | owner standing order for this adjustment | owner message |
 | C1 | 11-19 | The fix = the tier taken day by day: on date D the population is each player's latest `rate36` up to and including D inside the month | it is exactly what production sees on D (month-to-date rows plus the slate's rows), so history and live become the same thing | code reading of `build_baseline_ladder.py`; parity check 97% / 81% / 100% |
 | C2 | 11-19 | Parallel table stores one row per player-game-prop with the ladder in arrays | 20x smaller than a row per rung; DB plan has no room for a second 19M-row table | `baseline_history` is 19.34M rows (`build_final_hp.py` docstring) |
 | C3 | 11-19 | Build through the research workflow by wrapping the production builders with the one-block replacement, not by editing the certified harness | zero risk to production while unproven; the wrapper asserts the block is found, so a harness change cannot pass silently | `research_honest_history_build.py` |
@@ -164,6 +165,20 @@ Anomaly to check: Underdog R this season (3,107 legs) shows +11.7 for the honest
 
 **What this says.** About a third of the skill history claimed is real. It is 3-6 points of hit rate beyond the price on goblins, demons and Underdog alternates, strongest on threes; on PrizePicks regular lines it is 1-2 points (points and assists about zero). Combos are not measured yet.
 
+## 8b. WORK PLAN TO "DONE AND WIRED LIVE" (owner D6; updated as stages close)
+
+| Stage | What | Proof required before the next stage | Status |
+|---|---|---|---|
+| S1 | Honest baseline, single-stat props, 3 seasons -> `baseline_history_h` | rows per season match the stored history's player-games; leak test ~0 | DONE 11-19 12:25 |
+| S2 | Honest combos (pra, pts_reb, pts_ast, reb_ast, stocks, fantasy_score, double_double). The combos recipe `nba/backtest/combos_ladder_v1.py` has its OWN copy of the month-end tier block (lines 108-112) AND consumes the singles' components - both fixed in the build (`HH_MODE=combos`) | same | RUNNING: hc_2025-26 44599959909, hc_2024-25 44599977374, hc_2026-27 44599992946 |
+| S3 | PrizePicks leg PRICE for history. `nba_market.board_tiers_v2` holds the PrizePicks board with kind / tier / anchor for all three seasons (2024-10-22 .. today, 2.88M rows) but no price; the old factor (in `_mf_study_fs`) is an estimate that flatters demons. Fit a price model on the REAL quotes (`nba_market.pp_mined_leg`, 11,574 legs since 2026-09-21, plus the ladder rounds) from kind, tier, prop, distance from the regular line, line level; hold out whole days | held-out price error small enough that leg ROI is not driven by price error (target: median abs error <= 3%, no bias by tier) | NEXT |
+| S4 | One honest leg table per app (`nba_score._lr_legs_h`): PrizePicks from `board_tiers_v2` (window snapshot) x S3 price x honest probability x result; Underdog from the archived boards (real multipliers); Sleeper / Fliff real this season + derived history | counts reconcile with boards; grading spot-checked | after S2, S3 |
+| S5 | Leg probability = blend of honest model log-odds and price log-odds (+ kind / tier / prop terms only where they hold out of sample), walk-forward, per app. Proof suite: planted truth, placebo, slate re-draws, stability, THIS SEASON as referee | slope of real on predicted within 0.9-1.1 on history AND not rejected on this season; no false positives on placebo | after S4 |
+| S6 | Strategy search on honest leg ROI with the certified graders: 2-6 picks, Flex and Power, per app (Underdog: no Power above 2 picks, no Prediction legs in Flex), exposure rules, apps never mixed. Goal order: highest steady ROI, then low drawdown / droughts. Selection walk-forward; this season out of sample | chosen sets beat the currently deployed sets on honest history and this season; reported in final numbers | after S5 |
+| S7 | Wire live: (a) the one-block fix in `classification_ladder_v12.py` and `combos_ladder_v1.py` (+ guard test) so production cells stop training on month-end tiers; (b) P3 computes the blended leg probability and leg ROI from a config row of coefficients; (c) slip engine switches to the S6 sets; (d) board shows the honest leg ROI; (e) leak alarm + parity monitor scheduled. Each step dry-run on a past date first; slips already placed or saved are never changed; nothing during P2A 03:31-03:46, P2B 08:06-09:15, P3 13:17-13:35 PT | dry-run equals live output where it should, differs only where intended | after S6 |
+
+Pipeline windows measured 11-17..11-19 (PT): P2A 03:31-03:46, P2B 08:06-09:15, P3 13:17-13:35.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -211,3 +226,5 @@ External (read for this work):
 - **2026-11-19 11:05 PT** - Owner: option 1, parallel rebuild (D4). `research_honest_history_build.py` written, smoke-tested locally (assists+steals 2025-26: 595,253 rungs, 163 dates, 516 players, 300 s), three season builds dispatched (runs 44595794080 / 44595809486 / 44595823851). `research_honest_history_measure.py` written.
 - **2026-11-19 11:20 PT** - Owner asks for this document (D5). Created. NEXT: read the three builds, run the measurement, record the skill map here (section 8.2), then combos.
 - **2026-11-19 12:25 PT** - All three honest builds landed (178 MB). First measurement run hm (44598649248) recorded in section 8a: honest skill beyond the price is +3 to +6 pts on goblins / demons / Underdog alternates, +1 to +2 on PrizePicks regular lines; raw probability x multiplier loses on its top 5%. NEXT: (1) combos honest build (O2); (2) leg-ROI blend on honest inputs (O10); (3) Underdog R anomaly (O9); then strategies.
+- **2026-11-19 11:34 PT** - Owner: continue non-stop until done and wired live; report only for decisions that truly need him; goals for strategies: highest steady ROI first, then low drawdown and droughts (D6).
+- **2026-11-19 12:55 PT** - Found a SECOND copy of the month-end tier block in `nba/backtest/combos_ladder_v1.py` (lines 108-112); combos build extended and dispatched for three seasons (S2). Found `nba_market.board_tiers_v2` = PrizePicks board with kind / tier for all three seasons, no price -> stage S3 (price model on real quotes) added. Work plan written (section 8b).
