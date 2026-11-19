@@ -85,6 +85,39 @@ def build(tag, fixed, cut):
     return df
 
 
+def build_combos(tag, cut):
+    """Combos (pra, pts_reb, pts_ast, reb_ast, stocks, fantasy_score, double_double): honest components from the truncated singles harness, then the honest
+    combos recipe, exactly as research_honest_history_build.py does it."""
+    import research_honest_history_build as HB
+    src = TL.honest((HERE / "backtest" / "classification_ladder_v12.py").read_text()).replace(A1, B1).replace(A2, B2)
+    hf = HERE / "backtest" / f"_cl_tv_{tag}.py"; hf.write_text(src)
+    base = dict(os.environ, BT_TEST=TEST, BT_TRAIN=TRAIN, BT_INJURY="1"); base.pop("BT_TRUNC", None)
+    if cut:
+        base["BT_TRUNC"] = cut
+    rep = HERE / "backtest" / "reports"
+    for f in list(rep.glob(f"_comp_*_{TEST}.pkl")) + list(rep.glob(f"_p10_*_{TEST}.pkl")):
+        f.unlink()
+    for pair in ("points,rebounds", "assists,steals", "blocks,turnovers"):
+        r = subprocess.run([sys.executable, str(hf)], cwd=str(ROOT), env=dict(base, BT_PROPS=pair, BT_LADDER_STEPS="10", BT_SAVE_COMPONENTS="1", BT_TAG="tv" + tag), capture_output=True, text=True)
+        if r.returncode != 0:
+            print(r.stderr[-3000:], flush=True); raise SystemExit(f"components failed ({pair}, cut {cut})")
+    csrc = (HERE / "backtest" / "combos_ladder_v1.py").read_text(); assert HB.COMBO_OLD in csrc
+    cf = HERE / "backtest" / f"_co_tv_{tag}.py"; cf.write_text(csrc.replace(HB.COMBO_OLD, HB.COMBO_NEW))
+    cb = (HERE / "baseline" / "build_combos_history.py").read_text(); can = 'SRC = Path("nba/backtest/combos_ladder_v1.py").read_text()'; assert can in cb
+    cbf = HERE / "baseline" / f"_cbh_tv_{tag}.py"; cbf.write_text(cb.replace(can, f'SRC = Path("nba/backtest/_co_tv_{tag}.py").read_text()'))
+    env = dict(base); env.pop("BT_LADDER_STEPS", None); env.pop("BT_PROPS", None)
+    r = subprocess.run([sys.executable, str(cbf)], cwd=str(ROOT), env=env, capture_output=True, text=True)
+    for p_ in (hf, cf, cbf):
+        p_.unlink()
+    if r.returncode != 0:
+        print(r.stdout[-1500:], r.stderr[-3000:], flush=True); raise SystemExit(f"combos builder failed (cut {cut})")
+    f = ROOT / "nba" / "data" / f"nba_baseline_history_{TEST.replace('-', '_')}_combos.json"
+    rows = json.load(open(f))["rows"]; f.unlink()
+    df = pd.DataFrame(rows)[["game_date", "player_id", "game_id", "prop", "line", "offset", "p_more", "anchor", "role_tier", "var_band"]]
+    log(f"combos {tag} cut {cut or 'none'}: {len(df):,} rungs, {df['game_date'].nunique()} dates, last {df['game_date'].max()}")
+    return df
+
+
 def compare(label, full, cutdf, cut):
     a = full[full["game_date"] <= cut]; key = ["game_date", "player_id", "game_id", "prop", "offset"]
     j = a.merge(cutdf, on=key, how="outer", suffixes=("_f", "_c"), indicator=True)
@@ -107,12 +140,13 @@ def compare(label, full, cutdf, cut):
 def main():
     print(f"TV|season {TEST}, pair {PAIR}, cuts {CUTS}, control {CONTROL}", flush=True)
     ok = True
-    full = build("fixfull", True, None)
+    combos = PAIR == "combos"
+    full = build_combos("cf", None) if combos else build("fixfull", True, None)
     for c in CUTS:
-        ident, miss = compare("FIXED recipe  ", full, build("fixcut", True, c), c)
+        ident, miss = compare("FIXED recipe  ", full, build_combos("cc", c) if combos else build("fixcut", True, c), c)
         ok = ok and ident > 0.99995 and miss == 0
     print(f"TV|RESULT fixed recipe {TEST} {PAIR}: {'PASS - every rung identical on every cut' if ok else 'FAIL - rows moved or went missing'}", flush=True)
-    if CONTROL:
+    if CONTROL and not combos:
         lf = build("leakfull", False, None); seen = False
         for c in CUTS:
             ident, _ = compare("UNFIXED recipe", lf, build("leakcut", False, c), c); seen = seen or ident < 0.999
