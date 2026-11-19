@@ -60,6 +60,12 @@ def block(k, label):
         kk = k[ok]; yy = kk["hit"].values.astype(float); o1 = np.ones(len(kk)); lm = lg(kk["p"].values); zp = np.clip(kk["z10"].values, -3, 3)
         dm = np.clip(kk["dmin"].values, -15, 15) / 5.0; zf = np.clip(kk["zfut"].values, -3, 3)
         A = np.column_stack([o1, zp, lg(np.clip(kk["r20"].values, .05, .95))]); beta, *_ = np.linalg.lstsq(A, lm, rcond=None); res = lm - A @ beta
+        R_ = np.column_stack([o1, zp, lg(np.clip(kk["r20"].values, .05, .95))] + [kk[f"pc{j}"].values for j in range(7)])
+        bm, *_ = np.linalg.lstsq(R_, lm, rcond=None); bf, *_ = np.linalg.lstsq(R_, zf, rcond=None); rm = lm - R_ @ bm; rf = zf - R_ @ bf
+        wr, _ = fit(np.column_stack([R_, lm]), yy)
+        print(f"L2|   leak check 2 {label:14s} after removing EVERYTHING past (form over 3/5/10/20/40 games, season to date, last season, minutes trend): what is left of the model "
+              f"still tracks his NEXT 20 games by {np.corrcoef(rm, rf)[0, 1]:+.3f} (an honest model: about 0); past explains {100 * (1 - rm.var() / lm.var()):.0f}% of the model; "
+              f"model weight on top of all past numbers {wr[-1]:+.2f}", flush=True)
         w1, _ = fit(np.column_stack([o1, lm]), yy); w2, _ = fit(np.column_stack([o1, lm, dm]), yy); w3, _ = fit(np.column_stack([o1, lm, dm, zf]), yy)
         print(f"L2|   leak check {label:16s} corr(model, minutes played above his usual THAT game) {np.corrcoef(lm, dm)[0, 1]:+.3f}; the part of the model not explained by "
               f"past form: corr with that-game minutes {np.corrcoef(res, dm)[0, 1]:+.3f}, with his NEXT 20 games {np.corrcoef(res, zf)[0, 1]:+.3f}, with past form {np.corrcoef(res, zp)[0, 1]:+.3f} | "
@@ -82,7 +88,7 @@ def main():
                        WHERE app = 'pp26' AND lower(left(side, 1)) IN ('o', 'm', 'h')""", conn)
     conn.close()
     df = pd.concat([a[["season", "game_date", "pid", "prop", "line", "p", "hit"]], b], ignore_index=True)
-    z10 = np.full(len(df), np.nan); r20 = np.full(len(df), np.nan); gp = np.zeros(len(df)); dmin = np.full(len(df), np.nan); zfut = np.full(len(df), np.nan)
+    z10 = np.full(len(df), np.nan); r20 = np.full(len(df), np.nan); gp = np.zeros(len(df)); dmin = np.full(len(df), np.nan); zfut = np.full(len(df), np.nan); PAST = np.full((len(df), 7), np.nan)
     cache = {}
     for i, (pid, pr, ln, d) in enumerate(zip(df["pid"], df["prop"], df["line"], df["game_date"])):
         f = STAT.get(pr); g = logs.get(pid)
@@ -96,12 +102,19 @@ def main():
             continue
         v20 = vs[max(0, n - 20):n]; v10 = vs[max(0, n - 10):n]
         z10[i] = (v10.mean() - ln) / max(0.75, v20.std()); r20[i] = (v20 > ln).mean(); gp[i] = n
+        sd = max(0.75, v20.std()); cut = d.replace(month=8, day=1) if d.month >= 8 else d.replace(year=d.year - 1, month=8, day=1)
+        s0 = int(np.searchsorted(ds, cut)); sea = vs[s0:n]; prev = vs[max(0, s0 - 82):s0]
+        PAST[i] = [(vs[max(0, n - 3):n].mean() - ln) / sd, (vs[max(0, n - 5):n].mean() - ln) / sd, (v20.mean() - ln) / sd, (vs[max(0, n - 40):n].mean() - ln) / sd,
+                   ((sea.mean() if len(sea) else v20.mean()) - ln) / sd, ((prev.mean() if len(prev) >= 10 else v20.mean()) - ln) / sd,
+                   (ms[max(0, n - 3):n].mean() - ms[max(0, n - 20):n].mean()) / 5.0]
         if n < len(ds) and ds[n] == d:                          # the game of the slate itself and the games after it
             dmin[i] = ms[n] - ms[max(0, n - 10):n].mean()
             fut = vs[n + 1:n + 21]
             if len(fut) >= 5:
                 zfut[i] = (fut.mean() - ln) / max(0.75, v20.std())
     df["z10"] = z10; df["r20"] = r20; df["dmin"] = dmin; df["zfut"] = zfut
+    for j in range(7):
+        df[f"pc{j}"] = np.clip(PAST[:, j], -4, 4)
     ok = np.isfinite(z10)
     print(f"L2|legs {len(df):,}; with at least 5 earlier games {int(ok.sum()):,}", flush=True)
     df = df[ok].copy(); df["month"] = df["game_date"].astype(str).str[:7]
