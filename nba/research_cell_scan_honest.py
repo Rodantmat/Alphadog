@@ -61,7 +61,7 @@ def load(conn):
                      conn, params=(other, "standard" if other == "prizepicks" else "R")).drop_duplicates(["gd", "player_id", "prop"])
     df = df.merge(ol, on=["gd", "player_id", "prop"], how="left")
     # form from the game log (strictly earlier games of the same season)
-    gl = pd.read_sql("""SELECT nba_player_id::text player_id, game_date::text gd, season, matchup, min::float8 mn, pts::float8 pts, reb::float8 reb, ast::float8 ast, fg3m::float8 fg3m,
+    gl = pd.read_sql("""SELECT nba_player_id::text player_id, game_date::text gd, season, matchup, team_id::text team_id, game_id::text game_id, min::float8 mn, pts::float8 pts, reb::float8 reb, ast::float8 ast, fg3m::float8 fg3m,
                                stl::float8 stl, blk::float8 blk, tov::float8 tov FROM nba_stats.player_game_log WHERE game_date >= '2024-10-01'""", conn)
     gl = gl.sort_values(["player_id", "gd"]).drop_duplicates(["player_id", "gd"]); gl["played"] = (gl["mn"] > 0).astype(int)
     g = gl.groupby(["player_id", "season"], sort=False)
@@ -71,7 +71,8 @@ def load(conn):
     for c in ("pts", "reb", "ast", "fg3m", "stl", "blk", "tov"):
         gl[c + "_s"] = g[c].transform(lambda x: x.shift(1).expanding().mean()); gl[c + "_5"] = g[c].transform(lambda x: x.shift(1).rolling(5, min_periods=3).mean())
     gl["home"] = ~gl["matchup"].fillna("").str.contains("@")
-    df = df.merge(gl[["player_id", "gd", "gp", "rest", "mn_s", "mn_5", "home"] + [c + s for c in ("pts", "reb", "ast", "fg3m", "stl", "blk", "tov") for s in ("_s", "_5")]],
+    INJ = injury_context(conn, gl)
+    df = df.merge(gl[["player_id", "gd", "gp", "rest", "mn_s", "mn_5", "home", "team_id", "game_id"] + [c + s for c in ("pts", "reb", "ast", "fg3m", "stl", "blk", "tov") for s in ("_s", "_5")]],
                   on=["player_id", "gd"], how="left")
     avs = np.full(len(df), np.nan); av5 = np.full(len(df), np.nan)
     for pr, cols in STATCOL.items():
@@ -100,53 +101,103 @@ def load(conn):
     F["minutes trend"] = bucket(df["mn_5"] - df["mn_s"], [-99, -4, -1.5, 1.5, 4, 99], ["down 4+", "down 1.5-4", "level", "up 1.5-4", "up 4+"])
     F["rest days"] = bucket(df["rest"], [0, 1, 2, 3, 6, 400], ["back-to-back", "1 day", "2 days", "3-5 days", "6+"])
     F["home"] = np.where(df["home"].isna(), None, np.where(df["home"].fillna(False), "home", "away"))
+    if INJ is not None:
+        own, team = INJ
+        df = df.merge(own, on=["gd", "player_id"], how="left").merge(team, on=["gd", "team_id"], how="left")
+        opp = team.rename(columns={"team_id": "opp_id", "min_out": "opp_out", "min_fresh": "opp_fresh", "min_q": "opp_q"})
+        gt = gl[["gd", "game_id", "team_id"]].drop_duplicates(); gt = gt.merge(gt, on=["gd", "game_id"], suffixes=("", "_o")); gt = gt[gt["team_id"] != gt["team_id_o"]]
+        gt = gt.rename(columns={"team_id_o": "opp_id"}).drop_duplicates(["gd", "game_id", "team_id"])
+        df = df.merge(gt, on=["gd", "game_id", "team_id"], how="left").merge(opp, on=["gd", "opp_id"], how="left")
+        has = df["team_id"].notna().values
+        for c in ("min_out", "min_fresh", "min_q", "opp_out", "opp_fresh"):
+            df[c] = np.where(has, df[c].fillna(0.0), np.nan)
+        F = F.reindex(df.index)
+        F["own status at pick"] = np.where(has, df["own_status"].fillna("not listed"), None)
+        F["team minutes out"] = bucket(df["min_out"], [-1, .5, 24, 48, 80, 999], ["0", "1-24", "24-48", "48-80", "80+"])
+        F["team FRESH minutes out"] = bucket(df["min_fresh"], [-1, .5, 20, 40, 999], ["0", "1-20", "20-40", "40+"])
+        F["team questionable minutes"] = bucket(df["min_q"], [-1, .5, 30, 999], ["0", "1-30", "30+"])
+        F["opponent minutes out"] = bucket(df["opp_out"], [-1, .5, 48, 999], ["0", "1-48", "48+"])
+        F["opponent FRESH minutes out"] = bucket(df["opp_fresh"], [-1, .5, 20, 999], ["0", "1-20", "20+"])
     return df, F
 
 
+def injury_context(conn, gl):
+    """What the injury report said at pick time (latest snapshot at or before 20:20 UTC of the game date = 12:20 PST / 13:20 PDT, i.e. not later than P3).
+    own: the player's own listing. team: minutes of teammates listed Out / Doubtful (their season average so far), the FRESH part of it (the absent
+    player played the team's previous game - the absence is new, lines may lag), and minutes listed Questionable."""
+    try:
+        inj = pd.read_sql("""SELECT DISTINCT ON (game_date, team, player_name) game_date::text gd, team,
+                                    nba_ref.norm_name(split_part(player_name, ', ', 2) || ' ' || split_part(player_name, ', ', 1)) nm, status
+                             FROM nba_daily.injury_report_snapshots
+                             WHERE game_date >= '2024-10-01' AND snapshot_ts <= (game_date::timestamp + interval '20 hours 20 minutes')
+                             ORDER BY game_date, team, player_name, snapshot_ts DESC""", conn)
+        ids = dict(conn.execute("SELECT norm_name, player_id::text FROM nba_ref.player_name_map").fetchall())
+        tm = pd.read_sql("SELECT team_id::text a, nba_team_id::text b, full_name FROM nba_ref.teams", conn)
+    except Exception as ex:
+        conn.rollback(); print(f"CS|injury context not available: {str(ex)[:160]}", flush=True); return None
+    known = set(gl["team_id"].dropna().unique()); tmap = {}
+    for a_, b_, fn in zip(tm["a"], tm["b"], tm["full_name"]):
+        tmap[fn] = a_ if a_ in known else b_ if b_ in known else None
+    inj["player_id"] = inj["nm"].map(ids); inj["team_id"] = inj["team"].map(tmap); inj = inj[inj["player_id"].notna() & inj["team_id"].notna()].copy()
+    pl = gl[gl["mn"] > 0].sort_values(["player_id", "gd"]).copy()
+    g = pl.groupby(["player_id", "season"], sort=False)
+    pl["avg_to"] = g["mn"].transform(lambda x: x.expanding().mean()); pl["n_to"] = g.cumcount() + 1; pl["last_gd"] = pl["gd"]
+    pl["t"] = pd.to_datetime(pl["gd"]); inj["t"] = pd.to_datetime(inj["gd"])
+    inj = pd.merge_asof(inj.sort_values("t"), pl.sort_values("t")[["t", "player_id", "avg_to", "n_to", "last_gd", "season"]], on="t", by="player_id", allow_exact_matches=False)
+    inj = inj[(pd.to_datetime(inj["gd"]) - pd.to_datetime(inj["last_gd"])).dt.days < 120]           # same season only
+    tg = gl[["team_id", "gd"]].drop_duplicates().sort_values(["team_id", "gd"]); tg["prev_team_gd"] = tg.groupby("team_id")["gd"].shift(1)
+    inj = inj.merge(tg, on=["team_id", "gd"], how="left")
+    w = np.where((inj["n_to"] >= 3) & (inj["avg_to"] >= 10), inj["avg_to"], 0.0)
+    out = inj["status"].isin(["Out", "Doubtful"]).values; fresh = out & (inj["last_gd"] == inj["prev_team_gd"]).values; qq = (inj["status"] == "Questionable").values
+    inj["min_out"] = w * out; inj["min_fresh"] = w * fresh; inj["min_q"] = w * qq
+    team = inj.groupby(["gd", "team_id"], as_index=False)[["min_out", "min_fresh", "min_q"]].sum()
+    own = inj[inj["status"].isin(["Questionable", "Probable", "Available", "Doubtful"])][["gd", "player_id", "status"]].rename(columns={"status": "own_status"}).drop_duplicates(["gd", "player_id"])
+    print(f"CS|injury context: {len(inj):,} listings at pick time on {inj['gd'].nunique()} dates; team-days with minutes out {int((team['min_out'] > 0).sum()):,}, with FRESH minutes out {int((team['min_fresh'] > 0).sum()):,}", flush=True)
+    return own, team
+
+
 def scan(df, F, hitcol, label, verbose=True):
-    """returns kept cells; prints when verbose"""
+    """returns kept cells; prints when verbose. Counts by np.bincount over coded features; slates are re-drawn only for cells that pass every season."""
     kept = []; scanned = 0
     seas = df["season"].values; hit = df[hitcol].values.astype(float); sd = df["sd"].values; gd = df["gd"].values
     nsl = {s: df.loc[df["season"] == s, "gd"].nunique() for s in SEAS}
+    sidx = np.array([SEAS.index(x) if x in SEAS else -1 for x in seas]); need = np.array([MINL, MINL, MIN3])
+    cols = list(F.columns); codes = {}; labels = {}
+    for c in cols:
+        cat = pd.Categorical(F[c].astype(object).where(F[c].notna(), None)); codes[c] = cat.codes.astype(np.int64); labels[c] = [str(x) for x in cat.categories]
 
-    def test(mask, name):
-        nonlocal scanned
-        scanned += 1
-        st = []
-        for s in SEAS:
-            k = mask & (seas == s); n = int(k.sum())
-            if n < (MIN3 if s == SEAS[-1] else MINL):
-                return
-            h = hit[k].mean()
-            if h <= BE:
-                return
-            st.append((n, h))
-        hh = hit[mask]; dd = gd[mask]; u = np.unique(dd); by = {d: hh[dd == d] for d in u}
-        bs = [np.concatenate([by[d] for d in rng.choice(u, len(u))]).mean() for _ in range(200)]
-        lo = float(np.quantile(bs, .05))
+    def finish(mask, name, st):
+        hh = hit[mask]; dd = gd[mask]; u, inv = np.unique(dd, return_inverse=True)
+        sums = np.bincount(inv, weights=hh, minlength=len(u)); cnts = np.bincount(inv, minlength=len(u))
+        ix = rng.integers(len(u), size=(200, len(u))); bs = sums[ix].sum(1) / cnts[ix].sum(1); lo = float(np.quantile(bs, .05))
         if lo > BE:
-            kept.append((hh.mean(), lo, name, st, int(mask.sum()), sum(n / nsl[s] for (n, _), s in zip(st, SEAS)) / 3))
+            kept.append((hh.mean(), lo, name, st, int(mask.sum()), sum(n / nsl[s_] for (n, _), s_ in zip(st, SEAS)) / 3))
 
-    cols = list(F.columns); vals = {c: F[c].values for c in cols}
     for side in ("Under", "Over"):
-        sm = sd == side
-        test(sm, f"{side} | all")
+        sm = (sd == side) & (sidx >= 0)
+        def table(code, K):
+            ok = sm & (code >= 0); key = sidx[ok] * K + code[ok]
+            n = np.bincount(key, minlength=3 * K).reshape(3, K); h = np.bincount(key, weights=hit[ok], minlength=3 * K).reshape(3, K)
+            return n, h
+        ones = np.zeros(len(df), dtype=np.int64); n, h = table(ones, 1); scanned += 1
+        if (n[:, 0] >= need).all() and (h[:, 0] / np.maximum(1, n[:, 0]) > BE).all():
+            finish(sm, f"{side} | all", [(int(n[q, 0]), h[q, 0] / n[q, 0]) for q in range(3)])
         for c in cols:
-            for v in pd.unique(F[c].dropna()):
-                test(sm & (vals[c] == v), f"{side} | {c} = {v}")
+            K = len(labels[c]); n, h = table(codes[c], K); scanned += K
+            good = (n >= need[:, None]).all(0) & (h / np.maximum(1, n) > BE).all(0)
+            for v in np.where(good)[0]:
+                finish(sm & (codes[c] == v), f"{side} | {c} = {labels[c][v]}", [(int(n[q, v]), h[q, v] / n[q, v]) for q in range(3)])
         for c1, c2 in combinations(cols, 2):
-            a = vals[c1]; b = vals[c2]
-            for v1 in pd.unique(F[c1].dropna()):
-                m1 = sm & (a == v1)
-                if m1.sum() < 2 * MINL + MIN3:
-                    continue
-                for v2 in pd.unique(F[c2].dropna()):
-                    test(m1 & (b == v2), f"{side} | {c1} = {v1} & {c2} = {v2}")
+            K1, K2 = len(labels[c1]), len(labels[c2]); both = np.where((codes[c1] >= 0) & (codes[c2] >= 0), codes[c1] * K2 + codes[c2], -1)
+            n, h = table(both, K1 * K2); scanned += K1 * K2
+            good = (n >= need[:, None]).all(0) & (h / np.maximum(1, n) > BE).all(0)
+            for v in np.where(good)[0]:
+                finish(sm & (both == v), f"{side} | {c1} = {labels[c1][v // K2]} & {c2} = {labels[c2][v % K2]}", [(int(n[q, v]), h[q, v] / n[q, v]) for q in range(3)])
     if verbose:
         print(f"CS|{label}: cells scanned {scanned:,}; KEPT {len(kept)} (each season above {BE} with enough legs, pooled lower 90% bound above {BE})", flush=True)
-        for h, lo, name, st, n, per in sorted(kept, key=lambda x: -x[1])[:70]:
-            print(f"CS|  {name:86s} legs {n:6,} ({per:5.1f} a slate) hit {h:.3f} (low {lo:.3f}) return {100 * (h / BE - 1):+5.1f}% | " +
-                  " / ".join(f"{s[2:]} {x[1]:.3f} n{x[0]:,}" for x, s in zip(st, SEAS)), flush=True)
+        for h_, lo, name, st, n_, per in sorted(kept, key=lambda x: -x[1])[:90]:
+            print(f"CS|  {name:92s} legs {n_:6,} ({per:5.1f} a slate) hit {h_:.3f} (low {lo:.3f}) return {100 * (h_ / BE - 1):+5.1f}% | " +
+                  " / ".join(f"{s_[2:]} {x[1]:.3f} n{x[0]:,}" for x, s_ in zip(st, SEAS)), flush=True)
     return kept, scanned
 
 
@@ -169,10 +220,10 @@ def main():
     kept, scanned = scan(df, F, "hit", "REAL results")
     # false-positive yardstick: shuffle results inside each slate x side (keeps every slate's hit rate, destroys every link to the features)
     fp = []
-    for i in range(3):
+    for i in range(5):
         d2 = df.copy(); d2["hs"] = d2.groupby(["gd", "sd"])["hit"].transform(lambda x: rng.permutation(x.values))
         k2, _ = scan(d2, F, "hs", "shuffled", verbose=False); fp.append(len(k2))
-    print(f"CS|false-positive yardstick: the same scan on results shuffled inside each slate keeps {fp} cells (3 shuffles) against {len(kept)} on the real results", flush=True)
+    print(f"CS|false-positive yardstick: the same scan on results shuffled inside each slate keeps {fp} cells (5 shuffles) against {len(kept)} on the real results", flush=True)
     print("CS|DONE", flush=True)
 
 
