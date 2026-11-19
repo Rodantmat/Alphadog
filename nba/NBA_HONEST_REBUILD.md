@@ -4,13 +4,13 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 11:45 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 12:25 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
 ## 1. One-paragraph state
 
-The two past seasons of model probabilities (2024-25, 2025-26) that every backtest ranks by contain information from after each game. Cause: one block in the certified backtest harness gives every game of a calendar month the player's rate tier computed at his LAST game of that month. With that fixed, the model shows no skill against PrizePicks regular lines (points, rebounds) in any of the three seasons; the live pipeline was already honest and matches the fixed replay. The owner chose (11:05 PT) to rebuild an honest history into SEPARATE tables and leave production alone. The honest baseline for the single-stat props is being built now into `nba_score.baseline_history_h` (three seasons); the measurement script is written and runs as soon as the builds land. Nothing in production has been changed by this adjustment. Leg-ROI deployment is on hold (owner 09:04 PT).
+The two past seasons of model probabilities (2024-25, 2025-26) that every backtest ranks by contain information from after each game. Cause: one block in the certified backtest harness gives every game of a calendar month the player's rate tier computed at his LAST game of that month. With that fixed, the model shows no skill against PrizePicks regular lines (points, rebounds) in any of the three seasons; the live pipeline was already honest and matches the fixed replay. The owner chose (11:05 PT) to rebuild an honest history into SEPARATE tables and leave production alone. The honest baseline for the single-stat props is BUILT in `nba_score.baseline_history_h` (three seasons, 8 props) and the first measurement is in (section 8a): about a third of the skill history claimed is real, it sits on goblins / demons / Underdog alternates and on threes, and almost none on regular lines. Nothing in production has been changed by this adjustment. Leg-ROI deployment is on hold (owner 09:04 PT).
 
 ## 2. How we got here (chain of evidence, in order)
 
@@ -101,7 +101,7 @@ Open decisions for the owner are in section 9.
 
 - Build = production's `build_baseline_history.py` pointed at a temp copy of the harness with the one block replaced (`research_tier_prior_leak.OLD` -> `NEW`); `BT_LADDER_STEPS=10`, `BT_INJURY=1`, TRAIN strictly before the test season (2024-25 <- 2023-24; 2025-26 <- 2023-24, 2024-25; 2026-27 <- all three).
 - Pairs built: `points,rebounds` / `assists,steals` / `blocks,turnovers` / `threes_made,fg3a`. About 5 minutes a pair locally (595,253 rungs for assists+steals 2025-26).
-- Runs in flight (GitHub Actions, research workflow): hh_2025-26 = 44595794080, hh_2024-25 = 44595809486, hh_2026-27 = 44595823851. STATUS: running at the time of writing; see LOG.
+- Runs (GitHub Actions, research workflow): hh_2025-26 = 44595794080, hh_2024-25 = 44595809486, hh_2026-27 = 44595823851. STATUS: all three DONE. Rows per prop: 2024-25 23,585 (2024-10-22 .. 2025-04-13); 2025-26 24,369 (2025-10-21 .. 2026-04-12); 2026-27 4,401 (2026-10-20 .. 2026-11-18); props points, rebounds, assists, steals, blocks, turnovers, threes_made, fg3a. Table size 178 MB.
 - NOT built yet: combos (pra, pts_reb, pts_ast, reb_ast, stocks) via `build_combos_history.py`, periods, postseason, `fga,ftm`, `personal_fouls`; the whole chain after the baseline (final_hp, calibration, tier maps).
 
 **Other scratch tables made for this work** (research only): `nba_score._lr_app_legs` (cache of graded app legs: underdog three seasons 471,652 legs; fliff real 42,206 + derived 1,717,424; pp26 = PrizePicks regular lines this season 28,840; sleeper build hit a deadlock and was re-run - check it landed), `nba_score._mf_study_fs` (older, PrizePicks two-season study legs with the STORED model number).
@@ -132,6 +132,38 @@ Helper on Claude's side: `scratchpad/study/rr.sh` (`run <label> <script> [ENV=..
 5. **Wiring back**, only with the owner's go, in this order: (a) the one-block fix into the certified harness and both builders, with a guard test that fails if the tier ever uses a later game; (b) rebuild production history tables from the honest build; (c) refit the chain (calibration, board-cal tunables, tier maps, confidence); (d) switch strategies; (e) leg ROI on the board. Slips already placed or saved for a day are never changed.
 6. **A permanent leak alarm**: the leak test (what is left of the model after past form vs the player's next games) and the replay-vs-live parity check run on a schedule, so a fifth case is caught by a monitor and not by a losing month.
 
+## 8a. FIRST HONEST SKILL MAP (run hm = 44598649248, `research_honest_history_measure.py`; single-stat props only)
+
+Reading: "gap" = hit of the top fifth minus the bottom fifth of legs ranked by the number. For legs whose price varies the gap is taken ON TOP OF THE PRICE (ranking by what the model says beyond the price) - that is the part that can make money. Stored = today's history; honest = `baseline_history_h` at the leg's own line.
+
+**PrizePicks** (match rate of board legs to an honest rung: 97-99%)
+
+| Leg kind | Season | Legs | Stored, on top of price | Honest, on top of price |
+|---|---|---|---|---|
+| regular | 2024-25 | 38,798 | +9.6 pts | +1.0 |
+| regular | 2025-26 | 52,860 | +12.2 | +1.9 |
+| regular | 2026-27 (live board, replayed baseline) | 11,704 | live final +0.1, live baseline +0.6 | +3.1 |
+| goblin | 2024-25 | 35,539 | +7.6 | +3.1 |
+| goblin | 2025-26 | 88,794 | +10.7 | +4.3 |
+| demon | 2024-25 | 51,926 | +10.0 | +4.3 |
+| demon | 2025-26 | 139,625 | +9.8 | +3.1 |
+
+By prop, honest on top of price (2024-25 / 2025-26): regular points +1.4 / +0.7, rebounds +0.7 / +4.3, assists -1.8 / -1.5, threes +6.3 / +5.2, low-count +0.7 / +3.4; goblin points -1.0 / +1.5, rebounds +2.7 / +4.8, assists +4.3 / +6.3, threes +5.0 / +6.5; demon points +1.3 / +2.7, rebounds +1.0 / +2.7, assists +4.6 / +2.3, threes +12.0 / +5.3. This season regular (small samples): points +3.9, assists +7.1, low-count +2.9, rebounds -1.3, threes -7.9.
+
+**Underdog**
+
+| Tier | Season | Legs | Stored, on top of price | Honest, on top of price |
+|---|---|---|---|---|
+| F (lower multiplier) | 2024-25 / 2025-26 / 2026-27 | 37,827 / 41,392 / 20,202 | +10.4 / +9.6 / +3.9 | +4.4 / +5.7 / +3.0 |
+| B (higher multiplier) | same | 37,795 / 41,207 / 14,969 | +10.2 / +11.8 / +2.9 | +4.2 / +6.5 / +3.5 |
+| R (regular), no price variation | same | 33,578 / 37,194 / 3,107 | +10.8 / +12.4 / +11.8 | +2.8 / +3.3 / +11.7 |
+
+Anomaly to check: Underdog R this season (3,107 legs) shows +11.7 for the honest replay AND for the live baseline - too few legs and possibly a different kind of R line this season; do not use until understood.
+
+**Raw model x multiplier is not a leg ROI.** Top 5% of legs by honest probability x multiplier, real return: PrizePicks -6.6% / -9.1% / +0.1% (all legs -13.6% / -16.0% / -7.7%); Underdog -3.0% / -4.0% / -9.2% (all legs -7.7% / -10.9% / -13.4%). The stored number showed +5.9% / +5.7% and +3.8% / +3.6% on the past seasons - that was the leak. The price blend on honest inputs is the next test.
+
+**What this says.** About a third of the skill history claimed is real. It is 3-6 points of hit rate beyond the price on goblins, demons and Underdog alternates, strongest on threes; on PrizePicks regular lines it is 1-2 points (points and assists about zero). Combos are not measured yet.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -141,6 +173,8 @@ Helper on Claude's side: `scratchpad/study/rr.sh` (`run <label> <script> [ENV=..
 - **O5**: PrizePicks pricing leftovers: re-centre the 6-pick constants (-3.5%, same-game), triples (32 quotes collected), Flex model, then the mechanistic grader in the three twins (`build_slip_engine.py`, `sql/pp_payout_v3.sql`, `main_ui/pricing.js`).
 - **O6**: Sleeper leg cache rebuild status; Betr has no per-leg multiplier (table-priced) - leg ROI there is slip-structure only.
 - **O7 (owner, older, still open)**: re-grade Sleeper Flex records (+8.92u -> +11.63u); nightly check of placed Sleeper entries; Jessica "$3 max per app" reading; Jon's no-Save fallback; view the Jon / Jessi pages live; check the "Unverified" filter count after v1.5.8.
+- **O9**: Underdog R-tier anomaly this season (+11.7 pts on 3,107 legs) - check what those lines are before using.
+- **O10**: leg-ROI blend (model log-odds + price log-odds, walk-forward) re-run on the honest baseline; `research_leg_roi_model.py` / `_proof.py` need a loader that reads `baseline_history_h`.
 - **O8**: the 2026-12-20 scheduled calibration re-test predates this finding - its brief must be rewritten once the honest history exists.
 
 ## 10. Method rules learned in this work (apply to every next step)
@@ -176,3 +210,4 @@ External (read for this work):
 - **2026-11-19 09:55 PT** - Owner: be sure, test / debug / simulate, pair with research (D3). Leak test validated with controls. Root cause located in the harness tier block. Proof on three seasons (v25 / v26 / v27). Own matching error found and fixed before reporting. Compass updated; three options offered.
 - **2026-11-19 11:05 PT** - Owner: option 1, parallel rebuild (D4). `research_honest_history_build.py` written, smoke-tested locally (assists+steals 2025-26: 595,253 rungs, 163 dates, 516 players, 300 s), three season builds dispatched (runs 44595794080 / 44595809486 / 44595823851). `research_honest_history_measure.py` written.
 - **2026-11-19 11:20 PT** - Owner asks for this document (D5). Created. NEXT: read the three builds, run the measurement, record the skill map here (section 8.2), then combos.
+- **2026-11-19 12:25 PT** - All three honest builds landed (178 MB). First measurement run hm (44598649248) recorded in section 8a: honest skill beyond the price is +3 to +6 pts on goblins / demons / Underdog alternates, +1 to +2 on PrizePicks regular lines; raw probability x multiplier loses on its top 5%. NEXT: (1) combos honest build (O2); (2) leg-ROI blend on honest inputs (O10); (3) Underdog R anomaly (O9); then strategies.
