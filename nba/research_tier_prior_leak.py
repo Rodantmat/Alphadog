@@ -137,9 +137,13 @@ def main():
                             WHERE season = %s AND hp IS NOT NULL AND hit IS NOT NULL AND kind = 'standard' AND lower(left(side, 1)) IN ('o', 'm', 'h')
                               AND prop = ANY(%s)""", conn, params=(TEST, PROPS.split(",")))
     logs = defaultdict(list)
-    for pid, d, pts, reb, ast, fg3m, stl, blk, tov in conn.execute("""SELECT nba_player_id::text, game_date, pts, reb, ast, fg3m, stl, blk, tov
+    for pid, d, pts, reb, ast, fg3m, stl, blk, tov, mn in conn.execute("""SELECT nba_player_id::text, game_date, pts, reb, ast, fg3m, stl, blk, tov, min
             FROM nba_stats.player_game_log WHERE game_date >= '2023-10-01' AND min > 0 ORDER BY game_date""").fetchall():
-        logs[pid].append((d, (pts or 0, reb or 0, ast or 0, fg3m or 0, stl or 0, blk or 0, tov or 0)))
+        logs[pid].append((d, (pts or 0, reb or 0, ast or 0, fg3m or 0, stl or 0, blk or 0, tov or 0, float(mn or 0))))
+    prod = pd.read_sql("""SELECT DISTINCT ON (game_date, player_id, prop) game_date, player_id::text pid, prop, anchor::float8 anchor, proj_min::float8 proj_min,
+                                 rate36::float8 rate36, role_tier, recipe FROM nba_score.baseline_history
+                          WHERE season = %s AND prop = ANY(%s) AND coalesce(period, 'FULL') = 'FULL' ORDER BY game_date, player_id, prop, loaded_at DESC""",
+                       conn, params=(TEST, PROPS.split(",")))
     conn.close()
     pp["PLAYER_ID"] = pp["player"].astype(str) if TEST == "2026-27" else [names.get(nk(x), "") for x in pp["player"]]; pp["GAME_DATE"] = pd.to_datetime(pp["game_date"]).dt.date
     M["PLAYER_ID"] = M["PLAYER_ID"].astype(str); M["GAME_DATE"] = pd.to_datetime(M["GAME_DATE"]).dt.date
@@ -176,6 +180,37 @@ def main():
             for j, nm_ in ((6, "the game itself"), (7, "next 5 games"), (8, "games +6..+20")):
                 t = Z[ok, j]; bt, *_ = np.linalg.lstsq(R_, t, rcond=None); parts.append(f"{nm_} {np.corrcoef(rx, t - R_ @ bt)[0, 1]:+.3f}")
             print(f"TL|leak test {lab:20s} ({int(ok.sum()):,} legs) leftover after all past form vs: " + " | ".join(parts), flush=True)
+    # PARITY: production's stored per-game anchor / projected minutes against the harness (honest tier) for the same player-game
+    H0 = M[M["offset"] == 0][["prop", "PLAYER_ID", "GAME_DATE", "anchor"]].rename(columns={"anchor": "anchor_h"})
+    prod["GAME_DATE"] = pd.to_datetime(prod["game_date"]).dt.date
+    Q = prod.merge(H0, left_on=["prop", "pid", "GAME_DATE"], right_on=["prop", "PLAYER_ID", "GAME_DATE"], how="outer", indicator=True)
+    print(f"TL|=== PARITY {TEST}: production baseline_history vs harness (honest tier), per player-game: both {int((Q['_merge'] == 'both').sum()):,}, "
+          f"production only {int((Q['_merge'] == 'left_only').sum()):,}, harness only {int((Q['_merge'] == 'right_only').sum()):,} ===")
+    B_ = Q[Q["_merge"] == "both"].copy(); act = []; mins = []; m10 = []
+    idx = {}
+    for pid, pr, d in zip(B_["pid"], B_["prop"], B_["GAME_DATE"]):
+        g = logs.get(pid); a = np.nan; mn_ = np.nan; l10 = np.nan
+        if g:
+            if pid not in idx:
+                idx[pid] = np.array([x[0] for x in g])
+            n = int(np.searchsorted(idx[pid], d))
+            if n < len(g) and g[n][0] == d:
+                a = g[n][1][STAT[pr]]; mn_ = g[n][1][7]
+                if n >= 3:
+                    l10 = float(np.mean([x[1][7] for x in g[max(0, n - 10):n]]))
+        act.append(a); mins.append(mn_); m10.append(l10)
+    B_["actual"] = act; B_["min_act"] = mins; B_["min_l10"] = m10; B_ = B_[B_["actual"].notna()]
+    B_["month"] = B_["GAME_DATE"].astype(str).str[:7]
+    for pr in sorted(B_["prop"].unique()):
+        for mo in ["all"] + sorted(B_["month"].unique()):
+            k = B_[(B_["prop"] == pr) & ((B_["month"] == mo) | (mo == "all"))]
+            if len(k) < 200:
+                continue
+            dd_ = k["anchor"] - k["anchor_h"]
+            print(f"TL|parity {pr:9s} {mo:7s} n {len(k):6,} | anchors equal {100 * (dd_.abs() < 0.01).mean():3.0f}%, within 1.0 {100 * (dd_.abs() <= 1.0).mean():3.0f}%, mean diff (production - harness) {dd_.mean():+.2f}, "
+                  f"spread {dd_.std():.2f} | error vs the real result: production anchor {np.abs(k['anchor'] - k['actual']).mean():.2f}, harness anchor {np.abs(k['anchor_h'] - k['actual']).mean():.2f} | "
+                  f"minutes: production projected vs played {np.abs(k['proj_min'] - k['min_act']).mean():.2f}, plain last-10 average vs played {np.abs(k['min_l10'] - k['min_act']).mean():.2f}, "
+                  f"production projected minus last-10 {(k['proj_min'] - k['min_l10']).mean():+.2f} | recipe {k['recipe'].mode().iat[0] if k['recipe'].notna().any() else None}", flush=True)
     for tag in ("stored", "honest"):
         for ext in ("py", "pkl"):
             try:
