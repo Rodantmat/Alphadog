@@ -18,7 +18,8 @@ import numpy as np
 import pandas as pd
 import psycopg
 
-APP = (os.environ.get("LH_APP") or "prizepicks").lower()
+APPS = (os.environ.get("LH_APP") or "prizepicks").lower().split(",")
+APP = APPS[0]
 T0 = time.time()
 MK = {"player_points": "points", "player_rebounds": "rebounds", "player_assists": "assists", "player_threes": "threes_made", "player_steals": "steals",
       "player_blocks": "blocks", "player_turnovers": "turnovers", "player_blocks_steals": "stocks", "player_points_rebounds": "pts_reb",
@@ -68,13 +69,21 @@ def write(conn, df, where, params):
                        line float8, kind text, tier text, m float8, hit int, ph float8, p_stored float8)""")
         cur.execute("DELETE FROM nba_score._lr_legs_h WHERE " + where, params)
         with cur.copy("COPY nba_score._lr_legs_h (" + ", ".join(cols) + ") FROM STDIN") as cp:
+            hi = cols.index("hit")
             for r in df[cols].itertuples(index=False):
-                cp.write_row([None if (isinstance(v, float) and v != v) else v for v in r])
-        cur.execute("CREATE INDEX IF NOT EXISTS _lr_legs_h_i ON nba_score._lr_legs_h (app, game_date)")
+                v_ = [None if (isinstance(v, float) and v != v) else v for v in r]; v_[hi] = int(v_[hi])
+                cp.write_row(v_)
     conn.commit()
 
 
 def main():
+    global APP
+    for APP in APPS:
+        run_app()
+    print("LH|DONE", flush=True)
+
+
+def run_app():
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     seasons = ["2024-25", "2025-26", "2026-27"]
     if APP == "prizepicks":
@@ -143,7 +152,6 @@ def main():
             log(f"{APP} {s}: legs {len(df):,} on {df['game_date'].nunique()} slates; with honest probability {int(df['ph'].notna().sum()):,} ({100 * df['ph'].notna().mean():.0f}%); "
                 f"by src {df['src'].value_counts().to_dict()}; by kind {df['kind'].value_counts().to_dict()}")
     conn.close()
-    print("LH|DONE", flush=True)
 
 
 if __name__ == "__main__":
