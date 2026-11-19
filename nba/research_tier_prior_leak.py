@@ -27,7 +27,7 @@ import psycopg
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 TEST = os.environ.get("BT_TEST") or "2025-26"
-TRAIN = os.environ.get("BT_TRAIN") or ("2023-24" if TEST == "2024-25" else "2023-24,2024-25")
+TRAIN = os.environ.get("BT_TRAIN") or {"2024-25": "2023-24", "2025-26": "2023-24,2024-25"}.get(TEST, "2023-24,2024-25,2025-26")
 PROPS = os.environ.get("TL_PROPS") or "points,rebounds"
 
 OLD = '''    for (s, ym, role), grp in d.groupby(["season", "ym", "role_tier"]):
@@ -129,21 +129,31 @@ def main():
     names = {}
     for pid, nm in conn.execute("SELECT nba_player_id::text, full_name FROM nba_ref.players").fetchall():
         names.setdefault(nk(nm), pid)
-    pp = pd.read_sql("""SELECT game_date, player, prop, line::float8 line, hp::float8 hp, hit::int hit FROM nba_score._mf_study_fs
-                        WHERE season = %s AND hp IS NOT NULL AND hit IS NOT NULL AND kind = 'standard' AND lower(left(side, 1)) IN ('o', 'm', 'h')
-                          AND prop = ANY(%s)""", conn, params=(TEST, PROPS.split(",")))
+    if TEST == "2026-27":                                   # this season: the live board legs with the LIVE final_hp and LIVE baseline_hp
+        pp = pd.read_sql("""SELECT game_date, player, prop, line, p hp, base live_base, hit FROM nba_score._lr_app_legs
+                            WHERE app = 'pp26' AND lower(left(side, 1)) IN ('o', 'm', 'h') AND prop = ANY(%s)""", conn, params=(PROPS.split(","),))
+    else:
+        pp = pd.read_sql("""SELECT game_date, player, prop, line::float8 line, hp::float8 hp, NULL::float8 live_base, hit::int hit FROM nba_score._mf_study_fs
+                            WHERE season = %s AND hp IS NOT NULL AND hit IS NOT NULL AND kind = 'standard' AND lower(left(side, 1)) IN ('o', 'm', 'h')
+                              AND prop = ANY(%s)""", conn, params=(TEST, PROPS.split(",")))
     logs = defaultdict(list)
     for pid, d, pts, reb, ast, fg3m, stl, blk, tov in conn.execute("""SELECT nba_player_id::text, game_date, pts, reb, ast, fg3m, stl, blk, tov
             FROM nba_stats.player_game_log WHERE game_date >= '2023-10-01' AND min > 0 ORDER BY game_date""").fetchall():
         logs[pid].append((d, (pts or 0, reb or 0, ast or 0, fg3m or 0, stl or 0, blk or 0, tov or 0)))
     conn.close()
-    pp["PLAYER_ID"] = [names.get(nk(x), "") for x in pp["player"]]; pp["GAME_DATE"] = pd.to_datetime(pp["game_date"]).dt.date
+    pp["PLAYER_ID"] = pp["player"].astype(str) if TEST == "2026-27" else [names.get(nk(x), "") for x in pp["player"]]; pp["GAME_DATE"] = pd.to_datetime(pp["game_date"]).dt.date
     M["PLAYER_ID"] = M["PLAYER_ID"].astype(str); M["GAME_DATE"] = pd.to_datetime(M["GAME_DATE"]).dt.date
     J = pp.merge(M[["prop", "PLAYER_ID", "GAME_DATE", "line", "p_over_s", "p_over_h"]], on=["prop", "PLAYER_ID", "GAME_DATE", "line"], how="inner")
     print(f"TL|=== real PrizePicks REGULAR lines {TEST} matched to a harness rung: {len(J):,} of {len(pp):,} over legs ===")
     if len(J) > 1500:
         y = J["hit"].values
         print("TL|" + skill("stored final_hp (what the backtests used)", J["hp"].values, y), flush=True)
+        if J["live_base"].notna().any():
+            print("TL|" + skill("LIVE baseline_hp stored by production    ", J["live_base"].values, y), flush=True)
+            print(f"TL|correlation (log-odds) on these legs: live baseline vs harness honest {np.corrcoef(lg(J['live_base']), lg(J['p_over_h']))[0, 1]:.3f}; "
+                  f"live baseline vs harness stored-style {np.corrcoef(lg(J['live_base']), lg(J['p_over_s']))[0, 1]:.3f}; live final_hp vs harness honest {np.corrcoef(lg(J['hp']), lg(J['p_over_h']))[0, 1]:.3f}", flush=True)
+            _d = lg(J["live_base"]) - lg(J["p_over_h"])
+            print(f"TL|live baseline minus harness honest (log-odds): mean {_d.mean():+.3f}, spread {_d.std():.3f}; share of legs within 0.10: {100 * (np.abs(_d) < .10).mean():.0f}%", flush=True)
         print("TL|" + skill("harness baseline, STORED tier            ", J["p_over_s"].values, y), flush=True)
         print("TL|" + skill("harness baseline, HONEST tier            ", J["p_over_h"].values, y), flush=True)
         # leak test on the matched legs
