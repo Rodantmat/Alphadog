@@ -804,13 +804,27 @@ def main():
                      if a_[1]["player"] != b_[1]["player"] and a_[1]["game"] != b_[1]["game"]]
             rng.shuffle(pairs)
             for (ta, ra), (tb, rb) in pairs:
-                if getattr(q, "n", 0) >= MAX_Q - 5:
+                if getattr(q, "n", 0) >= int(MAX_Q * 0.76):
                     break
                 anc = anchors_for({ra["game"], rb["game"]}, {ra["player"], rb["player"]})
                 if len(anc) < 4:
                     continue
                 for k in range(0, 5):
                     run("LAD2", [leg(ra), leg(rb)] + anc[:k], f"{ta}+{tb}")
+            # (C) TRIPLES (2026-11-18 19:38 PT, owner: "lighter runs, multiple if needed"): three read rungs of three players in three
+            # games at 3, 4, 5, 6 picks (section LAD3) - does the pair rule (product of the leg prices) extend to three.
+            rng.shuffle(read)
+            tri, used_t = [], 0
+            for i in range(0, len(read) - 2):
+                a_, b_, c_ = read[i], read[i + 1], read[i + 2]
+                if len({a_[1]["player"], b_[1]["player"], c_[1]["player"]}) == 3 and len({a_[1]["game"], b_[1]["game"], c_[1]["game"]}) == 3:
+                    tri.append((a_, b_, c_))
+            for (ta, ra), (tb, rb), (tc, rc) in tri:
+                if getattr(q, "n", 0) >= MAX_Q - 4:
+                    break
+                anc = anchors_for({ra["game"], rb["game"], rc["game"]}, {ra["player"], rb["player"], rc["player"]})
+                for k in range(0, min(3, len(anc)) + 1):
+                    run("LAD3", [leg(ra), leg(rb), leg(rc)] + anc[:k], f"{ta}+{tb}+{tc}")
             save("complete (ladder2)")
             return 0
 
