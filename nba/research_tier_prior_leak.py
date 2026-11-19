@@ -195,9 +195,9 @@ def main():
                 idx[pid] = np.array([x[0] for x in g])
             n = int(np.searchsorted(idx[pid], d))
             if n < len(g) and g[n][0] == d:
-                a = g[n][1][STAT[pr]]; mn_ = g[n][1][7]
+                a = float(g[n][1][STAT[pr]]); mn_ = float(g[n][1][7])
                 if n >= 3:
-                    l10 = float(np.mean([x[1][7] for x in g[max(0, n - 10):n]]))
+                    l10 = float(np.mean([float(x[1][7]) for x in g[max(0, n - 10):n]]))
         act.append(a); mins.append(mn_); m10.append(l10)
     B_["actual"] = act; B_["min_act"] = mins; B_["min_l10"] = m10; B_ = B_[B_["actual"].notna()]
     B_["month"] = B_["GAME_DATE"].astype(str).str[:7]
