@@ -68,7 +68,6 @@ def main():
                        WHERE m.two_pick_power > 0 AND m.base_market = ANY(%s)""", conn, params=(list(LH.MK),))
     q = q.sort_values("quoted_at").drop_duplicates(["gd", "nm", "base_market", "line", "side"], keep="last")
     q["player_id"] = q["nm"].map(ids); q["prop"] = q["base_market"].map(LH.MK); q["real_m"] = (q["p2"] / 2.99) ** (1 / 0.904)
-    PPREG = legs[(legs["app"] == "prizepicks") & (legs["kind"] == "standard")][["gd", "player_id", "prop", "line"]].drop_duplicates(["gd", "player_id", "prop"]).rename(columns={"line": "ppl"})
     verdict = {}
     for app in ("prizepicks", "underdog", "sleeper", "fliff"):
         d = legs[legs["app"] == app].copy()
@@ -106,13 +105,6 @@ def main():
                 if len(un) >= 100:
                     put(app, win, "regular Unders, system top fifth", un[un["p"] >= un["p"].quantile(.8)], pcol="pred")
                     put(app, win, "regular Unders, all", un)
-            if app == "underdog":                            # lead 8j: an Under half a point below PrizePicks' regular line, paid above 1.0x
-                hp_ = d[(~d["over"]) & (d["mm"] / 1.8708 > 1.005)].merge(PPREG, on=["gd", "player_id", "prop"], how="inner")
-                hp_ = hp_[(hp_["line"] - hp_["ppl"]).between(-.51, -.49)]
-                vh = put(app, win, "half-point Unders (8j), all", f(hp_))
-                put(app, win, "half-point Unders (8j), 1.08x+", f(hp_[hp_["mm"] / 1.8708 >= 1.08]))
-                if win == "season":
-                    verdict[(app, "8j lead")] = vh
             v = put(app, win, "book rates positive (exact line)", f(d[d["br"] > 0]), pcol="br")
             v2 = put(app, win, "book rates positive, >= 2 books", f(d[(d["br"] > 0) & (d["books"] >= 2)]), pcol="br")
             if win == "season":

@@ -64,8 +64,19 @@ def load(conn):
     df = df.merge(mc, on=["gd", "player_id", "prop", "line"], how="left"); df["pb"] = np.where(df["under"], 1 - df["po"], df["po"])
     # the other app's regular line
     other = "prizepicks" if APP == "underdog" else "underdog"
-    ol = pd.read_sql("SELECT DISTINCT game_date::text gd, player_id, prop, line::float8 oline FROM nba_score._lr_legs_h WHERE app = %s AND kind = %s",
-                     conn, params=(other, "standard" if other == "prizepicks" else "R")).drop_duplicates(["gd", "player_id", "prop"])
+    # NEVER take a reference line from an outcome-filtered table: _lr_legs_h drops tied legs, and PrizePicks posts whole-number lines (lesson 8j).
+    if other == "prizepicks":
+        ol = pd.read_sql("""SELECT DISTINCT game_date::text gd, nm, base_market, line::float8 oline FROM nba_market.pp_leg_price
+                            WHERE snapshot_label = 'window' AND kind = 'standard'""", conn)
+        ol["player_id"] = ol["nm"].map(ids); ol["prop"] = ol["base_market"].map(inv); ol = ol[ol["player_id"].notna() & ol["prop"].notna()]
+        ol = ol.drop_duplicates(["gd", "player_id", "prop"])[["gd", "player_id", "prop", "oline"]]
+    else:
+        ol = pd.read_sql("""SELECT DISTINCT game_date::text gd, nba_ref.norm_name(player) nm, market_key, line::float8 oline FROM nba_market.board_snapshots
+                            WHERE bookmaker = 'underdog' AND snapshot_label = 'window' AND market_key = ANY(%s)
+                              AND coalesce(multiplier, round(((CASE WHEN price < 0 THEN 1 + 100.0 / (-price) ELSE 1 + price / 100.0 END) / sqrt(3))::numeric, 2)) = 1.0""",
+                         conn, params=(list(MKI.values()),))
+        ol["player_id"] = ol["nm"].map(ids); ol["prop"] = ol["market_key"].map(inv); ol = ol[ol["player_id"].notna() & ol["prop"].notna()]
+        ol = ol.drop_duplicates(["gd", "player_id", "prop"])[["gd", "player_id", "prop", "oline"]]
     df = df.merge(ol, on=["gd", "player_id", "prop"], how="left")
     # line movement between the morning board and the pick-time (window) board - PrizePicks regular lines only (nba_market.pp_leg_price keeps both)
     df["mline"] = np.nan; df["had_morning"] = False

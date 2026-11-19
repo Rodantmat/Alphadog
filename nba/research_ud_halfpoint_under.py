@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+*** RETRACTED 2026-11-19: the result of this script is an ARTIFACT. Its PrizePicks reference lines come from nba_score._lr_legs_h, where tied legs
+*** (stat == line) are dropped. PrizePicks posts whole-number lines on rebounds / assists, so the join kept only games WITHOUT a tie = a filter on the
+*** outcome. With the unfiltered reference (nba_market.pp_leg_price) the same legs return -5% / -12% / -13%. Kept for the record; do not use.
 S6d - UNDERDOG "HALF POINT BELOW THE MARKET" UNDERS (alternates at real multipliers). READ-ONLY. (NBA_HONEST_REBUILD.md section 8j)
 The honest cell scan on Underdog alternates (run cs3_alt) kept one family in all three seasons: an Under on an Underdog ALTERNATE line that sits half a
 point BELOW PrizePicks' regular line for the same player / prop / day, paid above 1.0x (tier B1). 10,170 legs, +3.3% / +2.4% / +2.2% a leg; with the

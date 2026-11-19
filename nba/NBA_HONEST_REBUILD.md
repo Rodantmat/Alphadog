@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 13:54 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 13:57 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -303,9 +303,17 @@ Reading with the measured leg rates: all regular Unders hit 0.51-0.53 on every a
 - On Underdog 2-pick Power is the cheapest (0.5345), then 3-pick Power, 4-pick Flex, 4-pick Power, 6-pick Flex; 3-pick Flex (0.5539), 5-pick Power and 6-pick Power are the expensive ones. (Owner rule: no Underdog Power above 2 picks - kept; the table is information.)
 - Betr boards carry Underdog's lines (event ids "live-underdog-..."), priced on Betr's own table: no separate honest history; its verdict follows Underdog's regular legs and the referee's played line.
 
-## 8j. SECOND LEAD, THE STRONGEST SO FAR - Underdog Unders half a point below the market (2026-11-19 13:54 PT)
+## 8j. RETRACTED (13:57 PT) - "Underdog Unders half a point below the market" was MY OWN ARTIFACT. Read this box first.
 
-Runs: cs3_alt 44620445xxx (`research_cell_scan_honest.py CS_KIND=alt`, Underdog alternates at REAL multipliers, 268,265 legs, 30,158 cells), cs3_pp 44620459760 (PrizePicks with line move since morning: 0 cells kept, 0-1 on shuffles; morning boards exist on 30 dates only), hu 44622145818 (`research_ud_halfpoint_under.py`).
+**What went wrong.** The reference "PrizePicks regular line" was taken from `nba_score._lr_legs_h`. That table holds GRADED legs and drops ties (stat == line). PrizePicks posts whole-number regular lines on rebounds and assists 40-50% of the time. Joining to it therefore kept only the games where the stat did NOT land on PrizePicks' line - a filter on the outcome. Every "half a point below" leg was an Underdog x.5 line under a PrizePicks whole number (3.5 under 4, 5.5 under 6 ...), so the measured hit rate was P(under | no tie), not P(under).
+**Proof.** Same legs, reference taken from the unfiltered board (`nba_market.pp_leg_price`, window, regular): rebounds + assists, paid above 1.0x: 2,204 / 2,863 / 492 legs, hit 0.460 / 0.447 / 0.431, return **-5.3% / -11.6% / -13.0%**. With the filtered reference the same cell read +9.8% / +4.5% / +0.6%. The tie-free PrizePicks Under and the Underdog Under had the IDENTICAL hit rate on the joined rows (0.548 / 0.527 / 0.479), which is what exposed it.
+**Caught before anything was reported to the owner or changed.** Referee line removed; `research_ud_halfpoint_under.py` marked retracted; the cell scan now reads the other app's line from the unfiltered boards.
+**RULE C12:** a reference line, price or feature may never come from a table that was filtered or graded on the result. (`_lr_legs_h` and `_lr_app_legs` are outcome tables: use them for the leg being judged, never as a lookup for another leg.)
+**What still stands from this batch:** the alternates scan has NO valid kept cell (28 of its 31 were this artifact; the other 3 are single odd cells); PrizePicks line-move scan: nothing; O14 below. The 8g lead (Underdog regular Unders ranked by the system) does not use this join.
+
+### (original text, kept for the record - DO NOT USE) Underdog Unders half a point below the market (2026-11-19 13:54 PT)
+
+Runs: cs3_alt 44620444723 (`research_cell_scan_honest.py CS_KIND=alt`, Underdog alternates at REAL multipliers, 268,265 legs, 30,158 cells), cs3_pp 44620459760 (PrizePicks with line move since morning: 0 cells kept, 0-1 on shuffles; morning boards exist on 30 dates only), hu 44622145818 (`research_ud_halfpoint_under.py`).
 - Alternates scan kept 31 cells; 28 of them are slices of ONE family: an **Under on an Underdog line that sits half a point BELOW PrizePicks' regular line for the same player / prop / day, paid above 1.0x** (tier B1; in practice Underdog's main line shaded half a point down with the Under paying ~1.07x). No model involved. (The shuffle yardstick of that run is not valid for priced legs - noted; the evidence is below.)
 - Per leg, real multipliers: all such legs 9,771 on 338 slates (28 a slate): **+3.5% [+0.8 .. +6.4] / +2.5% [-0.3 .. +5.3] / +6.5% [-0.2 .. +13.8]** by season, pooled +3.0% [+1.2 .. +4.6]; by phase +2.6% / +3.2% / +3.8% (not an early-season effect). Dose-response with the price: paid 1.01-1.04x +0.7%, 1.05-1.08x +1.3%, 1.09-1.12x +10.0% [+5.6 .. +14.4] (+11.0 / +7.8 / +3.8 by season), 1.13-1.20x +9.7%. By prop: assists +9.4% (+16.8 / +3.6 / +5.3), rebounds +6.4% (+10.3 / +4.5 / +1.8), reb_ast +0.3%, points -1.7%, pra -1.5%, pts_ast -8.0%. Line 3-5.5: +8.0% (+14.4 / +4.3 / +2.8).
 - It is specific: the same Under ONE full point below PrizePicks loses (-12.5%); at the same line paying 1.0-1.08x it is flat (+0.7%); B1 Unders as a whole lose (-5.9 / -8.1 / -9.3%). Overs: nothing.
@@ -390,3 +398,4 @@ External (read for this work):
 - **2026-11-19 12:52-13:13 PT** - Honest cell scan built (26 features incl. injury report at pick time, shuffle yardstick), run on Underdog and PrizePicks regular legs: nothing beyond chance (section 8h). Online reading added. NEXT (after the P3 window, 13:36): the same scan on Underdog alternates at their real multipliers (CS_KIND=alt); line-movement features (morning board to P3 board); Betr.
 - **2026-11-19 13:36-13:52 PT** - Owner interaction: asked for help placing today's slips ("continue with your work on the background, but help me get the slips done first"). Built 5 Fliff slips and 2 Underdog entries in his Chrome ($10 each); he pressed Submit / Play himself each time. Fliff cart driven through the page's own app frame (mouse clicks time out on that small window). O14 logged.
 - **2026-11-19 13:36-13:54 PT** - Alternates scan and half-point map / slips run in the background; second lead found and documented (section 8j); referee gets its line. PrizePicks line-move scan: nothing.
+- **2026-11-19 13:57 PT** - RETRACTION of 8j: the half-point lead was produced by joining to an outcome-filtered table (ties dropped). Found while checking the mechanism (identical hit rates of two different bets), proven with the unfiltered board (-5% / -12% / -13%). Rule C12 added. Scripts fixed. Nothing had been reported or wired.
