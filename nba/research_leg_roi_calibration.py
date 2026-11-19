@@ -117,6 +117,9 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])            # the row loop is long and the idle connection gets closed
     T = M.pp_tables(conn)["all"]
     subsets = [("ALL LEGS", np.ones(len(A0), bool))]
+    if APP != "betr":                                         # the board gives no leg ROI to a leg paying 8.3x or more (break-even under 12%)
+        m_eff = A0[:, 2] * (1.8708 if APP == "underdog" else 1.0)
+        subsets.append(("LEGS THE BOARD PRICES (pays under 8.3x)", m_eff <= 1.0 / 0.12))
     if len(set(K0)) > 1:
         subsets += [("MAIN LINES ONLY", K0 == "main"), ("ALTERNATE LINES ONLY", K0 != "main")]
     for s in sorted(set(S0)):
