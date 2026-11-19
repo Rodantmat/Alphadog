@@ -14,7 +14,8 @@ Leg ROI = p x m - 1, with
         ... +ISO       the raw ROI mapped to the REAL return of earlier legs with the same raw ROI (monotone / isotonic fit per kind, earlier slates only)
 The test of "realistic": legs the model rates at X% must really return about X%. Printed per predicted-ROI bucket (legs, predicted, real, +- standard error
 by slate), per kind, plus the slope of real on predicted (1.00 = honest, under 1 = overstated) and the real return of the top 5 legs a slate.
-Env: DATABASE_URL, LR_BASE (0.56), LR_WARM (60), LR_STEP (10), LR_MAXM (8.3).
+LR_APP = prizepicks (default) | sleeper | fliff | underdog (the app own graded boards; give smaller LR_WARM / LR_STEP).
+Env: DATABASE_URL, LR_APP, LR_BASE (0.56), LR_WARM (60), LR_STEP (10), LR_MAXM (8.3).
 """
 import os
 import time
@@ -25,9 +26,11 @@ import psycopg
 
 T0 = time.time()
 BASE = float(os.environ.get("LR_BASE") or 0.56)
+APP = (os.environ.get("LR_APP") or "prizepicks").lower()
 WARM = int(os.environ.get("LR_WARM") or 60)
 STEP = int(os.environ.get("LR_STEP") or 10)
 MAXM = float(os.environ.get("LR_MAXM") or 8.3)
+MINB = int(os.environ.get("LR_MINB") or 200)
 KAPPA = {"standard": .89, "goblin": .85, "demon": .76}
 PW = {"standard": .2, "goblin": .6, "demon": .6}
 COMBO = {"pra", "pts_ast", "pts_reb", "reb_ast", "stocks"}
@@ -71,8 +74,9 @@ def pava(x, y, w):
 
 def iso_fit(raw, ret, nb=120):
     """Bin raw ROI into quantile bins, real return per bin, monotone fit; returns a predictor."""
-    if len(raw) < 2000:
+    if len(raw) < 1500:
         return lambda r: r
+    nb = int(min(nb, max(10, len(raw) // 150)))
     q = np.quantile(raw, np.linspace(0, 1, nb + 1)[1:-1])
     b = np.searchsorted(q, raw)
     cnt = np.bincount(b, minlength=nb).astype(float); ok = cnt > 0
@@ -85,20 +89,74 @@ def iso_fit(raw, ret, nb=120):
     return pred
 
 
+def load_pp(conn):
+    df = pd.read_sql("""SELECT season, game_date, prop, side, kind, factor::float8 factor, hit::int hit, hp::float8 hp
+                        FROM nba_score._mf_study_fs WHERE hp IS NOT NULL AND hit IS NOT NULL AND factor > 0 AND kind IN ('standard', 'goblin', 'demon')""", conn)
+    df["over"] = df["side"].str.lower().str[0].isin(["o", "m", "h"]).astype(float)
+    df["be"] = np.minimum(.99, BASE / df["factor"]); df["m"] = 1.0 / df["be"]
+    kp = df["kind"].map(KAPPA).values; w = df["kind"].map(PW).values
+    return df, kp, w, None
+
+
+def load_app(conn):
+    """Sleeper / Fliff / Underdog: the app's own graded boards (same loaders as research_leg_roi_calibration.py)."""
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    os.environ["APP"] = "UD"; os.environ["SW_APP"] = APP if APP in ("sleeper", "fliff") else "sleeper"
+    import research_app_final_strategies as AF
+    import research_roi_slip_sweep_apps as M
+    days = []
+    if APP == "underdog":
+        for d in AF.slate_days(conn):
+            st = AF.box(conn, d)
+            if st:
+                days.append((d, AF.load_ud(conn, d, st)[0]))
+    else:
+        days = sorted(M.build_sleeper_fliff(conn).get(M.REAL, []))
+    rows = []
+    for d, legs in days:
+        for l in legs:
+            h = l.get("hit")
+            if h is None or h != h or l.get("p") is None or not l.get("m") or (l["m"] <= 1.0 and APP != "underdog"):
+                continue
+            mm = float(l["m"]) * (1.8708 if APP == "underdog" else 1.0)
+            rows.append((AF.season_of(d), d, l["prop"], float(str(l["side"]).lower()[0] in "omh"), "standard" if str(l.get("kind") or "main") == "main" else "alt",
+                         mm, int(h), float(l["p"])))
+    df = pd.DataFrame(rows, columns=["season", "game_date", "prop", "over", "kind", "m", "hit", "hp"])
+    df["be"] = 1.0 / df["m"]
+    try:
+        conn.close()
+    except Exception:
+        pass
+    c2 = psycopg.connect(os.environ["DATABASE_URL"])
+    T = M.pp_tables(c2)["all"]; c2.close()
+    gap = np.zeros(len(df))
+    for o in (0.0, 1.0):
+        k = (df["over"] == o).values
+        if k.any():
+            gap[k] = M.cal_gap(T, bool(o), df["hp"].values[k])[0]
+    kp = np.full(len(df), .88); w = np.minimum(.85, .40 + .5 * np.abs(np.log(df["be"].values / .56)))
+    return df, kp, w, gap
+
+
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
-    df = pd.read_sql("""SELECT season, game_date, prop, side, kind, factor::float8 factor, hit::int hit, hp::float8 hp
-                        FROM nba_score._mf_study_fs WHERE hp IS NOT NULL AND hit IS NOT NULL AND factor > 0 AND kind IN ('standard', 'goblin', 'demon')""", conn)
-    conn.close()
-    df["over"] = df["side"].str.lower().str[0].isin(["o", "m", "h"]).astype(float)
-    df["be"] = np.minimum(.99, BASE / df["factor"]); df["m"] = 1.0 / df["be"]
-    df = df[df["m"] < MAXM].sort_values("game_date", kind="stable").reset_index(drop=True)
+    df, KP, WB, GAPFIX = load_pp(conn) if APP == "prizepicks" else load_app(conn)
+    try:
+        conn.close()
+    except Exception:
+        pass
+    keep = ((df["m"] < MAXM) & (df["m"] > 1.0)).values
+    df = df[keep]; KP = KP[keep]; WB = WB[keep]; GAPFIX = GAPFIX[keep] if GAPFIX is not None else None
+    o_ = np.argsort(df["game_date"].values, kind="stable")
+    df = df.iloc[o_].reset_index(drop=True); KP = KP[o_]; WB = WB[o_]; GAPFIX = GAPFIX[o_] if GAPFIX is not None else None
     days = np.array(sorted(df["game_date"].unique())); didx = {d: i for i, d in enumerate(days)}
     df["di"] = df["game_date"].map(didx).values
+    KINDS = [k for k in ("standard", "goblin", "demon", "alt") if (df["kind"] == k).any()]
     log(f"legs {len(df):,} on {len(days)} slates {days[0]} .. {days[-1]}; base break-even {BASE}; warm-up {WARM} slates, refit every {STEP}")
     y = df["hit"].values.astype(float); m = df["m"].values; di = df["di"].values; ret = y * m - 1
-    kind = df["kind"].values; isg = (kind == "goblin").astype(float); isd = (kind == "demon").astype(float); one = np.ones(len(df))
+    kind = df["kind"].values; isg = np.isin(kind, ["goblin", "alt"]).astype(float); isd = (kind == "demon").astype(float); one = np.ones(len(df))
     lhp = lg(df["hp"].values); lbe = lg(df["be"].values); ov = df["over"].values
     combo = df["prop"].isin(COMBO).astype(float).values; lowc = df["prop"].isin(LOWC).astype(float).values
     feats = {"BLEND": [one, lhp, lbe, ov, isg, isd],
@@ -114,11 +172,13 @@ def main():
         if not te.any():
             continue
         # BOARD formula with the calibration gap from earlier slates only
-        g = pd.Series(y[tr] - df["hp"].values[tr]).groupby([kind[tr], ov[tr], hb[tr]]).mean().to_dict()
-        gap = np.array([g.get((k, o, b), 0.0) for k, o, b in zip(kind[te], ov[te], hb[te])])
+        if GAPFIX is None:
+            g = pd.Series(y[tr] - df["hp"].values[tr]).groupby([kind[tr], ov[tr], hb[tr]]).mean().to_dict()
+            gap = np.array([g.get((k, o, b), 0.0) for k, o, b in zip(kind[te], ov[te], hb[te])])
+        else:
+            gap = GAPFIX[te]
         pc = np.clip(df["hp"].values[te] + gap, .005, .995)
-        kp = np.array([KAPPA[k] for k in kind[te]]); w = np.array([PW[k] for k in kind[te]])
-        P["BOARD"][te] = np.clip(pc + w * (np.minimum(.99, kp * df["be"].values[te]) - pc), .005, .995)
+        P["BOARD"][te] = np.clip(pc + WB[te] * (np.minimum(.99, KP[te] * df["be"].values[te]) - pc), .005, .995)
         for name, cols in feats.items():
             X = np.column_stack(cols); wv = fit(X[tr], y[tr])
             P[name][te] = 1 / (1 + np.exp(-X[te] @ wv)); coef_log[name].append(np.round(wv, 3))
@@ -130,7 +190,7 @@ def main():
             tr = scored & (di < start); te = (di >= start) & (di < start + STEP)
             if not te.any():
                 continue
-            for k in ("standard", "goblin", "demon"):
+            for k in KINDS:
                 a = tr & (kind == k); b = te & (kind == k)
                 if b.any():
                     out[b] = iso_fit(raw[a], ret[a])(raw[b])
@@ -142,12 +202,12 @@ def main():
     log(f"scored legs {int(ev.sum()):,} on {len(set(di[ev]))} slates (after two warm-ups)")
     variants = {k: P[k] * m - 1 for k in ("MODEL", "BOARD", "BLEND", "BLEND+")}
     variants.update(ISO)
-    subsets = [("ALL KINDS", ev), ("REGULAR", ev & (kind == "standard")), ("GOBLIN", ev & (kind == "goblin")), ("DEMON", ev & (kind == "demon"))]
+    subsets = [("ALL KINDS", ev)] + ([(k.upper() if k != "standard" else "REGULAR", ev & (kind == k)) for k in KINDS] if len(KINDS) > 1 else [])
     for s in sorted(df["season"].unique()):
         subsets.append((f"SEASON {s}", ev & (df["season"] == s).values))
     for label, mk in subsets:
         dd = di[mk]; rr = ret[mk]; nd = len(set(dd))
-        print(f"\nLR|=== PRIZEPICKS {label}: {int(mk.sum()):,} legs on {nd} slates; hit {y[mk].mean():.3f}; all legs return {100 * rr.mean():+.1f}% ===", flush=True)
+        print(f"\nLR|=== {APP.upper()} {label}: {int(mk.sum()):,} legs on {nd} slates; hit {y[mk].mean():.3f}; all legs return {100 * rr.mean():+.1f}% ===", flush=True)
         for name, roi_all in variants.items():
             roi = roi_all[mk]
             # slope of real on predicted over 40 quantile bins (weighted)
@@ -167,7 +227,7 @@ def main():
                 bk = np.searchsorted(BINS, roi, side="right") - 1
                 for j, bn in enumerate(BNAME):
                     s_ = bk == j
-                    if s_.sum() < 200:
+                    if s_.sum() < MINB:
                         continue
                     daily = pd.Series(rr[s_]).groupby(dd[s_]).agg(["sum", "count"])
                     tot = daily["sum"].sum() / daily["count"].sum()
