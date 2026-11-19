@@ -4,7 +4,7 @@
 
 **Rule for whoever works on this (Claude included).** Update this file after every move on the rebuild and at the end of every interaction with the owner: add to the LOG (section 12), then correct sections 1-11 so they describe the present. Nothing here is "to be written later". The general project record stays in `NBA_COMPASS.md`; this file is the detail for this adjustment only.
 
-Last updated: 2026-11-19 12:45 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
+Last updated: 2026-11-19 12:48 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
@@ -241,6 +241,28 @@ The board's leg ROI overstates by 13-22 points on every app (this is the number 
 
 **ONE LEAD - Underdog regular (1.0x) Unders, early season.** The production number ranks Underdog regular legs this season (honest, live): Under fifths by final_hp hit 0.499 / 0.532 / 0.581 (895 legs, break-even 0.5345, about +8.7%, 2.8 standard errors); Overs 0.420 / 0.471 / 0.504 (all losers). Same lines as PrizePicks: 0.500 / 0.534 / 0.570. Honest baseline on three seasons, top tenth of Underdog regular Unders: Oct-Nov 0.529 / 0.557 / 0.594 (1,105 / 1,301 / 446 legs), Dec-Jan 0.533 / 0.531, Feb onward 0.510 / 0.501. Pooled Oct-Nov 0.552 (2,852 legs, +-0.009) = about +3.3% a leg, 1.9 standard errors over break-even, and it fades after January. PrizePicks regular Unders top tenth: 0.52-0.53, under its 0.542. STATUS: lead, not proof (one of many cells looked at; this season carries most of it). The referee now tracks it daily. NOT a line-difference effect (Underdog line against PrizePicks line: no pattern).
 
+## 8g. THE UNDERDOG REGULAR-UNDER LEAD AS SLIPS (2026-11-19 12:48 PT; `research_ud_under_slips.py`, run un 44612024565; referee run hr3 44611612037)
+
+Referee line added: "regular Unders, system top fifth" per app. First reading, season to date: Underdog 897 legs hit 0.580, predicted +9.6%, real +8.5% [+3.0 .. +14.1] (last 7 slates: 132 legs, -9.3% [-25 .. +11.5]); PrizePicks 2,884 legs hit 0.508, real -6.2%; Sleeper -7.6%; Fliff -4.8%. Underdog is the only app where the number ranks. Underdog played legs now read: live 60 slips +21.7u, 149 unique legs 0.557 (+-0.041); shadow 183 slips +24.2u, 199 legs 0.558 (+-0.035); paper 32 slips -17.0u.
+
+Slips from the lead, Underdog real tables (Power 2: 3.5x ... 6: 35x; Flex 3: 3.25 / 1.09, 4: 7.2 / 1.4, 5: 10 / 2.5, 6: 25 / 2.6 / 0.25; per-leg break-even 2-pick Power 0.5345, 4-pick Flex 0.5370, 6-pick Flex 0.5382, 5-pick Flex 0.5475, 3-pick Flex 0.5539). Pool = regular Under legs, one per player, ranked by the HONEST baseline (three seasons); no leg reused in a slate; at most 2 legs of a game in a slip.
+| pool leg hit | 2024-25 | 2025-26 | 2026-27 |
+|---|---|---|---|
+| top 6 a slate | 0.519 (Oct-Nov 0.566, Dec-Jan 0.511, Feb+ 0.497) | 0.565 (0.604 / 0.562 / 0.541) | 0.580 |
+| top 10 | 0.527 | 0.559 | 0.588 |
+| top 20 | 0.521 | 0.536 | 0.545 |
+| top 30 | 0.528 | 0.533 | 0.541 |
+Top 6 legs, 3 slips a slate:
+| structure | 2024-25 (465 slips) | 2025-26 (468) | 2026-27 (87) |
+|---|---|---|---|
+| 2-pick Power | -6.7% [-17 .. +5], -31.0u, drawdown 54.5, drought 4 | +9.2% [-2 .. +22], +43.0u, dd 30.0, drought 3 | +28.7% [-3 .. +57], +25.0u, dd 11.5, drought 3 |
+Top 12 legs, 3 slips a slate: 3-pick Flex -10.5% / +2.1% / +8.6%; 4-pick Flex -11.2% / +9.0% / +6.5%; 3-pick Power -8.2% / +14.6% / +19.5% (not allowed by the owner's Underdog rule); 4-pick Power -18.3% / +13.8% / -10.0%. Top 20, 3 a slate: 5-pick Flex -6.9% / -18.9% / -3.8%; 6-pick Flex +0.3% / -4.7% / +2.4%; 5-pick Power -5.2% / -33.3% / -23.1%; 6-pick Power -7.5% / -18.8% / -10.3%.
+One slip a slate from the top 2 legs (2-pick Power): +1.6% / +36.9% [+12 .. +59] / +69.0% [+21 .. +129] (155 / 156 / 29 slips).
+Ranked by production final_hp instead (this season only, 29 slates): top 6 legs 0.626, top 10 0.585; 3 slips of 2-pick Power +32.8% [+4.6 .. +60.9], +28.5u, drawdown 10.5.
+READING: positive in two of three seasons, negative in 2024-25 (its model had one training season); three seasons pooled, 3 x 2-pick Power: +3.6% on 1,020 slips - not different from zero. The edge sits in the very top of the list (6-10 legs a slate) and in 2-pick Power / 4-pick Flex; it dies with pool size and with 5-6 picks. NOT proven; tracked daily by the referee. No change to live Underdog strategies (D7).
+
+**Open (O13) - the number on the board.** The leg ROI shown today overstates by 13-22 points on every app (referee table, 8f). The honest formula is ready (8d). Showing it is a change to the slip screen and may move ROI-aware strategies, so it is NOT switched: next step is a shadow column written at P3 next to the current number, compared daily by the referee; the switch is the owner's call once he has seen both side by side.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -296,3 +318,4 @@ External (read for this work):
 - **2026-11-19 12:27 PT** - OWNER DECISION D7 (answer to O12): option 3 - keep playing as now, full stake, all apps; continue the work. O12 closed. Live strategies, stakes and the slip screen stay as they are until the honest pipeline has a proven replacement. NEXT (in order): (a) one-block tier fix in the two harness files + guard test + dry-run against production output; (b) shadow table of the honest leg ROI (sportsbook chance at the line x real price), written daily, nothing on the board changes; (c) S6 structure effects (same-game correlation, Flex tiers) and Betr on honest inputs; (d) search for a real edge led by the sportsbook signal.
 - **2026-11-19 12:28-12:36 PT** - Dry-run of the tier fix in the production builder (C10: ready, not switched). Off-market sportsbook test (C11). Section 8e. Running: `research_pp_stack_structure.py` (run ss 44609896286) - correlated stacks of regular lines against the Power / Flex tables, results only.
 - **2026-11-19 12:36-12:44 PT** - Stack-structure test (no lift). Daily referee built, run twice, scheduled (new workflow `nba-honest-referee.yml`). Underdog early-season regular-Under lead found and logged. Section 8f. NEXT: fix the Underdog played-slip read in the referee ("dnp"); add the Underdog-Under lead as its own referee line; then S6 on Underdog only (the one app with a lead), honest inputs, real multipliers.
+- **2026-11-19 12:44-12:48 PT** - Referee fixed for Underdog played slips and given the regular-Under line; Underdog lead tested as slips on three seasons (section 8g): two seasons positive, one negative, pooled not proven. Stopped new runs before the P3 window (13:17-13:35). NEXT after 13:40: shadow honest leg ROI written at P3 beside the board's number (O13); Betr on honest inputs; keep the referee running.
