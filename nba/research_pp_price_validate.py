@@ -84,6 +84,29 @@ def main():
             mk = ok & (j["kind"] == kd).values; summ(f"REFIT held out, {real}: {kd}", np.exp(pred[mk] - y[mk]))
             for lo, hi in ((0, .7), (.7, .85), (.85, 1.0), (1.0, 1.3), (1.3, 2.0), (2.0, 3.5), (3.5, 99)):
                 m2 = mk & (j[real].values >= lo) & (j[real].values < hi); summ(f"REFIT held out, {real}: {kd} real price {lo}-{hi}", np.exp(pred[m2] - y[m2]))
+    # stacked refit: the stored model price as an input, re-centred per kind with tier and distance terms (whole days held out)
+    print("\nPV|=== STACKED refit (whole days held out): log real price ~ kind x [1, log stored price, (log stored price)^2, distance, level, tier] + prop group ===")
+    j["lfm"] = np.log(j["f_model"].values); j["tr"] = j["tier"].fillna(0).astype(float)
+    for real in ("f2", "f6"):
+        pred = np.full(len(j), np.nan); y = np.log(j[real].values)
+        for kd in ("goblin", "demon"):
+            mk = (j["kind"] == kd).values
+            X = np.column_stack([np.ones(mk.sum()), j["lfm"].values[mk], j["lfm"].values[mk] ** 2, j["rel"].values[mk], j["lvl"].values[mk], j["tr"].values[mk]] +
+                                [(j["g"].values[mk] == g).astype(float) for g in ("rebounds", "assists", "threes", "combo")])
+            fo = j["fold"].values[mk]; out = np.full(mk.sum(), np.nan)
+            for f in range(5):
+                tr = fo != f; b, *_ = np.linalg.lstsq(X[tr], y[mk][tr], rcond=None); out[~tr] = X[~tr] @ b
+            pred[mk] = out
+            b, *_ = np.linalg.lstsq(X, y[mk], rcond=None)
+            print(f"PV|STACKED_COEF {real} {kd} (const, log stored, log stored^2, distance, level, tier, rebounds, assists, threes, combo): " + ",".join(f"{v:.4f}" for v in b))
+        ok = np.isfinite(pred)
+        summ(f"STACKED held out, {real}: all", np.exp(pred[ok] - y[ok]))
+        for kd in ("goblin", "demon"):
+            mk = ok & (j["kind"] == kd).values; summ(f"STACKED held out, {real}: {kd}", np.exp(pred[mk] - y[mk]))
+            for lo, hi in ((0, .7), (.7, .85), (.85, 1.0), (1.0, 1.3), (1.3, 2.0), (2.0, 3.5), (3.5, 99)):
+                m2 = mk & (j[real].values >= lo) & (j[real].values < hi); summ(f"STACKED held out, {real}: {kd} real price {lo}-{hi}", np.exp(pred[m2] - y[m2]))
+            for t in sorted(j["tr"][mk].unique()):
+                m2 = mk & (j["tr"].values == t); summ(f"STACKED held out, {real}: {kd} tier {int(t)}", np.exp(pred[m2] - y[m2]))
     print("PV|DONE", flush=True)
 
 
