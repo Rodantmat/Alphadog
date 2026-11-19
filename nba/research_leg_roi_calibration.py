@@ -24,8 +24,8 @@ import psycopg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 APP = (os.environ.get("RC_APP") or "sleeper").lower()
-os.environ["APP"] = "UD"
-os.environ["SW_APP"] = APP if APP in ("sleeper", "fliff") else "sleeper"
+os.environ["APP"] = "BETR" if APP == "betr" else "UD"
+os.environ["SW_APP"] = APP if APP in ("sleeper", "fliff", "betr") else "sleeper"
 import research_app_final_strategies as AF           # noqa: E402
 import research_roi_slip_sweep_apps as M             # noqa: E402
 
@@ -72,6 +72,14 @@ def main():
                 continue
             legs, _ = AF.load_ud(conn, d, st)
             days.append((d, legs))
+    elif APP == "betr":
+        raw = M.build_betr(conn)                               # Betr legs carry no multiplier of their own (m = 1): accuracy and the hit rate of the top legs only
+        days = sorted(x for v in raw.values() for x in v)
+        try:
+            conn.close()
+        except Exception:
+            pass
+        conn = psycopg.connect(os.environ["DATABASE_URL"])
     else:
         raw = M.build_sleeper_fliff(conn)
         days = sorted(raw.get(M.REAL, []))
@@ -79,7 +87,7 @@ def main():
     for d, legs in days:
         for l in legs:
             h = l.get("hit")
-            if h is None or h != h or l.get("p") is None or not l.get("m") or l["m"] <= 1.0 and APP != "underdog":
+            if h is None or h != h or l.get("p") is None or not l.get("m") or l["m"] <= 1.0 and APP not in ("underdog", "betr"):
                 continue
             if l["prop"] not in AF.STAT:
                 continue
@@ -134,14 +142,16 @@ def score(label, A, seasons, T):
         if kk.any():
             gap[kk] = M.cal_gap(T, bool(ov), p[kk])[0]
     pc = np.clip(p + gap, .005, .995)
-    deployed = np.clip(pc + 0.40 * (np.minimum(.99, 0.88 * be) - pc), .005, .995)
+    # main_ui/roi.js estimateHit, kind 'all' (2026-11-18 check: the weight is NOT flat - it grows with the distance of the price from a standard leg)
+    w_dep = np.minimum(0.85, 0.40 + 0.5 * np.abs(np.log(be / 0.56)))
+    deployed = np.clip(pc + w_dep * (np.minimum(.99, 0.88 * be) - pc), .005, .995)
     cut = np.median(sorted(set(day)))
     halves = [(day <= cut, day > cut), (day > cut, day <= cut)]
     one = np.ones(len(y))
     feats = {"FIT model only": [one, lg(p)], "FIT price only": [one, lg(be)], "FIT plain rate only": [one, lg(hdec)],
              "FIT model + price": [one, lg(p), lg(be), over], "FIT model + price + plain rate": [one, lg(p), lg(be), over, lg(hdec)]}
     est = {"RAW model": p, "PLAIN last 10": h10, "PLAIN last 20": h20, "PLAIN season to date": hsea, "PLAIN all games": hall, "PLAIN recency-weighted": hdec,
-           "DEPLOYED (assumed blend)": deployed}
+           "DEPLOYED (board formula)": deployed}
     for name, cols in feats.items():
         X = np.column_stack(cols); out = np.zeros(len(y)); ws = []
         for tr, te in halves:
