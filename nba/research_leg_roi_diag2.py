@@ -55,6 +55,15 @@ def block(k, label):
     out.append(f"model on top of naive: weight {w[3]:+.2f} extra gain {1e4 * (lln - llb):5.1f}")
     out.append(f"model spread {lg(k['p'].values).std():.2f}, corr(model, z10) {np.corrcoef(lg(k['p'].values), np.clip(k['z10'].values, -3, 3))[0, 1]:+.2f}")
     print("L2|" + " | ".join(out), flush=True)
+    ok = np.isfinite(k["dmin"].values) & np.isfinite(k["zfut"].values)
+    if ok.sum() > 1500:
+        kk = k[ok]; yy = kk["hit"].values.astype(float); o1 = np.ones(len(kk)); lm = lg(kk["p"].values); zp = np.clip(kk["z10"].values, -3, 3)
+        dm = np.clip(kk["dmin"].values, -15, 15) / 5.0; zf = np.clip(kk["zfut"].values, -3, 3)
+        A = np.column_stack([o1, zp, lg(np.clip(kk["r20"].values, .05, .95))]); beta, *_ = np.linalg.lstsq(A, lm, rcond=None); res = lm - A @ beta
+        w1, _ = fit(np.column_stack([o1, lm]), yy); w2, _ = fit(np.column_stack([o1, lm, dm]), yy); w3, _ = fit(np.column_stack([o1, lm, dm, zf]), yy)
+        print(f"L2|   leak check {label:16s} corr(model, minutes played above his usual THAT game) {np.corrcoef(lm, dm)[0, 1]:+.3f}; the part of the model not explained by "
+              f"past form: corr with that-game minutes {np.corrcoef(res, dm)[0, 1]:+.3f}, with his NEXT 20 games {np.corrcoef(res, zf)[0, 1]:+.3f}, with past form {np.corrcoef(res, zp)[0, 1]:+.3f} | "
+              f"model weight alone {w1[1]:+.2f}, after knowing that-game minutes {w2[1]:+.2f}, and next-20-games form {w3[1]:+.2f}", flush=True)
 
 
 def main():
@@ -63,9 +72,9 @@ def main():
     for pid, nm in conn.execute("SELECT nba_player_id::text, full_name FROM nba_ref.players").fetchall():
         names.setdefault(nk(nm), pid)
     logs = defaultdict(list)
-    for pid, d, pts, reb, ast, fg3m, stl, blk, tov in conn.execute("""SELECT nba_player_id::text, game_date, pts, reb, ast, fg3m, stl, blk, tov
+    for pid, d, pts, reb, ast, fg3m, stl, blk, tov, mn in conn.execute("""SELECT nba_player_id::text, game_date, pts, reb, ast, fg3m, stl, blk, tov, min
             FROM nba_stats.player_game_log WHERE game_date >= '2023-10-01' AND min > 0 ORDER BY game_date""").fetchall():
-        logs[pid].append((d, (pts or 0, reb or 0, ast or 0, fg3m or 0, stl or 0, blk or 0, tov or 0)))
+        logs[pid].append((d, (pts or 0, reb or 0, ast or 0, fg3m or 0, stl or 0, blk or 0, tov or 0, float(mn or 0))))
     a = pd.read_sql("""SELECT season, game_date, player, prop, line::float8 line, hp::float8 p, hit::int hit FROM nba_score._mf_study_fs
                        WHERE hp IS NOT NULL AND hit IS NOT NULL AND kind = 'standard' AND lower(left(side, 1)) IN ('o', 'm', 'h')""", conn)
     a["pid"] = [names.get(nk(x), "") for x in a["player"]]
@@ -73,7 +82,7 @@ def main():
                        WHERE app = 'pp26' AND lower(left(side, 1)) IN ('o', 'm', 'h')""", conn)
     conn.close()
     df = pd.concat([a[["season", "game_date", "pid", "prop", "line", "p", "hit"]], b], ignore_index=True)
-    z10 = np.full(len(df), np.nan); r20 = np.full(len(df), np.nan); gp = np.zeros(len(df))
+    z10 = np.full(len(df), np.nan); r20 = np.full(len(df), np.nan); gp = np.zeros(len(df)); dmin = np.full(len(df), np.nan); zfut = np.full(len(df), np.nan)
     cache = {}
     for i, (pid, pr, ln, d) in enumerate(zip(df["pid"], df["prop"], df["line"], df["game_date"])):
         f = STAT.get(pr); g = logs.get(pid)
@@ -81,13 +90,18 @@ def main():
             continue
         key = (pid, pr)
         if key not in cache:
-            cache[key] = (np.array([x[0] for x in g]), np.array([f(x[1]) for x in g], float))
-        ds, vs = cache[key]; n = int(np.searchsorted(ds, d))        # games strictly before the slate
+            cache[key] = (np.array([x[0] for x in g]), np.array([f(x[1]) for x in g], float), np.array([x[1][7] for x in g], float))
+        ds, vs, ms = cache[key]; n = int(np.searchsorted(ds, d))        # games strictly before the slate
         if n < 5:
             continue
         v20 = vs[max(0, n - 20):n]; v10 = vs[max(0, n - 10):n]
         z10[i] = (v10.mean() - ln) / max(0.75, v20.std()); r20[i] = (v20 > ln).mean(); gp[i] = n
-    df["z10"] = z10; df["r20"] = r20
+        if n < len(ds) and ds[n] == d:                          # the game of the slate itself and the games after it
+            dmin[i] = ms[n] - ms[max(0, n - 10):n].mean()
+            fut = vs[n + 1:n + 21]
+            if len(fut) >= 5:
+                zfut[i] = (fut.mean() - ln) / max(0.75, v20.std())
+    df["z10"] = z10; df["r20"] = r20; df["dmin"] = dmin; df["zfut"] = zfut
     ok = np.isfinite(z10)
     print(f"L2|legs {len(df):,}; with at least 5 earlier games {int(ok.sum()):,}", flush=True)
     df = df[ok].copy(); df["month"] = df["game_date"].astype(str).str[:7]
