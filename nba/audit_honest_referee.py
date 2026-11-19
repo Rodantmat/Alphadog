@@ -98,7 +98,7 @@ def main():
                 st = f(s[s["tier"].astype(str).str[:1].isin(["R", ""]) | (s["kind"].astype(str).isin(["standard", "main"]))]) if app != "prizepicks" else f(s)
                 if len(st) >= 200:
                     cut = st["p"].quantile(.9); top = st[st["p"] >= cut]
-                    print(f"HR|{app:10s} {win:6s} top-tenth of regular legs by the system: says {top['p'].mean():.3f} hits {top['hit'].mean():.3f} (n {len(top):,}); all regular legs hit {st['hit'].mean():.3f}", flush=True)
+                    print(f"HR|{app:10s} {win:6s} top-tenth of regular legs by the system: says {top['p'].mean():.3f} hits {top['hit'].mean():.3f} (n {len(top):,}), return at its price {100 * top['r'].mean():+.1f}%; all regular legs hit {st['hit'].mean():.3f}, return {100 * st['r'].mean():+.1f}%", flush=True)
                     ROWS.append((app, win, "system top tenth hit (pred = says)", len(top), top["gd"].nunique(), float(top["p"].mean()), float(top["hit"].mean()), float(st["hit"].mean()), None))
             v = put(app, win, "book rates positive (exact line)", f(d[d["br"] > 0]), pcol="br")
             v2 = put(app, win, "book rates positive, >= 2 books", f(d[(d["br"] > 0) & (d["books"] >= 2)]), pcol="br")
@@ -108,10 +108,11 @@ def main():
     print("\nHR|================ PLAYED (graded live slips) ================", flush=True)
     for app, tbl in (("prizepicks", "live_slips"), ("underdog", "ud_live_slips"), ("sleeper", "sleeper_live_slips"), ("fliff", "fliff_live_slips"), ("betr", "betr_live_slips")):
         try:
-            sl = pd.read_sql(f"SELECT status, count(*) slips, sum(profit)::float8 units FROM nba_score.{tbl} WHERE game_date >= %s AND status LIKE 'graded%%' GROUP BY 1", conn, params=(SINCE,))
-            lg_ = pd.read_sql(f"""SELECT DISTINCT s.game_date::text gd, s.status, coalesce(e->>'player_id', e->>'player') pl, e->>'prop' prop, e->>'side' side, e->>'line' ln, (e->>'hit')::float8 hit
+            sl = pd.read_sql(f"SELECT status, count(*) slips, sum(profit)::float8 units FROM nba_score.{tbl} WHERE game_date >= %s AND hits IS NOT NULL AND profit IS NOT NULL GROUP BY 1", conn, params=(SINCE,))
+            lg_ = pd.read_sql(f"""SELECT DISTINCT s.game_date::text gd, s.status, coalesce(e->>'player_id', e->>'player') pl, e->>'prop' prop, e->>'side' side, e->>'line' ln, (CASE WHEN e->>'hit' IN ('true', '1', '1.0') THEN 1 ELSE 0 END)::float8 hit
                                   FROM nba_score.{tbl} s, jsonb_array_elements(s.legs_json::jsonb) e
-                                  WHERE s.game_date >= %s AND s.status LIKE 'graded%%' AND e->>'hit' IS NOT NULL AND NOT coalesce((e->>'void')::boolean, false)""", conn, params=(SINCE,))
+                                  WHERE s.game_date >= %s AND s.hits IS NOT NULL AND s.profit IS NOT NULL AND e->>'hit' IN ('true', 'false', '0', '1', '0.0', '1.0')
+                                    AND NOT coalesce((e->>'void')::boolean, false)""", conn, params=(SINCE,))
         except Exception as ex:
             conn.rollback(); print(f"HR|{app}: live table not readable ({str(ex)[:120]})", flush=True); continue
         for st_, g in lg_.groupby("status"):
