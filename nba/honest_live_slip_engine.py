@@ -46,6 +46,7 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "S6": "H_S6_5flex", "F1": "H_F1_2max", "F4": "H_F4_4max", "F5": "H_F5_5max", "B1": "H_B1_3perfect", "B5": "H_B5_3perfect_pp",
          # FALLBACKS (owner 2026-11-20 08:59 PT): built only on a thin board, when the app's elected strategies give fewer slips than they number
          "U20": "FB0 top 4 Unders by the average ranking, no assists, under this line in 6+ of the last 10 games (4-pick Flex)",
+         "U22": "FB2 top 4 Unders, model-only ranking, up to two a game (4-pick Flex)",
          "U21": "FB1 top 3 Unders, model-only ranking (3-pick Flex)",
          "P21": "H_FB1_5flex_reb_geo", "P22": "H_FB2_6flex_reb_geo", "P23": "H_FB3_2power_udtop2", "P24": "H_FB4_5flex_props", "P25": "H_FB5_6flex_top6", "P26": "H_FB6_5flex_home",
          "P27": "H_FB7_6flex_second", "S7": "H_S7_5max_pp", "S8": "H_S8_4max_pp", "F6": "H_F6_4max_pp", "F7": "H_F7_5max_pp", "S9": "H_S9_2max_noast", "F8": "H_F8_2max_noast", "S21": "H_FB1_S_2max_noast", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max_noast", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_3perfect_noast", "B22": "H_FB2_B_2perfect",
@@ -247,6 +248,8 @@ def build(conn, day, apps, weights=None):
             conn.rollback(); l10 = {}; notes.append(f"U20: game logs not readable ({type(e).__name__}) - skipped")
         later("underdog", "U20", 4, "flex", [r for r in sorted(U, key=lambda r: (-(r["blend"] + r["ph"]) / 2, r["pid"], r["prop"], r["line"]))
                                               if r["prop"] != "assists" and not r["leg"].get("pred") and (under_share10(l10, r) or 0) >= 0.6])
+        # pass 25: 4-pick Flex by the MODEL, every single stat, up to two a game: +46 / +8 / +72%, +28% on 272 slips; shares 3+ legs with U8 on 12% of slates
+        later("underdog", "U22", 4, "flex", [r for r in sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])) if not r["leg"].get("pred")], gcap=2)
         later("underdog", "U21", 3, "flex", [r for r in sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])) if not r["leg"].get("pred")])
         fill("underdog")
     if "prizepicks" in apps:
