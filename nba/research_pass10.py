@@ -111,7 +111,15 @@ def main():
     nsl = Counter(season_of[gd] for gd in slates)
 
     def first(rows, k):
-        return pick(rows, k, Counter(), None, Counter(), None) or []
+        """up to k legs in order, one a player and a game (a short list on a small slate)"""
+        out = []; games = set(); players = set()
+        for r in rows:
+            if r["player_id"] in players or r["game_id"] in games:
+                continue
+            out.append(r); players.add(r["player_id"]); games.add(r["game_id"])
+            if len(out) == k:
+                break
+        return out
 
     def onto(app, gd, src):
         """the source legs (in order) as the target app's own legs: nearest line"""
@@ -129,9 +137,9 @@ def main():
             ukey = {(r["player_id"], r["prop"]): r for r in U}
             tight = sorted(first(U, 2) + first(P, 5), key=lambda r: -r["blend"]); seen = {r["player_id"] for r in tight}
             wide = tight + [r for r in sorted(first(U, 10) + first(P, 10), key=lambda r: -r["blend"]) if r["player_id"] not in seen]
-            p5 = {r["player_id"] for r in first(P, 6)}
+            p5 = {r["player_id"] for r in (pick(P, 6, Counter(), None, Counter(), None) or [])}
             plan = {"underdog": [("U1", 2, "P", U, {}), ("U2", 2, "P", LP.get(("underdog", gd), []), {}),
-                                 ("U3", 2, "P", [ukey[(r["player_id"], r["prop"])] for r in first(P, 12) if (r["player_id"], r["prop"]) in ukey], {}),
+                                 ("U3", 2, "P", [ukey[(r["player_id"], r["prop"])] for r in P if (r["player_id"], r["prop"]) in ukey], {}),
                                  ("U4", 2, "P", [r for r in U if r["prop"] == "rebounds"], {}), ("U5", 2, "P", [r for r in U if r["home"] is True or r["home"] == 1], {})],
                     "prizepicks": [("P1", 5, "F", P, dict(diff_prop=True)), ("P2", 5, "F", [r for r in P if r["line"] < 10], {}), ("P3", 5, "F", P, {}),
                                    ("P4", 5, "F", [r for r in P if r["home"] is True or r["home"] == 1], {}), ("P5", 6, "F", P, {}), ("P6", 6, "F", P, dict(diff_prop=True)),
