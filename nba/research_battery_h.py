@@ -59,12 +59,15 @@ EVMIN = (None, 0.0, 0.05)
 # FACTORS as pool filters (form, minutes, rest, venue, role, injury report, line position, books, season stage, line size, weekday, slate size).
 PASS = int(os.environ.get("BT_PASS") or 1)
 GAMECAP = int(os.environ.get("BT_GAMECAP") or 1)               # legs of one game allowed in a slip (composition)
-FAC2 = os.environ.get("BT_FAC2") or ""                         # layering: "factor A+factor B;..." pairs added as extra filters
+# layering: BT_FAC2 = "factor_A:factor_B,factor_C:factor_D" (underscores for spaces) -> extra filters "factor A & factor B"; BT_FAC2ONLY=1 keeps only "any" + the pairs
+FAC2 = {" & ".join(x.replace("_", " ") for x in pr.split(":")): [x.replace("_", " ") for x in pr.split(":")] for pr in (os.environ.get("BT_FAC2") or "").split(",") if pr}
+FAC2ONLY = (os.environ.get("BT_FAC2ONLY") or "0") == "1"
 if PASS >= 2:
     PROPS = ("all", "single stats", "points", "rebounds", "assists", "threes_made")
     FORMS = ("any", "hot", "cold", "minutes up", "minutes down", "back-to-back", "rested 3+", "home", "away", "starter roles", "bench roles", "team minutes out 24+",
              "no team minutes out", "opponent minutes out 48+", "line better than sportsbooks", "line equal to sportsbooks", "2+ sportsbooks", "first 10 games", "20+ games played",
-             "line under 6", "line 15+", "weekend", "listed on the report", "small slate", "large slate") + tuple(x for x in FAC2.split(";") if x)
+             "line under 6", "line 15+", "weekend", "listed on the report", "small slate", "large slate")
+    FORMS = (("any",) if FAC2ONLY else FORMS) + tuple(FAC2)
     EVMIN = (None, 0.0)
 KEYS1 = ("gbm return", "small gbm return", "blend return", "mix return", "honest return", "book return", "gbm chance", "blend chance", "honest chance",
         "CONTROL placebo", "CONTROL random")
@@ -212,7 +215,7 @@ def main():
             mp.update({q: prp == q for q in ("points", "rebounds", "assists", "threes_made")})
             Fv = g["F"].values; mf = {"any": np.ones(n, bool)}
             for f_ in FORMS[1:]:
-                parts = f_.split("+") if f_ in FAC2.split(";") else [f_]
+                parts = FAC2.get(f_, [f_])
                 mf[f_] = np.array([all(q in t for q in parts) for t in Fv], dtype=bool)
         me = {None: np.ones(n, bool), 0.0: evb > 0, 0.05: evb > 0.05}
         order = {k_: np.argsort(-np.nan_to_num(v, nan=-9.0), kind="stable") for k_, v in key.items()}; valid = {k_: ~np.isnan(v) for k_, v in key.items()}
