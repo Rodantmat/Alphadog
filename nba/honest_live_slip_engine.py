@@ -349,7 +349,10 @@ def write(conn, day, plan, commit=True):
                        "event_id": r["leg"].get("event_id"), "p_hat": round(r["blend"], 4)} for r in s]
                 conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
                                 VALUES (%s,'H',%s,%s,%s,1,%s,1.0,'live',false)""", (day, NAMES[code], k, st, json.dumps(lj)))
-                NL.store(conn, day, NAMES[code], 1, [dict(r["leg"], tier="R", factor=1.0, p=round(r["blend"], 4)) for r in cand], exclude_players={r["leg"]["player"] for r in s})
+                # 2026-11-20 FIX (first live slate): the Slips screen looks a slip's next ranked legs up under ITS name for an Underdog slip - "UD <portfolio> <composition> <size><S|F>" -
+                # not under the composition alone; stored under the composition they were never found and a moved leg got a generic backup-pool leg instead of the strategy's next Under.
+                NL.store(conn, day, f"UD H {NAMES[code]} {k}{'F' if st == 'flex' else 'S'}", 1, [dict(r["leg"], tier="R", factor=1.0, p=round(r["blend"], 4)) for r in cand],
+                         exclude_players={r["leg"]["player"] for r in s})
                 n += 1
         elif app in ("sleeper", "fliff"):
             import roi_app_live_slip_engine as RA
@@ -388,6 +391,7 @@ def write(conn, day, plan, commit=True):
                 mult = BE.top_multiplier(k, lj, rj, "perfect")
                 conn.execute("""INSERT INTO nba_score.betr_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
                                 VALUES (%s,%s,%s,'perfect',1,%s,1,'live',%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""", (day, NAMES[code], k, json.dumps(lj), mult, last))
+                NL.store(conn, day, NAMES[code], 1, [dict(r["leg"]) for r in cand], exclude_players={r["leg"]["player"] for r in s})     # 2026-11-20: Betr slips had no next-leg list
                 n += 1
     if commit:
         conn.commit()
