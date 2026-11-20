@@ -272,13 +272,13 @@ def main():
                     rs = []; ns = []; lbs = []; ps = []
                     for s in range(3):
                         m_ = smask[s] & (cnt > 0); n_ = cnt[m_].sum(); ns.append(n_); ps.append(float(prof[m_].sum()))
-                        if n_ >= (20 if s == 2 else 40) and m_.sum() >= 10:
+                        if n_ >= ((12 if PASS >= 2 else 20) if s == 2 else 40) and m_.sum() >= (8 if s == 2 else 10):
                             p_ = prof[m_]; r_ = p_.sum() / n_; se = math.sqrt(len(p_) * p_.var(ddof=1)) / n_
                             rs.append(r_); lbs.append(r_ - 1.645 * se)
                         else:
                             rs.append(np.nan); lbs.append(np.nan)
                     rs = np.array(rs); lbs = np.array(lbs); ok = ~np.isnan(rs)
-                    if not ok[2] or (ok.sum() < 2 and not REALONLY):
+                    if not ok[2] or (ok.sum() < 2 and not REALONLY and "(this season)" not in cb[0]):
                         continue
                     hv = (float(prof[hA].sum()), float(cnt[hA].sum()), float(prof[hB].sum()), float(cnt[hB].sum()))
                     # SCORE = season-weighted LOW END of the ROI (ROI minus 1.645 standard errors over slates): a season carried by one lottery slip has a
@@ -375,6 +375,7 @@ def main():
                         if len(y):
                             r_ = y.iloc[0]; out.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]) + f" n{int(np.nansum(r_['ns']))}")
                 return out
+            base3 = R[(~R["modelled"]) & (R["S"] == 3) & R["cb"].map(lambda q: q[1] == "regular" and q[5] is None)]
             base = R[(~R["modelled"]) & (R["S"] == 1) & R["cb"].map(lambda q: q[1] == "regular" and q[5] is None)]
             print("BT|P2 KEYS - regular lines, no factor, no minimum, 1 slip a slate: ROI by season (slips) | key x side x props | structure cells", flush=True)
             for key_ in KEYS:
@@ -387,9 +388,10 @@ def main():
             for key_ in ("blend return", "small gbm return", "honest chance", "CONTROL random"):
                 for pr_ in ("single stats", "all"):
                     for fm_ in FORMS:
-                        x = base[base["cb"].map(lambda q: q[0] == key_ and q[2] == "Under" and q[3] == pr_ and q[4] == fm_)]
-                        if len(x):
-                            print(f"BT|X {key_:17s} {pr_:12s} {fm_:30s} | " + " | ".join(cells_of(x)), flush=True)
+                        for tag_, bb in (("x1", base), ("x3", base3)):
+                            x = bb[bb["cb"].map(lambda q: q[0] == key_ and q[2] == "Under" and q[3] == pr_ and q[4] == fm_)]
+                            if len(x):
+                                print(f"BT|X {key_:17s} {pr_:12s} {fm_:30s} {tag_} | " + " | ".join(cells_of(x)), flush=True)
         if label.startswith("REAL") and APP == "underdog" and PASS < 2:
             # Underdog alternates carry REAL multipliers in every season, so slips with goblins / demons count here. Whole surface, 1 and 3 slips a slate.
             print("BT|SURFACE Underdog kinds - ROI by season | key x kind x side x props x minimum x slips a slate | structure cells", flush=True)
