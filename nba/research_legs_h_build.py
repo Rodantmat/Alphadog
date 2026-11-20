@@ -59,6 +59,13 @@ def attach(gd, pid, prop, line, over, H):
         j = np.searchsorted(h[0], ln - 1e-6)
         if j < len(h[0]) and abs(h[0][j] - ln) < 1e-3:
             out[i] = h[1][j] if ov else 1 - h[1][j]
+        elif abs(ln - round(ln)) < 1e-9:
+            # WHOLE-NUMBER LINE L (2026-11-20; 22-31% of PrizePicks regular single-stat lines): the ladder holds half lines. The Over wins when the stat
+            # is over L + 0.5, the Under when it is not over L - 0.5 (a stat exactly on L is a push and wins for neither).
+            l2 = ln + 0.5 if ov else ln - 0.5
+            j = np.searchsorted(h[0], l2 - 1e-6)
+            if j < len(h[0]) and abs(h[0][j] - l2) < 1e-3:
+                out[i] = h[1][j] if ov else 1 - h[1][j]
     return out
 
 

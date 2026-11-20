@@ -54,6 +54,12 @@ def log(m):
 def load(conn):
     q = "SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, kind, tier, src, m::float8 m, hit::int hit, ph::float8 ph FROM nba_score._lr_legs_h WHERE app = %s AND hit IS NOT NULL AND m > 0"
     df = pd.read_sql(q, conn, params=(APP,))
+    try:                                                     # pushed regular legs: scored out of sample, never trained on (hit stays empty)
+        pu = pd.read_sql(q.replace("_lr_legs_h", "_lr_legs_push").replace("hit IS NOT NULL AND ", ""), conn, params=(APP,))
+        if len(pu):
+            df = pd.concat([df, pu], ignore_index=True); log(f"{APP}: + {len(pu):,} pushed regular legs (prediction only)")
+    except Exception as ex:
+        conn.rollback(); log(f"no pushed-leg table ({str(ex)[:80]})")
     if APP == "prizepicks":
         df = df[~df["tier"].astype(str).str.endswith("-u")].copy(); df["mm"] = df["m"] / 0.542
         df["kindc"] = df["kind"].map({"standard": 0, "goblin": 1, "demon": 2}).fillna(0).astype(int)
@@ -191,7 +197,7 @@ def main():
     months = sorted(set(ym)); imp = np.zeros(len(feats)); nfit = 0
     Zall = np.c_[lg(np.nan_to_num(X["ph"].values, nan=.5)), np.isnan(X["ph"].values), lg(np.nan_to_num(X["pb"].values, nan=.5)), np.isnan(X["pb"].values), lg(X["be"].values), X["under"].values]
     for mth in months:
-        tr = ym < mth; te = ym == mth
+        tr = (ym < mth) & ~np.isnan(y); te = ym == mth
         if tr.sum() < 60000 or len(set(df["gd"].values[tr])) < 20:
             continue
         cur = sidx[te][0]; w = np.array([SW.get(int(cur - s), 0.35) for s in sidx[tr]])
@@ -212,7 +218,7 @@ def main():
         log(f"month {mth}: train {int(tr.sum()):,} legs, test {int(te.sum()):,}; blend weights [const, ph, ph missing, book, book missing, price, under] = {np.round(b, 3).tolist()}")
     P["price"] = 1 / mm; P["honest"] = df["ph"].values; P["book"] = df["pb"].values
     P["mix"] = 1 / (1 + np.exp(-(0.5 * lg(P["blend"]) + 0.5 * lg(P["gbm"]))))        # half blend, half gbm (log-odds)
-    ok = ~np.isnan(P["gbm"])
+    ok_all = ~np.isnan(P["gbm"]); ok = ok_all & ~np.isnan(y)
     log(f"out-of-sample legs {int(ok.sum()):,} of {len(df):,}; models fitted {nfit}")
     order = np.argsort(-imp); print("LM|feature weight in the gbm (gain share): " + ", ".join(f"{feats[i]} {100 * imp[i] / imp.sum():.1f}%" for i in order[:18]), flush=True)
     KN = {0: "regular", 1: "goblin", 2: "demon", 3: "alt"}
@@ -252,11 +258,11 @@ def main():
         conn.execute("DELETE FROM nba_score._lr_legs_hp WHERE app = %s", (APP,))
         with conn.cursor() as cur:
             with cur.copy("COPY nba_score._lr_legs_hp (app, game_date, player_id, prop, side, line, kind, tier, p_blend, p_gbm, p_placebo, p_gbm_s) FROM STDIN") as cp:
-                for i in np.where(ok)[0]:
+                for i in np.where(ok_all)[0]:
                     cp.write_row((APP, df["gd"].values[i], df["player_id"].values[i], df["prop"].values[i], df["side"].values[i], float(df["line"].values[i]), df["kind"].values[i],
                                   df["tier"].values[i], float(P["blend"][i]), float(P["gbm"][i]), float(P["placebo"][i]), float(P["gbm_s"][i])))
         conn.execute("CREATE INDEX IF NOT EXISTS _lr_legs_hp_i ON nba_score._lr_legs_hp (app, game_date, player_id, prop)")
-        conn.commit(); conn.close(); log(f"wrote {int(ok.sum()):,} rows to nba_score._lr_legs_hp")
+        conn.commit(); conn.close(); log(f"wrote {int(ok_all.sum()):,} rows to nba_score._lr_legs_hp")
     print("LM|DONE", flush=True)
 
 
