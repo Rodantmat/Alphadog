@@ -25,7 +25,7 @@ MK = {"player_points": "points", "player_rebounds": "rebounds", "player_assists"
 COL = R.SINGLE
 
 
-def main():
+def load():
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     d = pd.read_sql("""SELECT v.app, v.season, v.game_date::text gd, v.player_id, v.prop, v.line::float8 line, v.hit::int hit, v.p_blend::float8 blend, v.p_honest_baseline::float8 ph,
                               v.p_small_gbm::float8 gbm_s, g.game_id::text game_id
@@ -45,7 +45,7 @@ def main():
     # ---- trailing form at the leg's own line, earlier games only
     logs = {p: (g["gd"].values, g["mins"].values, {c: g[c].values for c in COL.values()}, pd.to_datetime(g["gd"]).values) for p, g in gl.groupby("player_id", sort=False)}
     n = len(d); u5 = np.full(n, np.nan); u10 = np.full(n, np.nan); u20 = np.full(n, np.nan); sh = np.full(n, np.nan); s3 = np.zeros(n, bool); lo = np.zeros(n, bool)
-    mt = np.full(n, np.nan); rest = np.full(n, np.nan); npr = np.zeros(n)
+    mt = np.full(n, np.nan); rest = np.full(n, np.nan); npr = np.zeros(n); lg2 = np.zeros(n, bool); W = {N_: np.full(n, np.nan) for N_ in (5, 8, 10, 15, 20)}
     for i, (p, gd, pr, ln) in enumerate(zip(d["player_id"].values, d["gd"].values, d["prop"].values, d["line"].values)):
         L = logs.get(p)
         if L is None:
@@ -61,13 +61,24 @@ def main():
         if len(v) >= 15:
             u20[i] = und.mean()
         sh[i] = (und.sum() + 0.55 * 8) / (len(und) + 8)
-        s3[i] = len(v) >= 3 and und[-3:].all(); lo[i] = und[-1] == 0
+        s3[i] = len(v) >= 3 and und[-3:].all(); lo[i] = und[-1] == 0; lg2[i] = len(v) >= 2 and und[-2:].sum() == 0
+        for N_ in W:
+            if len(v) >= N_:
+                W[N_][i] = und[-N_:].mean()
         m = L[1][max(0, j - 10):j]
         if len(m) >= 6:
             mt[i] = m[-3:].mean() / max(1.0, m.mean())
         rest[i] = (np.datetime64(gd) - L[3][j - 1]) / np.timedelta64(1, "D")
     d["u5"] = u5; d["u10"] = u10; d["u20"] = u20; d["sh"] = sh; d["s3"] = s3; d["lo"] = lo; d["mt"] = mt; d["rest"] = rest; d["npr"] = npr
     d["ph_u10"] = (d["ph"] + d["u10"]) / 2; d["bl_sh"] = (d["blend"] + d["sh"]) / 2; d["ph_sh"] = (d["ph"] + d["sh"]) / 2; d["ph2_sh"] = (2 * d["ph"] + d["sh"]) / 3
+    d["lg2"] = lg2; d["lu"] = ~d["lo"] & (d["npr"] > 0)
+    for N_ in (5, 8, 10, 15, 20):
+        d[f"w{N_}"] = W[N_]
+    return d
+
+
+def main():
+    d = load(); n = len(d)
     print(f"P18|legs {n:,}; with 10 earlier games {int(d['u10'].notna().sum()):,}; hit rate by last-10 share under the line: "
           + " | ".join(f"{a:.1f}-{b:.1f}: {100 * d[(d['u10'] >= a) & (d['u10'] < b)]['hit'].mean():.1f}% ({int(((d['u10'] >= a) & (d['u10'] < b)).sum()):,})" for a, b in ((0, .3), (.3, .5), (.5, .6), (.6, .7), (.7, .8), (.8, 1.01))), flush=True)
     print("P18|hit rate: last 3 all under " + f"{100 * d[d['s3']]['hit'].mean():.1f}% | last game over {100 * d[d['lo']]['hit'].mean():.1f}% | back-to-back {100 * d[d['rest'] == 1]['hit'].mean():.1f}% | "
