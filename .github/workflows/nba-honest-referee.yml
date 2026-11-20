@@ -17,7 +17,7 @@ concurrency:
 jobs:
   referee:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 200
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
@@ -32,7 +32,22 @@ jobs:
         run: |
           set -euo pipefail
           for app in underdog sleeper fliff pp26; do LR_APP=$app python -u nba/research_leg_roi_cache.py; done
+      - name: Honest history of this season (certified recipe; singles then combos) - new slates get their honest number
+        run: |
+          set -euo pipefail
+          BT_TEST=2026-27 python -u nba/research_honest_history_build.py
+          BT_TEST=2026-27 HH_MODE=combos python -u nba/research_honest_history_build.py
       - name: Rebuild the honest leg table
         run: LH_APP=prizepicks,underdog,sleeper,fliff python -u nba/research_legs_h_build.py
       - name: Referee
         run: python -u nba/audit_honest_referee.py
+      # The per-leg model, the per-leg store and the forward tracker of the one candidate (sections 8q-8u). Heavy database work: skipped when the
+      # scheduler started this run late, so it can never run into the P2B window (08:06 PT).
+      - name: Per-leg model (walk-forward), store, candidate tracker
+        run: |
+          set -euo pipefail
+          now=$(TZ=America/Los_Angeles date +%H%M)
+          if [ "$now" -gt 0610 ] && [ "$now" -lt 0930 ]; then echo "started at $now PT - too close to P2B, skipped today"; exit 0; fi
+          for app in underdog prizepicks sleeper fliff; do LM_APP=$app LM_WRITE=1 python -u nba/research_leg_model_h.py | grep -v "LM|  " ; done
+          python -u nba/research_legs_honest_store.py | head -12
+          python -u nba/audit_top_list_tracker.py
