@@ -85,7 +85,7 @@ SELECT s.bookmaker app, t.game_date, nm.player_id::text player_id
 FROM tip t JOIN snap s USING (game_date) JOIN nba_ref.player_name_map nm ON nm.norm_name = t.nm WHERE s.ts >= t.tip"""
 
 
-def drop_late(conn, d0="2026-10-01"):
+def drop_late(conn, d0="2024-10-01"):
     """Certification A3: a board captured after a game tipped holds in-play lines for that game. Drop every leg of a player whose game had already
     started when the app's window board of that day was captured (tip = earliest commence_time any book gives for the player that day)."""
     late = conn.execute(LATE_SQL, {"d0": d0}).fetchall()
@@ -104,7 +104,7 @@ def drop_late(conn, d0="2026-10-01"):
 
 def main():
     global APP
-    for APP in APPS:
+    for APP in ([] if os.environ.get("LH_GUARD_ONLY") == "1" else APPS):
         run_app()
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     drop_late(conn); conn.close()
