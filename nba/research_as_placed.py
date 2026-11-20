@@ -99,6 +99,76 @@ def main():
                 print(f"AP|  {nm:16s} {mode:46s}: {per} | pooled {t['u'].sum():+.1f} u, ROI {100 * t['u'].mean():+.1f}%, slips with a push {100 * (t['push'] > 0).mean():.1f}%", flush=True)
             a, c = out["pushes excluded (as the battery counted)"], out["AS PLACED (pushes in, paid by the app's rule)"]
             print(f"AP|    cost of pushes on {nm}: pooled ROI {100 * a['u'].mean():+.1f}% -> {100 * c['u'].mean():+.1f}% ({100 * (c['u'].mean() - a['u'].mean()):+.1f} points)", flush=True)
+    # ---- PART 2: the BLEND as placed (it now exists for pushed legs: nba_score._lr_legs_push scored by the leg model, prediction only) -------------------
+    conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
+    q = """SELECT l.app, l.season, l.game_date::text gd, l.player_id, l.prop, l.line::float8 line, {res} res, p.p_blend::float8 blend
+           FROM nba_score.{tab} l JOIN nba_score._lr_legs_hp p ON p.app = l.app AND p.game_date = l.game_date AND p.player_id = l.player_id AND p.prop = l.prop AND p.side = l.side
+                AND p.line = l.line AND p.kind = l.kind AND p.tier IS NOT DISTINCT FROM l.tier
+           WHERE l.app IN ('underdog', 'prizepicks') AND l.kind IN ('standard', 'R') AND lower(left(l.side, 1)) = 'u' AND l.prop = ANY(%s) {extra}"""
+    g1 = pd.read_sql(q.format(res="l.hit::int", tab="_lr_legs_h", extra="AND l.hit IS NOT NULL AND (l.app <> 'underdog' OR l.m BETWEEN 1.86 AND 1.88)"), conn, params=(list(SINGLE),))
+    g2 = pd.read_sql(q.format(res="2", tab="_lr_legs_push", extra=""), conn, params=(list(SINGLE),))
+    fh = pd.read_sql("""SELECT game_date::text gd, player_id::text player_id, prop, line::float8 line, final_hp::float8 fhp, score::float8 score FROM nba_score.final_hp
+                        WHERE game_date >= '2026-10-20' AND game_date < current_date AND lower(left(side, 1)) = 'u' AND prop = ANY(%s) AND final_hp IS NOT NULL""", conn, params=(list(SINGLE),))
+    conn.close()
+    allb = pd.concat([g1, g2], ignore_index=True).drop_duplicates(["app", "gd", "player_id", "prop", "line"]).merge(gl[["player_id", "gd", "game_id"]], on=["player_id", "gd"], how="left")
+    allb["game_id"] = allb["game_id"].fillna("g" + allb["player_id"])
+    print(f"\nAP|================ PART 2 - THE BLEND AS PLACED: graded regular single-stat Unders {len(g1):,} + pushed {len(g2):,} (with a blend number) ================", flush=True)
+    for app, plan in (("underdog", UD), ("prizepicks", PP)):
+        r = allb[allb["app"] == app].sort_values("blend", ascending=False).drop_duplicates(["gd", "player_id"])
+        for nm, (k, table) in plan.items():
+            res_ = {}
+            for mode in ("pushes excluded", "AS PLACED"):
+                rows = []
+                for gd, g in r.groupby("gd", sort=True):
+                    if mode == "pushes excluded":
+                        g = g[g["res"] != 2]
+                    pick = []; games = set()
+                    for rr_, game in zip(g["res"].values, g["game_id"].values):
+                        if game in games:
+                            continue
+                        pick.append(int(rr_)); games.add(game)
+                        if len(pick) == k:
+                            break
+                    if len(pick) == k:
+                        rows.append((gd, g["season"].iloc[0], pay(pick, table) - 1, sum(1 for x in pick if x == 2)))
+                res_[mode] = pd.DataFrame(rows, columns=["gd", "season", "u", "push"])
+            a_, c_ = res_["pushes excluded"], res_["AS PLACED"]
+            per = " | ".join(f"{s} {x['u'].sum():+.1f} u ({len(x)}, {100 * x['u'].mean():+.1f}%)" for s, x in c_.groupby("season"))
+            cum = np.concatenate([[0], np.cumsum(c_.sort_values("gd")["u"].values)]); dd = float((np.maximum.accumulate(cum) - cum).max())
+            print(f"AP|  {app:10s} {nm:16s} AS PLACED: {per} | pooled {c_['u'].sum():+.1f} u, ROI {100 * c_['u'].mean():+.1f}%, drawdown {dd:.1f}, slips with a push {100 * (c_['push'] > 0).mean():.1f}% "
+                  f"|| pushes excluded: pooled {a_['u'].sum():+.1f} u, ROI {100 * a_['u'].mean():+.1f}%", flush=True)
+    # ---- PART 3: THIS SEASON with the number production stored BEFORE the games (final_hp), on the raw board - players who then did not play included ----
+    print("\nAP|================ PART 3 - THIS SEASON, production's pick-time final_hp on the raw board: pushes AND did-not-play legs paid by the app's rule ================", flush=True)
+    for app, bsrc, plan in (("underdog", ud, UD), ("prizepicks", pp, PP)):
+        b = bsrc.copy(); b["player_id"] = b["nm"].map(ids); b["prop"] = b["mk"].map(MKS); b = b[b["player_id"].notna() & (b["gd"] >= "2026-10-20")].drop_duplicates(["gd", "player_id", "prop"])
+        lt = late[late["app"] == app][["gd", "player_id"]].drop_duplicates().assign(late=1)
+        b = b.merge(lt, on=["gd", "player_id"], how="left"); b = b[b["late"].isna()].drop(columns=["late"])
+        b = b.merge(gl, on=["player_id", "gd"], how="left").merge(fh, on=["gd", "player_id", "prop", "line"], how="inner")
+        played = b["mn"].fillna(0) > 0; stat = np.full(len(b), np.nan)
+        for p_, c_ in SINGLE.items():
+            k_ = (b["prop"] == p_).values; stat[k_] = b.loc[k_, c_].values
+        b["res"] = np.where(~played, 2, np.where(stat == b["line"].values, 2, (stat < b["line"].values).astype(int))); b["dnp"] = (~played).astype(int)
+        b["game_id"] = b["game_id"].fillna("g" + b["player_id"])
+        print(f"AP|  {app}: board legs with a stored final_hp {len(b):,} on {b['gd'].nunique()} slates; did not play {100 * b['dnp'].mean():.1f}%", flush=True)
+        for key in ("fhp", "score"):
+            r = b[b[key].notna()].sort_values(key, ascending=False).drop_duplicates(["gd", "player_id"])
+            t4 = r.groupby("gd").head(4)
+            print(f"AP|    top 4 by {('final_hp' if key == 'fhp' else 'score')}: legs {len(t4)}, did not play {100 * t4['dnp'].mean():.1f}%, pushed or void {100 * (t4['res'] == 2).mean():.1f}%, hit of the decided {t4[t4['res'] != 2]['res'].mean():.3f}", flush=True)
+            for nm, (k, table) in plan.items():
+                rows = []
+                for gd, g in r.groupby("gd", sort=True):
+                    pick = []; games = set()
+                    for rr_, game in zip(g["res"].values, g["game_id"].values):
+                        if game in games:
+                            continue
+                        pick.append(int(rr_)); games.add(game)
+                        if len(pick) == k:
+                            break
+                    if len(pick) == k:
+                        rows.append((pay(pick, table) - 1, sum(1 for x in pick if x == 2)))
+                t = pd.DataFrame(rows, columns=["u", "v"])
+                if len(t):
+                    print(f"AP|      {nm:16s}: {len(t)} slips, {t['u'].sum():+.1f} u, ROI {100 * t['u'].mean():+.1f}%, slips with a void / push {100 * (t['v'] > 0).mean():.0f}%", flush=True)
     print("AP|DONE", flush=True)
 
 
