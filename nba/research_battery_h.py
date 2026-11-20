@@ -311,6 +311,25 @@ def main():
                                 if len(y):
                                     r_ = y.iloc[0]; cells.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]))
                         print(f"BT|F {key_:17s} {sd_:5s} {pr_:12s} | " + " | ".join(cells), flush=True)
+        if label.startswith("REAL") and APP == "underdog":
+            # Underdog alternates carry REAL multipliers in every season, so slips with goblins / demons count here. Whole surface, 1 and 3 slips a slate.
+            print("BT|SURFACE Underdog kinds - ROI by season | key x kind x side x props x minimum x slips a slate | structure cells", flush=True)
+            for key_ in ("gbm return", "small gbm return", "blend return", "CONTROL placebo", "CONTROL random"):
+                for kn_ in ("regular + goblin", "goblin", "demon", "all"):
+                    for sd_ in ("both", "Under"):
+                        for pr_ in ("all", "no defensive"):
+                            for ev_ in (None, 0.0):
+                                for S_ in (1, 3):
+                                    x = R[(~R["modelled"]) & R["cb"].map(lambda q: q[0] == key_ and q[1] == kn_ and q[2] == sd_ and q[3] == pr_ and q[4] == "any" and q[5] == ev_) & (R["S"] == S_)]
+                                    if not len(x):
+                                        continue
+                                    cells = []
+                                    for k in KS:
+                                        for st in STRUCTS:
+                                            y = x[(x["k"] == k) & (x["st"] == st)]
+                                            if len(y):
+                                                r_ = y.iloc[0]; cells.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]))
+                                    print(f"BT|U {key_:17s} {kn_:16s} {sd_:5s} {pr_:12s} min {('none' if ev_ is None else '>0'):4s} x{S_} | " + " | ".join(cells), flush=True)
         if label.startswith("REAL") and len(fam):
             print("BT|FOCUS DETAIL - the same family with ranges, drawdown and droughts (2 - 4 picks; 1, 2, 3 slips a slate)", flush=True)
             for key_ in ("blend return", "small gbm return", "CONTROL random"):
