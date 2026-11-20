@@ -145,7 +145,7 @@ def load(conn):
     sl["tr_slate7"] = gs.transform(lambda x: x.shift(1).rolling(7, min_periods=3).mean()); sl["tr_slate21"] = gs.transform(lambda x: x.shift(1).rolling(21, min_periods=7).mean())
     t = df[["gd", "player_id", "prop", "under"]].merge(reg.drop(columns=["hit"]), on=["gd", "player_id", "prop", "under"], how="left")
     t = t.merge(pl.drop(columns=["hit"]), on=["gd", "player_id", "under"], how="left").merge(sl.drop(columns=["hit"]), on=["gd", "prop", "under"], how="left")
-    # legs with no regular leg of their own that day still get the player's history up to the previous slate
+    # legs of a player / prop / side with no regular leg that day stay empty on the player layers (the trees handle missing)
     for c in ("tr_pl10", "tr_pl_n", "tr_plall10", "tr_slate7", "tr_slate21"):
         X[c] = t[c].values
     X = X.astype("float32")
