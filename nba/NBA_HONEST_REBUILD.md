@@ -516,6 +516,61 @@ How to read it:
 
 **Database housekeeping (owner 18:39 / 18:41 PT: database at 90%, upgrading the plan, "only if there is some very easy cleaning").** Lossless only: the three scratch tables of this rebuild rewritten densely (`VACUUM FULL` on `baseline_history_h`, `_lr_legs_hp`, `_lr_legs_h` - row counts identical before / after: 785,325 / 4,651,922 / 5,076,317). Database 48 GB -> 47 GB. Measured and left alone (production tables, for the existing lossless tool `db_compact.py` off-hours): `tier_map_legs` ~340 MB free, `final_hp` ~330 MB, `board_outcomes` ~170 MB. Nothing deleted.
 
+## 8s. PHASE D3 - THE TOP OF THE LIST TAKEN APART (2026-11-19 19:05 PT; `research_top_list_h.py`, runs tl_underdog 44663331025, tl_prizepicks 44663341153; Underdog kinds surface bt6_underdog 44663881304)
+
+Regular single-stat Unders ranked by the blend, one leg a player, hit rate by rank position (2024-25 / 2025-26 / 2026-27; [90% range, three seasons pooled]):
+| Rank | Underdog (needs 0.5345) | PrizePicks (needs 0.542) |
+|---|---|---|
+| #1 | 0.589 / 0.615 / 0.517 [0.545..0.644] | 0.474 / 0.568 / 0.621 [0.489..0.590] |
+| #2 | 0.489 / 0.596 / 0.552 [0.509..0.600] | 0.557 / 0.630 / 0.621 [0.556..0.656] |
+| #3 | 0.522 / 0.538 / 0.655 [0.498..0.589] | 0.567 / 0.568 / 0.655 [0.531..0.618] |
+| #4 | 0.556 / 0.551 / 0.655 [0.516..0.611] | 0.567 / 0.525 / 0.621 [0.500..0.597] |
+| #5-6 | 0.572 / 0.500 / 0.552 [0.496..0.564] | 0.552 / 0.497 / 0.586 [0.486..0.559] |
+| #7-10 | 0.542 / 0.545 / 0.434 [0.505..0.556] | 0.518 / 0.535 / 0.552 [0.507..0.551] |
+| #11-20 | 0.527 / 0.521 / 0.534 [0.509..0.540] | 0.515 / 0.516 / 0.462 [0.495..0.526] |
+| #21-40 | 0.535 / 0.540 / 0.552 [0.528..0.550] | 0.515 / 0.524 / 0.538 [0.512..0.532] |
+Pooled against the break-even, slate level: Underdog top 2 0.576 (550 legs, +1.90 standard errors), top 4 0.565 (1,100 legs, +2.05), top 6 0.553 (+1.54); PrizePicks top 3 0.574 (864 legs, +1.82), top 4 0.568 (1,152 legs, +1.68), top 6 0.553 (+0.89).
+
+What the top 4 are: 92-96% have a sportsbook number at the exact line and it sits near even (0.51 - 0.53); the app line equals the sportsbooks' main line on 86-88% - **this is not line shopping**. The honest baseline calls them 0.71 (Underdog) / 0.82 (PrizePicks): players whose minutes are up (37-45% vs 27% of all), often bench / rotation, where the baseline still projects the old role. The app has mostly priced the new role; the leg still goes Under more than the price needs. When the app line IS above the sportsbooks' main line by 0.5+: 0.617 (115 legs, Underdog), 0.659 (41, PrizePicks). By month: no single month carries it (Underdog 0.51 - 0.65 outside two 16-20-leg Aprils at 0.35 - 0.38; PrizePicks 0.50 - 0.73). By prop: rebounds 0.59 / 0.62 and threes 0.61 / 0.60 above points 0.55 / 0.54.
+Against its neighbours: Overs are below break-even at every rank on both apps; combos Unders show no top-of-list lift on PrizePicks; the sportsbook alone and the gbm alone rank worse than the blend; placebo and random sit at the Under base rate (0.52). The honest baseline alone ranks almost as well as the blend at ranks 1-3 on both apps.
+
+Underdog with goblins (real multipliers in all three seasons): legs the blend calls profitable, regular + goblin, ranked by the small gbm - 2-pick Standard 1 a slate +35% / +13% / +17%, 3 a slate +17% / +16% / +10%; 4-pick Flex 3 a slate +16% / +17% / +39%. But RANDOM order inside the same "blend says profitable" set gives 2-pick x 3: +10% / -1% / +27%: the minimum filter carries most of it, the ranking adds a little. Goblins alone and demons alone: negative.
+
+Verdict on the family: **a thin, consistent top-of-list effect on regular single-stat Unders, about 2 standard errors on each of two apps, with "Under" and "single stats" chosen by looking. Probable, not proven. It supports about one slip a slate per app.**
+
+## 8t. PHASE C - THE PER-LEG STORE (2026-11-19 19:05 PT; `research_legs_honest_store.py`, run ls1 44664448176)
+
+| Object (schema `nba_score`, beside production, nothing reads it) | Content |
+|---|---|
+| `v_legs_honest` (view, no storage) | 5,059,053 board legs, four apps, 356 dates, 545 players: app, season, date, player, prop, side, line, kind, tier, price source (real / derived / modelled), return multiplier, break-even, result, honest baseline chance, walk-forward blend / small gbm / gbm (4,651,922 legs), predicted return, realised return |
+| `honest_leg_cells` (7,527 rows) | app x season x price source x kind x prop x side x line band x predicted-return band: legs, slates, hit rate, break-even, ROI, predicted ROI |
+| `honest_leg_players` (8,825 rows) | app x season x player x side on regular lines: legs, slates, hit rate, ROI |
+| `honest_leg_ladders` (243 rows) | app x season x kind x rung (the chance a rung needs) x side: legs, hit rate, ROI |
+
+Headlines from the store:
+- **Every regular line, every app, every season is below break-even on both sides**: Unders -3.5% to -9.3%, Overs -8.3% to -15.1%. Underdog regular Unders this season: 0.531 against 0.5345 (-0.6%).
+- **The blend orders the board correctly** (regular lines, real prices; ROI by predicted band, below -15% / -15..-5% / -5..0% / 0..+5%): Underdog 2025-26 -16.9% / -8.4% / -1.8% / +2.7%; Underdog 2026-27 -22.1% / -8.2% / -1.0% / +13.6% (229 legs); PrizePicks 2025-26 -12.8% / -8.5% / -3.8% / -2.7%; PrizePicks 2026-27 -15.2% / -9.0% / -3.9% / -0.1%; Fliff 2026-27 -16.5% / -8.7% / -4.9% / +11.1% (212 legs); Sleeper 2026-27 -16.3% / -10.2% / -4.7% / -4.4%. Monotone everywhere; the top band reaches zero or a little above, on few legs.
+- **The ladder**: every rung of every alternate ladder at real prices is negative (Underdog goblins -5.8% to -13.8%, demons -6.5% to -21.6%, Sleeper alternates -12% to -60%); the deeper the rung, the worse.
+- **Players do not repeat**: of 830 player x side with 60+ regular legs in both 2024-25 and 2025-26, the correlation of the two seasons' ROI is +0.03; of the 202 positive in 2024-25, 28% were positive again (27% is the base rate). "Specific players" is not a strategy.
+
+## 8u. WHERE THE REBUILD STANDS AFTER PHASES A-D (2026-11-19 19:05 PT) - the answer to D8
+
+| Phase | State |
+|---|---|
+| A. Numbers certified | DONE. Truncation invariance 15 / 15 at 100.00% identical with a leaky control; input audit 7 / 7; in-play boards removed in all seasons; PrizePicks alternate prices bounded by real quotes. |
+| B. Best per-leg number | DONE. Walk-forward blend / gbm on ~40 pick-time inputs for 4.65M legs. Trailing layers, form, role, injury report, line gaps tested inside it. The honest ceiling: it beats the price by a hair and orders the board correctly; it does not clear the apps' margin except at the very top of regular lines. |
+| C. Per-leg store | DONE. `v_legs_honest` + three roll-ups. |
+| D. Battery from zero | DONE for the first complete pass: ~130,000 strategies, four apps, 2-6 picks Flex and Power, controls per structure, walk-forward of the selection, focus surfaces. |
+
+What the certified numbers support:
+1. **No app, kind, prop, side, rung or player is profitable as a group at real prices.**
+2. **One thin candidate on Underdog and one on PrizePicks**: the top 2-4 regular single-stat Unders of the slate by the blend, about ONE slip a slate per app (8r, 8s). In units of one stake over 2024-25 / 2025-26 / 2026-27: Underdog 2-pick Standard +17.0 / +51.5 / +9.5 (88 / 155 / 29 slips; drawdown 8.0 / 8.5 / 6.5; drought 6 / 6 / 5 slates); PrizePicks 4-pick Flex +19.0 / +36.0 / +23.0 (89 / 147 / 25 slips; drawdown 8.0 / 15.5 / 5.5; drought 6 / 9 / 4); PrizePicks 3-pick Power +22 / +37 / +15 (drawdown 16 / 23 / 9; drought 14 / 23 / 9). Evidence about 2 standard errors per app: probable, not proven.
+3. **Sleeper, Fliff: nothing can be certified** - their history prices are derived; 29 real slates are too few. **Betr** has no per-leg price and is outside these leg tables.
+4. **PrizePicks goblins / demons: unanswerable from history** (modelled prices; rule C9). O17 is the way to settle it.
+5. Volume: the honest numbers support roughly 1 slip a slate on each of two apps - far fewer than the live system places.
+
+Open, in order of value: O16 (sportsbook capture this season is thin - the blend's main input), O17 (real quotes on the model's top goblins), a pick-time version of the blend (today it exists only for graded days), then the live discussion the owner reserved (D8).
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -591,3 +646,4 @@ External (read for this work):
 - **2026-11-19 17:16-18:18 PT** - Phase B closed (lm3 trailing layers rejected, lm4 final model stored), Phase D engine written with placebo / random controls per structure and a walk-forward of the selection; first pass on four apps (bt3_*). Section 8q.
 - **2026-11-19 18:39 / 18:41 PT** - Owner: database at 90%, any cleanup without losing data? then: upgrading the plan, only very easy cleaning. Done: lossless rewrite of this rebuild's three scratch tables (-0.8 GB, row counts verified). Nothing deleted.
 - **2026-11-19 18:45-18:47 PT** - Battery D2 (duplicates, leg hit rates, focus surface, real-only Sleeper / Fliff). Section 8r: the edge is the top 2-4 regular single-stat Unders by the blend, about one slip a slate per app, Underdog and PrizePicks; Sleeper / Fliff cannot be selected on 29 real slates.
+- **2026-11-19 19:45-19:05 PT** - D3 (rank positions, what the top legs are, Underdog kinds surface), Phase C store (view + three roll-ups), status table 8u. Sections 8s, 8t, 8u.
