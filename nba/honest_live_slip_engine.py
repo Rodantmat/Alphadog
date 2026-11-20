@@ -241,10 +241,20 @@ def write(conn, day, plan, commit=True):
             tm = SL.teams_of(conn, {r["pid"] for _c, _k, _s, s, _cand in slips for r in s}, day)
             for code, k, st, s, cand in slips:
                 legs = [dict(r["leg"], team=tm.get(r["pid"]), roi=0.0, score_roi=0.0) for r in s]
-                RA.insert(conn, app, day, NAMES[code], (None, None, None, None, None, k, st), 1, legs, pr)
-                if st == "max":                              # the Max price: the product (x Sleeper's size bonus); the shared insert stores the Flex top tier
-                    mm = math.prod(float(l["m"]) for l in legs) * (pr[0].get(k, 1.0) if app == "sleeper" else 1.0)
-                    conn.execute(f"UPDATE {tbl} SET model_multiplier = %s WHERE game_date = %s AND strategy = %s AND k = 1", (round(int(mm * 100 + 1e-6) / 100.0, 4), day, NAMES[code]))
+                if app == "fliff":
+                    RA.insert(conn, app, day, NAMES[code], (None, None, None, None, None, k, st), 1, legs, pr)
+                else:                                        # Sleeper: Max = the product x the size bonus; Flex = Sleeper's own tiers
+                    ms = [float(l["m"]) for l in legs]
+                    lj = [{"player": l["player"], "player_id": l["player_id"], "prop": l["prop"], "side": l["side"], "line": l["line"], "factor": l["m"], "p": round(float(l["p"]), 4),
+                           "team": l.get("team"), "event_id": l["event_id"], "tier": "R", "kind": l.get("kind") or "main"} for l in legs]
+                    tiers = SL.flex_tiers(ms, pr[1], pr[2]) if st == "flex" else None
+                    model = tiers[k] if tiers else math.prod(ms) * pr[0].get(k, 1.0)
+                    conn.execute("""INSERT INTO nba_score.sleeper_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, flex_tiers)
+                                    VALUES (%s,%s,%s,%s,1,%s,1,'live',%s,%s)
+                                    ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, status = EXCLUDED.status,
+                                      model_multiplier = EXCLUDED.model_multiplier, flex_tiers = EXCLUDED.flex_tiers, built_at = now()
+                                    WHERE nba_score.sleeper_live_slips.graded_at IS NULL""",
+                                 (day, NAMES[code], k, st, json.dumps(lj), round(float(model), 4), json.dumps(tiers) if tiers else None))
                 NL.store(conn, day, NAMES[code], 1, [dict(r["leg"]) for r in cand], exclude_players={r["leg"]["player"] for r in s})
                 n += 1
         elif app == "betr":
