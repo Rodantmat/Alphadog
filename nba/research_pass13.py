@@ -59,11 +59,14 @@ def main():
     ids = dict(conn.execute("SELECT norm_name, player_id::text FROM nba_ref.player_name_map").fetchall())
     mc = pd.read_sql("""SELECT game_date::text gd, snapshot_label lab, nba_ref.norm_name(player) nm, market_key, line::float8 line, p_over_mean::float8 po
                         FROM nba_market.market_consensus WHERE snapshot_label IN ('window', 'close') AND market_key = ANY(%s) AND p_over_mean IS NOT NULL""", conn, params=(list(MK),))
-    mv = pd.read_sql("""SELECT bookmaker app, game_date::text gd, snapshot_label lab, nba_ref.norm_name(player) nm, market_key, max(line)::float8 line
-                        FROM nba_market.board_snapshots WHERE bookmaker IN ('underdog', 'prizepicks') AND game_date >= '2026-10-20' AND game_date < current_date
-                          AND snapshot_label IN ('morning', 'window') AND market_key = ANY(%s) AND lower(left(side, 1)) = 'u'
-                          AND (bookmaker <> 'underdog' OR coalesce(multiplier, 1) = 1) AND (bookmaker <> 'prizepicks' OR coalesce(odds_type, 'standard') = 'standard')
-                        GROUP BY 1, 2, 3, 4, 5""", conn, params=(list(MK),)) if True else None
+    mv = pd.read_sql("""SELECT 'underdog' app, game_date::text gd, snapshot_label lab, nba_ref.norm_name(player) nm, market_key, max(line)::float8 line
+                        FROM nba_market.board_snapshots WHERE bookmaker = 'underdog' AND game_date >= '2026-10-20' AND game_date < current_date
+                          AND snapshot_label IN ('morning', 'window') AND market_key = ANY(%s) AND lower(left(side, 1)) = 'u' AND coalesce(multiplier, 1) = 1
+                        GROUP BY 2, 3, 4, 5
+                        UNION ALL
+                        SELECT 'prizepicks', game_date::text, snapshot_label, nm, base_market, max(line)::float8
+                        FROM nba_market.pp_leg_price WHERE game_date >= '2026-10-20' AND game_date < current_date AND snapshot_label IN ('morning', 'window')
+                          AND base_market = ANY(%s) AND kind = 'standard' GROUP BY 2, 3, 4, 5""", conn, params=(list(MK), list(MK)))
     import sleeper_live_slip_engine as SL
     pr = SL.pricing(conn); conn.close()
     d = pd.concat([g1, g2], ignore_index=True).merge(gl, on=["player_id", "gd"], how="left"); d["game_id"] = d["game_id"].fillna("g" + d["player_id"])
