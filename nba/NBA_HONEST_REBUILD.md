@@ -606,7 +606,7 @@ Owner 19:12 PT: "look at all proplines, variations, all hit rate rankings, all i
 | PrizePicks 3-pick Power | +74.0 (274) | -48.7 / +8.0 / +32.0 | 0.03% |
 | PrizePicks 5-pick Flex | +80.8 (242) | -38.2 / +13.2 / +34.0 | 0 of 4,000 |
 | PrizePicks 2-pick Power | +15.0 (285) | -58.0 / -21.0 / -3.0 | 0.05% |
-By season the candidate beats 84-99.9% of random draws in each of the three seasons (weakest: Underdog 2026-27 at 84%, 29 slips). Against "any regular leg, both sides" the gap is wider. The small gbm as the ranker is much weaker (PrizePicks 4-pick Flex -1.5 units, Underdog 2-pick +4.5): the result belongs to the blend and to the honest baseline, not to every ranker.
+By season the candidate beats 82-99.9% of random draws in each of the three seasons (weakest: PrizePicks 5-pick Flex 2024-25 at 82%, Underdog 2-pick 2026-27 at 84% on 29 slips). Against "any regular leg, both sides" the gap is wider. The small gbm as the ranker is much weaker (PrizePicks 4-pick Flex -1.5 units, Underdog 2-pick +4.5): the result belongs to the blend and to the honest baseline, not to every ranker.
 
 What passes 2 and 3 change:
 1. **The ranking is real**: the top of the list beats random picks from the same pool far beyond luck, in each season, on both apps.
