@@ -160,8 +160,18 @@ def load_sources(conn, day, weights):
     # slip a size (pass 13: 3-pick Power +17% -> +27%, 4-pick Flex +10% -> +24%, 5-pick Flex +24% -> +39% as placed). Switch: honest_live.pp_half_point_only.
     if HALF_ONLY:
         pp = [l for l in pp if abs(float(l["line"]) % 1) > 1e-9]
-    ud = [l for l in UD.load_legs(conn, day) if l["rank_key"] == "baseline_hp" and l["tier"] == "R" and str(l["side"]).lower().startswith("u")
-          and l["prop"] in SINGLE and l["score"] is not None]
+    ud_all = UD.load_legs(conn, day)
+    # PLACEABILITY (2026-11-20, first live slate): when Underdog's feed carries TWO OR MORE regular (non-alternate) lines for one player and stat
+    # (prediction-market players: a balanced -115/-115 line beside a skewed one), the Pick'em screen offers only one of them - on 2026-11-20 Black
+    # points 16.5 / 14.5, Mitchell 18.5 / 14.5, Bamba 8.5 / 11.5 and the site showed only the skewed line. The engine picked the balanced line,
+    # which could not be placed. Such player-stats (~5% of the board) are left out of the Underdog pool.
+    nl = {}
+    for l in ud_all:
+        if l.get("kind") != "alt":
+            nl.setdefault((str(l["player_id"]), l["prop"]), set()).add(float(l["line"]))
+    multi = {k for k, v in nl.items() if len(v) > 1}
+    ud = [l for l in ud_all if l["rank_key"] == "baseline_hp" and l["tier"] == "R" and str(l["side"]).lower().startswith("u")
+          and l["prop"] in SINGLE and l["score"] is not None and (str(l["player_id"]), l["prop"]) not in multi]
     ctx = context(conn, day, {str(l["player_id"]) for l in pp + ud})
     return rank_rows("underdog", ud, ctx, weights["underdog"]), rank_rows("prizepicks", pp, ctx, weights["prizepicks"]), ctx
 
