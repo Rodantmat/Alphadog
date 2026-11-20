@@ -17,6 +17,8 @@ WHAT IT BUILDS, every slate, from the SAME legs and in the SAME order as the cer
                                B1 3-pick Perfect | B5 3-pick Perfect from PrizePicks' top 5
 WHAT IT DOES TO THE OLD STRATEGIES: nothing is deleted. On an app this engine serves, every other strategy's slip of the day is set to a not-played status
 (PrizePicks 'placed_shadow', Underdog 'shadow', Sleeper / Fliff / Betr 'shadow' with stake 0): recorded and graded as paper, never shown as PLAY.
+FALLBACKS (owner 2026-11-20 08:59 PT): on a thin board, when an app's elected strategies build fewer slips than they number, its fallbacks are added in
+order until the count is reached (PrizePicks rebounds by the geometric mean of model and sportsbook, and the strategies not elected in the first round).
 GATE: nba_config.classification_config['honest_live'] {enabled, apps, weights}. enabled = false -> this engine does nothing and the old strategies play as before.
 Env: DATABASE_URL, HL_DATE (default today PT), HL_APPS (comma list; default the gate's apps), HL_DRY = 1 (print, write nothing; works on past dates).
 """
@@ -40,7 +42,13 @@ HALF_ONLY = True
 NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-only ranking", "U3": "U3 PrizePicks' top Unders on Underdog", "U4": "U4 top 2 rebounds Unders",
          "U5": "U5 top 2 Unders, home players", "U6": "U6 top 3 rebounds Unders (3-pick Standard)", "U7": "U7 top 4 rebounds Unders (4-pick Flex)", "P1": "H_P1_5flex_under10_noast", "P2": "H_P2_5flex_under10", "P3": "H_P3_5flex_top5", "P4": "H_P4_5flex_avg", "P5": "H_P5_6flex_avg",
          "P6": "H_P6_6flex_props", "P7": "H_P7_6flex_bench", "P9": "H_P9_4flex_top4", "P10": "H_P10_3power_top3", "S1": "H_S1_2max", "S4": "H_S4_4flex", "S5": "H_S5_4max",
-         "S6": "H_S6_5flex", "F1": "H_F1_2max", "F4": "H_F4_4max", "F5": "H_F5_5max", "B1": "H_B1_3perfect", "B5": "H_B5_3perfect_pp"}
+         "S6": "H_S6_5flex", "F1": "H_F1_2max", "F4": "H_F4_4max", "F5": "H_F5_5max", "B1": "H_B1_3perfect", "B5": "H_B5_3perfect_pp",
+         # FALLBACKS (owner 2026-11-20 08:59 PT): built only on a thin board, when the app's elected strategies give fewer slips than they number
+         "U21": "FB1 top 3 Unders, model-only ranking (3-pick Flex)",
+         "P21": "H_FB1_5flex_reb_geo", "P22": "H_FB2_6flex_reb_geo", "P23": "H_FB3_2power_udtop2", "P24": "H_FB4_5flex_props", "P25": "H_FB5_6flex_top6", "P26": "H_FB6_5flex_home",
+         "P27": "H_FB7_6flex_second", "S21": "H_FB1_S_2max", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_2perfect_ud", "B22": "H_FB2_B_2perfect",
+         "B23": "H_FB3_B_4perfect"}
+TARGET = {"underdog": 7, "prizepicks": 9, "sleeper": 4, "fliff": 3, "betr": 2}      # the number of elected strategies an app has
 
 
 def log(m):
@@ -169,6 +177,30 @@ def build(conn, day, apps, weights=None):
             notes.append(f"{code}: not enough qualifying legs ({len(cand)} candidates) - no slip"); return
         plan.setdefault(app, []).append((code, k, st, s, cand))
 
+    fb = {}                                                  # app -> fallback specs in priority order
+
+    def later(app, code, k, st, cand, **kw):
+        fb.setdefault(app, []).append((code, k, st, cand, kw))
+
+    def fill(app):
+        """THIN BOARD: while the app has fewer slips than elected strategies, add its fallbacks in order (never the same legs as a slip it already has)"""
+        have = plan.get(app, [])
+        if not have and app not in plan:
+            plan[app] = have
+        seen_sets = {frozenset((r["pid"], r["prop"]) for r in x[3]) for x in have}
+        for code, k, st, cand, kw in fb.get(app, []):
+            if len(plan[app]) >= TARGET[app]:
+                break
+            sl = pick(cand, k, **kw)
+            if sl is None:
+                continue
+            key = frozenset((r["pid"], r["prop"]) for r in sl)
+            if key in seen_sets:
+                continue
+            seen_sets.add(key); plan[app].append((code, k, st, sl, cand)); notes.append(f"{app}: thin board - fallback {code} added ({len(plan[app])} of {TARGET[app]} slips)")
+        if not plan[app]:
+            del plan[app]
+
     if "underdog" in apps:
         ukey = {}
         for r in U:
@@ -180,6 +212,8 @@ def build(conn, day, apps, weights=None):
         add("underdog", "U5", 2, "standard", [r for r in U if r["home"]])
         add("underdog", "U7", 4, "flex", [r for r in U if r["prop"] == "rebounds" and not r["leg"].get("pred")])   # owner 2026-11-20 00:37 PT; no Prediction legs in a Flex
         add("underdog", "U6", 3, "standard", [r for r in U if r["prop"] == "rebounds"])     # owner 2026-11-20 00:25 PT: "Standard top 3 rebounds under is deployable" (+22 / +23 / +56%)
+        later("underdog", "U21", 3, "flex", [r for r in sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])) if not r["leg"].get("pred")])
+        fill("underdog")
     if "prizepicks" in apps:
         # owner 2026-11-20 00:37 PT: P1, P4, P5 swapped for the pass-16 versions that are positive in every season under the half-point rule
         avg = sorted(P, key=lambda r: (-(r["blend"] + r["ph"]) / 2, r["pid"], r["prop"], r["line"]))
@@ -192,6 +226,19 @@ def build(conn, day, apps, weights=None):
         add("prizepicks", "P7", 6, "flex", [r for r in P if not r["starter"]])
         add("prizepicks", "P9", 4, "flex", P)
         add("prizepicks", "P10", 3, "power", P)             # P8 (6-pick, second team) retired 2026-11-20: flat under the half-point rule; P10 = 3-pick Power, top 3
+        geo = sorted([r for r in P if r["prop"] == "rebounds" and r["pb"] is not None], key=lambda r: (-math.sqrt(r["ph"] * r["pb"]), r["pid"], r["line"]))
+        pkey = {}
+        for r in P:
+            pkey.setdefault((r["pid"], r["prop"]), r)
+        p6 = pick(P, 6)
+        later("prizepicks", "P21", 5, "flex", geo)          # rebounds by the geometric mean of model and sportsbook (pass 17: +26 / +31 / +38%)
+        later("prizepicks", "P22", 6, "flex", geo)
+        later("prizepicks", "P23", 2, "power", [pkey[(r["pid"], r["prop"])] for r in first(U, 2) if (r["pid"], r["prop"]) in pkey])
+        later("prizepicks", "P24", 5, "flex", P, diff_prop=True)
+        later("prizepicks", "P25", 6, "flex", P)
+        later("prizepicks", "P26", 5, "flex", [r for r in P if r["home"]])
+        later("prizepicks", "P27", 6, "flex", P, skip={r["pid"] for r in (p6 or [])})
+        fill("prizepicks")
     tight = sorted(first(U, 2) + first(P, 5), key=lambda r: (-r["blend"], r["pid"]))
     for app, specs in (("sleeper", (("S1", 2, "max", "u2"), ("S4", 4, "flex", "t"), ("S5", 4, "max", "t"), ("S6", 5, "flex", "t"))),
                        ("fliff", (("F1", 2, "max", "u2"), ("F4", 4, "max", "t"), ("F5", 5, "max", "t"))),
@@ -206,6 +253,14 @@ def build(conn, day, apps, weights=None):
         for code, k, st, src in specs:
             cand = onto(tg, tight, ctx) if src == "t" else onto(tg, first(U, 10), ctx)[:2] if src == "u2" else onto(tg, first(P, 10), ctx)[:5]
             add(app, code, k, st, cand)
+        tl = onto(tg, tight, ctx)
+        if app == "sleeper":
+            later(app, "S21", 2, "max", tl); later(app, "S22", 3, "max", tl)
+        elif app == "fliff":
+            later(app, "F21", 2, "max", tl); later(app, "F22", 3, "max", tl)
+        else:
+            later(app, "B21", 2, "perfect", onto(tg, first(U, 10), ctx)[:2]); later(app, "B22", 2, "perfect", tl); later(app, "B23", 4, "perfect", tl)
+        fill(app)
     return plan, notes
 
 
