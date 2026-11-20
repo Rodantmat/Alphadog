@@ -770,6 +770,20 @@ Rejected on Underdog: the "second team" (top 2 after removing the base players) 
 
 PrizePicks 4-pick Flex and 3-pick Power: no variant is positive in 2024-25 except 4-pick "second team" (+38 / -7 / -4%). PrizePicks stays the weaker app: its sets are long-shot slips with 10-20 slate droughts.
 
+## 8aa. PASS 10 - THE OWNER'S ELECTED SET RUN TOGETHER, AND WHAT A PLAYER CAP DOES (owner 22:54 / 22:57 PT; written 23:07 PT, 2026-11-19)
+
+Owner's election (NOT live yet - his go-ahead pending): Underdog U1-U5, PrizePicks P1-P9, Sleeper S1 S4 S5 S6, Fliff F1 F4 F5, Betr B1 B5 (codes as in 8z / 8y). `research_pass10.py`, run p10b 44692205214; $10 a slip; a capped strategy takes ITS next leg.
+
+| Cap (slips a player may sit in, per app) | Underdog | PrizePicks | Sleeper (this season) | Fliff (this season) | Betr (2025-26) |
+|---|---|---|---|---|---|
+| none (as elected) | +$3,330, +24.6%, drawdown $355, 2 losing months of 13 | +$6,155, +29.6%, drawdown $1,140, 3 losing months | +$509, +51% | +$639, +86% | +$460, +20.1% |
+| 3 | +$3,155, +23.3%, drawdown $355, 1 losing month | -$615, -3.0%, drawdown $1,720, 7 losing months | +$521 | +$619 | +$505 |
+| 2 | +$2,695, +19.9%, drawdown $320, 0 losing months | -$800, -3.9%, drawdown $2,015 | +$324 | +$623 | +$505, +21.0% |
+| 1 | +$1,240, +9.2%, drawdown $385, 7 losing months | -$1,946, -9.5%, drawdown $2,739, 10 losing months | +$227 | +$333 | +$405, drawdown $115 |
+
+Underdog + PrizePicks together, no cap: +$1,271 / +$5,918 / +$2,296 by season, total +$9,485, +27.7% on 3,430 slips (11.5 a slate), drawdown $1,052, worst 7 slates -$580, 2 losing months of 13. All five apps this season, no cap: +$3,444 on 507 slips (17.5 a slate), drawdown $443, worst 7 slates -$391; one player sits in 12.4 slips on an average slate (worst 19), 15 players carry 66 legs. A cap ACROSS apps (4 slips a player over the five) turns Sleeper, Fliff and Betr negative (-$90 / -$229 / -$420).
+Reading: the edge is in the top few legs of the slate and nowhere else, so a cap swaps a good leg for a worse one. PrizePicks cannot take any cap (its 5- and 6-pick slips need the same top legs); Underdog takes a cap of 2 at a cost of about a fifth of the profit and with no losing month; the three small apps take a per-app cap of 2. The only way to reduce PrizePicks concentration is fewer PrizePicks slips, not a cap.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -852,3 +866,4 @@ External (read for this work):
 - **2026-11-19 21:07 PT** - Owner: "Cover every aspect and issues that still open and also all untested variations, techniques and aspects untested. No exceptions. Keep going". Passes 6-7 (written 22:12 PT): O16 cause found; whole-number-line fix + push table + rebuild (lh8, lm5); as placed parts 2-3 (ap2); rank caps (rc2), luck test (cn2), battery (bt8_* four apps), two-factor layering (ly_*), Betr (be1), conditions / composition / staking / portfolio / range (p7), tracker rewritten (tt2). Section 8x. Result: Underdog 2-pick Standard holds on every test (+28.7%, +78 u, 272 slips); PrizePicks CORRECTED down - negative in 2024-25 on the complete board; nothing else improves the plain top of the list; Fliff is a one-month lead; Betr and Sleeper nothing. Live untouched.
 - **2026-11-19 22:16 PT** - Owner: other structures (3-pick Flex, 6-pick Flex)? other apps using only Underdog / PrizePicks qualified legs - does their pricing bring positive ROI? (1) use ParlayAPI if it makes a big difference; (2) go for the goblin quotes if it does not delay the slips, earlier than the last reports. Done (written 22:23 PT): pass 8 (p8), O16 closed without spend (capture already 10 books; candidate does not depend on it), O17 built as a soft morning step + quote order (sh1 test). Section 8y. Live strategies untouched.
 - **2026-11-19 22:28 / 22:30 PT** - Owner asked for the best strategy per app (answered from 8x / 8y), then: "I want more strategies and more slips to do not depend on a single startegy". Pass 9 (p9) run and recorded in 8z (22:34 PT): four more Underdog 2-pick slips with 25-47% shared legs hold in all three seasons (5 slips together +330.5 u, +24.4%, drawdown 35.5, 2 losing months of 13); PrizePicks variants positive in every season exist only as 5- / 6-pick Flex. Selection caveat stated. Live untouched.
+- **2026-11-19 22:41-22:57 PT** - Owner: all five apps will go live; asked for the menu per app (given, with slips a day and dollars at $10), elected U1-U5, P1-P9, S1 S4 S5 S6, F1 F4 F5, B1 B5, then asked what a correlation / overuse cap changes. Pass 10 run (p10, p10b after fixing short lists) and recorded in 8aa (23:07 PT): caps make PrizePicks negative; Underdog tolerates 2. Nothing wired live - waiting for his go-ahead and stake.
