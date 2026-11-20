@@ -48,9 +48,9 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "U20": "FB0 top 4 Unders by the average ranking, no assists, under this line in 6+ of the last 10 games (4-pick Flex)",
          "U21": "FB1 top 3 Unders, model-only ranking (3-pick Flex)",
          "P21": "H_FB1_5flex_reb_geo", "P22": "H_FB2_6flex_reb_geo", "P23": "H_FB3_2power_udtop2", "P24": "H_FB4_5flex_props", "P25": "H_FB5_6flex_top6", "P26": "H_FB6_5flex_home",
-         "P27": "H_FB7_6flex_second", "S21": "H_FB1_S_2max", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_2perfect_ud", "B22": "H_FB2_B_2perfect",
+         "P27": "H_FB7_6flex_second", "S7": "H_S7_5max_pp", "S8": "H_S8_4max_pp", "F6": "H_F6_4max_pp", "F7": "H_F7_5max_pp", "S21": "H_FB1_S_2max_noast", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max_noast", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_3perfect_noast", "B22": "H_FB2_B_2perfect",
          "B23": "H_FB3_B_4perfect"}
-TARGET = {"underdog": 8, "prizepicks": 9, "sleeper": 4, "fliff": 3, "betr": 2}      # the number of elected strategies an app has
+TARGET = {"underdog": 8, "prizepicks": 9, "sleeper": 6, "fliff": 5, "betr": 2}      # the number of elected strategies an app has
 
 
 def log(m):
@@ -222,7 +222,7 @@ def build(conn, day, apps, weights=None):
             key = frozenset((r["pid"], r["prop"]) for r in sl)
             if key in seen_sets:
                 continue
-            seen_sets.add(key); plan[app].append((code, k, st, sl, cand)); notes.append(f"{app}: thin board - fallback {code} added ({len(plan[app])} of {TARGET[app]} slips)")
+            seen_sets.add(key); plan[app].append((code, k, st, sl, cand)); notes.append(f"{app}: {code} added ({len(plan[app])} of {TARGET[app]} slips)" if int(code[1:]) < 20 else f"{app}: thin board - fallback {code} added ({len(plan[app])} of {TARGET[app]} slips)")
         if not plan[app]:
             del plan[app]
 
@@ -288,7 +288,19 @@ def build(conn, day, apps, weights=None):
         for code, k, st, src in specs:
             cand = onto(tg, tight, ctx) if src == "t" else onto(tg, first(U, 10), ctx)[:2] if src == "u2" else onto(tg, first(P, 10), ctx)[:5]
             add(app, code, k, st, cand)
-        # owner 2026-11-20 09:23 PT: no fallbacks on Sleeper, Fliff, Betr (all three lost on the season replay) - fewer slips on thin days instead
+        # owner 2026-11-20 09:23 PT: the first Sleeper / Fliff / Betr fallbacks (2- / 3-pick on the qualified legs) lost on the season replay and were dropped.
+        # owner's rule 10:37 PT + pass 24 / 24b: NEW slips in PrizePicks' own order played on the app (deeper than the 7 qualified legs, so they also exist on days the
+        # elected ones cannot fill): Sleeper 5- and 4-pick Max (+59% / +227% and +42% / +135%: modelled-price 2025-26 / real-price 2026-27), Fliff 4- and 5-pick Max
+        # (+53% / +154%, +64% / +234%). Built after the elected ones and only when their legs differ from a slip the app already has. Then the positive low-return
+        # ones as true fallbacks: 2-pick Max no assists (Sleeper +10% / +50%, Fliff +16% / +59%), Betr 3-pick Perfect no assists (+22% / +16%).
+        ppo = onto(tg, P, ctx); tl = onto(tg, tight, ctx); noast = [r for r in tl if r["prop"] != "assists"]
+        if app == "sleeper":
+            later(app, "S7", 5, "max", ppo); later(app, "S8", 4, "max", ppo); later(app, "S21", 2, "max", noast)
+        elif app == "fliff":
+            later(app, "F6", 4, "max", ppo); later(app, "F7", 5, "max", ppo); later(app, "F21", 2, "max", noast)
+        else:
+            later(app, "B21", 3, "perfect", noast)
+        fill(app)
     return plan, notes
 
 
