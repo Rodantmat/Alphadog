@@ -8,7 +8,9 @@ Last updated: 2026-11-19 14:54 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 
 ---
 
-## 1. State (rewritten 14:16 PT, 2026-11-19 - read this first)
+## 1. State (items 1-8 written 14:16 PT; items 9-12 added 19:07 PT, 2026-11-19 - read this first)
+
+**LATEST (19:07 PT): phases A-D of the owner's directive D8 have had their first complete pass - read section 8u first, then 8o-8t.**
 
 1. **Cause (proven):** the certified backtest harness gave every game of a month the player's month-END rate tier, so the two past seasons of model numbers carried the future. Live production was always honest. Honest history now lives in `nba_score.baseline_history_h` (15 props, three seasons); one honest leg table for four apps in `nba_score._lr_legs_h` (rule C12: an outcome table - never a lookup for another leg).
 2. **Verdict at real prices (8d):** no proven per-leg edge on any app. The model adds almost nothing beyond the market (weight 0.03-0.06). PrizePicks goblins -10%, demons -37%, regular lines -4% to -12%; Sleeper / Fliff ~ -5% to -12%; Underdog ~0 to slightly negative. The board's leg ROI overstates by 13-22 points on every app (8f). Structure cannot create an edge (8f, 8i); 66,000+ cells scanned on three seasons with a shuffle yardstick: nothing repeatable (8h, 8k).
@@ -18,6 +20,11 @@ Last updated: 2026-11-19 14:54 PT (Claude, session 01H2FMsCx3km84dy84mk9Bwq).
 6. **Retraction on file (8j):** a "half point below the market" lead was my own join artifact (ties filtered); caught and removed before any report.
 7. **Ready, not switched:** the one-block tier fix in production (dry-run clean, +3-4 s; C10); the honest leg-ROI formula (book chance at the line x real price; O13).
 8. **OWNER DIRECTIVE D8 (14:51 PT) governs from here - section 8n: certify the numbers, then the best per-leg hit rate and ROI, then the per-leg store for all back data, then the whole battery from zero; live strategies stay and are not patched.** Earlier open items: O13 (show the honest leg ROI on the board), promotion of the top-of-list Unders to a tracked paper strategy / pool-size cut of the live strategies, O14 (Underdog prediction-pick payouts ~3% above our table; exact pricing needs his logged-in quote).
+
+9. **Phase A (numbers certified) DONE:** the first "honest" recipe still leaked through two all-rows league constants; fixed (`TL.honest`), truncation invariance 15 / 15 at 100.00%, input audit 7 / 7, in-play boards removed in all seasons, PrizePicks alternate prices bounded by real quotes (8o, 8p).
+10. **Phases B, C, D DONE (first complete pass):** walk-forward per-leg model for 4.65M legs (`_lr_legs_hp`), per-leg store (`v_legs_honest` + 3 roll-ups), battery from zero (~130,000 strategies, controls, walk-forward of the selection) (8q-8t).
+11. **Result (8u):** no group of legs is profitable at real prices; ONE thin candidate per app on Underdog and PrizePicks - the top 2-4 regular single-stat Unders of the slate by the blend, about one slip a slate, positive in all three seasons, about 2 standard errors: probable, not proven. Sleeper / Fliff cannot be certified (derived history prices, 29 real slates). PrizePicks goblins / demons unanswerable from history (C9).
+12. **LIVE from this work (nothing in production changed):** the daily referee now also rebuilds this season's honest history, re-scores the per-leg model, refreshes the store and records the candidate's slips in `nba_score.honest_top_list` (`audit_top_list_tracker.py`) - a forward scoreboard, not a strategy switch. Heavy steps skip themselves if the run starts after 06:10 PT.
 
 ## 2. How we got here (chain of evidence, in order)
 
@@ -647,3 +654,4 @@ External (read for this work):
 - **2026-11-19 18:39 / 18:41 PT** - Owner: database at 90%, any cleanup without losing data? then: upgrading the plan, only very easy cleaning. Done: lossless rewrite of this rebuild's three scratch tables (-0.8 GB, row counts verified). Nothing deleted.
 - **2026-11-19 18:45-18:47 PT** - Battery D2 (duplicates, leg hit rates, focus surface, real-only Sleeper / Fliff). Section 8r: the edge is the top 2-4 regular single-stat Unders by the blend, about one slip a slate per app, Underdog and PrizePicks; Sleeper / Fliff cannot be selected on 29 real slates.
 - **2026-11-19 19:45-19:05 PT** - D3 (rank positions, what the top legs are, Underdog kinds surface), Phase C store (view + three roll-ups), status table 8u. Sections 8s, 8t, 8u.
+- **2026-11-19 20:45-19:07 PT** - Daily referee extended (honest history of the season, per-leg model, store, forward tracker `audit_top_list_tracker.py` -> `nba_score.honest_top_list`; run tt1 44665360385 reproduces the battery's numbers to the unit: an independent cross-check). Section 1 items 9-12. Final report sent to the owner.
