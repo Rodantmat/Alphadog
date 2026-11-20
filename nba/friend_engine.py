@@ -756,7 +756,9 @@ def pick():
     # owner 2026-11-18 14:15 / 14:16 PT ("just put the top ones ... the top 4 per app", "Just the top 4, best 4, that's it"): from the 2026-11-19 slate the cap is 4 and the rank
     # is the per-leg edge (geometric mean of leg p x leg multiplier), the same measure Jon's tiers and both pages' best-first order use.
     JCAP = 4 if d >= dt.date(2026, 11, 19) else 5
-    if TIER == "jessi" and d >= dt.date(2026, 11, 14) and len(slips) > JCAP and len(slips) == len(rows):
+    # owner 2026-11-20 15:10 PT ("for both of them under tier 1, tier 2 with the rest of the slips"): from the 2026-11-21 slate Jessi keeps every slip; her page shows
+    # the 4 strongest per app as Tier 1 and the rest as Tier 2 (collapsed), like Jon's
+    if TIER == "jessi" and dt.date(2026, 11, 14) <= d < dt.date(2026, 11, 21) and len(slips) > JCAP and len(slips) == len(rows):
         try:
             def _pot(r):
                 v = 1.0
