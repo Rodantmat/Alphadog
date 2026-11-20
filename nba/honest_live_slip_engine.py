@@ -41,7 +41,8 @@ ALL_APPS = ("prizepicks", "underdog", "sleeper", "fliff", "betr")
 HALF_ONLY = True
 NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-only ranking", "U3": "U3 PrizePicks' top Unders on Underdog", "U4": "U4 top 2 rebounds Unders",
          "U5": "U5 top 2 Unders, home players", "U6": "U6 top 3 rebounds Unders (3-pick Standard)", "U7": "U7 top 4 rebounds Unders (4-pick Flex)",
-         "U8": "U8 top 4 Unders, no assists, up to two a game (4-pick Flex)", "P1": "H_P1_5flex_under10_noast", "P2": "H_P2_5flex_under10", "P3": "H_P3_5flex_top5", "P4": "H_P4_5flex_avg", "P5": "H_P5_6flex_avg",
+         "U8": "U8 top 4 Unders, no assists, up to two a game (4-pick Flex)",
+         "U9": "U9 top 3 Unders, no assists, up to two a game (3-pick Standard)", "P1": "H_P1_5flex_under10_noast", "P2": "H_P2_5flex_under10", "P3": "H_P3_5flex_top5", "P4": "H_P4_5flex_avg", "P5": "H_P5_6flex_avg",
          "P6": "H_P6_6flex_props", "P7": "H_P7_6flex_bench", "P9": "H_P9_4flex_top4", "P10": "H_P10_3power_top3", "S1": "H_S1_2max", "S4": "H_S4_4flex", "S5": "H_S5_4max",
          "S6": "H_S6_5flex", "F1": "H_F1_2max", "F4": "H_F4_4max", "F5": "H_F5_5max", "B1": "H_B1_3perfect", "B5": "H_B5_3perfect_pp",
          # FALLBACKS (owner 2026-11-20 08:59 PT): built only on a thin board, when the app's elected strategies give fewer slips than they number
@@ -51,7 +52,7 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "P21": "H_FB1_5flex_reb_geo", "P22": "H_FB2_6flex_reb_geo", "P23": "H_FB3_2power_udtop2", "P24": "H_FB4_5flex_props", "P25": "H_FB5_6flex_top6", "P26": "H_FB6_5flex_home",
          "P27": "H_FB7_6flex_second", "S7": "H_S7_5max_pp", "S8": "H_S8_4max_pp", "F6": "H_F6_4max_pp", "F7": "H_F7_5max_pp", "S9": "H_S9_2max_noast", "F8": "H_F8_2max_noast", "S21": "H_FB1_S_2max_noast", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max_noast", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_3perfect_noast", "B22": "H_FB2_B_2perfect",
          "B23": "H_FB3_B_4perfect"}
-TARGET = {"underdog": 8, "prizepicks": 9, "sleeper": 7, "fliff": 6, "betr": 2}      # the number of elected strategies an app has
+TARGET = {"underdog": 9, "prizepicks": 9, "sleeper": 7, "fliff": 6, "betr": 2}      # the number of elected strategies an app has
 
 
 def log(m):
@@ -240,6 +241,8 @@ def build(conn, day, apps, weights=None):
         # owner's rule 2026-11-20 10:37 PT (a new strategy above 25-30% goes live): pass 23 - the one-leg-a-game rule costs Underdog's 4-pick; with two a game
         # allowed: +27 / +34 / +43%, +89 u on 272 slips, drawdown 11.4, 6 of 6 half-seasons up. Two legs of one game at most, so always 2+ games (2+ teams).
         add("underdog", "U8", 4, "flex", [r for r in U if r["prop"] != "assists" and not r["leg"].get("pred")], gcap=2)
+        # owner 2026-11-20 12:11 PT "Let's go with option B": 3-pick Standard, blend, no assists, up to two a game (+33 / +47 / +57%, +118 u on 272 slips)
+        add("underdog", "U9", 3, "standard", [r for r in U if r["prop"] != "assists"], gcap=2)
         add("underdog", "U6", 3, "standard", [r for r in U if r["prop"] == "rebounds"])     # owner 2026-11-20 00:25 PT: "Standard top 3 rebounds under is deployable" (+22 / +23 / +56%)
         # owner 2026-11-20 09:46 PT "Add as a fallback": the pass-19 lead (+47% on 249 slips, 3 seasons) - first in the fallback order
         try:
