@@ -19,6 +19,7 @@ Reported per season and kind: log-loss, honesty slope (real on predicted), and t
 and > 1.05): legs, slates, hit rate, real return with a 90% range re-drawing slates; plus the top 6 / 10 / 20 legs a slate by predicted return (one per player).
 Env: DATABASE_URL, LM_APP (prizepicks | underdog | sleeper | fliff), LM_WRITE (0 | 1), LM_ROUNDS (300).
 """
+import json
 import os
 import subprocess
 import sys
@@ -39,6 +40,7 @@ os.environ["CS_APP"] = "prizepicks" if APP == "prizepicks" else "underdog"
 import research_cell_scan_honest as CS                      # noqa: E402  (injury_context, STATCOL, MKI)
 
 WRITE = (os.environ.get("LM_WRITE") or "0") == "1"
+BW = {}
 ROUNDS = int(os.environ.get("LM_ROUNDS") or 300)
 TRAIL = (os.environ.get("LM_TRAIL") or "0") == "1"
 SEAS = ["2024-25", "2025-26", "2026-27"]
@@ -216,6 +218,7 @@ def main():
         mp = lgb.train(par, lgb.Dataset(X[tr], label=ysh, weight=w, categorical_feature=cat, init_score=off[tr]), num_boost_round=ROUNDS)
         P["placebo"][te] = 1 / (1 + np.exp(-(mp.predict(X[te], raw_score=True) + off[te])))
         log(f"month {mth}: train {int(tr.sum()):,} legs, test {int(te.sum()):,}; blend weights [const, ph, ph missing, book, book missing, price, under] = {np.round(b, 3).tolist()}")
+        BW[str(mth)] = [float(v) for v in np.round(b, 4)]
     P["price"] = 1 / mm; P["honest"] = df["ph"].values; P["book"] = df["pb"].values
     P["mix"] = 1 / (1 + np.exp(-(0.5 * lg(P["blend"]) + 0.5 * lg(P["gbm"]))))        # half blend, half gbm (log-odds)
     ok_all = ~np.isnan(P["gbm"]); ok = ok_all & ~np.isnan(y)
@@ -250,6 +253,13 @@ def main():
                     tt = t.groupby("gd").head(K); lo, hi = boot(tt["r"].values, tt["gd"].values)
                     out.append(f"top {K}: hit {tt['h'].mean():.3f} REAL {100 * tt['r'].mean():+.1f}% [{100 * lo:+.1f} .. {100 * hi:+.1f}] n{len(tt):,}")
                 print(f"LM|  {nm:8s} best a slate by predicted return, one per player: " + " | ".join(out), flush=True)
+    if WRITE and BW:                                         # the month's blend weights for the live engine (honest_live_slip_engine.py reads the latest month)
+        with psycopg.connect(os.environ["DATABASE_URL"]) as c_:
+            c_.execute("CREATE TABLE IF NOT EXISTS nba_score.honest_blend_weights (app text, month text, weights jsonb, built_at timestamptz DEFAULT now(), PRIMARY KEY (app, month))")
+            for m_, w_ in BW.items():
+                c_.execute("""INSERT INTO nba_score.honest_blend_weights (app, month, weights) VALUES (%s, %s, %s::jsonb)
+                              ON CONFLICT (app, month) DO UPDATE SET weights = EXCLUDED.weights, built_at = now()""", (APP, m_, json.dumps(w_)))
+            c_.commit()
     if WRITE:
         conn = psycopg.connect(os.environ["DATABASE_URL"])
         conn.execute("""CREATE TABLE IF NOT EXISTS nba_score._lr_legs_hp (app text, game_date date, player_id text, prop text, side text, line float8, kind text, tier text,

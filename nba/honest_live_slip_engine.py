@@ -206,7 +206,7 @@ def describe(app, code, k, st, s):
                                                  + f" ({100 * r['blend']:.1f}%)" for r in s)
 
 
-def write(conn, day, plan):
+def write(conn, day, plan, commit=True):
     import next_legs_store as NL
     n = 0
     for app, slips in plan.items():
@@ -260,7 +260,8 @@ def write(conn, day, plan):
                 conn.execute("""INSERT INTO nba_score.betr_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier, board_ts)
                                 VALUES (%s,%s,%s,'perfect',1,%s,1,'live',%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""", (day, NAMES[code], k, json.dumps(lj), mult, last))
                 n += 1
-    conn.commit()
+    if commit:
+        conn.commit()
     return n
 
 
@@ -272,11 +273,21 @@ def main():
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         conn.execute("SET statement_timeout = '240s'")
         g = gate(conn)
-        if not g.get("enabled") and not dry:
+        if not g.get("enabled") and not dry and os.environ.get("HL_TEST") != "1":
             log(f"HONEST_LIVE|disabled (classification_config honest_live.enabled) - nothing built for {day}; the other engines' slips stand"); return
         want = [a.strip() for a in (os.environ.get("HL_APPS") or ",".join(g.get("apps") or ALL_APPS)).split(",") if a.strip()]
-        apps = [a for a in want if a in (g.get("apps") or ALL_APPS) or dry]
-        plan, notes = build(conn, day, apps, g.get("weights"))
+        apps = [a for a in want if a in (g.get("apps") or ALL_APPS) or dry or os.environ.get("HL_TEST") == "1"]
+        weights = dict(WEIGHTS)
+        try:                                                 # the latest month the nightly walk-forward fit stored (never a later month than the slate's)
+            for a_, w_ in conn.execute("""SELECT DISTINCT ON (app) app, weights FROM nba_score.honest_blend_weights WHERE month <= %s ORDER BY app, month DESC""", (day.strftime("%Y-%m"),)).fetchall():
+                w_ = w_ if isinstance(w_, list) else json.loads(w_)
+                if a_ in weights and len(w_) == 7:
+                    weights[a_] = [float(x) for x in w_]
+        except Exception:  # noqa: BLE001
+            conn.rollback()
+        weights.update(g.get("weights") or {})
+        log(f"HONEST_LIVE|blend weights: {weights}")
+        plan, notes = build(conn, day, apps, weights)
         for x in notes:
             log(f"HONEST_LIVE|{x}")
         for app in apps:
@@ -285,6 +296,12 @@ def main():
         if dry:
             conn.rollback(); log("HONEST_LIVE|dry run - nothing written"); return
         # an app whose slips cannot be built keeps what the other engines built: old strategies are demoted only where this engine wrote slips
+        if os.environ.get("HL_TEST") == "1":                 # every statement of the write path, then rolled back: nothing is kept
+            n = write(conn, day, plan, commit=False)
+            for t_ in ("live_slips", "ud_live_slips", "sleeper_live_slips", "fliff_live_slips", "betr_live_slips"):
+                c_ = "portfolio = 'H'" if t_ == "ud_live_slips" else "strategy LIKE 'H\\_%%'"
+                log(f"HONEST_LIVE|test {t_}: " + str(conn.execute(f"SELECT count(*), min(status), max(structure), max(size) FROM nba_score.{t_} WHERE game_date = %s AND {c_}", (day,)).fetchone()))
+            conn.rollback(); log(f"HONEST_LIVE|write-path test: {n} slips written and rolled back"); return
         n = write(conn, day, plan)
         log(f"HONEST_LIVE|{day}: {n} slips written on {', '.join(a for a in apps if plan.get(a)) or 'no app'}")
 
