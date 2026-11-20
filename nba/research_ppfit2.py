@@ -97,11 +97,11 @@ def main():
         if nalt == 0 or (only == "none" and sg):
             continue
         allv.append(top)
-        by[rf].append(dict(n=n, top=top, nalt=nalt, sg=sg, keys=[f"{l.get('id')}|{l.get('odds')}|{l.get('side')}|{l.get('line')}" for l in legs]))
+        by[(rf, n) if os.environ.get("PPFIT_PERSIZE") else rf].append(dict(n=n, top=top, nalt=nalt, sg=sg, keys=[f"{l.get('id')}|{l.get('odds')}|{l.get('side')}|{l.get('line')}" for l in legs]))
     bd = bands(allv)
     print(f"FIT2|quotes with alternates={len(allv)} windows={len(by)} | grid by band: " + " ; ".join(f"[{lo},{hi}) step {st} ({nb} values)" for lo, hi, st, nb in bd))
     rng = np.random.default_rng(7)
-    for conv in ("nearest", "floor", "ceil"):
+    for conv in (os.environ.get("PPFIT_CONV") or "nearest,floor,ceil").split(","):
         insample_ok = insample_n = 0
         ho = defaultdict(lambda: [0, 0])
         for rf, qs in by.items():
