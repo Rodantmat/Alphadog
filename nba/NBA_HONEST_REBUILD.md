@@ -459,6 +459,31 @@ Small leads kept for the battery, not proven: blend says > 0 on this season's re
 
 Runs in flight: lm3_* (same model plus trailing layers: the player's own last 10 regular legs of the prop / side, his last 10 over all props, the app's prop x side hit rate over the last 7 and 21 slates).
 
+## 8q. PHASE B CLOSED, PHASE D FIRST PASS - THE BATTERY FROM ZERO (2026-11-19 18:18 PT)
+
+**Phase B final model (runs lm4_*, stored in `nba_score._lr_legs_hp`: p_blend, p_gbm, p_gbm_s, p_placebo; 4.65M out-of-sample legs).**
+- Trailing layers (run lm3: the player's last 10 regular legs of the prop / side, his last 10 over all props, the app's prop x side hit rate over 7 / 21 slates): the trees give them weight (9% of gain) and get WORSE out of sample (Underdog regular 2025-26, legs called > +5%: +4.6% -> +0.2%; log-loss worse on Sleeper / Fliff). Off (`LM_TRAIL=0`).
+- The model starts from the app's own price (init score): without it this season's deeper Underdog demons were called +66% a leg and returned -16%.
+- A small, heavily regularised version (`gbm_s`: 7 leaves, 2,000 legs a leaf) is the honest one: slope 0.94 - 1.02. Underdog regular legs it calls profitable: -2.7% [-5.3..+0.1] (5,591) / +2.8% [+0.5..+5.2] (5,634) / +5.2% [-3.9..+13.8] (265); its top 6 a slate hit 0.539 / 0.557 / 0.563 against the 0.5345 break-even.
+- Reading: per leg, the best number beats the price by a hair; the only place it reaches the break-even is the very top of the list on regular lines.
+
+**Phase D first pass (`research_battery_h.py`, runs bt3_*).** A strategy = rank key (9 + placebo + random controls) x kind x side x props x form x minimum predicted return x 2-6 picks x structure x 1 / 2 / 3 / 5 slips a slate; one pick a player and a game; real tables. Score = season-weighted LOW END of the ROI (1.0 / 0.6 / 0.35). Two yardsticks: controls of the same structure, and a walk-forward of the selection itself (choose on earlier seasons, read the unseen one).
+
+| App (counted strategies) | Positive in all 3 seasons: real vs controls | Above the best same-structure control (luck share) | Chosen on 2024-25, read on 2025-26 (top 10 / 30 / 100; grid) | Chosen on 2024-25 + 2025-26, read on 2026-27 | Backwards check (chosen 2025-26, read 2024-25) |
+|---|---|---|---|---|---|
+| Underdog (59,159) | 4.19% vs 0.66% | 2.46% (0.29%) | +8.8% / +5.0% / +0.6%; grid -16.7%; controls +4.4% / -3.5% / -6.0% | +40.9% / +10.9% / +3.6%; grid -31.3%; controls -39.8% / -20.2% / -7.1% | -35.6% / -34.3% / -12.7% |
+| PrizePicks regular lines (22,670) | 1.57% vs 0.47% | 8.47% (0.53%) | -0.9% / +10.1% / -0.4%; grid -13.1%; controls -14.5% / -10.7% / -16.9% | +97.0% / +52.2% / +28.5%; grid -6.8%; controls -13.7% / -18.1% / -20.5% | -3.2% / -9.3% / -15.0% |
+| Sleeper (35,874) | 1.31% vs 0.18% | - | +37.5% / +35.2% / +33.1% (both seasons on DERIVED prices) | **-31.5% / -32.3% / -33.3%** (first real prices) | +35.2% |
+| Fliff (13,296) | 2.86% vs 0.98% | - | -18.4% / -4.8% / +0.6% | -32.8% / -23.3% / -1.0% | -47.0% / -14.5% / -5.1% |
+
+Readings:
+1. **Underdog and PrizePicks regular lines: the grid carries real information and a small part of it survives the walk-forward** - weakly from 2024-25 into 2025-26 (the per-leg model had little training in 2024-25, which is also why the backwards check fails), strongly into 2026-27 (only 29 slates - wide ranges). Not yet a certified edge; it is the first positive out-of-sample result of the rebuild.
+2. The strategies that survive share one idea: **the few best regular legs of the slate by the blended number** (sportsbook + honest baseline + side), single stats, mostly Unders. Examples, all three seasons: PrizePicks 5-pick Flex x 1 a slate, top by blend, regular, single stats: +12.2% [-22..+50] (82 slips) / +31.9% [-2..+74] (138) / +176% [+44..+318] (22); Underdog 3-pick Standard x 3, blend, regular + goblin, Under, no defensive, minimum > 0: +24.4% [0..+49] (216) / +14.3% [-11..+37] (269) / +132% [+56..+208] (35) (owner rule: no Standard above 2 picks - listed for completeness).
+3. **PrizePicks slips with goblins / demons: NOT counted.** At modelled prices even RANDOM slips return +20..+50% and the "best" +170..+340% - the slip pricing of alternates is not reproduced by a product of modelled factors. Rule C9 holds until real slip quotes exist for them.
+4. **Sleeper and Fliff history cannot select strategies.** 2024-25 and 2025-26 prices are derived from the sportsbook (circular): what wins there loses ~30% on this season's real prices. Only the 29 real slates count for these two apps.
+
+Next (D2): remove duplicate strategies (identical slip series), apply the owner's exposure rules, shortlist per app with slips a day / drawdown / droughts, portfolios, and the per-leg store (phase C) from the same tables.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -530,3 +555,5 @@ External (read for this work):
 - **2026-11-19 16:34 PT** - Owner asked for a status "without stopping". Sent: step 1 almost closed (15/15 truncation runs pass, grading 100%), step 2 started, goblin result flagged as modelled-price only, live untouched.
 - **2026-11-19 16:44 PT** - Owner asked for the expected time to finish. Answered: step 1 tonight, step 2 overnight, step 3 Friday midday, step 4 Friday night to Saturday morning; told him no leg group shows a steady profit so far, and the two corrections (impossible goblin prices; in-play boards in older seasons).
 - **2026-11-19 16:00-17:16 PT** - Phase A closed: combos 3/3, history rebuilt, input audit 7/7 after extending the in-play guard to all seasons. Phase B1 model run on four apps (lm, lm2), goblin prices bounded by real quotes, B2 real-quote check (pq). Section 8p. Open item O16 (thin sportsbook capture this season).
+- **2026-11-19 18:12 PT** - Owner: "If everything can be done in sequence non stopping, not depending on tomorrows data, better that way. Try have it finished for tomorrow 1:30pm". Answered 18:45 with the state: steps 1-2 done, battery first pass run on four apps, first reading. Target: Fri 13:30 PT.
+- **2026-11-19 17:16-18:18 PT** - Phase B closed (lm3 trailing layers rejected, lm4 final model stored), Phase D engine written with placebo / random controls per structure and a walk-forward of the selection; first pass on four apps (bt3_*). Section 8q.
