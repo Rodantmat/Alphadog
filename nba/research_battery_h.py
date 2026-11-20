@@ -16,8 +16,8 @@ A strategy = rank key x kind x side x props x form x minimum predicted return x 
   slip       2 - 6 picks, one pick a player and a game, slips are disjoint groups down the ranked list; 1, 2, 3 or 5 slips a slate
   structure  PrizePicks Power 2-6 / Flex 3-6 ; Underdog Standard 2-6 / Flex 3-6 (owner rule: no Standard above 2 picks - reported, flagged) ;
              Sleeper Max 2-6 / Flex 3-6 ; Fliff product 2-6.  Real tables; leg multipliers applied as each app applies them.
-Per strategy and season: slips, ROI, units, max drawdown (units), longest run of slates without a winning slip. Ranking = season-weighted ROI
-(this season 1.0, last 0.6, the one before 0.35 - owner), then steadiness (worst season), then drawdown.
+Per strategy and season: slips, ROI, units, max drawdown (units), longest run of slates without a winning slip. SCORE = season-weighted LOW END of the ROI (ROI minus 1.645
+standard errors over slates; this season 1.0, last 0.6, the one before 0.35 - owner): steady strategies score near their ROI, lottery seasons score low.
 THE YARDSTICK: the same grid is run on the placebo model and on random order. With tens of thousands of strategies some win by luck; a real strategy
 counts only above the best control. Finalists get a 90% range per season (re-drawing slates).
 PrizePicks slips that contain a goblin or demon are priced at MODELLED (bounded) history prices -> listed separately, NOT counted (rule C9).
@@ -201,18 +201,25 @@ def main():
                     cnt = CNT[c, ki, :S].sum(0).astype(float); prof = PROF[c, ki, si, :S].sum(0).astype(float); win = WIN[c, ki, si, :S].max(0)
                     if cnt.sum() < 80:
                         continue
-                    rs = []; ns = []
+                    rs = []; ns = []; lbs = []
                     for s in range(3):
-                        n_ = cnt[smask[s]].sum(); ns.append(n_); rs.append(prof[smask[s]].sum() / n_ if n_ >= (20 if s == 2 else 40) else np.nan)
-                    rs = np.array(rs); ok = ~np.isnan(rs)
+                        m_ = smask[s] & (cnt > 0); n_ = cnt[m_].sum(); ns.append(n_)
+                        if n_ >= (20 if s == 2 else 40) and m_.sum() >= 10:
+                            p_ = prof[m_]; r_ = p_.sum() / n_; se = math.sqrt(len(p_) * p_.var(ddof=1)) / n_
+                            rs.append(r_); lbs.append(r_ - 1.645 * se)
+                        else:
+                            rs.append(np.nan); lbs.append(np.nan)
+                    rs = np.array(rs); lbs = np.array(lbs); ok = ~np.isnan(rs)
                     if not ok[2] or ok.sum() < 2:
                         continue
-                    wroi = float((rs[ok] * SW[ok]).sum() / SW[ok].sum())
-                    rows.append((cb, k, st, S, wroi, float(np.nanmin(rs)), rs, np.array(ns), c, ki, si, float(ALT[c, ki, :S].sum() / max(1, cnt.sum()))))
+                    # SCORE = season-weighted LOW END of the ROI (ROI minus 1.645 standard errors over slates): a season carried by one lottery slip has a
+                    # huge standard error and scores low; a steady season scores close to its ROI.
+                    wroi = float((lbs[ok] * SW[ok]).sum() / SW[ok].sum()); wmean = float((rs[ok] * SW[ok]).sum() / SW[ok].sum())
+                    rows.append((cb, k, st, S, wroi, float(np.nanmin(rs)), rs, np.array(ns), c, ki, si, float(ALT[c, ki, :S].sum() / max(1, cnt.sum())), wmean, bool(ok.all())))
     log(f"strategies with enough slips this season and in at least one earlier season: {len(rows):,}")
-    R = pd.DataFrame(rows, columns=["cb", "k", "st", "S", "wroi", "worst", "rs", "ns", "c", "ki", "si", "alt"])
+    R = pd.DataFrame(rows, columns=["cb", "k", "st", "S", "wroi", "worst", "rs", "ns", "c", "ki", "si", "alt", "wmean", "full"])
     R["control"] = R["cb"].map(lambda x: x[0].startswith("CONTROL")); R["modelled"] = R["alt"] > 0
-    R["allpos"] = R["rs"].map(lambda r: bool(np.all(r[~np.isnan(r)] > 0)))
+    R["allpos"] = R["rs"].map(lambda r: bool(np.all(r[~np.isnan(r)] > 0))) & R["full"]        # positive in ALL THREE seasons, each with enough slips
 
     def describe(r):
         cb = r["cb"]; c, ki, si, S = r["c"], r["ki"], r["si"], r["S"]
@@ -229,7 +236,7 @@ def main():
             parts.append(f"{SEAS[s]}: {int(n_.sum())} slips / {int(m_.sum())} slates, ROI {100 * p_.sum() / n_.sum():+.1f}% [{100 * np.quantile(b, .05):+.0f} .. {100 * np.quantile(b, .95):+.0f}], units {p_.sum():+.1f}, drawdown {dd:.1f}, drought {dr}")
         flag = " | owner rule: Underdog plays no Standard above 2 picks" if (APP == "underdog" and r["st"] == "power" and r["k"] > 2) else ""
         return (f"{r['k']}-pick {SNAME[r['st']]} x {S} a slate | rank {cb[0]} | kind {cb[1]} | side {cb[2]} | props {cb[3]} | form {cb[4]} | minimum {('none' if cb[5] is None else f'> {int(100 * cb[5])}%')}"
-                f" | weighted ROI {100 * r['wroi']:+.1f}%, worst season {100 * r['worst']:+.1f}%{flag}\n        " + "\n        ".join(parts))
+                f" | score (weighted low end) {100 * r['wroi']:+.1f}%, weighted ROI {100 * r['wmean']:+.1f}%, worst season {100 * r['worst']:+.1f}%{flag}\n        " + "\n        ".join(parts))
 
     real = R[~R["control"]]; ctl = R[R["control"]]
     for label, sub_real, sub_ctl in (("REAL-PRICE strategies (counted)", real[~real["modelled"]], ctl[~ctl["modelled"]]),
@@ -239,19 +246,19 @@ def main():
         print(f"\nBT|================ {APP.upper()} - {label} ================", flush=True)
         cbest = float(sub_ctl["wroi"].max()) if len(sub_ctl) else float("nan"); c95 = float(sub_ctl["wroi"].quantile(.95)) if len(sub_ctl) else float("nan")
         cpos = float(sub_ctl["allpos"].mean()) if len(sub_ctl) else float("nan")
-        print(f"BT|strategies {len(sub_real):,}; controls (placebo + random) {len(sub_ctl):,}: best control weighted ROI {100 * cbest:+.1f}%, 95th percentile {100 * c95:+.1f}%, "
+        print(f"BT|strategies {len(sub_real):,}; controls (placebo + random) {len(sub_ctl):,}: best control score {100 * cbest:+.1f}%, 95th percentile {100 * c95:+.1f}%, "
               f"controls positive in every season {100 * cpos:.2f}%", flush=True)
         print(f"BT|real strategies: positive in every season {100 * sub_real['allpos'].mean():.2f}% ({int(sub_real['allpos'].sum()):,}); above the best control {int((sub_real['wroi'] > cbest).sum()):,}; "
-              f"above the controls' 95th percentile {100 * (sub_real['wroi'] > c95).mean():.1f}% (5.0% expected by luck); median weighted ROI {100 * sub_real['wroi'].median():+.1f}% (controls {100 * sub_ctl['wroi'].median():+.1f}%)", flush=True)
+              f"above the controls' 95th percentile {100 * (sub_real['wroi'] > c95).mean():.1f}% (5.0% expected by luck); median score {100 * sub_real['wroi'].median():+.1f}% (controls {100 * sub_ctl['wroi'].median():+.1f}%)", flush=True)
         for kname in KEYS:
             x = sub_real[sub_real["cb"].map(lambda q: q[0] == kname)] if not kname.startswith("CONTROL") else sub_ctl[sub_ctl["cb"].map(lambda q: q[0] == kname)]
             if len(x):
-                print(f"BT|  by rank key {kname:18s}: strategies {len(x):6,} | median weighted ROI {100 * x['wroi'].median():+6.1f}% | top 5% {100 * x['wroi'].quantile(.95):+6.1f}% | positive every season {100 * x['allpos'].mean():5.2f}%", flush=True)
+                print(f"BT|  by rank key {kname:18s}: strategies {len(x):6,} | median score {100 * x['wroi'].median():+6.1f}% | top 5% {100 * x['wroi'].quantile(.95):+6.1f}% | positive every season {100 * x['allpos'].mean():5.2f}%", flush=True)
         for k in KS:
             for st in STRUCTS:
                 x = sub_real[(sub_real["k"] == k) & (sub_real["st"] == st)]
                 if len(x):
-                    print(f"BT|  by structure {k}-pick {SNAME[st]:8s}: strategies {len(x):6,} | median weighted ROI {100 * x['wroi'].median():+6.1f}% | top 5% {100 * x['wroi'].quantile(.95):+6.1f}% | positive every season {100 * x['allpos'].mean():5.2f}%", flush=True)
+                    print(f"BT|  by structure {k}-pick {SNAME[st]:8s}: strategies {len(x):6,} | median score {100 * x['wroi'].median():+6.1f}% | top 5% {100 * x['wroi'].quantile(.95):+6.1f}% | positive every season {100 * x['allpos'].mean():5.2f}%", flush=True)
         # luck depends on the structure (a 6-pick Power on one slip a slate swings far more than a 2-pick): compare each strategy with the controls of
         # the SAME size, structure and slips a slate
         cg = sub_ctl.groupby(["k", "st", "S"])["wroi"].agg(cmax="max", c99=lambda x: x.quantile(.99), cn="size").reset_index()
@@ -263,7 +270,7 @@ def main():
         print(f"BT|--- top {NTOP}: positive in EVERY season, ranked by the margin over the same-structure controls' 99th percentile ---", flush=True)
         for _, r in sub_real[sub_real["allpos"]].sort_values("excess", ascending=False).head(NTOP).iterrows():
             print(f"BT|S [controls of this structure: best {100 * r['cmax']:+.1f}%, 99th pct {100 * r['c99']:+.1f}%] " + describe(r), flush=True)
-        print("BT|--- top 10 by weighted ROI, any season pattern ---", flush=True)
+        print("BT|--- top 10 by score, any season pattern ---", flush=True)
         for _, r in sub_real.sort_values("wroi", ascending=False).head(10).iterrows():
             print("BT|A " + describe(r), flush=True)
         print("BT|--- the 5 best CONTROLS (what luck alone produces on this grid) ---", flush=True)
