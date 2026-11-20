@@ -311,6 +311,14 @@ def main():
                                 if len(y):
                                     r_ = y.iloc[0]; cells.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]))
                         print(f"BT|F {key_:17s} {sd_:5s} {pr_:12s} | " + " | ".join(cells), flush=True)
+        if label.startswith("REAL") and len(fam):
+            print("BT|FOCUS DETAIL - the same family with ranges, drawdown and droughts (2 - 4 picks; 1, 2, 3 slips a slate)", flush=True)
+            for key_ in ("blend return", "small gbm return", "CONTROL random"):
+                for sd_ in ("Under", "both"):
+                    for pr_ in ("single stats", "all"):
+                        x = fam[fam["cb"].map(lambda q: q[0] == key_ and q[2] == sd_ and q[3] == pr_) & fam["k"].isin([2, 3, 4]) & fam["S"].isin([1, 2, 3])]
+                        for _, r in x.sort_values(["k", "st", "S"]).iterrows():
+                            print("BT|D " + describe(r), flush=True)
         for nm_, tab in (("REAL keys", sub_real), ("CONTROLS ", sub_ctl)):
             if REALONLY:
                 break
