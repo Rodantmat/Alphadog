@@ -53,8 +53,25 @@ SIDES = {"both": None, "Under": 1, "Over": 0}
 PROPS = ("all", "no defensive", "single stats", "combos")
 FORMS = ("any", "hot", "cold", "role up")
 EVMIN = (None, 0.0, 0.05)
-KEYS = ("gbm return", "small gbm return", "blend return", "mix return", "honest return", "book return", "gbm chance", "blend chance", "honest chance",
+# PASS 2 (owner 2026-11-19 19:12 PT: "all proplines, variations, all hit rate rankings, all internal rankings, final hp, score, per leg roi, slip structure,
+# slip composition, factors, layering ... leave nothing behind"): more rank keys (trailing hit rate, form against the line, line against the sportsbooks,
+# and - this season only, where they were stored on the day - production's final_hp, its return and its score), one prop at a time, and 25 pick-time
+# FACTORS as pool filters (form, minutes, rest, venue, role, injury report, line position, books, season stage, line size, weekday, slate size).
+PASS = int(os.environ.get("BT_PASS") or 1)
+GAMECAP = int(os.environ.get("BT_GAMECAP") or 1)               # legs of one game allowed in a slip (composition)
+FAC2 = os.environ.get("BT_FAC2") or ""                         # layering: "factor A+factor B;..." pairs added as extra filters
+if PASS >= 2:
+    PROPS = ("all", "single stats", "points", "rebounds", "assists", "threes_made")
+    FORMS = ("any", "hot", "cold", "minutes up", "minutes down", "back-to-back", "rested 3+", "home", "away", "starter roles", "bench roles", "team minutes out 24+",
+             "no team minutes out", "opponent minutes out 48+", "line better than sportsbooks", "line equal to sportsbooks", "2+ sportsbooks", "first 10 games", "20+ games played",
+             "line under 6", "line 15+", "weekend", "listed on the report", "small slate", "large slate") + tuple(x for x in FAC2.split(";") if x)
+    EVMIN = (None, 0.0)
+KEYS1 = ("gbm return", "small gbm return", "blend return", "mix return", "honest return", "book return", "gbm chance", "blend chance", "honest chance",
         "CONTROL placebo", "CONTROL random")
+KEYS = KEYS1 if PASS < 2 else ("blend return", "small gbm return", "honest chance", "book return", "trailing hit rate", "season avg vs line", "last 5 vs line",
+                                  "line vs sportsbooks", "final_hp chance (this season)", "final_hp return (this season)", "score (this season)", "CONTROL placebo", "CONTROL random")
+if PASS >= 2:
+    KINDS = {k: v for k, v in KINDS.items() if k in (("regular",) if APP == "prizepicks" else ("regular", "regular + goblin", "all"))}
 T0 = time.time()
 rng = np.random.default_rng(71)
 SLP = None
@@ -129,6 +146,33 @@ def load(conn):
     d["form"] = np.select([hot >= .10, hot <= -.10], [1, 2], 0); d["roleup"] = ((d["mn_5"] - d["mn_s"]) >= 2).astype(int)
     if REALONLY:
         d = d[(d["season"] == "2026-27") & (d["src"] == "real")].copy()
+    for c in ("avs_z", "av5_d", "bline_d", "tr_pl10", "p_prod", "score_prod"):
+        d[c] = np.nan
+    d["F"] = [()] * len(d)
+    if PASS >= 2:
+        os.environ["LM_APP"] = APP; os.environ["LM_TRAIL"] = "1"
+        import research_leg_model_h as LM
+        fdf, X = LM.load(conn)
+        X = X.reset_index(drop=True); fdf = fdf.reset_index(drop=True)
+        ng = fdf.groupby("gd")["game_id"].transform("nunique").values; role = fdf["role_tier"].astype(str).values; dow = pd.to_datetime(fdf["gd"]).dt.dayofweek.values
+        fac = {"hot": X["hot"].values >= .10, "cold": X["hot"].values <= -.10, "minutes up": X["mn_trend"].values >= 2, "minutes down": X["mn_trend"].values <= -2,
+               "back-to-back": X["rest"].values == 1, "rested 3+": X["rest"].values >= 3, "home": X["home"].values == 1, "away": X["home"].values == 0,
+               "starter roles": np.isin(role, ["IRON_MAN", "HIGH_USAGE_STARTER", "STARTER"]), "bench roles": np.isin(role, ["ROTATION", "BENCH", "FRINGE"]),
+               "team minutes out 24+": X["min_out"].values >= 24, "no team minutes out": X["min_out"].values == 0, "opponent minutes out 48+": X["opp_out"].values >= 48,
+               "line better than sportsbooks": X["bline_d"].values > 1e-9, "line equal to sportsbooks": np.abs(X["bline_d"].values) <= 1e-9, "2+ sportsbooks": X["books"].values >= 2,
+               "first 10 games": X["gp"].values < 10, "20+ games played": X["gp"].values >= 20, "line under 6": fdf["line"].values < 6, "line 15+": fdf["line"].values >= 15,
+               "weekend": dow >= 5, "listed on the report": X["own_status"].values > 0, "small slate": ng <= 4, "large slate": ng >= 9}
+        names = [f for f in fac]
+        M = np.column_stack([np.nan_to_num(fac[f].astype(float), nan=0.0).astype(bool) for f in names])
+        ft = fdf[["gd", "player_id", "prop", "side", "line", "kind", "tier"]].copy()
+        ft["avs_z"] = X["avs_z"].values; ft["av5_d"] = X["av5_d"].values; ft["bline_d"] = X["bline_d"].values; ft["tr_pl10"] = X["tr_pl10"].values
+        ft["F"] = [tuple(names[j] for j in np.where(r)[0]) for r in M]
+        d = d.drop(columns=["avs_z", "av5_d", "bline_d", "tr_pl10", "F"]).merge(ft.drop_duplicates(["gd", "player_id", "prop", "side", "line", "kind", "tier"]), on=["gd", "player_id", "prop", "side", "line", "kind", "tier"], how="left")
+        d["F"] = d["F"].map(lambda v: v if isinstance(v, tuple) else ())
+        pr = pd.read_sql("SELECT game_date::text gd, player player_id, prop, side, line::float8 line, p::float8 p_prod, score::float8 score_prod FROM nba_score._lr_app_legs WHERE app = %s AND season = '2026-27' AND p IS NOT NULL",
+                         conn, params=("pp26" if APP == "prizepicks" else APP,))
+        d = d.drop(columns=["p_prod", "score_prod"]).merge(pr.drop_duplicates(["gd", "player_id", "prop", "side", "line"]), on=["gd", "player_id", "prop", "side", "line"], how="left")
+        log(f"pass 2 features joined: factors on {100 * (d['F'].map(len) > 0).mean():.0f}% of legs; trailing hit rate {100 * d['tr_pl10'].notna().mean():.0f}%; production final_hp (this season) on {int(d['p_prod'].notna().sum()):,} legs")
     log(f"{APP}: out-of-sample legs {len(d):,} (rows before de-dup {n0:,}) on {d['gd'].nunique()} slates; by season {d.groupby('season').size().to_dict()}; price source {d.groupby(['season', 'src']).size().to_dict()}")
     return d
 
@@ -153,12 +197,23 @@ def main():
                "mix return": 1 / (1 + np.exp(-(0.5 * np.log(g["blend"].clip(1e-4, 1 - 1e-4) / (1 - g["blend"].clip(1e-4, 1 - 1e-4))) + 0.5 * np.log(g["gbm"].clip(1e-4, 1 - 1e-4) / (1 - g["gbm"].clip(1e-4, 1 - 1e-4)))))).values * mm - 1,
                "honest return": g["ph"].values * mm - 1, "book return": g["pb"].values * mm - 1, "gbm chance": g["gbm"].values, "blend chance": g["blend"].values,
                "honest chance": g["ph"].values, "CONTROL placebo": g["placebo"].values * mm - 1, "CONTROL random": rng.random(n)}
+        if PASS >= 2:
+            key = {"blend return": key["blend return"], "small gbm return": key["small gbm return"], "honest chance": key["honest chance"], "book return": key["book return"],
+                   "trailing hit rate": g["tr_pl10"].values, "season avg vs line": g["avs_z"].values, "last 5 vs line": g["av5_d"].values, "line vs sportsbooks": g["bline_d"].values,
+                   "final_hp chance (this season)": g["p_prod"].values, "final_hp return (this season)": g["p_prod"].values * mm - 1, "score (this season)": g["score_prod"].values,
+                   "CONTROL placebo": key["CONTROL placebo"], "CONTROL random": key["CONTROL random"]}
         evb = g["blend"].values * mm - 1
         isdef = np.isin(prp, list(DEF)); iscombo = np.isin(prp, list(COMBO))
         mk = {kn: np.isin(kc, list(s)) for kn, s in KINDS.items()}
         ms = {"both": np.ones(n, bool), "Under": und == 1, "Over": und == 0}
         mp = {"all": np.ones(n, bool), "no defensive": ~isdef, "single stats": ~iscombo, "combos": iscombo}
         mf = {"any": np.ones(n, bool), "hot": form == 1, "cold": form == 2, "role up": ru == 1}
+        if PASS >= 2:
+            mp.update({q: prp == q for q in ("points", "rebounds", "assists", "threes_made")})
+            Fv = g["F"].values; mf = {"any": np.ones(n, bool)}
+            for f_ in FORMS[1:]:
+                parts = f_.split("+") if f_ in FAC2.split(";") else [f_]
+                mf[f_] = np.array([all(q in t for q in parts) for t in Fv], dtype=bool)
         me = {None: np.ones(n, bool), 0.0: evb > 0, 0.05: evb > 0.05}
         order = {k_: np.argsort(-np.nan_to_num(v, nan=-9.0), kind="stable") for k_, v in key.items()}; valid = {k_: ~np.isnan(v) for k_, v in key.items()}
         for c, (k_, kn, sd, pr, fm, ev) in enumerate(combos):
@@ -176,11 +231,11 @@ def main():
             for ki, k in enumerate(KS):
                 used = set()
                 for gi in range(MAXG):
-                    pick = []; games = set()
+                    pick = []; games = {}
                     for i in pool:
-                        if i in used or gm[i] in games:
+                        if i in used or games.get(gm[i], 0) >= GAMECAP:
                             continue
-                        pick.append(i); games.add(gm[i])
+                        pick.append(i); games[gm[i]] = games.get(gm[i], 0) + 1
                         if len(pick) == k:
                             break
                     if len(pick) < k:
@@ -296,7 +351,7 @@ def main():
         # so the reader sees the whole surface and not a pick of the best
         kreg = "regular"
         fam = R[(~R["modelled"]) & R["cb"].map(lambda q: q[1] == kreg and q[4] == "any" and q[5] is None)]
-        if label.startswith("REAL") and len(fam):
+        if label.startswith("REAL") and len(fam) and PASS < 2:
             print("BT|FOCUS regular lines, top of the list, 1 slip a slate - ROI by season (slips) | key x side x props x structure", flush=True)
             for key_ in ("blend return", "small gbm return", "gbm return", "book return", "honest chance", "CONTROL placebo", "CONTROL random"):
                 for sd_ in ("both", "Under", "Over"):
@@ -311,7 +366,31 @@ def main():
                                 if len(y):
                                     r_ = y.iloc[0]; cells.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]))
                         print(f"BT|F {key_:17s} {sd_:5s} {pr_:12s} | " + " | ".join(cells), flush=True)
-        if label.startswith("REAL") and APP == "underdog":
+        if label.startswith("REAL") and PASS >= 2:
+            def cells_of(x):
+                out = []
+                for k in KS:
+                    for st in STRUCTS:
+                        y = x[(x["k"] == k) & (x["st"] == st)]
+                        if len(y):
+                            r_ = y.iloc[0]; out.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]) + f" n{int(np.nansum(r_['ns']))}")
+                return out
+            base = R[(~R["modelled"]) & (R["S"] == 1) & R["cb"].map(lambda q: q[1] == "regular" and q[5] is None)]
+            print("BT|P2 KEYS - regular lines, no factor, no minimum, 1 slip a slate: ROI by season (slips) | key x side x props | structure cells", flush=True)
+            for key_ in KEYS:
+                for sd_ in SIDES:
+                    for pr_ in PROPS:
+                        x = base[base["cb"].map(lambda q: q[0] == key_ and q[2] == sd_ and q[3] == pr_ and q[4] == "any")]
+                        if len(x):
+                            print(f"BT|K {key_:30s} {sd_:5s} {pr_:12s} | " + " | ".join(cells_of(x)), flush=True)
+            print("BT|P2 FACTORS - regular Unders, 1 slip a slate: ROI by season (slips) | key x props x factor | structure cells", flush=True)
+            for key_ in ("blend return", "small gbm return", "honest chance", "CONTROL random"):
+                for pr_ in ("single stats", "all"):
+                    for fm_ in FORMS:
+                        x = base[base["cb"].map(lambda q: q[0] == key_ and q[2] == "Under" and q[3] == pr_ and q[4] == fm_)]
+                        if len(x):
+                            print(f"BT|X {key_:17s} {pr_:12s} {fm_:30s} | " + " | ".join(cells_of(x)), flush=True)
+        if label.startswith("REAL") and APP == "underdog" and PASS < 2:
             # Underdog alternates carry REAL multipliers in every season, so slips with goblins / demons count here. Whole surface, 1 and 3 slips a slate.
             print("BT|SURFACE Underdog kinds - ROI by season | key x kind x side x props x minimum x slips a slate | structure cells", flush=True)
             for key_ in ("gbm return", "small gbm return", "blend return", "CONTROL placebo", "CONTROL random"):
@@ -330,7 +409,7 @@ def main():
                                             if len(y):
                                                 r_ = y.iloc[0]; cells.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]))
                                     print(f"BT|U {key_:17s} {kn_:16s} {sd_:5s} {pr_:12s} min {('none' if ev_ is None else '>0'):4s} x{S_} | " + " | ".join(cells), flush=True)
-        if label.startswith("REAL") and len(fam):
+        if label.startswith("REAL") and len(fam) and PASS < 2:
             print("BT|FOCUS DETAIL - the same family with ranges, drawdown and droughts (2 - 4 picks; 1, 2, 3 slips a slate)", flush=True)
             for key_ in ("blend return", "small gbm return", "CONTROL random"):
                 for sd_ in ("Under", "both"):
