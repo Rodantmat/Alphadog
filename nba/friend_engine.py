@@ -687,7 +687,19 @@ def pick():
             log(f"{len(FORBID)} exact slips of his / the friend's forbidden")
     slips, pool, rows, used = [], [], [], set()
     titles = defaultdict(int)
-    for code, size, st, gc, s, cand in plan(legs, H):
+    # HONEST-REBUILD STRATEGIES (owner 2026-11-19 23:13 PT: "same strategies go for Jon and Jessica with the same limits and specifics they had before"): while the
+    # owner's honest_live gate is on, this page's own base and extra slips are not built - the page carries the owner's new slips through the owner mirror below
+    # (same variant leg, same apps per person, Jessi's top-4 cap). From the 2026-11-20 slate; earlier pages and saves are never changed.
+    _hl = False
+    try:
+        _r = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'honest_live'").fetchone()
+        _c = (_r[0] if isinstance(_r[0], dict) else json.loads(_r[0])) if _r else {}
+        _hl = bool(_c.get("enabled")) and d >= dt.date(2026, 11, 20)
+    except Exception:
+        conn.rollback()
+    if _hl:
+        log("honest_live is on: this page's own base / extra slips are not built - the owner's new strategies are mirrored")
+    for code, size, st, gc, s, cand in ([] if _hl else plan(legs, H)):
         if not s:
             log(f"{code}: no slip")
             continue
@@ -709,7 +721,7 @@ def pick():
         log(f"{code}: " + "; ".join(f"{x['player_name']} {x['canonical_prop_key']} {x['selected_side']} {x['line_value']}" for x in slips[-1]["legs"]))
     # EXTRA slips (owner 2026-11-06 "deploy it"): one more slip per app from other players, the same leg-difference ladder against his legs,
     # never a player already on the friend's other slips. The base rules above are untouched; the backfill history does not include them.
-    for code, size, st, rule in EXTRA:
+    for code, size, st, rule in ([] if _hl else EXTRA):
         try:
             if FAPP == "PP":
                 cand, gc = pp_cand(legs, rule)
@@ -838,7 +850,7 @@ def mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used):
     elif FAPP == "FLIFF":
         src = conn.execute("SELECT strategy, legs_json, structure FROM nba_score.fliff_live_slips WHERE game_date=%s AND status IN ('live','placed') ORDER BY strategy, k", (d,)).fetchall()
     elif FAPP == "UD":
-        src = conn.execute("SELECT composition, legs_json, structure FROM nba_score.ud_live_slips WHERE game_date=%s AND portfolio IN ('T','C') AND status='live' ORDER BY composition, k", (d,)).fetchall()
+        src = conn.execute("SELECT composition, legs_json, structure FROM nba_score.ud_live_slips WHERE game_date=%s AND portfolio IN ('T','C','H') AND status='live' ORDER BY composition, k", (d,)).fetchall()
     else:
         return
     board = {}

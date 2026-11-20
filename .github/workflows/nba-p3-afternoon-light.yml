@@ -768,6 +768,18 @@ jobs:
           EXP_APPS: "prizepicks"
         run: python -u nba/slip_exposure_coordinator.py
 
+      # HONEST-REBUILD STRATEGIES, PRIZEPICKS (owner 2026-11-19 23:11 PT "disable the current strategies and wire the new ones"; NBA_HONEST_REBUILD.md 8ab).
+      # Gate classification_config honest_live. Soft: if it fails or the gate is off, the slips built above stand exactly as before.
+      - name: Honest-rebuild strategies (PrizePicks)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 6
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          HL_DATE: ${{ steps.d.outputs.asof }}
+          HL_APPS: "prizepicks"
+        run: python -u nba/honest_live_slip_engine.py
+
       # PRIZEPICKS' OWN PRICE FOR EVERY SLIP (2026-10-18, owner: "be sure we are using the proper multipliers"): the payout map
       # in SLIPQ mode quotes each engine slip on PrizePicks' quote endpoint (nothing is placed) and stores the exact tiers in
       # nba_score.live_slip_quotes - the Slips screen shows PrizePicks' number and the grade pays it. Dispatched (soft, its own
@@ -891,6 +903,17 @@ jobs:
           EXP_DATE: ${{ steps.d.outputs.asof }}
           EXP_APPS: "underdog,sleeper,fliff,betr"
         run: python -u nba/slip_exposure_coordinator.py
+
+      # HONEST-REBUILD STRATEGIES, THE OTHER FOUR APPS (same gate, soft; after every app's engine and the exposure step, before the screen is precomputed)
+      - name: Honest-rebuild strategies (Underdog, Sleeper, Fliff, Betr)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 8
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          HL_DATE: ${{ steps.d.outputs.asof }}
+          HL_APPS: "underdog,sleeper,fliff,betr"
+        run: python -u nba/honest_live_slip_engine.py
 
       # THE SLIPS SCREEN, PRECOMPUTED (owner 2026-10-26 18:31 PT: "it should run in a pipeline before and just be retrieved by the ui"):
       # every app's picks are in - the UI worker builds the screen once and stores it; the owner's views read the stored copy. Soft.
