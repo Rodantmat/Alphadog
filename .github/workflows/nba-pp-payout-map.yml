@@ -26,6 +26,10 @@ on:
         description: "research programs only: a quote budget that wins over the trigger file's max_quotes (blank = the file's)"
         required: false
         default: ""
+      shard:
+        description: "full-ladder sweep: 'i/n' = this run quotes slice i of n of the board (several runs side by side); blank = the whole board"
+        required: false
+        default: ""
   push:
     paths:
       - 'nba/TRIGGER_NBA_PP_MAP.txt'
@@ -46,7 +50,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: alphadog-nba-pp-payout-map
+  group: alphadog-nba-pp-payout-map${{ github.event.inputs.shard && format('-{0}', github.event.inputs.shard) || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -146,6 +150,7 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then export PP_MODE=delta; fi
           if [ -n "${{ github.event.inputs.mode }}" ]; then export PP_MODE="${{ github.event.inputs.mode }}"; fi
           if [ -n "${{ github.event.inputs.budget_override }}" ]; then export PP_MAX_QUOTES="${{ github.event.inputs.budget_override }}"; fi
+          if [ -n "${{ github.event.inputs.shard }}" ]; then export PP_SHARD="${{ github.event.inputs.shard }}"; fi
           echo "league: ${LG:-nba} ($PP_LEAGUE) | mode: ${PP_MODE:-full} | quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20} | drift: ${PP_DRIFT_SAMPLE:-10}"
           python nba/pp_payout_map.py
 

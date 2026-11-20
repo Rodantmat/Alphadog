@@ -63,6 +63,18 @@ MAX_Q = int(os.getenv("PP_MAX_QUOTES", "250"))
 N_ALTALT = int(os.getenv("PP_ALTALT", "20"))
 MODE = (os.getenv("PP_MODE") or "full").strip().lower()   # full = research map | delta = monitoring
 N_DRIFT = int(os.getenv("PP_DRIFT_SAMPLE", "10"))
+# FULL-LADDER SWEEP (owner 2026-11-20 13:20 PT: "every single goblin ... every single demon variation in the ladder for every prop line, every player",
+# several probes at once): PP_SHARD = "i/n" -> this run takes only the legs whose projection id falls in slice i of n, so n runs side by side
+# cover the board once without quoting a leg twice. Used by the delta and less modes; blank = the whole board (the scheduled runs).
+_sh = (os.getenv("PP_SHARD") or "").strip()
+SHARD = tuple(int(x) for x in _sh.split("/")) if re.fullmatch(r"\d+/\d+", _sh) else None
+
+
+def in_shard(r):
+    if not SHARD:
+        return True
+    import hashlib
+    return int(hashlib.md5(str(r["id"]).encode()).hexdigest(), 16) % SHARD[1] == SHARD[0]
 
 
 def already_mined():
@@ -525,7 +537,7 @@ def main():
     px = proxies()
     started = utc()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = OUT_DIR / f"pp_payout_map_{started.replace(':', '').replace('-', '')}.json"
+    out_path = OUT_DIR / f"pp_payout_map_{started.replace(':', '').replace('-', '')}{'_s%dof%d' % SHARD if SHARD else ''}.json"
     result = {"meta": {"started": started, "league": LEAGUE, "game_mode": "prizepools",
                        "max_quotes": MAX_Q, "targets": QUOTE_TARGETS}, "board": [], "quotes": []}
 
@@ -580,8 +592,10 @@ def main():
             # re-quoted to catch PrizePicks repricing a leg whose line did not move. Research sections are skipped.
             mined = already_mined()
             partners = pick_distinct(std, 4)
-            new = [r for r in alt if (r["id"], r["line"]) not in mined]
-            before = [r for r in alt if (r["id"], r["line"]) in mined]
+            new = [r for r in alt if (r["id"], r["line"]) not in mined and in_shard(r)]
+            before = [] if SHARD else [r for r in alt if (r["id"], r["line"]) in mined]
+            if SHARD:
+                print(f"DELTA|shard {SHARD[0]} of {SHARD[1]}: {len(new)} legs of this slice not quoted at their line yet", flush=True)
             prio = alt_targets()
             if prio:
                 key = lambda r: prio.get((str(r["name"]).lower(), r["stat"], float(r["line"]), r["odds"]), 10 ** 6)  # noqa: E731
@@ -599,6 +613,20 @@ def main():
                     if p:
                         run(section, [leg(p), leg(r)])
             save("complete (delta)")
+            return 0
+
+        if MODE == "sweepless":
+            # LESS SIDE OF THE SWEEP (2026-11-20): every goblin / demon rung PrizePicks opens for Less today (allowed_wager_types under_or_over),
+            # in this run's slice, quoted on Less with a standard More partner from another game. The More side comes from the delta shards.
+            partners = pick_distinct(std, 4)
+            pool_ = [r for r in alt if r.get("allow") == "under_or_over" and in_shard(r)]
+            result["meta"].update({"mode": "sweepless", "less_open": len(pool_)})
+            print(f"SWEEPLESS|alt legs open for Less in this slice={len(pool_)}|budget={MAX_Q}", flush=True)
+            for r in pool_:
+                p = next((x for x in partners if x["game"] != r["game"] and x["player"] != r["player"]), None)
+                if p:
+                    run("LESS", [leg(p), leg(r, "under")])
+            save("complete (sweepless)")
             return 0
 
         if MODE == "less":
