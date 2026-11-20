@@ -843,6 +843,13 @@ Owner: "Standard top 3 rebounds under is deployable. Nothing stands for pp or ot
 - **Betr - weak.** Graded on Betr's own lines for both seasons (130 + 22 slates; this season's boards are stored as bookmaker `betr`): on the Underdog or PrizePicks order nearly every Perfect / Dynamic cell is negative (PrizePicks order: 3-pick Perfect +11 / +5%, +14 u on 145 slips; 2-pick -9 / +12%; Dynamic 3-5 negative). B1's +28.8% (2025-26, qualified legs) does not generalise. Betr is the least supported app.
 - **Sleeper / Fliff:** nothing new can be proven - 29 real slates; their live slips ride the Underdog / PrizePicks lists.
 
+## 8ag. PASS 17 - OTHER WAYS TO RANK (owner 2026-11-20 00:37 PT; written 00:46 PT)
+
+`research_pass17.py`, run p17 44704947048. Eight new rankers (sportsbook alone, small gbm, the lower of model and sportsbook, model minus sportsbook, sportsbook minus model, rank sum, model x2 + sportsbook, geometric mean) x 6 pools x every structure; 540 cells an app.
+- **Underdog: nothing beats the model / the blend.** 2-pick Standard, every single stat: sportsbook alone +3 / -10 / +4% (-11 u); small gbm -9 / +2 / -16%; lower-of-both +7 / -3 / +4%; model minus sportsbook +15 / +6 / -35%; geo mean +11 / +22 / +17% (+48 u); against the blend +19 / +33 / +33% (+78 u) and the model +27 / +31 / +45% (+85 u). 37 cells positive every season, none better than what is live.
+- **PrizePicks: two new things stand.** (1) Rebounds ranked by the geometric mean of model and sportsbook: 5-pick Flex +26 / +31 / +38% (+70.8 u, 238 slips, drawdown 16.8); 6-pick Flex +45 / +39 / +59% (+89.2 u, 209 slips, drawdown 21.4); 4-pick Flex +11 / +16 / +14%; 5-pick Power +48 / +48 / +82% (+122 u, drawdown 46) - the most even PrizePicks result across the three seasons so far. (2) The small gbm as ranker: 5-pick Flex every single stat +38 / +18 / +31% (+62 u, drawdown 32.6); 6-pick Flex lines under 10 +85 / +21 / +65% (+98.8 u, drawdown 28.0); 5-pick Power +71 / +30 / +82% (+118 u, drawdown 58). The small gbm is not computed live yet (needs the tree model served at slip time). On the main 5-pick Flex the sportsbook alone is -6 / -15 / +111% and sportsbook-minus-model -14 / -41 / -64%: where the books like an Under more than the model does, it loses.
+Candidates: P11 = PrizePicks 5-pick Flex, top 5 rebounds by the geometric mean; P12 = the 6-pick Flex of the same. Not live.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
