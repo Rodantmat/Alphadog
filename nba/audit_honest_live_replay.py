@@ -58,7 +58,7 @@ def main():
                 if n < 2:
                     pay = 1.0
                 elif app == "underdog":
-                    pay = 1.0 if n < k else (3.5 if h == n else 0.0)
+                    pay = 1.0 if n < k else ((3.5 if k == 2 else 6.5) if h == n else 0.0)
                 elif app == "prizepicks":
                     pay = (PP_PWR[2] if h == 2 else 0.0) if n == 2 else (6.0 if h == 3 else 0.0) if (st == "power" and n == 3) else PP_FLEX.get((n, n - h), 0.0)
                 elif app == "fliff":
