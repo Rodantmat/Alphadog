@@ -67,6 +67,16 @@ def main():
                     out.append(f"says > {int(100 * thr):+d}% at the real price: n {len(s):,} / {s['gd'].nunique()} slates, hit {s['hit'].mean():.3f}, REAL {100 * s['r'].mean():+.1f}% [{100 * lo:+.1f} .. {100 * hi:+.1f}] "
                                f"(same legs at the modelled price {100 * s['r_mod'].mean():+.1f}%; modelled / real {np.median(s['m'] / s['real_m']):.2f})")
             print(" | ".join(out), flush=True)
+            # the question the owner asked (20:48 PT): how wrong is a pick made on the MODELLED price once it is paid at the REAL one? Same legs chosen
+            # the way the history had to choose them (p x modelled price), valued at the real quote.
+            out = [f"PQ|  {nm:8s} chosen at the MODELLED price"]
+            for thr in (0.0, 0.05, 0.10):
+                s_ = g[v & (np.nan_to_num(p) * g["m"].values / 0.542 - 1 > thr)]
+                if len(s_) >= 40:
+                    lo, hi = boot(s_["r"].values, s_["gd"].values)
+                    out.append(f"says > {int(100 * thr):+d}%: n {len(s_):,}, hit {s_['hit'].mean():.3f}, at the modelled price {100 * s_['r_mod'].mean():+.1f}% -> at the REAL price {100 * s_['r'].mean():+.1f}% [{100 * lo:+.1f} .. {100 * hi:+.1f}] "
+                               f"(modelled / real price on these {np.median(s_['m'] / s_['real_m']):.3f}, mean {np.mean(s_['m'] / s_['real_m']):.3f})")
+            print(" | ".join(out), flush=True)
             t = g[v].assign(ev=p[v] * g["mm"].values[v] - 1).sort_values("ev", ascending=False).drop_duplicates(["gd", "player_id"]); out = []
             for K in (6, 10, 20):
                 tt = t.groupby("gd").head(K); lo, hi = boot(tt["r"].values, tt["gd"].values)
