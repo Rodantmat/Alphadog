@@ -132,7 +132,23 @@ def load(conn):
             X[c] = np.where(has, df[c].fillna(0.0), np.nan)
         st = df["own_status"].fillna("not listed").str.lower()
         X["own_status"] = np.where(has, np.select([st.str.contains("out"), st.str.contains("doubt"), st.str.contains("quest"), st.str.contains("prob")], [4, 3, 2, 1], 0), np.nan)
-    df = df.reset_index(drop=True); X = X.reset_index(drop=True).astype("float32")
+    df = df.reset_index(drop=True); X = X.reset_index(drop=True)
+    # TRAILING LAYERS (strictly earlier slates): how the player's own regular legs of this prop and side have resolved, and how the app's regular legs of
+    # this prop and side have resolved lately (the documentation's "trailing" and "ranking" layers, rebuilt on honest results).
+    reg = df[df["kindc"] == 0].drop_duplicates(["gd", "player_id", "prop", "under"])[["gd", "player_id", "prop", "under", "hit"]].sort_values("gd")
+    gp_ = reg.groupby(["player_id", "prop", "under"], sort=False)["hit"]
+    reg["tr_pl10"] = gp_.transform(lambda x: x.shift(1).rolling(10, min_periods=4).mean()); reg["tr_pl_n"] = gp_.cumcount()
+    pl = reg.groupby(["gd", "player_id", "under"], as_index=False)["hit"].mean().sort_values("gd")
+    pl["tr_plall10"] = pl.groupby(["player_id", "under"], sort=False)["hit"].transform(lambda x: x.shift(1).rolling(10, min_periods=4).mean())
+    sl = reg.groupby(["gd", "prop", "under"], as_index=False)["hit"].mean().sort_values("gd")
+    gs = sl.groupby(["prop", "under"], sort=False)["hit"]
+    sl["tr_slate7"] = gs.transform(lambda x: x.shift(1).rolling(7, min_periods=3).mean()); sl["tr_slate21"] = gs.transform(lambda x: x.shift(1).rolling(21, min_periods=7).mean())
+    t = df[["gd", "player_id", "prop", "under"]].merge(reg.drop(columns=["hit"]), on=["gd", "player_id", "prop", "under"], how="left")
+    t = t.merge(pl.drop(columns=["hit"]), on=["gd", "player_id", "under"], how="left").merge(sl.drop(columns=["hit"]), on=["gd", "prop", "under"], how="left")
+    # legs with no regular leg of their own that day still get the player's history up to the previous slate
+    for c in ("tr_pl10", "tr_pl_n", "tr_plall10", "tr_slate7", "tr_slate21"):
+        X[c] = t[c].values
+    X = X.astype("float32")
     return df, X
 
 
