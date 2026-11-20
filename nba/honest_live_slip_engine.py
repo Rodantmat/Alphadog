@@ -44,6 +44,7 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "P6": "H_P6_6flex_props", "P7": "H_P7_6flex_bench", "P9": "H_P9_4flex_top4", "P10": "H_P10_3power_top3", "S1": "H_S1_2max", "S4": "H_S4_4flex", "S5": "H_S5_4max",
          "S6": "H_S6_5flex", "F1": "H_F1_2max", "F4": "H_F4_4max", "F5": "H_F5_5max", "B1": "H_B1_3perfect", "B5": "H_B5_3perfect_pp",
          # FALLBACKS (owner 2026-11-20 08:59 PT): built only on a thin board, when the app's elected strategies give fewer slips than they number
+         "U20": "FB0 top 4 Unders by the average ranking, no assists, under this line in 6+ of the last 10 games (4-pick Flex)",
          "U21": "FB1 top 3 Unders, model-only ranking (3-pick Flex)",
          "P21": "H_FB1_5flex_reb_geo", "P22": "H_FB2_6flex_reb_geo", "P23": "H_FB3_2power_udtop2", "P24": "H_FB4_5flex_props", "P25": "H_FB5_6flex_top6", "P26": "H_FB6_5flex_home",
          "P27": "H_FB7_6flex_second", "S21": "H_FB1_S_2max", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_2perfect_ud", "B22": "H_FB2_B_2perfect",
@@ -104,6 +105,29 @@ def context(conn, day, pids):
         if mk in MK and nm in ids:
             book.setdefault((ids[nm], MK[mk], round(float(line), 2)), 1 - float(po))
     return dict(team=team, game=game, home=home, started=started, role=role, book=book)
+
+
+GLCOL = {"points": "pts", "rebounds": "reb", "assists": "ast", "threes_made": "fg3m", "steals": "stl", "blocks": "blk", "turnovers": "tov"}
+
+
+def last10(conn, day, pids):
+    """{player: his last 10 games played before `day`, newest first, as {prop: value}} - for the trailing layer of fallback U20 (pass 19)"""
+    out = {}
+    if not pids:
+        return out
+    for row in conn.execute("""SELECT pid, pts, reb, ast, fg3m, stl, blk, tov FROM (SELECT nba_player_id::text pid, pts::float8, reb::float8, ast::float8, fg3m::float8, stl::float8,
+                               blk::float8, tov::float8, row_number() OVER (PARTITION BY nba_player_id ORDER BY game_date DESC) rn FROM nba_stats.player_game_log
+                               WHERE nba_player_id::text = ANY(%s) AND game_date < %s AND min > 0) x WHERE rn <= 10""", (list(pids), day)).fetchall():
+        out.setdefault(row[0], []).append(dict(zip(("pts", "reb", "ast", "fg3m", "stl", "blk", "tov"), row[1:])))
+    return out
+
+
+def under_share10(l10, r):
+    g = l10.get(r["pid"]) or []
+    if len(g) < 10:
+        return None
+    c = GLCOL[r["prop"]]
+    return sum(1 for x in g if x[c] is not None and x[c] < r["line"]) / 10.0
 
 
 def rank_rows(app, native, ctx, w):
@@ -212,6 +236,13 @@ def build(conn, day, apps, weights=None):
         add("underdog", "U5", 2, "standard", [r for r in U if r["home"]])
         add("underdog", "U7", 4, "flex", [r for r in U if r["prop"] == "rebounds" and not r["leg"].get("pred")])   # owner 2026-11-20 00:37 PT; no Prediction legs in a Flex
         add("underdog", "U6", 3, "standard", [r for r in U if r["prop"] == "rebounds"])     # owner 2026-11-20 00:25 PT: "Standard top 3 rebounds under is deployable" (+22 / +23 / +56%)
+        # owner 2026-11-20 09:46 PT "Add as a fallback": the pass-19 lead (+47% on 249 slips, 3 seasons) - first in the fallback order
+        try:
+            l10 = last10(conn, day, {r["pid"] for r in U})
+        except Exception as e:  # noqa: BLE001 - the trailing layer never costs the slate
+            conn.rollback(); l10 = {}; notes.append(f"U20: game logs not readable ({type(e).__name__}) - skipped")
+        later("underdog", "U20", 4, "flex", [r for r in sorted(U, key=lambda r: (-(r["blend"] + r["ph"]) / 2, r["pid"], r["prop"], r["line"]))
+                                              if r["prop"] != "assists" and not r["leg"].get("pred") and (under_share10(l10, r) or 0) >= 0.6])
         later("underdog", "U21", 3, "flex", [r for r in sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])) if not r["leg"].get("pred")])
         fill("underdog")
     if "prizepicks" in apps:
