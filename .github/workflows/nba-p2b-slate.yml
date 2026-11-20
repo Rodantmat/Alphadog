@@ -500,11 +500,23 @@ jobs:
       - name: Shadow list of the model's top goblins / demons (soft, research only)
         if: ${{ !cancelled() }}
         continue-on-error: true
-        timeout-minutes: 3
+        timeout-minutes: 8
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SH_DATE: ${{ steps.d.outputs.asof }}
-        run: python -u nba/shadow_alt_targets.py
+          BT2_APPS: "prizepicks"
+          BT2_DATE: ${{ steps.d.outputs.asof }}
+        # 2026-11-20 FIX: the first run wrote nothing ("no 'morning' PrizePicks price rows") - the morning board's tiers and price keys were only built at P3.
+        # Build them here for the morning board (one-slate rebuild + pp_refresh_prices, both idempotent; P3 rebuilds them for the window as before).
+        run: |
+          python nba/build_board_tiers_v2.py || echo "tier build failed softly"
+          python - <<'EOF' || echo "price refresh failed softly"
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              r = c.execute("SELECT * FROM nba_market.pp_refresh_prices(%s::date - 1)", (os.environ["SH_DATE"],)).fetchone(); c.commit()
+          print("price refresh:", r)
+          EOF
+          python -u nba/shadow_alt_targets.py
 
       # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): the continue-on-error steps above never fail the run,
       # so a failed roster refresh / name map / whole-number pricing was invisible in nba_control.pipeline_runs. Collected here,
