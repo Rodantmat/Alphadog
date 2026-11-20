@@ -50,9 +50,9 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "U22": "FB2 top 4 Unders, model-only ranking, up to two a game (4-pick Flex)",
          "U21": "FB1 top 3 Unders, model-only ranking (3-pick Flex)",
          "P21": "H_FB1_5flex_reb_geo", "P22": "H_FB2_6flex_reb_geo", "P23": "H_FB3_2power_udtop2", "P24": "H_FB4_5flex_props", "P25": "H_FB5_6flex_top6", "P26": "H_FB6_5flex_home",
-         "P27": "H_FB7_6flex_second", "S7": "H_S7_5max_pp", "S8": "H_S8_4max_pp", "F6": "H_F6_4max_pp", "F7": "H_F7_5max_pp", "S9": "H_S9_2max_noast", "F8": "H_F8_2max_noast", "S21": "H_FB1_S_2max_noast", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max_noast", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_3perfect_noast", "B22": "H_FB2_B_2perfect",
+         "P27": "H_FB7_6flex_second", "S7": "H_S7_5max_pp", "S8": "H_S8_4max_pp", "F6": "H_F6_4max_pp", "F7": "H_F7_5max_pp", "S9": "H_S9_2max_noast", "S10": "H_S10_3max_pp_props", "S11": "H_S11_2max_pp_reb", "F9": "H_F9_3max_pp_props", "F10": "H_F10_2max_pp_reb", "B6": "H_B6_3perfect_pp_props", "F8": "H_F8_2max_noast", "S21": "H_FB1_S_2max_noast", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max_noast", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_3perfect_noast", "B22": "H_FB2_B_2perfect",
          "B23": "H_FB3_B_4perfect"}
-TARGET = {"underdog": 9, "prizepicks": 9, "sleeper": 7, "fliff": 6, "betr": 2}      # the number of elected strategies an app has
+TARGET = {"underdog": 9, "prizepicks": 9, "sleeper": 9, "fliff": 8, "betr": 3}      # the number of elected strategies an app has
 
 
 def log(m):
@@ -300,11 +300,21 @@ def build(conn, day, apps, weights=None):
         # (+53% / +154%, +64% / +234%). Built after the elected ones and only when their legs differ from a slip the app already has. Then the positive low-return
         # ones as true fallbacks: 2-pick Max no assists (Sleeper +10% / +50%, Fliff +16% / +59%), Betr 3-pick Perfect no assists (+22% / +16%).
         ppo = onto(tg, P, ctx); tl = onto(tg, tight, ctx); noast = [r for r in tl if r["prop"] != "assists"]
+        # pass 27 (owner's rule 10:37 PT): PrizePicks' order on the app, no assists, the first leg of each prop only ("every prop different") - 3-pick: Sleeper +35% / +92%,
+        # Fliff +36% / +94%, Betr Perfect +60% / +53% (Betr: real prices in both seasons); 2-pick Max of PrizePicks' rebounds order: Sleeper +24% / +38%, Fliff +31% / +46%.
+        dp, seen_p = [], set()
+        for r in ppo:
+            if r["prop"] != "assists" and r["prop"] not in seen_p:
+                dp.append(r); seen_p.add(r["prop"])
+        rebo = [r for r in ppo if r["prop"] == "rebounds"]
         if app == "sleeper":
-            later(app, "S9", 2, "max", noast); later(app, "S7", 5, "max", ppo); later(app, "S8", 4, "max", ppo)     # S9: owner 2026-11-20 11:38 PT "it can go to live"
+            later(app, "S9", 2, "max", noast); later(app, "S7", 5, "max", ppo); later(app, "S8", 4, "max", ppo)
+            later(app, "S10", 3, "max", dp); later(app, "S11", 2, "max", rebo)     # S9: owner 2026-11-20 11:38 PT "it can go to live"
         elif app == "fliff":
-            later(app, "F8", 2, "max", noast); later(app, "F6", 4, "max", ppo); later(app, "F7", 5, "max", ppo)     # F8: owner 2026-11-20 11:38 PT
+            later(app, "F8", 2, "max", noast); later(app, "F6", 4, "max", ppo); later(app, "F7", 5, "max", ppo)
+            later(app, "F9", 3, "max", dp); later(app, "F10", 2, "max", rebo)     # F8: owner 2026-11-20 11:38 PT
         else:
+            later(app, "B6", 3, "perfect", dp)
             later(app, "B21", 3, "perfect", noast)
         fill(app)
     return plan, notes
