@@ -201,9 +201,9 @@ def main():
                     cnt = CNT[c, ki, :S].sum(0).astype(float); prof = PROF[c, ki, si, :S].sum(0).astype(float); win = WIN[c, ki, si, :S].max(0)
                     if cnt.sum() < 80:
                         continue
-                    rs = []; ns = []; lbs = []
+                    rs = []; ns = []; lbs = []; ps = []
                     for s in range(3):
-                        m_ = smask[s] & (cnt > 0); n_ = cnt[m_].sum(); ns.append(n_)
+                        m_ = smask[s] & (cnt > 0); n_ = cnt[m_].sum(); ns.append(n_); ps.append(float(prof[m_].sum()))
                         if n_ >= (20 if s == 2 else 40) and m_.sum() >= 10:
                             p_ = prof[m_]; r_ = p_.sum() / n_; se = math.sqrt(len(p_) * p_.var(ddof=1)) / n_
                             rs.append(r_); lbs.append(r_ - 1.645 * se)
@@ -215,9 +215,9 @@ def main():
                     # SCORE = season-weighted LOW END of the ROI (ROI minus 1.645 standard errors over slates): a season carried by one lottery slip has a
                     # huge standard error and scores low; a steady season scores close to its ROI.
                     wroi = float((lbs[ok] * SW[ok]).sum() / SW[ok].sum()); wmean = float((rs[ok] * SW[ok]).sum() / SW[ok].sum())
-                    rows.append((cb, k, st, S, wroi, float(np.nanmin(rs)), rs, np.array(ns), c, ki, si, float(ALT[c, ki, :S].sum() / max(1, cnt.sum())), wmean, bool(ok.all())))
+                    rows.append((cb, k, st, S, wroi, float(np.nanmin(rs)), rs, np.array(ns), c, ki, si, float(ALT[c, ki, :S].sum() / max(1, cnt.sum())), wmean, bool(ok.all()), lbs, np.array(ps)))
     log(f"strategies with enough slips this season and in at least one earlier season: {len(rows):,}")
-    R = pd.DataFrame(rows, columns=["cb", "k", "st", "S", "wroi", "worst", "rs", "ns", "c", "ki", "si", "alt", "wmean", "full"])
+    R = pd.DataFrame(rows, columns=["cb", "k", "st", "S", "wroi", "worst", "rs", "ns", "c", "ki", "si", "alt", "wmean", "full", "lbs", "ps"])
     R["control"] = R["cb"].map(lambda x: x[0].startswith("CONTROL")); R["modelled"] = R["alt"] > 0
     R["allpos"] = R["rs"].map(lambda r: bool(np.all(r[~np.isnan(r)] > 0))) & R["full"]        # positive in ALL THREE seasons, each with enough slips
 
@@ -250,6 +250,26 @@ def main():
               f"controls positive in every season {100 * cpos:.2f}%", flush=True)
         print(f"BT|real strategies: positive in every season {100 * sub_real['allpos'].mean():.2f}% ({int(sub_real['allpos'].sum()):,}); above the best control {int((sub_real['wroi'] > cbest).sum()):,}; "
               f"above the controls' 95th percentile {100 * (sub_real['wroi'] > c95).mean():.1f}% (5.0% expected by luck); median score {100 * sub_real['wroi'].median():+.1f}% (controls {100 * sub_ctl['wroi'].median():+.1f}%)", flush=True)
+        # WALK-FORWARD OF THE SELECTION ITSELF: choose strategies using EARLIER seasons only, then read the season they never saw. This is the honest test
+        # of "pick the best of the grid": the controls go through the same choice (what luck plus structure gives), and "all" is the grid's base rate.
+        def wf(tab, train, test, tag):
+            t = tab[tab["full"]].copy()
+            if len(t) < 50:
+                return
+            t["sel"] = t["lbs"].map(lambda v: float(sum(v[i] * SW[i] for i in train) / sum(SW[i] for i in train)))
+            t["tn"] = t["ns"].map(lambda v: float(v[test])); t["tp"] = t["ps"].map(lambda v: float(v[test])); t["tr"] = t["rs"].map(lambda v: float(v[test]))
+            t["trp"] = t["rs"].map(lambda v: bool(all(v[i] > 0 for i in train)))
+            out = []
+            for nm, q in (("top 10", t.sort_values("sel", ascending=False).head(10)), ("top 30", t.sort_values("sel", ascending=False).head(30)), ("top 100", t.sort_values("sel", ascending=False).head(100)),
+                          ("top 300", t.sort_values("sel", ascending=False).head(300)), ("every one positive in the chosen seasons", t[t["trp"]]), ("all", t)):
+                if len(q):
+                    out.append(f"{nm} ({len(q):,}): unseen-season ROI pooled {100 * q['tp'].sum() / max(1, q['tn'].sum()):+.1f}%, median {100 * q['tr'].median():+.1f}%, positive {100 * (q['tr'] > 0).mean():.0f}%")
+            print(f"BT|WF {tag}: " + " | ".join(out), flush=True)
+        for nm_, tab in (("REAL keys", sub_real), ("CONTROLS ", sub_ctl)):
+            wf(tab, [0], 1, f"{nm_} chosen on 2024-25 -> read on 2025-26")
+            wf(tab, [0, 1], 2, f"{nm_} chosen on 2024-25 + 2025-26 -> read on 2026-27")
+            wf(tab, [1], 2, f"{nm_} chosen on 2025-26 -> read on 2026-27")
+            wf(tab, [1], 0, f"{nm_} chosen on 2025-26 -> read on 2024-25 (backwards, as a check)")
         for kname in KEYS:
             x = sub_real[sub_real["cb"].map(lambda q: q[0] == kname)] if not kname.startswith("CONTROL") else sub_ctl[sub_ctl["cb"].map(lambda q: q[0] == kname)]
             if len(x):
