@@ -49,6 +49,10 @@ def cell(v, st, conv):
 
 def fit(qs, idx, conv, bd):
     """LP: minimise total slack; returns x (log weights) and per-quote slack"""
+    if os.environ.get("PPFIT_INTERCEPT"):
+        idx = dict(idx)
+        for k in (3, 4, 5, 6):
+            idx.setdefault(f"__size{k}", len(idx))
     nq, nv = len(qs), len(idx)
     # variables: x (nv, free), s (nq, >=0)
     c = np.concatenate([np.zeros(nv), np.ones(nq)])
@@ -58,6 +62,8 @@ def fit(qs, idx, conv, bd):
         row = np.zeros(nv + nq)
         for k in q["keys"]:
             row[idx[k]] = 1
+        if f"__size{q['n']}" in idx:
+            row[idx[f"__size{q['n']}"]] = 1
         r_hi = row.copy(); r_hi[nv + i] = -1
         A.append(r_hi); b.append(np.log(hi) - np.log(BASE[q["n"]]) - 1e-9)
         r_lo = -row.copy(); r_lo[nv + i] = -1
@@ -66,7 +72,7 @@ def fit(qs, idx, conv, bd):
     r = linprog(c, A_ub=np.array(A), b_ub=np.array(b), bounds=bounds, method="highs")
     if not r.success:
         return None, None
-    return r.x[:nv], r.x[nv:]
+    return (r.x[:nv], r.x[nv:]) if not os.environ.get("PPFIT_INTERCEPT") else ((r.x[:nv], idx), r.x[nv:])
 
 
 def round_to(v, st, conv):
@@ -96,6 +102,8 @@ def main():
         sg = sum(1 for i in range(len(gs)) for j in range(i + 1, len(gs)) if gs[i] and gs[i] == gs[j])
         if nalt == 0 or (only == "none" and sg):
             continue
+        if os.environ.get("PPFIT_INTERCEPT") and n == 2 and (top <= 1.9 + 1e-9 or top >= 18 - 1e-9):
+            continue          # 2-pick payouts at the grid ends are clamped - not a measurement of the leg
         allv.append(top)
         by[(rf, n) if os.environ.get("PPFIT_PERSIZE") else rf].append(dict(n=n, top=top, nalt=nalt, sg=sg, keys=[f"{l.get('id')}|{l.get('odds')}|{l.get('side')}|{l.get('line')}" for l in legs]))
     bd = bands(allv)
@@ -103,6 +111,7 @@ def main():
     rng = np.random.default_rng(7)
     for conv in (os.environ.get("PPFIT_CONV") or "nearest,floor,ceil").split(","):
         insample_ok = insample_n = 0
+        ints = []
         ho = defaultdict(lambda: [0, 0])
         for rf, qs in by.items():
             if len(qs) < 6:
@@ -115,6 +124,9 @@ def main():
             if x is None:
                 continue
             insample_n += len(qs); insample_ok += int((s < 1e-7).sum())
+            if isinstance(x, tuple):
+                xx, ii = x
+                ints.append([float(np.exp(xx[ii[f"__size{k}"]])) * BASE[k] for k in (3, 4, 5, 6)])
             fold = rng.integers(0, 5, len(qs))
             for f in range(5):
                 tr = [q for q, fo in zip(qs, fold) if fo != f]
@@ -128,10 +140,12 @@ def main():
                 x2, _ = fit(tr, idx2, conv, bd)
                 if x2 is None:
                     continue
+                if isinstance(x2, tuple):
+                    x2, idx2 = x2
                 for q in te:
                     if not all(k in idx2 for k in q["keys"]):
                         continue
-                    v = BASE[q["n"]] * np.exp(sum(x2[idx2[k]] for k in q["keys"]))
+                    v = BASE[q["n"]] * np.exp(sum(x2[idx2[k]] for k in q["keys"]) + (x2[idx2[f"__size{q['n']}"]] if f"__size{q['n']}" in idx2 else 0.0))
                     pr = round_to(v, step_of(v, bd), conv)
                     key = (q["n"], min(q["nalt"], 3))
                     ho[key][0] += 1; ho[key][1] += int(abs(pr - q["top"]) < 1e-6)
@@ -140,6 +154,9 @@ def main():
         for key in sorted(ho):
             n_, ok = ho[key]; tot[0] += n_; tot[1] += ok
             print(f"FIT2|{conv:7s}:   hold-out n={key[0]} alts={key[1]}{'+' if key[1]==3 else ''}: exact {ok}/{n_} ({100*ok/max(1,n_):.0f}%)")
+        if ints:
+            a = np.array(ints)
+            print(f"FIT2|{conv:7s}: adjusted bases 3/4/5/6 picks, median over windows: " + " ".join(f"{np.median(a[:, j]):.3f} (p10 {np.percentile(a[:, j], 10):.3f}, p90 {np.percentile(a[:, j], 90):.3f})" for j in range(4)))
         print(f"FIT2|{conv:7s}: hold-out exact total {tot[1]}/{tot[0]} ({100*tot[1]/max(1,tot[0]):.1f}%)")
 
 
