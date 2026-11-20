@@ -614,6 +614,51 @@ What passes 2 and 3 change:
 3. PrizePicks is the more fragile of the two: one ranker (the blend), one prop mix; Underdog holds with two rankers and with rebounds alone.
 4. Nothing else on the list - trailing rankings, form, factors, layering, single props, alternates, composition - produced a second candidate.
 
+## 8w. PASSES 4 AND 5 - "AS PLACED", RANK CAPS, COMPOSITION; GOBLIN PRICE BIAS; SLEEPER / FLIFF WITH DERIVED HISTORY (written 21:04 PT, 2026-11-20)
+
+Owner 2026-11-19 20:48 PT: the strategies "look good if they hold ... totally deployable"; keep quoting goblins / demons; Sleeper / Fliff can use derived boards; "I don't get this issue: sportsbook lines at pick time"; "the numbers ... properly backtested and proved with real legs, real boards, real generated slips with graded legs? They need to. Then test slip composition, rank caps and all variations possible".
+
+**What the candidate numbers were built from (the answer to "real legs, real boards, real slips").** Real: the pick-time boards as captured (Underdog regular lines at their real 1.0x; PrizePicks regular lines at the fixed tables), every leg graded from the box score (re-graded 100%), every slip generated leg by leg and paid by the app's table, the ranking number produced only from earlier months. NOT in those numbers until this pass: (1) legs that ended exactly on the line (a push) were absent from the leg tables, (2) players who did not play have no history number and cannot be ranked, (3) the blend exists from January 2025 on (it needs earlier months to learn from), (4) boards in the two older seasons are one capture a day at 22:40 UTC.
+
+**Pass 4 - as placed (`research_as_placed.py`, run ap1 44677088411).** The candidate rebuilt from the RAW board of regular single-stat Unders (every leg, pushes included, paid by the app's rule), full seasons, ranked by the certified honest baseline (the only ranker that exists for pushed legs and for October-December 2024):
+| | Slips | ROI 2024-25 / 2025-26 / 2026-27 | Pooled | Cost of pushes |
+|---|---|---|---|---|
+| Underdog 2-pick Standard | 158 / 162 / 29 | +13.6% / +27.5% / +32.8% | +21.6%, +75.5 units | none (0.3% of slips; Underdog lines are half-points) |
+| Underdog 3-pick Standard | 150 / 157 / 27 | -0.3% / +24.2% / +44.4% | +14.8% | none |
+| Underdog 3-pick Flex | 150 / 157 / 27 | -4.4% / +10.0% / +12.6% | +3.8% | -0.3 points |
+| PrizePicks 3-pick Power | 150 / 155 / 27 | -34.0% / +27.7% / +22.2% | -0.6% | -1.8 points |
+| PrizePicks 4-pick Flex | 142 / 147 / 25 | -11.6% / +11.9% / +50.0% | +4.3% | -2.7 points (8.6% of slips hold a push) |
+| PrizePicks 5-pick Flex | 126 / 138 / 22 | -1.5% / +37.8% / +125.5% | +27.2% | +0.8 points |
+| PrizePicks 2-pick Power | 157 / 160 / 29 | -21.7% / +5.6% / +17.2% | -5.8% | +0.6 points |
+- **Underdog holds as placed, on more slates than the battery had** (349 slips, the whole of 2024-25 included).
+- **PrizePicks does not hold under the honest baseline over the full 2024-25 season** (-34% on 3-pick Power). Its positive numbers belong to the blend, from January 2025 on; 22-31% of its regular single-stat lines are whole numbers, 12-14% of those push, and a push costs 2-3 points on the 3- and 4-pick slips. Blend numbers for PrizePicks should be read 2-3 points lower.
+- **Players who did not play**: 10-13% of board legs in the older seasons (Underdog this season 24%, PrizePicks 4%). In the app that leg is void: an Underdog 2-pick is refunded (the ROI applies to ~80% of the slips), a PrizePicks 4-pick Flex drops to a 3-pick Flex (about 4-5 points lower on the slips it touches). Not measurable from history. P3's fresh board after the injury report is what keeps it small live.
+
+**Pass 5 - rank caps and composition (`research_rank_caps.py`, run rc1 44678252241; blend ranking, graded legs).**
+| Rank window (one slip) | Underdog 2-pick Standard | PrizePicks 4-pick Flex | PrizePicks 3-pick Power |
+|---|---|---|---|
+| from rank 1 | +28.7% (ranks 1-2) | +29.9% (1-4) | +27.0% (1-3) |
+| from rank 2 | -0.2% (2-3) | +26.4% (2-5) | +47.1% (2-4) |
+| from rank 3 | -3.4% (3-4) | +4.9% (3-6) | +6.6% (3-5) |
+| from rank 4 | -6.1% | -6.2% | -5.6% |
+| from rank 5 | -7.4% | -29.8% | -25.0% |
+**The cap: Underdog 2 legs, PrizePicks 5 legs.** Below that the list is at or under break-even.
+| More slips from the same legs (every combination of the top N), ROI by season, pooled, units, drawdown |
+|---|
+| Underdog 2-pick, top 3 (3 slips a slate): +9% / +16% / +17%, pooled +13.6% on 789 slips, +107 units, drawdown 30 |
+| Underdog 2-pick, top 4 (6 slips): +7% / +15% / -11%, pooled +9.7%, +145 units, drawdown 50 |
+| PrizePicks 3-pick Power, top 4 (4 slips): +21% / +24% / +92%, pooled +29.9% on 1,044 slips, +312 units, drawdown 62 |
+| PrizePicks 4-pick Flex, top 5 (5 slips): +5% / +18% / +83%, pooled +19.8% on 1,210 slips, +239 units, drawdown 76 |
+| PrizePicks 5-pick Flex, top 6 (6 slips): +10% / +19% / +116%, pooled +25.2% on 1,296 slips, +326 units, drawdown 90 |
+| PrizePicks 3-pick Power, top 6 (20 slips): +12% / +8% / +72%, pooled +15.0% on 4,320 slips, +648 units, drawdown 252 |
+More units from the same few legs, at 3-10 times the drawdown: these slips win and lose together. Game rule: PrizePicks is better with one leg a game (4-pick Flex +29.9% vs +16.7% without); Underdog 3-pick Standard is better without it (+39.5% vs +21.1%), 2-pick the same.
+
+**Goblins at modelled prices, corrected by real quotes (run pq2 44677142042).** Picks chosen the way history must choose them (number x MODELLED price), paid at the REAL quote, this season: honest baseline says > +5%: 313 legs, +6.2% at the modelled price -> **+2.4% at the real price [-5.7..+16.4]**; gbm says > 0: 228 legs, -10.6% -> -15.0%. On chosen legs the modelled price runs 3-5% above the real one. Demons: -21% to -52% by every ranker. Reading: history's goblin figures need about 4 points taken off; what is left is around zero. The twice-a-day quote runs continue unchanged.
+
+**Sleeper / Fliff with derived history kept in (runs bt7_*; same family, regular single-stat Unders by blend, 1 slip a slate, 2024-25 / 2025-26 / 2026-27; the first two seasons at DERIVED prices):** Sleeper 2-pick -14% / +1% / -6%, 3-pick Max -5% / +5% / -20%, 4-pick Flex -1% / +1% / -29% - nothing (its regular lines need ~0.56). Fliff 2-pick -7% / +10% / +9%, 3-pick +1% / +11% / +23%, 4-pick +21% / +11% / -42% - a weak lead on 2-3 picks, random picks swing wider than that.
+
+**"Sportsbook lines at pick time" in plain words.** For each prop the system stores what the sportsbooks (DraftKings, FanDuel, ...) were offering at the moment our slips are built. The blend leans on that number more than on anything else. In the two older seasons a sportsbook number at the exact app line exists for 92-95% of Underdog legs; this season for 37% (about 2,000 stored sportsbook rows a day against about 5,500 before). The candidate still works this season with less of it, but the blend is working with one eye closed. Why the capture is thinner has not been looked at yet (O16).
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -692,3 +737,4 @@ External (read for this work):
 - **2026-11-19 19:45-19:05 PT** - D3 (rank positions, what the top legs are, Underdog kinds surface), Phase C store (view + three roll-ups), status table 8u. Sections 8s, 8t, 8u.
 - **2026-11-19 20:45-19:07 PT** - Daily referee extended (honest history of the season, per-leg model, store, forward tracker `audit_top_list_tracker.py` -> `nba_score.honest_top_list`; run tt1 44665360385 reproduces the battery's numbers to the unit: an independent cross-check). Section 1 items 9-12. Final report sent to the owner.
 - **2026-11-19 19:12 PT (read after the 21:00 report)** - Owner: continue, every angle, keep doing passes. Pass 2 (new keys incl. production final_hp / score this season, single props, 25 factors, game cap) and pass 3 (exact random-draw null) run and recorded in 8v. Result: the ranking is real (0 of 4,000 random draws match the candidates), profit above zero remains about 2 standard errors, no second candidate.
+- **2026-11-19 20:48 PT (read after the pass 2-3 report)** - Owner: strategies deployable if they hold; keep quoting goblins / demons; Sleeper / Fliff with derived boards; does not understand the sportsbook-lines issue; are the numbers proven on real legs / boards / slips; then composition, rank caps, variations. Passes 4-5 run and recorded in 8w: Underdog holds as placed; PrizePicks holds only under the blend (not under the honest baseline over all of 2024-25) and loses 2-3 points to pushes; caps Underdog 2 legs / PrizePicks 5 legs; goblins about zero after the real-price correction.
