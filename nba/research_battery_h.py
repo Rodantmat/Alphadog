@@ -35,6 +35,9 @@ import psycopg
 
 APP = (os.environ.get("BT_APP") or "underdog").lower()
 NTOP = int(os.environ.get("BT_TOP") or 30)
+# Sleeper / Fliff: the two earlier seasons carry DERIVED prices (circular with the sportsbook) - strategies chosen there lose ~30% on real prices (8q).
+# Default for them: this season's real slates only, judged by split halves.
+REALONLY = (os.environ.get("BT_REALONLY") or ("1" if APP in ("sleeper", "fliff") else "0")) == "1"
 SEAS = ["2024-25", "2025-26", "2026-27"]; SW = np.array([0.35, 0.6, 1.0])
 DEF = {"steals", "blocks", "stocks", "turnovers"}; COMBO = {"pra", "pts_reb", "pts_ast", "reb_ast", "stocks", "fantasy_score", "double_double"}
 PP_POWER = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
@@ -124,6 +127,8 @@ def load(conn):
     d["game_id"] = d["game_id"].fillna("g" + d["player_id"])
     hot = (d["pra_5"] - d["pra_s"]) / d["pra_s"].clip(lower=1.0)
     d["form"] = np.select([hot >= .10, hot <= -.10], [1, 2], 0); d["roleup"] = ((d["mn_5"] - d["mn_s"]) >= 2).astype(int)
+    if REALONLY:
+        d = d[(d["season"] == "2026-27") & (d["src"] == "real")].copy()
     log(f"{APP}: out-of-sample legs {len(d):,} (rows before de-dup {n0:,}) on {d['gd'].nunique()} slates; by season {d.groupby('season').size().to_dict()}; price source {d.groupby(['season', 'src']).size().to_dict()}")
     return d
 
@@ -138,6 +143,7 @@ def main():
     nC = len(combos); nS = len(STRUCTS)
     log(f"pools {nC:,}; strategies {nC * len(KS) * nS * len(SLATES):,} (flex needs 3+ picks); slates {nd}")
     PROF = np.zeros((nC, len(KS), nS, MAXG, nd), dtype=np.float32); CNT = np.zeros((nC, len(KS), MAXG, nd), dtype=np.int8); WIN = np.zeros((nC, len(KS), nS, MAXG, nd), dtype=np.int8)
+    HITS = np.zeros((nC, len(KS), MAXG, nd), dtype=np.int8)
     ALT = np.zeros((nC, len(KS), MAXG, nd), dtype=np.int8)   # the slip holds a prizepicks goblin / demon (modelled price)
     for gd, g in d.groupby("gd", sort=True):
         j = di[gd]; n = len(g)
@@ -181,6 +187,7 @@ def main():
                         break
                     used.update(pick)
                     pw, fx = pay_both([hit[i] for i in pick], [m[i] for i in pick])
+                    HITS[c, ki, gi, j] = sum(1 for i in pick if hit[i])
                     CNT[c, ki, gi, j] = 1; ALT[c, ki, gi, j] = int(APP == "prizepicks" and any(kc[i] != 0 for i in pick))
                     PROF[c, ki, 0, gi, j] = pw - 1; WIN[c, ki, 0, gi, j] = pw > 1
                     if nS > 1 and k >= 3:
@@ -188,8 +195,10 @@ def main():
         if j % 40 == 0:
             log(f"slate {j + 1} / {nd} ({gd})")
     log("slips built; scoring")
-    rows = []
+    rows = []; seen_sig = set(); ndup = 0
     smask = [dseason == s for s in range(3)]
+    cur = np.where(smask[2])[0]; half = np.zeros(nd, bool); half[cur[::2]] = True          # this season's slates, alternating: A = 1st, 3rd, ... ; B = 2nd, 4th, ...
+    hA = smask[2] & half; hB = smask[2] & ~half
     for c, cb in enumerate(combos):
         for ki, k in enumerate(KS):
             for si, st in enumerate(STRUCTS):
@@ -199,8 +208,12 @@ def main():
                     if S > MAXG:
                         continue
                     cnt = CNT[c, ki, :S].sum(0).astype(float); prof = PROF[c, ki, si, :S].sum(0).astype(float); win = WIN[c, ki, si, :S].max(0)
-                    if cnt.sum() < 80:
+                    if cnt.sum() < (20 if REALONLY else 80):
                         continue
+                    sig = hash((k, st, prof.tobytes(), cnt.tobytes()))          # the same slips under another name (e.g. kind "all" + side Under = regular Unders)
+                    if sig in seen_sig and not cb[0].startswith("CONTROL"):
+                        ndup += 1; continue
+                    seen_sig.add(sig)
                     rs = []; ns = []; lbs = []; ps = []
                     for s in range(3):
                         m_ = smask[s] & (cnt > 0); n_ = cnt[m_].sum(); ns.append(n_); ps.append(float(prof[m_].sum()))
@@ -210,14 +223,15 @@ def main():
                         else:
                             rs.append(np.nan); lbs.append(np.nan)
                     rs = np.array(rs); lbs = np.array(lbs); ok = ~np.isnan(rs)
-                    if not ok[2] or ok.sum() < 2:
+                    if not ok[2] or (ok.sum() < 2 and not REALONLY):
                         continue
+                    hv = (float(prof[hA].sum()), float(cnt[hA].sum()), float(prof[hB].sum()), float(cnt[hB].sum()))
                     # SCORE = season-weighted LOW END of the ROI (ROI minus 1.645 standard errors over slates): a season carried by one lottery slip has a
                     # huge standard error and scores low; a steady season scores close to its ROI.
                     wroi = float((lbs[ok] * SW[ok]).sum() / SW[ok].sum()); wmean = float((rs[ok] * SW[ok]).sum() / SW[ok].sum())
-                    rows.append((cb, k, st, S, wroi, float(np.nanmin(rs)), rs, np.array(ns), c, ki, si, float(ALT[c, ki, :S].sum() / max(1, cnt.sum())), wmean, bool(ok.all()), lbs, np.array(ps)))
-    log(f"strategies with enough slips this season and in at least one earlier season: {len(rows):,}")
-    R = pd.DataFrame(rows, columns=["cb", "k", "st", "S", "wroi", "worst", "rs", "ns", "c", "ki", "si", "alt", "wmean", "full", "lbs", "ps"])
+                    rows.append((cb, k, st, S, wroi, float(np.nanmin(rs)), rs, np.array(ns), c, ki, si, float(ALT[c, ki, :S].sum() / max(1, cnt.sum())), wmean, bool(ok.all()) or REALONLY, lbs, np.array(ps), hv))
+    log(f"strategies with enough slips: {len(rows):,} (identical slip series removed: {ndup:,}){' | THIS SEASON ONLY (real prices)' if REALONLY else ''}")
+    R = pd.DataFrame(rows, columns=["cb", "k", "st", "S", "wroi", "worst", "rs", "ns", "c", "ki", "si", "alt", "wmean", "full", "lbs", "ps", "hv"])
     R["control"] = R["cb"].map(lambda x: x[0].startswith("CONTROL")); R["modelled"] = R["alt"] > 0
     R["allpos"] = R["rs"].map(lambda r: bool(np.all(r[~np.isnan(r)] > 0))) & R["full"]        # positive in ALL THREE seasons, each with enough slips
 
@@ -233,7 +247,8 @@ def main():
             cum = np.concatenate([[0], np.cumsum(p_)]); dd = float((np.maximum.accumulate(cum) - cum).max()); dr = 0; cur = 0
             for w in win[m_]:
                 cur = 0 if w else cur + 1; dr = max(dr, cur)
-            parts.append(f"{SEAS[s]}: {int(n_.sum())} slips / {int(m_.sum())} slates, ROI {100 * p_.sum() / n_.sum():+.1f}% [{100 * np.quantile(b, .05):+.0f} .. {100 * np.quantile(b, .95):+.0f}], units {p_.sum():+.1f}, drawdown {dd:.1f}, drought {dr}")
+            lh = HITS[c, ki, :S].sum(0)[m_].sum() / (r["k"] * n_.sum())
+            parts.append(f"{SEAS[s]}: {int(n_.sum())} slips / {int(m_.sum())} slates, leg hit {lh:.3f}, ROI {100 * p_.sum() / n_.sum():+.1f}% [{100 * np.quantile(b, .05):+.0f} .. {100 * np.quantile(b, .95):+.0f}], units {p_.sum():+.1f}, drawdown {dd:.1f}, drought {dr}")
         flag = " | owner rule: Underdog plays no Standard above 2 picks" if (APP == "underdog" and r["st"] == "power" and r["k"] > 2) else ""
         return (f"{r['k']}-pick {SNAME[r['st']]} x {S} a slate | rank {cb[0]} | kind {cb[1]} | side {cb[2]} | props {cb[3]} | form {cb[4]} | minimum {('none' if cb[5] is None else f'> {int(100 * cb[5])}%')}"
                 f" | score (weighted low end) {100 * r['wroi']:+.1f}%, weighted ROI {100 * r['wmean']:+.1f}%, worst season {100 * r['worst']:+.1f}%{flag}\n        " + "\n        ".join(parts))
@@ -265,7 +280,40 @@ def main():
                 if len(q):
                     out.append(f"{nm} ({len(q):,}): unseen-season ROI pooled {100 * q['tp'].sum() / max(1, q['tn'].sum()):+.1f}%, median {100 * q['tr'].median():+.1f}%, positive {100 * (q['tr'] > 0).mean():.0f}%")
             print(f"BT|WF {tag}: " + " | ".join(out), flush=True)
+        def halves(tab, tag):
+            t = tab[tab["hv"].map(lambda v: v[1] >= 8 and v[3] >= 8)].copy()
+            if len(t) < 50:
+                return
+            t["ra"] = t["hv"].map(lambda v: v[0] / v[1]); t["rb"] = t["hv"].map(lambda v: v[2] / v[3]); out = []
+            for a_, b_, lab in (("ra", "rb", "chosen on half A -> read on half B"), ("rb", "ra", "chosen on half B -> read on half A")):
+                q = t.sort_values(a_, ascending=False); bi = 2 if b_ == "rb" else 0
+                for N in (10, 30, 100, 300):
+                    h = q.head(N); out.append(f"{lab} top {N}: {100 * h['hv'].map(lambda v: v[bi]).sum() / h['hv'].map(lambda v: v[bi + 1]).sum():+.1f}% (median {100 * h[b_].median():+.1f}%, positive {100 * (h[b_] > 0).mean():.0f}%)")
+                out.append(f"all {len(t):,}: {100 * t['hv'].map(lambda v: v[bi]).sum() / t['hv'].map(lambda v: v[bi + 1]).sum():+.1f}%")
+            print(f"BT|HALVES {tag} (this season's slates, alternating): " + " | ".join(out), flush=True)
+        halves(sub_real, "REAL keys"); halves(sub_ctl, "CONTROLS ")
+        # FOCUS: the one pre-stated family (top of the list on regular lines, no form filter, no minimum) - every key, side, props, size and structure,
+        # so the reader sees the whole surface and not a pick of the best
+        kreg = "regular"
+        fam = R[(~R["modelled"]) & R["cb"].map(lambda q: q[1] == kreg and q[4] == "any" and q[5] is None)]
+        if label.startswith("REAL") and len(fam):
+            print("BT|FOCUS regular lines, top of the list, 1 slip a slate - ROI by season (slips) | key x side x props x structure", flush=True)
+            for key_ in ("blend return", "small gbm return", "gbm return", "book return", "honest chance", "CONTROL placebo", "CONTROL random"):
+                for sd_ in ("both", "Under", "Over"):
+                    for pr_ in ("all", "single stats"):
+                        x = fam[fam["cb"].map(lambda q: q[0] == key_ and q[2] == sd_ and q[3] == pr_) & (fam["S"] == 1)]
+                        if not len(x):
+                            continue
+                        cells = []
+                        for k in KS:
+                            for st in STRUCTS:
+                                y = x[(x["k"] == k) & (x["st"] == st)]
+                                if len(y):
+                                    r_ = y.iloc[0]; cells.append(f"{k}{SNAME[st][0]} " + "/".join("-" if np.isnan(v) else f"{100 * v:+.0f}" for v in r_["rs"]))
+                        print(f"BT|F {key_:17s} {sd_:5s} {pr_:12s} | " + " | ".join(cells), flush=True)
         for nm_, tab in (("REAL keys", sub_real), ("CONTROLS ", sub_ctl)):
+            if REALONLY:
+                break
             wf(tab, [0], 1, f"{nm_} chosen on 2024-25 -> read on 2025-26")
             wf(tab, [0, 1], 2, f"{nm_} chosen on 2024-25 + 2025-26 -> read on 2026-27")
             wf(tab, [1], 2, f"{nm_} chosen on 2025-26 -> read on 2026-27")
