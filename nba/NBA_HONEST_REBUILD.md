@@ -422,6 +422,43 @@ Rest of the stream (Platt stage, empirical cells, zero-adjust, phase ratio, minu
 
 Note for the eventual production fix (S7): live builds only see data up to today, so the two constants are not a look-ahead LIVE; they are a history-vs-live mismatch. The fix to carry over stays the tier block (C10) plus these two constants for parity.
 
+## 8p. PHASE A CLOSED, PHASE B FIRST RESULTS (2026-11-19 17:16 PT)
+
+**Phase A - certified.**
+| Test | Result |
+|---|---|
+| A1 truncation invariance, singles (4 pairs x 3 seasons) | PASS 12 / 12, 100.00% identical; leaky control moves |
+| A1 truncation invariance, combos (3 seasons) | PASS 3 / 3 (2025-26 finished after 8o was written) |
+| Honest history `baseline_history_h` | REBUILT on the certified recipe (runs hh2_*, hc2_*) |
+| Input audit `audit_honest_inputs.py` on the rebuilt tables (run ai3 44650021619) | **7 of 7 PASS**: grading 5,076,317 legs 100%; equal to production grading 894,085 legs 100%; no leg from an in-play board; multipliers; no duplicates; every leg has a box score; Over + Under hit rates sum to 1.0000; probability attached at the exact line 200,000 / 200,000 |
+
+Corrections made on the way (each one was a wrong statement or a wrong number of mine):
+- **In-play boards exist in the OLDER seasons too** (8o said "history seasons 0" - wrong; that check started in 2026-10). 2,078 app-player-days, mostly weekend afternoon games captured after tip. Guard now covers all seasons (`drop_late` from 2024-10-01, `LH_GUARD_ONLY=1`); 30,560 + 17,420 legs removed.
+- **Impossible PrizePicks alternate prices.** The modelled history price put 5% of goblins ABOVE a regular leg (factor > 1.0; real quotes 0.535 .. 0.967) and every model "found" exactly those (+27..+47% a leg on the top 6). Prices are now bounded by the real quote range (goblin 0.535 .. 0.967, demon 1.097 .. 7.51) in `research_legs_h_build.py`. Rule C9 stands: a PrizePicks alternate counts only at a real quote.
+
+**Phase B1 - the per-leg model (`research_leg_model_h.py`, runs lm2_*).** Walk-forward by month, season weights 1.0 / 0.6 / 0.35, gradient boosting on ~40 pick-time features that starts from the app's own price, against: price alone, sportsbook at the exact line, honest baseline alone, a 4-number blend, and a placebo. Out-of-sample legs: Underdog 386k, PrizePicks 970k, Sleeper 1.67M, Fliff 1.63M.
+
+What the numbers say (REAL return of the legs each number calls profitable; 90% range re-drawing slates):
+| App / kind | 2024-25 | 2025-26 | 2026-27 | Reading |
+|---|---|---|---|---|
+| Underdog regular, gbm says > +5% | -7.4% (5,975) | +4.6% [+1.5..+7.5] (2,787) | +0.7% [-10.8..+11.8] (223) | one season only - not proven |
+| Underdog regular, top 6 a slate by gbm | +0.8% | +7.1% [+1.7..+12.3] | -5.4% | same |
+| Underdog goblins / demons, any number | negative or one season | negative | negative (demons -16%) | no edge |
+| Underdog, sportsbook says > 0 (all kinds) | +7.0% [+3.8..+10.8] (2,594) | +2.5% [-2.6..+7.9] (1,008) | -19.0% (282; book coverage fell to 37%) | fading, not proven |
+| PrizePicks regular, any number | -6..-10% | -3..-9% | -9..-16% | no edge |
+| PrizePicks demons, any number | -9..-14% | -9..-14% | -48% | no edge |
+| PrizePicks goblins, gbm says > +5% (MODELLED price, bounded) | +7.9% (8,201) | +6.8% (27,872) | +8.4% (3,152) | **NOT counted** - see B2 |
+| Sleeper, every kind, any number | -5..-20% | -1..-11% | -8..-17% (real prices) | no edge |
+| Fliff, every kind, any number | -5..-13% | -2..-12% | -5..-12% (real prices) | no edge |
+Model quality: the blend is honest (slope 0.93 - 1.02) and beats the price in log-loss on every app by a hair (e.g. Underdog 0.6953 -> 0.6871); the sportsbook carries most of the weight (blend weights: book 0.24 - 0.83, honest baseline 0.07 - 0.12). The gain is real and too small to clear the apps' 7 - 20% margin.
+Small leads kept for the battery, not proven: blend says > 0 on this season's regular legs - Underdog +14.9% [+0.8..+27.1] (241 legs), Fliff +11.4% [+3.4..+18.3] (213 legs).
+
+**Phase B2 - the goblin question at real quotes (`research_pp_alt_model_realquote.py`, run pq 44646833599).** 6,856 quoted alternates this season (7% of the board, the miner's broad sample). Quoted goblins: -10.6% [-15.1..-5.1] at the real price. Goblins the gbm calls profitable at the real price: 245 legs, -8.6% [-26.0..+7.5]; top 6 a slate -7.3% [-16.7..+1.8]. The honest baseline alone: 423 legs, +4.7% [-3.7..+15.4]. Demons: negative by every number. Verdict: the goblin profit at modelled prices is NOT confirmed at real prices; the sample of real quotes on model picks is too small to close it either way. What would settle it: quote the model's own top goblins every day before P3 (inside the existing quote budget) - parked until the live side is discussed (D8).
+
+**Data gap found:** sportsbook lines at pick time are much thinner this season (window rows a day ~2,000 vs ~5,500; exact-line coverage of Underdog legs 37% vs 92-95%). The sportsbook is the strongest input of every model. Open item O16.
+
+Runs in flight: lm3_* (same model plus trailing layers: the player's own last 10 regular legs of the prop / side, his last 10 over all props, the app's prop x side hit rate over the last 7 and 21 slates).
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -433,6 +470,8 @@ Note for the eventual production fix (S7): live builds only see data up to today
 - **O7 (owner, older, still open)**: re-grade Sleeper Flex records (+8.92u -> +11.63u); nightly check of placed Sleeper entries; Jessica "$3 max per app" reading; Jon's no-Save fallback; view the Jon / Jessi pages live; check the "Unverified" filter count after v1.5.8.
 - **O9**: Underdog R-tier anomaly this season (+11.7 pts on 3,107 legs) - check what those lines are before using.
 - **O10**: leg-ROI blend (model log-odds + price log-odds, walk-forward) re-run on the honest baseline; `research_leg_roi_model.py` / `_proof.py` need a loader that reads `baseline_history_h`.
+- **O16**: sportsbook lines at pick time are thin this season (window rows a day ~2,000 vs ~5,500 in the earlier seasons; exact-line coverage of Underdog legs 37% vs 92-95%). The sportsbook is the strongest input of every per-leg model (8p). Find why (source, markets, credits) and what restoring it costs before touching anything.
+- **O17**: settle the PrizePicks goblin question with real quotes on the model's own top picks (8p, B2) - a daily targeted quote list inside the existing quote budget; needs a pick-time honest score, so it belongs to the live discussion (D8).
 - **O8**: the 2026-12-20 scheduled calibration re-test predates this finding - its brief must be rewritten once the honest history exists.
 
 ## 10. Method rules learned in this work (apply to every next step)
@@ -488,3 +527,6 @@ External (read for this work):
 - **2026-11-19 14:16-14:24 PT** - Profile of the top-of-list Unders (role-bump players) and rank split of the played legs on four apps (section 8m). O15 raised for the owner: cut pools to the first 6 legs.
 - **2026-11-19 14:51-14:53 PT** - OWNER DIRECTIVE D8 (three messages, quoted in 8n). Master plan A-D written. Phase A started: `audit_truncation_invariance.py` dispatched for 4 prop pairs x 3 seasons (12 runs, 44632731240 .. 44632868687), with the unfixed recipe as positive control on the points pair.
 - **2026-11-19 14:54-15:37 PT** - Phase A. First truncation pass FAILED on the tier-only recipe; residual look-ahead localized to two all-rows league constants (`LG`, `_LG_IMPL`); honest recipe extended (`TL.honest`); second pass PASS 12/12 singles at 100.00% identical with the leaky control moving; combos 2/3 PASS so far. Input audit: grading 100%, one in-play day guarded. Honest history rebuild dispatched (hh2_*, hc2_*). Section 8o.
+- **2026-11-19 16:34 PT** - Owner asked for a status "without stopping". Sent: step 1 almost closed (15/15 truncation runs pass, grading 100%), step 2 started, goblin result flagged as modelled-price only, live untouched.
+- **2026-11-19 16:44 PT** - Owner asked for the expected time to finish. Answered: step 1 tonight, step 2 overnight, step 3 Friday midday, step 4 Friday night to Saturday morning; told him no leg group shows a steady profit so far, and the two corrections (impossible goblin prices; in-play boards in older seasons).
+- **2026-11-19 16:00-17:16 PT** - Phase A closed: combos 3/3, history rebuilt, input audit 7/7 after extending the in-play guard to all seasons. Phase B1 model run on four apps (lm, lm2), goblin prices bounded by real quotes, B2 real-quote check (pq). Section 8p. Open item O16 (thin sportsbook capture this season).
