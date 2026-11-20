@@ -179,10 +179,14 @@ def main():
         cur = sidx[te][0]; w = np.array([SW.get(int(cur - s), 0.35) for s in sidx[tr]])
         b = fit_blend(Zall[tr], y[tr], w); P["blend"][te] = 1 / (1 + np.exp(-(np.c_[np.ones(te.sum()), Zall[te]] @ b)))
         par = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=400, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1, num_threads=4, seed=7)
-        ds = lgb.Dataset(X[tr], label=y[tr], weight=w, categorical_feature=cat, free_raw_data=False)
-        m_ = lgb.train(par, ds, num_boost_round=ROUNDS); P["gbm"][te] = m_.predict(X[te]); imp += m_.feature_importance("gain"); nfit += 1
+        # the app's own price is the starting point (init score = log-odds of the break-even): the trees learn only the DEVIATION from the price, so a
+        # multiplier never seen in training (this season's deeper demons) starts from its own break-even instead of an extrapolated guess.
+        off = lg(X["be"].values.astype(float))
+        ds = lgb.Dataset(X[tr], label=y[tr], weight=w, categorical_feature=cat, free_raw_data=False, init_score=off[tr])
+        m_ = lgb.train(par, ds, num_boost_round=ROUNDS); P["gbm"][te] = 1 / (1 + np.exp(-(m_.predict(X[te], raw_score=True) + off[te]))); imp += m_.feature_importance("gain"); nfit += 1
         ysh = pd.Series(y[tr]).groupby(df["gd"].values[tr]).transform(lambda v: rng.permutation(v.values)).values
-        mp = lgb.train(par, lgb.Dataset(X[tr], label=ysh, weight=w, categorical_feature=cat), num_boost_round=ROUNDS); P["placebo"][te] = mp.predict(X[te])
+        mp = lgb.train(par, lgb.Dataset(X[tr], label=ysh, weight=w, categorical_feature=cat, init_score=off[tr]), num_boost_round=ROUNDS)
+        P["placebo"][te] = 1 / (1 + np.exp(-(mp.predict(X[te], raw_score=True) + off[te])))
         log(f"month {mth}: train {int(tr.sum()):,} legs, test {int(te.sum()):,}; blend weights [const, ph, ph missing, book, book missing, price, under] = {np.round(b, 3).tolist()}")
     P["price"] = 1 / mm; P["honest"] = df["ph"].values; P["book"] = df["pb"].values
     ok = ~np.isnan(P["gbm"])
