@@ -64,7 +64,9 @@ def _rb(c, who, today):
             if not rows:
                 return ""
             y = max(r[1] for r in rows)
-            for app_name in ("prizepicks", "underdog", "sleeper", "betr", "fliff"):
+            # 2026-11-20 owner: Jon (friend) sees PP, UD, Sleeper, Fliff; Jessi sees PP, Sleeper, Fliff
+            apps = ("prizepicks", "underdog", "sleeper", "fliff") if who == "friend" else ("prizepicks", "sleeper", "fliff")
+            for app_name in apps:
                 a = PAGE_KEY[app_name]
                 mine = [r for r in rows if r[0] == app_name]
                 if not mine:
