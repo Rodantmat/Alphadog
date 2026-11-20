@@ -578,6 +578,42 @@ What the certified numbers support:
 
 Open, in order of value: O16 (sportsbook capture this season is thin - the blend's main input), O17 (real quotes on the model's top goblins), a pick-time version of the blend (today it exists only for graded days), then the live discussion the owner reserved (D8).
 
+## 8v. PASSES 2 AND 3 - MORE ANGLES, AND AN EXACT TEST OF LUCK (2026-11-19/20, written 19:57 PT)
+
+Owner 19:12 PT: "look at all proplines, variations, all hit rate rankings, all internal rankings, final hp, score, per leg roi, slip structure, slip composition, factors, layering ... leave nothing behind, we need to keep doing passes".
+
+**Pass 2 (`research_battery_h.py` with `BT_PASS=2`; runs p2 / p2b / p2c on Underdog and PrizePicks; 227,020 strategies on Underdog, 86,000 on PrizePicks).** New rank keys: the player's trailing hit rate, season average and last 5 against the line, the line against the sportsbooks' main line, and - this season only, where they were stored on the day - production's final_hp, its return and its score. One prop at a time (points, rebounds, assists, threes). 25 pick-time factors as filters: hot / cold, minutes up / down, back-to-back, rested 3+, home / away, starter / bench roles, team minutes out 24+ / none, opponent minutes out 48+, line better than / equal to the sportsbooks, 2+ sportsbooks, first 10 games, 20+ games, line under 6 / 15+, weekend, listed on the report, small / large slate. Composition: 1, 2 or any number of legs from one game (`BT_GAMECAP`).
+
+| Angle | Result (ROI 2024-25 / 2025-26 / 2026-27, regular Unders unless said) |
+|---|---|
+| Honest baseline alone as the ranking, Underdog single stats | 2-pick Standard +27% / +33% / +45%; 3-pick Standard +36% / +30% / +20%; 3-pick Flex +12% / +11% / +5% - as good as the blend. On PrizePicks it fails in 2024-25 (3-pick Power -15% / +16% / +78% both sides). |
+| Trailing hit rate as the ranking | negative on both apps, every prop (Underdog 2-pick -12% / -16% / +57%, 3-pick Flex -17% / -22% / +9%; PrizePicks -27% / -16% / +24%). Rejected a second time. |
+| Season average / last 5 against the line | negative or one season only. Rejected. |
+| Line against the sportsbooks as the ranking | Underdog Unders -9% / +22% / +21% (2-pick): nothing in 2024-25. PrizePicks negative. |
+| One prop at a time | Underdog rebounds Unders by blend 2-pick +11% / +23% / +48%, 3-pick Standard +22% / +23% / +56%; points and threes mixed; assists negative on both apps. PrizePicks: no single prop holds in all three seasons - the result exists only as the single-stat mix. |
+| 25 factors as filters (3 slips a slate, Underdog 2-pick Standard; "no filter" = +19% / +10% / +17%) | none beats "no filter" in all three seasons. Closest: large slate +35% / +5% / +38% (random picks on large slates +8% / +7% / +17%), rested 3+ +24% / +6% / +8%, team minutes out 24+ +19% / +14% / -2%. Line better than the sportsbooks: +7% / +21% / +30%, and RANDOM picks inside that set -7% / +26% / +30% - a line-shopping effect in the last two seasons only, 205 slips. PrizePicks: every factor row is negative or one season. **Factors and layering add nothing reliable.** |
+| Legs of one game in a slip (Underdog) | 2 a game: 3-pick Standard +33% / +38% / +79% (1 a game: +13% / +21% / +44%); 2-pick unchanged; 5-6 picks worse. Unders of one game move together, which helps all-or-nothing slips slightly. Not enough slips to call. |
+| Production's own numbers this season (29 slates, stored on the day) | Underdog, single stats both sides, top of the list by final_hp: 2-pick +45%, 3-pick Standard +93%, 3-pick Flex +37%; by score +57% / +117% / +45%; the blend on the same slates +33% / +44% / +13%; random -3% / -28% / -32%. PrizePicks all props both sides by final_hp: 2-pick +24%, 3-pick Power +56%, 4-pick Flex +50%; random -59% / -56% / -40%. **This season the live system's top of the list is at least as good as the blend** - on 29 slates, so it ranks, it does not prove. |
+| Selection walk-forward on the bigger grid | Underdog chosen on 2024-25 -> 2025-26: top 30 +16%, top 100 +9%; chosen on both -> 2026-27: -34% / -28%. PrizePicks: negative in every direction. **Choosing "the best of the grid" does not carry forward; only the pre-stated family does.** |
+
+**Pass 3 - the exact null (`research_candidate_null.py`, run cn1 44669709664).** One slip a slate is few slips; ONE random order of the same legs showed +30% / +24% on PrizePicks 3-pick Power in the two full seasons. So each candidate slip was re-drawn 4,000 times at random from its own pool (any regular single-stat Under of the slate, one a player, one a game, same slates):
+| Candidate (ranked by blend) | Real units, 3 seasons | Random draws: mean / 95th / 99th | Share of random draws that do as well |
+|---|---|---|---|
+| Underdog 2-pick Standard | +78.0 (272 slips) | -13.1 / +29.0 / +46.5 | 0 of 4,000 |
+| Underdog 2-pick Standard, ranked by the honest baseline | +88.5 | -14.4 / +29.0 / +46.5 | 0.05% |
+| Underdog 3-pick Flex | +15.1 (263) | -30.8 / -2.2 / +11.8 | 0.6% |
+| PrizePicks 4-pick Flex | +78.0 (261) | -44.1 / -3.0 / +15.0 | 0 of 4,000 |
+| PrizePicks 3-pick Power | +74.0 (274) | -48.7 / +8.0 / +32.0 | 0.03% |
+| PrizePicks 5-pick Flex | +80.8 (242) | -38.2 / +13.2 / +34.0 | 0 of 4,000 |
+| PrizePicks 2-pick Power | +15.0 (285) | -58.0 / -21.0 / -3.0 | 0.05% |
+By season the candidate beats 84-99.9% of random draws in each of the three seasons (weakest: Underdog 2026-27 at 84%, 29 slips). Against "any regular leg, both sides" the gap is wider. The small gbm as the ranker is much weaker (PrizePicks 4-pick Flex -1.5 units, Underdog 2-pick +4.5): the result belongs to the blend and to the honest baseline, not to every ranker.
+
+What passes 2 and 3 change:
+1. **The ranking is real**: the top of the list beats random picks from the same pool far beyond luck, in each season, on both apps.
+2. **Profit above zero is still the uncertain part**: pooled ROI +29% on ~270 slips per candidate is about 2.5-2.9 standard errors before allowing for the choices made (ranker, side, props, structure), about 2 after.
+3. PrizePicks is the more fragile of the two: one ranker (the blend), one prop mix; Underdog holds with two rankers and with rebounds alone.
+4. Nothing else on the list - trailing rankings, form, factors, layering, single props, alternates, composition - produced a second candidate.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -655,3 +691,4 @@ External (read for this work):
 - **2026-11-19 18:45-18:47 PT** - Battery D2 (duplicates, leg hit rates, focus surface, real-only Sleeper / Fliff). Section 8r: the edge is the top 2-4 regular single-stat Unders by the blend, about one slip a slate per app, Underdog and PrizePicks; Sleeper / Fliff cannot be selected on 29 real slates.
 - **2026-11-19 19:45-19:05 PT** - D3 (rank positions, what the top legs are, Underdog kinds surface), Phase C store (view + three roll-ups), status table 8u. Sections 8s, 8t, 8u.
 - **2026-11-19 20:45-19:07 PT** - Daily referee extended (honest history of the season, per-leg model, store, forward tracker `audit_top_list_tracker.py` -> `nba_score.honest_top_list`; run tt1 44665360385 reproduces the battery's numbers to the unit: an independent cross-check). Section 1 items 9-12. Final report sent to the owner.
+- **2026-11-19 19:12 PT (read after the 21:00 report)** - Owner: continue, every angle, keep doing passes. Pass 2 (new keys incl. production final_hp / score this season, single props, 25 factors, game cap) and pass 3 (exact random-draw null) run and recorded in 8v. Result: the ranking is real (0 of 4,000 random draws match the candidates), profit above zero remains about 2 standard errors, no second candidate.
