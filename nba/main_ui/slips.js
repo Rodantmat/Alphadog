@@ -854,7 +854,10 @@ async function buildHighHit(sql, cfg, url, version) {
     const kept = slips.filter(x => !TEST_ONLY.test(String(x.stake_label || "")));
     slips.length = 0; slips.push(...kept);
     const by = new Map(); for (const x of testOnly) by.set(x.track_label || x.strategy, (by.get(x.track_label || x.strategy) || 0) + 1);
-    notes.push(`${testOnly.length} test-only slip(s) recorded as not played and not shown (${[...by].map(([k, n]) => n + " " + k).join(", ")}).`);
+    // owner 2026-11-19 23:34 PT ("Do not show the old strategies anymore, on any screen"): with the honest-rebuild slips on the screen (H_* / portfolio H),
+    // the retired strategies are not even named in a note - they stay recorded as not played in the tables only.
+    const honestLive = kept.some(x => /\bH_[PSFB]\d|\bU[1-5] (top|PrizePicks)/.test(String(x.strategy || "") + " " + String(x.track_label || "")));
+    if (!honestLive) notes.push(`${testOnly.length} test-only slip(s) recorded as not played and not shown (${[...by].map(([k, n]) => n + " " + k).join(", ")}).`);
   }
   // PLACING ORDER (2026-10-18, owner: "When ordering the slips on the slip screen put in placing order, so the right times ones
   // first"): the slips are listed by their Place by time (the first tip among their own legs), earliest first; at the same time
