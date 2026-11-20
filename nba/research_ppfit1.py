@@ -36,13 +36,16 @@ def main():
             continue
         keys = [f"{l.get('id')}|{l.get('odds')}|{l.get('side')}|{l.get('line')}" for l in legs]
         nalt = sum(1 for l in legs if l.get("odds") != "standard")
-        by[rf].append(dict(sec=sec, n=n, top=top, flex=fx.get(str(n)) or {}, adj=adj, keys=keys, nalt=nalt,
+        gs = [l.get("game") for l in legs]
+        sg = sum(1 for i in range(len(gs)) for j in range(i + 1, len(gs)) if gs[i] and gs[i] == gs[j])
+        by[rf].append(dict(sec=sec, n=n, top=top, flex=fx.get(str(n)) or {}, adj=adj, keys=keys, nalt=nalt, sg=sg,
                            kinds="".join(sorted((l.get("odds") or "s")[0] + (l.get("side") or "o")[0] for l in legs if l.get("odds") != "standard"))))
     res = []          # (n, nalt, rel_resid, sec)
     gstd = []
     flexr = defaultdict(list)
+    ONLY = os.environ.get("PPFIT_SG", "all")
     for rf, qs in by.items():
-        qs = [q for q in qs if q["nalt"] > 0]          # all-standard slips are the plain table
+        qs = [q for q in qs if q["nalt"] > 0 and (ONLY == "all" or q["sg"] == 0)]          # all-standard slips are the plain table
         if len(qs) < 5:
             continue
         idx = {}
@@ -62,7 +65,7 @@ def main():
         cnt = A.sum(0)
         for i, q in enumerate(qs):
             informative = all(cnt[idx[k]] >= 2 for k in q["keys"])
-            res.append((q["n"], q["nalt"], float(np.exp(y[i] - pred[i]) - 1), q["sec"], informative))
+            res.append((q["n"], q["nalt"], float(np.exp(y[i] - pred[i]) - 1), q["sec"], informative, q["sg"], q["top"]))
             for fn, fv in (q["flex"] or {}).items():
                 flexr[(q["n"], min(q["nalt"], 3), int(fn))].append(float(fv) / q["top"])
         for k, j in idx.items():
@@ -77,6 +80,13 @@ def main():
             rr_ = np.array([abs(t[2]) for t in res if t[0] == n and t[1] == na and t[4]])
             if len(rr_) >= 5:
                 print(f"FIT|  n={n} alts={na}: {len(rr_):4d} quotes | median {100*np.median(rr_):.2f}% | p90 {100*np.percentile(rr_,90):.2f}% | within 1% {100*(rr_<0.01).mean():.0f}%")
+    for sgv in range(0, 4):
+        rr_ = np.array([abs(t[2]) for t in res if t[5] == sgv and t[4]])
+        if len(rr_) >= 5:
+            print(f"FIT|  same-game pairs={sgv}: {len(rr_):4d} quotes | median {100*np.median(rr_):.2f}% | p90 {100*np.percentile(rr_,90):.2f}% | within 1% {100*(rr_<0.01).mean():.0f}%")
+    tops = [t[6] for t in res]
+    print("FIT|payout decimals: " + ", ".join(f"{d}dp {100*np.mean([len(str(v).split('.')[1]) == d if '.' in str(v) else d == 0 for v in tops]):.0f}%" for d in range(0, 4)))
+    print("FIT|sample top payouts: " + " ".join(str(v) for v in sorted(set(tops))[:60]))
     if gstd:
         g = np.array(gstd)
         print(f"FIT|standard legs' own g (seen >=3 times): {len(g)} | median {np.median(g):.3f} | p10 {np.percentile(g,10):.3f} | p90 {np.percentile(g,90):.3f}")
