@@ -253,14 +253,7 @@ def build(conn, day, apps, weights=None):
         for code, k, st, src in specs:
             cand = onto(tg, tight, ctx) if src == "t" else onto(tg, first(U, 10), ctx)[:2] if src == "u2" else onto(tg, first(P, 10), ctx)[:5]
             add(app, code, k, st, cand)
-        tl = onto(tg, tight, ctx)
-        if app == "sleeper":
-            later(app, "S21", 2, "max", tl); later(app, "S22", 3, "max", tl)
-        elif app == "fliff":
-            later(app, "F21", 2, "max", tl); later(app, "F22", 3, "max", tl)
-        else:
-            later(app, "B21", 2, "perfect", onto(tg, first(U, 10), ctx)[:2]); later(app, "B22", 2, "perfect", tl); later(app, "B23", 4, "perfect", tl)
-        fill(app)
+        # owner 2026-11-20 09:23 PT: no fallbacks on Sleeper, Fliff, Betr (all three lost on the season replay) - fewer slips on thin days instead
     return plan, notes
 
 
