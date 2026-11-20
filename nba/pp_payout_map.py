@@ -79,6 +79,24 @@ def already_mined():
             raise ValueError(f"unexpected PP_MINED_TABLE {table!r}")
         cur.execute(f"SELECT DISTINCT projection_id, line FROM {table}")
         return {(str(r[0]), float(r[1])) for r in cur.fetchall()}
+def alt_targets():
+    """ORDER ONLY (2026-11-19, NBA_HONEST_REBUILD.md O17): today's shadow list of the model's own top goblins / demons
+    (nba_score.honest_alt_targets, written after the morning slate build by shadow_alt_targets.py) -> {(name, stat, line, odds): rank}.
+    The delta run quotes these first inside its existing budget. Any failure -> {} (the old order)."""
+    url = (os.getenv("DATABASE_URL") or "").strip()
+    if not url or LEAGUE != 7:
+        return {}
+    try:
+        import psycopg
+        with psycopg.connect(url, connect_timeout=15) as conn, conn.cursor() as cur:
+            cur.execute("""SELECT lower(player), pp_stat, line::float8, kind, rank FROM nba_score.honest_alt_targets
+                           WHERE game_date = (now() AT TIME ZONE 'America/New_York')::date""")
+            return {(r[0], r[1], float(r[2]), r[3]): int(r[4]) for r in cur.fetchall()}
+    except Exception as e:  # noqa: BLE001
+        print(f"DELTA|targets unavailable ({type(e).__name__}) - board order", flush=True)
+        return {}
+
+
 DEADLINE = time.time() + float(os.getenv("PP_MAX_MINUTES", "34")) * 60
 OUT_DIR = Path(os.getenv("PP_OUT_DIR") or "nba/data/pp_payouts")   # WNBA -> its own directory: the NBA loader never reads it
 
@@ -564,6 +582,12 @@ def main():
             partners = pick_distinct(std, 4)
             new = [r for r in alt if (r["id"], r["line"]) not in mined]
             before = [r for r in alt if (r["id"], r["line"]) in mined]
+            prio = alt_targets()
+            if prio:
+                key = lambda r: prio.get((str(r["name"]).lower(), r["stat"], float(r["line"]), r["odds"]), 10 ** 6)  # noqa: E731
+                new.sort(key=key)                            # stable: the rest keeps the board order
+                hit = sum(1 for r in new if key(r) < 10 ** 6); done = sum(1 for r in before if key(r) < 10 ** 6)
+                print(f"DELTA|model targets today={len(prio)}|to quote first={hit}|already quoted at this line={done}", flush=True)
             random.Random(int(time.time()) // 3600).shuffle(before)
             drift = before[:N_DRIFT]
             result["meta"].update({"mode": "delta", "baseline_pairs": len(mined), "new_legs": len(new),

@@ -494,6 +494,18 @@ jobs:
           CERT_DATE: ${{ steps.d.outputs.asof }}
         run: python nba/certify_pipeline.py
 
+      # SHADOW LIST (2026-11-19, NBA_HONEST_REBUILD.md O17; research only - no slip, score or screen reads it): the model's own top
+      # goblins / demons of today -> nba_score.honest_alt_targets, so the midday PrizePicks quote run prices THOSE first inside its
+      # existing budget. Soft, 3 minutes at most, after everything else: it can never fail or delay the slate build.
+      - name: Shadow list of the model's top goblins / demons (soft, research only)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SH_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/shadow_alt_targets.py
+
       # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): the continue-on-error steps above never fail the run,
       # so a failed roster refresh / name map / whole-number pricing was invisible in nba_control.pipeline_runs. Collected here,
       # recorded on the run row by the finish job (SOFT_FAILED) as a run warning + note.
