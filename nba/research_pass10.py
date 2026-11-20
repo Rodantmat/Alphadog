@@ -22,7 +22,8 @@ import psycopg
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 COMBO = ("pra", "pts_reb", "pts_ast", "reb_ast", "stocks", "fantasy_score", "double_double")
 SEAS = ["2024-25", "2025-26", "2026-27"]; STAKE = 10.0
-PP_FLEX = {(4, 0): 6.0, (4, 1): 1.5, (5, 0): 10.0, (5, 1): 2.0, (5, 2): 0.4, (6, 0): 25.0, (6, 1): 2.0, (6, 2): 0.4}
+HALF = os.environ.get("P10_HALF") == "1"      # PrizePicks: half-point lines only (pass 14)
+PP_FLEX = {(3, 0): 6.0, (4, 0): 6.0, (4, 1): 1.5, (5, 0): 10.0, (5, 1): 2.0, (5, 2): 0.4, (6, 0): 25.0, (6, 1): 2.0, (6, 2): 0.4}
 SINGLE = {"points": "pts", "rebounds": "reb", "assists": "ast", "threes_made": "fg3m", "steals": "stl", "blocks": "blk", "turnovers": "tov"}
 MKS = {"player_points": "points", "player_rebounds": "rebounds", "player_assists": "assists", "player_threes": "threes_made", "player_steals": "steals", "player_blocks": "blocks", "player_turnovers": "turnovers"}
 SLP = None; BR = None
@@ -98,6 +99,9 @@ def main():
     bb["season"] = np.where(bb["gd"] < "2026-08-01", "2025-26", "2026-27")
 
     reg = d[(d["kind"] == "regular") & d["app"].isin(["underdog", "prizepicks"]) & d["blend"].notna()]
+    if HALF:
+        n0 = len(reg); reg = reg[(reg["app"] != "prizepicks") | (reg["line"] % 1 != 0)]
+        print(f"P10|PrizePicks half-point lines only: {n0 - len(reg):,} whole-number legs left out of the pool", flush=True)
     L = {}                                                   # (app, gd) -> list of leg dicts by the blend
     for (a, gd), g in reg.sort_values("blend", ascending=False).groupby(["app", "gd"], sort=False):
         L[(a, gd)] = g.to_dict("records")
@@ -143,7 +147,7 @@ def main():
                                  ("U4", 2, "P", [r for r in U if r["prop"] == "rebounds"], {}), ("U5", 2, "P", [r for r in U if r["home"] is True or r["home"] == 1], {})],
                     "prizepicks": [("P1", 5, "F", P, dict(diff_prop=True)), ("P2", 5, "F", [r for r in P if r["line"] < 10], {}), ("P3", 5, "F", P, {}),
                                    ("P4", 5, "F", [r for r in P if r["home"] is True or r["home"] == 1], {}), ("P5", 6, "F", P, {}), ("P6", 6, "F", P, dict(diff_prop=True)),
-                                   ("P7", 6, "F", [r for r in P if not r["starter"]], {}), ("P8", 6, "F", P, dict(skip=p5)), ("P9", 4, "F", P, {})],
+                                   ("P7", 6, "F", [r for r in P if not r["starter"]], {}), ("P8", 6, "F", P, dict(skip=p5)), ("P9", 4, "F", P, {})] + ([("P10", 3, "F", P, {})] if HALF else []),
                     "sleeper": [("S1", 2, "P", onto("sleeper", gd, first(U, 10)), {}), ("S4", 4, "F", onto("sleeper", gd, wide), {}), ("S5", 4, "P", onto("sleeper", gd, wide), {}),
                                 ("S6", 5, "F", onto("sleeper", gd, wide), {})] if s == "2026-27" else [],
                     "fliff": [("F1", 2, "P", onto("fliff", gd, first(U, 10)), {}), ("F4", 4, "P", onto("fliff", gd, wide), {}), ("F5", 5, "P", onto("fliff", gd, wide), {})] if s == "2026-27" else [],
@@ -169,8 +173,8 @@ def main():
                 conc_all.append((s, max(gused.values()), len(gused), sum(gused.values())))
         return pd.DataFrame(rows, columns=["gd", "s", "app", "code", "u", "n"]), pd.DataFrame(conc, columns=["app", "s", "mx", "players"]), pd.DataFrame(conc_all, columns=["s", "mx", "players", "legs"])
 
-    for label, cap, gcap in (("NO CAP (as elected)", None, None), ("a player in at most 3 slips an app", 3, None), ("at most 2 slips an app", 2, None), ("at most 1 slip an app", 1, None),
-                             ("at most 2 an app AND 6 over all apps", 2, 6), ("at most 2 an app AND 4 over all apps", 2, 4), ("at most 1 an app AND 3 over all apps", 1, 3)):
+    for label, cap, gcap in ((("NO CAP (as elected)", None, None),) if HALF else (("NO CAP (as elected)", None, None), ("a player in at most 3 slips an app", 3, None), ("at most 2 slips an app", 2, None), ("at most 1 slip an app", 1, None),
+                             ("at most 2 an app AND 6 over all apps", 2, 6), ("at most 2 an app AND 4 over all apps", 2, 4), ("at most 1 an app AND 3 over all apps", 1, 3))):
         R, C, CA = run(cap, gcap)
         print(f"\nP10|================ {label} ================", flush=True)
         for app in ("underdog", "prizepicks", "sleeper", "fliff", "betr"):
