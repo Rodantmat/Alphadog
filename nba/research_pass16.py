@@ -121,7 +121,7 @@ def main():
                             if gd < "2025-10-01":
                                 continue
                             g = g[base[bn](g)].sort_values(rk, ascending=False)
-                            g = g[[(gd, p, r) in betr for p, r in zip(g["player_id"], g["prop"])]]
+                            g = g[np.array([(gd, p, r) in betr for p, r in zip(g["player_id"], g["prop"])], dtype=bool)]
                             ix = take_idx(g["player_id"].values, g["game_id"].values, g["prop"].values, k)
                             if ix is None:
                                 continue
