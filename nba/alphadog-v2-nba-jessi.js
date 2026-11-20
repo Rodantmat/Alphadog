@@ -7,9 +7,9 @@ import { withPg, q } from "./main_ui/common.js";
 import { overlayLive } from "./main_ui/livecheck.js";
 import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
-const TOP_N = 4;   // owner 2026-11-20: Tier 1 = the 4 strongest slips per app, Tier 2 = the rest (collapsed), best first
+const TOP_N = 4;   // owner 2026-11-18: only the 4 strongest slips per app, best first, no tiers
 const UNIT_MAX = 3, UNIT_CAP_FROM = "2026-11-18";   // owner 2026-11-18 14:15 PT "limit her slips at $3 max per app": the unit never goes above $3 on any app, from this date on
-const VERSION = "alphadog-v2-nba-jessi-v1.3.0";   // v1.3.0 (owner 2026-11-20): Tier 1 top 4 per app, Tier 2 the rest. // v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.2.3";   // v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -145,9 +145,8 @@ async function data(env, token, save = true) {
       for (const r of tr) { const ls = (typeof r.legs === "string" ? JSON.parse(r.legs) : r.legs) || []; let v = 0; for (const l of ls) v += Math.log(Math.max((Number(l.p) || 0.5) * (Number(l.m) || 1.8), 1e-6)); sc[r.app + "|" + r.size + "|" + r.slip_no] = { v: ls.length ? v / ls.length : -99, ok: r.status === "placed" || r.status === "graded" }; }
       if (tr.length) {
         for (const s of slips) { const m = /(\d+)-pick (\d+)/.exec(s.name || ""); const x = m && sc[s.app + "|" + m[1] + "|" + m[2]]; s.rank_v = x ? x.v : -99; s.rank_ok = x ? x.ok : true; }
-        // owner 2026-11-20 15:10 PT: Tier 1 = the TOP_N strongest per app (open), Tier 2 = the rest (collapsed), best first - same as Jon's page
         const keep = []; const apps = []; slips.forEach(s => { if (!apps.includes(s.app)) apps.push(s.app); });
-        for (const a of apps) keep.push(...slips.filter(s => s.app === a && s.rank_ok).sort((x, y) => y.rank_v - x.rank_v).map((s, i) => Object.assign(s, { tier: i < TOP_N ? 1 : 2 })));
+        for (const a of apps) keep.push(...slips.filter(s => s.app === a && s.rank_ok).sort((x, y) => y.rank_v - x.rank_v).slice(0, TOP_N));
         slips.splice(0, slips.length, ...keep);
       }
     } catch (e) { /* the slips show as built */ }
@@ -172,7 +171,6 @@ td,th{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}th{co
 .spin{display:flex;gap:10px;align-items:center;color:var(--mut);padding:24px 0}.dot{width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:r 0.8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
 h2{font-size:15px;margin:18px 0 4px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
 .pair{background:var(--card);border-radius:12px;padding:10px 14px;margin:8px 0}.pair summary{cursor:pointer;font-weight:600;list-style:none}.pair summary::-webkit-details-marker{display:none}.pair[open] summary{margin-bottom:6px}
-.tier{background:transparent;padding:0;margin:6px 0 14px}.tier>summary{display:flex;justify-content:space-between;align-items:center;background:var(--card);border-radius:10px;padding:10px 14px}
 .pl{display:block;color:inherit;text-decoration:none}.pl .go{color:var(--acc);font-size:12px}
 </style></head><body>${BRAND}<div id="app"><div class="spin"><div class="dot"></div><span>Checking every leg on every app…</span></div></div>
 <script>
@@ -208,9 +206,7 @@ function render(d){
   h+='</table>';
   if(!d.slips.length)h+='<p class="sub" style="margin-top:16px">No slips right now. They appear here once the day\\'s lineups are set.</p>';
   for(const a of d.order){const ss=d.slips.filter(s=>s.app===a);if(!ss.length)continue;h+='<h2>'+esc(d.labels[a])+'</h2>';
-    [1,2].forEach(function(tn){var g=ss.filter(function(s){return (s.tier||1)===tn});if(!g.length)return;
-      h+='<details class="pair tier"'+(tn===1?' open':'')+'><summary>Tier '+tn+'<span class="tag">'+g.length+(g.length===1?' slip':' slips')+'</span></summary>';
-      g.forEach(function(s){h+=slipHtml(s,d.slips.indexOf(s))});h+='</details>'})}
+    for(const s of ss){h+=slipHtml(s,d.slips.indexOf(s))}}
   h+='<div id="pairsBox"></div>';
   $('#app').innerHTML=h;window.PD=d;drawPairs()}
 var SHOW={prizepicks:8,sleeper:5,fliff:3};var pOpen={};
