@@ -571,7 +571,7 @@ Headlines from the store:
 
 What the certified numbers support:
 1. **No app, kind, prop, side, rung or player is profitable as a group at real prices.**
-2. **One thin candidate on Underdog and one on PrizePicks**: the top 2-4 regular single-stat Unders of the slate by the blend, about ONE slip a slate per app (8r, 8s). In units of one stake over 2024-25 / 2025-26 / 2026-27: Underdog 2-pick Standard +17.0 / +51.5 / +9.5 (88 / 155 / 29 slips; drawdown 8.0 / 8.5 / 6.5; drought 6 / 6 / 5 slates); PrizePicks 4-pick Flex +19.0 / +36.0 / +23.0 (89 / 147 / 25 slips; drawdown 8.0 / 15.5 / 5.5; drought 6 / 9 / 4); PrizePicks 3-pick Power +22 / +37 / +15 (drawdown 16 / 23 / 9; drought 14 / 23 / 9). Evidence about 2 standard errors per app: probable, not proven.
+2. *(PrizePicks part SUPERSEDED by 8x: on the complete board PrizePicks is negative in 2024-25; Underdog unchanged.)* **One thin candidate on Underdog and one on PrizePicks**: the top 2-4 regular single-stat Unders of the slate by the blend, about ONE slip a slate per app (8r, 8s). In units of one stake over 2024-25 / 2025-26 / 2026-27: Underdog 2-pick Standard +17.0 / +51.5 / +9.5 (88 / 155 / 29 slips; drawdown 8.0 / 8.5 / 6.5; drought 6 / 6 / 5 slates); PrizePicks 4-pick Flex +19.0 / +36.0 / +23.0 (89 / 147 / 25 slips; drawdown 8.0 / 15.5 / 5.5; drought 6 / 9 / 4); PrizePicks 3-pick Power +22 / +37 / +15 (drawdown 16 / 23 / 9; drought 14 / 23 / 9). Evidence about 2 standard errors per app: probable, not proven.
 3. **Sleeper, Fliff: nothing can be certified** - their history prices are derived; 29 real slates are too few. **Betr** has no per-leg price and is outside these leg tables.
 4. **PrizePicks goblins / demons: unanswerable from history** (modelled prices; rule C9). O17 is the way to settle it.
 5. Volume: the honest numbers support roughly 1 slip a slate on each of two apps - far fewer than the live system places.
@@ -659,6 +659,53 @@ More units from the same few legs, at 3-10 times the drawdown: these slips win a
 
 **"Sportsbook lines at pick time" in plain words.** For each prop the system stores what the sportsbooks (DraftKings, FanDuel, ...) were offering at the moment our slips are built. The blend leans on that number more than on anything else. In the two older seasons a sportsbook number at the exact app line exists for 92-95% of Underdog legs; this season for 37% (about 2,000 stored sportsbook rows a day against about 5,500 before). The candidate still works this season with less of it, but the blend is working with one eye closed. Why the capture is thinner has not been looked at yet (O16).
 
+## 8x. PASSES 6 AND 7 - EVERY OPEN ITEM AND EVERY UNTESTED VARIATION (owner 21:07 PT; written 22:12 PT, 2026-11-19)
+
+**CORRECTION FIRST - PrizePicks is weaker than 8u / 8v / 8w said.** A whole-number line (e.g. 5.0) had no honest chance stored (the baseline ladder is on half points), so 9% of PrizePicks regular legs were invisible to the ranking. `LH.attach` now reads the neighbouring half point (coverage 91% -> 99%), pushed legs are kept in a table of their own (`_lr_legs_push`, 8,018 rows), legs and model rebuilt (runs lh8, lm5_*). On the complete board the PrizePicks candidate is NEGATIVE in 2024-25. Underdog did not move by one unit.
+
+| Slip (top regular single-stat Unders by the blend, one a player and a game) | 2024-25 | 2025-26 | 2026-27 | pooled | drawdown | drought |
+|---|---|---|---|---|---|---|
+| Underdog 2-pick Standard (top 2) | +19.3% (+17.0 u, 88) | +33.2% (+51.5 u, 155) | +32.8% (+9.5 u, 29) | +28.7%, +78.0 u | 8.5 | 6 |
+| Underdog 3-pick Standard (top 3) | +13.4% (+11.5 u) | +21.3% (+32.0 u) | +44.4% (+12.0 u) | +21.1%, +55.5 u | 28.5 | - |
+| PrizePicks 3-pick Power (top 3) | -15.2% (-14.0 u, 92) | +35.5% (+55.0 u, 155) | +55.6% (+15.0 u, 27) | +20.4%, +56.0 u | 26.0 | 22 |
+| PrizePicks 4-pick Flex (top 4) | -12.4% (-11.0 u, 89) | +21.4% (+31.5 u, 147) | +44.0% (+11.0 u, 25) | +12.1%, +31.5 u | 15.5 | 8 |
+| PrizePicks 5-pick Flex (top 5) | -5.9% (-4.8 u, 82) | +33.3% (+46.0 u, 138) | +127.3% (+28.0 u, 22) | +28.6%, +69.2 u | 21.8 | 16 |
+| PrizePicks 2-pick Power | -27% | +6% | +14% | -4.2% | 32 | - |
+
+The earlier PrizePicks figures (4-pick Flex +21 / +24 / +92%, 3-pick Power +24 / +24 / +56%) are VOID. Runs: rc2 44682855267, cn2 44682863851, bt8_*, tt2 44685832925 (tracker rewritten on the refreshed blend, 807 slips, same numbers to the unit).
+
+**As placed, with pushes paid by the app's rule** (ap2 44682845802, part 2): Underdog 2-pick Standard +78.0 u, +28.7% (no slip had a push). PrizePicks 3-pick Power +47.0 u (+17.2%; 6.6% of slips had a push), 4-pick Flex +26.0 u (+10.0%), 5-pick Flex +57.9 u (+23.9%; 9.9% with a push) - pushes cost PrizePicks 3-8 points. **This season on the raw board with production's own pick-time final_hp / score, did-not-play legs included** (part 3, 30 slates): top-4 legs did not play 7.5-9.2% of the time; Underdog 2-pick Standard +10.0% by final_hp, +38.3% by score, 3-pick Standard +89.7% / +84.5%; PrizePicks 2-pick Power +16.7% / +43.3%, 3-pick Power -3.4% / +17.2%, 4-pick Flex +7.4% / +11.1%, 5-pick Flex +6.4% / -5.2%. Thirty slates: direction only.
+
+**Luck test again** (4,000 random draws of the same slip from the same pool, cn2): Underdog 2-pick Standard - 0 of 4,000 as good pooled; by season p = 0.09 / 0.001 / 0.16. PrizePicks 5-pick Flex pooled p = 0.0005, by season 0.29 / 0.004 / 0.004; 3-pick Power pooled 0.018, by season 0.24 / 0.06 / 0.18; 4-pick Flex pooled 0.0015, by season 0.38 / 0.005 / 0.04. So the ranking beat chance in the last two seasons on both apps and did NOT on PrizePicks in 2024-25.
+
+**Range of the result** (10,000 resamples of the slates, p7 44684807698): Underdog 2-pick Standard pooled +28.7%, 5th-95th +11.9 .. +45.4%, above zero in 99.8%; season-weighted +30.3% (+12.2 .. +48.3). PrizePicks 5-pick Flex pooled +28.6% (+0.8 .. +57.7), above zero 95.6%; 3-pick Power +20.4% (-3.6 .. +44.5), 92.9%.
+
+**Pass 7 - what was still untested** (`research_pass7.py`, p7):
+- *Conditions* (slate size, weekday, month, weakest leg's chance, gap to the next leg, largest line, pool size): no split is steady across the three seasons on either app. Underdog by games on the slate 1-3 / 4-6 / 7-9 / 10+: +43 / +20 / +27 / +39%. One note kept, not adopted: two legs of DIFFERENT props +35 / +32 / +50% (200 slips) against the same prop -42 / +37 / -12% (72 slips). April is negative on both apps (9 and 20 slips).
+- *Composition*: Unders + the best Over, best of either side, only legs both rankers agree on, only legs top on both apps, average of the two rankers - none beats the plain top of the list on Underdog (+26.1 / +23.5 / +22.9 / +22.6 / +28.7% against +28.7%). PrizePicks 5-pick Flex by the average of blend and honest baseline -4 / +49 / +135% (+94 u) - still negative in 2024-25.
+- *Staking*: skipping slates below the past median chance, or doubling above it, does not raise the ROI (Underdog +26.1% and +26.9% against +28.7% flat). Flat stays.
+- *Two-factor layering* (28 pairs of the 8 strongest factors inside the battery, ly_underdog 44682882649, ly_prizepicks 44682900906; 258,329 and 87,467 strategies): no pair improves the unfiltered top of the list in all three seasons on either app.
+- *Rank caps / round robins* (rc2): Underdog ranks 1-2 only (ranks 2-3 -0.2%); every 2-pick of the top 3 +9 / +16 / +17% (+107 u on 3 slips a slate, drawdown 30). PrizePicks cap about 5 legs; one leg a game beats no rule.
+- *Betr* (`research_betr_candidate.py`, be1 44682994726; real Betr tables incl. the all-Less discount; 129 slates, one season of boards): the same family is flat to negative - all-Unders 2-pick -2.5%, 3-pick -8.3%, 4-pick +10.5% / -0.8% (perfect / dynamic), 5-pick -11.6% / -3.3%. Nothing to carry.
+- *Sleeper / Fliff this season at real multipliers* (lm5_*, bt8_fliff 44685205872, bt8_sleeper 44685215510; 29 slates): Sleeper top of list negative to flat (top 6 -2.6%, top 10 +2.9%). Fliff: the blend's top 6 a slate hit 68.4%, +11.0% a leg [+0.8 .. +19.5] (174 legs), 3-pick +21% - a lead on one month of data, not a result.
+
+**Portfolio - the slips run together, 1 unit a slip** (p7 part D):
+
+| Set | 2024-25 | 2025-26 | 2026-27 | pooled | slips a slate | drawdown | drought | losing months | worst 10 slates |
+|---|---|---|---|---|---|---|---|---|---|
+| Underdog 2-pick Standard alone | +17.0 u (+19.3%) | +51.5 u (+33.2%) | +9.5 u (+32.8%) | +78.0 u, +28.7% | 1.00 | 8.5 | 6 | 3 of 13 | -6.5 u |
+| + PrizePicks 5-pick Flex | +12.2 u (+7.2%) | +97.5 u (+33.3%) | +37.5 u (+73.5%) | +147.2 u, +28.6% | 1.80 | 17.9 | 6 | 4 of 13 | -13.3 u |
+| + PrizePicks 3-pick Power | +3.0 u (+1.7%) | +106.5 u (+34.4%) | +24.5 u (+43.8%) | +134.0 u, +24.5% | 1.92 | 24.5 | 8 | 3 of 13 | -16.5 u |
+| + PrizePicks 4-pick Flex | +6.0 u (+3.4%) | +83.0 u (+27.5%) | +20.5 u (+38.0%) | +109.5 u, +20.5% | 1.87 | 16.5 | 5 | 2 of 13 | -13.5 u |
+| PrizePicks 5-pick Flex alone | -4.8 u (-5.9%) | +46.0 u (+33.3%) | +28.0 u (+127.3%) | +69.2 u, +28.6% | 1.00 | 21.8 | 16 | 4 of 13 | -8.8 u |
+| all five slips | -1.3 u (-0.3%) | +216.0 u (+29.0%) | +75.5 u (+58.1%) | +290.2 u, +22.1% | 4.60 | 56.2 | 5 | 5 of 13 | -40.3 u |
+
+Underdog top 2 and PrizePicks top 5 share 0 / 1 / 2 players on 108 / 95 / 26 of 229 common slates; their daily results are almost unrelated (correlation +0.07).
+
+**O16 answered - why sportsbook lines are thin this season.** Not a fault, a different capture: the two older seasons were BACKFILLED with full alternate ladders (19 markets, about 5,500 consensus rows a day); this season is captured LIVE with main lines only (10-11 markets, about 2,500 rows a day) and the book list changed on the way: DraftKings (thin) + Bovada at the start, novig from 11-01, BetMGM from 11-11, FanDuel from 11-13, Pinnacle stopped 11-08, BetOnline absent; about 2.1 books a row since 11-13. Restoring the older depth means capturing alternate lines live (more requests against the odds source) - a cost decision for the owner, not taken here.
+
+**O17 design (not built - it touches the live side, D8).** To quote goblins the model itself would pick, a pick-time copy of the honest number is needed: after P3 mines the board, run the honest baseline + blend on that board into a shadow table (no slip reads it), take the 30 best goblin / demon legs a slate by predicted return and send them through the existing GitHub Actions quote job. About 6 weeks of that gives ~1,000 real quotes on model picks, enough to say yes or no. Today's only evidence: 313 such legs at real quotes, about +2%.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -670,8 +717,8 @@ More units from the same few legs, at 3-10 times the drawdown: these slips win a
 - **O7 (owner, older, still open)**: re-grade Sleeper Flex records (+8.92u -> +11.63u); nightly check of placed Sleeper entries; Jessica "$3 max per app" reading; Jon's no-Save fallback; view the Jon / Jessi pages live; check the "Unverified" filter count after v1.5.8.
 - **O9**: Underdog R-tier anomaly this season (+11.7 pts on 3,107 legs) - check what those lines are before using.
 - **O10**: leg-ROI blend (model log-odds + price log-odds, walk-forward) re-run on the honest baseline; `research_leg_roi_model.py` / `_proof.py` need a loader that reads `baseline_history_h`.
-- **O16**: sportsbook lines at pick time are thin this season (window rows a day ~2,000 vs ~5,500 in the earlier seasons; exact-line coverage of Underdog legs 37% vs 92-95%). The sportsbook is the strongest input of every per-leg model (8p). Find why (source, markets, credits) and what restoring it costs before touching anything.
-- **O17**: settle the PrizePicks goblin question with real quotes on the model's own top picks (8p, B2) - a daily targeted quote list inside the existing quote budget; needs a pick-time honest score, so it belongs to the live discussion (D8).
+- **O16 (cause found, 8x; owner decision: capture alternate lines live or not)**: sportsbook lines at pick time are thin this season (window rows a day ~2,000 vs ~5,500 in the earlier seasons; exact-line coverage of Underdog legs 37% vs 92-95%). The sportsbook is the strongest input of every per-leg model (8p). Find why (source, markets, credits) and what restoring it costs before touching anything.
+- **O17 (design in 8x)**: settle the PrizePicks goblin question with real quotes on the model's own top picks (8p, B2) - a daily targeted quote list inside the existing quote budget; needs a pick-time honest score, so it belongs to the live discussion (D8).
 - **O8**: the 2026-12-20 scheduled calibration re-test predates this finding - its brief must be rewritten once the honest history exists.
 
 ## 10. Method rules learned in this work (apply to every next step)
@@ -738,3 +785,4 @@ External (read for this work):
 - **2026-11-19 20:45-19:07 PT** - Daily referee extended (honest history of the season, per-leg model, store, forward tracker `audit_top_list_tracker.py` -> `nba_score.honest_top_list`; run tt1 44665360385 reproduces the battery's numbers to the unit: an independent cross-check). Section 1 items 9-12. Final report sent to the owner.
 - **2026-11-19 19:12 PT (read after the 21:00 report)** - Owner: continue, every angle, keep doing passes. Pass 2 (new keys incl. production final_hp / score this season, single props, 25 factors, game cap) and pass 3 (exact random-draw null) run and recorded in 8v. Result: the ranking is real (0 of 4,000 random draws match the candidates), profit above zero remains about 2 standard errors, no second candidate.
 - **2026-11-19 20:48 PT (read after the pass 2-3 report)** - Owner: strategies deployable if they hold; keep quoting goblins / demons; Sleeper / Fliff with derived boards; does not understand the sportsbook-lines issue; are the numbers proven on real legs / boards / slips; then composition, rank caps, variations. Passes 4-5 run and recorded in 8w: Underdog holds as placed; PrizePicks holds only under the blend (not under the honest baseline over all of 2024-25) and loses 2-3 points to pushes; caps Underdog 2 legs / PrizePicks 5 legs; goblins about zero after the real-price correction.
+- **2026-11-19 21:07 PT** - Owner: "Cover every aspect and issues that still open and also all untested variations, techniques and aspects untested. No exceptions. Keep going". Passes 6-7 (written 22:12 PT): O16 cause found; whole-number-line fix + push table + rebuild (lh8, lm5); as placed parts 2-3 (ap2); rank caps (rc2), luck test (cn2), battery (bt8_* four apps), two-factor layering (ly_*), Betr (be1), conditions / composition / staking / portfolio / range (p7), tracker rewritten (tt2). Section 8x. Result: Underdog 2-pick Standard holds on every test (+28.7%, +78 u, 272 slips); PrizePicks CORRECTED down - negative in 2024-25 on the complete board; nothing else improves the plain top of the list; Fliff is a one-month lead; Betr and Sleeper nothing. Live untouched.
