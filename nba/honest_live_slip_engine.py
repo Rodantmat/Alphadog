@@ -10,7 +10,7 @@ WHAT IT BUILDS, every slate, from the SAME legs and in the SAME order as the cer
                 The model chance live is production's own baseline_hp for the leg (nba_score.final_hp) - the live twin of the honest history's number.
   Underdog (2-pick Standard)   U1 top 2 by blend | U2 top 2 by second | U3 PrizePicks' order played on Underdog | U4 top 2 rebounds | U5 top 2 home players
   PrizePicks (Flex)            P1 5 different props | P2 5, lines under 10 | P3 top 5 | P4 5 home players | P5 top 6 | P6 6 different props | P7 6 bench roles
-                               P8 6, none of P5's players | P9 top 4
+                               P9 top 4 | P10 3-pick POWER top 3 (half-point lines only on PrizePicks)
   Sleeper / Fliff / Betr       the qualified legs (Underdog top 2 + PrizePicks top 5, best first) as that app's own Under on its own line and price:
                                S1 2-pick Max (Underdog's top 2) | S4 4-pick Flex | S5 4-pick Max | S6 5-pick Flex
                                F1 2-pick (Underdog's top 2) | F4 4-pick | F5 5-pick
@@ -36,9 +36,10 @@ MK = {"player_points": "points", "player_rebounds": "rebounds", "player_assists"
 WEIGHTS = {"underdog": [-0.174, 0.093, -0.148, 0.298, -0.054, 0.666, 0.085], "prizepicks": [-0.178, 0.105, -0.020, 0.205, -0.026, 0.923, 0.071]}
 BREAK_EVEN = {"underdog": 1 / 1.8708, "prizepicks": 0.542}
 ALL_APPS = ("prizepicks", "underdog", "sleeper", "fliff", "betr")
+HALF_ONLY = True
 NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-only ranking", "U3": "U3 PrizePicks' top Unders on Underdog", "U4": "U4 top 2 rebounds Unders",
          "U5": "U5 top 2 Unders, home players", "P1": "H_P1_5flex_props", "P2": "H_P2_5flex_under10", "P3": "H_P3_5flex_top5", "P4": "H_P4_5flex_home", "P5": "H_P5_6flex_top6",
-         "P6": "H_P6_6flex_props", "P7": "H_P7_6flex_bench", "P8": "H_P8_6flex_second", "P9": "H_P9_4flex_top4", "S1": "H_S1_2max", "S4": "H_S4_4flex", "S5": "H_S5_4max",
+         "P6": "H_P6_6flex_props", "P7": "H_P7_6flex_bench", "P9": "H_P9_4flex_top4", "P10": "H_P10_3power_top3", "S1": "H_S1_2max", "S4": "H_S4_4flex", "S5": "H_S5_4max",
          "S6": "H_S6_5flex", "F1": "H_F1_2max", "F4": "H_F4_4max", "F5": "H_F5_5max", "B1": "H_B1_3perfect", "B5": "H_B5_3perfect_pp"}
 
 
@@ -120,6 +121,10 @@ def load_sources(conn, day, weights):
     import ud_live_slip_engine as UD
     pp = [l for l in LSE.load_board_legs_live(conn, day, "window") if l["rank_key"] == "baseline_hp" and l["tier"] == "R" and str(l["side"]).lower().startswith("u")
           and l["prop"] in SINGLE and l["score"] is not None]
+    # owner 2026-11-20 00:00 PT ("if brings ROI up, bring it in"): PrizePicks takes half-point lines only - a whole-number line can push and a push drops the
+    # slip a size (pass 13: 3-pick Power +17% -> +27%, 4-pick Flex +10% -> +24%, 5-pick Flex +24% -> +39% as placed). Switch: honest_live.pp_half_point_only.
+    if HALF_ONLY:
+        pp = [l for l in pp if abs(float(l["line"]) % 1) > 1e-9]
     ud = [l for l in UD.load_legs(conn, day) if l["rank_key"] == "baseline_hp" and l["tier"] == "R" and str(l["side"]).lower().startswith("u")
           and l["prop"] in SINGLE and l["score"] is not None]
     ctx = context(conn, day, {str(l["player_id"]) for l in pp + ud})
@@ -174,7 +179,6 @@ def build(conn, day, apps, weights=None):
         add("underdog", "U4", 2, "standard", [r for r in U if r["prop"] == "rebounds"])
         add("underdog", "U5", 2, "standard", [r for r in U if r["home"]])
     if "prizepicks" in apps:
-        p5 = pick(P, 6)
         add("prizepicks", "P1", 5, "flex", P, diff_prop=True)
         add("prizepicks", "P2", 5, "flex", [r for r in P if r["line"] < 10])
         add("prizepicks", "P3", 5, "flex", P)
@@ -182,8 +186,8 @@ def build(conn, day, apps, weights=None):
         add("prizepicks", "P5", 6, "flex", P)
         add("prizepicks", "P6", 6, "flex", P, diff_prop=True)
         add("prizepicks", "P7", 6, "flex", [r for r in P if not r["starter"]])
-        add("prizepicks", "P8", 6, "flex", P, skip={r["pid"] for r in (p5 or [])})
         add("prizepicks", "P9", 4, "flex", P)
+        add("prizepicks", "P10", 3, "power", P)             # P8 (6-pick, second team) retired 2026-11-20: flat under the half-point rule; P10 = 3-pick Power, top 3
     tight = sorted(first(U, 2) + first(P, 5), key=lambda r: (-r["blend"], r["pid"]))
     for app, specs in (("sleeper", (("S1", 2, "max", "u2"), ("S4", 4, "flex", "t"), ("S5", 4, "max", "t"), ("S6", 5, "flex", "t"))),
                        ("fliff", (("F1", 2, "max", "u2"), ("F4", 4, "max", "t"), ("F5", 5, "max", "t"))),
@@ -283,6 +287,8 @@ def main():
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         conn.execute("SET statement_timeout = '240s'")
         g = gate(conn)
+        global HALF_ONLY
+        HALF_ONLY = g.get("pp_half_point_only", True) is not False
         if not g.get("enabled") and not dry and os.environ.get("HL_TEST") != "1":
             log(f"HONEST_LIVE|disabled (classification_config honest_live.enabled) - nothing built for {day}; the other engines' slips stand"); return
         want = [a.strip() for a in (os.environ.get("HL_APPS") or ",".join(g.get("apps") or ALL_APPS)).split(",") if a.strip()]
