@@ -484,6 +484,38 @@ Readings:
 
 Next (D2): remove duplicate strategies (identical slip series), apply the owner's exposure rules, shortlist per app with slips a day / drawdown / droughts, portfolios, and the per-leg store (phase C) from the same tables.
 
+## 8r. PHASE D2 - WHERE THE EDGE IS AND HOW DEEP IT GOES (2026-11-19 18:47 PT; runs bt4_*, bt5_*)
+
+Engine changes: identical slip series removed (11,232 on Underdog), leg hit rate per strategy, the FOCUS surface (one pre-stated family printed whole: regular lines, top of the list, no form filter, no minimum - every key x side x props x size x structure, controls included), Sleeper / Fliff on this season's real slates only, split halves of this season.
+
+**The one family that is positive in all three seasons on both apps with real prices: the top regular single-stat Unders of the slate by the blended number.** ROI by season 2024-25 / 2025-26 / 2026-27, 1 slip a slate:
+| Underdog (break-even 2-pick Standard 0.5345) | slips | leg hit | ROI [90% range] | drawdown (units) | drought (slates) |
+|---|---|---|---|---|---|
+| 2-pick Standard, top 2 | 88 / 155 / 29 | 0.545 / 0.623 / 0.552 | +19.3% [-9..+47] / +33.2% [+11..+56] / +32.8% [-28..+93] | 8.0 / 8.5 / 6.5 | 6 / 6 / 5 |
+| 2-pick Standard x 2 a slate (top 4) | 176 / 310 / 58 | 0.540 / 0.563 / 0.595 | +7.4% / +10.6% [-4..+26] / +32.8% [-3..+69] | 12.0 / 14.5 / 6.0 | 6 / 5 / 3 |
+| 2-pick Standard x 3 a slate (top 6) | 264 / 465 / 87 | 0.557 / 0.560 / 0.563 | +19.3% [+2..+34] / +9.9% [-3..+22] / +16.7% [-11..+45] | 13.5 / 21.5 / 7.5 | 3 / 3 / 2 |
+| 3-pick Flex, top 3 | 86 / 150 / 27 | 0.543 / 0.584 / 0.543 | +1.0% / +7.9% / +8.6% | 8.2 / 6.4 / 7.7 | 3 / 4 / 5 |
+| 4-pick Flex x 2 (top 8) | 166 / 284 / 50 | 0.563 / 0.542 / 0.525 | +27.1% / +2.3% / +14.4% | 20.8 / 24.6 / 13.2 | 4 / 4 / 5 |
+
+| PrizePicks (break-even 0.542 Flex 5/6, 0.550 3-pick Power, 0.577 2-pick Power) | slips | leg hit | ROI [90% range] | drawdown | drought |
+|---|---|---|---|---|---|
+| 4-pick Flex, top 4 | 89 / 147 / 25 | 0.579 / 0.570 / 0.650 | +21.3% [-7..+53] / +24.5% [-2..+48] / +92.0% [+26..+170] | 8.0 / 15.5 / 5.5 | 6 / 9 / 4 |
+| 4-pick Flex x 2 (top 8) | 178 / 294 / 50 | 0.558 / 0.548 / 0.605 | +15.4% / +7.1% / +41.0% | 11.0 / 20.5 / 6.5 | 3 / 3 / 1 |
+| 3-pick Power, top 3 | 92 / 155 / 27 | 0.569 / 0.570 / 0.630 | +23.9% [-15..+63] / +23.9% [-3..+59] / +55.6% [-33..+144] | 16 / 23 / 9 | 14 / 23 / 9 |
+| 4-pick Power, top 4 | 89 / 147 / 25 | 0.579 / 0.570 / 0.650 | +12.4% / +36.1% / +140% | 25 / 23 / 9 | 25 / 23 / 9 |
+| 5-pick Flex, top 5 (both sides, single stats) | 82 / 138 / 22 | - | +12.2% / +31.9% / +176% | 14.0 / 17.2 / 4.4 | 8 / 12 / 4 |
+| 2-pick Power, top 2 | 95 / 161 / 29 | 0.521 / 0.596 / 0.638 | -2.1% / +6.2% / +24.1% | 15 / 9 / 9 | 8 / 8 / 9 |
+| 3-pick Flex x 3 (top 9) | 276 / 465 / 81 | 0.537 / 0.541 / 0.576 | -9.8% / -12.3% / 0.0% | 29 / 62 / 10 | 6 / 13 / 5 |
+
+How to read it:
+1. **The edge is at the very top of the list and it is thin**: legs ranked 1-4 hit 0.55 - 0.62; by the third slip of a slate (legs 7-9) the hit rate is back at the break-even. About ONE slip a slate per app carries it. Pooled over three seasons: PrizePicks top-4 legs ~1,040 legs at ~0.575 against 0.542; Underdog top-2 legs ~540 legs at ~0.59 against 0.5345 - about 2 to 2.7 standard errors each, before allowing for the fact that "single stats" and "Under" were chosen by looking.
+2. Over sides are negative everywhere; with combos included the PrizePicks result disappears in 2024-25; the sportsbook number alone is weaker than the blend; placebo and random controls are negative in the two full seasons (this season they are noisy: 29 slates).
+3. Per-season ranges mostly include zero. This is a consistent, modest result - not a proven one. It agrees with the earlier leads (8g, 8l, 8m: the top of the system's regular Unders).
+4. **Sleeper and Fliff on 29 real slates: nothing can be selected** (split halves: chosen on one half, read on the other: -62% / -52% / -32% on Sleeper; Fliff swings +176% to -15% with random controls at +7 / +28 / +14). They need more real slates.
+5. PrizePicks goblin / demon slips stay uncounted (C9).
+
+**Database housekeeping (owner 18:39 / 18:41 PT: database at 90%, upgrading the plan, "only if there is some very easy cleaning").** Lossless only: the three scratch tables of this rebuild rewritten densely (`VACUUM FULL` on `baseline_history_h`, `_lr_legs_hp`, `_lr_legs_h` - row counts identical before / after: 785,325 / 4,651,922 / 5,076,317). Database 48 GB -> 47 GB. Measured and left alone (production tables, for the existing lossless tool `db_compact.py` off-hours): `tier_map_legs` ~340 MB free, `final_hp` ~330 MB, `board_outcomes` ~170 MB. Nothing deleted.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -557,3 +589,5 @@ External (read for this work):
 - **2026-11-19 16:00-17:16 PT** - Phase A closed: combos 3/3, history rebuilt, input audit 7/7 after extending the in-play guard to all seasons. Phase B1 model run on four apps (lm, lm2), goblin prices bounded by real quotes, B2 real-quote check (pq). Section 8p. Open item O16 (thin sportsbook capture this season).
 - **2026-11-19 18:12 PT** - Owner: "If everything can be done in sequence non stopping, not depending on tomorrows data, better that way. Try have it finished for tomorrow 1:30pm". Answered 18:45 with the state: steps 1-2 done, battery first pass run on four apps, first reading. Target: Fri 13:30 PT.
 - **2026-11-19 17:16-18:18 PT** - Phase B closed (lm3 trailing layers rejected, lm4 final model stored), Phase D engine written with placebo / random controls per structure and a walk-forward of the selection; first pass on four apps (bt3_*). Section 8q.
+- **2026-11-19 18:39 / 18:41 PT** - Owner: database at 90%, any cleanup without losing data? then: upgrading the plan, only very easy cleaning. Done: lossless rewrite of this rebuild's three scratch tables (-0.8 GB, row counts verified). Nothing deleted.
+- **2026-11-19 18:45-18:47 PT** - Battery D2 (duplicates, leg hit rates, focus surface, real-only Sleeper / Fliff). Section 8r: the edge is the top 2-4 regular single-stat Unders by the blend, about one slip a slate per app, Underdog and PrizePicks; Sleeper / Fliff cannot be selected on 29 real slates.
