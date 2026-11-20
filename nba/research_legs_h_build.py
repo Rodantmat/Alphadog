@@ -154,7 +154,9 @@ def run_app():
                 for p_, c in GRPC.items():
                     x = x + b[c] * (pr == p_)
                 x = x + b[9] * np.isin(pr, list(COMBO))
-                m[k] = np.exp(x)
+                # PHYSICAL BOUNDS (2026-11-19, 11,873 real quotes): a goblin never pays more than a regular leg (real factors 0.535 .. 0.967), a demon never
+                # less (1.097 .. 7.51). The fit put 5% of goblins ABOVE 1.0 - impossible prices that every model then "found" as an edge.
+                m[k] = np.clip(np.exp(x), 0.535, 0.967) if kd == "goblin" else np.clip(np.exp(x), 1.097, 7.51)
             # Under alternates (new this season): the STACKED fit was trained on Over rungs only. 111 real Under quotes (2026-10-20..11-19) show the stored
             # factor reads 0.93-0.97 of the real 2-pick factor (mean abs error 7.5%) -> re-centre by 0.95 and convert to the sharp 6-pick read. Tier gets "-u".
             ua = (df["kind"].isin(["goblin", "demon"]) & ~df["side"].str.lower().str.startswith("o")).values
