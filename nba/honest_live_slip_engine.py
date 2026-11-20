@@ -8,7 +8,7 @@ WHAT IT BUILDS, every slate, from the SAME legs and in the SAME order as the cer
   the ranking   blend  = logistic on [model chance, sportsbook chance at the exact line, price]  (weights of the month from the walk-forward fit)
                 second = the model's baseline chance alone (no sportsbook input)
                 The model chance live is production's own baseline_hp for the leg (nba_score.final_hp) - the live twin of the honest history's number.
-  Underdog (2-pick Standard)   U1 top 2 by blend | U2 top 2 by second | U3 PrizePicks' order played on Underdog | U4 top 2 rebounds | U5 top 2 home players
+  Underdog (2-pick Standard)   U1 top 2 by blend | U2 top 2 by second | U3 PrizePicks' order played on Underdog | U4 top 2 rebounds | U5 top 2 home players | U6 3-pick Standard, top 3 rebounds
   PrizePicks (Flex)            P1 5 different props | P2 5, lines under 10 | P3 top 5 | P4 5 home players | P5 top 6 | P6 6 different props | P7 6 bench roles
                                P9 top 4 | P10 3-pick POWER top 3 (half-point lines only on PrizePicks)
   Sleeper / Fliff / Betr       the qualified legs (Underdog top 2 + PrizePicks top 5, best first) as that app's own Under on its own line and price:
@@ -38,7 +38,7 @@ BREAK_EVEN = {"underdog": 1 / 1.8708, "prizepicks": 0.542}
 ALL_APPS = ("prizepicks", "underdog", "sleeper", "fliff", "betr")
 HALF_ONLY = True
 NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-only ranking", "U3": "U3 PrizePicks' top Unders on Underdog", "U4": "U4 top 2 rebounds Unders",
-         "U5": "U5 top 2 Unders, home players", "P1": "H_P1_5flex_props", "P2": "H_P2_5flex_under10", "P3": "H_P3_5flex_top5", "P4": "H_P4_5flex_home", "P5": "H_P5_6flex_top6",
+         "U5": "U5 top 2 Unders, home players", "U6": "U6 top 3 rebounds Unders (3-pick Standard)", "P1": "H_P1_5flex_props", "P2": "H_P2_5flex_under10", "P3": "H_P3_5flex_top5", "P4": "H_P4_5flex_home", "P5": "H_P5_6flex_top6",
          "P6": "H_P6_6flex_props", "P7": "H_P7_6flex_bench", "P9": "H_P9_4flex_top4", "P10": "H_P10_3power_top3", "S1": "H_S1_2max", "S4": "H_S4_4flex", "S5": "H_S5_4max",
          "S6": "H_S6_5flex", "F1": "H_F1_2max", "F4": "H_F4_4max", "F5": "H_F5_5max", "B1": "H_B1_3perfect", "B5": "H_B5_3perfect_pp"}
 
@@ -178,6 +178,7 @@ def build(conn, day, apps, weights=None):
         add("underdog", "U3", 2, "standard", [ukey[(r["pid"], r["prop"])] for r in P if (r["pid"], r["prop"]) in ukey])
         add("underdog", "U4", 2, "standard", [r for r in U if r["prop"] == "rebounds"])
         add("underdog", "U5", 2, "standard", [r for r in U if r["home"]])
+        add("underdog", "U6", 3, "standard", [r for r in U if r["prop"] == "rebounds"])     # owner 2026-11-20 00:25 PT: "Standard top 3 rebounds under is deployable" (+22 / +23 / +56%)
     if "prizepicks" in apps:
         add("prizepicks", "P1", 5, "flex", P, diff_prop=True)
         add("prizepicks", "P2", 5, "flex", [r for r in P if r["line"] < 10])
