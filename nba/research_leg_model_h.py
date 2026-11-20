@@ -40,6 +40,7 @@ import research_cell_scan_honest as CS                      # noqa: E402  (injur
 
 WRITE = (os.environ.get("LM_WRITE") or "0") == "1"
 ROUNDS = int(os.environ.get("LM_ROUNDS") or 300)
+TRAIL = (os.environ.get("LM_TRAIL") or "0") == "1"
 SEAS = ["2024-25", "2025-26", "2026-27"]
 SW = {0: 1.0, 1: 0.6, 2: 0.35}
 T0 = time.time()
@@ -146,8 +147,9 @@ def load(conn):
     t = df[["gd", "player_id", "prop", "under"]].merge(reg.drop(columns=["hit"]), on=["gd", "player_id", "prop", "under"], how="left")
     t = t.merge(pl.drop(columns=["hit"]), on=["gd", "player_id", "under"], how="left").merge(sl.drop(columns=["hit"]), on=["gd", "prop", "under"], how="left")
     # legs of a player / prop / side with no regular leg that day stay empty on the player layers (the trees handle missing)
-    for c in ("tr_pl10", "tr_pl_n", "tr_plall10", "tr_slate7", "tr_slate21"):
-        X[c] = t[c].values
+    if TRAIL:                                               # run lm3: the trees give these layers weight and get WORSE out of sample -> off by default
+        for c in ("tr_pl10", "tr_pl_n", "tr_plall10", "tr_slate7", "tr_slate21"):
+            X[c] = t[c].values
     X = X.astype("float32")
     return df, X
 
@@ -185,7 +187,7 @@ def main():
     feats = list(X.columns); cat = ["prop", "kind"]
     log(f"features {len(feats)}: {feats}")
     log("coverage: " + ", ".join(f"{c} {100 * X[c].notna().mean():.0f}%" for c in ("ph", "pb", "bline_d", "oline_d", "avs_d", "min_out") if c in X))
-    P = {k: np.full(len(df), np.nan) for k in ("blend", "gbm", "placebo")}
+    P = {k: np.full(len(df), np.nan) for k in ("blend", "gbm", "gbm_s", "placebo")}
     months = sorted(set(ym)); imp = np.zeros(len(feats)); nfit = 0
     Zall = np.c_[lg(np.nan_to_num(X["ph"].values, nan=.5)), np.isnan(X["ph"].values), lg(np.nan_to_num(X["pb"].values, nan=.5)), np.isnan(X["pb"].values), lg(X["be"].values), X["under"].values]
     for mth in months:
@@ -200,11 +202,16 @@ def main():
         off = lg(X["be"].values.astype(float))
         ds = lgb.Dataset(X[tr], label=y[tr], weight=w, categorical_feature=cat, free_raw_data=False, init_score=off[tr])
         m_ = lgb.train(par, ds, num_boost_round=ROUNDS); P["gbm"][te] = 1 / (1 + np.exp(-(m_.predict(X[te], raw_score=True) + off[te]))); imp += m_.feature_importance("gain"); nfit += 1
+        # a small, heavily regularised version (7 leaves, 2,000 legs a leaf): less able to chase noise
+        par_s = dict(par, num_leaves=7, min_data_in_leaf=2000, lambda_l2=20.0)
+        ms_ = lgb.train(par_s, lgb.Dataset(X[tr], label=y[tr], weight=w, categorical_feature=cat, init_score=off[tr]), num_boost_round=max(100, ROUNDS // 2))
+        P["gbm_s"][te] = 1 / (1 + np.exp(-(ms_.predict(X[te], raw_score=True) + off[te])))
         ysh = pd.Series(y[tr]).groupby(df["gd"].values[tr]).transform(lambda v: rng.permutation(v.values)).values
         mp = lgb.train(par, lgb.Dataset(X[tr], label=ysh, weight=w, categorical_feature=cat, init_score=off[tr]), num_boost_round=ROUNDS)
         P["placebo"][te] = 1 / (1 + np.exp(-(mp.predict(X[te], raw_score=True) + off[te])))
         log(f"month {mth}: train {int(tr.sum()):,} legs, test {int(te.sum()):,}; blend weights [const, ph, ph missing, book, book missing, price, under] = {np.round(b, 3).tolist()}")
     P["price"] = 1 / mm; P["honest"] = df["ph"].values; P["book"] = df["pb"].values
+    P["mix"] = 1 / (1 + np.exp(-(0.5 * lg(P["blend"]) + 0.5 * lg(P["gbm"]))))        # half blend, half gbm (log-odds)
     ok = ~np.isnan(P["gbm"])
     log(f"out-of-sample legs {int(ok.sum()):,} of {len(df):,}; models fitted {nfit}")
     order = np.argsort(-imp); print("LM|feature weight in the gbm (gain share): " + ", ".join(f"{feats[i]} {100 * imp[i] / imp.sum():.1f}%" for i in order[:18]), flush=True)
@@ -217,7 +224,7 @@ def main():
                 continue
             gd = df["gd"].values[k]; yy = y[k]; m_k = mm[k]; r = yy * m_k - 1
             print(f"\nLM|=== {APP} {s} {kn}: legs {int(k.sum()):,} on {len(set(gd))} slates; hit {yy.mean():.3f}; return of every leg {100 * r.mean():+.1f}%; price source {df['src'][k].value_counts().to_dict()} ===", flush=True)
-            for nm in ("price", "book", "honest", "blend", "gbm", "placebo"):
+            for nm in ("price", "book", "honest", "blend", "gbm", "gbm_s", "mix", "placebo"):
                 p = P[nm][k]; v = ~np.isnan(p)
                 if v.sum() < 1000:
                     continue
@@ -229,7 +236,7 @@ def main():
                         lo, hi = boot(r[sel], gd[sel])
                         out.append(f"says > {int(100 * thr):+d}%: n {int(sel.sum()):,} / {len(set(gd[sel]))} slates, says {100 * (p[sel] * m_k[sel] - 1).mean():+.1f}%, hit {yy[sel].mean():.3f}, REAL {100 * r[sel].mean():+.1f}% [{100 * lo:+.1f} .. {100 * hi:+.1f}]")
                 print(" | ".join(out), flush=True)
-            for nm in ("honest", "blend", "gbm", "placebo"):
+            for nm in ("honest", "blend", "gbm", "gbm_s", "mix", "placebo"):
                 p = P[nm][k]; t = pd.DataFrame({"gd": gd, "pl": df["player_id"].values[k], "ev": p * m_k - 1, "r": r, "h": yy})
                 t = t[t["ev"].notna()].sort_values("ev", ascending=False).drop_duplicates(["gd", "pl"])
                 out = []
@@ -241,12 +248,13 @@ def main():
         conn = psycopg.connect(os.environ["DATABASE_URL"])
         conn.execute("""CREATE TABLE IF NOT EXISTS nba_score._lr_legs_hp (app text, game_date date, player_id text, prop text, side text, line float8, kind text, tier text,
                         p_blend float4, p_gbm float4, p_placebo float4, built_at timestamptz DEFAULT now())""")
+        conn.execute("ALTER TABLE nba_score._lr_legs_hp ADD COLUMN IF NOT EXISTS p_gbm_s float4")
         conn.execute("DELETE FROM nba_score._lr_legs_hp WHERE app = %s", (APP,))
         with conn.cursor() as cur:
-            with cur.copy("COPY nba_score._lr_legs_hp (app, game_date, player_id, prop, side, line, kind, tier, p_blend, p_gbm, p_placebo) FROM STDIN") as cp:
+            with cur.copy("COPY nba_score._lr_legs_hp (app, game_date, player_id, prop, side, line, kind, tier, p_blend, p_gbm, p_placebo, p_gbm_s) FROM STDIN") as cp:
                 for i in np.where(ok)[0]:
                     cp.write_row((APP, df["gd"].values[i], df["player_id"].values[i], df["prop"].values[i], df["side"].values[i], float(df["line"].values[i]), df["kind"].values[i],
-                                  df["tier"].values[i], float(P["blend"][i]), float(P["gbm"][i]), float(P["placebo"][i])))
+                                  df["tier"].values[i], float(P["blend"][i]), float(P["gbm"][i]), float(P["placebo"][i]), float(P["gbm_s"][i])))
         conn.execute("CREATE INDEX IF NOT EXISTS _lr_legs_hp_i ON nba_score._lr_legs_hp (app, game_date, player_id, prop)")
         conn.commit(); conn.close(); log(f"wrote {int(ok.sum()):,} rows to nba_score._lr_legs_hp")
     print("LM|DONE", flush=True)
