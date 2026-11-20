@@ -263,7 +263,7 @@ def main():
                     if S > MAXG:
                         continue
                     cnt = CNT[c, ki, :S].sum(0).astype(float); prof = PROF[c, ki, si, :S].sum(0).astype(float); win = WIN[c, ki, si, :S].max(0)
-                    if cnt.sum() < (20 if REALONLY else 80):
+                    if cnt.sum() < (20 if (REALONLY or "(this season)" in cb[0]) else 80):
                         continue
                     sig = hash((k, st, prof.tobytes(), cnt.tobytes()))          # the same slips under another name (e.g. kind "all" + side Under = regular Unders)
                     if sig in seen_sig and not cb[0].startswith("CONTROL"):
