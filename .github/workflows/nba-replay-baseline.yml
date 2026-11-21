@@ -1,0 +1,92 @@
+name: NBA Replay Baseline (same pipeline, past dates)
+
+# Owner 2026-11-20 20:58 PT: "run the same formula for every single day. Exactly the same pipeline with the data set for that specific date,
+# the same for all dates." Runs P2B's baseline steps (the production day builders, BT_REPLAY=1) for each date given, with the honest recipe,
+# and loads each slate into the PARALLEL store nba_score.baseline_history_v2 (pruned to that day's boards, as production is a day later).
+# Commits nothing; never writes production tables.
+on:
+  workflow_dispatch:
+    inputs:
+      dates:
+        description: "comma-separated YYYY-MM-DD"
+        required: true
+      honest:
+        default: "1"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BT_HONEST: ${{ github.event.inputs.honest }}
+      BT_REPLAY: "1"
+      BT_CUTOFF: "baseline"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy
+      - name: Replay each date
+        env:
+          DATES: ${{ github.event.inputs.dates }}
+        run: |
+          set -uo pipefail
+          python nba/build_schedule_history.py
+          mkdir -p nba/backtest/reports
+          ok=""; bad=""
+          for D in ${DATES//,/ }; do
+            [[ "$D" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad date $D"; continue; }
+            echo "================ REPLAY $D ================"
+            export BT_ASOF="$D"
+            t0=$(date +%s)
+            (
+              set -e
+              python nba/ensure_season_files.py
+              for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
+                BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py > /tmp/b_$PAIR.log 2>&1 || { tail -40 /tmp/b_$PAIR.log; exit 1; }
+                grep -E "^LADDER:|honest recipe|roster rule|^slate " /tmp/b_$PAIR.log | head -4
+              done
+              for pair in points,rebounds assists,steals blocks,turnovers; do
+                BT_INJURY=1 BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py > /tmp/c_$pair.log 2>&1 || { tail -40 /tmp/c_$pair.log; exit 1; }
+              done
+              BT_INJURY=1 python nba/baseline/build_combos_ladder.py > /tmp/co.log 2>&1 || { tail -40 /tmp/co.log; exit 1; }
+              grep -E "honest recipe" /tmp/co.log | head -1
+              BT_INJURY=1 python nba/baseline/build_periods_ladder.py > /tmp/pe.log 2>&1 || { tail -40 /tmp/pe.log; exit 1; }
+              grep -E "honest recipe|roster rule" /tmp/pe.log | head -2
+              rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
+              python - <<'EOF'
+          import json, glob, os
+          asof = os.environ["BT_ASOF"]; rows = []; meta = None
+          for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
+              d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
+          if not meta:
+              raise SystemExit(f"ABORT: no per-pair ladder files for {asof}")
+          seen, uniq = set(), []
+          for r in rows:
+              k = (r.get("player_id"), r.get("game_id"), r.get("prop"), r.get("period") or "FULL", r.get("line"))
+              if k in seen:
+                  continue
+              seen.add(k); uniq.append(r)
+          meta["rows"] = len(uniq); meta["props"] = sorted({r["prop"] for r in uniq}); meta["players"] = len({r["player_id"] for r in uniq})
+          meta["recipe"] = ("HONEST " if os.environ.get("BT_HONEST") == "1" else "") + (meta.get("recipe") or "")
+          json.dump({"meta": meta, "ladder": uniq}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
+          for f in glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json"):
+              os.remove(f)
+          print("merged", asof, len(uniq), "rows", meta["players"], "players")
+          EOF
+              LOAD_ASOF="$D" LOAD_TABLE=nba_score.baseline_history_v2 LOAD_PRUNE=1 python nba/load_baseline_ladder.py | grep -E "merged|pruned|replay loaded|ABORT"
+              rm -f "nba/data/nba_baseline_ladder_${D}.json"
+            ) && ok="$ok $D" || bad="$bad $D"
+            echo "REPLAY $D done in $(( $(date +%s) - t0 ))s"
+          done
+          echo "REPLAY OK:$ok"
+          echo "REPLAY FAILED:$bad"
+          [ -z "$bad" ]

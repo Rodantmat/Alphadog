@@ -28,7 +28,12 @@ def rep(s, old, new):
     return s.replace(old, new)
 
 
-s = SRC
+# THE HONEST RECIPE (2026-11-20, owner: one formula for every date): nba/baseline/honest_recipe.py, switch BT_HONEST
+import sys as _hsys
+_hsys.path.insert(0, "nba/baseline")
+import honest_recipe as _HR
+s = _HR.harness(SRC)
+print("honest recipe:", "ON" if _HR.on() else "off", flush=True)
 # LADDER DEPTH: the certified recipe uses LADDER_STEPS = 6 (anchor +/- 6). The 2026-03-15 board coverage
 # check showed demons on high scorers reaching roughly anchor + 10 on points and the points-based combos
 # (102 pts_reb legs, 81 pts_ast, 69 pra, 60 points out of ladder range). Extending the range only ADDS
@@ -88,6 +93,8 @@ teams_adv = teams_adv.drop(columns=["GAME_DATE"], errors="ignore")
 teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
 players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)
 _sched = json.loads((DATA / "nba_schedule_current.json").read_text()).get("games", [])
+if os.environ.get("BT_REPLAY", "0") == "1" and (DATA / "nba_schedule_history.json").exists():   # replay of a past season's date (2026-11-20)
+    _sched = _sched + json.loads((DATA / "nba_schedule_history.json").read_text()).get("games", [])
 _replay = os.environ.get("BT_REPLAY", "0") == "1"
 _slate = [g_ for g_ in _sched if str(g_.get("game_date", ""))[:10] == str(ASOF) and (_replay or int(g_.get("game_status") or 1) != 3)]
 players = players[players["GAME_DATE"] < ASOF]; teams = teams[teams["GAME_DATE"] < ASOF]; teams_adv = teams_adv[teams_adv["GAME_DATE"] < ASOF]
@@ -108,9 +115,24 @@ if _cr_path.exists():
 print(f"current roster (§31r): {len(_cur_team)} rostered players" + ("" if _cur_team else " - FILE MISSING OR EMPTY: last-3-games rosters only (old behaviour)"))
 _hist_ids = set(players["PLAYER_ID"])
 _ros_added = _ros_dropped = _ros_nohist = 0
+_AS20 = os.environ.get("BT_HONEST", _HR.DEFAULT) == "1"
+_last_tg, _team_last20 = {}, {}
+if _AS20:
+    _srt = players.sort_values("GAME_DATE")
+    _last_tg = {p_: (t_, g_) for p_, t_, g_ in zip(_srt["PLAYER_ID"], _srt["TEAM_ID"].astype(str), _srt["GAME_ID"].astype(str))}
+    _tg = teams.sort_values("GAME_DATE")
+    for t_, grp_ in _tg.groupby(_tg["TEAM_ID"].astype(str)):
+        _team_last20[t_] = set(grp_["GAME_ID"].astype(str).drop_duplicates().tail(20))
+    print(f"roster rule AS20 (honest): {len(_last_tg)} players with history", flush=True)
 for g_ in _slate:
     gid = str(g_["game_id"]); hid = str(g_["home_team_id"]); aid = str(g_["away_team_id"]); ht = g_.get("home_team_tricode", "HOME"); at = g_.get("away_team_tricode", "AWAY")
     for tid, is_h in ((hid, True), (aid, False)):
+        if _AS20:   # ONE ROSTER RULE live and on any past date (2026-11-20): last game for this team, within the team's last 20 games
+            roster = [p_ for p_, (t_, g_) in _last_tg.items() if t_ == tid and g_ in _team_last20.get(tid, set())]
+            mu = f"{ht} vs. {at}" if is_h else f"{at} @ {ht}"
+            for pid in roster: v_players.append({"season": TEST[0], "PLAYER_ID": pid, "TEAM_ID": tid, "GAME_ID": gid, "GAME_DATE": ASOF, "MATCHUP": mu})
+            v_teams.append({"season": TEST[0], "TEAM_ID": tid, "GAME_ID": gid, "GAME_DATE": ASOF, "MATCHUP": mu})
+            continue
         recent = players[(players["TEAM_ID"] == tid) & (players["season"] == TEST[0])].sort_values("GAME_DATE")
         last_games = recent["GAME_ID"].drop_duplicates().tail(3).tolist()
         _recent_roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()

@@ -27,7 +27,12 @@ def rep(s, old, new):
     return s.replace(old, new)
 
 
-s = SRC
+# THE HONEST RECIPE (2026-11-20, owner: one formula for every date): nba/baseline/honest_recipe.py, switch BT_HONEST
+import sys as _hsys
+_hsys.path.insert(0, "nba/baseline")
+import honest_recipe as _HR
+s = _HR.combos(SRC)
+print("honest recipe:", "ON" if _HR.on() else "off", flush=True)
 s = rep(s, '''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL = 24, 15, 5, 6, 300, 300.0''',
 '''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL = 24, 15, 5, int(os.environ.get("BT_LADDER_STEPS", "10")), 300, 300.0
 # PER-PROP COMBO DEPTH (strategy doc §31s G2, 2026-10-06). The singles builder has a measured per-prop depth table; this builder used
