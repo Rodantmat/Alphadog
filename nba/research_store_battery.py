@@ -2,7 +2,7 @@
 """
 STRATEGY BATTERY FROM ZERO ON THE ONE-FORMULA STORE - REAL PRICES ONLY. READ-ONLY. (owner 2026-11-21: per-leg ROI with real prices only; strategies
 positive in all three seasons, smaller bad days; every structure 2, 3, 4, 5, 6 picks, Power and Flex)
-Legs: PrizePicks REGULAR lines (decision snapshot 'window', market without '_alternate') - the only legs whose payout is known exactly: Power 3 / 6 / 10 /
+Legs (only the 12 props a box score grades, only dates with box scores - player_game_log has no playoff games): PrizePicks REGULAR lines (decision snapshot 'window', market without '_alternate') - the only legs whose payout is known exactly: Power 3 / 6 / 10 /
 20 / 37.5 and the Flex tables. Goblins / demons are left out (their price is not mapped yet). Model numbers from nba_score.board_scored_v2 (final_hp,
 confidence, score of the replayed store - one formula on every date). Graded on the box score: a push or a player who did not play voids the leg and the
 slip pays one size down (a 2-pick with a void refunds).
@@ -50,7 +50,9 @@ def load(conn):
                               s.score::float8 score, s.confidence::float8 conf
                        FROM nba_score.board_scored_v2 s JOIN reg r ON r.game_date = s.game_date AND r.pid = s.player_id::text AND r.prop = s.prop
                             AND r.line = s.line::float8 AND r.side = s.side
-                       WHERE s.app = 'prizepicks' AND s.game_date <= '2026-11-20')
+                       WHERE s.app = 'prizepicks' AND s.game_date <= '2026-11-20'
+                         AND s.prop IN ('points','rebounds','assists','threes_made','steals','blocks','turnovers','pra','pts_reb','pts_ast','reb_ast','stocks')
+                         AND EXISTS (SELECT 1 FROM nba_stats.player_game_log x WHERE x.game_date = s.game_date))
             SELECT s.*, ({STATV})::float8 v, coalesce(g.min, 0)::float8 mins
             FROM s LEFT JOIN nba_stats.player_game_log g ON g.nba_player_id::text = s.pid AND g.game_date = s.game_date"""
     d = pd.read_sql(q.replace("%%", "%"), conn)
