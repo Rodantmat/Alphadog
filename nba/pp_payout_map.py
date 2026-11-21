@@ -727,6 +727,72 @@ def main():
             save("complete (grid)")
             return 0
 
+        if MODE == "combo":
+            # COMBO (owner 2026-11-20 18:20 PT, step 2): two to six goblins / demons in one slip - goblin+goblin, demon+demon, goblin+demon,
+            # More and Less, mixed tiers and stats - filled with the SAME regular legs from other games up to 2..6 picks. Every alternate is
+            # first priced alone beside a regular (section LEG, same run) so the combination rule can be read against the single readings.
+            # Section CMB; note = composition (g/d + o/u per alt) + tiers.
+            rng = random.Random(int(os.getenv("PP_GRID_SEED", str(int(time.time()) // 60))) + (SHARD[0] if SHARD else 0))
+            lad = {}
+            for r in rows:
+                lad.setdefault((r["player"], r["stat"]), []).append(r)
+            tagged = []
+            for key, v in lad.items():
+                st_ = [r for r in v if r["odds"] == "standard"]
+                gs_ = [r for r in v if r["odds"] == "goblin"]; ds_ = [r for r in v if r["odds"] == "demon"]
+                if not gs_ and not ds_:
+                    continue
+                l0 = st_[0]["line"] if st_ else ((max(r["line"] for r in gs_) + min(r["line"] for r in ds_)) / 2.0 if gs_ and ds_ else None)
+                if l0 is None:
+                    continue
+                gs_.sort(key=lambda r: abs(r["line"] - l0)); ds_.sort(key=lambda r: abs(r["line"] - l0))
+                for i, r in enumerate(gs_[:4]):
+                    tagged.append((r, f"G{i + 1}"))
+                for i, r in enumerate(ds_[:4]):
+                    tagged.append((r, f"D{i + 1}"))
+            rng.shuffle(tagged)
+            comps = ["go go", "do do", "go do", "gu du", "go gu", "do du", "go go go", "do do do", "go go do", "go do do", "go du gu",
+                     "go go go go", "do do do do", "go go do do", "go go go go go", "do do do do do", "go go go do do", "go go go go go go",
+                     "do do do do do do", "go go go do do do"]
+            anchors_all = sorted([r for r in std if r["allow"] in ("", "over", "under_or_over")], key=lambda r: (r["game"], r["player"], r["stat"]))
+            priced = set(); n_c = 0; fails = 0
+            result["meta"].update({"mode": "combo", "alts_tagged": len(tagged)})
+            print(f"COMBO|alternates tagged={len(tagged)}|budget={MAX_Q}", flush=True)
+            while getattr(q, "n", 0) < MAX_Q - 10 and fails < 300:
+                comp = comps[n_c % len(comps)].split()
+                n_c += 1
+                chosen, games_, players_ = [], set(), set()
+                for c_ in comp:
+                    kind = "goblin" if c_[0] == "g" else "demon"; side = "over" if c_[1] == "o" else "under"
+                    pick = next(((r, t) for r, t in tagged if r["odds"] == kind and r["game"] not in games_ and r["player"] not in players_
+                                 and (side == "over" or r["allow"] == "under_or_over")), None)
+                    if not pick:
+                        break
+                    tagged.remove(pick); tagged.append(pick)          # rotate so the next combos use other rungs
+                    chosen.append((pick[0], pick[1], side)); games_.add(pick[0]["game"]); players_.add(pick[0]["player"])
+                if len(chosen) < len(comp):
+                    fails += 1
+                    continue
+                anchors = []
+                for x in anchors_all:
+                    if x["game"] in games_ or x["player"] in players_:
+                        continue
+                    anchors.append(x); games_.add(x["game"])
+                    if len(anchors) == 6 - len(chosen):
+                        break
+                for r, t, side in chosen:
+                    if (r["id"], side) not in priced and anchors:
+                        run("LEG" if side == "over" else "LESS", [leg(anchors[0]), leg(r, side)], f"{t}{'u' if side == 'under' else ''}")
+                        priced.add((r["id"], side))
+                note = " ".join(f"{t}{'u' if side == 'under' else ''}" for _, t, side in chosen)
+                for k in range(max(2, len(chosen)), 7):
+                    need = k - len(chosen)
+                    if need > len(anchors) or getattr(q, "n", 0) >= MAX_Q:
+                        break
+                    run("CMB", [leg(r, side) for r, _, side in chosen] + [leg(x) for x in anchors[:need]], f"{' '.join(comp)} | {note}")
+            save("complete (combo)")
+            return 0
+
         if MODE == "ladderall":
             # LADDER-ALL (owner 2026-11-20 18:20 PT): EVERY ladder on the board, sharded by ladder (player + stat): each goblin / demon rung
             # (and the regular line itself as the control) quoted as the ONLY non-regular leg beside the SAME regular legs from other games
