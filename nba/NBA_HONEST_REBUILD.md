@@ -988,6 +988,29 @@ the board of the same probe run):**
 every ladder, both sides, quoted in the same minutes; then single-leg + regulars ladders (sizes 2-6) and goblin/demon mixes; refit with
 the fitted distribution of each player's book ladder (not linear interpolation), per-book source test, and the floor / cap rules.
 
+## 8ar. OWNER'S METHOD RUN TONIGHT - ONE RUNG AT A TIME BESIDE THE SAME REGULARS, THEN MIXES (owner 2026-11-20 18:20 PT; written 19:33 PT)
+
+**Probes (new modes in `pp_payout_map.py`):** `ladderall` (every ladder on the board, sharded by ladder, Points first; each goblin / demon rung and the
+regular line itself as the ONLY non-regular leg beside the SAME 1..5 regular legs from other games / teams, at 2, 3, 4, 5 and 6 picks, More and
+Less) - 40 shards 18:22 PT -> 16,648 quotes, 3,344 rungs, 578 ladders, 27 stats (40 at once trips PrizePicks' bot wall after ~100-300 quotes a
+shard; ~20 at once is the safe level). `combo` (2..6 goblins / demons in one slip - gg, dd, gd, More / Less mixes - filled with the same regulars to
+2..6 picks; every alternate priced alone in the same run) - 16 shards 18:56 PT -> 5,378 combo quotes. Analysis: `research_pplad.py`,
+`research_pplad_model.py`, `research_ppcombo.py`. Real per-leg payouts at 2-6 picks + leg multiplier + break-even: `nba_market.pp_lad_leg` (2,683 legs).
+
+**Results:**
+1. Control: the regular line alone pays exactly 3 / 6 / 10 / 20 / 37.5 and the Flex table in 100% of 1,694 quotes.
+2. One rung, sizes 2-6: the 2-pick "deduction" does NOT stick as the same ratio - vs the 2-pick, the 3-pick multiplier is x0.91, 4-pick x1.02,
+   5-pick x0.96, 6-pick x0.97 (median). Full 2-pick -> k-pick mapping table printed in the run (e.g. goblin 2.7 -> 4.75 / 9.0 / 17.0 / 32.0; demon
+   3.5 -> 6.25 / 12.0 / 22.0 / 42.0). The 6-pick reading decides the 3-pick in 77% exactly (2-pick only 12% - the 2-pick is coarsely rounded).
+3. COMBINATION LAW (proven tonight): a slip holding any goblin / demon pays  P_k = B'_k x product over its alternates of (that leg's single
+   k-pick payout / B'_k), with ADJUSTED bases B' = 5.44 (3-pick), 10.21 (4), 19.0 (5), 36.4 (6); regulars count 1. Real / predicted median
+   1.00 at every size and every number of alternates (2-6), median error 1.7-4.8% (the time between the single readings and the combo
+   quotes + rounding). In a 2-pick, two alternates simply multiply (exact 50%, the rest is the singles' rounding); point "deductions" do NOT add (22%).
+4. What sets a rung (tested grouped by PLAYER, never seen in training): the dominant factor is the distance from the regular line / switch point
+   divided by sqrt(the line) (goblin More rung by that distance: spread 0.03 in multiplier); then the player's line vs his season form;
+   regular vs switch point, ladder density, anchor level add ~nothing beyond it. Unseen players: goblins within one step 86-95% at 2-3 picks,
+   demons 37-59% - demons follow a hidden input (the market) the board does not show.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -1102,4 +1125,5 @@ External (read for this work):
 - **2026-11-20 15:37-15:38 PT** - Owner asked where goblin/demon multipliers stand. Status: single-leg factors mapped from 2-pick quotes (today 7,091 More + 871 Less real quotes; season 23,315 + 1,382). Open gap found: slip-level pricing - 1,710 historical 3-6 pick Power quotes with 1-6 alternates are NOT base x product of the 2-pick leg factors (payout / prediction 0.80-1.25 on single-alternate slips, 0.04-1.55 on all-alternate slips; 3-picks average 0.88-0.90, 4-picks 1.02-1.03); today's 9 slip quotes were all standard legs. Flex with alternates not mapped. Not mapped, no results reported. Scheduled task for 2026-11-21 10:10 PT broadened to the slip-level probe (every 2-6 structure, Power + Flex, More + Less) with predict-then-check.
 - **2026-11-20 15:45-16:33 PT** - Owner: more runners, get the goblin / demon multipliers today. 34 parallel probe runs; slip pricing worked out for Power (8ap): partner-invariant, time-drifting, grid-rounded, one strength per leg, adjusted bases 5.36 / 10.2 / 19.2 / 36.6, alternates combine by summed log factor; history-based Power error ~2.2% median, bias ~0 (6-pick +1.5%). Flex with alternates not mapped (needs real quotes). Goblin / demon Power: no slip worth playing.
 - **2026-11-20 17:08-18:08 PT** - Owner restated the goblin / demon requirement (every leg mapped like a regular, every factor reverse-engineered). Program and results in 8aq: best so far 41% exact / median error 3.7% (ladder geometry + market chance); form adds nothing beyond distance; drift explained by a hidden moving input. Late-game sweep dispatched 18:07 PT.
+- **2026-11-20 18:20-19:33 PT** - Owner's method (8ar): ladderall (16,648 quotes, 578 ladders) + combo (5,378 quotes). Combination law proven: P = B' x prod(single k-pick / B'), B' 5.44 / 10.21 / 19.0 / 36.4, unbiased at every size and alternate count. Real per-leg multipliers for 2,683 legs in nba_market.pp_lad_leg.
 
