@@ -32,7 +32,7 @@ def main():
                         WHERE f.final_hp IS NOT NULL""", conn)
     d = d[d["prop"] == d["prop"]]
     print(f"CO|graded legs: {len(d):,} | {d['season'].value_counts().to_dict()}", flush=True)
-    for col, lab in (("c", "CONFIDENCE"), ("s", "SCORE")):
+    for col, lab in (("p", "FINAL_HP"), ("c", "CONFIDENCE"), ("s", "SCORE")):
         print(f"CO|================ by {lab} fifth (within season) ================", flush=True)
         for s, g in d.groupby("season"):
             g = g.copy()
