@@ -35,6 +35,13 @@ def main():
     rows = conn.execute("SELECT run_file, section, n, power, note, legs FROM nba_market.pp_quote WHERE status=200 AND section IN ('CMB','LEG','LESS') AND quoted_at >= %s", (since,)).fetchall()
     single = {}
     cmb = []
+    lad = {}
+    for n, pw, legs in conn.execute("SELECT n, power, legs FROM nba_market.pp_quote WHERE status=200 AND section='LAD' AND quoted_at >= '2026-11-21T02:00'").fetchall():
+        pw = pw if isinstance(pw, dict) else json.loads(pw or "{}"); legs = legs if isinstance(legs, list) else json.loads(legs or "[]")
+        try:
+            lad[(legs[0]["id"], legs[0]["side"], n)] = float(pw[str(n)][str(n)]) / TABLE[n]
+        except Exception:
+            pass
     for rf, sec, n, pw, note, legs in rows:
         pw = pw if isinstance(pw, dict) else json.loads(pw or "{}")
         legs = legs if isinstance(legs, list) else json.loads(legs or "[]")
@@ -52,7 +59,8 @@ def main():
         ps = [single.get((rf, a["id"], a["side"])) for a in alts]
         if any(p is None for p in ps):
             continue
-        data.append(dict(n=n, top=top, m=len(alts), comp=comp, ps=ps, s=sum(np.log(p / 3) for p in ps)))
+        gk = [lad.get((a["id"], a["side"], n)) for a in alts]
+        data.append(dict(n=n, top=top, m=len(alts), comp=comp, ps=ps, s=sum(np.log(p / 3) for p in ps), gk=None if any(g is None for g in gk) else gk))
     print(f"CMB|combo quotes {len(cmb):,} | with every alternate's own 2-pick in the same run {len(data):,}", flush=True)
     if not data:
         return
@@ -80,6 +88,14 @@ def main():
             for v, y in zip(pv, np.exp(Y[te])):
                 ex.append(snap(v) == round(y, 4)); er.append(abs(v / y - 1))
         prod = [snap(TABLE[n] * np.exp(x["s"])) == x["top"] for x in xs]
+        sz = [x for x in xs if x["gk"]]
+        if sz:
+            pr = np.array([TABLE[n] * np.prod(x["gk"]) for x in sz]); yy = np.array([x["top"] for x in sz])
+            print(f"CMB|{n}-pick SIZE-PRODUCT rule (each leg's own {n}-pick multiplier from its ladder reading, multiplied): {len(sz)} | exact {100*np.mean([snap(a) == b for a, b in zip(pr, yy)]):.0f}% | within-1-step {100*np.mean(np.abs(pr/yy-1) < step(1) * 0 + .05):.0f}% | median error {100*np.median(np.abs(pr/yy-1)):.2f}% | real/pred median {np.median(yy/pr):.3f}", flush=True)
+            for m in sorted({x["m"] for x in sz}):
+                q_ = [(TABLE[n] * np.prod(x["gk"]), x["top"]) for x in sz if x["m"] == m]
+                r = np.array([b / a for a, b in q_])
+                print(f"CMB|     {m} alternates: {len(q_)} | real / size-product median {np.median(r):.3f} (p10 {np.percentile(r,10):.3f}, p90 {np.percentile(r,90):.3f}) | exact {100*np.mean([snap(a) == b for a, b in q_]):.0f}%", flush=True)
         if ex:
             print(f"CMB|{n}-pick: {len(xs)} combos | MULT (size curve on summed strength, unseen composition) exact {100*np.mean(ex):.0f}% within-1-step {100*np.mean(np.array(er) < .05):.0f}% median error {100*np.median(er):.2f}% | PROD exact {100*np.mean(prod):.0f}%", flush=True)
         for m in sorted({x["m"] for x in xs}):
