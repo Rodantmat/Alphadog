@@ -314,7 +314,15 @@ def main():
     # 2.23M graded legs by nba/build_confidence_v3.py. Absent = fall back to the conformal blend.
     CONF_DEDUCT, CONF_BASE, CONF_FLOOR = {}, 99.0, 55.0
     try:
-        cm = pd.read_sql("SELECT factor, deduction, base, floor FROM nba_score.confidence_model", conn)
+        cm = pd.read_sql("SELECT * FROM nba_score.confidence_model", conn)
+        # AS-OF MODELS (2026-11-20): when the table holds dated models, a slate uses the latest one dated on or before it (never a later fit);
+        # a slate older than every model uses none (conformal fallback). Undated table = the single current model, as before.
+        if "as_of_date" in cm.columns and cm["as_of_date"].notna().any():
+            cm["as_of_date"] = pd.to_datetime(cm["as_of_date"]).dt.date
+            _ref = pd.Timestamp(FE_DATE).date() if FE_DATE else max(cm["as_of_date"])
+            _ok = sorted(d for d in cm["as_of_date"].dropna().unique() if d <= _ref)
+            cm = cm[cm["as_of_date"] == _ok[-1]] if _ok else cm.iloc[0:0]
+            print(f"confidence model as of {_ok[-1] if _ok else 'NONE before ' + str(_ref)}", flush=True)
         if not cm.empty:
             CONF_DEDUCT = {r.factor: float(r.deduction) for r in cm.itertuples(index=False)
                            if float(r.deduction) > 0}

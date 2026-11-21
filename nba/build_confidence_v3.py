@@ -40,6 +40,8 @@ import numpy as np
 import pandas as pd
 import psycopg
 
+C3_ASOF = (os.environ.get("C3_ASOF") or "").strip() or None
+
 
 # THE MARKET SIDE, MATERIALISED ONCE (2026-10-21). The per-prop query used to carry the two market aggregates as CTEs:
 # rung_market (1.1M rows, a regexp per row) and board_tiers_v2's PrizePicks window rows, grouped on every one of ~30 props.
@@ -329,7 +331,7 @@ def main():
             FROM nba_market.board_outcomes o
             JOIN nba_ref.player_name_map m
               ON m.norm_name = nba_ref.norm_name(o.player)
-            WHERE o.leg_result IN ('over_win','under_win')""")
+            WHERE o.leg_result IN ('over_win','under_win') AND (%s::date IS NULL OR o.game_date < %s::date)""", (C3_ASOF, C3_ASOF))
         cur.execute("CREATE INDEX ON tmp_graded (game_date, player_id, prop, line, side)")
         cur.execute("ANALYZE tmp_graded")
         cur.execute("SELECT count(*) FROM tmp_graded")
@@ -489,11 +491,21 @@ def main():
             cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.confidence_model (
                 factor text PRIMARY KEY, deduction numeric, separation numeric,
                 base numeric, floor numeric, built_at timestamptz DEFAULT now())""")
-            cur.execute("DELETE FROM nba_score.confidence_model")
-            cur.executemany("""INSERT INTO nba_score.confidence_model
-                (factor, deduction, separation, base, floor) VALUES (%s,%s,%s,%s,%s)""",
-                [(c, round(float(v), 4), round(float(sep[c]), 6), 99.0, 55.0)
-                 for c, v in zip(FACTOR_COLS, ded)])
+            if C3_ASOF:
+                # AS-OF MODEL (2026-11-20, owner: one formula for every date): fitted only on legs graded before C3_ASOF and stored under
+                # that date, so any day reads the model it would have had - never one fitted on its own future.
+                cur.execute("ALTER TABLE nba_score.confidence_model ADD COLUMN IF NOT EXISTS as_of_date date")
+                cur.execute("DELETE FROM nba_score.confidence_model WHERE as_of_date = %s", (C3_ASOF,))
+                cur.executemany("""INSERT INTO nba_score.confidence_model
+                    (factor, deduction, separation, base, floor, as_of_date) VALUES (%s,%s,%s,%s,%s,%s)""",
+                    [(c, round(float(v), 4), round(float(sep[c]), 6), 99.0, 55.0, C3_ASOF)
+                     for c, v in zip(FACTOR_COLS, ded)])
+            else:
+                cur.execute("DELETE FROM nba_score.confidence_model")
+                cur.executemany("""INSERT INTO nba_score.confidence_model
+                    (factor, deduction, separation, base, floor) VALUES (%s,%s,%s,%s,%s)""",
+                    [(c, round(float(v), 4), round(float(sep[c]), 6), 99.0, 55.0)
+                     for c, v in zip(FACTOR_COLS, ded)])
         conn.commit()
         print(f"  persisted {len(FACTOR_COLS)} deductions to nba_score.confidence_model", flush=True)
         F = d[FACTOR_COLS].values

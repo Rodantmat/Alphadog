@@ -391,7 +391,11 @@ def main():
               flush=True)
 
     # 5) CONFIDENCE (measured deductions) -> SCORE (0-100, confidence ENHANCES) -> EDGE
-    cm = pd.read_sql("SELECT factor, deduction, base, floor FROM nba_score.confidence_model", conn)
+    cm = pd.read_sql("SELECT * FROM nba_score.confidence_model", conn)
+    if "as_of_date" in cm.columns and cm["as_of_date"].notna().any():   # dated models (2026-11-20): the latest on or before the slate
+        cm["as_of_date"] = pd.to_datetime(cm["as_of_date"]).dt.date
+        _ok = sorted(x for x in cm["as_of_date"].dropna().unique() if x <= pd.Timestamp(asof).date())
+        cm = cm[cm["as_of_date"] == _ok[-1]] if _ok else cm.iloc[0:0]
     ded = {r.factor: float(r.deduction) for r in cm.itertuples(index=False) if float(r.deduction) > 0}
     BASE = float(cm["base"].iloc[0]) if not cm.empty else 99.0
     FLOOR = float(cm["floor"].iloc[0]) if not cm.empty else 55.0
