@@ -86,7 +86,26 @@ def main():
     if not (combo_props & set(props)):
         raise SystemExit("ABORT: artifact has no combo props - refusing to load a singles-only slate")
 
+    # REPLAY TARGET (owner 2026-11-20 20:58 PT: the same pipeline for every date). LOAD_TABLE sends a replayed slate to the parallel store
+    # (nba_score.baseline_history_v2) instead of production; LOAD_PRUNE=1 keeps, as prune_baseline_to_board does for production a day later,
+    # only the rungs some board carried that day (a prop no board carried keeps its full ladder). Default: production, unpruned, unchanged.
+    TABLE = os.environ.get("LOAD_TABLE") or "nba_score.baseline_history"
+    if TABLE not in ("nba_score.baseline_history", "nba_score.baseline_history_v2"):
+        raise SystemExit(f"REFUSED: unknown target table {TABLE!r}")
     conn = psycopg.connect(os.environ["DATABASE_URL"])   # NOT autocommit: delete+insert must be atomic.
+    if os.environ.get("LOAD_PRUNE") == "1":
+        keys = set(); kprops = set()
+        for pid, pr, per, ln in conn.execute("""SELECT player_id::text, prop, coalesce(period, 'FULL'), line::float8 FROM nba_market.board_rung_keys
+                                                WHERE game_date = %s""", (asof,)):
+            keys.add((pid, pr, per, float(ln))); kprops.add((pr, per))
+        n0 = len(rows)
+        rows = [r for r in rows if ((r.get("prop"), r.get("period") or "FULL") not in kprops)
+                or (str(r.get("player_id")), r.get("prop"), r.get("period") or "FULL", float(r.get("line"))) in keys]
+        print(f"pruned to the board: {len(rows):,} of {n0:,} rungs kept ({len(keys):,} board keys)")
+    if TABLE != "nba_score.baseline_history":
+        conn.execute(f"CREATE TABLE IF NOT EXISTS {TABLE} (LIKE nba_score.baseline_history INCLUDING DEFAULTS)")
+        conn.execute(f"CREATE INDEX IF NOT EXISTS baseline_history_v2_date ON {TABLE} (game_date, prop)")
+        conn.commit()
     conn.execute("SET statement_timeout = 0")            # A failed insert after a committed delete once
     with conn.cursor() as cur:                            # emptied the table - never again.
         # 🔴 ONE BASELINE STORE (owner decision 2026-09-24: one set per day, the last run overwrites).
@@ -106,9 +125,9 @@ def main():
         from nba_season import current_season
         from datetime import date as _date
         season = current_season(_date.fromisoformat(asof))
-        cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
-        cur.execute("DELETE FROM nba_score.baseline_history WHERE game_date = %s", (asof,))
-        cur.executemany("""INSERT INTO nba_score.baseline_history
+        cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (TABLE,))
+        cur.execute(f"DELETE FROM {TABLE} WHERE game_date = %s", (asof,))
+        cur.executemany(f"""INSERT INTO {TABLE}
             (season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset, p_more, p_less, p_raw,
              role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36, loaded_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now())""",
@@ -117,6 +136,8 @@ def main():
               r.get("p_more"), r.get("p_less"), r.get("p_raw"), r.get("role_tier"), r.get("var_band"),
               r.get("used_emp"), meta.get("ladder_steps"), (meta.get("recipe") or "")[:120],
               r.get("proj_min"), r.get("rate36")) for r in rows])
+        if TABLE != "nba_score.baseline_history":
+            conn.commit(); print(f"replay loaded into {TABLE}: {len(rows):,} rows"); conn.close(); print("DONE"); return
         cur.execute("DELETE FROM nba_score.baseline_ladder_runs WHERE asof = %s", (asof,))
         cur.execute("""INSERT INTO nba_score.baseline_ladder_runs
             (asof, slate_games, players, rows, props, history_seasons, current_season,

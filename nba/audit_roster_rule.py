@@ -30,7 +30,10 @@ def main():
         if not f.name[len("nba_player_game_log_"):].replace(".json", "").replace("_", "").isdigit():
             continue
         r = json.loads(f.read_text())["records"]
-        P.append(pd.DataFrame(r)[["PLAYER_ID", "TEAM_ID", "GAME_ID", "GAME_DATE", "MIN", "SEASON_YEAR"]])
+        x = pd.DataFrame(r)[["PLAYER_ID", "TEAM_ID", "GAME_ID", "GAME_DATE", "MIN"]]
+        sl = f.name[len("nba_player_game_log_"):].replace(".json", "")
+        x["SEASON_YEAR"] = sl[:4] + "-" + sl[-2:]
+        P.append(x)
     p = pd.concat(P, ignore_index=True)
     p["GAME_DATE"] = pd.to_datetime(p["GAME_DATE"]).dt.date
     p["PLAYER_ID"] = p["PLAYER_ID"].astype(str); p["TEAM_ID"] = p["TEAM_ID"].astype(str)
