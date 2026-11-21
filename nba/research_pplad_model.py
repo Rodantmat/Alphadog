@@ -97,11 +97,27 @@ def main():
             d.loc[i, "over_s"] = (f[7] > r["line"]).mean()
     d["z_form"] = (d["line"] - d["avg_s"]) / d["sd_s"]; d["anc_form"] = (d["anchor"] - d["avg_s"]) / d["sd_s"]
     print(f"LM|rungs with player form: {d.drop_duplicates('rid')['avg_s'].notna().mean()*100:.0f}%", flush=True)
+    # LADDER SIBLINGS (owner's method: once one rung of a ladder is read, how well are the others known?): for each rung, the 2-pick
+    # reading and distance of the nearest OTHER goblin and nearest OTHER demon of the same ladder, same side (never the rung itself)
+    two = d[d["n"] == 2][["rid", "player", "stat", "kind", "side", "dsq", "top"]].drop_duplicates("rid")
+    sib = {}
+    for (pl_, st_, sd_), g in two.groupby(["player", "stat", "side"]):
+        recs2 = g.to_dict("records")
+        for r in recs2:
+            out = {}
+            for kd in ("goblin", "demon"):
+                o = [x for x in recs2 if x["rid"] != r["rid"] and x["kind"] == kd]
+                if o:
+                    o.sort(key=lambda x: abs(x["dsq"] - r["dsq"]))
+                    out[f"sib_{kd[0]}_p"] = np.log(o[0]["top"] / 3); out[f"sib_{kd[0]}_dsq"] = o[0]["dsq"]
+            sib[r["rid"]] = out
+    for c in ("sib_g_p", "sib_g_dsq", "sib_d_p", "sib_d_dsq"):
+        d[c] = d["rid"].map(lambda k: sib.get(k, {}).get(c, np.nan))
     base_f = ["is_dem", "is_less", "stat_c", "tier_i", "adist", "rel", "dsq", "anchor", "is_sw", "n_gob", "n_dem"]
     form_f = ["avg_s", "sd_s", "avg10", "avg5", "sd10", "gp", "min10", "over_s", "z_form", "anc_form"]
     players = np.array(sorted(d["player"].unique())); rng = np.random.default_rng(3); rng.shuffle(players)
     folds = np.array_split(players, 5)
-    for lab, cols in (("ladder factors", base_f), ("ladder factors + player form", base_f + form_f)):
+    for lab, cols in (("ladder factors", base_f), ("ladder factors + player form", base_f + form_f), ("+ one sibling rung of the same ladder already read", base_f + form_f + ["sib_g_p", "sib_g_dsq", "sib_d_p", "sib_d_dsq"])):
         print(f"LM|=== {lab}", flush=True)
         tot = []
         for n in (2, 3, 4, 5, 6):
@@ -118,7 +134,7 @@ def main():
             tot.append(rr.assign(n=n))
             print(f"LM|  {n}-pick: exact {100*rr['ex'].mean():.1f}% | within one step {100*rr['w1'].mean():.1f}% | median error {100*rr['err'].median():.2f}% | p90 {100*rr['err'].quantile(.9):.2f}% | " +
                   " | ".join(f"{k}-{'Less' if s == 'under' else 'More'} exact {100*g['ex'].mean():.0f}% w1 {100*g['w1'].mean():.0f}%" for (k, s), g in rr.groupby(["kind", "side"])), flush=True)
-        if lab.endswith("form"):
+        if lab.startswith("+ one"):
             x = d[d["n"] == 2]
             mdl = HistGradientBoostingRegressor(max_iter=600, learning_rate=0.04, max_leaf_nodes=31, min_samples_leaf=8).fit(x[cols], np.log(x["top"]))
             b0 = np.median(np.abs(mdl.predict(x[cols]) - np.log(x["top"])))
