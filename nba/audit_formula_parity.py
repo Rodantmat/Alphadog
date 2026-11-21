@@ -68,6 +68,16 @@ def main():
     url = os.environ["DATABASE_URL"]
     ro = psycopg.connect(url)
     ro.execute("SET statement_timeout = 0")
+    V2 = os.environ.get("FP_V2") == "1"   # compare today's builder on the one-formula store (store_redirect) with what the replay stored
+    if V2:
+        import store_redirect as SR
+
+        class CaptureRedirect(CaptureCursor):
+            def execute(self, query, params=None, **kw):
+                return super().execute(SR.rewrite(query), params, **kw)
+
+            def executemany(self, query, params_seq, **kw):
+                return super().executemany(SR.rewrite(query), params_seq, **kw)
     import build_final_hp as B
     real_connect = psycopg.connect
     dates = [d.strip() for d in (os.environ.get("FP_DATES") or DEFAULT_DATES).split(",") if d.strip()]
@@ -79,7 +89,7 @@ def main():
             print(f"FP|{d}: no baseline rows - not a slate, skipped", flush=True)
             continue
         CAPTURED.clear(); BLOCKED.clear()
-        psycopg.connect = lambda *a, **k: real_connect(*a, **{**k, "cursor_factory": CaptureCursor})
+        psycopg.connect = lambda *a, **k: real_connect(*a, **{**k, "cursor_factory": CaptureRedirect if V2 else CaptureCursor})
         B.psycopg.connect = psycopg.connect
         os.environ.update({"FE_DATE": d, "FE_WRITE": "1"})
         os.environ.pop("FE_SEASONS", None); os.environ.pop("FE_PROPS", None)
@@ -92,10 +102,10 @@ def main():
         finally:
             psycopg.connect = real_connect; B.psycopg.connect = real_connect
         print(f"FP|{d}: intercepted writes (not executed): {dict(BLOCKED)}", flush=True)
-        new = pd.DataFrame(CAPTURED.get("nba_score.final_hp", []), columns=COLS)
+        new = pd.DataFrame(CAPTURED.get("nba_score.final_hp_v2" if V2 else "nba_score.final_hp", []), columns=COLS)
         old = pd.read_sql("""SELECT season, game_date, player_id, prop, line::float8 line, side, baseline_hp::float8 baseline_hp, final_hp::float8 final_hp,
                                     confidence::float8 confidence, score::float8 score, edge::float8 edge, cal_chain, built_at
-                             FROM nba_score.final_hp WHERE game_date=%s""", ro, params=(d,))
+                             FROM nba_score.final_hp""" + ("_v2" if V2 else "") + """ WHERE game_date=%s""", ro, params=(d,))
         season = old["season"].iloc[0] if len(old) else (new["season"].iloc[0] if len(new) else "?")
         # 2. score arithmetic on the stored rows
         if len(old):
