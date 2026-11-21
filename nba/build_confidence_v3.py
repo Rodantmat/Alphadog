@@ -213,6 +213,15 @@ def main():
         # so before the rollover the third season adds nothing).
         seasons = stats_seasons(3)
     conn = psycopg.connect(os.environ["DATABASE_URL"], application_name="build_confidence_v3")
+    # FIXED CONFIDENCE (2026-11-21, owner: one formula for every date). On the honest store final_hp is calibrated to within tenths of a point in
+    # every cell, so the |gap| separations this refit measures are noise: refit daily they swung the deductions (role 9.3 -> books 9.1 on 10-23,
+    # completeness 0.9 -> 9.4 on 11-19) and moved every score with no change in any input (NBA_HONEST_REBUILD.md 8av). With
+    # classification_config['confidence_fixed'].enabled the model in nba_score.confidence_model is a DEFINITION (equal points per named data gap)
+    # and is not refit.
+    _cf = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'confidence_fixed'").fetchone()
+    if _cf and (_cf[0] if isinstance(_cf[0], dict) else __import__("json").loads(_cf[0])).get("enabled"):
+        print("confidence is FIXED by definition (classification_config confidence_fixed) - no refit", flush=True)
+        return
     note_orphans(conn)
     _t = statement_timeout_s(conn)
     conn.execute(f"SET statement_timeout = {_t * 1000}")
