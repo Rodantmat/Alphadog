@@ -14,8 +14,9 @@ DATA = Path(__file__).resolve().parent / "data"
 def main():
     have = {str(g.get("game_date", ""))[:10] for g in json.loads((DATA / "nba_schedule_current.json").read_text()).get("games", [])}
     games = {}
-    for f in sorted(DATA.glob("nba_team_game_log_20*_*.json")):
-        tag = f.name[len("nba_team_game_log_"):].replace(".json", "")
+    files = [(f, f.name[len("nba_team_game_log_"):].replace(".json", "")) for f in sorted(DATA.glob("nba_team_game_log_20*_*.json"))]
+    files += [(f, f.name[len("nba_team_game_log_postseason_"):].replace(".json", "")) for f in sorted(DATA.glob("nba_team_game_log_postseason_20*_*.json"))]
+    for f, tag in files:
         if not tag.replace("_", "").isdigit():
             continue
         season = tag[:4] + "-" + tag[-2:]

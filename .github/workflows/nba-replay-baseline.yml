@@ -50,17 +50,15 @@ jobs:
             (
               set -e
               python nba/ensure_season_files.py
-              for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
-                BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py > /tmp/b_$PAIR.log 2>&1 || { tail -40 /tmp/b_$PAIR.log; exit 1; }
-                grep -E "^LADDER:|honest recipe|roster rule|^slate " /tmp/b_$PAIR.log | head -4
-              done
-              for pair in points,rebounds assists,steals blocks,turnovers; do
-                BT_INJURY=1 BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py > /tmp/c_$pair.log 2>&1 || { tail -40 /tmp/c_$pair.log; exit 1; }
-              done
+              # the same builders P2B runs, four at a time (each is one process with its own inputs; outputs are per pair)
+              run1() { BT_PROPS="$1" python nba/baseline/build_baseline_ladder.py > "/tmp/b_$1.log" 2>&1 || { echo "FAILED pair $1"; tail -30 "/tmp/b_$1.log"; return 1; }; }
+              run2() { BT_INJURY=1 BT_SAVE_COMPONENTS=1 BT_PROPS="$1" python nba/baseline/build_baseline_ladder.py > "/tmp/c_$1.log" 2>&1 || { echo "FAILED comp $1"; tail -30 "/tmp/c_$1.log"; return 1; }; }
+              export -f run1 run2
+              printf '%s\n' "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb" | xargs -P 3 -I{} bash -c 'run1 "{}"'
+              printf '%s\n' "points,rebounds" "assists,steals" "blocks,turnovers" | xargs -P 3 -I{} bash -c 'run2 "{}"'
               BT_INJURY=1 python nba/baseline/build_combos_ladder.py > /tmp/co.log 2>&1 || { tail -40 /tmp/co.log; exit 1; }
-              grep -E "honest recipe" /tmp/co.log | head -1
               BT_INJURY=1 python nba/baseline/build_periods_ladder.py > /tmp/pe.log 2>&1 || { tail -40 /tmp/pe.log; exit 1; }
-              grep -E "honest recipe|roster rule" /tmp/pe.log | head -2
+              grep -hE "^slate |honest recipe" /tmp/b_points,rebounds.log /tmp/co.log /tmp/pe.log | sort -u | head -4
               rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
               python - <<'EOF'
           import json, glob, os
