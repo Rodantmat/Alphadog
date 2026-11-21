@@ -1,0 +1,52 @@
+name: NBA Replay Downstream (parallel store)
+
+# Owner 2026-11-20 20:58 PT: the same pipeline for every date. Runs the production downstream builders UNEDITED against the parallel store
+# (nba/store_redirect.py rewrites every scoring table to its _v2 twin): final_hp per date, the board-centred and as-of calibrations, the
+# confidence model. Never writes production scoring tables; commits nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "final_hp | board_cal | asof_cal | confidence"
+        required: true
+      dates:
+        description: "comma list or FROM:TO"
+        default: ""
+        required: false
+      seasons:
+        default: ""
+        required: false
+      env:
+        description: "extra KEY=VALUE pairs, space separated"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  downstream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy
+      - name: Run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RD_STEP: ${{ github.event.inputs.step }}
+          RD_DATES: ${{ github.event.inputs.dates }}
+          RD_SEASONS: ${{ github.event.inputs.seasons }}
+          EXTRA_ENV: ${{ github.event.inputs.env }}
+        run: |
+          set -euo pipefail
+          for kv in $EXTRA_ENV; do
+            [[ "$kv" =~ ^[A-Z][A-Z0-9_]*=[A-Za-z0-9_.,:+-]*$ ]] || { echo "refused env pair: $kv"; exit 1; }
+            export "$kv"
+          done
+          python -u nba/replay_downstream.py
