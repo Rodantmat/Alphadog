@@ -11,7 +11,7 @@ import psycopg
 
 TABLES = ("baseline_history", "final_hp", "final_hp_derived", "final_hp_all", "confidence_model", "confidence_verification",
           "ladder_calibration_asof", "final_hp_board_cal", "board_scored")
-INDEXES = ("final_hp_uidx", "final_hp_lookup")
+INDEXES = ("final_hp_uidx", "final_hp_lookup", "final_hp_derived_key", "final_hp_derived_lookup", "final_hp_derived_date")
 _T = re.compile(r"\bnba_score\.(" + "|".join(sorted(TABLES, key=len, reverse=True)) + r")\b(?!_v2)")
 _I = re.compile(r"\b(" + "|".join(INDEXES) + r")\b")
 
@@ -20,7 +20,7 @@ def rewrite(q):
     if not isinstance(q, str):
         q = q.as_string(None) if hasattr(q, "as_string") else str(q)
     q = _T.sub(lambda m: f"nba_score.{m.group(1)}_v2", q)
-    return _I.sub(lambda m: m.group(1).replace("final_hp", "final_hp_v2"), q)
+    return _I.sub(lambda m: m.group(1).replace("final_hp", "final_hp_v2", 1), q)
 
 
 class RedirectCursor(psycopg.Cursor):
