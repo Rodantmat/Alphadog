@@ -68,16 +68,21 @@ def main():
             fs.append((g, np.log(min(c)[1] / 3)))
         if fs is None:
             continue
-        x = np.zeros(2 * len(G) + 1)
-        x[0] = 1
-        for g, lf in fs:
-            if g in G:
-                j = G.index(g)
-                x[1 + 2 * j] += lf
-                x[2 + 2 * j] += lf * lf
+        if os.environ.get("PPFIT5_FORM") == "sum":
+            S = sum(lf for _, lf in fs)
+            x = np.array([1.0, S, S * S, S ** 3, float(len(fs))])
+        else:
+            x = np.zeros(2 * len(G) + 1)
+            x[0] = 1
+            for g, lf in fs:
+                if g in G:
+                    j = G.index(g)
+                    x[1 + 2 * j] += lf
+                    x[2 + 2 * j] += lf * lf
         for tier, v in tiers.items():
-            if v > 0:
-                data.append((day, n, tier, x, v, len(keys)))
+            if v <= 0 or (os.environ.get("PPFIT5_ONLYMULTI") and len(keys) < 2):
+                continue
+            data.append((day, n, tier, x, v, len(keys)))
     print(f"FIT5|slips priced with every alternate's 2-pick within {DT}s: {len({(d[0], d[1], tuple(d[3])) for d in data})} | tier rows {len(data)} | days {len({d[0] for d in data})}")
     by = defaultdict(list)
     for d in data:
