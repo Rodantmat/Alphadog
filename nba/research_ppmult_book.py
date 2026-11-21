@@ -57,22 +57,22 @@ def main():
     allp["over"] = allp["over"].clip(0.005, 0.995)
     print("PMB|book overround (median of two-sided pairs): " + ", ".join(f"{b} {v:.3f}" for b, v in vig.items()), flush=True)
     # per snapshot time + player-market: median across books per line
-    allp["snap"] = pd.to_datetime(allp["snapshot_ts"], utc=True).dt.floor("30min")
+    allp["snap"] = pd.to_datetime(allp["snapshot_ts"], utc=True).dt.tz_convert(None).dt.floor("30min").astype("datetime64[ns]")
     cur = allp.groupby(["gd", "snap", "base_market", "nm", "line"])["over"].median().reset_index()
     curves = {k: g.sort_values("line") for k, g in cur.groupby(["gd", "snap", "base_market", "nm"])}
-    snaps = cur.groupby("gd")["snap"].apply(lambda s: np.array(sorted(s.unique()))).to_dict()
+    snaps = cur.groupby("gd")["snap"].apply(lambda s: np.array(sorted(s.unique()), dtype="datetime64[ns]")).to_dict()
     rows = []
-    m["qt"] = pd.to_datetime(m["quoted_at"], utc=True)
+    m["qt"] = pd.to_datetime(m["quoted_at"], utc=True).dt.tz_convert(None).astype("datetime64[ns]")
     for r in m.itertuples():
         ss = snaps.get(r.gd)
         if ss is None:
             continue
-        dt = np.abs((ss - np.datetime64(r.qt.tz_convert(None))).astype("timedelta64[m]").astype(float))
+        dt = np.abs((ss - np.datetime64(r.qt, "ns")).astype("timedelta64[m]").astype(float))
         best = None
         for j in np.argsort(dt):
             if dt[j] > WIN:
                 break
-            c = curves.get((r.gd, ss[j], r.base_market, r.nm))
+            c = curves.get((r.gd, pd.Timestamp(ss[j]), r.base_market, r.nm))
             if c is not None and len(c) >= 1:
                 best = (c, dt[j]); break
         if best is None:
