@@ -52,6 +52,27 @@ def main():
             near[6] = (top, fx)
             lad.append((day, k.split("|")[1] + "-" + k.split("|")[2], near))
     print(f"FIT6|ladders anchored on a 6-pick: {len(lad)} on {len({l[0] for l in lad})} days")
+    # FLEX tiers from the same one-number strength (the 6-pick Power reading)
+    for k in (3, 4, 5, 6):
+        for h in range(k - 2, k + 1):
+            pts = [(day, np.log(nr[6][0]), float((nr[k][1] or {}).get(str(h)))) for day, kd, nr in lad if k in nr and (nr[k][1] or {}).get(str(h)) is not None]
+            pts = [p for p in pts if p[2] > 0]
+            days = sorted({p[0] for p in pts})
+            if len(pts) < 20:
+                continue
+            ok = w1 = 0; errs = []
+            for dd in days:
+                tr = [p for p in pts if p[0] != dd]; te = [p for p in pts if p[0] == dd]
+                if len(tr) < 10:
+                    continue
+                c = np.polyfit([p[1] for p in tr], np.log([p[2] for p in tr]), 3)
+                for p in te:
+                    v = float(np.exp(np.polyval(c, p[1])))
+                    ok += rnd(v) == p[2]; w1 += abs(rnd(v) - p[2]) <= step(p[2]) + 1e-9; errs.append(v / p[2] - 1)
+            e = np.array(errs)
+            if len(e):
+                vals = sorted({p[2] for p in pts})
+                print(f"FIT6|FLEX {h}/{k} from p6: {len(e):4d} | exact {100*ok/len(e):3.0f}% | within 1 step {100*w1/len(e):3.0f}% | abs err median {100*np.median(np.abs(e)):.2f}% | bias {100*e.mean():+.2f}% | values seen {vals[:12]}{'...' if len(vals) > 12 else ''}")
     for ref in (6, 2):
         for k in (2, 3, 4, 5, 6):
             if k == ref:
