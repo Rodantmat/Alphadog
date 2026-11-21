@@ -57,6 +57,17 @@ def patch(conn):
             l = dict(l); l["score"] = v; out.append(l)
         return out
 
+    o_ctx = HL.context
+
+    def ctx_(conn_, day, pids):
+        c = o_ctx(conn_, day, pids)
+        if not c["game"]:            # 2024-25 has no slate calendar: games and home sides from the box scores of the day
+            for t, gid, mu in conn_.execute("SELECT DISTINCT team_id::text, game_id::text, matchup FROM nba_stats.player_game_log WHERE game_date = %s", (day,)).fetchall():
+                c["game"][t] = gid
+                if mu and "vs." in mu:
+                    c["home"].add(t)
+        return c
+    HL.context = ctx_
     LSE.load_board_legs_live = lambda conn_, day, *a, **k: swap(o_pp(conn_, day, *a, **k), day, "prizepicks")
     UD.load_legs = lambda conn_, day, *a, **k: swap(o_ud(conn_, day, *a, **k), day, "underdog")
 
@@ -79,9 +90,9 @@ def main():
     pr = SL.pricing(conn); rj = BE.rules(conn)
     season = os.environ.get("HS_SEASON", "2026-27"); a, b = SEASON[season]
     d1 = min(dt.date.fromisoformat(b), dt.date.fromisoformat(os.environ.get("HS_TO") or str(dt.date.today() - dt.timedelta(days=1))))
-    days = [r[0] for r in conn.execute("""SELECT DISTINCT s.game_date FROM nba_calendar.slate_games s WHERE s.game_date >= %s AND s.game_date <= %s
-                                          AND EXISTS (SELECT 1 FROM nba_market.board_snapshots b WHERE b.game_date = s.game_date AND b.bookmaker IN ('prizepicks','underdog'))
-                                          ORDER BY 1""", (a, d1)).fetchall()]
+    days = [r[0] for r in conn.execute("""SELECT DISTINCT b.game_date FROM nba_market.board_snapshots b WHERE b.game_date >= %s AND b.game_date <= %s
+                                          AND b.bookmaker IN ('prizepicks','underdog')
+                                          AND EXISTS (SELECT 1 FROM nba_stats.player_game_log g WHERE g.game_date = b.game_date) ORDER BY 1""", (a, d1)).fetchall()]
     W = defaultdict(dict)
     for app, month, w in conn.execute("SELECT app, month, weights FROM nba_score.honest_blend_weights ORDER BY month").fetchall():
         W[app][month] = w if isinstance(w, list) else __import__("json").loads(w)
