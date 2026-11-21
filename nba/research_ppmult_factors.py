@@ -51,9 +51,9 @@ def main():
     # ladder shape per side
     lad = lp.groupby(["gd", "nm", "base_market", "sd"]).agg(n_gob=("kind", lambda s: (s == "goblin").sum()), n_dem=("kind", lambda s: (s == "demon").sum()),
                                                            has_std=("kind", lambda s: (s == "standard").any())).reset_index()
-    lp2 = lp[lp["kind"] != "standard"].copy()
+    lp2 = lp[(lp["kind"] != "standard") & lp["anchor"].notna()].copy()
     lp2["dist"] = (lp2["line"] - lp2["anchor"]).abs()
-    lp2["rung"] = lp2.groupby(["gd", "nm", "base_market", "sd", "kind"])["dist"].rank(method="first").astype(int)
+    lp2["rung"] = lp2.groupby(["gd", "nm", "base_market", "sd", "kind"])["dist"].rank(method="first")
     stepd = lp.groupby(["gd", "nm", "base_market", "sd"])["line"].apply(lambda s: np.min(np.diff(np.sort(s.unique()))) if s.nunique() > 1 else np.nan).rename("lstep").reset_index()
     d = m.merge(lp2[["gd", "nm", "base_market", "sd", "line", "kind", "anchor", "anchor_type", "tier", "rung"]].drop_duplicates(["gd", "nm", "base_market", "sd", "line", "kind"]),
                 on=["gd", "nm", "base_market", "sd", "line", "kind"], how="inner")
