@@ -49,8 +49,14 @@ def main():
     stats = sorted(d["stat"].unique())
     print(f"MECH|legs {len(d):,} | ladders {d['lad'].nunique():,} | ladders with >= 2 quoted rungs {int((d.groupby('lad').size() >= 2).sum()):,} | stats {len(stats)}", flush=True)
     r_stat = {s: 8.0 for s in stats}
-    a, bb, c = 0.0, -0.6, 0.0
+    KS = [("demon", "o"), ("demon", "u"), ("goblin", "o"), ("goblin", "u")]
+    coef = {k: np.array([0.0, -0.6, 0.0]) for k in KS}
+    a = bb = c = None
     L = {k: g for k, g in d.groupby("lad")}
+
+    def F(kind, sd, lq):
+        k0 = coef[(kind, sd)]
+        return k0[0] + k0[1] * lq + k0[2] * lq * lq
 
     def best_mu(g, a, bb, c, r, exclude=None):
         rows = g if exclude is None else g.drop(index=exclude)
@@ -60,7 +66,7 @@ def main():
         for _, x in rows.iterrows():
             q = qchance(MUG, r, x["line"], x["over"])
             lq = np.log(q / (1 - q))
-            err += (a + bb * lq + c * lq * lq - np.log(x["f"])) ** 2
+            err += (F(x["kind"], x["sd"], lq) - np.log(x["f"])) ** 2
         return MUG[int(np.argmin(err))]
 
     for it in range(6):
@@ -69,7 +75,12 @@ def main():
         q = np.array([qchance(mu, r_stat[s], ln, ov) for mu, s, ln, ov in zip(d["mu"], d["stat"], d["line"], d["over"])])
         lq = np.log(q / (1 - q))
         X = np.column_stack([np.ones(len(d)), lq, lq * lq])
-        a, bb, c = np.linalg.lstsq(X, np.log(d["f"].values), rcond=None)[0]
+        pred = np.zeros(len(d))
+        for k in KS:
+            mk = ((d["kind"] == k[0]) & (d["sd"] == k[1])).values
+            if mk.sum() > 20:
+                coef[k] = np.linalg.lstsq(X[mk], np.log(d["f"].values[mk]), rcond=None)[0]
+            pred[mk] = X[mk] @ coef[k]
         # dispersion per stat: pick r minimising error with mu re-searched (coarse)
         if it in (1, 3):
             for s in stats:
@@ -83,29 +94,30 @@ def main():
                         g = L[k]; mu = best_mu(g, a, bb, c, r)
                         for _, x in g.iterrows():
                             qq = qchance(mu, r, x["line"], x["over"]); l2 = np.log(qq / (1 - qq))
-                            e += (a + bb * l2 + c * l2 * l2 - np.log(x["f"])) ** 2
+                            e += (F(x["kind"], x["sd"], l2) - np.log(x["f"])) ** 2
                     if best is None or e < best[0]:
                         best = (e, r)
                 r_stat[s] = best[1]
-        res = np.log(d["f"].values) - X @ np.array([a, bb, c])
-        print(f"MECH|iter {it}: a {a:+.3f} b {bb:+.3f} c {c:+.4f} | in-sample median |log err| {100*np.median(np.abs(res)):.2f}% | r " + ", ".join(f"{s}:{r_stat[s]:g}" for s in stats[:12]), flush=True)
+        res = np.log(d["f"].values) - pred
+        print(f"MECH|iter {it}: " + " ".join(f"{k[0][0]}{k[1]} {coef[k][0]:+.3f}/{coef[k][1]:+.3f}/{coef[k][2]:+.4f}" for k in KS) + " | in-sample median |log err| {100*np.median(np.abs(res)):.2f}% | r " + ", ".join(f"{s}:{r_stat[s]:g}" for s in stats[:12]), flush=True)
 
     # leave-one-rung-out exactness
     ok = []; errs = []; by = {}
+    MINR = int(os.environ.get("MECH_MINR", "4"))
     for k, g in L.items():
-        if len(g) < 2:
+        if len(g) < MINR:
             continue
         r = r_stat[g["stat"].iloc[0]]
         for i, x in g.iterrows():
             mu = best_mu(g, a, bb, c, r, exclude=i)
             qq = qchance(mu, r, x["line"], x["over"]); l2 = np.log(qq / (1 - qq))
-            v = float(np.exp(a + bb * l2 + c * l2 * l2))
+            v = float(np.exp(F(x["kind"], x["sd"], l2)))
             gr = grid[(x["kind"], x["sd"])]; sn = gr[np.argmin(np.abs(gr - v))]
             hit = abs(sn - round(x["f"], 4)) < 1e-3
             ok.append(hit); errs.append(abs(sn / x["f"] - 1))
             by.setdefault((x["kind"], x["sd"]), []).append(hit)
     e = np.array(errs)
-    print(f"MECH|LEAVE-ONE-RUNG-OUT: {len(ok):,} rungs | EXACT {100*np.mean(ok):.1f}% | median error {100*np.median(e):.2f}% | p90 {100*np.percentile(e,90):.2f}% | " +
+    print(f"MECH|LEAVE-ONE-RUNG-OUT (ladders with >= {MINR} quoted rungs): {len(ok):,} rungs | EXACT {100*np.mean(ok):.1f}% | median error {100*np.median(e):.2f}% | p90 {100*np.percentile(e,90):.2f}% | " +
           " | ".join(f"{k[0]}-{'More' if k[1]=='o' else 'Less'} exact {100*np.mean(v):.0f}% (n {len(v)})" for k, v in sorted(by.items())), flush=True)
     # mu vs anchor
     lm = d.drop_duplicates("lad")[["stat", "anchor", "mu"]].dropna()
