@@ -83,6 +83,7 @@ def main():
         cur = v[h["game_date"].values >= np.datetime64("2026-10-01")]
         base = cur if len(cur) >= 3 else v[-20:]
         F[(pid, stat)] = (base.mean(), base.std() + 0.3, v[-10:].mean(), v[-5:].mean(), v[-10:].std(), len(cur), h["mn"].values[-10:].mean(), base)
+    print(f"LM|debug: rows with player_id {d['player_id'].notna().mean()*100:.0f}% | form keys {len(F)} | gl players {gl['player_id'].nunique()} | sample ids {list(d['player_id'].dropna().unique()[:3])} | sample gl {list(gl['player_id'].unique()[:3])}", flush=True)
     for c in ("avg_s", "sd_s", "avg10", "avg5", "sd10", "gp", "min10"):
         d[c] = np.nan
     d["over_s"] = np.nan
