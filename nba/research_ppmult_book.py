@@ -9,7 +9,9 @@ Caesars, Fanatics, BetRivers, Novig, ProphetX, Underdog's own prices), de-vigged
 combined per line (median), and interpolated across lines in logit space -> P(stat > x) for any x. Only PrizePicks quotes taken within
 PPMB_WIN minutes of the book snapshot are used.
 Test: ln f = poly(logit q) per kind / side, q = the market chance of that exact leg; out-of-day; EXACT after snapping to PrizePicks' values.
-Env: DATABASE_URL, PPMF_SINCE (2026-10-20), PPMB_WIN (75).
+Env: DATABASE_URL, PPMF_SINCE (2026-10-20), PPMB_WIN (75), PPMB_FIT (linear | nb: 2026-11-21 - instead of straight lines between book
+lines, fit a negative-binomial count distribution (mean, dispersion) to each player's whole book ladder and read P(stat > x) from it; this
+also reaches rungs beyond the book's last line), PPMB_EXTRAP (with nb: how many points past the book's outermost line a rung may sit, 6).
 """
 import os
 import subprocess
@@ -28,6 +30,37 @@ BOOKS = ("fanduel", "bovada", "draftkings", "betmgm", "williamhill_us", "fanatic
 def am2p(a):
     a = np.asarray(a, float)
     return np.where(a < 0, -a / (-a + 100), 100 / (a + 100))
+
+
+FIT = os.environ.get("PPMB_FIT", "linear"); EXTRAP = float(os.environ.get("PPMB_EXTRAP", "6"))
+_FITC = {}
+
+
+def nb_fit(key, xs, po):
+    """negative binomial (mean mu, size r) fitted to the book ladder: P(X > x) = sf(floor(x)) for half-point lines; least squares in logit."""
+    if key in _FITC:
+        return _FITC[key]
+    from scipy.optimize import minimize
+    from scipy.stats import nbinom
+    xs = np.asarray(xs, float); lo_t = np.log(po / (1 - po)); k = np.floor(xs)
+
+    def sf(mu, r):
+        pp = r / (r + mu)
+        return np.clip(nbinom.sf(k, r, pp), 1e-4, 1 - 1e-4)
+
+    def loss(v):
+        mu, r = np.exp(v)
+        s_ = sf(mu, r)
+        return float(np.sum((np.log(s_ / (1 - s_)) - lo_t) ** 2))
+    mu0 = max(float(np.interp(0.5, po[::-1], xs[::-1])) if len(xs) > 1 else float(xs[0]), 0.3)
+    best = None
+    for r0 in (2.0, 8.0, 40.0):
+        res = minimize(loss, np.log([mu0, r0]), method="Nelder-Mead", options={"xatol": 1e-4, "fatol": 1e-6, "maxiter": 400})
+        if best is None or res.fun < best.fun:
+            best = res
+    mu, r = np.exp(best.x)
+    _FITC[key] = (mu, r, best.fun / max(len(xs), 1))
+    return _FITC[key]
 
 
 def main():
@@ -82,7 +115,14 @@ def main():
         c, gap = best
         xs = c["line"].values; ys = np.log(c["over"].values / (1 - c["over"].values))
         exact = np.any(np.isclose(xs, r.line))
-        if exact:
+        if FIT == "nb" and len(xs) >= 2:
+            from scipy.stats import nbinom
+            if not (xs.min() - EXTRAP <= r.line <= xs.max() + EXTRAP):
+                continue
+            mu, rr, _ = nb_fit((r.gd, ss[j], r.base_market, r.nm), xs, c["over"].values)
+            pv = float(np.clip(nbinom.sf(np.floor(r.line), rr, rr / (rr + mu)), 1e-4, 1 - 1e-4))
+            lo = np.log(pv / (1 - pv))
+        elif exact:
             lo = ys[np.isclose(xs, r.line)][0]
         elif len(xs) >= 2 and xs.min() < r.line < xs.max():
             lo = np.interp(r.line, xs, ys)
@@ -100,7 +140,8 @@ def main():
             pass
         rows.append((r.gd, r.kind, r.sd, r.f, q, exact, gap, len(xs), pb, r.quoted_at, r.nm, r.base_market, r.line))
     d = pd.DataFrame(rows, columns=["gd", "kind", "sd", "f", "q", "exact", "gap", "nlines", "pb", "quoted_at", "nm", "base_market", "line"])
-    if os.environ.get("PPMB_SAVE") == "1":
+    print(f"PMB|market curve: {FIT}" + (f" (negative binomial per ladder, up to {EXTRAP:g} pts past the book's lines; {len(_FITC):,} ladders fitted)" if FIT == "nb" else " (straight lines in logit between book lines)"), flush=True)
+    if os.environ.get("PPMB_SAVE") == "1" and FIT == "linear":
         c2 = psycopg.connect(os.environ["DATABASE_URL"])
         c2.execute("DROP TABLE IF EXISTS nba_market.rs_pp_mktq")
         c2.execute("CREATE TABLE nba_market.rs_pp_mktq (quoted_at text, nm text, base_market text, line float8, kind text, sd text, q float8, q_bovada float8, q_underdog float8, q_novig float8, q_fanduel float8, gap float8, exact boolean)")
