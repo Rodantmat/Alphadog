@@ -25,9 +25,10 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     since = os.environ.get("PPMF_SINCE", "2026-10-20")
     m = pd.read_sql("""SELECT run_file, (quoted_at AT TIME ZONE 'America/Los_Angeles')::date gd, quoted_at, projection_id::text pid, line::float8 line, kind, lower(left(side,1)) sd,
-                              factor_mined::float8 f FROM nba_market.pp_mined_leg WHERE factor_mined IS NOT NULL AND kind IN ('goblin','demon') AND quoted_at >= %s""", conn, params=(since,))
+                              factor_mined::float8 f, nba_ref.norm_name(player) nm, base_market, quoted_at::text qa FROM nba_market.pp_mined_leg WHERE factor_mined IS NOT NULL AND kind IN ('goblin','demon') AND quoted_at >= %s""", conn, params=(since,))
     runs = tuple(m["run_file"].unique())
     b = pd.read_sql("SELECT run_file, projection_id::text pid, player_id::text ppid, player, stat, line::float8 line, odds, start_time FROM nba_market.pp_board_row WHERE run_file = ANY(%s)", conn, params=(list(runs),))
+    mk = pd.read_sql("SELECT * FROM nba_market.rs_pp_mktq", conn) if os.environ.get("PPMF_MKT") == "1" else None
     conn.close()
     print(f"PMF2|quotes {len(m):,} in {len(runs)} runs | board rows {len(b):,}", flush=True)
     b = b[~b["player"].str.contains(r"\+", regex=True, na=False)]
@@ -61,6 +62,16 @@ def main():
     d["stat_c"] = d["stat"].astype("category").cat.codes
     d["mins_to_tip"] = (pd.to_datetime(d["start_time"], utc=True) - pd.to_datetime(d["quoted_at"], utc=True)).dt.total_seconds() / 60
     d["lnf"] = np.log(d["f"])
+    MKT = []
+    if mk is not None:
+        mk = mk.rename(columns={"quoted_at": "qa"})
+        d = d.merge(mk.drop_duplicates(["qa", "nm", "base_market", "line", "kind", "sd"]), on=["qa", "nm", "base_market", "line", "kind", "sd"], how="left")
+        for c in ("q", "q_bovada", "q_underdog", "q_novig", "q_fanduel"):
+            d["l" + c] = np.log(d[c] / (1 - d[c]))
+        MKT = ["lq", "lq_bovada", "lq_underdog", "lq_novig", "lq_fanduel", "gap"]
+        print(f"PMF2|with a same-hour market chance: {d['q'].notna().sum():,}", flush=True)
+        if os.environ.get("PPMF_ONLYMKT") == "1":
+            d = d[d["q"].notna()].copy()
     print(f"PMF2|quotes with their same-run ladder: {len(d):,} ({100*len(d)/len(m):.0f}%) | explicit regular line {100*d['explicit'].mean():.0f}% | days {d['gd'].nunique()}", flush=True)
     grid = {k: np.array(sorted(v.round(4).unique())) for k, v in d.groupby(["kind", "sd"])["f"]}
     for k, v in grid.items():
@@ -102,6 +113,9 @@ def main():
             ("+ anchor level, regular vs switch, ladder shape", ["is_dem", "is_over", "rung", "dist", "rel", "dsq", "steps", "anchor", "explicit", "n_gob", "n_dem", "n_side", "lstep"]),
             ("+ stat", ["is_dem", "is_over", "rung", "dist", "rel", "dsq", "steps", "anchor", "explicit", "n_gob", "n_dem", "n_side", "lstep", "stat_c"]),
             ("+ minutes before tip", ["is_dem", "is_over", "rung", "dist", "rel", "dsq", "steps", "anchor", "explicit", "n_gob", "n_dem", "n_side", "lstep", "stat_c", "mins_to_tip"])]
+    if MKT:
+        sets += [("market chance alone", ["is_dem", "is_over"] + MKT),
+                 ("ladder + stat + market chance", ["is_dem", "is_over", "rung", "dist", "rel", "dsq", "steps", "anchor", "explicit", "n_gob", "n_dem", "n_side", "lstep", "stat_c", "mins_to_tip"] + MKT)]
     for lab, cols in sets:
         ex = []; er = []
         for fd in folds:

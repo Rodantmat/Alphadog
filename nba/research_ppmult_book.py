@@ -98,8 +98,17 @@ def main():
                     pb[bkn] = v if r.sd == "o" else 1 - v
         except KeyError:
             pass
-        rows.append((r.gd, r.kind, r.sd, r.f, q, exact, gap, len(xs), pb))
-    d = pd.DataFrame(rows, columns=["gd", "kind", "sd", "f", "q", "exact", "gap", "nlines", "pb"])
+        rows.append((r.gd, r.kind, r.sd, r.f, q, exact, gap, len(xs), pb, r.quoted_at, r.nm, r.base_market, r.line))
+    d = pd.DataFrame(rows, columns=["gd", "kind", "sd", "f", "q", "exact", "gap", "nlines", "pb", "quoted_at", "nm", "base_market", "line"])
+    if os.environ.get("PPMB_SAVE") == "1":
+        c2 = psycopg.connect(os.environ["DATABASE_URL"])
+        c2.execute("DROP TABLE IF EXISTS nba_market.rs_pp_mktq")
+        c2.execute("CREATE TABLE nba_market.rs_pp_mktq (quoted_at text, nm text, base_market text, line float8, kind text, sd text, q float8, q_bovada float8, q_underdog float8, q_novig float8, q_fanduel float8, gap float8, exact boolean)")
+        with c2.cursor() as cur:
+            cur.executemany("INSERT INTO nba_market.rs_pp_mktq VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                            [(str(r.quoted_at), r.nm, r.base_market, float(r.line), r.kind, r.sd, float(r.q), r.pb.get("bovada"), r.pb.get("underdog"), r.pb.get("novig"), r.pb.get("fanduel"), float(r.gap), bool(r.exact)) for r in d.itertuples()])
+        c2.commit(); c2.close()
+        print(f"PMB|saved {len(d):,} market chances to nba_market.rs_pp_mktq", flush=True)
     d["lq"] = np.log(d["q"] / (1 - d["q"])); d["lnf"] = np.log(d["f"])
     print(f"PMB|quotes with a same-hour market chance: {len(d):,} ({100*d['exact'].mean():.0f}% at an exact book line, rest interpolated) | days {d['gd'].nunique()}", flush=True)
     grid = {k: np.array(sorted(v.round(4).unique())) for k, v in d.groupby(["kind", "sd"])["f"]}
