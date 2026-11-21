@@ -959,6 +959,35 @@ Season replay of the live engine, real prices (hr11 44811329596): S10 23 slips +
 **Flex with goblins / demons: NOT mapped.** Flex tiers are not a function of the leg strength alone (top tier within one step only 36-82%; lower tiers 60-80%); the lower tier is chosen on a coarse grid and the top tier moves with it. Flex results for goblin / demon slips can only come from real quotes.
 **Value consequence (Power):** the adjusted bases make 3-pick goblin / demon Power about 11% worse than "6 x factors" and 5- / 6-pick 2-4% worse; with pass 28 (every More tier loses per leg), no goblin / demon Power slip is worth playing. Not wired.
 
+## 8aq. GOBLIN / DEMON LEG MULTIPLIER - REVERSE-ENGINEERING PROGRAM (owner 2026-11-20 17:08 PT; written 18:08 PT)
+
+**Owner's instruction (verbatim gist):** every goblin / demon leg must carry a proper multiplier like a regular line, so each has an implied ROI.
+The ladder is anchored at the regular line or the switch point (tier 0); goblins / demons are tiers 1, 2, 3 ... each side, More and Less.
+The multiplier per tier is NOT fixed - known factors: the tier; where the regular line sits (32.5 vs 15.5); no regular line (switch point only);
+player form (0.5 blocks for a player with none vs one with 1-2 recently); ladder density (many rungs vs one goblin + one demon) - and maybe more.
+Method: probe one leg with regulars until understood, then vary prop / line / player / form; then mix goblin+goblin, demon+demon, goblin+demon,
++ regulars; reverse-engineer every factor until the multiplier is very close.
+
+**Results so far (scripts research_ppmult_factors.py, _factors2.py, _mech.py, _book.py; 19,313 real leg quotes, 31 days, every quote joined to
+the board of the same probe run):**
+- Partner-invariant; re-quoted with the ladder unchanged: changes 1.8% within 30 min, 14% at 30-120 min, 33% at 2-6 h; with the ladder moved: 64%.
+  So the multiplier follows a hidden input that moves during the day.
+- PrizePicks' values are its 2-pick payout rounded (goblin More 1.9-2.9 in 0.1 steps = factor 0.633-0.967; demon More 3.25.. in 0.25 steps,
+  capped at 6.94 x factor; demon Less 0.567-0.967; goblin Less 1.083-2.667). Demon More floor 1.083 even when the market says ~50%.
+- Factor-by-factor (out-of-day, exact value): kind/side/rung alone 13.5%; + distance from the anchor (units, relative, per sqrt(anchor), steps)
+  34%; + anchor level, regular vs switch, ladder shape 36%; + stat 37%; minutes before tip adds nothing. Player form (season / last-10 /
+  last-5 average and spread, share of games over the line) adds NOTHING once distance and anchor are known. Strongest single driver:
+  distance from the anchor divided by sqrt(anchor) (a count-like spread).
+- Sportsbooks' chance of the exact line, same hour (all books, de-vigged, interpolated across each player's alt ladder): corr -0.96 (demons),
+  -0.94 (goblins); FanDuel's own alt ladder -0.99 (few exact matches). Market chance alone 33% exact; ladder + stat + market 41% exact,
+  64% within ~one step, median error 3.7%. A hidden-projection negative-binomial model per ladder: 20% exact (rejected as specified).
+- Limits found: the book snapshot is once a day (13:22 PT) while PrizePicks moves through the day; only Bovada / FanDuel / Underdog carry alt
+  ladders; PrizePicks rounds to 0.1 / 0.25 steps, so exact needs the hidden input to within ~1-2%.
+
+**Next (2026-11-21):** time-aligned full-ladder sweep starting right after P3 (13:35 PT, within 15 min of the books' snapshot): every rung of
+every ladder, both sides, quoted in the same minutes; then single-leg + regulars ladders (sizes 2-6) and goblin/demon mixes; refit with
+the fitted distribution of each player's book ladder (not linear interpolation), per-book source test, and the floor / cap rules.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -1072,4 +1101,5 @@ External (read for this work):
 - **2026-11-20 15:13-15:13 PT** - Owner: "the tiers are for Jon only, Jessi just the top 4 of each app she uses". The 15:10 Jessi change is reverted (commit 32f95e8 undone): her engine keeps the top-4 cap and her page shows only the top 4 per app (PP / Sleeper / Fliff), best first, no tiers (v1.2.3). Jon unchanged: Tier 1 = 4 strongest per app, Tier 2 = the rest.
 - **2026-11-20 15:37-15:38 PT** - Owner asked where goblin/demon multipliers stand. Status: single-leg factors mapped from 2-pick quotes (today 7,091 More + 871 Less real quotes; season 23,315 + 1,382). Open gap found: slip-level pricing - 1,710 historical 3-6 pick Power quotes with 1-6 alternates are NOT base x product of the 2-pick leg factors (payout / prediction 0.80-1.25 on single-alternate slips, 0.04-1.55 on all-alternate slips; 3-picks average 0.88-0.90, 4-picks 1.02-1.03); today's 9 slip quotes were all standard legs. Flex with alternates not mapped. Not mapped, no results reported. Scheduled task for 2026-11-21 10:10 PT broadened to the slip-level probe (every 2-6 structure, Power + Flex, More + Less) with predict-then-check.
 - **2026-11-20 15:45-16:33 PT** - Owner: more runners, get the goblin / demon multipliers today. 34 parallel probe runs; slip pricing worked out for Power (8ap): partner-invariant, time-drifting, grid-rounded, one strength per leg, adjusted bases 5.36 / 10.2 / 19.2 / 36.6, alternates combine by summed log factor; history-based Power error ~2.2% median, bias ~0 (6-pick +1.5%). Flex with alternates not mapped (needs real quotes). Goblin / demon Power: no slip worth playing.
+- **2026-11-20 17:08-18:08 PT** - Owner restated the goblin / demon requirement (every leg mapped like a regular, every factor reverse-engineered). Program and results in 8aq: best so far 41% exact / median error 3.7% (ladder geometry + market chance); form adds nothing beyond distance; drift explained by a hidden moving input. Late-game sweep dispatched 18:07 PT.
 
