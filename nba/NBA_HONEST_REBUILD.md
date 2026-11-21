@@ -1071,6 +1071,16 @@ Changes made (all behind BT_HONEST, default off until proven):
 - Replay of past seasons: nba/build_schedule_history.py (2,455 games on 322 dates from the team box scores) read by the builders only when BT_REPLAY=1.
 - Loader: LOAD_TABLE (parallel store) + LOAD_PRUNE (board rungs only, as production a day later). Workflow nba-replay-baseline.yml.
 - store_redirect.py: runs any builder against the _v2 tables unchanged.
+RESULTS SO FAR (22:40 PT):
+- CHAIN (research_chain_sharp.py, run cs_full; 2,276,904 distinct graded board legs, honest ladders, walk-forward by month, out of sample):
+  | season | RAW ladder | Platt | board-centred (production's chain B) |
+  | 2024-25 | log-loss 0.6136, slope 0.75 | 0.6030, 1.07 | 0.5844, 1.00 |
+  | 2025-26 | 0.6043, 0.75 | 0.5943, 1.03 | 0.5737, 1.02 |
+  | 2026-27 | 0.6070, 0.70 | 0.5948, 0.99 | 0.5684, 1.02 |
+  Same order on every line type (standard / goblin side / demon side); board-centred is calibrated (slope 0.93-1.05) everywhere. Its weights are stable month to month (points 0.05-0.1, rebounds 0.1, assists 0.1, steals 0.5-0.75, blocks 0.5). DECISION: keep production's chain B, refit as of each date on EVERY graded board leg of every season (BC_TRAIN_SRC=outcomes) on the honest ladders - production trained it on the two old seasons only, on the leaky ladders, and never on this season.
+- REPLAY PARITY: the production day builder replayed with the honest recipe = the certified honest history: 2024-12-20 92.2% of rungs identical, median 0.00, 1.7% > 5 pts (the rest = day-of injury report / roster rows the batch history never had). 2026-11-14 differs from the batch by median 0.9 (the batch used three TRAIN seasons, production uses two) - the replay is the production computation by construction.
+- Replay run: 450 dates in 38 jobs (nba-replay-baseline.yml, ~26 min a date), started 22:12 PT.
+- Also made homogeneous: build_availability_delta (P3's late-injury re-projection) used today's roster table -> last game's team under the honest recipe, and is replayed per date (it existed for 27 dates only). Fixed confidence tier cutpoints option (final_hp_conf_cuts).
 Found on the way: build_final_hp's confidence tier cutpoints are quartiles of the WHOLE stored population (drift with it) - to be fixed; board-centred calibration trained on the two old seasons only (never this season's legs) and on the leaky baseline.
 
 ## 9. Open items and owner decisions pending
@@ -1194,3 +1204,4 @@ External (read for this work):
 - **2026-11-20 20:48 PT** - Owner 20:37: audit the daily scoring chain, then one formula over all data. Health read (8au): runs and mining every slate; consumption complete by design; NOT consistent (daily confidence refit, calibration chain from 10-22, wider book set 11-01); back data built in 6 batches on older logic. Sample re-run of today's builder dispatched (fp24/fp25/fp26). Nothing written.
 - **2026-11-20 21:00 PT** - Parity samples in (8au): final_hp matches; confidence and score do not (back data -6 to -9 score pts median; this season -2 to -5 until 11-19); baseline history differs from the honest replay by 2-3.6 pts median, and production this season by ~2. Options for one formula sent to owner. Nothing written.
 - **2026-11-20 21:15 PT** - Owner 20:58: fix the daily formula until sharp and proven, then run the identical pipeline for every date. Built (8av): honest recipe module (classification, combos, periods), AS20 roster rule, past-season schedule, replay workflow into baseline_history_v2, store_redirect. Smoke replays 2024-12-20 / 2026-11-14 running; chain test (research_chain_sharp) running. Production unchanged.
+- **2026-11-20 22:40 PT** - Chain test: board-centred chain is the sharp one on honest inputs in all three seasons (log-loss 0.584 / 0.574 / 0.568 vs raw 0.614 / 0.604 / 0.607, calibration slope 1.00-1.02); kept, retrained on every graded leg. Replay parity proven (92% identical to the certified history). Full baseline replay (450 dates, 38 jobs) running.
