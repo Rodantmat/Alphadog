@@ -942,6 +942,23 @@ Season replay of the live engine, real prices (hr11 44811329596): S10 23 slips +
 - A 2- or 3-pick of legs that each lose 9-17% loses roughly 20-40%. **Verdict: no goblin or demon slip is worth playing on this evidence; not wired.** Re-test the Less sides once tonight's ~870 Less quotes are graded, and the goblin "model predicts a profit" bucket as quotes accumulate.
 - Defect: the pass's one-slip-a-day section printed no rows (fewer than 8 slips found per cell) - to fix; the leg-level result already decides it.
 
+## 8ap. PRIZEPICKS SLIP PRICING WITH GOBLINS / DEMONS - POWER MAPPED, FLEX NOT (owner 2026-11-20 15:45 PT "more runners, more parallel probes, we need to get it today"; written 16:33 PT)
+
+**Probes.** 15:47 PT: 20 parallel runs (stack x8, multi x8, slips x4); 16:16 PT: 14 more (slips x8, stack x6). New real quotes: STACK ~2,900, MIXED (one alternate + standards, sizes 3-6) ~1,200, plus 2-pick legs. No AI model in the probes.
+**Scripts:** `research_ppfit1.py` .. `research_ppfit6.py` (read-only).
+
+**What PrizePicks does (proven on real quotes):**
+1. A leg's 2-pick price does not depend on its standard partner (different partners within a minute: 100% identical).
+2. Prices drift through the day (same leg: 96% identical within 10 min, 64-93% within an hour, ~50% across 6 h). Every comparison must use quotes taken minutes apart.
+3. Payouts are rounded to a grid: 0.1 below 3x, 0.25 to 10x, 0.5 to 50x, 1 above.
+4. One number per leg sets every size: from a leg's 6-pick payout, its 2-, 3-, 4- and 5-pick payouts are predicted 78-90% exactly and 98-100% within one grid step (median error 0.6-1.2%, bias 0); goblin vs demon and More vs Less add nothing once that number is known.
+5. A lineup with any goblin / demon is priced on ADJUSTED bases, not the 6 / 10 / 20 / 37.5 table: at a factor of 1 they are about 5.36 (3-pick, -11%), 10.2 (4-pick, +2%), 19.2 (5-pick, -4%), 36.6 (6-pick, -2%). The size step also grows with the leg (a big demon scales up more than a goblin), so "base x 2-pick factor" is wrong by 0.80-1.25 on single slips - that is what made earlier goblin / demon slip numbers untrustworthy.
+6. Several alternates combine through the SUM of their log 2-pick factors (one strength per slip), then the per-size curve.
+
+**Accuracy from what history holds (each leg's 2-pick quote only; out-of-day test, 8 days):** Power 3-pick median error 2.2% (p90 5.5%), bias +0.1%; 4-pick 2.1% (5.9%), +0.1%; 5-pick 2.2% (7.2%), +0.2%; 6-pick 2.3% (7.1%), +1.5%. Exact to the cent 22-50% - the 2-pick reading itself is rounded (+/-2-4%), so cent-exact prediction from history is not possible; live slips are priced by PrizePicks' own quote (slipq) before they show, which is exact.
+**Flex with goblins / demons: NOT mapped.** Flex tiers are not a function of the leg strength alone (top tier within one step only 36-82%; lower tiers 60-80%); the lower tier is chosen on a coarse grid and the top tier moves with it. Flex results for goblin / demon slips can only come from real quotes.
+**Value consequence (Power):** the adjusted bases make 3-pick goblin / demon Power about 11% worse than "6 x factors" and 5- / 6-pick 2-4% worse; with pass 28 (every More tier loses per leg), no goblin / demon Power slip is worth playing. Not wired.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -1054,4 +1071,5 @@ External (read for this work):
 - **2026-11-20 15:01-15:03 PT** - Owner: Jon's text showed Betr; texts must show only Jon = PrizePicks, Underdog, Sleeper, Fliff; Jessi = PrizePicks, Sleeper, Fliff; their slip limits stand (top ones by the previous rules). Done: `nba/p3_text.py` results block filtered per person (yesterday lines and Accumulated). Pages checked for 2026-11-20: Jon carries every owner slip that is on his boards (PP 9/9, UD 7/9 - two had lines Underdog moved, Sleeper 6/7, Fliff 6/6, no Betr); Jessi 4 per app on PP / Sleeper / Fliff (top-4 cap), no UD / Betr. Owner text: logged and sent by Gmail at 13:38 PT to the same Voice address as every day, no bounce in Gmail - the send left our side; not received on his phone (Voice side).
 - **2026-11-20 15:13-15:13 PT** - Owner: "the tiers are for Jon only, Jessi just the top 4 of each app she uses". The 15:10 Jessi change is reverted (commit 32f95e8 undone): her engine keeps the top-4 cap and her page shows only the top 4 per app (PP / Sleeper / Fliff), best first, no tiers (v1.2.3). Jon unchanged: Tier 1 = 4 strongest per app, Tier 2 = the rest.
 - **2026-11-20 15:37-15:38 PT** - Owner asked where goblin/demon multipliers stand. Status: single-leg factors mapped from 2-pick quotes (today 7,091 More + 871 Less real quotes; season 23,315 + 1,382). Open gap found: slip-level pricing - 1,710 historical 3-6 pick Power quotes with 1-6 alternates are NOT base x product of the 2-pick leg factors (payout / prediction 0.80-1.25 on single-alternate slips, 0.04-1.55 on all-alternate slips; 3-picks average 0.88-0.90, 4-picks 1.02-1.03); today's 9 slip quotes were all standard legs. Flex with alternates not mapped. Not mapped, no results reported. Scheduled task for 2026-11-21 10:10 PT broadened to the slip-level probe (every 2-6 structure, Power + Flex, More + Less) with predict-then-check.
+- **2026-11-20 15:45-16:33 PT** - Owner: more runners, get the goblin / demon multipliers today. 34 parallel probe runs; slip pricing worked out for Power (8ap): partner-invariant, time-drifting, grid-rounded, one strength per leg, adjusted bases 5.36 / 10.2 / 19.2 / 36.6, alternates combine by summed log factor; history-based Power error ~2.2% median, bias ~0 (6-pick +1.5%). Flex with alternates not mapped (needs real quotes). Goblin / demon Power: no slip worth playing.
 
