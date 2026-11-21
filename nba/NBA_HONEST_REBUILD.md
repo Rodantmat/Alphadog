@@ -1011,6 +1011,22 @@ shard; ~20 at once is the safe level). `combo` (2..6 goblins / demons in one sli
    regular vs switch point, ladder density, anchor level add ~nothing beyond it. Unseen players: goblins within one step 86-95% at 2-3 picks,
    demons 37-59% - demons follow a hidden input (the market) the board does not show.
 
+## 8as. THE LIVE SET AS ONE PORTFOLIO - RISK, CONCENTRATION, EXPOSURE CAPS (owner 2026-11-20 19:36 / 19:39 PT; written 19:51 PT)
+
+Trigger: first live slate 2026-11-20 went red across every app; Aday Mara rebounds U7.5 (16) sat in 18 of 31 slips, Keegan Murray 3s U1.5 in 13; also lost:
+Daniels steals U2.5 (4), Battle reb U3.5 (5), Hield 3s U1.5 (4), Wolf pts U5.5 (20), Spencer Jones 3s U0.5. `audit_portfolio_risk.py` (run 44862715374) replays
+build() on the 30 slates 2026-10-20 .. 11-19, all apps together, 1 unit a slip:
+- Distinct legs the set used, graded once: 521 legs, hit **58.0%** (the blend said 53.4%; the raw model said 73.8% - the raw baseline is overconfident by ~16 points,
+  it only orders lists). Per day median 58%; 3 of 30 days under 40% (10-25 5/19, 11-15 6/18, 10-29 4/11): a bad day like 11-20 has happened ~1 in 10 slates.
+- Whole set: 856 slips (28.5 a day), +549 u, ROI +64%, days up 50%, max drawdown 132 u, worst day -29 u, daily sd 56 u.
+- Concentration: the most-used leg sits in a median 20 slips a day (61% of the day's slips, max 30). Days it hit (20): median +20%; days it missed (9): median -55%.
+- Exposure caps (a leg in at most C slips across all apps; the slip takes its own list's next leg):
+  per player + stat: C1 -9% | C2 +6% | C3 +24% (dd 58) | C4 +23% (dd 53) | C6 +27% (dd 76) | C8 +45% (dd 63, worst -24) | C10 +47% (dd 103) | none +64% (dd 132, worst -29)
+  per player: C3 +7% | C4 +37% (+208 u, dd 49, worst -18, 18.5 slips/day) | C5 +36% (dd 44) | C8 +48% (dd 68) | none +64%
+- Reading: the edge is real at the leg level (58% vs ~54-57% break-evens) but the set's return and its swings both come from stacking the top few legs; 30 slates
+  only - every number here is wide. Owner decides (options with numbers sent 20:xx PT). Next: the same on 2024-25 / 2025-26 (modelled prices), and whether an
+  all-Unders set carries a night-level factor (fast / high-scoring nights) that Overs would offset.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -1126,4 +1142,5 @@ External (read for this work):
 - **2026-11-20 15:45-16:33 PT** - Owner: more runners, get the goblin / demon multipliers today. 34 parallel probe runs; slip pricing worked out for Power (8ap): partner-invariant, time-drifting, grid-rounded, one strength per leg, adjusted bases 5.36 / 10.2 / 19.2 / 36.6, alternates combine by summed log factor; history-based Power error ~2.2% median, bias ~0 (6-pick +1.5%). Flex with alternates not mapped (needs real quotes). Goblin / demon Power: no slip worth playing.
 - **2026-11-20 17:08-18:08 PT** - Owner restated the goblin / demon requirement (every leg mapped like a regular, every factor reverse-engineered). Program and results in 8aq: best so far 41% exact / median error 3.7% (ladder geometry + market chance); form adds nothing beyond distance; drift explained by a hidden moving input. Late-game sweep dispatched 18:07 PT.
 - **2026-11-20 18:20-19:33 PT** - Owner's method (8ar): ladderall (16,648 quotes, 578 ladders) + combo (5,378 quotes). Combination law proven: P = B' x prod(single k-pick / B'), B' 5.44 / 10.21 / 19.0 / 36.4, unbiased at every size and alternate count. Real per-leg multipliers for 2,683 legs in nba_market.pp_lad_leg.
+- **2026-11-20 19:36-19:51 PT** - Owner: live slate all red, validate. Portfolio audit 8as: distinct legs 58% hit over 30 slates; 61% of slips share the top leg; exposure-cap options measured; decision with the owner.
 
