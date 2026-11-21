@@ -55,6 +55,8 @@ def main():
     oneu["over"] = 1 - oneu["u"] / oneu["bookmaker"].map(vig).fillna(1.05)
     allp = pd.concat([two[key + ["over"]], one[key + ["over"]], oneu[key + ["over"]]])
     allp["over"] = allp["over"].clip(0.005, 0.995)
+    allp["snapk"] = pd.to_datetime(allp["snapshot_ts"], utc=True).dt.tz_convert(None).dt.floor("30min")
+    perbook = allp.groupby(["gd", "snapk", "base_market", "nm", "line", "bookmaker"])["over"].median().unstack("bookmaker")
     print("PMB|book overround (median of two-sided pairs): " + ", ".join(f"{b} {v:.3f}" for b, v in vig.items()), flush=True)
     # per snapshot time + player-market: median across books per line
     allp["snap"] = pd.to_datetime(allp["snapshot_ts"], utc=True).dt.tz_convert(None).dt.floor("30min").astype("datetime64[ns]")
@@ -88,8 +90,16 @@ def main():
             continue          # no extrapolation
         po = 1 / (1 + np.exp(-lo))
         q = po if r.sd == "o" else 1 - po
-        rows.append((r.gd, r.kind, r.sd, r.f, q, exact, gap, len(xs)))
-    d = pd.DataFrame(rows, columns=["gd", "kind", "sd", "f", "q", "exact", "gap", "nlines"])
+        pb = {}
+        try:
+            row = perbook.loc[(r.gd, pd.Timestamp(ss[j]), r.base_market, r.nm, r.line)]
+            for bkn, v in row.items():
+                if pd.notna(v):
+                    pb[bkn] = v if r.sd == "o" else 1 - v
+        except KeyError:
+            pass
+        rows.append((r.gd, r.kind, r.sd, r.f, q, exact, gap, len(xs), pb))
+    d = pd.DataFrame(rows, columns=["gd", "kind", "sd", "f", "q", "exact", "gap", "nlines", "pb"])
     d["lq"] = np.log(d["q"] / (1 - d["q"])); d["lnf"] = np.log(d["f"])
     print(f"PMB|quotes with a same-hour market chance: {len(d):,} ({100*d['exact'].mean():.0f}% at an exact book line, rest interpolated) | days {d['gd'].nunique()}", flush=True)
     grid = {k: np.array(sorted(v.round(4).unique())) for k, v in d.groupby(["kind", "sd"])["f"]}
@@ -112,6 +122,27 @@ def main():
                 continue
             ex = np.concatenate(ex); er = np.concatenate(er)
             print(f"PMB|[{lab}] {kind} {'More' if sd == 'o' else 'Less'}: {len(ex):,} out-of-day | EXACT {100*ex.mean():.1f}% | median error {100*np.median(er):.2f}% | p90 {100*np.percentile(er,90):.2f}% | corr(lnf, logit q) {np.corrcoef(x['lnf'], x['lq'])[0,1]:+.3f}", flush=True)
+    # per book: which single book's chance predicts PrizePicks best (same legs, exact line at that book)
+    for bkn in BOOKS:
+        x = d[d["pb"].apply(lambda z: bkn in z)].copy()
+        if len(x) < 200:
+            continue
+        x["lqb"] = x["pb"].apply(lambda z: np.log(z[bkn] / (1 - z[bkn])))
+        out = []
+        for (kind, sd), y in x.groupby(["kind", "sd"]):
+            if len(y) < 100:
+                continue
+            ex = []
+            for fd in folds:
+                tr = y[~y["gd"].isin(fd)]; te = y[y["gd"].isin(fd)]
+                if len(tr) < 50 or te.empty:
+                    continue
+                c = np.polyfit(tr["lqb"], tr["lnf"], 3); p = np.exp(np.polyval(c, te["lqb"])); gr = grid[(kind, sd)]
+                ex.append(np.isclose(np.array([gr[np.argmin(np.abs(gr - v))] for v in p]), te["f"].round(4), atol=1e-3))
+            if ex:
+                ex = np.concatenate(ex)
+                out.append(f"{kind[0]}{sd} exact {100*ex.mean():.0f}% (n {len(ex)}, corr {np.corrcoef(y['lnf'], y['lqb'])[0,1]:+.3f})")
+        print(f"PMB|book {bkn}: " + " | ".join(out), flush=True)
     # the curve itself (implied chance PrizePicks charges vs market chance)
     for (kind, sd), x in d.groupby(["kind", "sd"]):
         t = x.groupby(pd.cut(x["q"], [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]))["f"].agg(["count", "median"])
