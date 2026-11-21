@@ -357,6 +357,8 @@ def main():
     # a replay and a season rebuild, so the same confidence could land in different tiers on different days. When
     # classification_config['final_hp_conf_cuts'] holds three cuts they are used for every date; absent -> the in-run rule below.
     _fc = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'final_hp_conf_cuts'").fetchone()
+    if os.environ.get("FE_CONF_CUTS"):   # replays of the one-formula store pass the same three cuts the live config will hold
+        _fc = ({"cuts": [float(x) for x in os.environ["FE_CONF_CUTS"].split(",")]},)
     if _fc:
         _fcj = _fc[0] if isinstance(_fc[0], dict) else json.loads(_fc[0])
         if len(_fcj.get("cuts") or []) == 3:
