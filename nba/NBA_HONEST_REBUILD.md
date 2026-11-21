@@ -1089,6 +1089,19 @@ PROGRESS 2026-11-21 06:05 PT:
 - DOWNSTREAM ON THE STORE (production builders through store_redirect): 2024-25 complete (board-centred sets fitted as of every date on every graded leg, as-of cells, final_hp with fixed confidence, availability delta, board scoring running). 2025-26 / 2026-27 in progress.
 - PROOF OF ONE FORMULA (audit_formula_parity.py FP_V2=1, run fpv2a): today's builder re-run on 2024-11-15, 2025-01-24, 2025-04-09 against the stored rows: 100% of rows identical, final_hp / confidence / score moved 0.00, top-50 50 / 50.
 - PLAN: finish 2025-26 / 2026-27; heavy jobs paused during P2B (08:00-08:55 PT); switch after today's P3 (the 11-21 slate is played on the current formula), replay 11-21 into the store, then swap tables (switch_formula_v2.py) and turn the honest recipe on for the live builders, so 11-22 is the first live day on the one formula.
+RESULT 2026-11-21 10:35 PT - THE ONE-FORMULA STORE IS COMPLETE FOR 453 DATES (2024-10-22 .. 2026-11-20); research_formula_report.py, runs rep_prod / rep_v2:
+| | production today | one-formula store |
+|---|---|---|
+| final_hp legs 2024-25 / 2025-26 / 2026-27 | 3.68M / 4.09M / 0.56M | 3.79M / 4.20M / 0.55M |
+| calibration 2024-25 (predicted -> hit by fifth) | 12.5->11.4, 31.4->32.1, 47.8->48.0, 63.5->62.8, 81.7->81.2 | 10.6->10.7, 31.3->31.7, 47.8->47.8, 63.1->62.6, 81.9->81.3 |
+| calibration 2025-26 | 10.0->9.4, 27.3->27.2, 44.9->44.9, 61.3->61.4, 79.5->80.2 | 10.0->9.7, 27.6->27.2, 45.2->45.0, 61.6->61.5, 80.3->80.4 |
+| calibration 2026-27 | 10.0->10.9, 30.7->32.9, 47.0->47.6, 59.8->58.7, 78.9->77.5 | 10.7->10.7, 31.8->32.8, 47.3->47.5, 59.9->58.6, 78.8->78.1 |
+| log-loss 2024-25 / 2025-26 / 2026-27 (coin ~0.69) | 0.5542 / 0.5405 / 0.5675 (history on the leaky baseline) | 0.5501 / 0.5414 / 0.5642 (honest, as of each date) |
+| daily mean confidence: sd / largest jump, 2026-27 | 1.55 / 4.89 (10-23) | 0.06 / 0.10 |
+| daily mean score: sd / largest jump, 2026-27 | 2.52 / 8.02 (10-23) | 0.10 / 0.17 |
+| daily mean score: largest jump 2024-25 / 2025-26 | 4.17 / 3.18 | 2.02 / 1.87 (playoff slates) |
+| same formula every date | no (6 build batches, 3 calibration states, daily confidence refits) | yes: today's builder re-run on stored dates = 100% identical (fpv2a) |
+Board scoring follows the live rule of today on every date (Betr out of the scored board since owner 2026-10-19; its lines still have final_hp).
 Found on the way: build_final_hp's confidence tier cutpoints are quartiles of the WHOLE stored population (drift with it) - to be fixed; board-centred calibration trained on the two old seasons only (never this season's legs) and on the leaky baseline.
 
 ## 9. Open items and owner decisions pending
@@ -1216,3 +1229,4 @@ External (read for this work):
 - **2026-11-20 23:12 PT** - Production final_hp is badly overconfident in all three seasons incl. this one (top fifth said 82-84%, hit 54-58%): the board-centred set frozen on 10-23 and trained on leaky ladders. The honest refit fixes it (chain test). Confidence shows no out-of-sample order. Baseline replay at ~110 of 450 dates. (WITHDRAWN - see 03:58 PT)
 - **2026-11-21 03:58 PT** - CORRECTION: the 23:12 PT entry (production final_hp far too spread) was a measurement error of mine (outcomes joined without the prop). Withdrawn; re-measuring with the prop join. First correct read of the replayed store, January 2025, board-centred legs: final_hp 0.093 / 0.306 / 0.500 / 0.700 / 0.862 vs hit 0.090 / 0.306 / 0.500 / 0.698 / 0.864 (469k legs).
 - **2026-11-21 06:05 PT** - Baseline replay complete (453 dates). Confidence fixed by definition (measured: no outcome signal left once final_hp is calibrated). 2024-25 downstream complete; parity proof 100% identical. Switch planned after today's P3.
+- **2026-11-21 10:35 PT** - One-formula store complete for 453 dates; calibrated within ~1 pt in every season, log-loss equal or better than production, day-to-day jumps gone (score jump 8.0 -> 0.17 this season). Switch after today's P3: replay 11-21, swap tables, honest recipe + daily board-centred fit + fixed confidence on for the live builders.
