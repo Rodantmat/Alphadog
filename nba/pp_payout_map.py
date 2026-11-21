@@ -74,7 +74,15 @@ def in_shard(r):
     if not SHARD:
         return True
     import hashlib
-    return int(hashlib.md5(str(r["id"]).encode()).hexdigest(), 16) % SHARD[1] == SHARD[0]
+    return int(hashlib.md5(str(r["id"]).encode()).hexdigest(), 16) % SHARD[1] == SHARD[0] % SHARD[1]   # "1/n".."n/n" or "0/n".."n-1/n" both cover the board
+
+
+def in_shard_key(k):
+    """shard by any key (a whole ladder: player + stat) - same convention as in_shard"""
+    if not SHARD:
+        return True
+    import hashlib
+    return int(hashlib.md5(str(k).encode()).hexdigest(), 16) % SHARD[1] == SHARD[0] % SHARD[1]
 
 
 def already_mined():
@@ -717,6 +725,67 @@ def main():
                 if len(result["quotes"]) == before or getattr(q, "n", 0) >= MAX_Q:
                     break
             save("complete (grid)")
+            return 0
+
+        if MODE == "ladderall":
+            # LADDER-ALL (owner 2026-11-20 18:20 PT): EVERY ladder on the board, sharded by ladder (player + stat): each goblin / demon rung
+            # (and the regular line itself as the control) quoted as the ONLY non-regular leg beside the SAME regular legs from other games
+            # (never the same player, team or game), at 2, 3, 4, 5 and 6 picks - Power + every Flex tier come back with each quote. More on
+            # every rung, Less where PrizePicks opens it. Section LAD; note = tier|distance from anchor|anchor|explicit/switch|player | stat.
+            # Order: Points first (owner: "go with points"), then every other stat; deepest ladders first inside a stat.
+            lad = {}
+            for r in rows:
+                lad.setdefault((r["player"], r["stat"]), []).append(r)
+            cands = []
+            for key, v in lad.items():
+                if not in_shard_key(f"{key[0]}|{key[1]}"):
+                    continue
+                st_ = [r for r in v if r["odds"] == "standard"]
+                gs_ = [r for r in v if r["odds"] == "goblin"]
+                ds_ = [r for r in v if r["odds"] == "demon"]
+                if not gs_ and not ds_:
+                    continue
+                if st_:
+                    l0, expl = st_[0]["line"], "R"
+                elif gs_ and ds_:
+                    l0, expl = (max(r["line"] for r in gs_) + min(r["line"] for r in ds_)) / 2.0, "S"
+                else:
+                    l0, expl = (max(r["line"] for r in gs_) + 0.5) if gs_ else (min(r["line"] for r in ds_) - 0.5), "S"
+                gs_.sort(key=lambda r: abs(r["line"] - l0)); ds_.sort(key=lambda r: abs(r["line"] - l0))
+                pri = 0 if key[1] == "Points" else 1
+                cands.append((pri, -(len(gs_) + len(ds_)), key, l0, expl, st_[0] if st_ else None, gs_, ds_))
+            cands.sort(key=lambda c: (c[0], c[1], c[2]))
+            anchors_all = sorted([r for r in std if r["allow"] in ("", "over", "under_or_over")], key=lambda r: (r["game"], r["player"], r["stat"]))
+            result["meta"].update({"mode": "ladderall", "ladders_in_slice": len(cands)})
+            print(f"LADDERALL|ladders in this slice={len(cands)}|rungs={sum(len(c[6]) + len(c[7]) for c in cands)}|budget={MAX_Q}", flush=True)
+            done_l = 0
+            for _p, _n, key, l0, expl, st0, gs, ds in cands:
+                if getattr(q, "n", 0) >= MAX_Q - 5:
+                    break
+                g0 = (st0 or (gs or ds)[0])["game"]
+                team0 = (st0 or (gs or ds)[0]).get("team")
+                anchors, seen_g = [], {g0}
+                for x in anchors_all:
+                    if x["game"] in seen_g or x["player"] == key[0] or (team0 and x.get("team") == team0):
+                        continue
+                    anchors.append(leg(x)); seen_g.add(x["game"])
+                    if len(anchors) == 5:
+                        break
+                if not anchors:
+                    continue
+                done_l += 1
+                rungs = ([("S0", st0)] if st0 else []) + [(f"G{i + 1}", r) for i, r in enumerate(gs)] + [(f"D{i + 1}", r) for i, r in enumerate(ds)]
+                for tier_, r in rungs:
+                    sides = ["over"] + (["under"] if r["allow"] == "under_or_over" else [])
+                    for side in sides:
+                        for k in range(1, len(anchors) + 1):
+                            if getattr(q, "n", 0) >= MAX_Q:
+                                break
+                            run("LAD", [leg(r, side)] + anchors[:k],
+                                f"{tier_}{'u' if side == 'under' else ''}|{r['line'] - l0:+g}|{l0:g}|{expl}|{key[0]} | {key[1]}")
+            result["meta"]["ladders_done"] = done_l
+            print(f"LADDERALL|ladders done={done_l} of {len(cands)}", flush=True)
+            save("complete (ladderall)")
             return 0
 
         if MODE == "ladder":
