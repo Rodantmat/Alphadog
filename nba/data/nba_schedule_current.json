@@ -25406,8 +25406,8 @@
       "away_team_tricode": "CHA",
       "arena_name": "State Farm Arena",
       "arena_city": "Atlanta",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25421,8 +25421,8 @@
       "away_team_tricode": "ORL",
       "arena_name": "Barclays Center",
       "arena_city": "Brooklyn",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25436,8 +25436,8 @@
       "away_team_tricode": "IND",
       "arena_name": "Rocket Arena",
       "arena_city": "Cleveland",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25451,8 +25451,8 @@
       "away_team_tricode": "TOR",
       "arena_name": "Little Caesars Arena",
       "arena_city": "Detroit",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25466,8 +25466,8 @@
       "away_team_tricode": "WAS",
       "arena_name": "United Center",
       "arena_city": "Chicago",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25481,8 +25481,8 @@
       "away_team_tricode": "NOP",
       "arena_name": "Paycom Center",
       "arena_city": "Oklahoma City",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25496,8 +25496,8 @@
       "away_team_tricode": "PHX",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "9:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25511,8 +25511,8 @@
       "away_team_tricode": "HOU",
       "arena_name": "Ball Arena",
       "arena_city": "Denver",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25526,8 +25526,8 @@
       "away_team_tricode": "SAC",
       "arena_name": "Crypto.com Arena",
       "arena_city": "Los Angeles",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -26644,7 +26644,7 @@
       "game_id": "0022600325",
       "season": "2026-27",
       "game_date": "2026-12-01T00:00:00Z",
-      "game_datetime_utc": "2026-12-02T03:00:00Z",
+      "game_datetime_utc": "2026-12-02T04:00:00Z",
       "home_team_id": 1610612757,
       "home_team_tricode": "POR",
       "away_team_id": 1610612750,
@@ -26652,14 +26652,14 @@
       "arena_name": "Moda Center",
       "arena_city": "Portland",
       "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status_text": "11:00 pm ET",
       "game_label": ""
     },
     {
       "game_id": "0022600326",
       "season": "2026-27",
       "game_date": "2026-12-01T00:00:00Z",
-      "game_datetime_utc": "2026-12-02T04:00:00Z",
+      "game_datetime_utc": "2026-12-02T03:00:00Z",
       "home_team_id": 1610612744,
       "home_team_tricode": "GSW",
       "away_team_id": 1610612762,
@@ -26667,7 +26667,7 @@
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
       "game_status": 1,
-      "game_status_text": "11:00 pm ET",
+      "game_status_text": "10:00 pm ET",
       "game_label": ""
     },
     {
