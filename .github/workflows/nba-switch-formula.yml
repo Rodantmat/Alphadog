@@ -1,0 +1,32 @@
+name: NBA Switch to the one-formula store
+
+# Owner 2026-11-20 20:58 PT ("run the same formula for every single day ... homogeneous throughout the whole dataset and back data").
+# Swaps the production scoring tables for the replayed _v2 store (previous tables kept as <name>_pre_v2) - nba/switch_formula_v2.py.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "1 = swap; anything else = dry run"
+        default: "0"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  switch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Switch
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SW_APPLY: ${{ github.event.inputs.apply }}
+        run: python -u nba/switch_formula_v2.py
