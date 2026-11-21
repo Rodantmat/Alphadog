@@ -194,6 +194,13 @@ def main():
     roster = pd.read_sql("""SELECT p.nba_player_id::text AS pid, t.abbreviation AS team
                             FROM nba_ref.players p JOIN nba_ref.teams t ON t.team_id = p.team_id
                             WHERE p.active = 1 AND p.nba_player_id IS NOT NULL""", conn)
+    # ONE RULE FOR EVERY DATE (2026-11-20, honest recipe): today's roster table does not exist for a past date, so with BT_HONEST the team is the
+    # last game's team - the same rule the day builders use (nba/baseline/honest_recipe.py, AS20).
+    sys.path.insert(0, "nba/baseline")
+    import honest_recipe as _HR
+    if _HR.on():
+        roster = roster.iloc[0:0]
+        print("  team resolution: last game's team (honest recipe; roster table not used)", flush=True)
     n_roster_override = 0
     for pid, team in zip(roster["pid"], roster["team"]):
         if team and last_team.get(pid) != team:

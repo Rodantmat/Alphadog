@@ -3,6 +3,7 @@
 REPLAY THE DOWNSTREAM LAYERS ON THE PARALLEL STORE (owner 2026-11-20 20:58 PT: the same pipeline for every date). Runs the PRODUCTION builders,
 unedited, through store_redirect (every scoring table read / written is its _v2 twin):
   RD_STEP=final_hp     nba/build_final_hp.py for each date of RD_DATES (FE_DATE = the date, FE_WRITE = 1)
+  RD_STEP=delta        nba/build_availability_delta.py for each date (availability_delta_v2)
   RD_STEP=board        nba/score_board_legs.py for each date (BS_ASOF; board_scored_v2)
   RD_STEP=board_cal    nba/final_hp_board_cal.py for RD_DATES (BC_DATES, BC_WRITE = 1)
   RD_STEP=asof_cal     nba/build_asof_calibration.py (AC_SEASONS = RD_SEASONS)
@@ -45,6 +46,16 @@ def main():
             except SystemExit as e:
                 if e.code not in (0, None):
                     print(f"RD|final_hp {d} stopped: {e}", flush=True)
+    elif step == "delta":
+        for d in dates():
+            yy = int(d[:4]) if int(d[5:7]) >= 10 else int(d[:4]) - 1
+            os.environ.update({"DELTA_ASOF": d, "DELTA_SEASON": f"{yy}-{str(yy + 1)[-2:]}"})
+            print(f"RD|delta {d}", flush=True)
+            try:
+                runpy.run_path(os.path.join(HERE, "build_availability_delta.py"), run_name="__main__")
+            except SystemExit as e:
+                if e.code not in (0, None):
+                    print(f"RD|delta {d} stopped: {e}", flush=True)
     elif step == "board":
         for d in dates():
             os.environ.update({"BS_ASOF": d, "BS_FORCE_RESCORE": "1"})

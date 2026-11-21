@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       step:
-        description: "final_hp | board_cal | asof_cal | confidence"
+        description: "final_hp | delta | board | board_cal | asof_cal | confidence"
         required: true
       dates:
         description: "comma list or FROM:TO"
@@ -39,6 +39,7 @@ jobs:
       - name: Run
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BT_HONEST: "1"
           RD_STEP: ${{ github.event.inputs.step }}
           RD_DATES: ${{ github.event.inputs.dates }}
           RD_SEASONS: ${{ github.event.inputs.seasons }}
