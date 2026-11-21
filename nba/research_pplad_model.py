@@ -61,7 +61,7 @@ def main():
                          line=float(a.get("line")), side=a.get("side"), kind=a.get("odds"), rid=f"{a.get('id')}|{a.get('side')}"))
     d = pd.DataFrame(recs)
     pl = sorted(d["player"].unique())
-    nm_of = dict(conn.execute("SELECT x, nba_ref.norm_name(x) FROM unnest(%s::text[]) x", (pl,)).fetchall())
+    nm_of = dict(conn.execute("SELECT DISTINCT ON (player_id::text) player_id::text, nba_ref.norm_name(player) FROM nba_market.pp_board_row WHERE player_id::text = ANY(%s) AND player NOT LIKE '%%+%%' ORDER BY player_id::text, run_file DESC", (pl,)).fetchall())
     print(f"LM|rung quotes {len(d):,} | rungs {d['rid'].nunique():,} | players {d['player'].nunique()}", flush=True)
     # ladder density
     lad = d.drop_duplicates("rid").groupby(["player", "stat"]).agg(n_gob=("kind", lambda s: (s == "goblin").sum()), n_dem=("kind", lambda s: (s == "demon").sum())).reset_index()
