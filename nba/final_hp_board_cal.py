@@ -268,14 +268,45 @@ def materialize_std_lines(conn, a, b):
 
 
 # ---------------------------------------------------------------- fit
+TRAIN_SRC = os.environ.get("BC_TRAIN_SRC") or "tier_map"   # "outcomes" = every graded board leg of every season (honest, 2026-11-20)
+OUT_KEY = {"points": "points", "rebounds": "rebounds", "assists": "assists", "threes": "threes_made", "points_rebounds_assists": "pra",
+           "points_rebounds": "pts_reb", "points_assists": "pts_ast", "rebounds_assists": "reb_ast", "blocks": "blocks", "steals": "steals",
+           "turnovers": "turnovers", "blocks_steals": "stocks"}
+
+
+def _legs_outcomes(conn, name_pid, before=None):
+    """ONE TRAINING SET FOR EVERY DATE (owner 2026-11-20: the same formula for every day): every graded board leg (nba_market.board_outcomes,
+    one outcome per date / player / prop / line / side) of every season in the baseline store - the current season's legs included, which the
+    tier-map set never held - so a fit as of any day D sees exactly the legs graded before D."""
+    legs = {}
+    cur = conn.cursor(name="bc_outcomes"); cur.itersize = 200000
+    cur.execute("""SELECT DISTINCT game_date, nba_ref.norm_name(player), replace(replace(market_key,'player_',''),'_alternate',''), side, line::float8,
+                          (leg_result = 'over_win') = (side = 'Over')
+                   FROM nba_market.board_outcomes WHERE leg_result IN ('over_win', 'under_win')
+                     AND game_date >= (SELECT min(game_date) FROM nba_score.baseline_history) AND (%s::date IS NULL OR game_date < %s::date)""",
+                (before, before))
+    for d, nn, rk, sd, ln, won in cur:
+        pr = OUT_KEY.get(rk)
+        if pr in PROPS:
+            legs[(d, nn, pr, sd, round(ln, 1))] = int(won)
+    cur.close()
+    return legs
+
+
 def load_training(conn):
     name_pid = dict(conn.execute("SELECT norm_name, player_id::text FROM nba_ref.player_name_map").fetchall())
+    if TRAIN_SRC == "outcomes":
+        return _load_training_from(conn, name_pid, _legs_outcomes(conn, name_pid))
     legs = {}
     for d, nn, pr, sd, ln, t, h in conn.execute(
             """SELECT game_date, nba_ref.norm_name(player), prop, side, line::float8, tier, hit
                FROM nba_score.tier_map_legs_sel_wo WHERE season = ANY(%s) AND hit IS NOT NULL AND prop = ANY(%s)
                AND rank_key = 'final_hp'""", (list(TRAIN_SEASONS), list(PROPS))):
         legs[(d, nn, pr, sd, round(ln, 1))] = int(h)
+    return _load_training_from(conn, name_pid, legs)
+
+
+def _load_training_from(conn, name_pid, legs):
     # the standard line of the training legs is PrizePicks' window main line - the same rule std_lines() applies live
     need = {(name_pid.get(nn), d, pr) for (d, nn, pr, sd, ln) in legs if name_pid.get(nn)}
     lo, hi = min(k[1] for k in need), max(k[1] for k in need)
@@ -284,8 +315,8 @@ def load_training(conn):
     cur = conn.cursor(name="bc_train_ladders")
     cur.itersize = 200000
     cur.execute("""SELECT player_id, game_date, prop, line::float8, p_more::float8 FROM nba_score.baseline_history
-                   WHERE season = ANY(%s) AND prop = ANY(%s) AND upper(coalesce(period, 'FULL')) = 'FULL' AND p_more IS NOT NULL""",
-                (list(TRAIN_SEASONS), list(PROPS)))
+                   WHERE (season = ANY(%s) OR %s) AND prop = ANY(%s) AND upper(coalesce(period, 'FULL')) = 'FULL' AND p_more IS NOT NULL""",
+                (list(TRAIN_SEASONS), TRAIN_SRC == "outcomes", list(PROPS)))
     for pid, d, pr, ln, pm in cur:
         if (pid, d, pr) in need:
             lad[(pid, d, pr)].append((ln, pm))
