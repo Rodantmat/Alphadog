@@ -25,7 +25,7 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     since = os.environ.get("PPMF_SINCE", "2026-10-20")
     m = pd.read_sql("""SELECT run_file, (quoted_at AT TIME ZONE 'America/Los_Angeles')::date gd, quoted_at, projection_id::text pid, line::float8 line, kind, lower(left(side,1)) sd,
-                              factor_mined::float8 f, nba_ref.norm_name(player) nm, base_market, quoted_at::text qa FROM nba_market.pp_mined_leg WHERE factor_mined IS NOT NULL AND kind IN ('goblin','demon') AND quoted_at >= %s""", conn, params=(since,))
+                              factor_mined::float8 f, nba_ref.norm_name(player) nm, base_market, extract(epoch FROM quoted_at)::bigint::text qa FROM nba_market.pp_mined_leg WHERE factor_mined IS NOT NULL AND kind IN ('goblin','demon') AND quoted_at >= %s""", conn, params=(since,))
     runs = tuple(m["run_file"].unique())
     b = pd.read_sql("SELECT run_file, projection_id::text pid, player_id::text ppid, player, stat, line::float8 line, odds, start_time FROM nba_market.pp_board_row WHERE run_file = ANY(%s)", conn, params=(list(runs),))
     mk = pd.read_sql("SELECT * FROM nba_market.rs_pp_mktq", conn) if os.environ.get("PPMF_MKT") == "1" else None
