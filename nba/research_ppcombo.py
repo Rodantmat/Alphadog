@@ -89,6 +89,19 @@ def main():
                 ex.append(snap(v) == round(y, 4)); er.append(abs(v / y - 1))
         prod = [snap(TABLE[n] * np.exp(x["s"])) == x["top"] for x in xs]
         sz = [x for x in xs if x["gk"]]
+        if sz and n >= 3:
+            # ADJUSTED-BASE LAW: P = B'_k x prod (P_k(single i) / B'_k) - the adjusted base counts once per slip
+            best = None
+            for B in np.arange(TABLE[n] * 0.85, TABLE[n] * 1.10, TABLE[n] * 0.001):
+                pr = np.array([B * np.prod([g * TABLE[n] / B for g in x["gk"]]) for x in sz]); yy = np.array([x["top"] for x in sz])
+                sc = np.median(np.abs(np.log(pr / yy)))
+                if best is None or sc < best[0]:
+                    best = (sc, B, pr, yy)
+            sc, B, pr, yy = best
+            print(f"CMB|{n}-pick ADJUSTED-BASE LAW, B'={B:.3f}: {len(sz)} | exact {100*np.mean([snap(a) == b for a, b in zip(pr, yy)]):.0f}% | within 5% {100*np.mean(np.abs(pr/yy-1) < .05):.0f}% | median error {100*np.median(np.abs(pr/yy-1)):.2f}% | real/pred median {np.median(yy/pr):.3f}", flush=True)
+            for m in sorted({x["m"] for x in sz}):
+                sel = np.array([x["m"] == m for x in sz])
+                print(f"CMB|     {m} alternates: {sel.sum()} | real/pred median {np.median(yy[sel]/pr[sel]):.3f} (p10 {np.percentile(yy[sel]/pr[sel],10):.3f}, p90 {np.percentile(yy[sel]/pr[sel],90):.3f}) | median error {100*np.median(np.abs(pr[sel]/yy[sel]-1)):.2f}%", flush=True)
         if sz:
             pr = np.array([TABLE[n] * np.prod(x["gk"]) for x in sz]); yy = np.array([x["top"] for x in sz])
             print(f"CMB|{n}-pick SIZE-PRODUCT rule (each leg's own {n}-pick multiplier from its ladder reading, multiplied): {len(sz)} | exact {100*np.mean([snap(a) == b for a, b in zip(pr, yy)]):.0f}% | within-1-step {100*np.mean(np.abs(pr/yy-1) < step(1) * 0 + .05):.0f}% | median error {100*np.median(np.abs(pr/yy-1)):.2f}% | real/pred median {np.median(yy/pr):.3f}", flush=True)
