@@ -1046,6 +1046,16 @@ Re-priced returns (`research_pp_alt_roi_v2.py`, run alt2 44865500169), 2-pick ba
 older seasons: every slip lost (-18 u on 18 slips) on 5 slates each season. Exposure caps per player: no cap value is better in all three seasons.
 Reading: the set's edge is real in 2025-26 and this season and close to zero in 2024-25; this season's +63% is above what the older seasons support.
 
+## 8au. DAILY SCORING PIPELINE HEALTH AND ONE FORMULA OVER ALL DATA (owner 20:37 PT; written 20:48 PT, read-only)
+Chain (code): P2B baseline (build_baseline_ladder -> load_baseline_ladder -> baseline_history) -> build_asof_calibration -> build_confidence_v3 (refits nba_score.confidence_model DAILY) -> build_final_hp (baseline_hp, final_hp, confidence, score, edge) -> P3 rung_market / market_derived -> build_final_hp again -> score_board_legs (board_scored, every app) -> UI worker roi-snapshot (board_roi = implied ROI). P2A next morning rebuilds yesterday's final_hp (that is the stored row).
+Daily health 2026-27 (31 slates 10-20..11-20; 11-03 no games):
+- Runs: P3 green every day; P2A/P2B had 5 failed attempts, each day has a successful run and data.
+- Mining: every slate has 3-4 board snapshots per app (Betr missing 10-22..10-25), injury snapshots (90-120), rung_market, box scores (11-20 pending tonight).
+- Consuming (decision snapshot 'window', 11-10..11-19): board legs scored - Sleeper 99.6% / 94.9% (regular / alt), Fliff 98.9%, Underdog 97.7% / 93.4%, PrizePicks alt 94.7%, PrizePicks regular 69.3%. The PrizePicks gap is BY DESIGN: whole-number lines (2,799 in 10 days, all routed to final_hp_derived) and two-player combo lines (unscoreable); half-point regular lines 99.3% scored. About 1-5% of legs per app belong to players never scored (name map).
+- NOT CONSISTENT DAY TO DAY: (1) the confidence model is refit every morning and its measured deductions jump - role 9.3 -> books/depth 9.1 on 10-23, phase 4.5 -> time 4.5 on 11-05, completeness 0.9 -> 9.4 on 11-19; mean score moved 59.7 -> 51.8 (10-23) and 53.4 -> 57.8 (11-19) with no code change. (2) Calibration chain: 10-20/10-21 have rows with no calibration, board-centred chain from 10-22 (code 10-22). (3) rung_market book set widened 11-01 (pinnacle/novig/prophetx): market rows x3-5, c_market 0.01 -> 0.05.
+- Back data is NOT the same formula: 2024-25 / 2025-26 final_hp written in 6 batches (09-19, 09-24, 09-25, 10-07, 10-09, 10-23) with three calibration states (none / as-of / board) and September confidence models; mean score 58-67 vs this season 52-58. Baseline history is the leaky harness (8 / 8e). Implied ROI (board_roi) exists only from 2026-11-11 - none on back data.
+- Sample re-run of TODAY's builder on 15 slates (capture mode, no writes): nba/audit_formula_parity.py, runs fp24 44867821086 / fp25 44867827845 / fp26 44867834525 - results below when in.
+
 ## 9. Open items and owner decisions pending
 
 - **O1 (owner)**: pause live slips while the rebuild is measured, or keep running? Offered 11-19; the owner chose the parallel rebuild and did not ask for a pause - slips keep running. Revisit when section 8.2 is measured.
@@ -1164,4 +1174,4 @@ External (read for this work):
 - **2026-11-20 19:36-19:51 PT** - Owner: live slate all red, validate. Portfolio audit 8as: distinct legs 58% hit over 30 slates; 61% of slips share the top leg; exposure-cap options measured; decision with the owner.
 - **2026-11-20 19:54-20:27 PT** - Owner: priority 0 goblin / demon price per leg for the whole backtest; real-board backtest of the strategies. Done (8at): price v2 unbiased (-0.6%) vs old +37%; 707k legs re-priced; every goblin / demon cell negative on 3 seasons. Live set on real boards: +3.9% / +25.4% / +62.8%.
 - **2026-11-20 20:30 PT** - Owner: the back data was NOT priced - v2 is a model estimate (exact 35%, within a step 61%); calling it "priced every leg" was my overstatement, not authorized. `pp_alt_price_v2` is labelled ESTIMATE; nothing live or in any strategy reads it. Rule from now on: zero assumptions - no estimate is presented or used as a real price, and nothing is applied without the owner's go-ahead.
-
+- **2026-11-20 20:48 PT** - Owner 20:37: audit the daily scoring chain, then one formula over all data. Health read (8au): runs and mining every slate; consumption complete by design; NOT consistent (daily confidence refit, calibration chain from 10-22, wider book set 11-01); back data built in 6 batches on older logic. Sample re-run of today's builder dispatched (fp24/fp25/fp26). Nothing written.
