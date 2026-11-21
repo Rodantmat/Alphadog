@@ -28,7 +28,7 @@ def main():
                            FROM nba_market.board_outcomes o JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(o.player)
                            WHERE o.leg_result IN ('over_win','under_win') AND o.game_date >= '2024-10-01')
                         SELECT f.season, f.game_date, f.prop, f.final_hp::float8 p, f.confidence::float8 c, f.score::float8 s, o.won
-                        FROM {TABLE} f JOIN o ON o.game_date = f.game_date AND o.pid = f.player_id::text AND o.line = f.line::float8 AND o.side = f.side
+                        FROM {TABLE} f JOIN o ON o.game_date = f.game_date AND o.pid = f.player_id::text AND o.line = f.line::float8 AND o.side = f.side AND f.prop = (CASE o.rk WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' WHEN 'blocks_steals' THEN 'stocks' ELSE o.rk END)
                         WHERE f.final_hp IS NOT NULL""", conn)
     d = d[d["prop"] == d["prop"]]
     print(f"CO|graded legs: {len(d):,} | {d['season'].value_counts().to_dict()}", flush=True)

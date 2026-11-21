@@ -22,11 +22,11 @@ def main():
     assert TABLE in ("nba_score.final_hp_v2", "nba_score.final_hp")
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     d = pd.read_sql(f"""WITH o AS (SELECT DISTINCT ON (o.game_date, m.player_id, replace(replace(o.market_key,'player_',''),'_alternate',''), o.line, o.side)
-                                  o.game_date, m.player_id::text pid, o.line::float8 line, o.side, ((o.leg_result = 'over_win') = (o.side = 'Over'))::int won
+                                  o.game_date, m.player_id::text pid, replace(replace(o.market_key,'player_',''),'_alternate','') rk, o.line::float8 line, o.side, ((o.leg_result = 'over_win') = (o.side = 'Over'))::int won
                            FROM nba_market.board_outcomes o JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(o.player)
                            WHERE o.leg_result IN ('over_win','under_win') AND o.game_date >= '2024-10-01')
                         SELECT f.season, f.game_date, f.prop, f.side, f.final_hp::float8 p, abs(coalesce(f.ladder_offset, 0)) dist, o.won
-                        FROM {TABLE} f JOIN o ON o.game_date = f.game_date AND o.pid = f.player_id::text AND o.line = f.line::float8 AND o.side = f.side
+                        FROM {TABLE} f JOIN o ON o.game_date = f.game_date AND o.pid = f.player_id::text AND o.line = f.line::float8 AND o.side = f.side AND f.prop = (CASE o.rk WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' WHEN 'blocks_steals' THEN 'stocks' ELSE o.rk END)
                         WHERE f.final_hp IS NOT NULL""", conn)
     d["band"] = pd.cut(d["p"], [0, .2, .35, .45, .55, .65, .8, 1.0]).astype(str)
     d["dist"] = np.minimum(d["dist"], 6)
