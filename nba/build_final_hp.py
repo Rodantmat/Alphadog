@@ -345,7 +345,18 @@ def main():
     # rebuilt (FE_DATE -> all other dates; season rebuild -> the other seasons), so a rerun sees exactly the same population and
     # a live slate's cutpoints come only from legs already on record. (conf_tier feeds diagnostics only - no selection reads it.)
     CUTS = None
+    # FIXED CUTPOINTS (2026-11-20, owner: one formula for every date). Quartiles of "every other leg on record" differ between a live day,
+    # a replay and a season rebuild, so the same confidence could land in different tiers on different days. When
+    # classification_config['final_hp_conf_cuts'] holds three cuts they are used for every date; absent -> the in-run rule below.
+    _fc = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'final_hp_conf_cuts'").fetchone()
+    if _fc:
+        _fcj = _fc[0] if isinstance(_fc[0], dict) else json.loads(_fc[0])
+        if len(_fcj.get("cuts") or []) == 3:
+            CUTS = [float(x) for x in _fcj["cuts"]]
+            print(f"tier cutpoints FIXED (classification_config final_hp_conf_cuts): {CUTS}", flush=True)
     try:
+        if CUTS is not None:
+            raise StopIteration
         # SAME NUMBERS, NO GLOBAL SORT (2026-10-20, P3 speed-up): percentile_cont over 7.8M legs sorted them all and spilled
         # ~270 MB to disk - 20-28 s of every P3 market refresh. confidence has ~1,065 distinct values, so the population is read as
         # (value, count) pairs (hash aggregate) and the SAME percentile_cont is computed exactly here: Postgres' float8 rule
@@ -357,6 +368,8 @@ def main():
                 print(f"tier cutpoints from the LIVE LEG distribution: {[round(c,4) for c in CUTS]}", flush=True)
             else:
                 print(f"leg sample is degenerate {cand} - falling back to the group distribution", flush=True)
+    except StopIteration:
+        pass
     except Exception as exc:  # noqa: BLE001
         print(f"leg-distribution sample unavailable ({str(exc)[:50]})", flush=True)
     if CUTS is None and not cc.empty:
