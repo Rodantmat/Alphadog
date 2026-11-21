@@ -112,6 +112,29 @@ def main():
                     up=float((u > 0).mean()) if len(u) else 0, red=float(np.mean([d[3] < 0.2 for d in daily if d[3] == d[3]])), losing_run=mx, daily=daily,
                     slips_day=tot_slips / max(1, len(daily)))
 
+    # UNIQUE LEGS (owner 2026-11-20 19:39 PT: "those legs should hit 55-60%"): every distinct player + stat the live set used that day, graded once
+    import scipy.stats as SS
+    ud = []
+    for day, plan in plans.items():
+        seen = {}
+        for app, slips in plan.items():
+            for code, k, st, s, cand in slips:
+                for r in s:
+                    v = box[day].get(r["pid"])
+                    if v is None or v[STAT[r["prop"]]] == r["line"]:
+                        continue
+                    seen.setdefault((r["pid"], r["prop"]), (int(v[STAT[r["prop"]]] < r["line"]), r["ph"], r["blend"]))
+        if seen:
+            h = np.array([x[0] for x in seen.values()]); ph = np.array([x[1] for x in seen.values()]); bl = np.array([x[2] for x in seen.values()])
+            ud.append((day, len(h), h.mean(), ph.mean(), bl.mean(), h.sum()))
+    H = sum(x[5] for x in ud); N = sum(x[1] for x in ud)
+    print("PR|================ 0. the DISTINCT legs the live set used, graded once ================", flush=True)
+    print(f"PR|  {N} distinct legs on {len(ud)} slates | hit {100*H/N:.1f}% | the model said {100*np.mean([x[3] for x in ud]):.1f}%, the blend said {100*np.mean([x[4] for x in ud]):.1f}%", flush=True)
+    rates = np.array([x[2] for x in ud])
+    print(f"PR|  per day: median {100*np.median(rates):.0f}% | worst {100*rates.min():.0f}% | days under 40%: {int((rates < .4).sum())} | under 35%: {int((rates < .35).sum())} | under 30%: {int((rates < .3).sum())}", flush=True)
+    for d in sorted(ud, key=lambda x: x[2])[:6]:
+        p_ = SS.binom.cdf(d[5], d[1], d[3])
+        print(f"PR|  low day {d[0]}: {d[5]}/{d[1]} hit ({100*d[2]:.0f}%), model expected {100*d[3]:.0f}% -> chance of a day this bad or worse if the model is right: {100*p_:.1f}%", flush=True)
     base = run(None, False)
     print("PR|================ 1. the live set as ONE portfolio (1 unit a slip) ================", flush=True)
     print(f"PR|  slips {base['slips']} ({base['slips_day']:.1f} a day) | units {base['units']:+.1f} | ROI {100*base['roi']:+.1f}% | days up {100*base['up']:.0f}% | max drawdown {base['dd']:.1f} u | "
