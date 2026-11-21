@@ -65,9 +65,10 @@ def main():
     since = os.environ.get("PPFIT_SINCE", "2026-10-19")
     std_mode = os.environ.get("PPFIT3_STD", "fixed")
     only = os.environ.get("PPFIT_SG", "none")
-    rows = conn.execute("SELECT run_file, n, power, legs FROM nba_market.pp_quote WHERE status=200 AND n BETWEEN 2 AND 6 AND quoted_at >= %s", (since,)).fetchall()
+    rows = conn.execute("SELECT run_file, n, power, legs, extract(epoch FROM quoted_at::timestamptz)::bigint FROM nba_market.pp_quote WHERE status=200 AND n BETWEEN 2 AND 6 AND quoted_at >= %s", (since,)).fetchall()
     by = defaultdict(list)
-    for rf, n, pw, legs in rows:
+    W = int(os.environ.get("PPFIT3_WIN", "0"))      # seconds; 0 = whole run_file
+    for rf, n, pw, legs, ts in rows:
         pw = pw if isinstance(pw, dict) else json.loads(pw or "{}")
         legs = legs if isinstance(legs, list) else json.loads(legs or "[]")
         try:
@@ -81,12 +82,12 @@ def main():
             continue
         if n == 2 and (top <= 1.9 + 1e-9 or top >= 18 - 1e-9):
             continue
-        by[rf].append(dict(n=n, top=top, nalt=nalt, legs=[(f"{l.get('id')}|{l.get('odds')}|{l.get('side')}|{l.get('line')}", l.get("odds") != "standard") for l in legs]))
+        by[(rf, ts // W) if W else rf].append(dict(n=n, top=top, nalt=nalt, legs=[(f"{l.get('id')}|{l.get('odds')}|{l.get('side')}|{l.get('line')}", l.get("odds") != "standard") for l in legs]))
     rng = np.random.default_rng(11)
     stats = defaultdict(list)          # (n, nalt) -> list of (exact, within1, relerr)
     bases = []
     for rf, qs in by.items():
-        if len(qs) < 8 or not any(q["n"] > 2 for q in qs):
+        if len(qs) < int(os.environ.get("PPFIT3_MINQ", "8")) or not any(q["n"] > 2 for q in qs):
             continue
         idx, A, y = design(qs, std_mode)
         x = solve(A, y, idx, std_mode)
@@ -110,7 +111,7 @@ def main():
                 pr = rnd(v)
                 stats[(q["n"], min(q["nalt"], 3))].append((abs(pr - q["top"]) < 1e-6, abs(pr - q["top"]) <= step(q["top"]) + 1e-6, abs(v / q["top"] - 1)))
     b = np.array(bases)
-    print(f"FIT3|std={std_mode} sg={only} windows={len(bases)}")
+    print(f"FIT3|std={std_mode} sg={only} window={os.environ.get('PPFIT3_WIN', 'run')}s windows={len(bases)}")
     print("FIT3|adjusted bases (median over windows, p10-p90): " + " | ".join(f"{k}-pick {np.nanmedian(b[:, j]):.3f} ({np.nanpercentile(b[:, j], 10):.3f}-{np.nanpercentile(b[:, j], 90):.3f})" for j, k in enumerate((3, 4, 5, 6))))
     tot = []
     for key in sorted(stats):
