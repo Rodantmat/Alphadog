@@ -1034,7 +1034,7 @@ backtest has every day of every season (ladder: regular line or switch point, ru
 chance at the exact line; form before the day). Out of time (train before 11-12): exact 35%, within ~one step 61%, median error 3.9%, **bias -0.58%**; leg return on
 the graded test legs with the real price -29.4%, with this price -30.0% (gap -0.6 pts). Goblin More: exact 50%, within a step 86%, error 1.8%. Out of player: bias -0.21%.
 **The OLD backtest price (v_legs_honest.multiplier, "modelled") was +37% too high on the same legs (demons +47%, goblins +20%): it showed +6.7% where the truth was -29.4%.**
-Every goblin / demon backtest number built on the old price was inflated by 20-45 points of leg return. Written: `nba_score.pp_alt_price_v2` (707,044 legs, 3 seasons;
+Every goblin / demon backtest number built on the old price was inflated by 20-45 points of leg return. Written: `nba_score.pp_alt_price_v2` - **AN ESTIMATE, NOT REAL PRICES** (owner 20:30 PT: not authorized as "priced"; zero assumptions): 707,044 legs, 3 seasons;
 real quote where one exists, else v2; leg multiplier and break-even at 2-6 picks via the 8ar size curves).
 Re-priced returns (`research_pp_alt_roi_v2.py`, run alt2 44865500169), 2-pick basis, every season: demon More -17% / -23% / -38% (tier 1 -15 / -17 / -19%); goblin More
 -6% / -11% / -13% (tier 1 -5 / -10 / -14%). The old price had shown +40..+70%. Only lead: goblin More where the honest blend says > +5%: +5.5% (941 legs) / +1.9%
@@ -1163,4 +1163,5 @@ External (read for this work):
 - **2026-11-20 18:20-19:33 PT** - Owner's method (8ar): ladderall (16,648 quotes, 578 ladders) + combo (5,378 quotes). Combination law proven: P = B' x prod(single k-pick / B'), B' 5.44 / 10.21 / 19.0 / 36.4, unbiased at every size and alternate count. Real per-leg multipliers for 2,683 legs in nba_market.pp_lad_leg.
 - **2026-11-20 19:36-19:51 PT** - Owner: live slate all red, validate. Portfolio audit 8as: distinct legs 58% hit over 30 slates; 61% of slips share the top leg; exposure-cap options measured; decision with the owner.
 - **2026-11-20 19:54-20:27 PT** - Owner: priority 0 goblin / demon price per leg for the whole backtest; real-board backtest of the strategies. Done (8at): price v2 unbiased (-0.6%) vs old +37%; 707k legs re-priced; every goblin / demon cell negative on 3 seasons. Live set on real boards: +3.9% / +25.4% / +62.8%.
+- **2026-11-20 20:30 PT** - Owner: the back data was NOT priced - v2 is a model estimate (exact 35%, within a step 61%); calling it "priced every leg" was my overstatement, not authorized. `pp_alt_price_v2` is labelled ESTIMATE; nothing live or in any strategy reads it. Rule from now on: zero assumptions - no estimate is presented or used as a real price, and nothing is applied without the owner's go-ahead.
 
