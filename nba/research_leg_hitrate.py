@@ -360,6 +360,14 @@ def main():
         pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
         lpm = lg(np.nan_to_num(pmv, nan=0.5)); zh = lg(d["hit_rate"].values)
         d["hit_rate"] = np.where(hasm, sg(lpm + np.clip(zh - lpm, -tau, tau)), d["hit_rate"].values)
+    if os.environ.get("LH_APPCLIP"):
+        # the same guard where no book prices the line: the reference is the app's own break-even (1 / m) - a leg with no market read may not
+        # claim to beat its own price by more than LH_APPCLIP in logit (2026-11-22: Sleeper double-double / first-quarter legs, final_hp 0.71-0.81,
+        # hit 0.38-0.60, predicted ROI +75%, realised -20%)
+        tau2 = float(os.environ["LH_APPCLIP"])
+        nom = d["p_mkt"].isna().values & d["m"].notna().values
+        lbe = lg(1 / np.nan_to_num(d["m"].values.astype(float), nan=2.0)); zh = lg(d["hit_rate"].values)
+        d["hit_rate"] = np.where(nom, sg(np.minimum(zh, lbe + tau2)), d["hit_rate"].values)
     if EC & {"2", "3"}:
         # STAGE 3 (continuous) - an offset logistic per app x side on earlier weeks: logit y = logit(h) + a + b x edge (+ c x edge^2), edge =
         # logit(h) - logit(1/m). Pools every priced leg into one slope, so the thin top bands borrow the whole curve.
