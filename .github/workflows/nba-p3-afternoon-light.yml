@@ -518,23 +518,20 @@ jobs:
           print(f"price refresh: rescued {ra}+{rb}, new keys {nk}, new prices {npr}; window legs still without a key: {left[0]} of {left[1]}")
           EOF
 
-      # 2b) LIVE SPORTSBOOK PLAYER PROPS - the market term (owner 2026-10-09: "for props we use ParlayAPI"; strategy §31ac).
-      #     ParlayAPI's live NBA props (every sportsbook; 3 credits) -> raw capture (nba_market.parlay_props_captures) and the
-      #     sportsbook rows into nba_market.board_snapshots in the Odds API backfill's shape, so build_rung_market below counts
-      #     today's books per rung exactly as the certified history counted them. Soft: the pick never waits on a feed.
-      - name: Live sportsbook props (ParlayAPI) - the market term
+      # 2b) LIVE SPORTSBOOK PLAYER PROPS - the market read of every leg (owner 2026-11-22 00:31 PT: the Odds API, key in secret ODDS2_API_KEY,
+      #     "wire it to be used daily"; ParlayAPI is deactivated). Same source, markets, region and row shape as the history
+      #     (nba/backfill_board_snapshots.py), written to nba_market.board_snapshots as 'window'. ~21 credits a game. Soft: the pick never waits.
+      - name: Live sportsbook props (Odds API) - the market read
         id: soft_props
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         continue-on-error: true
-        # 2026-10-19: a full read + one read per sportsbook (truncation recovery) is ~1-2 min; ParlayAPI retries are budgeted
-        # (300 s full read, 240 s all per-book reads together). The cap keeps an early slate (P3 ~29 min before the first tip) safe.
         timeout-minutes: 10
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          CP_MODE: capture
-          CP_LABEL: window
-          CP_DATE: ${{ steps.d.outputs.asof }}
-        run: python -u nba/capture_parlay_props.py
+          ODDS2_API_KEY: ${{ secrets.ODDS2_API_KEY }}
+          OP_LABEL: window
+          OP_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/capture_odds_props.py
 
       # 3) THE MARKET at the window - de-vigged book probability per rung
       # SOFT (2026-10-15 full pass): rung_market is read only by the market refresh below, which is switched off; a slow rebuild
