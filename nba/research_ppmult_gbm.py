@@ -97,7 +97,8 @@ def main():
         a = legs[0]
         if a.get("odds") == "standard":
             continue
-        r = rung.setdefault((rf, a["id"], a["side"]), dict(name=a["name"], stat=a["stat"], line=float(a["line"]), side=a["side"], odds=a["odds"], t=qa, P={}))
+        r = rung.setdefault((rf, a["id"], a["side"]), dict(name=a["name"], stat=a["stat"], line=float(a["line"]), side=a["side"], odds=a["odds"], t=qa, P={},
+                                                           rk=f"{rf}|{a['id']}|{a['side']}" if sec == "S6" else None))
         r["P"][n] = P; r["t"] = min(r["t"], qa)
     out = []
     bad = 0
@@ -107,7 +108,7 @@ def main():
             bad += iv is None
             continue
         y = (iv[0] * iv[1]) ** 0.5
-        out.append(dict(name=r["name"], stat=r["stat"], line=r["line"], side=r["side"], t=pd.Timestamp(r["t"]), qo=C / y if r["side"] == "over" else 1 - C / y))
+        out.append(dict(name=r["name"], stat=r["stat"], line=r["line"], side=r["side"], t=pd.Timestamp(r["t"]), rk=r["rk"], qo=C / y if r["side"] == "over" else 1 - C / y))
     R = pd.DataFrame(out)
     print(f"PPG|exact rung readings {len(R):,} (size law inconsistent: {bad})", flush=True)
     R["nk"] = R["name"].map(nm); R["base"] = R["stat"].map(MK)
@@ -136,10 +137,10 @@ def main():
     w = m.pivot_table(index="key", columns=["book", "two"], values="zi", aggfunc="first")
     w.columns = [f"{b}_{'2' if t else '1'}" for b, t in w.columns]
     base = m.groupby("key").agg(zq=("zq", "first"), zim=("zi", "median"), zis=("zi", "std"), nb=("book", "size"), line=("line", "first"),
-                                stat=("stat", "first"), name=("name", "first"), side=("side", "first"), gap=("gap", "first"))
+                                stat=("stat", "first"), name=("name", "first"), side=("side", "first"), gap=("gap", "first"), rk=("rk", "first"))
     X = base.join(w)
     X["stat_c"] = X["stat"].astype("category").cat.codes
-    feats = [c for c in X.columns if c not in ("zq", "stat", "name", "side")]
+    feats = [c for c in X.columns if c not in ("zq", "stat", "name", "side", "rk")]
     yv = X["zq"].values
     pred = np.zeros(len(X))
     for tr, te in GroupKFold(5).split(X, yv, X["name"].values):
@@ -161,7 +162,53 @@ def main():
             Pt = np.array([float(snap(size_value(c, kk, v))) for c, v in zip(cls, yt)]); Pp = np.array([float(snap(size_value(c, kk, v))) for c, v in zip(cls, yp)])
             line.append(f"{kk}-pick exact {100*np.mean(Pt == Pp):.0f}% (1 step {100*np.mean(np.abs(Pt - Pp) <= stp(Pt) + 1e-9):.0f}%)")
         print(f"PPG|  {'More' if side == 'over' else 'Less'} {s.sum():,} rungs: " + " | ".join(line), flush=True)
+    if os.environ.get("PPG_CMB") == "1":
+        combos(conn, since, X, pred)
     print("PPG|DONE", flush=True)
+
+
+def combos(conn, since, X, pred):
+    """END TO END: every alternate of a live slip priced from the books alone (its out-of-fold chance, players unseen), combined with the
+    slip law (pp_slip_law.json: Y = prod(y_i) / B^(m-1), n-pick payout = snap(spline_n(ln Y)), caps), checked against PrizePicks' quote."""
+    from pathlib import Path
+    L = json.loads((Path(__file__).resolve().parent / "pp_slip_law.json").read_text())
+    K = np.array(L["knots_lnY"]); B = L["B"]
+    def law(n, Y):
+        ly = np.log(Y); xb = np.array([1, ly] + [max(ly - k, 0) ** 3 for k in K])
+        lo = np.log(L["yrange"][0]); hi = np.log(L["yrange"][1])
+        v = float(np.exp(xb @ np.array(L["coef"][str(n)]))) if lo <= ly <= hi else float("nan")
+        return min(float(snap(v)), L["cap"].get(str(n), 1e12)) if v == v else float("nan")
+    sg = lambda z: 1 / (1 + np.exp(-z))  # noqa: E731
+    yp = {}
+    for rk, z, side in zip(X["rk"].values, pred, X["side"].values):
+        if rk:
+            q = sg(z) if side == "over" else 1 - sg(z)
+            yp[rk] = C / q
+    rows = conn.execute("""SELECT run_file, n, power, legs FROM nba_market.pp_quote WHERE status = 200 AND section = 'CMB' AND quoted_at >= %s""", (since,)).fetchall()
+    res = []
+    for rf, n, pw, legs in rows:
+        pw = pw if isinstance(pw, dict) else json.loads(pw or "{}"); legs = legs if isinstance(legs, list) else json.loads(legs or "[]")
+        try:
+            P = float(pw[str(n)][str(n)])
+        except Exception:
+            continue
+        alts = [a for a in legs if a.get("odds") != "standard"]
+        ys = [yp.get(f"{rf}|{a['id']}|{a['side']}") for a in alts]
+        if not alts or any(v is None for v in ys):
+            continue
+        v = law(n, float(np.prod(ys)) / B ** (len(ys) - 1))
+        if v == v:
+            res.append((n, len(alts), P, v))
+    if not res:
+        print("PPG|CMB end-to-end: no slips with every alternate priced", flush=True)
+        return
+    r = pd.DataFrame(res, columns=["n", "m", "P", "v"]); r["e"] = np.log(r["v"] / r["P"])
+    r["ex"] = r["v"] == r["P"]; r["s1"] = np.abs(r["v"] - r["P"]) <= stp(r["P"].values) + 1e-9
+    print(f"PPG|CMB end-to-end (books -> each alternate -> slip law), {len(r):,} live slips: exact {100*r.ex.mean():.1f}% | within one step "
+          f"{100*r.s1.mean():.1f}% | median |error| {100*r.e.abs().median():.2f}% | median signed {100*r.e.median():+.2f}%", flush=True)
+    for (n, m), g in r.groupby(["n", "m"]):
+        print(f"PPG|   {n}-pick, {m} alternates: {len(g):,} slips | exact {100*g.ex.mean():.0f}% | 1 step {100*g.s1.mean():.0f}% | "
+              f"median |error| {100*g.e.abs().median():.1f}% | signed {100*g.e.median():+.1f}%", flush=True)
 
 
 if __name__ == "__main__":

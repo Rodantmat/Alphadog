@@ -385,6 +385,13 @@ def main():
             nom = d["p_mkt"].isna().values & d["m"].notna().values
             lbe = lg(1 / np.nan_to_num(d["m"].values.astype(float), nan=2.0)); zh = lg(d["hit_rate"].values)
             d["hit_rate"] = np.where(nom, sg(np.minimum(zh, lbe + tau2)), d["hit_rate"].values)
+        if os.environ.get("LH_EDGECLIP"):
+            # every priced leg, market read or not: the hit rate may beat the leg's own break-even (1 / m) by at most LH_EDGECLIP in logit
+            # (audit 3, 2026-11-22: the +ROI bands realised -2 to -38% in every app and season; 0 = no leg may claim a positive ROI)
+            tau3 = float(os.environ["LH_EDGECLIP"])
+            prc = d["m"].notna().values
+            lbe = lg(1 / np.nan_to_num(d["m"].values.astype(float), nan=2.0)); zh = lg(d["hit_rate"].values)
+            d["hit_rate"] = np.where(prc, sg(np.minimum(zh, lbe + tau3)), d["hit_rate"].values)
 
     if os.environ.get("LH_CLIPLAST") != "1":
         guards()
