@@ -142,7 +142,10 @@ def main():
 
 
 def certify(conn, seasons):
-    d = pd.read_sql("""SELECT season, game_date, app, prop, line::float8 line, side, kind, final_hp p, confidence c, score s, price_source, leg_mult, m, roi, roi_prod,
+    pcol = os.environ.get("LC_PCOL") or "final_hp"     # which probability to certify: final_hp (the model) or hit_rate (research_leg_hitrate.py)
+    assert pcol in ("final_hp", "hit_rate")
+    print(f"LC|certifying probability column: {pcol}", flush=True)
+    d = pd.read_sql(f"""SELECT season, game_date, app, prop, line::float8 line, side, kind, {pcol} p, confidence c, score s, price_source, leg_mult, m, roi, roi_prod,
                               stat_actual, result, realized FROM nba_score.leg_card_v2 WHERE season = ANY(%s)""", conn, params=(seasons,))
     print(f"LC|================ 1. COVERAGE: {len(d):,} legs ================", flush=True)
     for (s, a), g in d.groupby(["season", "app"]):
