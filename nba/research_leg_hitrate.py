@@ -167,6 +167,7 @@ def main():
     d["appside"] = d["app"] + "_" + d["side"]
     GRAN = [x for x in (os.environ.get("LH_GRAN") or "").split(",") if x]     # finer cells tried first (owner 21:06 PT: granularity per tier / profile)
     assert all(x in ("prop", "lineband") for x in GRAN)
+    GK = float(os.environ.get("LH_GRAN_K") or 50000)
     d["lineband"] = pd.cut(d["line"], [-1, 1, 3, 6, 10, 15, 22, 30, 999]).astype(str)
     d["fine"] = d["grp"]
     for x in GRAN:
@@ -211,6 +212,17 @@ def main():
             if cell == "none|priced" and not use_price:
                 continue                                   # a flat price adds nothing: hit rate = final_hp
             beta = fit(design(trg, cell, use_price), trg["y"].values.astype(float))
+            if GRAN and level == fg:
+                # a finer cell is pulled toward its parent by its own sample: w = n / (n + LH_GRAN_K) - the documented as-of shrink, at the
+                # scale of a whole cell (a hard switch to the fine fit made prop cells unstable: 2026-27 PrizePicks log-loss 0.583 -> 0.606)
+                for pl, pk in ((g, "grp"), (app, "appside")):
+                    pp_ = ix[pk].get((pl, cell), emp)
+                    if len(pp_) >= MIN_N:
+                        trp = tr.iloc[pp_]
+                        bp = fit(design(trp, cell, use_price), trp["y"].values.astype(float))
+                        w_ = len(trg) / (len(trg) + GK)
+                        beta = w_ * beta + (1 - w_) * bp
+                        break
             wrows.append((wk, level, cell, len(trg), *beta[:4], *([np.nan] * (4 - len(beta)))))
             d.loc[gg.index, "hit_rate"] = sg(design(gg, cell, use_price) @ beta)
             d.loc[gg.index, "wlevel"] = level
