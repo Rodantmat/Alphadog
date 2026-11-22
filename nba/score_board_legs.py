@@ -32,6 +32,7 @@ THE CHAIN, per board leg:
 Env: DATABASE_URL, BS_ASOF, BS_SEASON, BS_APPS (default all)
 """
 import os
+import sys
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
@@ -422,6 +423,28 @@ def main():
     # an interpolated rung is genuinely less supported than a fitted one - say so
     lost = lost + np.where(d["interpolated"].values, 4.0, 0.0)
     d["confidence"] = np.clip(BASE - lost, FLOOR, 99.5) / 100.0
+    # ONE CONFIDENCE PER LEG (2026-11-21, owner 17:48 PT: "a single logic" for every number). The board's own confidence above uses other
+    # factor readings than build_final_hp (f_time 1, f_agree 0.55, books = apps / 4, -4 interpolated), so the same leg carried two
+    # confidences and two scores (measured on the v2 store: |diff| 0.020 confidence, 3.6 score points on 99% of pick'em legs). Under the
+    # honest recipe the leg takes final_hp's own stored confidence (or final_hp_derived's for a beyond-depth rung) when that exact leg exists
+    # there - the same rule the hit probability already follows (4b) - and the board's computation remains only for legs final_hp never priced.
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "baseline"))
+        import honest_recipe as _HRc
+        if _HRc.on():
+            _fc = {}
+            for _t in ("nba_score.final_hp_derived", "nba_score.final_hp"):   # final_hp last: its own row wins
+                for pid_, pr_, ln_, sd_, cf_ in conn.execute(f"SELECT player_id::text, prop, line::float8, side, confidence::float8 FROM {_t} "
+                                                              "WHERE game_date = %s AND confidence IS NOT NULL", (asof,)):
+                    _fc[(pid_, pr_, round(ln_, 1), sd_)] = cf_
+            _k = [(str(a), b, round(float(c), 1), s) for a, b, c, s in zip(d["player_id"], d["prop"], d["line"], d["side_n"])]
+            _v = np.array([_fc.get(k, np.nan) for k in _k], dtype=float)
+            _hit = ~np.isnan(_v)
+            d.loc[_hit, "confidence"] = _v[_hit]
+            print(f"  one confidence (honest recipe): {int(_hit.sum()):,} of {len(d):,} legs take final_hp's stored confidence", flush=True)
+    except Exception as _exc:  # noqa: BLE001
+        conn.rollback()
+        print(f"::error::one-confidence step failed ({type(_exc).__name__}: {str(_exc)[:120]}) - board confidence kept", flush=True)
 
     # ONE FORMULA (round-2 P3#17, 2026-10-08): score / edge come from build_final_hp.score_and_edge - the certified arithmetic
     # (CONF_NEUTRAL 0.85, lift 0.50, drop 0.35, break-even 0.560) - instead of a copy here that could drift silently.
