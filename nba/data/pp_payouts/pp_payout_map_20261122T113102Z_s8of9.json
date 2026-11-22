@@ -1,0 +1,18 @@
+{
+ "meta": {
+  "started": "2026-11-22T11:31:02Z",
+  "league": 7,
+  "game_mode": "prizepools",
+  "max_quotes": 1200,
+  "targets": [
+   "chrome152",
+   "chrome151",
+   "chrome150"
+  ],
+  "finished": "2026-11-22T11:31:18Z",
+  "stop_reason": "board unavailable",
+  "quotes": 0
+ },
+ "board": [],
+ "quotes": []
+}
