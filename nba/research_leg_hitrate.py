@@ -128,16 +128,20 @@ def read_at(legs, w):
 
 
 def fit(X, y):
-    """logistic regression by Newton steps (IRLS) - exact maximum likelihood, fast on millions of legs"""
-    b = np.zeros(X.shape[1]); b[1] = 1.0
-    for _ in range(25):
+    """logistic regression by Newton steps (IRLS) - maximum likelihood with a light ridge (1.0) and bounded steps, so a small or
+    near-separable cell cannot run off to extreme weights; returns None when it does not settle (the caller then takes the parent)"""
+    k = X.shape[1]
+    R = np.eye(k); R[0, 0] = 0.0
+    b = np.zeros(k); b[1] = 1.0
+    for _ in range(50):
         p = sg(X @ b); W = p * (1 - p)
-        H = X.T @ (X * W[:, None]) + 1e-9 * np.eye(X.shape[1])
-        step = np.linalg.solve(H, X.T @ (y - p))
+        H = X.T @ (X * W[:, None]) + R
+        step = np.linalg.solve(H, X.T @ (y - p) - R @ b)
+        step = np.clip(step, -2.0, 2.0)
         b = b + step
         if np.max(np.abs(step)) < 1e-7:
             break
-    return b
+    return b if np.all(np.isfinite(b)) and np.max(np.abs(b[1:])) < 15 else None
 
 
 def ll(p, y):
@@ -212,6 +216,8 @@ def main():
             if cell == "none|priced" and not use_price:
                 continue                                   # a flat price adds nothing: hit rate = final_hp
             beta = fit(design(trg, cell, use_price), trg["y"].values.astype(float))
+            if beta is None:
+                continue                                   # the cell's fit did not settle: hit rate = final_hp
             if GRAN and level == fg:
                 # a finer cell is pulled toward its parent by its own sample: w = n / (n + LH_GRAN_K) - the documented as-of shrink, at the
                 # scale of a whole cell (a hard switch to the fine fit made prop cells unstable: 2026-27 PrizePicks log-loss 0.583 -> 0.606)
@@ -220,6 +226,8 @@ def main():
                     if len(pp_) >= MIN_N:
                         trp = tr.iloc[pp_]
                         bp = fit(design(trp, cell, use_price), trp["y"].values.astype(float))
+                        if bp is None:
+                            break
                         w_ = len(trg) / (len(trg) + GK)
                         beta = w_ * beta + (1 - w_) * bp
                         break
@@ -287,6 +295,9 @@ def main():
         conn.commit()
         print(f"LH|written: {n:,} legs updated; {len(wrows):,} weight rows", flush=True)
     gg_ = d[d["y"] >= 0]
+    for (s_, a_), x in gg_.groupby(["season", "app"]):
+        dd = sorted(((ll(h["hit_rate"], h["y"]) - ll(h["p"], h["y"]), pr, len(h)) for pr, h in x.groupby("prop") if len(h) >= 2000), reverse=True)[:3]
+        print(f"LH|  worst props {s_} {a_}: " + " | ".join(f"{pr} {len(h_) if False else n_:,} legs {100*v:+.2f} pts log-loss" for v, pr, n_ in dd), flush=True)
     print(f"LH|OVERALL graded {len(gg_):,} | granularity {GRAN or 'app x kind x side'} | log-loss final_hp {ll(gg_['p'], gg_['y']):.5f} -> hit rate {ll(gg_['hit_rate'], gg_['y']):.5f}", flush=True)
     print("LH|DONE", flush=True)
 
