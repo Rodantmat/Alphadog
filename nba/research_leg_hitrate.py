@@ -287,6 +287,33 @@ def main():
         sm = t["s"].to_dict()
         shift[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv[te], bv[te])]
     d["hit_rate"] = sg(lg(d["h1"]) + shift)
+    if os.environ.get("LH_DZCAL") == "2":
+        # STAGE 2b (continuous) - per app, on earlier weeks: logit y = logit(market) + a + b x dz + c x dz|dz|, dz = logit(hit rate) - logit(market):
+        # one curve that keeps the model's lead near the books and lets it saturate far from them (pooled over every band, so the thin far bands
+        # borrow the whole curve). Legs without a market read are untouched.
+        pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
+        lpm = lg(np.nan_to_num(pmv, nan=0.5))
+        dz = np.where(hasm, lg(d["hit_rate"].values) - lpm, 0.0)
+        av = d["app"].values; zout = lg(d["hit_rate"].values).copy()
+        for wk in weeks:
+            te = np.where((wv == wk) & hasm)[0]
+            if not len(te):
+                continue
+            for a_ in np.unique(av[te]):
+                trm = (wv < wk) & (yv >= 0) & hasm & (av == a_)
+                if trm.sum() < MIN_N:
+                    continue
+                X = np.c_[np.ones(trm.sum()), dz[trm], dz[trm] * np.abs(dz[trm])]; yy = yv[trm].astype(float); o = lpm[trm]
+                b = np.array([0.0, 1.0, 0.0])
+                for _ in range(40):
+                    pp = sg(o + X @ b); W = pp * (1 - pp)
+                    st_ = np.clip(np.linalg.solve(X.T @ (X * W[:, None]) + 1e-3 * np.eye(3), X.T @ (yy - pp)), -1, 1)
+                    b = b + st_
+                    if np.max(np.abs(st_)) < 1e-7:
+                        break
+                ti = te[av[te] == a_]
+                zout[ti] = lpm[ti] + np.c_[np.ones(len(ti)), dz[ti], dz[ti] * np.abs(dz[ti])] @ b
+        d["hit_rate"] = sg(zout)
     if os.environ.get("LH_DZCAL") == "1":
         # STAGE 2b - AS-OF CALIBRATION BY DISAGREEMENT WITH THE BOOKS (audit 2026-11-22 02:30 PT: legs whose hit rate sat far from the books'
         # de-vigged price realised only ~40% of that gap - 2.3M legs, every app, both directions; these are exactly the legs that showed +ROI).
