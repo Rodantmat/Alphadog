@@ -90,13 +90,20 @@ def main():
     per_snapshot = 10 * n_markets * n_regions
 
     conn = psycopg.connect(dsn, autocommit=True)
+    key_env = os.environ.get("ODDS_KEY_ENV", "").strip()      # 2026-11-22: the owner's 100K key lives in a GitHub secret (ODDS2_API_KEY)
     with conn.cursor() as cur:
-        cur.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = %s", (key_name,))
-        row = cur.fetchone()
-        if not row:
-            print(f"no credential {key_name}", file=sys.stderr)
-            sys.exit(1)
-        key = str(row[0]).strip()
+        if key_env:
+            key = (os.environ.get(key_env) or "").strip()
+            if not key:
+                print(f"no key in env {key_env}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            cur.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = %s", (key_name,))
+            row = cur.fetchone()
+            if not row:
+                print(f"no credential {key_name}", file=sys.stderr)
+                sys.exit(1)
+            key = str(row[0]).strip()
         cur.execute("SELECT event_id, snapshot_label FROM nba_market.board_backfill_log WHERE status = 'ok'")
         done = {(r[0], r[1]) for r in cur.fetchall()}
     print(f"already done: {len(done)} event-snapshots | {n_markets} markets x {n_regions} regions = {per_snapshot} credits/snapshot")
@@ -137,6 +144,15 @@ def main():
         std_window = datetime(d.year, d.month, d.day, hh + off, mm, tzinfo=timezone.utc)
         early_cut = datetime(d.year, d.month, d.day, 15 + off, 45, tzinfo=timezone.utc)   # 15:45 PT
         window_dt = std_window if first_tip >= early_cut else (first_tip - timedelta(hours=2))
+        if os.environ.get("BOARD_WINDOW_FROM_DB") == "1":
+            # 2026-11-22: the books are read at the SAME moment P3 read the pick'em boards that day (the PrizePicks 'window' snapshot), so
+            # the market and the legs it prices are time-aligned
+            with conn.cursor() as cur:
+                cur.execute("""SELECT max(snapshot_ts) FROM nba_market.board_snapshots WHERE game_date = %s AND bookmaker = 'prizepicks'
+                               AND snapshot_label = 'window'""", (d,))
+                w_ = cur.fetchone()[0]
+            if w_ is not None:
+                window_dt = w_.astimezone(timezone.utc) if w_.tzinfo else w_.replace(tzinfo=timezone.utc)
         if window_dt != std_window:
             print(f"{d}: EARLY SLATE first tip {first_tip.isoformat()} -> window {window_dt.isoformat()}", flush=True)
         for ev in events:

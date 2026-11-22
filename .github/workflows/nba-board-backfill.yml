@@ -19,6 +19,22 @@ on:
         description: "Odds API regions"
         default: "us_dfs,us"
         required: false
+      snapshots:
+        description: "Snapshot labels (window,close)"
+        default: "window,close"
+        required: false
+      key_env:
+        description: "Read the key from this env var instead of the credentials table (ODDS2_API_KEY)"
+        default: ""
+        required: false
+      credit_floor:
+        description: "Stop below this many credits"
+        default: "250000"
+        required: false
+      window_from_db:
+        description: "1 = read the books at the day's PrizePicks window snapshot time"
+        default: "0"
+        required: false
 
 permissions:
   contents: read
@@ -46,5 +62,9 @@ jobs:
           BOARD_END: ${{ github.event.inputs.end || '2026-04-12' }}
           BOARD_MAX_EVENTS: ${{ github.event.inputs.max_events || '0' }}
           BOARD_REGIONS: ${{ github.event.inputs.regions || 'us_dfs,us' }}
-          BOARD_CREDIT_FLOOR: '250000'
+          BOARD_CREDIT_FLOOR: ${{ github.event.inputs.credit_floor || '250000' }}
+          BOARD_SNAPSHOTS: ${{ github.event.inputs.snapshots || 'window,close' }}
+          ODDS_KEY_ENV: ${{ github.event.inputs.key_env || '' }}
+          BOARD_WINDOW_FROM_DB: ${{ github.event.inputs.window_from_db || '0' }}
+          ODDS2_API_KEY: ${{ secrets.ODDS2_API_KEY }}
         run: python nba/backfill_board_snapshots.py
