@@ -193,6 +193,20 @@ def fix_grade(conn, seasons):
                                                               UNION ALL SELECT game_id, nba_player_id FROM nba_stats.player_game_log_postseason) g
                                                WHERE g.game_id::text = l.game_id::text AND g.nba_player_id::text = l.player_id)""", (s,)).rowcount
         print(f"LC|no box-score row in a game his team played -> dnp (void): {s} {n2:,} legs", flush=True)
+        # the same rule when the board never carried a game id (a player ruled out before tip is often listed without one): his team is the
+        # team of his box-score row nearest that date; if that team has box-score rows on the date and he has none, he did not play -> dnp
+        n3 = conn.execute("""WITH g AS (SELECT nba_player_id::text pid, team_id, game_date FROM nba_stats.player_game_log
+                                       UNION ALL SELECT nba_player_id::text, team_id, game_date FROM nba_stats.player_game_log_postseason)
+                             UPDATE nba_score.leg_card_v2 l SET result = 'dnp', realized = NULL
+                             WHERE l.season = %s AND l.result = 'ungraded' AND l.game_id IS NULL
+                               AND NOT EXISTS (SELECT 1 FROM g WHERE g.pid = l.player_id AND g.game_date = l.game_date)
+                               AND EXISTS (SELECT 1 FROM g t WHERE t.game_date = l.game_date AND t.team_id =
+                                             (SELECT g2.team_id FROM g g2 WHERE g2.pid = l.player_id AND g2.game_date BETWEEN l.game_date - 45 AND l.game_date + 45
+                                              ORDER BY abs(g2.game_date - l.game_date), g2.game_date LIMIT 1))""", (s,)).rowcount
+        print(f"LC|no game id on the board, his team played that day, no box-score row for him -> dnp (void): {s} {n3:,} legs", flush=True)
+        left = conn.execute("""SELECT count(*), count(*) FILTER (WHERE game_date >= (SELECT max(game_date) FROM nba_stats.player_game_log))
+                                FROM nba_score.leg_card_v2 WHERE season = %s AND result = 'ungraded'""", (s,)).fetchone()
+        print(f"LC|still ungraded {s}: {left[0]:,} legs ({left[1]:,} on dates whose box scores are not loaded yet)", flush=True)
 
 
 PSTAT = {"points": ["PTS"], "rebounds": ["REB"], "assists": ["AST"], "threes_made": ["FG3M"], "steals": ["STL"], "blocks": ["BLK"],
@@ -214,13 +228,13 @@ def fix_grade_periods(conn, seasons):
         for q in ("q1", "q2", "q3", "q4"):
             for f in glob.glob(str(data / f"nba_player_game_log_{q}_{slug}.json")) + glob.glob(str(data / f"nba_player_game_log_{q}_postseason_{slug}.json")):
                 for r in json.loads(Path(f).read_text()).get("records", []):
-                    rows.append({"pid": str(r["PLAYER_ID"]), "gid": str(r["GAME_ID"]), "q": q, **{k: r.get(k) for k in
+                    rows.append({"pid": str(r["PLAYER_ID"]), "gid": str(r["GAME_ID"]), "gd": str(r.get("GAME_DATE") or "")[:10], "q": q, **{k: r.get(k) for k in
                                  ("MIN", "PTS", "REB", "AST", "FG3M", "STL", "BLK", "TOV", "FG3A", "FGA", "FGM", "FTA", "FTM")}})
         if not rows:
             print(f"LC|period grading {s}: no quarter logs found", flush=True)
             continue
         qd = pd.DataFrame(rows)
-        legs = pd.read_sql("""SELECT ctid::text rid, player_id pid, game_id::text gid, prop, line::float8 line, side, m FROM nba_score.leg_card_v2
+        legs = pd.read_sql("""SELECT ctid::text rid, player_id pid, game_id::text gid, game_date::date gd, prop, line::float8 line, side, m FROM nba_score.leg_card_v2
                               WHERE season = %s AND result = 'ungraded' AND prop ~ '_(q[1-4]|h[12])$'""", conn, params=(s,))
         played_games = set(qd["gid"])
         upd = []
@@ -228,7 +242,10 @@ def fix_grade_periods(conn, seasons):
             base, per = r.prop.rsplit("_", 1)
             if base not in PSTAT or per not in PERQ:
                 continue
-            x = qd[(qd["pid"] == r.pid) & (qd["gid"] == r.gid) & (qd["q"].isin(PERQ[per]))]
+            if r.gid and r.gid != "None":
+                x = qd[(qd["pid"] == r.pid) & (qd["gid"] == r.gid) & (qd["q"].isin(PERQ[per]))]
+            else:                                    # no game id on the board: the player's quarter rows of that date
+                x = qd[(qd["pid"] == r.pid) & (qd["gd"] == str(r.gd)) & (qd["q"].isin(PERQ[per]))]
             if x.empty:
                 if r.gid in played_games:
                     upd.append((r.rid, None, "dnp", None))
