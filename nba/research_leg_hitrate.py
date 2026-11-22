@@ -165,6 +165,12 @@ def main():
     d["p_mkt"] = np.where(over, d["p_mkt"], 1 - d["p_mkt"])
     d["grp"] = d["app"] + "_" + d["kind"].fillna("none") + "_" + d["side"]
     d["appside"] = d["app"] + "_" + d["side"]
+    GRAN = [x for x in (os.environ.get("LH_GRAN") or "").split(",") if x]     # finer cells tried first (owner 21:06 PT: granularity per tier / profile)
+    assert all(x in ("prop", "lineband") for x in GRAN)
+    d["lineband"] = pd.cut(d["line"], [-1, 1, 3, 6, 10, 15, 22, 30, 999]).astype(str)
+    d["fine"] = d["grp"]
+    for x in GRAN:
+        d["fine"] = d["fine"] + "_" + d[x].astype(str)
     d["y"] = np.where(d["result"] == "won", 1, np.where(d["result"] == "lost", 0, -1))
     d["lm"] = np.log(d["m"])                     # the app's own price of this leg (real prices only; NaN = none)
     d["cell"] = d["src"].where(d["src"] == "none", "mkt") + np.where(d["lm"].notna(), "|priced", "|unpriced")
@@ -187,12 +193,17 @@ def main():
         tr = graded[graded["wk"] < wk]
         te_idx = d.index[d["wk"] == wk]
         te = d.loc[te_idx]
-        for (g, cell), gg in te.groupby(["grp", "cell"]):
+        ix = {k: tr.groupby([k, "cell"]).indices for k in (["fine"] if GRAN else []) + ["grp", "appside"]}   # row positions per cell, built once a week
+        emp = np.array([], dtype=int)
+        for (fg, cell), gg in te.groupby(["fine", "cell"]):
+            g = gg["grp"].iloc[0]
             if cell == "none|unpriced":
                 continue                                   # nothing beyond the model to pool with: hit rate = final_hp
             app = gg["appside"].iloc[0]
-            for level, trg in ((g, tr[(tr["grp"] == g) & (tr["cell"] == cell)]), (app, tr[(tr["appside"] == app) & (tr["cell"] == cell)])):
-                if len(trg) >= MIN_N:
+            for level, key in (((fg, "fine"),) if GRAN else ()) + ((g, "grp"), (app, "appside")):
+                pos = ix[key].get((level, cell), emp)
+                if len(pos) >= MIN_N:
+                    trg = tr.iloc[pos]
                     break
             else:
                 continue                                   # not enough graded history yet: hit rate = final_hp
@@ -214,7 +225,7 @@ def main():
     d["h1"] = d["hit_rate"]
     d["band"] = np.minimum((d["h1"] * 20).astype(int), 19)
     shift = np.zeros(len(d))
-    yv = d["y"].values; gv = (d["grp"] + "|" + d["cell"]).values; bv = d["band"].values; hv = d["h1"].values; wv = d["wk"].values
+    yv = d["y"].values; gv = (d["fine"] + "|" + d["cell"]).values; bv = d["band"].values; hv = d["h1"].values; wv = d["wk"].values
     for wk in weeks:
         tr = (wv < wk) & (yv >= 0)
         te = np.where(wv == wk)[0]
@@ -263,6 +274,8 @@ def main():
                 cp.write_row([pd.Timestamp(r[0]).date(), r[1], r[2], int(r[3])] + [None if x != x else float(x) for x in r[4:8]])
         conn.commit()
         print(f"LH|written: {n:,} legs updated; {len(wrows):,} weight rows", flush=True)
+    gg_ = d[d["y"] >= 0]
+    print(f"LH|OVERALL graded {len(gg_):,} | granularity {GRAN or 'app x kind x side'} | log-loss final_hp {ll(gg_['p'], gg_['y']):.5f} -> hit rate {ll(gg_['hit_rate'], gg_['y']):.5f}", flush=True)
     print("LH|DONE", flush=True)
 
 
