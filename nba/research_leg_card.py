@@ -157,6 +157,8 @@ def main():
         conn.execute("CREATE INDEX IF NOT EXISTS leg_card_v2_date ON nba_score.leg_card_v2 (game_date, app)")
     if os.environ.get("LC_WRITE") == "1" or os.environ.get("LC_FIXGRADE") == "1":
         ensure_cols(conn)
+        # fresh statistics before the fix-up joins: planned on the pre-rebuild statistics they ran as nested loops (11-22: >1.5 h, never finished)
+        conn.execute("ANALYZE nba_score.leg_card_v2")
         sanity_pairs(conn, seasons)
         box_first(conn, seasons)
         fix_grade(conn, seasons)
