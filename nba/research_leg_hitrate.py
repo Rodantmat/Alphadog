@@ -370,6 +370,27 @@ def main():
             sm = t["s"].to_dict()
             shp[te] = [sm.get(g_, 0.0) for g_ in gp[te]]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + shp)
+    if os.environ.get("LH_MODCAL") == "1":
+        # STAGE 2d - Underdog per era x side x price band (1/m), as-of, shrunk. 2026-11-22 14:00 PT: in 2026-27 the 1.0x legs hit 52.4% (Under) /
+        # 47.8% (Over) vs hit rate 48.3 / 45.1 (5,953 / 6,013 legs): the 2026-27 modifier table is a new population the app x kind x side cells
+        # (fit mostly on 2024-26) cannot see. The era is its own group, so it is learned only from earlier 2026-27 weeks.
+        ud = (d["app"] == "underdog").values & d["m"].notna().values
+        era = np.where(d["gd"].values >= np.datetime64("2026-07-01"), "new", "old")
+        bnd = pd.cut(1 / d["m"].where(d["m"] > 0), [0, .3, .4, .5, .55, .6, .7, .8, 1.01]).astype(str).values
+        gm = np.array([f"{e}|{s}|{b}" for e, s, b in zip(era, d["side"].values, bnd)])
+        hp_ = d["hit_rate"].values; shm = np.zeros(len(d)); KM = float(os.environ.get("LH_MODK") or 1000)
+        for wk in weeks:
+            tr = (wv < wk) & (yv >= 0) & ud
+            te = np.where((wv == wk) & ud)[0]
+            if tr.sum() < 50 or not len(te):
+                continue
+            t = pd.DataFrame({"g": gm[tr], "h": hp_[tr], "y": yv[tr]}).groupby("g").agg(n=("y", "size"), hit=("y", "mean"), mh=("h", "mean"))
+            t = t[t["n"] >= 100]
+            t["s"] = t["n"] / (t["n"] + KM) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
+            sm = t["s"].to_dict()
+            shm[te] = [sm.get(g_, 0.0) for g_ in gm[te]]
+        d["hit_rate"] = sg(lg(d["hit_rate"]) + shm)
+        print(f"LH|stage 2d Underdog era x side x price band: legs shifted {(shm != 0).sum():,}, mean |shift| {np.abs(shm[shm != 0]).mean():.3f} logit", flush=True)
     def guards():
         if os.environ.get("LH_DZCLIP"):
             # FINAL GUARD (audit 2026-11-22: every leg the chain put far from the books realised the books' price, every app and season): the hit
@@ -542,6 +563,13 @@ def main():
         dd = sorted(((ll(h["hit_rate"], h["y"]) - ll(h["p"], h["y"]), pr, len(h)) for pr, h in x.groupby("prop") if len(h) >= 2000), reverse=True)[:3]
         print(f"LH|  worst props {s_} {a_}: " + " | ".join(f"{pr} {len(h_) if False else n_:,} legs {100*v:+.2f} pts log-loss" for v, pr, n_ in dd), flush=True)
     print(f"LH|OVERALL graded {len(gg_):,} | granularity {GRAN or 'app x kind x side'} | log-loss final_hp {ll(gg_['p'], gg_['y']):.5f} -> hit rate {ll(gg_['hit_rate'], gg_['y']):.5f}", flush=True)
+    u_ = gg_[(gg_["app"] == "underdog") & gg_["m"].notna()].copy()
+    if len(u_):   # Underdog level check per season x side x price band (hit vs hit rate)
+        u_["b"] = pd.cut(1 / u_["m"].where(u_["m"] > 0), [0, .3, .4, .5, .55, .6, .7, .8, 1.01])
+        for (s_, sd_), x in u_.groupby(["season", "side"]):
+            print(f"LH|  UD {s_} {sd_}: " + " ".join(f"{b}:{100*h['y'].mean():.1f}/{100*h['hit_rate'].mean():.1f}({len(h)})"
+                                                     for b, h in x.groupby("b", observed=True) if len(h) >= 500)
+                  + f" | log-loss {ll(x['hit_rate'], x['y']):.5f}", flush=True)
     print("LH|DONE", flush=True)
 
 
