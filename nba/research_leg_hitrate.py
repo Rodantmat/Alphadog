@@ -202,14 +202,14 @@ def main():
     ok = d["hit_rate"].notna()
     print(f"LH|legs whose hit rate pools final_hp with a market read or the app own price: {100*ok.mean():.1f}% (the rest: hit rate = final_hp)", flush=True)
     d["hit_rate"] = d["hit_rate"].fillna(d["p"])
-    # STAGE 2 - AS-OF BAND CALIBRATION of the hit rate, the system's own documented rule (build_asof_calibration.py: per cell
+    # STAGE 2 - AS-OF BAND CALIBRATION of the hit rate (per app x kind x cell x band), the system's own documented rule (build_asof_calibration.py: per cell
     # shift = w x (logit(hit) - logit(mean predicted)), w = n / (n + 400), n >= 50) applied per app x kind x 5-point band of the hit rate,
     # fitted on the hit rates of legs graded in EARLIER weeks (each already out-of-sample) - it corrects the tails a straight-line pooling
     # leaves (measured before this step: Underdog 85 -> 60.5, PrizePicks top band over-stated).
     d["h1"] = d["hit_rate"]
     d["band"] = np.minimum((d["h1"] * 20).astype(int), 19)
     shift = np.zeros(len(d))
-    yv = d["y"].values; gv = d["grp"].values; bv = d["band"].values; hv = d["h1"].values; wv = d["wk"].values
+    yv = d["y"].values; gv = (d["grp"] + "|" + d["cell"]).values; bv = d["band"].values; hv = d["h1"].values; wv = d["wk"].values
     for wk in weeks:
         tr = (wv < wk) & (yv >= 0)
         te = np.where(wv == wk)[0]
