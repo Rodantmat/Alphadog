@@ -39,6 +39,7 @@ MAXGAP = float(os.environ.get("LH_MAXGAP") or 99)   # widest gap between a book'
                                                     # straight-line reads across wide alternate gaps sat ~10 pts above the hit rate)
 ONESIDE = os.environ.get("LH_ONESIDE") or "ovr"          # one-sided book lines: ovr (implied / overround) | power (implied ** book's k)
 SAT = os.environ.get("LH_SAT") == "1"
+EC = set((os.environ.get("LH_EDGECAL") or "").split(","))   # stage-3 variants, combinable: "2,1" = continuous curve then the as-of edge bands
 CELLSRC = os.environ.get("LH_CELLSRC") == "1"            # separate weights for an exact two-sided read and a ladder read          # stage-2 shrink (documented as-of value 400)
 KEY = ["game_date", "nb", "prop"]
 
@@ -334,7 +335,14 @@ def main():
             sm = t["s"].to_dict()
             shz[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(av[te], zb[te])]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + shz)
-    if os.environ.get("LH_EDGECAL") in ("2", "3"):
+    if os.environ.get("LH_DZCLIP"):
+        # FINAL GUARD (audit 2026-11-22: every leg the chain put far from the books realised the books' price, every app and season): the hit
+        # rate may lead the books' de-vigged price by at most LH_DZCLIP in logit. Legs without a market read are untouched.
+        tau = float(os.environ["LH_DZCLIP"])
+        pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
+        lpm = lg(np.nan_to_num(pmv, nan=0.5)); zh = lg(d["hit_rate"].values)
+        d["hit_rate"] = np.where(hasm, sg(lpm + np.clip(zh - lpm, -tau, tau)), d["hit_rate"].values)
+    if EC & {"2", "3"}:
         # STAGE 3 (continuous) - an offset logistic per app x side on earlier weeks: logit y = logit(h) + a + b x edge (+ c x edge^2), edge =
         # logit(h) - logit(1/m). Pools every priced leg into one slope, so the thin top bands borrow the whole curve.
         pr = d["m"].notna().values
@@ -345,7 +353,7 @@ def main():
         # EDGECAL=3: the curve also knows how far the leg's own model sits from the books (0 without a market read)
         pmv = d["p_mkt"].values.astype(float)
         dz3 = np.where(np.isnan(pmv), 0.0, lg(d["p"].values) - lg(np.nan_to_num(pmv, nan=0.5)))
-        E3 = os.environ.get("LH_EDGECAL") == "3"
+        E3 = "3" in EC
 
         def XF(ix_):
             cols = [np.ones(len(ed[ix_])), ed[ix_], ed[ix_] ** 2]
@@ -373,7 +381,7 @@ def main():
                 ti = te[gk3[te] == g_]
                 z3[ti] = XF(ti) @ b
         d["hit_rate"] = sg(off + z3)
-    if os.environ.get("LH_EDGECAL") == "1":
+    if "1" in EC:
         # STAGE 3 - AS-OF CALIBRATION BY EDGE (the leg's hit rate against its own price, logit(h) - logit(1/m)): legs the chain calls far above
         # their price were the ones that over-stated (+ROI bands realised -3 to -15%). Same documented rule, w = n / (n + 400), per app x side,
         # 0.1-wide edge bands, fitted on earlier weeks only. Legs without a real price are untouched.
@@ -394,13 +402,6 @@ def main():
             sm = t["s"].to_dict()
             sh3[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv3[te], eb[te])]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + sh3)
-    if os.environ.get("LH_DZCLIP"):
-        # FINAL GUARD (audit 2026-11-22: every leg the chain put far from the books realised the books' price, every app and season): the hit
-        # rate may lead the books' de-vigged price by at most LH_DZCLIP in logit. Legs without a market read are untouched.
-        tau = float(os.environ["LH_DZCLIP"])
-        pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
-        lpm = lg(np.nan_to_num(pmv, nan=0.5)); zh = lg(d["hit_rate"].values)
-        d["hit_rate"] = np.where(hasm, sg(lpm + np.clip(zh - lpm, -tau, tau)), d["hit_rate"].values)
     d["roi"] = d["hit_rate"] * d["m"] - 1
     d["roi_model"] = d["p"] * d["m"] - 1
     # ---- check (out-of-sample by construction: every weight set predates its week)
