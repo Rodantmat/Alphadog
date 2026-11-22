@@ -35,6 +35,8 @@ RK = ("CASE {x} WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' 
       "WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' WHEN 'blocks_steals' THEN 'stocks' ELSE {x} END")
 MIN_N = 5000
 K2 = float(os.environ.get("LH_K") or 400)
+MAXGAP = float(os.environ.get("LH_MAXGAP") or 99)   # widest gap between a book's two neighbouring lines that may be read across (2026-27 rebounds:
+                                                    # straight-line reads across wide alternate gaps sat ~10 pts above the hit rate)
 ONESIDE = os.environ.get("LH_ONESIDE") or "ovr"          # one-sided book lines: ovr (implied / overround) | power (implied ** book's k)
 CELLSRC = os.environ.get("LH_CELLSRC") == "1"            # separate weights for an exact two-sided read and a ladder read          # stage-2 shrink (documented as-of value 400)
 KEY = ["game_date", "nb", "prop"]
@@ -130,7 +132,7 @@ def read_at(legs, w):
         inside = m["l0"].notna() & m["l1"].notna()
         t = np.where(ex, 0.0, (m["line"] - m["l0"]) / (m["l1"] - m["l0"]).where(m["l1"] > m["l0"]))
         z = np.where(ex, lg(m["p0"]), lg(m["p0"]) + t * (lg(m["p1"]) - lg(m["p0"])))
-        ok = ex | (inside & ~np.isnan(z))
+        ok = ex | (inside & ~np.isnan(z) & ((m["l1"] - m["l0"]) <= MAXGAP))   # a read between two lines no further apart than LH_MAXGAP
         out.append(pd.DataFrame({"kid": m.loc[ok, "kid"].values, "z": z[ok], "exact2": (ex & m["t0"].fillna(False).astype(bool)).values[ok]}))
     if not out:
         return keys.assign(p_mkt=np.nan, src="none")
