@@ -182,6 +182,16 @@ def fix_grade(conn, seasons):
                                    WHERE l.season = %s AND l.result = 'ungraded' AND l.prop IN {BOXP}) x
                              WHERE l.ctid = x.rid AND x.v IS NOT NULL""", (s,)).rowcount
         print(f"LC|graded from the box score (results table never matched them): {s} {n:,} legs", flush=True)
+        # a player with no box-score row in a game his team played did not play: the leg is void (dnp), as the apps settle it
+        n2 = conn.execute("""UPDATE nba_score.leg_card_v2 l SET result = 'dnp', realized = NULL
+                             WHERE l.season = %s AND l.result = 'ungraded' AND l.game_id IS NOT NULL
+                               AND EXISTS (SELECT 1 FROM (SELECT game_id, nba_player_id FROM nba_stats.player_game_log
+                                                          UNION ALL SELECT game_id, nba_player_id FROM nba_stats.player_game_log_postseason) g
+                                           WHERE g.game_id::text = l.game_id::text)
+                               AND NOT EXISTS (SELECT 1 FROM (SELECT game_id, nba_player_id FROM nba_stats.player_game_log
+                                                              UNION ALL SELECT game_id, nba_player_id FROM nba_stats.player_game_log_postseason) g
+                                               WHERE g.game_id::text = l.game_id::text AND g.nba_player_id::text = l.player_id)""", (s,)).rowcount
+        print(f"LC|no box-score row in a game his team played -> dnp (void): {s} {n2:,} legs", flush=True)
 
 
 def certify(conn, seasons):
