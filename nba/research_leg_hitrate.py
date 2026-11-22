@@ -196,7 +196,12 @@ def main():
     d["src"] = d["src"].fillna("none")
     over = d["side"] == "Over"
     d["p_mkt"] = np.where(over, d["p_mkt"], 1 - d["p_mkt"])
-    d["grp"] = d["app"] + "_" + d["kind"].fillna("none") + "_" + d["side"]
+    kind_ = d["kind"].fillna("none")
+    if os.environ.get("LH_KINDERA") == "1":
+        # PrizePicks 'alternate' in 2026-27 is not the 2024-26 population (those seasons had no goblin / demon tag; 2026-27 has the tags, so its
+        # left-over 'alternate' legs are a different class): its own group, never calibrated on the earlier seasons' alternates
+        kind_ = kind_.where(~((d["app"] == "prizepicks") & (kind_ == "alternate") & (d["season"] == "2026-27")), "alternate_tagged_era")
+    d["grp"] = d["app"] + "_" + kind_ + "_" + d["side"]
     d["appside"] = d["app"] + "_" + d["side"]
     GRAN = [x for x in (os.environ.get("LH_GRAN") or "").split(",") if x]     # finer cells tried first (owner 21:06 PT: granularity per tier / profile)
     assert all(x in ("prop", "lineband") for x in GRAN)
@@ -236,8 +241,9 @@ def main():
         emp = np.array([], dtype=int)
         for (fg, cell), gg in te.groupby(["fine", "cell"]):
             g = gg["grp"].iloc[0]
-            if cell == "none|unpriced":
+            if cell == "none|unpriced" and os.environ.get("LH_RECAL_NONE") != "1":
                 continue                                   # nothing beyond the model to pool with: hit rate = final_hp
+                                                           # (LH_RECAL_NONE=1: a walk-forward logistic recalibration of final_hp alone)
             app = gg["appside"].iloc[0]
             beta = None
             for level, key in (((fg, "fine"),) if GRAN else ()) + ((g, "grp"), (app, "appside")):
