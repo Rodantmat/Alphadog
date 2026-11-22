@@ -39,6 +39,7 @@ MAXGAP = float(os.environ.get("LH_MAXGAP") or 99)   # widest gap between a book'
                                                     # straight-line reads across wide alternate gaps sat ~10 pts above the hit rate)
 ONESIDE = os.environ.get("LH_ONESIDE") or "ovr"          # one-sided book lines: ovr (implied / overround) | power (implied ** book's k)
 SAT = os.environ.get("LH_SAT") == "1"
+OUTLIER = float(os.environ.get("LH_OUTLIER") or 0)     # drop a book read more than this (logit) from the other books' median of the same line
 EC = set((os.environ.get("LH_EDGECAL") or "").split(","))   # stage-3 variants, combinable: "2,1" = continuous curve then the as-of edge bands
 CELLSRC = os.environ.get("LH_CELLSRC") == "1"            # separate weights for an exact two-sided read and a ladder read          # stage-2 shrink (documented as-of value 400)
 KEY = ["game_date", "nb", "prop"]
@@ -139,6 +140,11 @@ def read_at(legs, w):
     if not out:
         return keys.assign(p_mkt=np.nan, src="none")
     o_ = pd.concat(out)
+    if OUTLIER:
+        # a book whose read sits far from every other book's read of the same line is a data error, not a price (2026-11-22: a Bovada
+        # 'rebounds' 14.5 at -120/-110 for Jayson Tatum - his rebounds line was 8.5 - became the leg's only two-sided read, p 0.51, +130% ROI)
+        med = o_.groupby("kid")["z"].transform("median"); nbk = o_.groupby("kid")["z"].transform("size")
+        o_ = o_[(nbk < 3) | ((o_["z"] - med).abs() <= OUTLIER)]
     # when any book prices the leg's exact line on BOTH sides, only those two-sided reads count (one-sided alternates carry extra margin -
     # independent audit 2026-11-22: Grayson Allen reb o5.5, FanDuel pair 0.093 vs four Over-only books near 0.2)
     has2 = o_.groupby("kid")["exact2"].transform("max").astype(bool)
