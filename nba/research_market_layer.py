@@ -72,7 +72,7 @@ def main():
     bk = bk.drop_duplicates(["game_date", "bookmaker", "nb", "prop", "line", "side"])
     w = bk.pivot_table(index=["game_date", "bookmaker", "nb", "prop", "line"], columns="side", values="price", aggfunc="first").dropna().reset_index()
     io, iu = 1 / dec(w["Over"]), 1 / dec(w["Under"])
-    w["mult"] = io / (io + iu); w["pow"] = power_devig(io.values, iu.values)
+    w["mult"] = io / (io + iu); w["pow"] = power_devig(io, iu)
     mk = w.groupby(["game_date", "nb", "prop", "line"]).agg(p_mult=("mult", "median"), p_pow=("pow", "median"), books=("bookmaker", "nunique")).reset_index()
     d = legs.merge(mk, on=["game_date", "nb", "prop", "line"], how="left")
     over = d["side"] == "Over"
