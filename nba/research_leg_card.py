@@ -117,7 +117,7 @@ p AS (
       ELSE CASE WHEN k.multiplier IS NOT NULL OR k.price IS NOT NULL THEN 'app' END END src
   FROM k),
 q AS (
-  SELECT p.*, CASE WHEN p.lm > 0 THEN CASE WHEN p.app IN ('prizepicks','underdog') THEN sqrt(3.0) * p.lm ELSE p.lm END END mm FROM p)
+  SELECT p.*, CASE WHEN p.lm > 0 THEN CASE WHEN p.app = 'prizepicks' THEN sqrt(3.0) * p.lm WHEN p.app = 'underdog' THEN sqrt(3.5) * p.lm ELSE p.lm END END mm FROM p)   -- Underdog Standard 2-pick pays 3.5x (fix 2026-11-22: was sqrt 3)
 SELECT q.season, q.game_date, q.app, q.player_id, q.player, q.prop, q.line, q.side, q.game_id, q.kind, q.hp, q.conf, q.score,
        q.src, q.lm, q.mm, CASE WHEN q.mm > 0 THEN 1 / q.mm END, q.hp * q.mm - 1,
        CASE WHEN q.lm > 0 THEN CASE WHEN q.app IN ('prizepicks','underdog') THEN q.hp * q.lm / 0.56 ELSE q.hp * q.lm END - 1 END,
