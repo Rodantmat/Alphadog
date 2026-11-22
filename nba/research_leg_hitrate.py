@@ -389,7 +389,10 @@ def main():
         ed = np.full(len(d), np.nan)
         ed[pr] = lg(d["hit_rate"].values[pr]) - lg(1 / d["m"].values[pr])
         eb = np.where(pr, np.clip(np.floor(np.nan_to_num(ed) / 0.1), -20, 20), -99).astype(int)
-        hv3 = d["hit_rate"].values; gv3 = d["appside"].values
+        hv3 = d["hit_rate"].values
+        # legs with and without a market read get separate band curves (2026-11-22: Sleeper double-double / blocks with no book line sat at an
+        # over-stated final_hp, +70% predicted ROI realised -21%, inside bands dominated by market-read legs)
+        gv3 = (d["appside"] + np.where(d["p_mkt"].notna(), "|m", "|n")).values
         sh3 = np.zeros(len(d))
         for wk in weeks:
             tr = (wv < wk) & (yv >= 0) & pr
