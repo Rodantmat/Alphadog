@@ -56,7 +56,7 @@ snap AS MATERIALIZED (
          (s.market_key LIKE '%%alternate') alt
   FROM nba_market.board_snapshots s
   -- PRE-TIP ONLY, every capture (audit 3, 2026-11-22: IND@PHI 11-15 was captured 2h20m after tip - in-game prices priced 2,108 legs; and
-  -- 53% of legs had no price because only the 'window' capture was read while the board also takes legs from the morning / close captures):
+  -- 53 pct of legs had no price because only the 'window' capture was read while the board also takes legs from the morning / close captures):
   -- the window capture first, then the latest other capture before tip; ties broken by time, deterministically
   WHERE s.bookmaker = ANY(%(apps)s) AND s.snapshot_label IN ('window','close','morning') AND s.game_date >= %(a)s AND s.game_date < %(b)s
     AND (s.commence_time IS NULL OR s.snapshot_ts < s.commence_time)
