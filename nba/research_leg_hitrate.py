@@ -351,12 +351,13 @@ def main():
             sm = t["s"].to_dict()
             shz[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(av[te], zb[te])]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + shz)
-    if os.environ.get("LH_PROPCAL") == "1":
+    if os.environ.get("LH_PROPCAL") in ("1", "2"):
         # STAGE 2c - legs WITHOUT a market read, per app x prop x side: one as-of shift on earlier weeks (all bands pooled), w = n / (n + 100).
         # 2026-11-22: Sleeper double-double / blocks with no book line carried final_hp 0.77 / 0.65 and hit 0.56 / 0.44 (+70% predicted ROI,
         # -21% realised) - a prop whose own level is off, which the app x kind bands cannot see.
-        nom = d["p_mkt"].isna().values
-        gp = (d["app"] + "|" + d["prop"].astype(str) + "|" + d["side"]).values
+        nom = d["p_mkt"].isna().values if os.environ.get("LH_PROPCAL") == "1" else np.ones(len(d), bool)   # 2: every leg (2026-11-22 10:30 PT:
+        # Underdog Under rebounds / threes hit 1.6-2.0 pts above the hit rate on 4.6-8.7k legs; prop x side level shift, as-of, shrunk)
+        gp = (d["app"] + "|" + d["prop"].astype(str) + "|" + d["side"] + ("|" + d["kind"].fillna("none") if os.environ.get("LH_PROPCAL") == "2" else "")).values
         hp_ = d["hit_rate"].values; shp = np.zeros(len(d))
         for wk in weeks:
             tr = (wv < wk) & (yv >= 0) & nom
@@ -365,7 +366,7 @@ def main():
                 continue
             t = pd.DataFrame({"g": gp[tr], "h": hp_[tr], "y": yv[tr]}).groupby("g").agg(n=("y", "size"), hit=("y", "mean"), mh=("h", "mean"))
             t = t[t["n"] >= 30]
-            t["s"] = t["n"] / (t["n"] + 100) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
+            t["s"] = t["n"] / (t["n"] + float(os.environ.get("LH_PROPK") or 100)) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
             sm = t["s"].to_dict()
             shp[te] = [sm.get(g_, 0.0) for g_ in gp[te]]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + shp)
