@@ -394,6 +394,13 @@ def main():
             sm = t["s"].to_dict()
             sh3[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv3[te], eb[te])]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + sh3)
+    if os.environ.get("LH_DZCLIP"):
+        # FINAL GUARD (audit 2026-11-22: every leg the chain put far from the books realised the books' price, every app and season): the hit
+        # rate may lead the books' de-vigged price by at most LH_DZCLIP in logit. Legs without a market read are untouched.
+        tau = float(os.environ["LH_DZCLIP"])
+        pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
+        lpm = lg(np.nan_to_num(pmv, nan=0.5)); zh = lg(d["hit_rate"].values)
+        d["hit_rate"] = np.where(hasm, sg(lpm + np.clip(zh - lpm, -tau, tau)), d["hit_rate"].values)
     d["roi"] = d["hit_rate"] * d["m"] - 1
     d["roi_model"] = d["p"] * d["m"] - 1
     # ---- check (out-of-sample by construction: every weight set predates its week)
