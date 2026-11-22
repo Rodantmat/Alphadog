@@ -75,11 +75,15 @@ def power_devig(io_, iu):
 
 def market(conn, a, b):
     """fair P(over) per (date, player, prop, line) from the books' window ladders; returns (frame of book points, exact keys)"""
-    bk = pd.read_sql(f"""SELECT s.game_date, s.bookmaker, s.market_key mkey, nba_ref.norm_name(s.player) nb,
-                               {RK.format(x="replace(replace(s.market_key,'player_',''),'_alternate','')")} prop, s.line::float8 line, s.side, s.price::float8 price
-                        FROM nba_market.board_snapshots s
+    # keyed by PLAYER ID through the name map (audit 3: 'Herb Jones' vs 'Herbert Jones' got different reads on different apps); PRE-TIP rows only
+    # (audit 3: IND@PHI 11-15 captured 2h20m after tip); the latest pre-tip row of a key wins, deterministically
+    bk = pd.read_sql(f"""SELECT s.game_date, s.bookmaker, s.market_key mkey, coalesce(pm.player_id::text, 'n:' || nba_ref.norm_name(s.player)) nb,
+                               {RK.format(x="replace(replace(s.market_key,'player_',''),'_alternate','')")} prop, s.line::float8 line, s.side, s.price::float8 price,
+                               s.snapshot_ts
+                        FROM nba_market.board_snapshots s LEFT JOIN nba_ref.player_name_map pm ON pm.norm_name = nba_ref.norm_name(s.player)
                         WHERE s.bookmaker = ANY(%s) AND s.snapshot_label = 'window' AND s.game_date BETWEEN %s AND %s AND s.price IS NOT NULL
-                          AND s.side IN ('Over','Under')""", conn, params=(list(BOOKS), a, b))
+                          AND s.side IN ('Over','Under') AND (s.commence_time IS NULL OR s.snapshot_ts < s.commence_time)""", conn, params=(list(BOOKS), a, b))
+    bk = bk.sort_values(["snapshot_ts", "price"], ascending=[False, True])
     # Over and Under are paired WITHIN one market of one book (a main and an alternate market can both carry the line at different prices -
     # pairing across them mixed prices; independent audit 2026-11-21: 35 of 54 exact legs reproduced before this)
     bk = bk.drop_duplicates(["game_date", "bookmaker", "mkey", "nb", "prop", "line", "side"])
@@ -181,7 +185,7 @@ def ll(p, y):
 def main():
     url = os.environ["DATABASE_URL"]
     conn = psycopg.connect(url); conn.execute("SET statement_timeout = 0"); conn.execute("SET work_mem = '512MB'")
-    legs = pd.read_sql("""SELECT ctid::text rid, season, game_date, app, nba_ref.norm_name(player) nb, prop, line::float8 line, side, kind,
+    legs = pd.read_sql("""SELECT ctid::text rid, season, game_date, app, player_id::text nb, prop, line::float8 line, side, kind,
                                  final_hp p, m, app_px, result FROM nba_score.leg_card_v2""", conn)
     print(f"LH|legs {len(legs):,}", flush=True)
     mk = []

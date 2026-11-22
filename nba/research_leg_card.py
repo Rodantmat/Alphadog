@@ -55,8 +55,13 @@ snap AS MATERIALIZED (
          s.bookmaker app, s.game_date, nba_ref.norm_name(s.player) nb, {rk_s} prop, s.line, s.side, s.price, s.multiplier,
          (s.market_key LIKE '%%alternate') alt
   FROM nba_market.board_snapshots s
-  WHERE s.bookmaker = ANY(%(apps)s) AND s.snapshot_label = 'window' AND s.game_date >= %(a)s AND s.game_date < %(b)s
-  ORDER BY s.bookmaker, s.game_date, nba_ref.norm_name(s.player), {rk_s}, s.line, s.side, s.fetched_at DESC),
+  -- PRE-TIP ONLY, every capture (audit 3, 2026-11-22: IND@PHI 11-15 was captured 2h20m after tip - in-game prices priced 2,108 legs; and
+  -- 53% of legs had no price because only the 'window' capture was read while the board also takes legs from the morning / close captures):
+  -- the window capture first, then the latest other capture before tip; ties broken by time, deterministically
+  WHERE s.bookmaker = ANY(%(apps)s) AND s.snapshot_label IN ('window','close','morning') AND s.game_date >= %(a)s AND s.game_date < %(b)s
+    AND (s.commence_time IS NULL OR s.snapshot_ts < s.commence_time)
+    AND NOT (s.bookmaker = 'underdog' AND s.multiplier = 1 AND s.price >= 100)   -- placeholder: a +100 'standard' price no app offers (audit 3)
+  ORDER BY s.bookmaker, s.game_date, nba_ref.norm_name(s.player), {rk_s}, s.line, s.side, (s.snapshot_label = 'window') DESC, s.snapshot_ts DESC, s.fetched_at DESC, s.price),
 udmap AS MATERIALIZED (
   SELECT DISTINCT price, multiplier FROM nba_market.board_snapshots
   WHERE bookmaker = 'underdog' AND snapshot_label = 'window' AND multiplier IS NOT NULL AND game_date >= '2025-07-01' AND game_date < '2026-07-01'),
@@ -69,11 +74,11 @@ ppflag AS MATERIALIZED (
     AND (p.start_time::timestamptz AT TIME ZONE 'America/Los_Angeles')::date < %(b)s
   ORDER BY d, nb, s.prop, p.line, p.run_file DESC),
 ppq AS MATERIALIZED (
-  SELECT DISTINCT ON (d, nb, prop, q.line, q.side) (q.quoted_at AT TIME ZONE 'America/Los_Angeles')::date d, nba_ref.norm_name(q.player) nb,
-         coalesce({rk_q}, s.prop) prop, q.line, q.side, q.factor_mined::float8 f
+  SELECT DISTINCT ON (d, nb, prop, q.line, q.side, q.kind) (q.quoted_at AT TIME ZONE 'America/Los_Angeles')::date d, nba_ref.norm_name(q.player) nb,
+         coalesce({rk_q}, s.prop) prop, q.line, q.side, q.kind, q.factor_mined::float8 f
   FROM nba_market.pp_mined_leg q LEFT JOIN pbs s ON s.stat = q.pp_stat
   WHERE q.factor_mined > 0 AND (q.quoted_at AT TIME ZONE 'America/Los_Angeles')::date >= %(a)s AND (q.quoted_at AT TIME ZONE 'America/Los_Angeles')::date < %(b)s
-  ORDER BY d, nb, prop, q.line, q.side, q.quoted_at DESC),
+  ORDER BY d, nb, prop, q.line, q.side, q.kind, q.quoted_at DESC),
 outc AS MATERIALIZED (
   -- matched by PLAYER ID through the name map, not by name: one player can be graded under one of his names and left unmatched under another
   -- (independent audit 2026-11-21: every Carlton / Bub Carrington leg came out ungraded - 7,334 legs - while his box scores exist)
@@ -88,6 +93,7 @@ j AS (
   LEFT JOIN snap sn ON sn.app = bs.app AND sn.game_date = bs.game_date AND sn.nb = bs.nb AND sn.prop = bs.prop AND sn.line = bs.line AND sn.side = bs.side
   LEFT JOIN ppflag pf ON bs.app = 'prizepicks' AND pf.d = bs.game_date AND pf.nb = bs.nb AND pf.prop = bs.prop AND pf.line = bs.line
   LEFT JOIN ppq pq ON bs.app = 'prizepicks' AND pq.d = bs.game_date AND pq.nb = bs.nb AND pq.prop = bs.prop AND pq.line = bs.line AND pq.side = bs.side
+                     AND pq.kind = pf.odds          -- the quote must be of the same tag the board shows (audit 3: 25 goblin / demon mix-ups)
   LEFT JOIN udmap um ON bs.app = 'underdog' AND um.price = sn.price
   LEFT JOIN outc oc ON oc.game_date = bs.game_date AND oc.pid = bs.player_id::text AND oc.prop = bs.prop AND oc.line = bs.line),
 k AS (
@@ -151,6 +157,8 @@ def main():
         conn.execute("CREATE INDEX IF NOT EXISTS leg_card_v2_date ON nba_score.leg_card_v2 (game_date, app)")
     if os.environ.get("LC_WRITE") == "1" or os.environ.get("LC_FIXGRADE") == "1":
         ensure_cols(conn)
+        sanity_pairs(conn, seasons)
+        box_first(conn, seasons)
         fix_grade(conn, seasons)
         fix_grade_periods(conn, seasons)
         conn.execute("ANALYZE nba_score.leg_card_v2")
@@ -209,6 +217,38 @@ def fix_grade(conn, seasons):
         print(f"LC|still ungraded {s}: {left[0]:,} legs ({left[1]:,} on dates whose box scores are not loaded yet)", flush=True)
 
 
+def sanity_pairs(conn, seasons):
+    """A real two-sided price always carries the app's margin: 1/m(Over) + 1/m(Under) >= 1. A pair below 1 is a guaranteed-profit price no app
+    offers - a placeholder or a stale side (audit 3, 2026-11-22: 279 Underdog pairs, e.g. Bam Adebayo points 29.5 Over 5.22x / Under 1.0x).
+    Both sides lose their price (the leg stays on the card, graded, with no ROI)."""
+    for s in seasons:
+        n = conn.execute("""WITH pr AS (SELECT game_date, app, player_id, prop, line FROM nba_score.leg_card_v2
+                                        WHERE season = %s AND m > 0 AND app IN ('underdog','sleeper','fliff')
+                                        GROUP BY 1,2,3,4,5 HAVING count(DISTINCT side) = 2 AND sum(1 / m) FILTER (WHERE side = 'Over') + sum(1 / m) FILTER (WHERE side = 'Under') < 0.999)
+                            UPDATE nba_score.leg_card_v2 l SET m = NULL, leg_mult = NULL, breakeven = NULL, roi = NULL, roi_prod = NULL, realized = NULL,
+                                   app_px = NULL, price_source = 'rejected_pair'
+                            FROM pr WHERE l.season = %s AND l.game_date = pr.game_date AND l.app = pr.app AND l.player_id = pr.player_id
+                              AND l.prop = pr.prop AND l.line = pr.line""", (s, s)).rowcount
+        print(f"LC|price pairs below the app's margin (1/m Over + 1/m Under < 1) - both sides unpriced: {s} {n:,} legs", flush=True)
+
+
+def box_first(conn, seasons):
+    """The box score is the truth: a graded leg whose stat differs from the current box score (NBA stat corrections the results table never
+    picked up - audit 3: 541 legs in 2026-27, 62 flipped, e.g. Ace Bailey 11-06 rebounds 5 -> 6) is re-graded from it."""
+    for s in seasons:
+        n = conn.execute(f"""UPDATE nba_score.leg_card_v2 l SET stat_actual = x.v,
+                                result = CASE WHEN x.v = l.line::float8 THEN 'push' WHEN (x.v > l.line::float8) = (l.side = 'Over') THEN 'won' ELSE 'lost' END,
+                                realized = CASE WHEN x.v = l.line::float8 OR l.m IS NULL THEN NULL WHEN (x.v > l.line::float8) = (l.side = 'Over') THEN l.m - 1 ELSE -1 END
+                             FROM (SELECT l.ctid rid, ({BOXV})::float8 v FROM nba_score.leg_card_v2 l
+                                   JOIN (SELECT nba_player_id, game_date, min, pts, reb, ast, fg3m, stl, blk, tov, fg3a, fga, fgm, fta, ftm, oreb, dreb FROM nba_stats.player_game_log
+                                         UNION ALL
+                                         SELECT nba_player_id, game_date, min, pts, reb, ast, fg3m, stl, blk, tov, fg3a, fga, fgm, fta, ftm, oreb, dreb FROM nba_stats.player_game_log_postseason) g
+                                     ON g.nba_player_id::text = l.player_id AND g.game_date = l.game_date AND g.min > 0
+                                   WHERE l.season = %s AND l.result IN ('won','lost','push') AND l.prop IN {BOXP}) x
+                             WHERE l.ctid = x.rid AND x.v IS NOT NULL AND x.v IS DISTINCT FROM l.stat_actual""", (s,)).rowcount
+        print(f"LC|re-graded from the current box score (stat corrections): {s} {n:,} legs", flush=True)
+
+
 PSTAT = {"points": ["PTS"], "rebounds": ["REB"], "assists": ["AST"], "threes_made": ["FG3M"], "steals": ["STL"], "blocks": ["BLK"],
          "turnovers": ["TOV"], "pra": ["PTS", "REB", "AST"], "pts_reb": ["PTS", "REB"], "pts_ast": ["PTS", "AST"], "reb_ast": ["REB", "AST"],
          "stocks": ["STL", "BLK"], "fg3a": ["FG3A"], "fga": ["FGA"], "fgm": ["FGM"], "fta": ["FTA"], "ftm": ["FTM"]}
@@ -247,6 +287,13 @@ def fix_grade_periods(conn, seasons):
             else:                                    # no game id on the board: the player's quarter rows of that date
                 x = qd[(qd["pid"] == r.pid) & (qd["gd"] == str(r.gd)) & (qd["q"].isin(PERQ[per]))]
             if x.empty:
+                pq = qd[(qd["pid"] == r.pid) & ((qd["gid"] == r.gid) if (r.gid and r.gid != "None") else (qd["gd"] == str(r.gd)))]
+                if not pq.empty:                      # he played that game, just not in this quarter: his stat there is 0 (audit 3)
+                    v = 0.0
+                    res = "push" if v == r.line else ("won" if (v > r.line) == (r.side == "Over") else "lost")
+                    real = None if res == "push" or r.m is None or r.m != r.m else (r.m - 1 if res == "won" else -1.0)
+                    upd.append((r.rid, v, res, real))
+                    continue
                 if r.gid in played_games:
                     upd.append((r.rid, None, "dnp", None))
                 continue
