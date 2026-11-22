@@ -13,9 +13,9 @@ Per leg of nba_score.leg_card_v2:
              the leg's line inside the book's own ladder (exact, or straight in log-odds between its two neighbouring lines - never beyond its
              outermost line), median over books. market_src = exact (a book prices this exact line two-sided) | ladder | none.
   hit_rate   logit h = a + b x logit(final_hp) [+ c x logit(p_market) when the books read the line] [+ d x ln(price) when the leg has a real,
-             varying price - the app's own price carries its read of the leg; roi.js used it with assumed weights], fitted per app x kind x cell
+             varying price - the app's own price carries its read of the leg; roi.js used it with assumed weights], fitted per app x kind x side x cell
              (market / no market, priced / unpriced) on every leg graded BEFORE the week of the date (earlier seasons included); a cell with
-             < 5,000 such legs takes the app's cell, else hit rate = final_hp. No market read and no varying price -> hit rate = final_hp.
+             < 5,000 such legs takes the app x side cell, else hit rate = final_hp. No market read and no varying price -> hit rate = final_hp.
   roi        hit_rate x m - 1 (m = the leg's real price per leg, research_leg_card.py); roi_model keeps final_hp x m - 1.
 LH_WRITE=1 writes p_market, market_src, hit_rate, roi, roi_model and the weight set used (nba_score.leg_hitrate_weights_v2). Then prints the check:
 log-loss, calibration and ROI predicted vs realized per season x app on the out-of-sample legs.
@@ -159,7 +159,8 @@ def main():
     d["src"] = d["src"].fillna("none")
     over = d["side"] == "Over"
     d["p_mkt"] = np.where(over, d["p_mkt"], 1 - d["p_mkt"])
-    d["grp"] = d["app"] + "_" + d["kind"].fillna("none")
+    d["grp"] = d["app"] + "_" + d["kind"].fillna("none") + "_" + d["side"]
+    d["appside"] = d["app"] + "_" + d["side"]
     d["y"] = np.where(d["result"] == "won", 1, np.where(d["result"] == "lost", 0, -1))
     d["lm"] = np.log(d["m"])                     # the app's own price of this leg (real prices only; NaN = none)
     d["cell"] = d["src"].where(d["src"] == "none", "mkt") + np.where(d["lm"].notna(), "|priced", "|unpriced")
@@ -185,8 +186,8 @@ def main():
         for (g, cell), gg in te.groupby(["grp", "cell"]):
             if cell == "none|unpriced":
                 continue                                   # nothing beyond the model to pool with: hit rate = final_hp
-            app = g.split("_")[0]
-            for level, trg in ((g, tr[(tr["grp"] == g) & (tr["cell"] == cell)]), (app, tr[(tr["app"] == app) & (tr["cell"] == cell)])):
+            app = gg["appside"].iloc[0]
+            for level, trg in ((g, tr[(tr["grp"] == g) & (tr["cell"] == cell)]), (app, tr[(tr["appside"] == app) & (tr["cell"] == cell)])):
                 if len(trg) >= MIN_N:
                     break
             else:
