@@ -38,6 +38,7 @@ K2 = float(os.environ.get("LH_K") or 400)
 MAXGAP = float(os.environ.get("LH_MAXGAP") or 99)   # widest gap between a book's two neighbouring lines that may be read across (2026-27 rebounds:
                                                     # straight-line reads across wide alternate gaps sat ~10 pts above the hit rate)
 ONESIDE = os.environ.get("LH_ONESIDE") or "ovr"          # one-sided book lines: ovr (implied / overround) | power (implied ** book's k)
+SAT = os.environ.get("LH_SAT") == "1"
 CELLSRC = os.environ.get("LH_CELLSRC") == "1"            # separate weights for an exact two-sided read and a ladder read          # stage-2 shrink (documented as-of value 400)
 KEY = ["game_date", "nb", "prop"]
 
@@ -213,6 +214,9 @@ def main():
         c = [np.ones(len(f)), lg(f["p"])]
         if cell.startswith("mkt"):
             c.append(lg(f["p_mkt"]))
+            if SAT:   # disagreement saturation (2026-11-22 audit: on +ROI legs the hit followed the market, not the model): lets the model's pull
+                dz = lg(f["p"]) - lg(f["p_mkt"])          # fade as it moves far from the books
+                c.append(np.asarray(dz * np.abs(dz)))
         if use_price:
             c.append(f["lm"].values)
         return np.column_stack(c)
@@ -283,7 +287,7 @@ def main():
         sm = t["s"].to_dict()
         shift[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv[te], bv[te])]
     d["hit_rate"] = sg(lg(d["h1"]) + shift)
-    if os.environ.get("LH_EDGECAL") == "2":
+    if os.environ.get("LH_EDGECAL") in ("2", "3"):
         # STAGE 3 (continuous) - an offset logistic per app x side on earlier weeks: logit y = logit(h) + a + b x edge (+ c x edge^2), edge =
         # logit(h) - logit(1/m). Pools every priced leg into one slope, so the thin top bands borrow the whole curve.
         pr = d["m"].notna().values
@@ -291,6 +295,16 @@ def main():
         ed = np.zeros(len(d)); ed[pr] = lg(hv3[pr]) - lg(1 / d["m"].values[pr])
         off = lg(hv3); gv3 = d["appside"].values; gk3 = d["grp"].values      # per app x kind x side (Underdog discounted legs need their own curve)
         z3 = np.zeros(len(d))
+        # EDGECAL=3: the curve also knows how far the leg's own model sits from the books (0 without a market read)
+        pmv = d["p_mkt"].values.astype(float)
+        dz3 = np.where(np.isnan(pmv), 0.0, lg(d["p"].values) - lg(np.nan_to_num(pmv, nan=0.5)))
+        E3 = os.environ.get("LH_EDGECAL") == "3"
+
+        def XF(ix_):
+            cols = [np.ones(len(ed[ix_])), ed[ix_], ed[ix_] ** 2]
+            if E3:
+                cols += [dz3[ix_], np.abs(dz3[ix_])]
+            return np.column_stack(cols)
         for wk in weeks:
             te = np.where((wv == wk) & pr)[0]
             if not len(te):
@@ -301,16 +315,16 @@ def main():
                     trm = (wv < wk) & (yv >= 0) & pr & (gv3 == gv3[te][gk3[te] == g_][0])
                     if trm.sum() < MIN_N:
                         continue
-                X = np.c_[np.ones(trm.sum()), ed[trm], ed[trm] ** 2]; yy = yv[trm].astype(float); o = off[trm]
-                b = np.zeros(3)
+                X = XF(trm); yy = yv[trm].astype(float); o = off[trm]
+                b = np.zeros(X.shape[1])
                 for _ in range(30):
                     pp = sg(o + X @ b); W = pp * (1 - pp)
-                    stp = np.clip(np.linalg.solve(X.T @ (X * W[:, None]) + np.eye(3), X.T @ (yy - pp) - b), -1, 1)
+                    stp = np.clip(np.linalg.solve(X.T @ (X * W[:, None]) + np.eye(X.shape[1]), X.T @ (yy - pp) - b), -1, 1)
                     b = b + stp
                     if np.max(np.abs(stp)) < 1e-7:
                         break
                 ti = te[gk3[te] == g_]
-                z3[ti] = np.c_[np.ones(len(ti)), ed[ti], ed[ti] ** 2] @ b
+                z3[ti] = XF(ti) @ b
         d["hit_rate"] = sg(off + z3)
     if os.environ.get("LH_EDGECAL") == "1":
         # STAGE 3 - AS-OF CALIBRATION BY EDGE (the leg's hit rate against its own price, logit(h) - logit(1/m)): legs the chain calls far above
@@ -343,7 +357,7 @@ def main():
         cal = " ".join(f"{100*h['hit_rate'].mean():.0f}->{100*h['y'].mean():.1f}" for _, h in x.groupby(q, observed=True) if len(h) >= 200)
         r = x[x["m"].notna()]
         real = np.where(r["y"] == 1, r["m"] - 1, -1.0)
-        bb = pd.cut(r["roi"], [-1, -.2, -.1, -.05, 0, .05, .1, 10])
+        bb = pd.cut(r["roi"], [-1, -.2, -.1, -.05, 0, .03, .06, .1, .2, 10])
         rr = " ".join(f"{100*h['roi'].mean():+.0f}->{100*real[r.index.get_indexer(h.index)].mean():+.1f}({len(h)})"
                       for _, h in r.groupby(bb, observed=True) if len(h) >= 50)
         print(f"LH|  {s} {a:10s} {len(x):8,} | log-loss final_hp {ll(x['p'], x['y']):.4f} -> pooled {ll(x['h1'], x['y']):.4f} -> hit rate {ll(x['hit_rate'], x['y']):.4f} | market read {100*(x['src'] != 'none').mean():.0f}% | "
