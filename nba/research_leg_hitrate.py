@@ -458,6 +458,39 @@ def main():
             sm = t["s"].to_dict()
             sh3[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv3[te], eb[te])]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + sh3)
+    if os.environ.get("LH_RESID") == "1":
+        # STAGE 4 (owner 2026-11-22 09:43 PT; positive-ROI hunt 09:40 PT): the hit rate still missed in pockets the app x kind x side bands cannot
+        # see - PrizePicks / Underdog Less legs predicted 51% hit 55-56% on 1-2k unseen legs, early-season 36% -> 42%. One correction model per
+        # month, fitted ONLY on legs graded before that month (all seasons): gradient boosting on the hit rate itself plus prop, line, side, kind,
+        # app, price, the books' read and the day of the season. Strongly regularised (leaves >= LH_RESID_LEAF legs).
+        import subprocess, sys
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "scikit-learn"], check=False)
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        leaf = int(os.environ.get("LH_RESID_LEAF") or 2000)
+        f = pd.DataFrame({"zh": lg(d["hit_rate"].clip(1e-4, 1 - 1e-4)),
+                          "zm": np.where(d["p_mkt"].notna(), lg(d["p_mkt"].fillna(.5).clip(1e-4, 1 - 1e-4)), np.nan),
+                          "lm": np.log(d["m"].astype(float)), "line": d["line"].astype(float),
+                          "dos": (d["gd"] - d.groupby("season")["gd"].transform("min")).dt.days.astype(float),
+                          "wd": d["gd"].dt.weekday.astype(float)})
+        f["dz"] = f["zh"] - f["zm"]
+        cats = ["app", "prop", "side", "grp"]
+        for c in cats:
+            f[c] = d[c].astype("category").cat.codes
+        X = f.values; isc = [f.columns.get_loc(c) for c in cats]
+        mo = d["gd"].dt.to_period("M").astype(str).values
+        hr4 = d["hit_rate"].values.copy()
+        for m_ in sorted(set(mo)):
+            tr = np.where((d["gd"].values < pd.Period(m_).start_time.to_datetime64()) & (yv >= 0))[0]
+            te = np.where(mo == m_)[0]
+            if len(tr) < 100000:
+                continue
+            if len(tr) > 900000:
+                tr = tr[-900000:]
+            clf = HistGradientBoostingClassifier(max_iter=200, learning_rate=0.05, max_depth=4, min_samples_leaf=leaf, l2_regularization=1.0,
+                                                 categorical_features=isc, random_state=0).fit(X[tr], yv[tr])
+            hr4[te] = clf.predict_proba(X[te])[:, 1]
+        d["hit_rate"] = np.clip(hr4, 1e-4, 1 - 1e-4)
+        print("LH|stage 4 (monthly walk-forward correction) applied", flush=True)
     if os.environ.get("LH_CLIPLAST") == "1":   # guards after every calibration stage (nothing downstream can push a leg past them)
         guards()
     d["roi"] = d["hit_rate"] * d["m"] - 1
