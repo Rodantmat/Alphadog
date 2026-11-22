@@ -254,7 +254,7 @@ def main():
         conn.execute("DROP TABLE IF EXISTS nba_score.leg_hitrate_weights_v2")
         conn.execute("CREATE TABLE nba_score.leg_hitrate_weights_v2 (week date, grp text, cell text, n_train int, a float8, b_final_hp float8, c2 float8, c3 float8)")
         with conn.cursor().copy("COPY nba_score.leg_hitrate_weights_v2 FROM STDIN") as cp:
-            for r in wrows:
+            for r in {(r[0], r[1], r[2]): r for r in wrows}.values():   # one row per week x level x cell (a parent used by several kinds is written once)
                 cp.write_row([pd.Timestamp(r[0]).date(), r[1], r[2], int(r[3])] + [None if x != x else float(x) for x in r[4:8]])
         conn.commit()
         print(f"LH|written: {n:,} legs updated; {len(wrows):,} weight rows", flush=True)
