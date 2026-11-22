@@ -370,7 +370,7 @@ def main():
             sm = t["s"].to_dict()
             shp[te] = [sm.get(g_, 0.0) for g_ in gp[te]]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + shp)
-    if os.environ.get("LH_MODCAL") == "1":
+    def modcal():
         # STAGE 2d - Underdog per era x side x price band (1/m), as-of, shrunk. 2026-11-22 14:00 PT: in 2026-27 the 1.0x legs hit 52.4% (Under) /
         # 47.8% (Over) vs hit rate 48.3 / 45.1 (5,953 / 6,013 legs): the 2026-27 modifier table is a new population the app x kind x side cells
         # (fit mostly on 2024-26) cannot see. The era is its own group, so it is learned only from earlier 2026-27 weeks.
@@ -391,6 +391,8 @@ def main():
             shm[te] = [sm.get(g_, 0.0) for g_ in gm[te]]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + shm)
         print(f"LH|stage 2d Underdog era x side x price band: legs shifted {(shm != 0).sum():,}, mean |shift| {np.abs(shm[shm != 0]).mean():.3f} logit", flush=True)
+    if os.environ.get("LH_MODCAL") == "1":
+        modcal()
     def guards():
         if os.environ.get("LH_DZCLIP"):
             # FINAL GUARD (audit 2026-11-22: every leg the chain put far from the books realised the books' price, every app and season): the hit
@@ -417,12 +419,19 @@ def main():
 
     if os.environ.get("LH_CLIPLAST") != "1":
         guards()
+    ME = d["m"].values.astype(float).copy()
+    if os.environ.get("LH_UDEDGE") == "1":
+        # 2026-11-22 14:40 PT: the edge stages pool Underdog 2024-26 (3x base) with 2026-27 (3.5x base); the same modifier sits 0.15 logit
+        # 'further above its price' in 2026-27, so curves fitted on the old era pulled 2026-27 mid-price legs 3 pts low (1.0x Under 50.3 hit vs
+        # 47.2). Edge for Underdog is measured on the modifier with one base (sqrt 3) in both eras; the real price (m) is unchanged.
+        nu_ = (d["app"].values == "underdog") & (d["gd"].values >= np.datetime64("2026-07-01"))
+        ME[nu_] = ME[nu_] * np.sqrt(3.0 / 3.5)
     if EC & {"2", "3"}:
         # STAGE 3 (continuous) - an offset logistic per app x side on earlier weeks: logit y = logit(h) + a + b x edge (+ c x edge^2), edge =
         # logit(h) - logit(1/m). Pools every priced leg into one slope, so the thin top bands borrow the whole curve.
         pr = d["m"].notna().values
         hv3 = d["hit_rate"].values.copy()
-        ed = np.zeros(len(d)); ed[pr] = lg(hv3[pr]) - lg(1 / d["m"].values[pr])
+        ed = np.zeros(len(d)); ed[pr] = lg(hv3[pr]) - lg(1 / ME[pr])
         off = lg(hv3); gv3 = d["appside"].values; gk3 = d["grp"].values      # per app x kind x side (Underdog discounted legs need their own curve)
         z3 = np.zeros(len(d))
         # EDGECAL=3: the curve also knows how far the leg's own model sits from the books (0 without a market read)
@@ -462,7 +471,7 @@ def main():
         # 0.1-wide edge bands, fitted on earlier weeks only. Legs without a real price are untouched.
         pr = d["m"].notna().values
         ed = np.full(len(d), np.nan)
-        ed[pr] = lg(d["hit_rate"].values[pr]) - lg(1 / d["m"].values[pr])
+        ed[pr] = lg(d["hit_rate"].values[pr]) - lg(1 / ME[pr])
         eb = np.where(pr, np.clip(np.floor(np.nan_to_num(ed) / 0.1), -20, 20), -99).astype(int)
         hv3 = d["hit_rate"].values
         # legs with and without a market read get separate band curves (2026-11-22: Sleeper double-double / blocks with no book line sat at an
@@ -480,6 +489,8 @@ def main():
             sm = t["s"].to_dict()
             sh3[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv3[te], eb[te])]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + sh3)
+    if os.environ.get("LH_MODCAL") == "2":   # after the edge calibration, so stage 3 cannot pool the band level back
+        modcal()
     if os.environ.get("LH_RESID") == "1":
         # STAGE 4 (owner 2026-11-22 09:43 PT; positive-ROI hunt 09:40 PT): the hit rate still missed in pockets the app x kind x side bands cannot
         # see - PrizePicks / Underdog Less legs predicted 51% hit 55-56% on 1-2k unseen legs, early-season 36% -> 42%. One correction model per
