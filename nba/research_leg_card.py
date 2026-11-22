@@ -41,11 +41,11 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_score.leg_card_v2 (
   season text, game_date date, app text, player_id text, player text, prop text, line numeric, side text, game_id text,
   kind text, final_hp float8, confidence float8, score float8,
   price_source text, leg_mult float8, m float8, breakeven float8, roi float8, roi_prod float8,
-  stat_actual float8, result text, realized float8, built_at timestamptz DEFAULT now())"""
+  stat_actual float8, result text, realized float8, app_px float8, built_at timestamptz DEFAULT now())"""
 
 BUILD = """
 INSERT INTO nba_score.leg_card_v2 (season, game_date, app, player_id, player, prop, line, side, game_id, kind, final_hp, confidence, score,
-                                   price_source, leg_mult, m, breakeven, roi, roi_prod, stat_actual, result, realized)
+                                   price_source, leg_mult, m, breakeven, roi, roi_prod, stat_actual, result, realized, app_px)
 WITH bs AS MATERIALIZED (
   SELECT b.season, b.game_date, b.app, b.player_id, b.player, nba_ref.norm_name(b.player) nb, b.prop, b.line, b.side, b.game_id,
          b.final_hp::float8 hp, b.confidence::float8 conf, b.score::float8 score
@@ -119,9 +119,18 @@ SELECT q.season, q.game_date, q.app, q.player_id, q.player, q.prop, q.line, q.si
        CASE WHEN q.leg_result IS NULL THEN 'ungraded' WHEN q.leg_result = 'dnp' OR q.played = false THEN 'dnp' WHEN q.leg_result = 'push' OR q.v = q.line::float8 THEN 'push'
             WHEN (q.leg_result = 'over_win') = (q.side = 'Over') THEN 'won' ELSE 'lost' END,
        CASE WHEN q.leg_result IN ('over_win','under_win') AND coalesce(q.played, true) AND q.mm > 0 THEN
-            CASE WHEN (q.leg_result = 'over_win') = (q.side = 'Over') THEN q.mm - 1 ELSE -1 END END
+            CASE WHEN (q.leg_result = 'over_win') = (q.side = 'Over') THEN q.mm - 1 ELSE -1 END END,
+       -- the app's own quote of this leg as an implied probability (an INPUT to the hit rate only, never a payout): Underdog / Fliff the American
+       -- price (every season - Underdog 2024-25 prices with no one-to-one modifier still carry the app's read), Sleeper the pick multiplier,
+       -- PrizePicks the real per-leg price where one exists
+       CASE WHEN q.app IN ('underdog','fliff') AND q.price >= 100 THEN 100.0 / (q.price + 100) WHEN q.app IN ('underdog','fliff') AND q.price <= -100 THEN -q.price / (-q.price + 100.0)
+            WHEN q.app = 'sleeper' AND q.multiplier > 0 THEN 1 / q.multiplier::float8 WHEN q.app = 'prizepicks' AND q.mm > 0 THEN 1 / q.mm END
 FROM q""".format(rk_s=RK.format(x=MK.format(c="s.market_key")), rk_o=RK.format(x=MK.format(c="o.market_key")),
                  rk_q=RK.format(x=MK.format(c="q.base_market")), pbs=PBS)
+
+
+def ensure_cols(conn):
+    conn.execute("ALTER TABLE nba_score.leg_card_v2 ADD COLUMN IF NOT EXISTS app_px float8")
 
 
 def main():
@@ -131,6 +140,7 @@ def main():
     conn = psycopg.connect(url, autocommit=True); conn.execute("SET statement_timeout = 0"); conn.execute("SET work_mem = '512MB'")
     if os.environ.get("LC_WRITE") == "1":
         conn.execute(DDL)
+        ensure_cols(conn)
         for s in seasons:
             a, b = SEASONS[s]
             t0 = dt.datetime.now()
@@ -140,6 +150,7 @@ def main():
             print(f"LC|built {s}: {n:,} legs in {(dt.datetime.now() - t0).seconds}s", flush=True)
         conn.execute("CREATE INDEX IF NOT EXISTS leg_card_v2_date ON nba_score.leg_card_v2 (game_date, app)")
     if os.environ.get("LC_WRITE") == "1" or os.environ.get("LC_FIXGRADE") == "1":
+        ensure_cols(conn)
         fix_grade(conn, seasons)
         conn.execute("ANALYZE nba_score.leg_card_v2")
     certify(conn, seasons)
@@ -147,21 +158,28 @@ def main():
 
 BOXV = ("CASE l.prop WHEN 'points' THEN g.pts WHEN 'rebounds' THEN g.reb WHEN 'assists' THEN g.ast WHEN 'threes_made' THEN g.fg3m WHEN 'steals' THEN g.stl "
         "WHEN 'blocks' THEN g.blk WHEN 'turnovers' THEN g.tov WHEN 'pra' THEN g.pts+g.reb+g.ast WHEN 'pts_reb' THEN g.pts+g.reb WHEN 'pts_ast' THEN g.pts+g.ast "
-        "WHEN 'reb_ast' THEN g.reb+g.ast WHEN 'stocks' THEN g.stl+g.blk END")
+        "WHEN 'reb_ast' THEN g.reb+g.ast WHEN 'stocks' THEN g.stl+g.blk WHEN 'fg3a' THEN g.fg3a WHEN 'fga' THEN g.fga WHEN 'fgm' THEN g.fgm "
+        "WHEN 'fta' THEN g.fta WHEN 'ftm' THEN g.ftm WHEN 'oreb' THEN g.oreb WHEN 'dreb' THEN g.dreb "
+        "WHEN 'fantasy_score' THEN g.pts + 1.2 * g.reb + 1.5 * g.ast + 3 * g.stl + 3 * g.blk - g.tov END")   # PrizePicks' published NBA fantasy scoring
+BOXP = ("('points','rebounds','assists','threes_made','steals','blocks','turnovers','pra','pts_reb','pts_ast','reb_ast','stocks',"
+        "'fg3a','fga','fgm','fta','ftm','oreb','dreb','fantasy_score')")
 
 
 def fix_grade(conn, seasons):
     """A leg the results table never matched (independent audit 2026-11-21: 'Carlton Carrington' is unmatched_player on all 29,247 of his rows
-    while his box scores exist under player id 1642267) is graded from the box score itself - the same truth: where both exist they agree on
+    while his box scores exist under player id 1642267), and a prop the results table never grades (fantasy_score under its own name, fg3a, fga ...)
+    is graded from the box score itself (regular season + postseason) - the same truth: where both exist they agree on
     100.00% of 1.57M legs. Only a played game (minutes > 0) is graded this way; anything else stays ungraded."""
     for s in seasons:
         n = conn.execute(f"""UPDATE nba_score.leg_card_v2 l SET stat_actual = x.v,
                                 result = CASE WHEN x.v = l.line::float8 THEN 'push' WHEN (x.v > l.line::float8) = (l.side = 'Over') THEN 'won' ELSE 'lost' END,
                                 realized = CASE WHEN x.v = l.line::float8 OR l.m IS NULL THEN NULL WHEN (x.v > l.line::float8) = (l.side = 'Over') THEN l.m - 1 ELSE -1 END
                              FROM (SELECT l.ctid rid, ({BOXV})::float8 v FROM nba_score.leg_card_v2 l
-                                   JOIN nba_stats.player_game_log g ON g.nba_player_id::text = l.player_id AND g.game_date = l.game_date AND g.min > 0
-                                   WHERE l.season = %s AND l.result = 'ungraded'
-                                     AND l.prop IN ('points','rebounds','assists','threes_made','steals','blocks','turnovers','pra','pts_reb','pts_ast','reb_ast','stocks')) x
+                                   JOIN (SELECT nba_player_id, game_date, min, pts, reb, ast, fg3m, stl, blk, tov, fg3a, fga, fgm, fta, ftm, oreb, dreb FROM nba_stats.player_game_log
+                                         UNION ALL
+                                         SELECT nba_player_id, game_date, min, pts, reb, ast, fg3m, stl, blk, tov, fg3a, fga, fgm, fta, ftm, oreb, dreb FROM nba_stats.player_game_log_postseason) g
+                                     ON g.nba_player_id::text = l.player_id AND g.game_date = l.game_date AND g.min > 0
+                                   WHERE l.season = %s AND l.result = 'ungraded' AND l.prop IN {BOXP}) x
                              WHERE l.ctid = x.rid AND x.v IS NOT NULL""", (s,)).rowcount
         print(f"LC|graded from the box score (results table never matched them): {s} {n:,} legs", flush=True)
 

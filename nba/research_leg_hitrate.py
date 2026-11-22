@@ -136,7 +136,12 @@ def read_at(legs, w):
         out.append(pd.DataFrame({"kid": m.loc[ok, "kid"].values, "z": z[ok], "exact2": (ex & m["t0"].fillna(False).astype(bool)).values[ok]}))
     if not out:
         return keys.assign(p_mkt=np.nan, src="none")
-    r = pd.concat(out).groupby("kid").agg(z=("z", "median"), exact2=("exact2", "max"), books=("z", "size")).reset_index()
+    o_ = pd.concat(out)
+    # when any book prices the leg's exact line on BOTH sides, only those two-sided reads count (one-sided alternates carry extra margin -
+    # independent audit 2026-11-22: Grayson Allen reb o5.5, FanDuel pair 0.093 vs four Over-only books near 0.2)
+    has2 = o_.groupby("kid")["exact2"].transform("max").astype(bool)
+    o_ = o_[~has2 | o_["exact2"].astype(bool)]
+    r = o_.groupby("kid").agg(z=("z", "median"), exact2=("exact2", "max"), books=("z", "size")).reset_index()
     keys = keys.merge(r, on="kid", how="left")
     keys["p_mkt"] = sg(keys["z"])
     keys["src"] = np.where(keys["z"].isna(), "none", np.where(keys["exact2"].fillna(False).astype(bool), "exact", "ladder"))
@@ -157,7 +162,7 @@ def fit(X, y):
         b = b + step
         if np.max(np.abs(step)) < 1e-7:
             break
-    return b if np.all(np.isfinite(b)) and np.max(np.abs(b[1:])) < 15 else None
+    return b if np.all(np.isfinite(b)) and np.max(np.abs(b[1:])) < 50 else None
 
 
 def ll(p, y):
@@ -169,7 +174,7 @@ def main():
     url = os.environ["DATABASE_URL"]
     conn = psycopg.connect(url); conn.execute("SET statement_timeout = 0"); conn.execute("SET work_mem = '512MB'")
     legs = pd.read_sql("""SELECT ctid::text rid, season, game_date, app, nba_ref.norm_name(player) nb, prop, line::float8 line, side, kind,
-                                 final_hp p, m, result FROM nba_score.leg_card_v2""", conn)
+                                 final_hp p, m, app_px, result FROM nba_score.leg_card_v2""", conn)
     print(f"LH|legs {len(legs):,}", flush=True)
     mk = []
     for s, g in legs.groupby("season"):
@@ -193,7 +198,7 @@ def main():
     for x in GRAN:
         d["fine"] = d["fine"] + "_" + d[x].astype(str)
     d["y"] = np.where(d["result"] == "won", 1, np.where(d["result"] == "lost", 0, -1))
-    d["lm"] = np.log(d["m"])                     # the app's own price of this leg (real prices only; NaN = none)
+    d["lm"] = pd.Series(np.where(d["app_px"].notna(), lg(d["app_px"].fillna(0.5)), np.nan), index=d.index)   # the app's own quote as an implied probability, in logit (an input only; NaN = none)
     d["cell"] = (d["src"].where(d["src"] == "none", "mkt") if not CELLSRC else d["src"].replace({"exact": "mkt_exact", "ladder": "mkt_ladder"})) \
         + np.where(d["lm"].notna(), "|priced", "|unpriced")
     d["gd"] = pd.to_datetime(d["game_date"])
@@ -202,6 +207,7 @@ def main():
     weeks = sorted(d["wk"].unique())
     graded = d[d["y"] >= 0]
     wrows = []
+    nofit = {}
 
     def design(f, cell, use_price):
         c = [np.ones(len(f)), lg(f["p"])]
@@ -222,19 +228,21 @@ def main():
             if cell == "none|unpriced":
                 continue                                   # nothing beyond the model to pool with: hit rate = final_hp
             app = gg["appside"].iloc[0]
+            beta = None
             for level, key in (((fg, "fine"),) if GRAN else ()) + ((g, "grp"), (app, "appside")):
                 pos = ix[key].get((level, cell), emp)
-                if len(pos) >= MIN_N:
-                    trg = tr.iloc[pos]
-                    break
-            else:
-                continue                                   # not enough graded history yet: hit rate = final_hp
-            use_price = cell.endswith("|priced") and float(trg["lm"].std()) > 0.01
-            if cell == "none|priced" and not use_price:
-                continue                                   # a flat price adds nothing: hit rate = final_hp
-            beta = fit(design(trg, cell, use_price), trg["y"].values.astype(float))
+                if len(pos) < MIN_N:
+                    continue
+                trg = tr.iloc[pos]
+                use_price = cell.endswith("|priced") and float(trg["lm"].std()) > 0.01
+                if cell == "none|priced" and not use_price:
+                    break                                  # a flat price adds nothing: hit rate = final_hp
+                beta = fit(design(trg, cell, use_price), trg["y"].values.astype(float))
+                if beta is not None:
+                    break                                  # a fit that does not settle hands the cell to the next level up
             if beta is None:
-                continue                                   # the cell's fit did not settle: hit rate = final_hp
+                nofit[cell] = nofit.get(cell, 0) + len(gg)
+                continue                                   # no settled fit at any level: hit rate = final_hp
             if GRAN and level == fg:
                 # a finer cell is pulled toward its parent by its own sample: w = n / (n + LH_GRAN_K) - the documented as-of shrink, at the
                 # scale of a whole cell (a hard switch to the fine fit made prop cells unstable: 2026-27 PrizePicks log-loss 0.583 -> 0.606)
@@ -252,6 +260,7 @@ def main():
             d.loc[gg.index, "hit_rate"] = sg(design(gg, cell, use_price) @ beta)
             d.loc[gg.index, "wlevel"] = level
         d.loc[te_idx, "wset"] = wk
+    print(f"LH|legs left at final_hp for want of a settled fit / enough history, by cell: {nofit}", flush=True)
     ok = d["hit_rate"].notna()
     print(f"LH|legs whose hit rate pools final_hp with a market read or the app own price: {100*ok.mean():.1f}% (the rest: hit rate = final_hp)", flush=True)
     d["hit_rate"] = d["hit_rate"].fillna(d["p"])
