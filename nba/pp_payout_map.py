@@ -785,8 +785,15 @@ def main():
                         run("LEG" if side == "over" else "LESS", [leg(anchors[0]), leg(r, side)], f"{t}{'u' if side == 'under' else ''}")
                         # 2026-11-22: the same alternate alone at 6 picks (the finest payout grid) - its precise single reading, so the
                         # combination rule is tested against exact singles, not the coarse 2-pick (section S6; the per-leg loader skips it)
-                        if len(anchors) >= 5:
-                            run("S6", [leg(r, side)] + [leg(x) for x in anchors[:5]], f"{t}{'u' if side == 'under' else ''}")
+                        a6, g6 = [], {r["game"]}
+                        for x in anchors_all:
+                            if x["game"] in g6 or x["player"] == r["player"]:
+                                continue
+                            a6.append(x); g6.add(x["game"])
+                            if len(a6) == 5:
+                                break
+                        if len(a6) == 5:
+                            run("S6", [leg(r, side)] + [leg(x) for x in a6], f"{t}{'u' if side == 'under' else ''}")
                         priced.add((r["id"], side))
                 note = " ".join(f"{t}{'u' if side == 'under' else ''}" for _, t, side in chosen)
                 for k in range(max(2, len(chosen)), 7):
