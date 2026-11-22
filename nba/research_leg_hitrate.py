@@ -201,6 +201,25 @@ def main():
     ok = d["hit_rate"].notna()
     print(f"LH|legs whose hit rate pools final_hp with a market read or the app own price: {100*ok.mean():.1f}% (the rest: hit rate = final_hp)", flush=True)
     d["hit_rate"] = d["hit_rate"].fillna(d["p"])
+    # STAGE 2 - AS-OF BAND CALIBRATION of the hit rate, the system's own documented rule (build_asof_calibration.py: per cell
+    # shift = w x (logit(hit) - logit(mean predicted)), w = n / (n + 400), n >= 50) applied per app x kind x 5-point band of the hit rate,
+    # fitted on the hit rates of legs graded in EARLIER weeks (each already out-of-sample) - it corrects the tails a straight-line pooling
+    # leaves (measured before this step: Underdog 85 -> 60.5, PrizePicks top band over-stated).
+    d["h1"] = d["hit_rate"]
+    d["band"] = np.minimum((d["h1"] * 20).astype(int), 19)
+    shift = np.zeros(len(d))
+    yv = d["y"].values; gv = d["grp"].values; bv = d["band"].values; hv = d["h1"].values; wv = d["wk"].values
+    for wk in weeks:
+        tr = (wv < wk) & (yv >= 0)
+        te = np.where(wv == wk)[0]
+        if tr.sum() < MIN_N or not len(te):
+            continue
+        t = pd.DataFrame({"g": gv[tr], "b": bv[tr], "h": hv[tr], "y": yv[tr]}).groupby(["g", "b"]).agg(n=("y", "size"), hit=("y", "mean"), mh=("h", "mean"))
+        t = t[t["n"] >= 50]
+        t["s"] = t["n"] / (t["n"] + 400) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
+        sm = t["s"].to_dict()
+        shift[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv[te], bv[te])]
+    d["hit_rate"] = sg(lg(d["h1"]) + shift)
     d["roi"] = d["hit_rate"] * d["m"] - 1
     d["roi_model"] = d["p"] * d["m"] - 1
     # ---- check (out-of-sample by construction: every weight set predates its week)
@@ -214,7 +233,7 @@ def main():
         bb = pd.cut(r["roi"], [-1, -.2, -.1, -.05, 0, .05, .1, 10])
         rr = " ".join(f"{100*h['roi'].mean():+.0f}->{100*real[r.index.get_indexer(h.index)].mean():+.1f}({len(h)})"
                       for _, h in r.groupby(bb, observed=True) if len(h) >= 50)
-        print(f"LH|  {s} {a:10s} {len(x):8,} | log-loss {ll(x['p'], x['y']):.4f} -> {ll(x['hit_rate'], x['y']):.4f} | market read {100*(x['src'] != 'none').mean():.0f}% | "
+        print(f"LH|  {s} {a:10s} {len(x):8,} | log-loss final_hp {ll(x['p'], x['y']):.4f} -> pooled {ll(x['h1'], x['y']):.4f} -> hit rate {ll(x['hit_rate'], x['y']):.4f} | market read {100*(x['src'] != 'none').mean():.0f}% | "
               f"calibration {cal}", flush=True)
         if len(r):
             print(f"LH|      ROI ({len(r):,} priced): mean predicted {100*r['roi'].mean():+.1f}% realized {100*real.mean():+.1f}% | {rr}", flush=True)
