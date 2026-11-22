@@ -287,6 +287,26 @@ def main():
         sm = t["s"].to_dict()
         shift[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv[te], bv[te])]
     d["hit_rate"] = sg(lg(d["h1"]) + shift)
+    if os.environ.get("LH_DZCAL") == "1":
+        # STAGE 2b - AS-OF CALIBRATION BY DISAGREEMENT WITH THE BOOKS (audit 2026-11-22 02:30 PT: legs whose hit rate sat far from the books'
+        # de-vigged price realised only ~40% of that gap - 2.3M legs, every app, both directions; these are exactly the legs that showed +ROI).
+        # Same documented rule (shift = w x (logit hit - logit mean predicted), w = n / (n + 400), n >= 50) per app x 0.1-wide band of
+        # dz = logit(hit rate) - logit(market), fitted on earlier weeks only. Legs without a market read are untouched.
+        pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
+        dz = np.where(hasm, lg(d["hit_rate"].values) - lg(np.nan_to_num(pmv, nan=0.5)), 0.0)
+        zb = np.where(hasm, np.clip(np.floor(dz / 0.1), -20, 20), -99).astype(int)
+        av = d["app"].values; hz = d["hit_rate"].values; shz = np.zeros(len(d))
+        for wk in weeks:
+            tr = (wv < wk) & (yv >= 0) & hasm
+            te = np.where((wv == wk) & hasm)[0]
+            if tr.sum() < MIN_N or not len(te):
+                continue
+            t = pd.DataFrame({"g": av[tr], "b": zb[tr], "h": hz[tr], "y": yv[tr]}).groupby(["g", "b"]).agg(n=("y", "size"), hit=("y", "mean"), mh=("h", "mean"))
+            t = t[t["n"] >= 50]
+            t["s"] = t["n"] / (t["n"] + K2) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
+            sm = t["s"].to_dict()
+            shz[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(av[te], zb[te])]
+        d["hit_rate"] = sg(lg(d["hit_rate"]) + shz)
     if os.environ.get("LH_EDGECAL") in ("2", "3"):
         # STAGE 3 (continuous) - an offset logistic per app x side on earlier weeks: logit y = logit(h) + a + b x edge (+ c x edge^2), edge =
         # logit(h) - logit(1/m). Pools every priced leg into one slope, so the thin top bands borrow the whole curve.
@@ -362,6 +382,12 @@ def main():
                       for _, h in r.groupby(bb, observed=True) if len(h) >= 50)
         print(f"LH|  {s} {a:10s} {len(x):8,} | log-loss final_hp {ll(x['p'], x['y']):.4f} -> pooled {ll(x['h1'], x['y']):.4f} -> hit rate {ll(x['hit_rate'], x['y']):.4f} | market read {100*(x['src'] != 'none').mean():.0f}% | "
               f"calibration {cal}", flush=True)
+        xm = x[x["p_mkt"].notna()]
+        if len(xm):
+            dzz = lg(xm["hit_rate"].clip(1e-4, 1 - 1e-4)) - lg(xm["p_mkt"].clip(1e-4, 1 - 1e-4))
+            zz = pd.cut(dzz, [-9, -.6, -.3, -.1, .1, .3, .6, 9])
+            print(f"LH|      vs books (dz band: hit rate -> realized | market): " + " ".join(
+                f"{100*h['hit_rate'].mean():.0f}->{100*h['y'].mean():.1f}|{100*h['p_mkt'].mean():.0f}({len(h)})" for _, h in xm.groupby(zz, observed=True) if len(h) >= 100), flush=True)
         if len(r):
             print(f"LH|      ROI ({len(r):,} priced): mean predicted {100*r['roi'].mean():+.1f}% realized {100*real.mean():+.1f}% | {rr}", flush=True)
     if os.environ.get("LH_WRITE") == "1":
