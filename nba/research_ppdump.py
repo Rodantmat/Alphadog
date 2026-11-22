@@ -32,5 +32,19 @@ def main():
         print(f"PPD|board rows {m}", flush=True)
 
 
+def books():
+    if not os.environ.get("PPD_BOOKDATE"):
+        return
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    c = conn.cursor(name="k")
+    c.execute("""SELECT snapshot_label, snapshot_ts, bookmaker, market_key, player, side, line, price, event_id FROM nba_market.board_snapshots
+                 WHERE game_date = %s AND snapshot_label = ANY(%s)""", (os.environ["PPD_BOOKDATE"], (os.environ.get("PPD_BOOKLABELS") or "align").split(",")))
+    m = 0
+    for r in c:
+        print("K|" + "|".join(str(x) for x in r)); m += 1
+    print(f"PPD|book rows {m}", flush=True)
+
+
 if __name__ == "__main__":
+    books()
     main()
