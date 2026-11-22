@@ -152,6 +152,7 @@ def main():
     if os.environ.get("LC_WRITE") == "1" or os.environ.get("LC_FIXGRADE") == "1":
         ensure_cols(conn)
         fix_grade(conn, seasons)
+        fix_grade_periods(conn, seasons)
         conn.execute("ANALYZE nba_score.leg_card_v2")
     certify(conn, seasons)
 
@@ -192,6 +193,54 @@ def fix_grade(conn, seasons):
                                                               UNION ALL SELECT game_id, nba_player_id FROM nba_stats.player_game_log_postseason) g
                                                WHERE g.game_id::text = l.game_id::text AND g.nba_player_id::text = l.player_id)""", (s,)).rowcount
         print(f"LC|no box-score row in a game his team played -> dnp (void): {s} {n2:,} legs", flush=True)
+
+
+PSTAT = {"points": ["PTS"], "rebounds": ["REB"], "assists": ["AST"], "threes_made": ["FG3M"], "steals": ["STL"], "blocks": ["BLK"],
+         "turnovers": ["TOV"], "pra": ["PTS", "REB", "AST"], "pts_reb": ["PTS", "REB"], "pts_ast": ["PTS", "AST"], "reb_ast": ["REB", "AST"],
+         "stocks": ["STL", "BLK"], "fg3a": ["FG3A"], "fga": ["FGA"], "fgm": ["FGM"], "fta": ["FTA"], "ftm": ["FTM"]}
+PERQ = {"q1": ("q1",), "q2": ("q2",), "q3": ("q3",), "q4": ("q4",), "h1": ("q1", "q2"), "h2": ("q3", "q4")}
+
+
+def fix_grade_periods(conn, seasons):
+    """Quarter / half props (owner 2026-11-22: grade every prop line, no exceptions) from the quarter logs P2 mines (nba/data/
+    nba_player_game_log_q{1..4}[_postseason]_<season>.json - the same files grade_board_outcomes.py reads; H1 = Q1+Q2, H2 = Q3+Q4)."""
+    import glob
+    import json
+    from pathlib import Path
+    data = Path(__file__).resolve().parent / "data"
+    for s in seasons:
+        slug = s.replace("-", "_")
+        rows = []
+        for q in ("q1", "q2", "q3", "q4"):
+            for f in glob.glob(str(data / f"nba_player_game_log_{q}_{slug}.json")) + glob.glob(str(data / f"nba_player_game_log_{q}_postseason_{slug}.json")):
+                for r in json.loads(Path(f).read_text()).get("records", []):
+                    rows.append({"pid": str(r["PLAYER_ID"]), "gid": str(r["GAME_ID"]), "q": q, **{k: r.get(k) for k in
+                                 ("MIN", "PTS", "REB", "AST", "FG3M", "STL", "BLK", "TOV", "FG3A", "FGA", "FGM", "FTA", "FTM")}})
+        if not rows:
+            print(f"LC|period grading {s}: no quarter logs found", flush=True)
+            continue
+        qd = pd.DataFrame(rows)
+        legs = pd.read_sql("""SELECT ctid::text rid, player_id pid, game_id::text gid, prop, line::float8 line, side, m FROM nba_score.leg_card_v2
+                              WHERE season = %s AND result = 'ungraded' AND prop ~ '_(q[1-4]|h[12])$'""", conn, params=(s,))
+        played_games = set(qd["gid"])
+        upd = []
+        for r in legs.itertuples(index=False):
+            base, per = r.prop.rsplit("_", 1)
+            if base not in PSTAT or per not in PERQ:
+                continue
+            x = qd[(qd["pid"] == r.pid) & (qd["gid"] == r.gid) & (qd["q"].isin(PERQ[per]))]
+            if x.empty:
+                if r.gid in played_games:
+                    upd.append((r.rid, None, "dnp", None))
+                continue
+            v = float(x[PSTAT[base]].fillna(0).to_numpy().sum())
+            res = "push" if v == r.line else ("won" if (v > r.line) == (r.side == "Over") else "lost")
+            real = None if res == "push" or r.m is None or r.m != r.m else (r.m - 1 if res == "won" else -1.0)
+            upd.append((r.rid, v, res, real))
+        with conn.cursor() as cur:
+            cur.executemany("UPDATE nba_score.leg_card_v2 SET stat_actual = %s, result = %s, realized = %s WHERE ctid = %s::tid",
+                            [(v, res, real, rid) for rid, v, res, real in upd])
+        print(f"LC|period props graded from the quarter logs: {s} {len(upd):,} of {len(legs):,} ungraded period legs", flush=True)
 
 
 def certify(conn, seasons):
