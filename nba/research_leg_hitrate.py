@@ -353,21 +353,25 @@ def main():
             sm = t["s"].to_dict()
             shp[te] = [sm.get(g_, 0.0) for g_ in gp[te]]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + shp)
-    if os.environ.get("LH_DZCLIP"):
-        # FINAL GUARD (audit 2026-11-22: every leg the chain put far from the books realised the books' price, every app and season): the hit
-        # rate may lead the books' de-vigged price by at most LH_DZCLIP in logit. Legs without a market read are untouched.
-        tau = float(os.environ["LH_DZCLIP"])
-        pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
-        lpm = lg(np.nan_to_num(pmv, nan=0.5)); zh = lg(d["hit_rate"].values)
-        d["hit_rate"] = np.where(hasm, sg(lpm + np.clip(zh - lpm, -tau, tau)), d["hit_rate"].values)
-    if os.environ.get("LH_APPCLIP"):
-        # the same guard where no book prices the line: the reference is the app's own break-even (1 / m) - a leg with no market read may not
-        # claim to beat its own price by more than LH_APPCLIP in logit (2026-11-22: Sleeper double-double / first-quarter legs, final_hp 0.71-0.81,
-        # hit 0.38-0.60, predicted ROI +75%, realised -20%)
-        tau2 = float(os.environ["LH_APPCLIP"])
-        nom = d["p_mkt"].isna().values & d["m"].notna().values
-        lbe = lg(1 / np.nan_to_num(d["m"].values.astype(float), nan=2.0)); zh = lg(d["hit_rate"].values)
-        d["hit_rate"] = np.where(nom, sg(np.minimum(zh, lbe + tau2)), d["hit_rate"].values)
+    def guards():
+        if os.environ.get("LH_DZCLIP"):
+            # FINAL GUARD (audit 2026-11-22: every leg the chain put far from the books realised the books' price, every app and season): the hit
+            # rate may lead the books' de-vigged price by at most LH_DZCLIP in logit. Legs without a market read are untouched.
+            tau = float(os.environ["LH_DZCLIP"])
+            pmv = d["p_mkt"].values.astype(float); hasm = ~np.isnan(pmv)
+            lpm = lg(np.nan_to_num(pmv, nan=0.5)); zh = lg(d["hit_rate"].values)
+            d["hit_rate"] = np.where(hasm, sg(lpm + np.clip(zh - lpm, -tau, tau)), d["hit_rate"].values)
+        if os.environ.get("LH_APPCLIP"):
+            # the same guard where no book prices the line: the reference is the app's own break-even (1 / m) - a leg with no market read may not
+            # claim to beat its own price by more than LH_APPCLIP in logit (2026-11-22: Sleeper double-double / first-quarter legs, final_hp 0.71-0.81,
+            # hit 0.38-0.60, predicted ROI +75%, realised -20%)
+            tau2 = float(os.environ["LH_APPCLIP"])
+            nom = d["p_mkt"].isna().values & d["m"].notna().values
+            lbe = lg(1 / np.nan_to_num(d["m"].values.astype(float), nan=2.0)); zh = lg(d["hit_rate"].values)
+            d["hit_rate"] = np.where(nom, sg(np.minimum(zh, lbe + tau2)), d["hit_rate"].values)
+
+    if os.environ.get("LH_CLIPLAST") != "1":
+        guards()
     if EC & {"2", "3"}:
         # STAGE 3 (continuous) - an offset logistic per app x side on earlier weeks: logit y = logit(h) + a + b x edge (+ c x edge^2), edge =
         # logit(h) - logit(1/m). Pools every priced leg into one slope, so the thin top bands borrow the whole curve.
@@ -431,6 +435,8 @@ def main():
             sm = t["s"].to_dict()
             sh3[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv3[te], eb[te])]
         d["hit_rate"] = sg(lg(d["hit_rate"]) + sh3)
+    if os.environ.get("LH_CLIPLAST") == "1":   # guards after every calibration stage (nothing downstream can push a leg past them)
+        guards()
     d["roi"] = d["hit_rate"] * d["m"] - 1
     d["roi_model"] = d["p"] * d["m"] - 1
     # ---- check (out-of-sample by construction: every weight set predates its week)
