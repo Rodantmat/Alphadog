@@ -272,6 +272,27 @@ def main():
         sm = t["s"].to_dict()
         shift[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv[te], bv[te])]
     d["hit_rate"] = sg(lg(d["h1"]) + shift)
+    if os.environ.get("LH_EDGECAL") == "1":
+        # STAGE 3 - AS-OF CALIBRATION BY EDGE (the leg's hit rate against its own price, logit(h) - logit(1/m)): legs the chain calls far above
+        # their price were the ones that over-stated (+ROI bands realised -3 to -15%). Same documented rule, w = n / (n + 400), per app x side,
+        # 0.1-wide edge bands, fitted on earlier weeks only. Legs without a real price are untouched.
+        pr = d["m"].notna().values
+        ed = np.full(len(d), np.nan)
+        ed[pr] = lg(d["hit_rate"].values[pr]) - lg(1 / d["m"].values[pr])
+        eb = np.where(pr, np.clip(np.floor(np.nan_to_num(ed) / 0.1), -20, 20), -99).astype(int)
+        hv3 = d["hit_rate"].values; gv3 = d["appside"].values
+        sh3 = np.zeros(len(d))
+        for wk in weeks:
+            tr = (wv < wk) & (yv >= 0) & pr
+            te = np.where((wv == wk) & pr)[0]
+            if tr.sum() < MIN_N or not len(te):
+                continue
+            t = pd.DataFrame({"g": gv3[tr], "b": eb[tr], "h": hv3[tr], "y": yv[tr]}).groupby(["g", "b"]).agg(n=("y", "size"), hit=("y", "mean"), mh=("h", "mean"))
+            t = t[t["n"] >= 50]
+            t["s"] = t["n"] / (t["n"] + K2) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
+            sm = t["s"].to_dict()
+            sh3[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv3[te], eb[te])]
+        d["hit_rate"] = sg(lg(d["hit_rate"]) + sh3)
     d["roi"] = d["hit_rate"] * d["m"] - 1
     d["roi_model"] = d["p"] * d["m"] - 1
     # ---- check (out-of-sample by construction: every weight set predates its week)
