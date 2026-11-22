@@ -117,7 +117,7 @@ p AS (
       ELSE CASE WHEN k.multiplier IS NOT NULL OR k.price IS NOT NULL THEN 'app' END END src
   FROM k),
 q AS (
-  SELECT p.*, CASE WHEN p.lm > 0 THEN CASE WHEN p.app = 'prizepicks' THEN sqrt(3.0) * p.lm WHEN p.app = 'underdog' THEN sqrt(3.5) * p.lm ELSE p.lm END END mm FROM p)   -- Underdog Standard 2-pick pays 3.5x (fix 2026-11-22: was sqrt 3)
+  SELECT p.*, CASE WHEN p.lm > 0 THEN CASE WHEN p.app = 'prizepicks' THEN sqrt(3.0) * p.lm WHEN p.app = 'underdog' THEN CASE WHEN p.game_date >= '2026-07-01' THEN sqrt(3.5) ELSE sqrt(3.0) END * p.lm ELSE p.lm END END mm FROM p)   -- Underdog 2-pick: 3x until 2026-06 (raw price -137 = 1/sqrt 3), 3.5x from 2026-27 (-115 = 1/sqrt 3.5) - audit 2026-11-22
 SELECT q.season, q.game_date, q.app, q.player_id, q.player, q.prop, q.line, q.side, q.game_id, q.kind, q.hp, q.conf, q.score,
        q.src, q.lm, q.mm, CASE WHEN q.mm > 0 THEN 1 / q.mm END, q.hp * q.mm - 1,
        CASE WHEN q.lm > 0 THEN CASE WHEN q.app IN ('prizepicks','underdog') THEN q.hp * q.lm / 0.56 ELSE q.hp * q.lm END - 1 END,
@@ -171,9 +171,10 @@ BOXV = ("CASE l.prop WHEN 'points' THEN g.pts WHEN 'rebounds' THEN g.reb WHEN 'a
         "WHEN 'blocks' THEN g.blk WHEN 'turnovers' THEN g.tov WHEN 'pra' THEN g.pts+g.reb+g.ast WHEN 'pts_reb' THEN g.pts+g.reb WHEN 'pts_ast' THEN g.pts+g.ast "
         "WHEN 'reb_ast' THEN g.reb+g.ast WHEN 'stocks' THEN g.stl+g.blk WHEN 'fg3a' THEN g.fg3a WHEN 'fga' THEN g.fga WHEN 'fgm' THEN g.fgm "
         "WHEN 'fta' THEN g.fta WHEN 'ftm' THEN g.ftm WHEN 'oreb' THEN g.oreb WHEN 'dreb' THEN g.dreb "
-        "WHEN 'fantasy_score' THEN g.pts + 1.2 * g.reb + 1.5 * g.ast + 3 * g.stl + 3 * g.blk - g.tov END")   # PrizePicks' published NBA fantasy scoring
+        "WHEN 'fantasy_score' THEN g.pts + 1.2 * g.reb + 1.5 * g.ast + 3 * g.stl + 3 * g.blk - g.tov "
+        "WHEN 'double_double' THEN CASE WHEN (g.pts >= 10)::int + (g.reb >= 10)::int + (g.ast >= 10)::int + (g.stl >= 10)::int + (g.blk >= 10)::int >= 2 THEN 1 ELSE 0 END END")   # PrizePicks' published NBA fantasy scoring
 BOXP = ("('points','rebounds','assists','threes_made','steals','blocks','turnovers','pra','pts_reb','pts_ast','reb_ast','stocks',"
-        "'fg3a','fga','fgm','fta','ftm','oreb','dreb','fantasy_score')")
+        "'fg3a','fga','fgm','fta','ftm','oreb','dreb','fantasy_score','double_double')")
 
 
 def fix_grade(conn, seasons):

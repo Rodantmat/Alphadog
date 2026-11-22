@@ -25,7 +25,8 @@ import psycopg
 LAW = {"hi": {2: [-2.9367, 1.281669, -0.043245], 3: [-2.064888, 1.118527, -0.020444], 4: [-1.266466, 1.022979, -0.006269], 5: [-0.678407, 1.025417, -0.004404]},
        "lo": {2: [-2.732025, 1.176992, -0.029711], 3: [0.434015, -0.34985, 0.195287], 4: [-0.631412, 0.631904, 0.05341], 5: [0.305111, 0.441502, 0.082239]}}
 PP = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
-UD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}
+UD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}            # 2026-27 (in-app, 2026-10-10)
+UD_OLD = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0}                 # until 2026-06 (raw price -137 = 1/sqrt 3; 2024 published 3/6/10/20); no 6-pick
 KS = (2, 3, 4, 5, 6)
 
 
@@ -47,7 +48,7 @@ def gk(k, y):
     return np.exp(a + b * ly + c * ly * ly)
 
 
-YG = np.exp(np.linspace(np.log(3), np.log(3000), 300000)); P2G = snap(gk(2, YG))
+YG = np.exp(np.linspace(np.log(2), np.log(20000), 400000)); P2G = snap(gk(2, YG))
 
 
 def y_of_p2(P):
@@ -56,18 +57,23 @@ def y_of_p2(P):
         i = np.where(np.isclose(P2G, v))[0]
         if len(i):
             out[P == v] = np.sqrt(YG[i[0]] * YG[i[-1]])
+        else:   # a real quote off the size-law grid (audit: 2,309 demons, P2 10-20): the y whose continuous 2-pick value is closest
+            out[P == v] = YG[np.argmin(np.abs(gk(2, YG) - v))]
     return out
 
 
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True); conn.execute("SET statement_timeout = 0")
     if os.environ.get("LV_FIXUD") == "1":
-        f = (3.5 / 3.0) ** 0.5
-        n = conn.execute(f"""UPDATE nba_score.leg_card_v2 SET m = m * {f}, breakeven = 1 / (m * {f}), roi = hit_rate * m * {f} - 1,
-                                  realized = CASE WHEN result = 'won' THEN m * {f} - 1 WHEN result = 'lost' THEN -1 END
-                             WHERE app = 'underdog' AND m IS NOT NULL AND abs(m / leg_mult - sqrt(3.0)) < 1e-9""").rowcount
-        print(f"LV|Underdog legs moved to the 3.5x 2-pick base (m = sqrt(3.5) x modifier): {n:,}", flush=True)
-    d = pd.read_sql("""SELECT ctid::text rid, season, app, kind, side, result, hit_rate::float8 h, leg_mult::float8 lm, m::float8 m, m_mech::float8 mm
+        # audit 2026-11-22: the 3.5x base holds from 2026-27 only; 2024-26 Underdog paid 3x at 2 picks -> back to sqrt(3) for those seasons
+        n = conn.execute("""UPDATE nba_score.leg_card_v2 SET m = sqrt(3.0) * leg_mult, breakeven = 1 / (sqrt(3.0) * leg_mult), roi = hit_rate * sqrt(3.0) * leg_mult - 1,
+                                  realized = CASE WHEN result = 'won' THEN sqrt(3.0) * leg_mult - 1 WHEN result = 'lost' THEN -1 END
+                             WHERE app = 'underdog' AND game_date < '2026-07-01' AND m IS NOT NULL AND abs(m / leg_mult - sqrt(3.5)) < 1e-9""").rowcount
+        print(f"LV|Underdog 2024-26 legs back to the 3x 2-pick base (m = sqrt(3) x modifier): {n:,}", flush=True)
+        n = conn.execute("""UPDATE nba_score.leg_card_v2 SET roi_mech = hit_rate * m_mech - 1 WHERE m_mech IS NOT NULL""").rowcount
+        print(f"LV|roi_mech recomputed on the current hit rate: {n:,}", flush=True)
+    d = pd.read_sql("""SELECT ctid::text rid, season, app, kind, side, result, hit_rate::float8 h, leg_mult::float8 lm, m::float8 m, m_mech::float8 mm,
+                              (game_date >= '2026-07-01') new_ud
                        FROM nba_score.leg_card_v2""", conn)
     V = np.full((len(d), 5), np.nan)
     app = d.app.values
@@ -85,8 +91,11 @@ def main():
         V[alt & ~np.isnan(y), j] = (PP[k] ** (1 / k) * Pk / PP[k])[alt & ~np.isnan(y)]
     print(f"LV|PrizePicks: standard {std.sum():,} | goblin / demon with a value {(alt & ~np.isnan(y)).sum():,} of {alt.sum():,}", flush=True)
     ud = (app == "underdog") & ~np.isnan(d.lm.values) & ~np.isnan(d.m.values)
+    nu = d.new_ud.values.astype(bool)
     for j, k in enumerate(KS):
-        V[ud, j] = UD[k] ** (1 / k) * d.lm.values[ud]
+        V[ud & nu, j] = UD[k] ** (1 / k) * d.lm.values[ud & nu]
+        if k in UD_OLD:
+            V[ud & ~nu, j] = UD_OLD[k] ** (1 / k) * d.lm.values[ud & ~nu]
     pl = np.isin(app, ["sleeper", "fliff"]) & ~np.isnan(d.m.values)
     for j in range(5):
         V[pl, j] = d.m.values[pl]
@@ -96,7 +105,7 @@ def main():
     d["best_k"] = np.where(has, np.array(KS)[np.clip(bj, 0, 4)], np.nan)
     d["v_best"] = vb
     d["roi_best"] = d.h * vb - 1
-    d["realized_best"] = np.where(d.result == "won", vb - 1, np.where(d.result == "lost", -1.0, np.nan))
+    d["realized_best"] = np.where(~has, np.nan, np.where(d.result == "won", vb - 1, np.where(d.result == "lost", -1.0, np.nan)))   # audit C: no value -> no realized
     for j, k in enumerate(KS):
         d[f"v{k}"] = V[:, j]
     g = d[d.result.isin(["won", "lost"]) & has]
