@@ -21,9 +21,15 @@ PP_P = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
 PP_F = {(3, 0): 3.0, (3, 1): 1.0, (4, 0): 6.0, (4, 1): 1.5, (5, 0): 10.0, (5, 1): 2.0, (5, 2): 0.4, (6, 0): 25.0, (6, 1): 2.0, (6, 2): 0.4}
 UD_P = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}
 UD_F = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 7.2, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5, (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25}
+UD_P_OLD = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0}   # Underdog until 2026-06 (audit 2026-11-22: raw price -137 = 3x 2-pick); flex table of that era not verified
 
 
-def pay(app, st, k, miss):
+def pay(app, st, k, miss, old=False):
+    """None = structure not available / not verified in that era"""
+    if app == "underdog" and old:
+        if st != "power" or k not in UD_P_OLD:
+            return None
+        return UD_P_OLD[k] if miss == 0 else 0.0
     if st == "power":
         return (PP_P if app == "prizepicks" else UD_P)[k] if miss == 0 else 0.0
     return (PP_F if app == "prizepicks" else UD_F).get((k, miss), 0.0)
@@ -64,7 +70,8 @@ def main():
                     if st == "flex" and k == 2:
                         continue
                     key = (app, side, hm, st, k)
-                    v = pay(app, st, k, k - sum(pool[:k])) - 1 if len(pool) >= k else np.nan
+                    pv = pay(app, st, k, k - sum(pool[:k]), str(gd) < "2026-07-01") if len(pool) >= k else None
+                    v = pv - 1 if pv is not None else np.nan
                     series.setdefault(key, {})[gd] = v
     seas = d.drop_duplicates("game_date").set_index("game_date").season
     rows = []
