@@ -26,18 +26,18 @@ BEST = 37.5 ** (1 / 6) / 3 ** 0.5     # 6-pick Power per-leg value over the 2-pi
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     d = pd.read_sql("""SELECT season, game_date, app, prop, line::float8 line, side, coalesce(kind,'none') kind, hit_rate::float8 h, p_market::float8 pm,
-                              score::float8 sc, confidence::float8 cf, result,
+                              score::float8 sc, confidence::float8 cf, result, v2::float8 v2, v_best::float8 vb,
                               coalesce(m, m_mech)::float8 m, (m IS NULL) mech
-                       FROM nba_score.leg_card_v2 WHERE result IN ('won','lost') AND coalesce(m, m_mech) IS NOT NULL""", conn)
+                       FROM nba_score.leg_card_v2 WHERE result IN ('won','lost') AND v_best IS NOT NULL""", conn)
     d["won"] = (d.result == "won").astype(float)
-    d["best"] = np.where(d.app.isin(["prizepicks", "underdog"]), BEST, 1.0)
-    d["r2"] = np.where(d.won == 1, d.m - 1, -1.0)
-    d["r6"] = np.where(d.won == 1, d.m * d.best - 1, -1.0)
+    d["best"] = d.vb / d.v2      # the leg's best Power size over its 2-pick value (leg_values: v2..v6, Underdog 3.5x base)
+    d["r2"] = np.where(d.won == 1, d.v2 - 1, -1.0)
+    d["r6"] = np.where(d.won == 1, d.vb - 1, -1.0)
     lg = lambda p: np.log(np.clip(p, 1e-4, 1 - 1e-4) / (1 - np.clip(p, 1e-4, 1 - 1e-4)))  # noqa: E731
     d["mb"] = pd.qcut(d.m.rank(method="first"), 8, labels=False)
-    d["mband"] = pd.cut(d.m, [0, 1.3, 1.6, 1.75, 1.9, 2.2, 3, 5, 100]).astype(str)
+    d["mband"] = pd.cut(d.vb, [0, 1.3, 1.6, 1.75, 1.9, 2.2, 3, 5, 100]).astype(str)
     d["hband"] = pd.cut(d.h, [0, .15, .3, .4, .45, .5, .55, .6, .7, .8, 1]).astype(str)
-    d["edge"] = pd.cut(d.h * d.m * d.best - 1, [-1, -.3, -.15, -.08, -.04, 0, .04, .1, .25, 100]).astype(str)
+    d["edge"] = pd.cut(d.h * d.vb - 1, [-1, -.3, -.15, -.08, -.04, 0, .04, .1, .25, 100]).astype(str)
     d["dz"] = pd.cut(np.where(d.pm.notna(), lg(d.h) - lg(d.pm.fillna(.5)), np.nan), [-9, -.3, -.1, -.03, .03, .1, .3, 9]).astype(str)
     d["mkt"] = d.pm.notna().map({True: "mkt", False: "nomkt"})
     d["sband"] = pd.qcut(d.sc.rank(method="first"), 5, labels=False).astype(str)
