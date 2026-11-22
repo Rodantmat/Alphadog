@@ -12,9 +12,10 @@ Per leg of nba_score.leg_card_v2:
              of its lines (two-sided price -> power de-vig; one-sided alternate -> implied / that book's median overround of the season; a book with no two-sided line that season gives no one-sided reads), read at
              the leg's line inside the book's own ladder (exact, or straight in log-odds between its two neighbouring lines - never beyond its
              outermost line), median over books. market_src = exact (a book prices this exact line two-sided) | ladder | none.
-  hit_rate   logit h = a + b x logit(final_hp) + c x logit(p_market), (a, b, c) per group (app x kind) x market_src, fitted on every leg graded
-             before the week the date falls in (all earlier seasons included; a group with < 5,000 such legs takes its parent - all apps for the
-             same market_src). No market -> hit_rate = final_hp passed through the same group's no-market recalibration logit h = a + b logit(final_hp).
+  hit_rate   logit h = a + b x logit(final_hp) [+ c x logit(p_market) when the books read the line] [+ d x ln(price) when the leg has a real,
+             varying price - the app's own price carries its read of the leg; roi.js used it with assumed weights], fitted per app x kind x cell
+             (market / no market, priced / unpriced) on every leg graded BEFORE the week of the date (earlier seasons included); a cell with
+             < 5,000 such legs takes the app's cell, else hit rate = final_hp. No market read and no varying price -> hit rate = final_hp.
   roi        hit_rate x m - 1 (m = the leg's real price per leg, research_leg_card.py); roi_model keeps final_hp x m - 1.
 LH_WRITE=1 writes p_market, market_src, hit_rate, roi, roi_model and the weight set used (nba_score.leg_hitrate_weights_v2). Then prints the check:
 log-loss, calibration and ROI predicted vs realized per season x app on the out-of-sample legs.
@@ -157,42 +158,53 @@ def main():
     d["src"] = d["src"].fillna("none")
     over = d["side"] == "Over"
     d["p_mkt"] = np.where(over, d["p_mkt"], 1 - d["p_mkt"])
-    d["grp"] = np.where(d["app"] == "prizepicks", "pp_" + d["kind"].fillna("none"), d["app"])
+    d["grp"] = d["app"] + "_" + d["kind"].fillna("none")
     d["y"] = np.where(d["result"] == "won", 1, np.where(d["result"] == "lost", 0, -1))
+    d["lm"] = np.log(d["m"])                     # the app's own price of this leg (real prices only; NaN = none)
+    d["cell"] = d["src"].where(d["src"] == "none", "mkt") + np.where(d["lm"].notna(), "|priced", "|unpriced")
     d["gd"] = pd.to_datetime(d["game_date"])
     d["wk"] = d["gd"] - pd.to_timedelta(d["gd"].dt.weekday, unit="D")     # week starting Monday
-    d["hit_rate"] = np.nan; d["wset"] = pd.NaT
+    d["hit_rate"] = np.nan; d["wset"] = pd.NaT; d["wlevel"] = None
     weeks = sorted(d["wk"].unique())
     graded = d[d["y"] >= 0]
     wrows = []
+
+    def design(f, cell, use_price):
+        c = [np.ones(len(f)), lg(f["p"])]
+        if cell.startswith("mkt"):
+            c.append(lg(f["p_mkt"]))
+        if use_price:
+            c.append(f["lm"].values)
+        return np.column_stack(c)
+
     for wk in weeks:
         tr = graded[graded["wk"] < wk]
         te_idx = d.index[d["wk"] == wk]
-        if len(tr) < MIN_N:
-            continue
         te = d.loc[te_idx]
-        for src in ("exact", "ladder", "none"):
-            trs = tr[tr["src"] == src]
-            if len(trs) < MIN_N:
-                continue
-            cols = (lambda f: np.c_[np.ones(len(f)), lg(f["p"]), lg(f["p_mkt"])]) if src != "none" else (lambda f: np.c_[np.ones(len(f)), lg(f["p"])])
-            parent = fit(cols(trs), trs["y"].values.astype(float))
-            wrows.append((wk, "all", src, len(trs), *parent, *([np.nan] if src == "none" else [])))
-            tes = te[te["src"] == src]
-            for g, gg in tes.groupby("grp"):
-                trg = trs[trs["grp"] == g]
-                beta = fit(cols(trg), trg["y"].values.astype(float)) if len(trg) >= MIN_N else parent
+        for (g, cell), gg in te.groupby(["grp", "cell"]):
+            if cell == "none|unpriced":
+                continue                                   # nothing beyond the model to pool with: hit rate = final_hp
+            app = g.split("_")[0]
+            for level, trg in ((g, tr[(tr["grp"] == g) & (tr["cell"] == cell)]), (app, tr[(tr["app"] == app) & (tr["cell"] == cell)])):
                 if len(trg) >= MIN_N:
-                    wrows.append((wk, g, src, len(trg), *beta, *([np.nan] if src == "none" else [])))
-                d.loc[gg.index, "hit_rate"] = sg(cols(gg) @ beta)
+                    break
+            else:
+                continue                                   # not enough graded history yet: hit rate = final_hp
+            use_price = cell.endswith("|priced") and float(trg["lm"].std()) > 0.01
+            if cell == "none|priced" and not use_price:
+                continue                                   # a flat price adds nothing: hit rate = final_hp
+            beta = fit(design(trg, cell, use_price), trg["y"].values.astype(float))
+            wrows.append((wk, level, cell, len(trg), *beta[:4], *([np.nan] * (4 - len(beta)))))
+            d.loc[gg.index, "hit_rate"] = sg(design(gg, cell, use_price) @ beta)
+            d.loc[gg.index, "wlevel"] = level
         d.loc[te_idx, "wset"] = wk
     ok = d["hit_rate"].notna()
-    print(f"LH|legs with a hit rate {100*ok.mean():.1f}% (the rest fall in the first weeks of 2024-25, before {MIN_N:,} graded legs exist: hit rate = final_hp)", flush=True)
+    print(f"LH|legs whose hit rate pools final_hp with a market read or the app own price: {100*ok.mean():.1f}% (the rest: hit rate = final_hp)", flush=True)
     d["hit_rate"] = d["hit_rate"].fillna(d["p"])
     d["roi"] = d["hit_rate"] * d["m"] - 1
     d["roi_model"] = d["p"] * d["m"] - 1
     # ---- check (out-of-sample by construction: every weight set predates its week)
-    g = d[(d["y"] >= 0) & ok]
+    g = d[d["y"] >= 0]
     print("LH|================ CHECK: log-loss final_hp -> hit_rate, calibration and ROI predicted vs realized ================", flush=True)
     for (s, a), x in g.groupby(["season", "app"]):
         q = pd.cut(x["hit_rate"], [0, .3, .4, .45, .5, .55, .6, .65, .7, .8, 1])
@@ -220,10 +232,10 @@ def main():
         n = conn.execute("""UPDATE nba_score.leg_card_v2 l SET p_market = t.p_market, market_src = t.market_src, hit_rate = t.hit_rate, roi = t.roi,
                                    roi_model = t.roi_model, weight_week = t.weight_week FROM _lh t WHERE l.ctid = t.rid""").rowcount
         conn.execute("DROP TABLE IF EXISTS nba_score.leg_hitrate_weights_v2")
-        conn.execute("CREATE TABLE nba_score.leg_hitrate_weights_v2 (week date, grp text, market_src text, n_train int, a float8, b_final_hp float8, c_market float8)")
+        conn.execute("CREATE TABLE nba_score.leg_hitrate_weights_v2 (week date, grp text, cell text, n_train int, a float8, b_final_hp float8, c2 float8, c3 float8)")
         with conn.cursor().copy("COPY nba_score.leg_hitrate_weights_v2 FROM STDIN") as cp:
             for r in wrows:
-                cp.write_row([pd.Timestamp(r[0]).date(), r[1], r[2], int(r[3]), float(r[4]), float(r[5]), None if len(r) < 7 or r[6] != r[6] else float(r[6])])
+                cp.write_row([pd.Timestamp(r[0]).date(), r[1], r[2], int(r[3])] + [None if x != x else float(x) for x in r[4:8]])
         conn.commit()
         print(f"LH|written: {n:,} legs updated; {len(wrows):,} weight rows", flush=True)
     print("LH|DONE", flush=True)
