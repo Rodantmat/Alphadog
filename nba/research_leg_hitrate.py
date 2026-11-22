@@ -280,16 +280,18 @@ def main():
         pr = d["m"].notna().values
         hv3 = d["hit_rate"].values.copy()
         ed = np.zeros(len(d)); ed[pr] = lg(hv3[pr]) - lg(1 / d["m"].values[pr])
-        off = lg(hv3); gv3 = d["appside"].values
+        off = lg(hv3); gv3 = d["appside"].values; gk3 = d["grp"].values      # per app x kind x side (Underdog discounted legs need their own curve)
         z3 = np.zeros(len(d))
         for wk in weeks:
             te = np.where((wv == wk) & pr)[0]
             if not len(te):
                 continue
-            for g_ in np.unique(gv3[te]):
-                trm = (wv < wk) & (yv >= 0) & pr & (gv3 == g_)
-                if trm.sum() < MIN_N:
-                    continue
+            for g_ in np.unique(gk3[te]):
+                trm = (wv < wk) & (yv >= 0) & pr & (gk3 == g_)
+                if trm.sum() < MIN_N:                       # thin app x kind x side: the app x side curve
+                    trm = (wv < wk) & (yv >= 0) & pr & (gv3 == gv3[te][gk3[te] == g_][0])
+                    if trm.sum() < MIN_N:
+                        continue
                 X = np.c_[np.ones(trm.sum()), ed[trm], ed[trm] ** 2]; yy = yv[trm].astype(float); o = off[trm]
                 b = np.zeros(3)
                 for _ in range(30):
@@ -298,7 +300,7 @@ def main():
                     b = b + stp
                     if np.max(np.abs(stp)) < 1e-7:
                         break
-                ti = te[gv3[te] == g_]
+                ti = te[gk3[te] == g_]
                 z3[ti] = np.c_[np.ones(len(ti)), ed[ti], ed[ti] ** 2] @ b
         d["hit_rate"] = sg(off + z3)
     if os.environ.get("LH_EDGECAL") == "1":
