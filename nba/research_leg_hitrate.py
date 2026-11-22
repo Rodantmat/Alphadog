@@ -68,13 +68,15 @@ def power_devig(io_, iu):
 
 def market(conn, a, b):
     """fair P(over) per (date, player, prop, line) from the books' window ladders; returns (frame of book points, exact keys)"""
-    bk = pd.read_sql(f"""SELECT s.game_date, s.bookmaker, nba_ref.norm_name(s.player) nb,
+    bk = pd.read_sql(f"""SELECT s.game_date, s.bookmaker, s.market_key mkey, nba_ref.norm_name(s.player) nb,
                                {RK.format(x="replace(replace(s.market_key,'player_',''),'_alternate','')")} prop, s.line::float8 line, s.side, s.price::float8 price
                         FROM nba_market.board_snapshots s
                         WHERE s.bookmaker = ANY(%s) AND s.snapshot_label = 'window' AND s.game_date BETWEEN %s AND %s AND s.price IS NOT NULL
                           AND s.side IN ('Over','Under')""", conn, params=(list(BOOKS), a, b))
-    bk = bk.drop_duplicates(["game_date", "bookmaker", "nb", "prop", "line", "side"])
-    w = bk.pivot_table(index=["game_date", "bookmaker", "nb", "prop", "line"], columns="side", values="price", aggfunc="first").reset_index()
+    # Over and Under are paired WITHIN one market of one book (a main and an alternate market can both carry the line at different prices -
+    # pairing across them mixed prices; independent audit 2026-11-21: 35 of 54 exact legs reproduced before this)
+    bk = bk.drop_duplicates(["game_date", "bookmaker", "mkey", "nb", "prop", "line", "side"])
+    w = bk.pivot_table(index=["game_date", "bookmaker", "mkey", "nb", "prop", "line"], columns="side", values="price", aggfunc="first").reset_index()
     for c in ("Over", "Under"):
         if c not in w:
             w[c] = np.nan
@@ -89,6 +91,8 @@ def market(conn, a, b):
     onu = ~two & np.isnan(io_) & ~np.isnan(iu)
     w.loc[onu, "po"] = 1 - iu[onu] / w.loc[onu, "bookmaker"].map(ovr).values
     w = w[w["po"].between(0.005, 0.995)]
+    # one read per book and line: the two-sided pair when the book has one (its main market first), else its one-sided read
+    w = w.sort_values(["two", "mkey"], ascending=[False, True]).drop_duplicates(["game_date", "bookmaker", "nb", "prop", "line"])
     return w[["game_date", "bookmaker", "nb", "prop", "line", "po", "two"]]
 
 

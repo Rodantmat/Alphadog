@@ -75,11 +75,13 @@ ppq AS MATERIALIZED (
   WHERE q.factor_mined > 0 AND (q.quoted_at AT TIME ZONE 'America/Los_Angeles')::date >= %(a)s AND (q.quoted_at AT TIME ZONE 'America/Los_Angeles')::date < %(b)s
   ORDER BY d, nb, prop, q.line, q.side, q.quoted_at DESC),
 outc AS MATERIALIZED (
-  SELECT DISTINCT ON (o.game_date, nba_ref.norm_name(o.player), {rk_o}, o.line) o.game_date, nba_ref.norm_name(o.player) nb, {rk_o} prop, o.line,
+  -- matched by PLAYER ID through the name map, not by name: one player can be graded under one of his names and left unmatched under another
+  -- (independent audit 2026-11-21: every Carlton / Bub Carrington leg came out ungraded - 7,334 legs - while his box scores exist)
+  SELECT DISTINCT ON (o.game_date, m.player_id, {rk_o}, o.line) o.game_date, m.player_id::text pid, {rk_o} prop, o.line,
          o.stat_actual::float8 v, o.played, o.leg_result
-  FROM nba_market.board_outcomes o
+  FROM nba_market.board_outcomes o JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(o.player)
   WHERE o.game_date >= %(a)s AND o.game_date < %(b)s AND o.leg_result IN ('over_win','under_win','push','dnp')
-  ORDER BY o.game_date, nba_ref.norm_name(o.player), {rk_o}, o.line, (o.leg_result = 'dnp'), o.graded_at DESC NULLS LAST),
+  ORDER BY o.game_date, m.player_id, {rk_o}, o.line, (o.leg_result = 'dnp'), o.graded_at DESC NULLS LAST),
 j AS (
   SELECT bs.*, sn.price, sn.multiplier, sn.alt, pf.odds ppodds, pq.f ppf, um.multiplier udm, oc.v, oc.played, oc.leg_result
   FROM bs
@@ -87,7 +89,7 @@ j AS (
   LEFT JOIN ppflag pf ON bs.app = 'prizepicks' AND pf.d = bs.game_date AND pf.nb = bs.nb AND pf.prop = bs.prop AND pf.line = bs.line
   LEFT JOIN ppq pq ON bs.app = 'prizepicks' AND pq.d = bs.game_date AND pq.nb = bs.nb AND pq.prop = bs.prop AND pq.line = bs.line AND pq.side = bs.side
   LEFT JOIN udmap um ON bs.app = 'underdog' AND um.price = sn.price
-  LEFT JOIN outc oc ON oc.game_date = bs.game_date AND oc.nb = bs.nb AND oc.prop = bs.prop AND oc.line = bs.line),
+  LEFT JOIN outc oc ON oc.game_date = bs.game_date AND oc.pid = bs.player_id::text AND oc.prop = bs.prop AND oc.line = bs.line),
 k AS (
   SELECT j.*,
     CASE j.app
