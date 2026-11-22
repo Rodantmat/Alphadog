@@ -139,8 +139,31 @@ def main():
             n = conn.execute("SELECT count(*) FROM nba_score.leg_card_v2 WHERE season = %s", (s,)).fetchone()[0]
             print(f"LC|built {s}: {n:,} legs in {(dt.datetime.now() - t0).seconds}s", flush=True)
         conn.execute("CREATE INDEX IF NOT EXISTS leg_card_v2_date ON nba_score.leg_card_v2 (game_date, app)")
+    if os.environ.get("LC_WRITE") == "1" or os.environ.get("LC_FIXGRADE") == "1":
+        fix_grade(conn, seasons)
         conn.execute("ANALYZE nba_score.leg_card_v2")
     certify(conn, seasons)
+
+
+BOXV = ("CASE l.prop WHEN 'points' THEN g.pts WHEN 'rebounds' THEN g.reb WHEN 'assists' THEN g.ast WHEN 'threes_made' THEN g.fg3m WHEN 'steals' THEN g.stl "
+        "WHEN 'blocks' THEN g.blk WHEN 'turnovers' THEN g.tov WHEN 'pra' THEN g.pts+g.reb+g.ast WHEN 'pts_reb' THEN g.pts+g.reb WHEN 'pts_ast' THEN g.pts+g.ast "
+        "WHEN 'reb_ast' THEN g.reb+g.ast WHEN 'stocks' THEN g.stl+g.blk END")
+
+
+def fix_grade(conn, seasons):
+    """A leg the results table never matched (independent audit 2026-11-21: 'Carlton Carrington' is unmatched_player on all 29,247 of his rows
+    while his box scores exist under player id 1642267) is graded from the box score itself - the same truth: where both exist they agree on
+    100.00% of 1.57M legs. Only a played game (minutes > 0) is graded this way; anything else stays ungraded."""
+    for s in seasons:
+        n = conn.execute(f"""UPDATE nba_score.leg_card_v2 l SET stat_actual = x.v,
+                                result = CASE WHEN x.v = l.line::float8 THEN 'push' WHEN (x.v > l.line::float8) = (l.side = 'Over') THEN 'won' ELSE 'lost' END,
+                                realized = CASE WHEN x.v = l.line::float8 OR l.m IS NULL THEN NULL WHEN (x.v > l.line::float8) = (l.side = 'Over') THEN l.m - 1 ELSE -1 END
+                             FROM (SELECT l.ctid rid, ({BOXV})::float8 v FROM nba_score.leg_card_v2 l
+                                   JOIN nba_stats.player_game_log g ON g.nba_player_id::text = l.player_id AND g.game_date = l.game_date AND g.min > 0
+                                   WHERE l.season = %s AND l.result = 'ungraded'
+                                     AND l.prop IN ('points','rebounds','assists','threes_made','steals','blocks','turnovers','pra','pts_reb','pts_ast','reb_ast','stocks')) x
+                             WHERE l.ctid = x.rid AND x.v IS NOT NULL""", (s,)).rowcount
+        print(f"LC|graded from the box score (results table never matched them): {s} {n:,} legs", flush=True)
 
 
 def certify(conn, seasons):
