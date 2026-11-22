@@ -34,7 +34,9 @@ BOOKS = ("fanduel", "draftkings", "betmgm", "williamhill_us", "bovada", "betrive
 RK = ("CASE {x} WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' "
       "WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' WHEN 'blocks_steals' THEN 'stocks' ELSE {x} END")
 MIN_N = 5000
-K2 = float(os.environ.get("LH_K") or 400)          # stage-2 shrink (documented as-of value 400)
+K2 = float(os.environ.get("LH_K") or 400)
+ONESIDE = os.environ.get("LH_ONESIDE") or "ovr"          # one-sided book lines: ovr (implied / overround) | power (implied ** book's k)
+CELLSRC = os.environ.get("LH_CELLSRC") == "1"            # separate weights for an exact two-sided read and a ladder read          # stage-2 shrink (documented as-of value 400)
 KEY = ["game_date", "nb", "prop"]
 
 
@@ -87,9 +89,21 @@ def market(conn, a, b):
     w["po"] = np.nan
     w.loc[two, "po"] = power_devig(io_[two], iu[two])
     one = ~two & ~np.isnan(io_)
-    w.loc[one, "po"] = io_[one] / w.loc[one, "bookmaker"].map(ovr).values
     onu = ~two & np.isnan(io_) & ~np.isnan(iu)
-    w.loc[onu, "po"] = 1 - iu[onu] / w.loc[onu, "bookmaker"].map(ovr).values
+    if ONESIDE == "power":
+        # one-sided lines are de-vigged the way the book's own two-sided lines are: p = implied ** k, k = the book's median power exponent
+        # (a longshot carries more margin than a favourite - dividing by a flat overround left 2026-27 rebounds ladders ~10 pts too high)
+        kk = np.full(len(w), np.nan)
+        a2, b2 = io_[two], iu[two]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            kv = np.log(np.clip(w.loc[two, "po"].values, 1e-6, 1)) / np.log(np.clip(a2, 1e-6, 0.999999))
+        kb = pd.Series(kv).groupby(w.loc[two, "bookmaker"].values).median()
+        kmap = w["bookmaker"].map(kb).values
+        w.loc[one, "po"] = io_[one] ** kmap[one]
+        w.loc[onu, "po"] = 1 - iu[onu] ** kmap[onu]
+    else:
+        w.loc[one, "po"] = io_[one] / w.loc[one, "bookmaker"].map(ovr).values
+        w.loc[onu, "po"] = 1 - iu[onu] / w.loc[onu, "bookmaker"].map(ovr).values
     w = w[w["po"].between(0.005, 0.995)]
     # one read per book and line: the two-sided pair when the book has one (its main market first), else its one-sided read
     w = w.sort_values(["two", "mkey"], ascending=[False, True]).drop_duplicates(["game_date", "bookmaker", "nb", "prop", "line"])
@@ -178,7 +192,8 @@ def main():
         d["fine"] = d["fine"] + "_" + d[x].astype(str)
     d["y"] = np.where(d["result"] == "won", 1, np.where(d["result"] == "lost", 0, -1))
     d["lm"] = np.log(d["m"])                     # the app's own price of this leg (real prices only; NaN = none)
-    d["cell"] = d["src"].where(d["src"] == "none", "mkt") + np.where(d["lm"].notna(), "|priced", "|unpriced")
+    d["cell"] = (d["src"].where(d["src"] == "none", "mkt") if not CELLSRC else d["src"].replace({"exact": "mkt_exact", "ladder": "mkt_ladder"})) \
+        + np.where(d["lm"].notna(), "|priced", "|unpriced")
     d["gd"] = pd.to_datetime(d["game_date"])
     d["wk"] = d["gd"] - pd.to_timedelta(d["gd"].dt.weekday, unit="D")     # week starting Monday
     d["hit_rate"] = np.nan; d["wset"] = pd.NaT; d["wlevel"] = None
