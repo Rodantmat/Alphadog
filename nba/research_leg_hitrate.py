@@ -34,6 +34,7 @@ BOOKS = ("fanduel", "draftkings", "betmgm", "williamhill_us", "bovada", "betrive
 RK = ("CASE {x} WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' "
       "WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' WHEN 'blocks_steals' THEN 'stocks' ELSE {x} END")
 MIN_N = 5000
+K2 = float(os.environ.get("LH_K") or 400)          # stage-2 shrink (documented as-of value 400)
 KEY = ["game_date", "nb", "prop"]
 
 
@@ -216,7 +217,7 @@ def main():
             continue
         t = pd.DataFrame({"g": gv[tr], "b": bv[tr], "h": hv[tr], "y": yv[tr]}).groupby(["g", "b"]).agg(n=("y", "size"), hit=("y", "mean"), mh=("h", "mean"))
         t = t[t["n"] >= 50]
-        t["s"] = t["n"] / (t["n"] + 400) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
+        t["s"] = t["n"] / (t["n"] + K2) * (lg(t["hit"].clip(0.005, 0.995)) - lg(t["mh"]))
         sm = t["s"].to_dict()
         shift[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv[te], bv[te])]
     d["hit_rate"] = sg(lg(d["h1"]) + shift)
