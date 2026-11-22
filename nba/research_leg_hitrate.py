@@ -274,6 +274,33 @@ def main():
         sm = t["s"].to_dict()
         shift[te] = [sm.get((g_, b_), 0.0) for g_, b_ in zip(gv[te], bv[te])]
     d["hit_rate"] = sg(lg(d["h1"]) + shift)
+    if os.environ.get("LH_EDGECAL") == "2":
+        # STAGE 3 (continuous) - an offset logistic per app x side on earlier weeks: logit y = logit(h) + a + b x edge (+ c x edge^2), edge =
+        # logit(h) - logit(1/m). Pools every priced leg into one slope, so the thin top bands borrow the whole curve.
+        pr = d["m"].notna().values
+        hv3 = d["hit_rate"].values.copy()
+        ed = np.zeros(len(d)); ed[pr] = lg(hv3[pr]) - lg(1 / d["m"].values[pr])
+        off = lg(hv3); gv3 = d["appside"].values
+        z3 = np.zeros(len(d))
+        for wk in weeks:
+            te = np.where((wv == wk) & pr)[0]
+            if not len(te):
+                continue
+            for g_ in np.unique(gv3[te]):
+                trm = (wv < wk) & (yv >= 0) & pr & (gv3 == g_)
+                if trm.sum() < MIN_N:
+                    continue
+                X = np.c_[np.ones(trm.sum()), ed[trm], ed[trm] ** 2]; yy = yv[trm].astype(float); o = off[trm]
+                b = np.zeros(3)
+                for _ in range(30):
+                    pp = sg(o + X @ b); W = pp * (1 - pp)
+                    stp = np.clip(np.linalg.solve(X.T @ (X * W[:, None]) + np.eye(3), X.T @ (yy - pp) - b), -1, 1)
+                    b = b + stp
+                    if np.max(np.abs(stp)) < 1e-7:
+                        break
+                ti = te[gv3[te] == g_]
+                z3[ti] = np.c_[np.ones(len(ti)), ed[ti], ed[ti] ** 2] @ b
+        d["hit_rate"] = sg(off + z3)
     if os.environ.get("LH_EDGECAL") == "1":
         # STAGE 3 - AS-OF CALIBRATION BY EDGE (the leg's hit rate against its own price, logit(h) - logit(1/m)): legs the chain calls far above
         # their price were the ones that over-stated (+ROI bands realised -3 to -15%). Same documented rule, w = n / (n + 400), per app x side,
