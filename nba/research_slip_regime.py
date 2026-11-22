@@ -74,6 +74,15 @@ def main():
                     v = pv - 1 if pv is not None else np.nan
                     series.setdefault(key, {})[gd] = v
     seas = d.drop_duplicates("game_date").set_index("game_date").season
+    if os.environ.get("SR_ALWAYS") == "1":   # always-on read: every strategy, every season, no switch
+        for key, sv in sorted(series.items(), key=lambda kv: str(kv[0])):
+            v = pd.Series(sv).dropna()
+            if len(v) < 60:
+                continue
+            se = v.index.map(lambda g: seas.get(g))
+            per = " | ".join(f"{s} {int((se == s).sum())} {100*v[se == s].mean():+.0f}%" for s in ("2024-25", "2025-26", "2026-27") if (se == s).sum())
+            print(f"SA|  {' '.join(map(str, key))} | {len(v)} slates ROI {100*v.mean():+.1f}% (se {100*v.std()/len(v)**.5:.0f}) || {per}", flush=True)
+        print("SR|DONE", flush=True); return
     rows = []
     rng = np.random.default_rng(11)
     for key, sv in series.items():
