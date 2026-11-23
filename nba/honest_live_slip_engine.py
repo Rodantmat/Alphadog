@@ -59,10 +59,12 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "U10": "U10 top 3 single-stat Unders, main ranking, up to two a game (3-pick Standard)",      # +30.2% (+23 / +28 / +62), w/o 5 best +20.2%
          "U11": "U11 top 3 Unders by the sportsbook chance, players in form (3-pick Standard)",         # +26.7% (+22 / +33 / +15)
          "U12": "U12 top 3 Unders by the certified hit rate (3-pick Standard)",                         # +34.3% (+29 / +40 / +30) - needs the daily hit rate
-         "P11": "H_P11_5flex_b2b_score"}                                                                   # +75.0% (+49 / +59 / +322), back-to-back slates only
+         "P11": "H_P11_5flex_b2b_score",
+         "S12": "H_S12_5max_pp_props", "S13": "H_S13_6flex_avg", "F11": "H_F11_5max_pp_props", "F12": "H_F12_6max_pp_m18",
+         "B7": "H_B7_5perfect_model_props", "B8": "H_B8_3perfect_pp_noast_2g", "B9": "H_B9_3perfect_score_props"}                                                                   # +75.0% (+49 / +59 / +322), back-to-back slates only
 # owner 2026-11-23: daily = the codes above 25% ROI, fallback = below (thin board only). PrizePicks daily P1 P3 P4 P10 P11, fallback P9;
 # Underdog daily U9 U10 U11 (U12 once the daily certified hit rate exists), fallback U2 U1. P2 P5 P6 P7, U3-U8 and the old fallbacks retired.
-TARGET = {"underdog": 3, "prizepicks": 4, "sleeper": 8, "fliff": 7, "betr": 3}      # the number of elected (daily) strategies an app has
+TARGET = {"underdog": 3, "prizepicks": 4, "sleeper": 10, "fliff": 9, "betr": 2}      # the number of elected (daily) strategies an app has
 
 
 def log(m):
@@ -292,7 +294,7 @@ def build(conn, day, apps, weights=None):
             key = frozenset((r["pid"], r["prop"]) for r in sl)
             if key in seen_sets:
                 continue
-            seen_sets.add(key); plan[app].append((code, k, st, sl, cand)); notes.append(f"{app}: {code} added ({len(plan[app])} of {TARGET[app]} slips)" if int(code[1:]) < 20 else f"{app}: thin board - fallback {code} added ({len(plan[app])} of {TARGET[app]} slips)")
+            seen_sets.add(key); plan[app].append((code, k, st, sl, cand)); notes.append(f"{app}: thin board - fallback {code} added ({len(plan[app])} of {TARGET[app]} slips)")
         if not plan[app]:
             del plan[app]
 
@@ -336,10 +338,19 @@ def build(conn, day, apps, weights=None):
         later("prizepicks", "P9", 4, "flex", P)
         fill("prizepicks")
     tight = sorted(first(U, 2) + first(P, 5), key=lambda r: (-r["blend"], r["pid"]))
-    # owner 2026-11-23 09:24 PT rule (negative -> drop), pass 29: S1 (-15 / -5 / -10%) and F1 (-10 / +1 / -1%, without the best -11%) dropped
-    for app, specs in (("sleeper", (("S4", 4, "flex", "t"), ("S5", 4, "max", "t"), ("S6", 5, "flex", "t"))),
-                       ("fliff", (("F4", 4, "max", "t"), ("F5", 5, "max", "t"))),
-                       ("betr", (("B1", 3, "perfect", "t"), ("B5", 3, "perfect", "p5")))):
+    # SLEEPER / FLIFF / BETR (owner 2026-11-23 09:53 PT: "All that goes above 25% go live. All that are over 5% fallbacks. As long as they hold real results").
+    # pass 29 (research_pass29.py, nba_score.p29_cells): Sleeper / Fliff judged on their REAL 2026-27 slates (ROI 25%+, still positive without the best slip)
+    # with the most recent support season (2025-26, derived prices) positive - that support is what separates real orders from random ones (cells passing:
+    # Sleeper 7.3% real vs 0.9% random, Fliff 10.4% vs 2.4%; on 2026-27 alone random orders pass 10%). Betr: real prices in both seasons, pooled.
+    # Dropped: S1 (-15 / -5 / -10%), F1 (-10 / +1 / -1%), B6 (2026-27 -4%), B5 (without the best -12%), B21 (without the best -17%).
+    avg_p = sorted(P, key=lambda r: (-(r["blend"] + r["ph"]) / 2, r["pid"], r["prop"], r["line"]))
+    model_p = sorted(P, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"]))
+    try:
+        sc_p = board_score(conn, day)
+    except Exception:  # noqa: BLE001
+        conn.rollback(); sc_p = {}
+    score_p = sorted([r for r in P if (r["pid"], r["prop"], round(r["line"], 2)) in sc_p], key=lambda r: (-sc_p[(r["pid"], r["prop"], round(r["line"], 2))], r["pid"], r["prop"]))
+    for app in ("sleeper", "fliff", "betr"):
         if app not in apps:
             continue
         try:
@@ -347,31 +358,31 @@ def build(conn, day, apps, weights=None):
         except Exception as e:  # noqa: BLE001 - one app's board never costs the others
             conn.rollback(); notes.append(f"{app}: board not readable ({type(e).__name__}: {str(e)[:120]}) - no slip"); continue
         notes.append(f"{app}: {len(tg)} player-props with an Under on its board")
-        for code, k, st, src in specs:
-            cand = onto(tg, tight, ctx) if src == "t" else onto(tg, first(U, 10), ctx)[:2] if src == "u2" else onto(tg, first(P, 10), ctx)[:5]
-            add(app, code, k, st, cand)
-        # owner 2026-11-20 09:23 PT: the first Sleeper / Fliff / Betr fallbacks (2- / 3-pick on the qualified legs) lost on the season replay and were dropped.
-        # owner's rule 10:37 PT + pass 24 / 24b: NEW slips in PrizePicks' own order played on the app (deeper than the 7 qualified legs, so they also exist on days the
-        # elected ones cannot fill): Sleeper 5- and 4-pick Max (+59% / +227% and +42% / +135%: modelled-price 2025-26 / real-price 2026-27), Fliff 4- and 5-pick Max
-        # (+53% / +154%, +64% / +234%). Built after the elected ones and only when their legs differ from a slip the app already has. Then the positive low-return
-        # ones as true fallbacks: 2-pick Max no assists (Sleeper +10% / +50%, Fliff +16% / +59%), Betr 3-pick Perfect no assists (+22% / +16%).
-        ppo = onto(tg, P, ctx); tl = onto(tg, tight, ctx); noast = [r for r in tl if r["prop"] != "assists"]
-        # pass 27 (owner's rule 10:37 PT): PrizePicks' order on the app, no assists, the first leg of each prop only ("every prop different") - 3-pick: Sleeper +35% / +92%,
-        # Fliff +36% / +94%, Betr Perfect +60% / +53% (Betr: real prices in both seasons); 2-pick Max of PrizePicks' rebounds order: Sleeper +24% / +38%, Fliff +31% / +46%.
+        tl = onto(tg, tight, ctx); ppo = onto(tg, P, ctx)
+        noast = [r for r in tl if r["prop"] != "assists"]
         dp, seen_p = [], set()
         for r in ppo:
             if r["prop"] != "assists" and r["prop"] not in seen_p:
                 dp.append(r); seen_p.add(r["prop"])
         rebo = [r for r in ppo if r["prop"] == "rebounds"]
-        if app == "sleeper":
-            later(app, "S9", 2, "max", noast); later(app, "S7", 5, "max", ppo); later(app, "S8", 4, "max", ppo)
-            later(app, "S10", 3, "max", dp); later(app, "S11", 2, "max", rebo)     # S9: owner 2026-11-20 11:38 PT "it can go to live"
-        elif app == "fliff":
-            later(app, "F8", 2, "max", noast); later(app, "F6", 4, "max", ppo); later(app, "F7", 5, "max", ppo)
-            later(app, "F9", 3, "max", dp); later(app, "F10", 2, "max", rebo)     # F8: owner 2026-11-20 11:38 PT
-        else:
-            # B6 dropped (owner's rule, pass 29: 2026-27 real -4%, without the best -24%)
-            later(app, "B21", 3, "perfect", noast)
+        mx = "perfect" if app == "betr" else "max"
+        if app == "sleeper":       # 2026-27 real ROI (2025-26 derived): S4 +61 (+6), S5 +84 (+8), S6 +78 (+31), S7 +200 (+59), S8 +110 (+41), S9 +36 (+9),
+            add(app, "S4", 4, "flex", tl); add(app, "S5", 4, "max", tl); add(app, "S6", 5, "flex", tl)          # S10 +42 (+21), S11 +25 (+24)
+            add(app, "S7", 5, "max", ppo); add(app, "S8", 4, "max", ppo); add(app, "S9", 2, "max", noast)
+            add(app, "S10", 3, "max", dp); add(app, "S11", 2, "max", rebo)
+            add(app, "S12", 5, "max", ppo, diff_prop=True)                       # NEW +169% (+70%), w/o best +72%
+            add(app, "S13", 6, "flex", onto(tg, avg_p, ctx))                       # NEW +158% (+66%), w/o best +57%
+        elif app == "fliff":       # F4 +99 (+17), F5 +122 (+61), F6 +127 (+53), F7 +206 (+63), F8 +44 (+16), F9 +43 (+22), F10 +32 (+31)
+            add(app, "F4", 4, "max", tl); add(app, "F5", 5, "max", tl)
+            add(app, "F6", 4, "max", ppo); add(app, "F7", 5, "max", ppo); add(app, "F8", 2, "max", noast)
+            add(app, "F9", 3, "max", dp); add(app, "F10", 2, "max", rebo)
+            add(app, "F11", 5, "max", ppo, diff_prop=True)                       # NEW +175% (+75%), w/o best +75%
+            add(app, "F12", 6, "max", [r for r in ppo if float(r["leg"].get("m") or 0) >= 1.8])   # NEW +272% (+72%), w/o best +81%
+        else:                      # Betr, real both seasons (2025-26 / 2026-27, pooled)
+            add(app, "B7", 5, "perfect", onto(tg, model_p, ctx), diff_prop=True)                          # NEW +62 / +140% (pooled +73%)
+            add(app, "B8", 3, "perfect", [r for r in ppo if r["prop"] != "assists"], diff_prop=True, gcap=2)  # NEW +30 / +38% (pooled +31%)
+            later(app, "B1", 3, "perfect", tl)                                                              # fallback: +17 / +20%
+            later(app, "B9", 3, "perfect", onto(tg, score_p, ctx), diff_prop=True)                          # fallback: +7 / +83% (pooled +20%)
         fill(app)
     # LEG GONE (owner 2026-11-23 09:24 PT "check the best ... leg sub, shrink or slip drop. If leg sub, have clear what is the pool used. We keep the best ROI";
     # research_set_check.py, every leg of every slip removed in turn, profit per affected slip): the next-leg pool each slip carries to the Slips screen -
