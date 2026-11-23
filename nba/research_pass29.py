@@ -202,6 +202,18 @@ def main():
             rec["code"] = named.get(key, "")
             rows.append(rec)
         R = pd.DataFrame(rows)
+        if os.environ.get("P29_WRITE") == "1" and len(R):           # research scratch table: every cell, for the owner's 09:53 PT selection
+            import io
+            wc = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
+            Rw = R.copy(); Rw.insert(0, "app", app)
+            cols = list(Rw.columns)
+            typ = {c: ("boolean" if pd.api.types.is_bool_dtype(Rw[c]) else ("float8" if pd.api.types.is_numeric_dtype(Rw[c]) else "text")) for c in cols}
+            wc.execute("CREATE TABLE IF NOT EXISTS nba_score.p29_cells (" + ", ".join(f'"{c}" {typ[c]}' for c in cols) + ")")
+            wc.execute("DELETE FROM nba_score.p29_cells WHERE app = %s", (app,))
+            buf = io.StringIO(); Rw.to_csv(buf, index=False, header=False, na_rep=""); buf.seek(0)
+            with wc.cursor().copy("COPY nba_score.p29_cells (" + ", ".join(f'"{c}"' for c in cols) + ") FROM STDIN WITH (FORMAT csv)") as cp:
+                cp.write(buf.read())
+            print(f"P29|  written {len(Rw):,} cells to nba_score.p29_cells", flush=True)
         sup = [c for c in ("r24", "r25") if c in R and R[c].notna().any()]
         R["support"] = np.all([R[c].fillna(-1) > 0 for c in sup], axis=0) if sup else True
         R["ok26"] = (R["n26"] >= 15) & (R["w26"] > 0)
