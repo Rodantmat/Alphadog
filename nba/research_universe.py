@@ -111,6 +111,7 @@ def load(conn):
         d["val"] = val
         d["logy"] = np.where(reg, 0.0, np.log(y_of_p2(math.sqrt(3) * val)))
         d = d[reg | np.isfinite(d["logy"].values)].copy()
+        reg = (d["kind"] == "standard").values
         d["easy"] = np.where(reg, 0, np.where(d["val"] < math.sqrt(3), 1, 2))        # 1 goblin-like, 2 demon-like
         d["logf"] = 0.0
     elif APP == "underdog":
