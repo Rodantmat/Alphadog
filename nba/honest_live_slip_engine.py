@@ -29,6 +29,8 @@ import os
 import sys
 from zoneinfo import ZoneInfo
 
+import numpy as np
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 PT = ZoneInfo("America/Los_Angeles")
 SINGLE = ("points", "rebounds", "assists", "threes_made", "steals", "blocks", "turnovers")
@@ -51,8 +53,16 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "U21": "FB1 top 3 Unders, model-only ranking (3-pick Flex)",
          "P21": "H_FB1_5flex_reb_geo", "P22": "H_FB2_6flex_reb_geo", "P23": "H_FB3_2power_udtop2", "P24": "H_FB4_5flex_props", "P25": "H_FB5_6flex_top6", "P26": "H_FB6_5flex_home",
          "P27": "H_FB7_6flex_second", "S7": "H_S7_5max_pp", "S8": "H_S8_4max_pp", "F6": "H_F6_4max_pp", "F7": "H_F7_5max_pp", "S9": "H_S9_2max_noast", "S10": "H_S10_3max_pp_props", "S11": "H_S11_2max_pp_reb", "F9": "H_F9_3max_pp_props", "F10": "H_F10_2max_pp_reb", "B6": "H_B6_3perfect_pp_props", "F8": "H_F8_2max_noast", "S21": "H_FB1_S_2max_noast", "S22": "H_FB2_S_3max", "F21": "H_FB1_F_2max_noast", "F22": "H_FB2_F_3max", "B21": "H_FB1_B_3perfect_noast", "B22": "H_FB2_B_2perfect",
-         "B23": "H_FB3_B_4perfect"}
-TARGET = {"underdog": 9, "prizepicks": 9, "sleeper": 9, "fliff": 8, "betr": 3}      # the number of elected strategies an app has
+         "B23": "H_FB3_B_4perfect",
+         # owner 2026-11-23 09:24 / 09:30 PT ("everything over 25% as daily, under as fallback ... deploy them ... make them all live now"): the full-universe
+         # winners (NBA_HONEST_REBUILD.md 2026-11-23 00:55 PT, research_candidates.py, one slip a slate, 2024-25 / 2025-26 / 2026-27):
+         "U10": "U10 top 3 single-stat Unders, main ranking, up to two a game (3-pick Standard)",      # +30.2% (+23 / +28 / +62), w/o 5 best +20.2%
+         "U11": "U11 top 3 Unders by the sportsbook chance, players in form (3-pick Standard)",         # +26.7% (+22 / +33 / +15)
+         "U12": "U12 top 3 Unders by the certified hit rate (3-pick Standard)",                         # +34.3% (+29 / +40 / +30) - needs the daily hit rate
+         "P11": "H_P11_5flex_b2b_score"}                                                                   # +75.0% (+49 / +59 / +322), back-to-back slates only
+# owner 2026-11-23: daily = the codes above 25% ROI, fallback = below (thin board only). PrizePicks daily P1 P3 P4 P10 P11, fallback P9;
+# Underdog daily U9 U10 U11 (U12 once the daily certified hit rate exists), fallback U2 U1. P2 P5 P6 P7, U3-U8 and the old fallbacks retired.
+TARGET = {"underdog": 3, "prizepicks": 4, "sleeper": 9, "fliff": 8, "betr": 3}      # the number of elected (daily) strategies an app has
 
 
 def log(m):
@@ -113,6 +123,44 @@ def context(conn, day, pids):
 GLCOL = {"points": "pts", "rebounds": "reb", "assists": "ast", "threes_made": "fg3m", "steals": "stl", "blocks": "blk", "turnovers": "tov"}
 
 
+def season_form(conn, day, pids):
+    """{player: (season average, last-5 average by stat, date of his last game)} from every game-log row of this season before `day`
+    (DNP rows count, as in research_leg_model_h: hot = (last-5 - season) / max(1, season), last 5 needs 3+ rows)"""
+    out = {}
+    if not pids:
+        return out
+    y = day.year if day.month >= 8 else day.year - 1
+    rows = conn.execute("""SELECT nba_player_id::text, game_date, pts::float8, reb::float8, ast::float8, fg3m::float8, stl::float8, blk::float8, tov::float8
+                           FROM nba_stats.player_game_log WHERE nba_player_id::text = ANY(%s) AND game_date < %s AND game_date >= %s ORDER BY 1, 2""",
+                        (list(pids), day, dt.date(y, 8, 1))).fetchall()
+    by = {}
+    for r in rows:
+        by.setdefault(r[0], []).append(r)
+    for pid, g in by.items():
+        cols = list(zip(*[x[2:] for x in g]))
+        avs = {c: float(np.nanmean([v if v is not None else np.nan for v in cols[i]])) for i, c in enumerate(GLCOL.values())}
+        last5 = [x[2:] for x in g[-5:]]
+        av5 = {c: (float(np.nanmean([x[i] if x[i] is not None else np.nan for x in last5])) if len(last5) >= 3 else None) for i, c in enumerate(GLCOL.values())}
+        out[pid] = (avs, av5, g[-1][1])
+    return out
+
+
+def hot(form, r):
+    f = form.get(r["pid"])
+    if not f or r["prop"] not in GLCOL:
+        return None
+    c = GLCOL[r["prop"]]; s_, f5 = f[0].get(c), f[1].get(c)
+    if s_ is None or f5 is None or s_ != s_ or f5 != f5:
+        return None
+    return (f5 - s_) / max(1.0, s_)
+
+
+def board_score(conn, day):
+    """the board's score (nba/score_board_legs.py, nba_score.board_scored - built by P3 before this engine) for PrizePicks Unders by (player, prop, line)"""
+    return {(str(p), pr, round(float(ln), 2)): float(sc) for p, pr, ln, sc in conn.execute(
+        """SELECT player_id, prop, line, score FROM nba_score.board_scored WHERE game_date = %s AND app = 'prizepicks' AND side = 'Under' AND score IS NOT NULL""", (day,)).fetchall()}
+
+
 def last10(conn, day, pids):
     """{player: his last 10 games played before `day`, newest first, as {prop: value}} - for the trailing layer of fallback U20 (pass 19)"""
     out = {}
@@ -154,12 +202,14 @@ def rank_rows(app, native, ctx, w):
 def load_sources(conn, day, weights):
     import live_slip_engine as LSE
     import ud_live_slip_engine as UD
-    pp = [l for l in LSE.load_board_legs_live(conn, day, "window") if l["rank_key"] == "baseline_hp" and l["tier"] == "R" and str(l["side"]).lower().startswith("u")
-          and l["prop"] in SINGLE and l["score"] is not None]
+    pp_all = [l for l in LSE.load_board_legs_live(conn, day, "window") if l["rank_key"] == "baseline_hp" and l["tier"] == "R" and str(l["side"]).lower().startswith("u")
+              and l["score"] is not None]
+    pp = [l for l in pp_all if l["prop"] in SINGLE]
     # owner 2026-11-20 00:00 PT ("if brings ROI up, bring it in"): PrizePicks takes half-point lines only - a whole-number line can push and a push drops the
     # slip a size (pass 13: 3-pick Power +17% -> +27%, 4-pick Flex +10% -> +24%, 5-pick Flex +24% -> +39% as placed). Switch: honest_live.pp_half_point_only.
     if HALF_ONLY:
         pp = [l for l in pp if abs(float(l["line"]) % 1) > 1e-9]
+    pp_all = [l for l in pp_all if abs(float(l["line"]) % 1) > 1e-9]          # P11 (research: half-point lines, every prop)
     ud_all = UD.load_legs(conn, day)
     # PLACEABILITY (2026-11-20, first live slate): when Underdog's feed carries TWO OR MORE regular (non-alternate) lines for one player and stat
     # (prediction-market players: a balanced -115/-115 line beside a skewed one), the Pick'em screen offers only one of them - on 2026-11-20 Black
@@ -172,7 +222,8 @@ def load_sources(conn, day, weights):
     multi = {k for k, v in nl.items() if len(v) > 1}
     ud = [l for l in ud_all if l["rank_key"] == "baseline_hp" and l["tier"] == "R" and str(l["side"]).lower().startswith("u")
           and l["prop"] in SINGLE and l["score"] is not None and (str(l["player_id"]), l["prop"]) not in multi]
-    ctx = context(conn, day, {str(l["player_id"]) for l in pp + ud})
+    ctx = context(conn, day, {str(l["player_id"]) for l in pp_all + ud})
+    ctx["pp_all"] = rank_rows("prizepicks", pp_all, ctx, weights["prizepicks"])
     return rank_rows("underdog", ud, ctx, weights["underdog"]), rank_rows("prizepicks", pp, ctx, weights["prizepicks"]), ctx
 
 
@@ -226,7 +277,7 @@ def build(conn, day, apps, weights=None):
             plan[app] = have
         seen_sets = {frozenset((r["pid"], r["prop"]) for r in x[3]) for x in have}
         for code, k, st, cand, kw in fb.get(app, []):
-            if len(plan[app]) >= TARGET[app]:
+            if len([x for x in plan[app] if x[0] != "P11"]) >= TARGET[app]:      # P11 is an extra of back-to-back slates, never a slot
                 break
             sl = pick(cand, k, **kw)
             if sl is None:
@@ -242,53 +293,40 @@ def build(conn, day, apps, weights=None):
         ukey = {}
         for r in U:
             ukey.setdefault((r["pid"], r["prop"]), r)
-        add("underdog", "U1", 2, "standard", U)
-        add("underdog", "U2", 2, "standard", sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])))
-        add("underdog", "U3", 2, "standard", [ukey[(r["pid"], r["prop"])] for r in P if (r["pid"], r["prop"]) in ukey])
-        add("underdog", "U4", 2, "standard", [r for r in U if r["prop"] == "rebounds"])
-        add("underdog", "U5", 2, "standard", [r for r in U if r["home"]])
-        add("underdog", "U7", 4, "flex", [r for r in U if r["prop"] == "rebounds" and not r["leg"].get("pred")])   # owner 2026-11-20 00:37 PT; no Prediction legs in a Flex
-        # owner's rule 2026-11-20 10:37 PT (a new strategy above 25-30% goes live): pass 23 - the one-leg-a-game rule costs Underdog's 4-pick; with two a game
-        # allowed: +27 / +34 / +43%, +89 u on 272 slips, drawdown 11.4, 6 of 6 half-seasons up. Two legs of one game at most, so always 2+ games (2+ teams).
-        add("underdog", "U8", 4, "flex", [r for r in U if r["prop"] != "assists" and not r["leg"].get("pred")], gcap=2)
-        # owner 2026-11-20 12:11 PT "Let's go with option B": 3-pick Standard, blend, no assists, up to two a game (+33 / +47 / +57%, +118 u on 272 slips)
+        # owner 2026-11-23 09:24 / 09:30 PT: daily U9 U10 U11 (+ U12 when the daily certified hit rate exists), fallback U2 U1 (thin board only)
         add("underdog", "U9", 3, "standard", [r for r in U if r["prop"] != "assists"], gcap=2)
-        add("underdog", "U6", 3, "standard", [r for r in U if r["prop"] == "rebounds"])     # owner 2026-11-20 00:25 PT: "Standard top 3 rebounds under is deployable" (+22 / +23 / +56%)
-        # owner 2026-11-20 09:46 PT "Add as a fallback": the pass-19 lead (+47% on 249 slips, 3 seasons) - first in the fallback order
+        add("underdog", "U10", 3, "standard", U, gcap=2)
         try:
-            l10 = last10(conn, day, {r["pid"] for r in U})
-        except Exception as e:  # noqa: BLE001 - the trailing layer never costs the slate
-            conn.rollback(); l10 = {}; notes.append(f"U20: game logs not readable ({type(e).__name__}) - skipped")
-        later("underdog", "U20", 4, "flex", [r for r in sorted(U, key=lambda r: (-(r["blend"] + r["ph"]) / 2, r["pid"], r["prop"], r["line"]))
-                                              if r["prop"] != "assists" and not r["leg"].get("pred") and (under_share10(l10, r) or 0) >= 0.6])
-        # pass 25: 4-pick Flex by the MODEL, every single stat, up to two a game: +46 / +8 / +72%, +28% on 272 slips; shares 3+ legs with U8 on 12% of slates
-        later("underdog", "U22", 4, "flex", [r for r in sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])) if not r["leg"].get("pred")], gcap=2)
-        later("underdog", "U21", 3, "flex", [r for r in sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])) if not r["leg"].get("pred")])
+            form = season_form(conn, day, {r["pid"] for r in U})
+        except Exception as e:  # noqa: BLE001 - the form layer never costs the slate
+            conn.rollback(); form = {}; notes.append(f"U11: game logs not readable ({type(e).__name__}) - skipped")
+        add("underdog", "U11", 3, "standard", sorted([r for r in U if r["pb"] is not None and (hot(form, r) or -9) >= 0.10],
+                                                     key=lambda r: (-r["pb"], r["pid"], r["prop"], r["line"])))
+        later("underdog", "U2", 2, "standard", sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])))
+        later("underdog", "U1", 2, "standard", U)
         fill("underdog")
     if "prizepicks" in apps:
-        # owner 2026-11-20 00:37 PT: P1, P4, P5 swapped for the pass-16 versions that are positive in every season under the half-point rule
+        # owner 2026-11-23 09:24 / 09:30 PT: daily P1 P3 P4 P10 P11, fallback P9 (thin board only)
         avg = sorted(P, key=lambda r: (-(r["blend"] + r["ph"]) / 2, r["pid"], r["prop"], r["line"]))
         add("prizepicks", "P1", 5, "flex", [r for r in P if r["line"] < 10 and r["prop"] != "assists"])
-        add("prizepicks", "P2", 5, "flex", [r for r in P if r["line"] < 10])
         add("prizepicks", "P3", 5, "flex", P)
         add("prizepicks", "P4", 5, "flex", avg)
-        add("prizepicks", "P5", 6, "flex", avg)
-        add("prizepicks", "P6", 6, "flex", P, diff_prop=True)
-        add("prizepicks", "P7", 6, "flex", [r for r in P if not r["starter"]])
-        add("prizepicks", "P9", 4, "flex", P)
-        add("prizepicks", "P10", 3, "power", P)             # P8 (6-pick, second team) retired 2026-11-20: flat under the half-point rule; P10 = 3-pick Power, top 3
-        geo = sorted([r for r in P if r["prop"] == "rebounds" and r["pb"] is not None], key=lambda r: (-math.sqrt(r["ph"] * r["pb"]), r["pid"], r["line"]))
-        pkey = {}
-        for r in P:
-            pkey.setdefault((r["pid"], r["prop"]), r)
-        p6 = pick(P, 6)
-        later("prizepicks", "P21", 5, "flex", geo)          # rebounds by the geometric mean of model and sportsbook (pass 17: +26 / +31 / +38%)
-        later("prizepicks", "P22", 6, "flex", geo)
-        later("prizepicks", "P23", 2, "power", [pkey[(r["pid"], r["prop"])] for r in first(U, 2) if (r["pid"], r["prop"]) in pkey])
-        later("prizepicks", "P24", 5, "flex", P, diff_prop=True)
-        later("prizepicks", "P25", 6, "flex", P)
-        later("prizepicks", "P26", 5, "flex", [r for r in P if r["home"]])
-        later("prizepicks", "P27", 6, "flex", P, skip={r["pid"] for r in (p6 or [])})
+        add("prizepicks", "P10", 3, "power", P)
+        # P11: back-to-back players (their last game was yesterday), every prop, half-point lines, by the board score, up to two a game (5-pick Flex).
+        # Only on slates with enough such players (research: 66 / 64 / 11 slips a season) - on the others it is simply not built (not a thin board).
+        try:
+            sc = board_score(conn, day); fm = season_form(conn, day, {r["pid"] for r in ctx["pp_all"]})
+            b2b = [dict(r, bscore=sc.get((r["pid"], r["prop"], round(r["line"], 2)))) for r in ctx["pp_all"]
+                   if fm.get(r["pid"]) and (day - fm[r["pid"]][2]).days == 1]
+            b2b = sorted([r for r in b2b if r["bscore"] is not None], key=lambda r: (-r["bscore"], r["pid"], r["prop"], r["line"]))
+            s11 = pick(b2b, 5, gcap=2)
+            if s11 is not None:
+                plan.setdefault("prizepicks", []).append(("P11", 5, "flex", s11, b2b))
+            else:
+                notes.append(f"P11: {len(b2b)} back-to-back Unders with a board score - no slip today")
+        except Exception as e:  # noqa: BLE001
+            conn.rollback(); notes.append(f"P11: skipped ({type(e).__name__}: {str(e)[:120]})")
+        later("prizepicks", "P9", 4, "flex", P)
         fill("prizepicks")
     tight = sorted(first(U, 2) + first(P, 5), key=lambda r: (-r["blend"], r["pid"]))
     for app, specs in (("sleeper", (("S1", 2, "max", "u2"), ("S4", 4, "flex", "t"), ("S5", 4, "max", "t"), ("S6", 5, "flex", "t"))),
