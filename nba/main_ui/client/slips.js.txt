@@ -96,13 +96,18 @@ function takeBestPoolLeg(keptLegs,slip,removed){
       if(!poolLegIsLegalForSlip(c,keptLegs,slip))continue;
       if(ppS&&(Number(c.is_goblin)===1||Number(c.is_demon)===1||String(c.line_type||'regular')!=='regular'))continue;
       if(want&&String(c.line_type||'regular')!==want)continue;
+      {const sv=x=>{const v=String(x&&x.selected_side||'').toLowerCase();return v.startsWith('u')||v.startsWith('l')?'U':'O'};if(removed&&sv(c)!==sv(removed))continue;}
       return backupPool.splice(i,1)[0];
     }
   }
   let best=-1,bestAny=-1;
+  // owner 2026-11-23 15:26 PT (a Fliff Under slip got "0.5 Steals MORE" as a sub): a sub is always the SAME SIDE as the leg it replaces - an Under slip never takes an Over
+  const sideOf=x=>{const v=String(x&&x.selected_side||'').toLowerCase();return v.startsWith('u')||v.startsWith('l')?'U':(v.startsWith('o')||v.startsWith('m')||v.startsWith('h')?'O':'')};
+  const wantSide=removed?sideOf(removed):'';
   for(let i=0;i<backupPool.length;i++){
     const l=backupPool[i];
     if(!poolLegIsLegalForSlip(l,keptLegs,slip))continue;
+    if(wantSide&&sideOf(l)!==wantSide)continue;
     if(bestAny<0||poolEdge(l)>poolEdge(backupPool[bestAny]))bestAny=i;
     if(want&&String(l.line_type||'regular')===want&&(best<0||poolEdge(l)>poolEdge(backupPool[best])))best=i;
   }
