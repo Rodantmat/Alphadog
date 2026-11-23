@@ -129,6 +129,11 @@ def load(conn):
     d["rnd0"] = rng.random(len(d)); d["rnd1"] = rng.random(len(d))
     d["neg_avsz"] = -d["avs_z"]
     d["single"] = d["prop"].isin(SINGLE)
+    # the documented low-foul key (NBA_SLIP_BUILDING_STRATEGY 29r): the player's personal fouls over his last 20 games before the day
+    pf = pd.read_sql("SELECT nba_player_id::text player_id, game_date::text gd, pf::float8 pf FROM nba_stats.player_game_log WHERE game_date >= '2024-09-01'", conn)
+    pf = pf.sort_values(["player_id", "gd"]).drop_duplicates(["player_id", "gd"])
+    pf["pf20"] = pf.groupby("player_id")["pf"].transform(lambda x: x.shift(1).rolling(20, min_periods=8).mean())
+    d = d.merge(pf[["player_id", "gd", "pf20"]], on=["player_id", "gd"], how="left")
     return d.reset_index(drop=True)
 
 
@@ -151,8 +156,14 @@ def layers(d):
          "gp<10": (d["gp"] < 10).values, "gp20": (d["gp"] >= 20).values, "listed": (d["own_status"] > 0).values,
          "trpl_hot": (d["tr_pl10"] >= .6).values, "trpl_cold": (d["tr_pl10"] <= .4).values, "trall_hot": (d["tr_plall10"] >= .6).values,
          "trall_cold": (d["tr_plall10"] <= .4).values, "slate_up": (d["tr_slate7"] > d["tr_slate21"]).values, "slate_dn": (d["tr_slate7"] < d["tr_slate21"]).values,
+         "lowfoul": (d["pf20"] < 1.8).values, "midfoul": ((d["pf20"] >= 1.8) & (d["pf20"] < 2.5)).values, "highfoul": (d["pf20"] >= 2.5).values,
+         "steals": (d["prop"] == "steals").values, "turnovers": (d["prop"] == "turnovers").values, "blocks": (d["prop"] == "blocks").values,
+         "stocks": (d["prop"] == "stocks").values, "threes": (d["prop"] == "threes_made").values, "assists": (d["prop"] == "assists").values,
+         "pra": (d["prop"] == "pra").values, "pts_reb": (d["prop"] == "pts_reb").values, "pts_ast": (d["prop"] == "pts_ast").values,
+         "lowfoul+def": ((d["pf20"] < 1.8) & d["prop"].isin(DEF)).values, "lowfoul+single": ((d["pf20"] < 1.8) & d["single"]).values,
          "ret+": (d["ret_hr"] > 0).values, "blend>book": (d["e_blend"] > 0).values, "book>.5": (d["pb"] > .5).values, "realprice": ~d["est"].values}
-    return L
+    want = [x for x in (os.environ.get("UA_LAYERS") or "").split(",") if x]
+    return {k: v for k, v in L.items() if not want or k in want}
 
 
 def tiersets(d):
