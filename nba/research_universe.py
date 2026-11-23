@@ -272,7 +272,9 @@ def stage_b(d, A, slp, nshort):
     """composition on the shortlist chosen on 2024-26 only"""
     sel = A[(~A.rk.str.startswith("rnd")) & (A.n24 >= 30) & (A.n25 >= 30) & (A.r24 > 0) & (A.r25 > 0)].copy()
     sel["sc"] = np.minimum(sel.r24, sel.r25)
-    sel = sel.sort_values("sc", ascending=False).drop_duplicates(["tier", "side", "rk", "layer", "gcap"]).head(nshort)
+    sel = sel.sort_values("sc", ascending=False)
+    sel = sel.groupby(["st", "k"], group_keys=False).head(max(5, nshort // 9))       # the best of EVERY structure, not only the long shots
+    sel = sel.drop_duplicates(["tier", "side", "rk", "layer", "gcap"])
     L = layers(d); T = tiersets(d)
     out = []
     groups = {gd: x.index.values for gd, x in d.groupby("gd")}
@@ -354,7 +356,7 @@ def main():
         X = A[~A.rand & (A.n24 >= 30) & (A.n25 >= 30)]
         g = X.groupby(col).apply(lambda z: pd.Series(dict(c=len(z), p=((z.r24 > 0) & (z.r25 > 0)).mean(), r26=z[(z.r24 > 0) & (z.r25 > 0)].r26.mean(), roi=z.roi.mean())))
         print(f"UA|by {col}: " + " | ".join(f"{i} {int(r.c)} cells, both+ {100*r.p:.1f}%, ->26-27 {100*r.r26:+.1f}%, mean {100*r.roi:+.1f}%" for i, r in g.iterrows()), flush=True)
-    B = stage_b(d, A, slp, int(os.environ.get("UA_SHORT") or 80))
+    B = stage_b(d, A, slp, int(os.environ.get("UA_SHORT") or 120))
     log(f"UA|stage B strategies {len(B):,}")
     if len(B):
         ok = B[(B.r24 > 0) & (B.r25 > 0) & (B.n26 >= 10)]
@@ -366,6 +368,26 @@ def main():
                   f"ROI {100*r.roi:+.1f}% {r.units:+.1f} u | {100*r.r24:+.0f}/{100*r.r25:+.0f}/{100*r.r26:+.0f}% ({r.n24}/{r.n25}/{r.n26}) | w/o 5 best {100*r.wo5:+.1f}% "
                   f"| dd {r.dd:.1f} u drought {r.drought} | legs {100*r.hit:.1f}%", flush=True)
     
+    # research scratch tables (nothing reads them; beside the other _lr_ / research tables) - so every cell can be queried afterwards
+    tag = f"{APP}|{os.environ.get('UA_TIERS') or 'all-tiers'}|{os.environ.get('UA_LAYERS') or 'all-layers'}"
+    import io
+    wc = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
+    for name, df_ in (("ua_cells", A), ("ua_strats", B)):
+        if not len(df_):
+            continue
+        df_ = df_.copy(); df_.insert(0, "app", APP); df_.insert(1, "tag", tag)
+        cols = [c for c in df_.columns]
+        typ = {c: ("text" if df_[c].dtype == object else ("boolean" if df_[c].dtype == bool else "float8")) for c in cols}
+        wc.execute(f"CREATE TABLE IF NOT EXISTS nba_score.{name} (" + ", ".join(f'"{c}" {typ[c]}' for c in cols) + ")")
+        have = {r[0] for r in wc.execute("SELECT column_name FROM information_schema.columns WHERE table_schema = 'nba_score' AND table_name = %s", (name,)).fetchall()}
+        for c in cols:
+            if c not in have:
+                wc.execute(f'ALTER TABLE nba_score.{name} ADD COLUMN "{c}" {typ[c]}')
+        wc.execute(f"DELETE FROM nba_score.{name} WHERE tag = %s", (tag,))
+        buf = io.StringIO(); df_.to_csv(buf, index=False, header=False, na_rep=""); buf.seek(0)
+        with wc.cursor().copy(f"COPY nba_score.{name} (" + ", ".join(f'"{c}"' for c in cols) + ") FROM STDIN WITH (FORMAT csv)") as cp:
+            cp.write(buf.read())
+        print(f"UA|written {len(df_):,} rows to nba_score.{name} (tag {tag})", flush=True)
     print("UA|DONE", flush=True)
 
 
