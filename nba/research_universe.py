@@ -378,11 +378,15 @@ def main():
         df_ = df_.copy(); df_.insert(0, "app", APP); df_.insert(1, "tag", tag)
         cols = [c for c in df_.columns]
         typ = {c: ("boolean" if pd.api.types.is_bool_dtype(df_[c]) else ("float8" if pd.api.types.is_numeric_dtype(df_[c]) else "text")) for c in cols}
-        wc.execute(f"CREATE TABLE IF NOT EXISTS nba_score.{name} (" + ", ".join(f'"{c}" {typ[c]}' for c in cols) + ")")
+        for _try in range(5):                                  # 17 jobs may finish together: a concurrent CREATE can collide
+            try:
+                wc.execute(f"CREATE TABLE IF NOT EXISTS nba_score.{name} (" + ", ".join(f'"{c}" {typ[c]}' for c in cols) + ")"); break
+            except Exception:
+                time.sleep(3 + 5 * _try)
         have = {r[0] for r in wc.execute("SELECT column_name FROM information_schema.columns WHERE table_schema = 'nba_score' AND table_name = %s", (name,)).fetchall()}
         for c in cols:
             if c not in have:
-                wc.execute(f'ALTER TABLE nba_score.{name} ADD COLUMN "{c}" {typ[c]}')
+                wc.execute(f'ALTER TABLE nba_score.{name} ADD COLUMN IF NOT EXISTS "{c}" {typ[c]}')
         wc.execute(f"DELETE FROM nba_score.{name} WHERE tag = %s", (tag,))
         buf = io.StringIO(); df_.to_csv(buf, index=False, header=False, na_rep=""); buf.seek(0)
         with wc.cursor().copy(f"COPY nba_score.{name} (" + ", ".join(f'"{c}"' for c in cols) + ") FROM STDIN WITH (FORMAT csv)") as cp:
