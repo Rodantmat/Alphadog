@@ -1258,3 +1258,12 @@ Judged on pass 29 (nba_score.p29_cells): REAL 2026-27 ROI 25%+, still positive w
 - Betr daily: NEW B7 (PP model order, props different, 5 Perfect: +62 / +140%) and B8 (PP order no assists, props different, 2 a game, 3 Perfect: +30 / +38%). TARGET 2.
   Betr fallbacks (thin board only): B1 (+17 / +20%), B9 (PP score order, props different, 3 Perfect: +7 / +83%). B5, B21 dropped (negative without the best slip), B6 dropped earlier.
 - Identical leg sets are one slip, not two (S8 = S5 and F6 = F4 on 2026-11-18). Test 2026-11-18 (HL_TEST, rolled back): Sleeper 8, Fliff 7, Betr 2, all apps 23 slips; run 45234370013.
+
+### 2026-11-23 15:45 PT - replay of the live set, composition rules, screen fixes
+- Replay of the new set (audit_honest_live_replay.py, every prop graded now): 11-21 +2.6 u (22 slips), 11-22 -18.2 u (21 slips). Season 10-20..11-22: 659 slips, +520 u, ROI +79%,
+  but without the 5 best days -13%; by period +187% (10-20..11-01) / +102% (11-02..11-10) / -37% (11-11..11-22). In-sample for the new codes (chosen on this season).
+- audit_honest_set_compose.py (run 45289749699): player caps per app / across apps all LOWER ROI; overlap rule (drop a slip sharing more than M players with an earlier slip
+  of the same app): M=1 -> 7.3 slips/day, ROI +76%, w/o 5 best days +1.7%, losing run 3, drawdown 37 u (base: 20 slips/day, +79%, -13%, run 7, dd 118 u).
+  Per app best: PP player cap 2 (+56%, dd 15 vs 39), UD overlap 1 (+54%), Sleeper overlap 3 (+62%, dd 30), Fliff overlap 3 (+87%, dd 34), Betr as built (+160%). Owner to decide.
+- Slips screen v1.5.9 (friend v1.9.8): a substitute always keeps the side of the removed leg (a Fliff Under slip had taken "0.5 Steals MORE"); honest-set slips labelled by
+  their code. Checked in the owner's Chrome: 23 slips, 10 subs, all LESS, no old labels.
