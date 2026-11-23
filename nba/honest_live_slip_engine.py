@@ -62,7 +62,7 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "P11": "H_P11_5flex_b2b_score"}                                                                   # +75.0% (+49 / +59 / +322), back-to-back slates only
 # owner 2026-11-23: daily = the codes above 25% ROI, fallback = below (thin board only). PrizePicks daily P1 P3 P4 P10 P11, fallback P9;
 # Underdog daily U9 U10 U11 (U12 once the daily certified hit rate exists), fallback U2 U1. P2 P5 P6 P7, U3-U8 and the old fallbacks retired.
-TARGET = {"underdog": 3, "prizepicks": 4, "sleeper": 9, "fliff": 8, "betr": 3}      # the number of elected (daily) strategies an app has
+TARGET = {"underdog": 3, "prizepicks": 4, "sleeper": 8, "fliff": 7, "betr": 3}      # the number of elected (daily) strategies an app has
 
 
 def log(m):
@@ -336,8 +336,9 @@ def build(conn, day, apps, weights=None):
         later("prizepicks", "P9", 4, "flex", P)
         fill("prizepicks")
     tight = sorted(first(U, 2) + first(P, 5), key=lambda r: (-r["blend"], r["pid"]))
-    for app, specs in (("sleeper", (("S1", 2, "max", "u2"), ("S4", 4, "flex", "t"), ("S5", 4, "max", "t"), ("S6", 5, "flex", "t"))),
-                       ("fliff", (("F1", 2, "max", "u2"), ("F4", 4, "max", "t"), ("F5", 5, "max", "t"))),
+    # owner 2026-11-23 09:24 PT rule (negative -> drop), pass 29: S1 (-15 / -5 / -10%) and F1 (-10 / +1 / -1%, without the best -11%) dropped
+    for app, specs in (("sleeper", (("S4", 4, "flex", "t"), ("S5", 4, "max", "t"), ("S6", 5, "flex", "t"))),
+                       ("fliff", (("F4", 4, "max", "t"), ("F5", 5, "max", "t"))),
                        ("betr", (("B1", 3, "perfect", "t"), ("B5", 3, "perfect", "p5")))):
         if app not in apps:
             continue
@@ -369,7 +370,7 @@ def build(conn, day, apps, weights=None):
             later(app, "F8", 2, "max", noast); later(app, "F6", 4, "max", ppo); later(app, "F7", 5, "max", ppo)
             later(app, "F9", 3, "max", dp); later(app, "F10", 2, "max", rebo)     # F8: owner 2026-11-20 11:38 PT
         else:
-            later(app, "B6", 3, "perfect", dp)
+            # B6 dropped (owner's rule, pass 29: 2026-27 real -4%, without the best -24%)
             later(app, "B21", 3, "perfect", noast)
         fill(app)
     # LEG GONE (owner 2026-11-23 09:24 PT "check the best ... leg sub, shrink or slip drop. If leg sub, have clear what is the pool used. We keep the best ROI";
