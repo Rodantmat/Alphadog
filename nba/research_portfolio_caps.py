@@ -127,11 +127,11 @@ def main():
         for mode, cap in MODES.items():
             cnt = {}
             for code, (o, gcap, pdif, st, k) in lists.items():
-                sel = []; ug = defaultdict(int); upl = set(); upr = set()
+                sel = []; ug = defaultdict(int); upl = set(); upr = set(); tmp = dict(cnt)   # the slip's own earlier picks count too
                 for r in o.itertuples():
-                    if r.player_id in upl or ug[r.gid] >= gcap or (pdif and r.prop in upr) or not ok_counts(cnt, r.key, n, cap):
+                    if r.player_id in upl or ug[r.gid] >= gcap or (pdif and r.prop in upr) or not ok_counts(tmp, r.key, n, cap):
                         continue
-                    sel.append(r); upl.add(r.player_id); ug[r.gid] += 1; upr.add(r.prop)
+                    sel.append(r); upl.add(r.player_id); ug[r.gid] += 1; upr.add(r.prop); tmp[r.key] = tmp.get(r.key, 0) + 1
                     if len(sel) == k:
                         break
                 if len(sel) < k:
