@@ -31,7 +31,7 @@ UD = {"U1": ("blend", "all", 1, 0, "power", 2), "U2": ("base", "all", 1, 0, "pow
 PP = {"P1": ("blend", "u10noast", 1, 0, "flex", 5), "P2": ("blend", "u10", 1, 0, "flex", 5), "P3": ("blend", "all", 1, 0, "flex", 5),
       "P4": ("avg", "all", 1, 0, "flex", 5), "P5": ("avg", "all", 1, 0, "flex", 6), "P6": ("blend", "all", 1, 1, "flex", 6),
       "P7": ("blend", "bench", 1, 0, "flex", 6), "P9": ("blend", "all", 1, 0, "flex", 4), "P10": ("blend", "all", 1, 0, "power", 3)}
-MODES = {"none": None, "owner 35/20": (0.35, 0.20), "50/30": (0.50, 0.30), "45/25": (0.45, 0.25), "25/15": (0.25, 0.15), "once": (0.0, 0.0)}
+MODES = {"none": None, "skip 35/20": ("skip", 0.35, 0.20), "owner 35/20": (0.35, 0.20), "50/30": (0.50, 0.30), "45/25": (0.45, 0.25), "25/15": (0.25, 0.15), "once": (0.0, 0.0)}
 
 
 def pay(app, st, k, miss, old):
@@ -108,6 +108,9 @@ def main():
     for (app, gd), x in d.groupby(["app", "game_date"]):
         season = x.season.iloc[0]; old = str(gd) < "2026-07-01"
         codes = UD if app == "underdog" else PP
+        keep = [c for c in (os.environ.get("PC_CODES") or "").split(",") if c]
+        if keep:
+            codes = {c: v for c, v in codes.items() if c in keep}
         lists = {}
         for code, (rk, pool, gcap, pdif, st, k) in codes.items():
             if pay(app, st, k, 0, old) is None:
@@ -124,8 +127,10 @@ def main():
             o = o[pool_mask(o, pool)]
             lists[code] = (o, gcap, pdif, st, k)
         n = len(lists)
-        for mode, cap in MODES.items():
+        for mode, cap0 in MODES.items():
             cnt = {}
+            skip = isinstance(cap0, tuple) and cap0[0] == "skip"
+            cap = None if skip else cap0
             for code, (o, gcap, pdif, st, k) in lists.items():
                 sel = []; ug = defaultdict(int); upl = set(); upr = set(); tmp = dict(cnt)   # the slip's own earlier picks count too
                 for r in o.itertuples():
@@ -136,11 +141,19 @@ def main():
                         break
                 if len(sel) < k:
                     continue
+                if skip:
+                    t2 = dict(cnt); good = True
+                    for r in sel:
+                        if not ok_counts(t2, r.key, n, (cap0[1], cap0[2])):
+                            good = False; break
+                        t2[r.key] = t2.get(r.key, 0) + 1
+                    if not good:
+                        continue
                 for r in sel:
                     cnt[r.key] = cnt.get(r.key, 0) + 1
                 pv = pay(app, st, k, k - sum(r.w for r in sel), old)
                 out[(mode, app, code)].append((season, gd, pv - 1))
-            built = sum(1 for c in lists if out[(mode, app, c)] and out[(mode, app, c)][-1][1] == gd)
+            built = sum(1 for c in lists if out.get((mode, app, c)) and out[(mode, app, c)][-1][1] == gd)
             if cnt and built:
                 expo[(mode, app)].append(max(cnt.values()) / built)
     # report
@@ -149,7 +162,7 @@ def main():
         for mode in MODES:
             allu = []; ses = defaultdict(list); days = defaultdict(float)
             for code in (UD if app == "underdog" else PP):
-                for s, gd, u in out[(mode, app, code)]:
+                for s, gd, u in out.get((mode, app, code), []):
                     allu.append((gd, u)); ses[s].append(u); days[gd] += u
             allu.sort(); st = stats([u for _, u in allu]); dv = np.array([days[g] for g in sorted(days)])
             cum = np.cumsum(dv); ddd = float(np.max(np.maximum.accumulate(np.concatenate([[0.0], cum]))[1:] - cum)) if len(dv) else 0
@@ -160,9 +173,11 @@ def main():
                   f"top leg in {100*np.mean(ex):.0f}% of slips (max {100*ex.max():.0f}%)", flush=True)
         print("PC|  per code (mode: ROI pooled | by season | slips):", flush=True)
         for code in (UD if app == "underdog" else PP):
+            if (os.environ.get("PC_CODES") or "") and code not in os.environ["PC_CODES"].split(","):
+                continue
             parts = []
-            for mode in ("none", "owner 35/20", "once"):
-                v = out[(mode, app, code)]
+            for mode in ("none", "skip 35/20", "owner 35/20", "once"):
+                v = out.get((mode, app, code), [])
                 if not v:
                     continue
                 s = np.array([a for a, _, _ in v]); u = np.array([c for _, _, c in v])
@@ -176,7 +191,7 @@ def main():
         for W in (5, 10):
             up = []; dn = []
             for code in (UD if app == "underdog" else PP):
-                v = [u for _, _, u in out[("none", app, code)]]
+                v = [u for _, _, u in out.get(("none", app, code), [])]
                 for i in range(W, len(v)):
                     (up if np.mean(v[i - W:i]) > 0 else dn).append(v[i])
             print(f"PC|  {app} W={W}: after up {100*np.mean(up):+.1f}% ({len(up)}) | after down {100*np.mean(dn):+.1f}% ({len(dn)})", flush=True)
