@@ -4,22 +4,22 @@
   ],
   "summary": {
     "matchups_2026-27": {
-      "rows": 34412,
-      "mb": 13.91,
+      "rows": 42157,
+      "mb": 17.04,
       "missing": []
     },
     "pt_defend_2026-27": {
-      "rows": 462,
+      "rows": 468,
       "mb": 0.11,
       "missing": []
     },
     "hustle_2026-27": {
-      "rows": 459,
+      "rows": 468,
       "mb": 0.18,
       "missing": []
     },
     "clutch_2026-27": {
-      "rows": 323,
+      "rows": 355,
       "mb": 0.09,
       "missing": []
     },

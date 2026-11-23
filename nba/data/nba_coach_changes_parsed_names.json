@@ -1,6 +1,6 @@
 {
  "meta": {
-  "built_at": "2026-11-16T19:19:26Z",
+  "built_at": "2026-11-23T19:08:05Z",
   "source": "wikipedia season pages",
   "note": "NAMES ONLY - cross-check against the verified dated set in nba_coach_changes_backfill.json"
  },
@@ -66,85 +66,6 @@
     "team": "Washington Wizards",
     "outgoing": "Wes Unseld Jr.",
     "incoming": "Brian Keefe (interim)",
-    "section": "In-season",
-    "in_season": true
-   }
-  ],
-  "2024-25": [
-   {
-    "team": "Brooklyn Nets",
-    "outgoing": "Kevin Ollie (interim)",
-    "incoming": "Jordi Fern\u00e1ndez",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Charlotte Hornets",
-    "outgoing": "Steve Clifford",
-    "incoming": "Charles Lee",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Cleveland Cavaliers",
-    "outgoing": "J. B. Bickerstaff",
-    "incoming": "Kenny Atkinson",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Detroit Pistons",
-    "outgoing": "Monty Williams",
-    "incoming": "J. B. Bickerstaff",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Los Angeles Lakers",
-    "outgoing": "Darvin Ham",
-    "incoming": "JJ Redick",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Phoenix Suns",
-    "outgoing": "Frank Vogel",
-    "incoming": "Mike Budenholzer",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Washington Wizards",
-    "outgoing": "Brian Keefe (interim)",
-    "incoming": "Brian Keefe",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Sacramento Kings",
-    "outgoing": "Mike Brown",
-    "incoming": "Doug Christie (interim)",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "Memphis Grizzlies",
-    "outgoing": "Taylor Jenkins",
-    "incoming": "Tuomas Iisalo (interim)",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "Denver Nuggets",
-    "outgoing": "Michael Malone",
-    "incoming": "David Adelman (interim)",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "San Antonio Spurs",
-    "outgoing": "Gregg Popovich",
-    "incoming": "Mitch Johnson (interim)",
     "section": "In-season",
     "in_season": true
    }

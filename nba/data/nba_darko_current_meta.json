@@ -1,10 +1,10 @@
 {
-  "fetched_at": "2026-11-16T19:19:11Z",
+  "fetched_at": "2026-11-23T19:07:50Z",
   "source_url": "https://www.darko.app/__data.json",
   "method_used": "sveltekit___data.json (devalue, columnar)",
   "player_count": 525,
   "error": null,
   "source_asOf": null,
-  "source_ratingsThrough": "2026-11-15",
+  "source_ratingsThrough": "2026-11-22",
   "source_selectedSeason": null
 }

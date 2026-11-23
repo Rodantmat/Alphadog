@@ -1,39 +1,39 @@
 {
-  "fetched_at": "2026-11-16T19:18:54Z",
+  "fetched_at": "2026-11-23T19:07:22Z",
   "per_type": {
     "Passing": {
-      "count": 471,
+      "count": 474,
       "error": null
     },
     "Rebounding": {
-      "count": 452,
+      "count": 465,
       "error": null
     },
     "Drives": {
-      "count": 471,
+      "count": 474,
       "error": null
     },
     "CatchShoot": {
-      "count": 471,
+      "count": 474,
       "error": null
     },
     "PullUpShot": {
-      "count": 471,
+      "count": 474,
       "error": null
     },
     "ElbowTouch": {
-      "count": 471,
+      "count": 474,
       "error": null
     },
     "PostTouch": {
-      "count": 471,
+      "count": 474,
       "error": null
     },
     "PaintTouch": {
-      "count": 471,
+      "count": 474,
       "error": null
     }
   },
-  "total_record_count": 3749,
+  "total_record_count": 3783,
   "error": null
 }
