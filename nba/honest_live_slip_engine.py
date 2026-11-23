@@ -259,10 +259,17 @@ def build(conn, day, apps, weights=None):
     notes = [f"{day}: Underdog regular single-stat Unders {len(U)}, PrizePicks {len(P)}; sportsbook number at the exact line on {sum(r['pb'] is not None for r in U)} / {sum(r['pb'] is not None for r in P)}"]
     plan = {}
 
+    same = {}                                                # app -> daily codes whose slip came out identical to one already built (counted, not played twice)
+
     def add(app, code, k, st, cand, **kw):
         s = pick(cand, k, **kw)
         if s is None:
             notes.append(f"{code}: not enough qualifying legs ({len(cand)} candidates) - no slip"); return
+        key = frozenset((r["pid"], r["prop"]) for r in s)
+        for c_, k_, st_, s_, _ in plan.get(app, []):
+            if k_ == k and st_ == st and frozenset((r["pid"], r["prop"]) for r in s_) == key:
+                same.setdefault(app, []).append(code)
+                notes.append(f"{code}: the same legs as {c_} today - one slip, not two"); return
         plan.setdefault(app, []).append((code, k, st, s, cand))
 
     fb = {}                                                  # app -> fallback specs in priority order
@@ -277,7 +284,7 @@ def build(conn, day, apps, weights=None):
             plan[app] = have
         seen_sets = {frozenset((r["pid"], r["prop"]) for r in x[3]) for x in have}
         for code, k, st, cand, kw in fb.get(app, []):
-            if len([x for x in plan[app] if x[0] != "P11"]) >= TARGET[app]:      # P11 is an extra of back-to-back slates, never a slot
+            if len([x for x in plan[app] if x[0] != "P11"]) + len(same.get(app, [])) >= TARGET[app]:   # P11 is an extra of back-to-back slates, never a slot
                 break
             sl = pick(cand, k, **kw)
             if sl is None:
