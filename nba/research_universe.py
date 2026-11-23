@@ -377,7 +377,7 @@ def main():
             continue
         df_ = df_.copy(); df_.insert(0, "app", APP); df_.insert(1, "tag", tag)
         cols = [c for c in df_.columns]
-        typ = {c: ("text" if df_[c].dtype == object else ("boolean" if df_[c].dtype == bool else "float8")) for c in cols}
+        typ = {c: ("boolean" if pd.api.types.is_bool_dtype(df_[c]) else ("float8" if pd.api.types.is_numeric_dtype(df_[c]) else "text")) for c in cols}
         wc.execute(f"CREATE TABLE IF NOT EXISTS nba_score.{name} (" + ", ".join(f'"{c}" {typ[c]}' for c in cols) + ")")
         have = {r[0] for r in wc.execute("SELECT column_name FROM information_schema.columns WHERE table_schema = 'nba_score' AND table_name = %s", (name,)).fetchall()}
         for c in cols:
