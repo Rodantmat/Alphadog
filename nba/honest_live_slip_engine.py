@@ -372,6 +372,16 @@ def build(conn, day, apps, weights=None):
             later(app, "B6", 3, "perfect", dp)
             later(app, "B21", 3, "perfect", noast)
         fill(app)
+    # LEG GONE (owner 2026-11-23 09:24 PT "check the best ... leg sub, shrink or slip drop. If leg sub, have clear what is the pool used. We keep the best ROI";
+    # research_set_check.py, every leg of every slip removed in turn, profit per affected slip): the next-leg pool each slip carries to the Slips screen -
+    #   sub from the app's MAIN list (every regular single-stat Under, main-ranking order): P1 (+0.20 u vs own +0.16), P4 (+0.23 vs +0.22),
+    #     U11 (+0.28 vs +0.21), U2 (+0.19 vs -0.11)
+    #   sub from the strategy's OWN list: P3 (+0.20; shrink +0.20, the same), P10 (+0.15; shrink +0.02), P11 (+0.49), U9 (+0.04; shrink -0.01),
+    #     U10 (+0.06), U1 (+0.14), P9 (-0.01, drop 0 - kept on its own list: the owner's never-skip rule of 2026-11-13; the gap is 0.01 u)
+    #   shrinking or dropping never beat the best sub on a daily code.
+    MAINPOOL = {"P1": P, "P4": P, "U11": U, "U2": U}
+    for app_, slips_ in plan.items():
+        plan[app_] = [(c_, k_, st_, s_, MAINPOOL.get(c_, cand_)) for c_, k_, st_, s_, cand_ in slips_]
     return plan, notes
 
 
