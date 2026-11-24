@@ -504,7 +504,9 @@ def build(conn, day, apps, weights=None):
     #   shrinking or dropping never beat the best sub on a daily code.
     rp = {r["pid"] for a in REST_SKIP for x in plan.get(a, []) for r in x[3]}
     plan = compose(plan, notes, game_spreads(conn, day), rest_days(conn, day, rp))
-    plan = {a: v for a, v in plan.items() if v}
+    # 2026-11-24 FIX: every requested app stays in the plan even with no slip left (spread / rest / overlap rules can empty it), so write() still
+    # retires that app's old non-honest slips - on 11-24 Fliff and Sleeper had no honest slip and the retired F_UDT1 / S_F slips stayed on the screen.
+    plan = {a: plan.get(a) or [] for a in set(apps) | set(plan)}
     MAINPOOL = {"P1": P, "P4": P, "U11": U, "U2": U}
     for app_, slips_ in plan.items():
         plan[app_] = [(c_, k_, st_, s_, MAINPOOL.get(c_, cand_)) for c_, k_, st_, s_, cand_ in slips_]
