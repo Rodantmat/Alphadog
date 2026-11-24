@@ -1358,3 +1358,11 @@ strategy's own next legs (nba_score.slip_next_legs) found on that page's board. 
 drop = "DO NOT PLAY" card, shrink = no substitute, sub = own next legs first (same app, not started, live-checked, other player, game cap, two teams), then the page's pool.
 Their own limits stay (apps per person, Jessi top 4 per app, Jon tiers). Today's rebuild (run 45507719501): P10 copy -> 12 next legs, first Tatum Under 26.5 points
 (the same substitute the owner's screen took); U9 copy (Jon) -> 3 next legs. Both workers deployed (49484b59); page scripts syntax-checked.
+
+### 2026-11-24 16:00 PT - season accumulation per person (research_profile_sim.py, run 45509667597; owner 15:22 PT)
+Live engine on every slate 10-20..11-23 (34), real boards / legs / multipliers, box-score grading; drift = measured share of legs substituted or pulled at the
+pages' first open (PP 20.9%, UD 24.1%, Sleeper 12.6%, Fliff 14.6%, Betr 31.3%), gone legs follow the leg-gone rule; stakes $1 +$1 per 25 units (own slips).
+OWNER: no drift 395 slips +444 u (+112%), $+3,574 (ends $18); with drift (median of 500) 381 slips +315 u (+83%) [10-90%: +255..+383], $+1,770 [$1,137..$2,637], worst drop $568.
+JESSI (PP / Sleeper / Fliff, max 4 per app): no drift +311 u (+118%), $+1,783; with drift +235 u (+94%) [+194..+281], $+1,015 [$677..$1,435], worst drop $371.
+JON (PP / UD / Sleeper / Fliff, max 4 per app, units): no drift +338 u (+108%); with drift +260 u (+87%) [+211..+301].
+In-sample: the strategies were chosen on this season.
