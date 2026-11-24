@@ -1344,3 +1344,10 @@ Dry text blocks (audit_text_blocks_dry.py): owner "Accumulated: $0", Jessi "Accu
 3. False "P3 status unknown" text at 11:47: importing p3_text ran main(). Fixed b8fbb698 (script-only, ALERT never blocks READY, PT day).
 Reset: stake_unit.per_app.linear.from, nba_jessi.season / nba_friend.season season_start = 2026-11-25. Checks (rolled back): tomorrow's P2A unit step -> $1 every app;
 texts on 11-25 -> owner "Accumulated: $0", Jessi "$0", Jon "0 units".
+
+### 2026-11-24 15:20 PT - leg-gone rule on the Slips screen (owner 15:01 PT "check the sub, shrink, drop rule")
+Was: every slip only substituted (own list first, then the shared pool) and shrank only when nothing qualified - shrink / drop per strategy were never built.
+Now (main UI v1.6.0, client LEG_GONE_RULE): S7 / S8 / F6 / F7 SHRINK (no substitute, one pick smaller, multiplier recomputed); S9 / S11 / F10 DROP (card shows
+"DO NOT PLAY", cannot be selected); every other strategy SUBS from its own ranked list (P1 / P4 / U11 / U2 from the app's main list). Checked in the owner's Chrome:
+the rule per code as above, the drop card disabled, and a real uncheck on today's P10 slip took the next Under of its own list and gave it back on re-check.
+Jessi / Jon pages keep their own substitute logic (not changed).
