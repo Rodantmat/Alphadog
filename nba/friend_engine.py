@@ -836,6 +836,10 @@ def pick():
         conn.rollback()
 
 
+# the owner's leg-gone rule per strategy (main UI client LEG_GONE_RULE; research_set_check.py / pass 29) - the copies on Jessi's / Jon's pages follow it too
+LEG_GONE_RULE = {"S7": "shrink", "S8": "shrink", "F6": "shrink", "F7": "shrink", "S9": "drop", "S11": "drop", "F10": "drop"}
+
+
 def mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used):
     """owner 2026-11-12 00:03 PT ("all 3 of us get all strategies now"): EVERY strategy slip the owner has live today on this app is copied onto this page. The owner keeps the originals;
     when the app has MORE than 2 owner slips, exactly one copy (the one with the most legs) is changed: its lowest-ranked leg is skipped and replaced by the next best leg
@@ -923,8 +927,30 @@ def mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used):
         size = len(s)
         titles[size] += 1
         n += 1
+        # LEG-GONE RULE (owner 2026-11-24 15:08 PT: "Jon and Jessi should use the best subs logic as well, for the size of slate they carry and their other rules"):
+        # the copy carries its strategy's rule (shrink / drop / sub, as on the owner's screen) and that strategy's own ranked next legs on THIS page's board.
+        rule, nxt = "sub", []
+        try:
+            m0 = re.match(r"^(?:H_)?([A-Z]+\d+)", str(strat or ""))
+            rule = LEG_GONE_RULE.get(m0.group(1) if m0 else "", "sub")
+            if rule == "sub":
+                key = (f"UD H {strat} {size}{'F' if owner_st == 'flex' else 'S'}" if FAPP == "UD" else strat)
+                on = {pid(x) for x in s}
+                for (lg,) in conn.execute("SELECT leg FROM nba_score.slip_next_legs WHERE game_date=%s AND strategy=%s ORDER BY k, rank", (d, key)).fetchall():
+                    l0 = lg if isinstance(lg, dict) else json.loads(lg)
+                    if FAPP == "FLIFF":
+                        x = dict(l0); x["m"] = l0.get("factor") or l0.get("m"); x.setdefault("kind", "main"); x.setdefault("side", "Under")
+                    else:
+                        x = board.get((str(l0.get("player_id")), l0.get("prop"), l0.get("side") or "Under", round(float(l0.get("line") or 0), 2)))
+                    if x is None or pid(x) in on:
+                        continue
+                    on.add(pid(x)); nxt.append(deco(conn, ctx, x, d))
+                    if len(nxt) >= 12:
+                        break
+        except Exception as e:  # noqa: BLE001 - no next list: the page falls back to its own pool
+            log(f"next legs for {strat} not read ({e})"); conn.rollback()
         slips.append({"source_key": APP_KEY, "name": f"{APP_LABEL} {size}-pick {titles[size]}", "structure_label": STRUCT_NAME[st], "size": size, "game_cap": 1,
-                      "legs": [deco(conn, ctx, l, d) for l in s]})
+                      "legs": [deco(conn, ctx, l, d) for l in s], "strategy": strat, "leg_gone_rule": rule, "next": nxt})
         rows.append(dict(d=d, code=f"O{n}", no=titles[size], st=st, size=size, legs=[leg_json(l) for l in s]))
         used |= {pid(l) for l in s}
         have.append(frozenset(lk(x) for x in s))

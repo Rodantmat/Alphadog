@@ -19,7 +19,7 @@ const pricingFrom = cfg => ({ pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sle
 const J = v => (typeof v === "string" ? JSON.parse(v) : v);
 
 const TIER1_N = 4;   // owner 2026-11-18: Tier 1 = the 4 strongest slips per app (always open), Tier 2 = the rest (always collapsed, not pre-checked for Save)
-const VERSION = "alphadog-v2-nba-friend-v1.9.8";   // v1.9.8 (2026-11-23): ships the shared Slips client (same-side substitutes). // prior: v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
+const VERSION = "alphadog-v2-nba-friend-v1.10.0";   // v1.10.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then the page pool. // prior: v1.9.8 v1.9.8 (2026-11-23): ships the shared Slips client (same-side substitutes). // prior: v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
 // prior:
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
@@ -54,6 +54,17 @@ function autoSwap(out, now) {
       if (!started && !isBad(l)) return;
       const kept = s.legs.filter((_x, j) => j !== i);
       const gcap = s.game_cap || 1;
+      // LEG-GONE RULE (owner 2026-11-24 15:08 PT): as on the owner's screen - DROP = the slip is not played, SHRINK = no substitute, SUB = the strategy's own next legs first
+      const rule = s.leg_gone_rule || "sub";
+      if (rule === "drop") { l.off = true; s.drop = true; return; }
+      if (rule === "shrink") { l.off = true; return; }
+      const legal = c => c.source_key === s.source_key && !(startedMs(c) != null && startedMs(c) <= now) && !isBad(c)
+        && !kept.some(x => x.player_name === c.player_name)
+        && !(sidesOf.has(c.player_name + "|" + c.canonical_prop_key) && sidesOf.get(c.player_name + "|" + c.canonical_prop_key) !== c.selected_side)
+        && kept.filter(x => x.matchup === c.matchup).length < gcap
+        && new Set([...kept.map(x => x.team_abbr), c.team_abbr]).size >= 2;
+      const nx = (s.next || []).findIndex(legal);
+      if (nx >= 0) { const c = s.next.splice(nx, 1)[0]; c.sub = true; s.legs[i] = c; return; }
       const k = pool.findIndex(c => c.source_key === s.source_key && !(startedMs(c) != null && startedMs(c) <= now)
         && !kept.some(x => x.player_name === c.player_name)
         && !(sidesOf.has(c.player_name + "|" + c.canonical_prop_key) && sidesOf.get(c.player_name + "|" + c.canonical_prop_key) !== c.selected_side)
@@ -200,7 +211,11 @@ async function data(env, token, save = true, preview = false) {
     }
     const slips = (date === today ? out.generated_slips : []).filter(s => !s._pairs).map(s => ({ app: s.source_key, name: s.name, structure: s.structure_label, url: linkUrl(s, now),
       legs: s.legs.map(l => ({ player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value, matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null,
-        sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now, status: l.source_key === "prizepicks" ? l.pp_now || null : l.live_now || null, team: l.team_abbr || null, lid: legLid(l), g: l._g || null, f: legF(l) })), gcap: s.game_cap || 1 }));
+        sub: !!l.sub, off: !!l.off, started: startedMs(l) != null && startedMs(l) <= now, status: l.source_key === "prizepicks" ? l.pp_now || null : l.live_now || null, team: l.team_abbr || null, lid: legLid(l), g: l._g || null, f: legF(l) })), gcap: s.game_cap || 1,
+      // LEG-GONE RULE (owner 2026-11-24 15:08 PT): the strategy's rule and its own next legs, for the page's tap-to-uncheck / started-game swap
+      rule: s.leg_gone_rule || "sub", drop: !!s.drop,
+      next: (s.next || []).filter(l => !isBad(l) && !(startedMs(l) != null && startedMs(l) <= now)).map(l => ({ app: l.source_key, player: l.player_name, prop: l.prop_label || l.canonical_prop_key, side: l.selected_side, line: l.line_value,
+        matchup: l.matchup || null, tip: l.official_game_time_utc || (l.link && l.link.tip_utc) || null, team: l.team_abbr || null, lid: legLid(l), g: l._g || null, f: legF(l) })) }));
     // TIERS (owner 2026-11-18 13:52 PT: "limit at 4 slips per app, the top/strongest ... tier 1, this always come visible ... the rest ... tier 2, always collapsed"):
     // per app the 4 strongest slips of the day are Tier 1, the rest Tier 2. Strength = the slip's per-leg edge, the geometric mean of (leg hit chance x leg multiplier)
     // from nba_friend.slips (so a bigger slip is not ranked higher just for having more legs). No tier data -> every slip is Tier 1.
@@ -265,7 +280,7 @@ function canTake(s,c,extra){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)r
   if(k.some(function(x){return x.player===c.player}))return false;
   if(k.filter(function(x){return x.matchup&&x.matchup===c.matchup}).length>=(s.gcap||1)+(extra||0))return false;
   var tm=k.map(function(x){return x.team}).concat([c.team]);if(tm.every(Boolean)&&new Set(tm).size<2)return false;return true}
-function pickSub(s){var P=window.PD.pool||[];for(var pass=0;pass<2;pass++){for(var i=0;i<P.length;i++){if(canTake(s,P[i],pass))return P.splice(i,1)[0]}}return null}
+function pickSub(s){if(s.rule==='drop'){s.drop=true;return null}if(s.rule==='shrink')return null;var N=s.next||[];for(var j=0;j<N.length;j++){if(canTake(s,N[j]))return N.splice(j,1)[0]}var P=window.PD.pool||[];for(var pass=0;pass<2;pass++){for(var i=0;i<P.length;i++){if(canTake(s,P[i],pass))return P.splice(i,1)[0]}}return null}
 function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
 function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
 function sweep(s){var ch=false;if(s.saved)return false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped||l.removed)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
@@ -280,7 +295,7 @@ function tiersOf(s){var k=alive(s);if(k.length<2||!window.PD.pricing||typeof nba
 function tierTxt(t,n,mode){if(!t)return '—';var ks=Object.keys(t).map(Number).sort(function(a,b){return b-a});if(!ks.length)return '—';if(mode==='flex'&&ks.length>1)return ks.map(function(x){return x+'/'+n+' '+t[x]+'x'}).join(' · ');return (t[n]||t[ks[0]])+'x'}
 function modeName(app,m){if(app==='fliff')return 'Max';if(app==='underdog')return m==='flex'?'Flex':'Standard';if(app==='betr')return m==='flex'?'Dynamic':'Perfect';return m==='flex'?'Flex':'Power'}
 function legBody(l){return '<b>'+esc(l.player)+'</b> · '+esc(propName(l.prop))+' '+(l.side==='less'?'Under':'Over')+' '+esc(l.line)+'<div class="sub">'+esc(l.matchup||'')+(l.tip?' · '+esc(tipFmt(l.tip)):'')+(l.sub?' · SUB':'')+'</div>'}
-function slipHtml(s,si){if(!SV)return slipHtmlOld(s,si);var k=alive(s);
+function slipHtml(s,si){if(s.drop)return '<div class="slip" id="slip'+si+'" style="opacity:.6"><h3>'+esc(s.name)+'</h3><div class="flag">DO NOT PLAY - a leg is gone and this strategy\\'s rule is to skip the slip.</div></div>';if(!SV)return slipHtmlOld(s,si);var k=alive(s);
   if(k.length<2&&!s.saved&&!s.legs.some(function(l){return l.removed}))return '<div class="slip" id="slip'+si+'" style="opacity:.55"><div class="hd"><h3>'+esc(s.name)+'</h3><span class="sub">Pulled</span></div><div class="sub">Not enough legs left to play this slip (a slip needs at least 2).</div></div>';var url=s.changed?lidUrl(s.app,k):s.url;var md=modeOf(s);var t=tiersOf(s);var ms=(typeof nbaModes==='function')?nbaModes(s.app,k.length):[];
   var h='<div class="slip" id="slip'+si+'"><div class="hd"><h3>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>':esc(s.name))+(s.structure?'<span class="tag">'+esc(s.structure)+'</span>':'')+'</h3>'
     +(s.saved?'<span class="saved">Saved ✓</span>':(SAVEUI?'<label class="sv"><input type="checkbox" class="sk" data-si="'+si+'"'+(s.save?' checked':'')+'> Save</label>':''))+'</div><div class="mrow">';
