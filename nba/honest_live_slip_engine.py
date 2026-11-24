@@ -118,8 +118,10 @@ COMPOSE = {"prizepicks": ("playercap", 2), "underdog": ("overlap", 1), "sleeper"
 # SPREAD RULE (owner 2026-11-23 22:49 PT "Go"; research_spread_check.py / research_spread_refine.py, three seasons, real prices): a PrizePicks slip whose legs'
 # games average a point spread above 8 (absolute, the books' latest pre-game spread) is not played - ROI +36 / +50 / +121% vs +26 / +31 / +97% as built in
 # 2024-25 / 2025-26 / 2026-27, units about the same (93 / 202 / 108 vs 104 / 195 / 113), ~35% fewer slips; random skips of as many slips do as well
-# 13% / 1% / 7% of the time. Underdog did not hold (2024-25 worse); Sleeper / Fliff under test on their live codes.
-SPREAD_SKIP = {"prizepicks": 8.0}
+# 13% / 1% / 7% of the time. Underdog did not hold (2024-25 worse).
+# Sleeper / Fliff (owner 2026-11-23 22:58 PT "A"; research_spread_sf.py on the live codes): Sleeper +51 / +137% vs +32 / +84% (2025-26 derived / 2026-27 real),
+# Fliff +66 / +173% vs +43 / +108%, more units with ~30% fewer slips, luck p .00 / .00; 2024-25 (derived) ROI a few points lower but fewer units lost.
+SPREAD_SKIP = {"prizepicks": 8.0, "sleeper": 8.0, "fliff": 8.0}
 TEAM_NAME = {"ATL": "Atlanta Hawks", "BOS": "Boston Celtics", "BKN": "Brooklyn Nets", "CHA": "Charlotte Hornets", "CHI": "Chicago Bulls", "CLE": "Cleveland Cavaliers",
         "DAL": "Dallas Mavericks", "DEN": "Denver Nuggets", "DET": "Detroit Pistons", "GSW": "Golden State Warriors", "HOU": "Houston Rockets", "IND": "Indiana Pacers",
         "LAC": "Los Angeles Clippers", "LAL": "Los Angeles Lakers", "MEM": "Memphis Grizzlies", "MIA": "Miami Heat", "MIL": "Milwaukee Bucks",
