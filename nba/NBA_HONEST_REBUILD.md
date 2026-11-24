@@ -1316,3 +1316,8 @@ The one sign that agrees across apps and with the 2026-27 bad-day study (back-to
       skip slips with no back-to-back leg: +49 / +98 / +184%, units 73 / 221 / 101 (half the slips), luck .18 / .00 / .01
   UD  skip slip mean rest >= 3.6: +29 / +40 / +42% vs +25 / +32 / +37%, units 118 / 219 / 46 vs 111 / 192 / 42 (better in all), ~7% fewer slips, luck .16 / .01 / .38
   Sleeper / Fliff families: rest does not help. Not deployed - owner decides.
+
+### 2026-11-24 11:10 PT - rest rule LIVE (owner 10:41 PT "A"); spread rule kept at 8 (owner: keep as is)
+REST_SKIP {"prizepicks": 2.8, "underdog": 3.6}: slip skipped when its players average that many days since their last game (capped 7), after the spread skip.
+HL_TEST 2026-11-18 (run 45462458342): 16 slips written and rolled back. Season replay through 11-23 (run 45462479707): 395 slips (11.6/day), +443 u, ROI +112%,
+w/o 5 best days +23%, drawdown 50 u; PrizePicks 80 slips +79.8 u (+100%), Underdog +53%, Sleeper +102%, Fliff +127%, Betr +172%. First live slate 2026-11-24.
