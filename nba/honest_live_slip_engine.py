@@ -100,8 +100,47 @@ def pick(rows, k, diff_prop=False, skip=(), gcap=1):
             continue
         out.append(r); players.add(r["pid"]); games[r["game"]] = games.get(r["game"], 0) + 1; props.add(r["prop"])
         if len(out) == k:
+            PICKED[id(out)] = (rows, dict(diff_prop=diff_prop, gcap=gcap))     # the slip's own list and rules (the composition step re-picks from them)
             return out
     return None
+
+
+PICKED = {}
+# COMPOSITION (owner 2026-11-23 16:17 PT "Deploy this"; audit_honest_set_compose.py, 33 slates 10-20..11-22, run 45289749699):
+#   prizepicks: a player in at most 2 of the app's slips - a later slip with a capped player is re-picked from its own list (ROI +56% vs +51%, drawdown 15 u vs 39)
+#   underdog:   a slip sharing 2+ players with an earlier slip of the app is dropped (ROI +54% vs +33%, 1.5 slips a day)
+#   sleeper:    a slip sharing 4+ players with an earlier slip is dropped (ROI +62% vs +87% as built but drawdown 30 u vs 56, w/o 5 best days -11% vs -23%)
+#   fliff:      a slip sharing 4+ players with an earlier slip is dropped (ROI +87% vs +81%, drawdown 34 u vs 45)
+#   betr:       as built (every rule tried lowered it)
+COMPOSE = {"prizepicks": ("playercap", 2), "underdog": ("overlap", 1), "sleeper": ("overlap", 3), "fliff": ("overlap", 3)}
+
+
+def compose(plan, notes):
+    for app, (rule, x) in COMPOSE.items():
+        slips = plan.get(app) or []
+        kept = []; used = {}
+        for code, k, st, s, cand in slips:
+            if rule == "playercap":
+                bad = {p for p, c in used.items() if c >= x}
+                s2 = s
+                if {r["pid"] for r in s} & bad:
+                    rows, kw = PICKED.get(id(s), (cand, dict(diff_prop=False, gcap=1)))
+                    s2 = pick(rows, k, skip=bad, **kw)
+                    notes.append(f"{app}: {code} re-picked - a player was already in {x} slips" if s2 is not None else f"{app}: {code} dropped - a player was already in {x} slips and its list ran out")
+                if s2 is None:
+                    continue
+                kept.append((code, k, st, s2, cand))
+                for r in s2:
+                    used[r["pid"]] = used.get(r["pid"], 0) + 1
+            else:
+                ps = {r["pid"] for r in s}
+                worst = max([len(ps & {r["pid"] for r in t[3]}) for t in kept] or [0])
+                if worst > x:
+                    notes.append(f"{app}: {code} dropped - shares {worst} players with an earlier slip (limit {x})"); continue
+                kept.append((code, k, st, s, cand))
+        if slips:
+            plan[app] = kept
+    return plan
 
 
 def context(conn, day, pids):
@@ -391,6 +430,8 @@ def build(conn, day, apps, weights=None):
     #   sub from the strategy's OWN list: P3 (+0.20; shrink +0.20, the same), P10 (+0.15; shrink +0.02), P11 (+0.49), U9 (+0.04; shrink -0.01),
     #     U10 (+0.06), U1 (+0.14), P9 (-0.01, drop 0 - kept on its own list: the owner's never-skip rule of 2026-11-13; the gap is 0.01 u)
     #   shrinking or dropping never beat the best sub on a daily code.
+    plan = compose(plan, notes)
+    plan = {a: v for a, v in plan.items() if v}
     MAINPOOL = {"P1": P, "P4": P, "U11": U, "U2": U}
     for app_, slips_ in plan.items():
         plan[app_] = [(c_, k_, st_, s_, MAINPOOL.get(c_, cand_)) for c_, k_, st_, s_, cand_ in slips_]
