@@ -81,6 +81,15 @@ def unit_for(conn, app, day):
     except Exception:  # noqa: BLE001 - table appears with the first update
         conn.rollback()
         r = None
+    lin = pa.get("linear") or {}
+    if lin.get("enabled") and day >= dt.date.fromisoformat(str(lin["from"])[:10]):
+        # one unit for every app since the reset: the latest row of ANY app from linear.from, else the start unit
+        try:
+            r2 = conn.execute("SELECT unit_usd FROM nba_score.live_unit_app WHERE game_date >= %s AND game_date < %s ORDER BY game_date DESC LIMIT 1",
+                              (dt.date.fromisoformat(str(lin["from"])[:10]), day)).fetchone()
+        except Exception:  # noqa: BLE001
+            conn.rollback(); r2 = None
+        return float(r2[0]) if r2 else float(lin.get("start") or 1)
     return float(r[0]) if r else float(pa["seed"][app]["unit"])
 
 
@@ -125,9 +134,40 @@ def update(conn, last):
             # per-app start (2026-11-15: Underdog $5 -> $10 from 11-15 on; earlier slates keep the unit they were played at)
             fa = (flat.get("from_by_app") or {}).get(a)
             fa = dt.date.fromisoformat(str(fa)[:10]) if fa else ff
-            conn.execute("UPDATE nba_score.live_unit_app SET unit_usd = %s WHERE app = %s AND game_date >= %s", (fu, a, fa))
-            if a in out:
+            lin0 = pa.get("linear") or {}
+            to = dt.date.fromisoformat(str(lin0["from"])[:10]) if lin0.get("enabled") else dt.date(2999, 1, 1)     # the linear ladder replaces flat from its start
+            conn.execute("UPDATE nba_score.live_unit_app SET unit_usd = %s WHERE app = %s AND game_date >= %s AND game_date < %s", (fu, a, fa, to))
+            if a in out and not (pa.get("linear") or {}).get("enabled"):
                 out[a].update({"unit": fu, "next_raise_at": None, "step_down_below": None})
+    lin = pa.get("linear") or {}
+    if lin.get("enabled"):
+        # owner 2026-11-24 11:44 PT: "Put the bet at $1 and it increases each earned 25 units total, gradually, 2, 3 and so on. Reset the accumulates on the
+        # message. Today starts from zero". ONE unit for every app: start $1 on linear.from; +$1 for every 25 units (slip results in units, all apps
+        # together) of profit since then, the same steps going down (floor $1). Each app's accumulated DOLLARS restart at 0 on linear.from (the text's
+        # "Accumulated"). Slates before linear.from keep their rows.
+        lf = dt.date.fromisoformat(str(lin["from"])[:10]); every = float(lin.get("every_units") or 25); start = float(lin.get("start") or 1)
+        conn.execute("DELETE FROM nba_score.live_unit_app WHERE game_date >= %s", (lf,))
+        day_units = {}
+        for app in APPS:
+            for d, x in conn.execute(f"SELECT game_date, sum(u) FROM ({PLAYED[app]}) p(game_date, u) WHERE game_date BETWEEN %s AND %s GROUP BY 1",
+                                     (lf, last)).fetchall():
+                day_units.setdefault(d, {})[app] = float(x)
+        cum_u = 0.0; u = start; dol = {a: 0.0 for a in APPS}
+        for d in sorted(day_units):
+            for app, x in day_units[d].items():
+                dol[app] += x * played.get((app, d), u)
+            cum_u += sum(day_units[d].values())
+            n = max(start, start + float(int(max(0.0, cum_u) // every)))
+            reason = (f"linear raise: {cum_u:+.2f} units since {lf}" if n > u else f"linear step down: {cum_u:+.2f} units since {lf}" if n < u else "hold")
+            for app in day_units[d]:
+                conn.execute("""INSERT INTO nba_score.live_unit_app (game_date, app, profit, unit_from, unit_usd, reason) VALUES (%s,%s,%s,%s,%s,%s)""",
+                             (d, app, dol[app], u, n, reason))
+            print(f"  {d} all apps: {sum(day_units[d].values()):+.2f}u -> {cum_u:+.2f}u since {lf} | unit ${u:g} -> ${n:g}", flush=True)
+            u = n
+        for app in APPS:
+            out[app] = {"unit": u, "profit": round(dol[app], 2), "units_since_reset": round(cum_u, 2),
+                        "next_raise_at": round((int(max(0.0, cum_u) // every) + 1) * every, 2), "step_down_below": round((u - start) * every, 2) if u > start else None,
+                        "up_x": every, "rule": f"${start:g} from {lf}, +$1 every {every:g} units (all apps)"}
     conn.execute("""UPDATE nba_config.classification_config SET config_json = jsonb_set(config_json::jsonb, '{per_app,units}', %s::jsonb)
                     WHERE config_key = 'stake_unit'""", (json.dumps({UI_NAME[a]: v for a, v in out.items()}),))
     for a, v in out.items():

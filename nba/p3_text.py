@@ -46,9 +46,16 @@ def _rb(c, who, today):
         per = {}      # app -> (yesterday dollars, season dollars)
         if who == "rodo":
             rows = c.execute("SELECT game_date, app, profit FROM nba_score.live_unit_app ORDER BY app, game_date").fetchall()
+            # owner 2026-11-24 11:44 PT: "Reset the accumulates on the message. Today starts from zero" - only slates from stake_unit.per_app.linear.from count
+            try:
+                lf = c.execute("SELECT config_json::jsonb #>> '{per_app,linear,from}' FROM nba_config.classification_config WHERE config_key='stake_unit'").fetchone()[0]
+            except Exception:  # noqa: BLE001
+                c.rollback(); lf = None
+            if lf:
+                rows = [r for r in rows if str(r[0]) >= str(lf)[:10]]
             ydays = sorted({r[0] for r in rows if str(r[0]) < today})
             if not ydays:
-                return ""
+                return "\n\u00a0\nAccumulated: $0" if lf else ""
             y = ydays[-1]
             for app in APP_ORDER:
                 mine = [r for r in rows if r[1] == app and str(r[0]) <= str(y)]
