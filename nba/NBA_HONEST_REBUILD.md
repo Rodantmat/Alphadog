@@ -1351,3 +1351,10 @@ Now (main UI v1.6.0, client LEG_GONE_RULE): S7 / S8 / F6 / F7 SHRINK (no substit
 "DO NOT PLAY", cannot be selected); every other strategy SUBS from its own ranked list (P1 / P4 / U11 / U2 from the app's main list). Checked in the owner's Chrome:
 the rule per code as above, the drop card disabled, and a real uncheck on today's P10 slip took the next Under of its own list and gave it back on re-check.
 Jessi / Jon pages keep their own substitute logic (not changed).
+
+### 2026-11-24 15:35 PT - Jessi / Jon pages follow the leg-gone rule (owner 15:08 PT)
+friend_engine.mirror_owner_new: every copy of an owner slip carries strategy, leg_gone_rule (S7 / S8 / F6 / F7 shrink, S9 / S11 / F10 drop, rest sub) and up to 12 of the
+strategy's own next legs (nba_score.slip_next_legs) found on that page's board. Pages (Jessi v1.4.0, Jon v1.10.0): server swap and tap-to-uncheck follow the rule -
+drop = "DO NOT PLAY" card, shrink = no substitute, sub = own next legs first (same app, not started, live-checked, other player, game cap, two teams), then the page's pool.
+Their own limits stay (apps per person, Jessi top 4 per app, Jon tiers). Today's rebuild (run 45507719501): P10 copy -> 12 next legs, first Tatum Under 26.5 points
+(the same substitute the owner's screen took); U9 copy (Jon) -> 3 next legs. Both workers deployed (49484b59); page scripts syntax-checked.
