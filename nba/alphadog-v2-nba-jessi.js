@@ -9,7 +9,7 @@ import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
 const TOP_N = 4;   // owner 2026-11-18: only the 4 strongest slips per app, best first, no tiers
 const UNIT_MAX = 3, UNIT_CAP_FROM = "2026-11-18";   // owner 2026-11-18 14:15 PT "limit her slips at $3 max per app": the unit never goes above $3 on any app, from this date on
-const VERSION = "alphadog-v2-nba-jessi-v1.2.3";   // v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.3.0";   // v1.3.0 (owner 2026-11-24 11:51 PT): reset from 2026-11-24, stakes like the owner - one unit for all apps, $1, +$1 every 25 units won, same steps down, no cap. // prior: v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -75,11 +75,20 @@ function slipUrl(s, now) {
 
 // the unit ladder replayed over the season: each day's profit is the day's $1-per-slip profit x the unit in force that morning
 function unitFor(acc, upx) { let n = 1; while (upx * (n + 1) * n / 2 <= acc + 1e-9) n++; return n; }
-function ladder(rows, app) {
-  const upx = UPX[app]; let acc = 0;
-  for (const r of rows) { if (r.app !== app) continue; let u0 = unitFor(acc, upx); if (String(r.d) >= UNIT_CAP_FROM) u0 = Math.min(u0, UNIT_MAX); acc += u0 * r.p; }
-  const uf = unitFor(acc, upx); const u = Math.min(uf, UNIT_MAX);
-  return { unit: u, capped: uf >= UNIT_MAX, acc: Math.round(acc * 100) / 100, next_at: Math.round(upx * u * (u + 1) / 2 * 100) / 100, down_below: u > 1 ? Math.round(upx * (u - 1) * u / 2 * 100) / 100 : null };
+// owner 2026-11-24 11:51 PT "Reset Jessica's as well. And stakes like mine": ONE unit for all her apps - $1 from the reset (nba_jessi.season.season_start),
+// +$1 every 25 units won since then (all apps together), the same steps going down, floor $1, no cap. rows are ordered by date; p = units ($1-per-slip profit).
+function ladderAll(rows) {
+  const EVERY = 25; let cum = 0, u = 1; const acc = {}; let lastD = null, dayUnits = 0;
+  const close = () => { cum += dayUnits; u = 1 + Math.floor(Math.max(0, cum) / EVERY); dayUnits = 0; };
+  for (const r of rows) {
+    if (lastD !== null && r.d !== lastD) close();
+    acc[r.app] = (acc[r.app] || 0) + u * r.p; dayUnits += r.p; lastD = r.d;
+  }
+  if (lastD !== null) close();
+  const out = {};
+  for (const a of APP_ORDER) out[a] = { unit: u, capped: false, acc: Math.round((acc[a] || 0) * 100) / 100, units_won: Math.round(cum * 100) / 100,
+    next_at: (Math.floor(Math.max(0, cum) / EVERY) + 1) * EVERY, down_below: u > 1 ? (u - 1) * EVERY : null };
+  return out;
 }
 
 async function data(env, token, save = true) {
@@ -88,7 +97,7 @@ async function data(env, token, save = true) {
     const today = ptDate();
     const snaps = await q(sql, "SELECT game_date::text d, payload FROM nba_jessi.snapshot WHERE game_date = (SELECT max(game_date) FROM nba_jessi.snapshot WHERE game_date <= $1::date)", [today], 8000);
     const hist = await q(sql, `SELECT app, game_date::text d, sum(profit)::float p FROM nba_jessi.slips WHERE status='graded' AND game_date >= (SELECT season_start FROM nba_jessi.season) GROUP BY app, game_date ORDER BY game_date`, [], 8000);
-    const units = {}; for (const a of APP_ORDER) units[a] = ladder(hist, a);
+    const units = ladderAll(hist);
     const out = { ok: true, source: "live", generated_slips: [], backup_pool: [] };
     let date = null;
     for (const sn of snaps) {
@@ -202,7 +211,7 @@ setInterval(function(){if(!window.PD)return;window.PD.slips.forEach(function(s,s
 function render(d){
   initSwap(d);
   let h='<table><tr><th>App</th><th>Unit</th><th>Next increase</th><th>Accumulated</th></tr>';
-  for(const a of d.order){const u=d.units[a];h+='<tr><td>'+esc(d.labels[a])+'</td><td>'+money(u.unit)+'</td><td>'+(u.capped?'Max':money(u.unit+1)+' at '+money(u.next_at))+'</td><td>'+money(u.acc)+'</td></tr>'}
+  for(const a of d.order){const u=d.units[a];h+='<tr><td>'+esc(d.labels[a])+'</td><td>'+money(u.unit)+'</td><td>'+(money(u.unit+1)+' at '+u.next_at+' units won (now '+u.units_won+')')+'</td><td>'+money(u.acc)+'</td></tr>'}
   h+='</table>';
   if(!d.slips.length)h+='<p class="sub" style="margin-top:16px">No slips right now. They appear here once the day\\'s lineups are set.</p>';
   for(const a of d.order){const ss=d.slips.filter(s=>s.app===a);if(!ss.length)continue;h+='<h2>'+esc(d.labels[a])+'</h2>';

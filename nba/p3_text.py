@@ -33,6 +33,17 @@ def unit_for(acc, upx):
     return n
 
 
+def jessi_unit(rows, day):
+    """Jessi's unit on `day` (owner 2026-11-24): $1 + $1 for every 25 units won (all her apps) on the slates before it since the reset"""
+    cum = sum(p for _a, d, p in rows if d < day)
+    return 1.0 + float(int(max(0.0, cum) // 25))
+
+
+def units_txt(v):
+    r = round(v, 1)
+    return ("+%g units" % r) if r > 0 else ("%g units" % r) if r < 0 else "0 units"
+
+
 def results_block(c, who, today):
     s = _rb(c, who, today)
     # layout the owner picked (format E): no blank line between the header and "Yesterday Results:", one blank line before "Accumulated"
@@ -69,7 +80,7 @@ def _rb(c, who, today):
             rows = c.execute(f"SELECT app, game_date, sum(profit)::float FROM {sch}.slips WHERE status='graded' AND game_date < %s::date "
                              f"AND game_date >= (SELECT season_start FROM {sch}.season) GROUP BY app, game_date ORDER BY game_date", (today,)).fetchall()
             if not rows:
-                return ""
+                return "\n\u00a0\nAccumulated: " + ("0 units" if who == "friend" else "$0")      # just reset (2026-11-24)
             y = max(r[1] for r in rows)
             # 2026-11-20 owner: Jon (friend) sees PP, UD, Sleeper, Fliff; Jessi sees PP, Sleeper, Fliff
             apps = ("prizepicks", "underdog", "sleeper", "fliff") if who == "friend" else ("prizepicks", "sleeper", "fliff")
@@ -80,21 +91,25 @@ def _rb(c, who, today):
                     continue
                 acc = 0.0; ydol = None
                 for _a, d, p in mine:
-                    u = FRIEND_UNIT if who == "friend" else unit_for(acc, JESSI_UPX.get(a, 7.0))
+                    # 2026-11-24 owner: Jon has no stake - his text counts units; Jessi stakes like the owner (one unit, $1 +$1 every 25 units won, all apps)
+                    u = 1.0 if who == "friend" else jessi_unit(rows, d)
                     acc += u * p
                     if d == y:
                         ydol = u * p
                 per[a] = (ydol, acc)
+        fmt = units_txt if who == "friend" else (lambda v: money(int(round(v))))
         lines = ["Yesterday Results:"]
-        tot = 0
+        tot = 0.0
         for app in APP_ORDER:
             if app in per and per[app][0] is not None:
-                r = int(round(per[app][0])); tot += r
-                lines.append(f"{APP_NAME[app]}: {money(r)}")
+                r = per[app][0] if who == "friend" else int(round(per[app][0])); tot += r
+                lines.append(f"{APP_NAME[app]}: {fmt(r)}")
         if len(lines) == 1:
             return ""
-        lines.append(f"Total: {money(tot)}")
+        lines.append(f"Total: {fmt(tot)}")
         acc_all = sum(v[1] for v in per.values())
+        if who == "friend":
+            return "\n\u00a0\n" + "\n".join(lines) + "\n\u00a0\nAccumulated: " + units_txt(acc_all)
         # blank lines are written as a line holding one non-breaking space: the Google Voice email bridge drops everything after a truly empty line (2026-11-09 test)
         return "\n\u00a0\n" + "\n".join(lines) + "\n\u00a0\nAccumulated: " + money(acc_all)
     except Exception as e:  # noqa: BLE001
