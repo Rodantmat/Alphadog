@@ -1329,3 +1329,8 @@ units won since 11-24 (all apps) reach 25, $3 at 50, ... same steps going down, 
 for 11-24, text block "Accumulated: $0"; simulated from 10-20 the unit walks $1 -> $2 at +25 u -> ... with step-downs.
 Incident: the first dry run (45473774698) imported p3_text.py, whose module body ran main() and texted the owner "AlphaDog ALERT: P3 status unknown" (11:47 PT) and
 logged it for the day. Fixed (b8fbb698): p3_text runs only as a script; an earlier ALERT no longer blocks the day's READY text; log day in Pacific time.
+
+### 2026-11-24 12:20 PT - Jessi and Jon reset (owner 11:51 PT)
+nba_jessi.season / nba_friend.season season_start -> 2026-11-24. Jessi (page v1.3.0 + text): stakes like the owner - one unit for all her apps, $1, +$1 every 25 units
+won since the reset, same steps down, floor $1, the old $3 cap gone. Jon: no stake - his page already shows no amounts; his text now reports units, not $5 dollars.
+Dry text blocks (audit_text_blocks_dry.py): owner "Accumulated: $0", Jessi "Accumulated: $0", Jon "Accumulated: 0 units".
