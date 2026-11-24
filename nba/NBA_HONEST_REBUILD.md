@@ -1306,3 +1306,13 @@ Not deployed - owner decides.
 SPREAD_SKIP {"prizepicks": 8, "sleeper": 8, "fliff": 8}. HL_TEST 2026-11-18 (run 45344442136): 16 slips written and rolled back. Season replay of the full live set (run 45344457820):
 12.1 slips/day, 399 slips, +422 u, ROI +105.8%, w/o 5 best days +19.8%, drawdown 50 u; Nov 11-22 +26 u (+20%), last 7 days +43 u.
 PP +79% (dd 10), UD +54% (dd 7), Sleeper +102% (dd 17), Fliff +127% (dd 19), Betr +160% (dd 11). In-sample for 2026-27 (the codes were chosen on it).
+
+### 2026-11-24 02:40 PT - "anything new?" battery (research_filter_battery.py runs 45347359014/76938/94596/411933; research_rest_check.py runs 45348571675/89816/610142/628145)
+24 pre-game features (teammates out, opponents out, status, minutes trend / projection, form, line vs averages, line vs books, books, games played, rest, home,
+trailing hit rates, book chance, edge, game total, spread) x leg filter / slip skip x tails, on the live sets (PP / S / F with the spread-8 skip), chosen on
+2024-25 + 2025-26 (better than as-built AND than random drops), confirmed on 2026-27. ~700 rules; most "confirmations" disagree between apps (noise).
+The one sign that agrees across apps and with the 2026-27 bad-day study (back-to-back legs hit 67%): FATIGUE - skip slips of well-rested legs.
+  PP  skip slip mean rest >= 2.8 days: +46 / +61 / +129% vs +36 / +52 / +121%, units 98 / 208 / 111 vs 93 / 212 / 108, ~17% fewer slips, luck p .08 / .06 / .06
+      skip slips with no back-to-back leg: +49 / +98 / +184%, units 73 / 221 / 101 (half the slips), luck .18 / .00 / .01
+  UD  skip slip mean rest >= 3.6: +29 / +40 / +42% vs +25 / +32 / +37%, units 118 / 219 / 46 vs 111 / 192 / 42 (better in all), ~7% fewer slips, luck .16 / .01 / .38
+  Sleeper / Fliff families: rest does not help. Not deployed - owner decides.
