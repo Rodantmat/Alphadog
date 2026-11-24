@@ -1301,3 +1301,8 @@ Not deployed - owner decides.
   Sleeper -27 / +51 / +137% vs -19 / +32 / +84% (units -136 / +454 / +272 vs -147 / +408 / +230; luck p .89 / .00 / .00)
   Fliff   -35 / +66 / +173% vs -30 / +43 / +108% (units -157 / +521 / +307 vs -206 / +493 / +267; luck p .77 / .00 / .00)
   Better in 2025-26 and 2026-27 (the seasons the Sleeper / Fliff selection rule uses), ROI worse in 2024-25 but fewer units lost. Owner decides.
+
+### 2026-11-24 01:30 PT - spread rule LIVE on Sleeper and Fliff (owner 22:58 PT "A")
+SPREAD_SKIP {"prizepicks": 8, "sleeper": 8, "fliff": 8}. HL_TEST 2026-11-18 (run 45344442136): 16 slips written and rolled back. Season replay of the full live set (run 45344457820):
+12.1 slips/day, 399 slips, +422 u, ROI +105.8%, w/o 5 best days +19.8%, drawdown 50 u; Nov 11-22 +26 u (+20%), last 7 days +43 u.
+PP +79% (dd 10), UD +54% (dd 7), Sleeper +102% (dd 17), Fliff +127% (dd 19), Betr +160% (dd 11). In-sample for 2026-27 (the codes were chosen on it).
