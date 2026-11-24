@@ -1334,3 +1334,13 @@ logged it for the day. Fixed (b8fbb698): p3_text runs only as a script; an earli
 nba_jessi.season / nba_friend.season season_start -> 2026-11-24. Jessi (page v1.3.0 + text): stakes like the owner - one unit for all her apps, $1, +$1 every 25 units
 won since the reset, same steps down, floor $1, the old $3 cap gone. Jon: no stake - his page already shows no amounts; his text now reports units, not $5 dollars.
 Dry text blocks (audit_text_blocks_dry.py): owner "Accumulated: $0", Jessi "Accumulated: $0", Jon "Accumulated: 0 units".
+
+### 2026-11-24 14:05 PT - today's problems, fixed; accumulation restarts 2026-11-25 (owner 13:53 PT)
+1. Old Fliff / Sleeper slips on the screen: the spread rule left Fliff and Sleeper with no honest slip, the plan dropped those apps, so write() never retired the
+   old engines' slips (F_UDT1, S_F). Fix 3168c2be: every requested app stays in the plan. Proof audit_honest_retire_dry.py (rolled back): old slips set live,
+   engine writes, 0 old slips left on any app. Today's 4 old rows set to shadow; Jessi / Jon Fliff + Sleeper picks re-run (0 slips).
+2. Friend / Jessi PrizePicks pick + pairings failed: research_portfolio_caps.py (imported by friend_engine / live_slip_engine) had been rewritten on 11-22 for
+   the exposure study. Restored (0cfd0aa4), the study moved to research_portfolio_exposure.py; PP friend run re-run OK (32 pairing legs).
+3. False "P3 status unknown" text at 11:47: importing p3_text ran main(). Fixed b8fbb698 (script-only, ALERT never blocks READY, PT day).
+Reset: stake_unit.per_app.linear.from, nba_jessi.season / nba_friend.season season_start = 2026-11-25. Checks (rolled back): tomorrow's P2A unit step -> $1 every app;
+texts on 11-25 -> owner "Accumulated: $0", Jessi "$0", Jon "0 units".
