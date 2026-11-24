@@ -1267,3 +1267,9 @@ Judged on pass 29 (nba_score.p29_cells): REAL 2026-27 ROI 25%+, still positive w
   Per app best: PP player cap 2 (+56%, dd 15 vs 39), UD overlap 1 (+54%), Sleeper overlap 3 (+62%, dd 30), Fliff overlap 3 (+87%, dd 34), Betr as built (+160%). Owner to decide.
 - Slips screen v1.5.9 (friend v1.9.8): a substitute always keeps the side of the removed leg (a Fliff Under slip had taken "0.5 Steals MORE"); honest-set slips labelled by
   their code. Checked in the owner's Chrome: 23 slips, 10 subs, all LESS, no old labels.
+
+### 2026-11-23 16:40 PT - per-app composition LIVE (owner 16:17 PT "Deploy this")
+honest_live_slip_engine.compose(): PrizePicks a player in at most 2 slips (later slip re-picked from its own list); Underdog drop a slip sharing 2+ players with an earlier
+slip; Sleeper / Fliff drop a slip sharing 4+ players; Betr as built. Test 2026-11-18 (HL_TEST, rolled back, run 45295970243): 16 slips (PP 4, UD 1, Sleeper 4, Fliff 5, Betr 2).
+Season replay with the rule (run 45295988009): 15.3 slips/day, +392 u, ROI +77.5%, w/o 5 best days +5%, drawdown 78 u; by period +167% / +89% / -13%.
+Per app: PP +56% (dd 15), UD +54% (dd 7), Sleeper +62% (dd 30), Fliff +87% (dd 34), Betr +160% (dd 11). Last 7 days +17.2 u on 114 slips. First live slate: 2026-11-24.
