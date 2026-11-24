@@ -84,7 +84,17 @@ function poolLegIsLegalForSlip(leg,keptLegs,slip){
 // goblin for goblin, demon for demon, Underdog higher / lower payout alike), best EDGE over its own break-even first; only when the
 // pool has none of that type, the best-edge legal leg of any type (the card's multiplier is recomputed from the legs either way).
 function poolEdge(l){const e=Number(l&&l.edge_0_100);return Number.isFinite(e)?e:-999}
+// LEG-GONE RULE (owner 2026-11-23 09:24 PT "check the best strategy, leg sub, shrink or slip drop ... We keep the best ROI"; research_set_check.py + pass 29):
+// when a leg is gone (scratched, off the board, line moved, now a demon / more-only, or unchecked), each honest strategy does what earned the most:
+//   SHRINK - play the slip one pick smaller (no substitute): S7, S8 (Sleeper PP-order Max), F6, F7 (Fliff PP-order Max)
+//   DROP   - do not play the slip at all: S9, S11 (Sleeper 2-pick Max), F10 (Fliff 2-pick Max)
+//   SUB    - every other strategy: the next leg of its own ranked list (P1 / P4 / U11 / U2: the app's main list), then the shared pool
+const LEG_GONE_RULE={S7:'shrink',S8:'shrink',F6:'shrink',F7:'shrink',S9:'drop',S11:'drop',F10:'drop'};
+function legGoneRule(slip){const m=/^H_([A-Z]+\d+)_/.exec(String(slip&&slip.strategy||''));return m&&LEG_GONE_RULE[m[1]]||'sub'}
 function takeBestPoolLeg(keptLegs,slip,removed){
+  {const rule=legGoneRule(slip);
+   if(rule==='drop'){slip._legGoneDrop=true;return null}
+   if(rule==='shrink'){slip._legGoneShrink=true;return null}}
   const want=(String(slip&&slip.source_key||'')==='prizepicks')?'regular':(removed&&removed.line_type?String(removed.line_type):null);
   // owner 2026-11-12: SUB THE NEXT RANKED CANDIDATE of the slip's own strategy first (slip.next_ranked = the strategy's ranked board_row_ids, server-built); the generic edge order below is the fallback
   if(slip&&Array.isArray(slip.next_ranked)){
@@ -165,6 +175,7 @@ function handleLegToggle(slipIdx,legIdx,isChecked){
     }
   }else{
     un.delete(legIdx);
+    if(!un.size){slip._legGoneDrop=false;slip._legGoneShrink=false}
     // A leg was re-checked. If it had a substitute, remove that substitute and hand it back to the
     // pool so any slip can use it again - an accidental uncheck is fully reversible.
     if(subs.has(legIdx)){
@@ -515,6 +526,11 @@ function slipCardHtml(s,idx){
   return slipCardShell(s,idx,slipDeselected.has(String(idx))?'':' checked',s.estimated_multiplier,realMultFieldsHtml(s,idx));
 }
 function slipCardShell(s,idx,sel,multValue,fieldsHtml){
+  if(s._legGoneDrop){
+    // the DROP rule: a leg is gone, so this slip is not played (its strategy earned more by skipping than by substituting)
+    return '<div class="slipCard" style="opacity:0.75"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'" disabled><b>'+slipTitleHtml(s,idx)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">—</span></div><div class="small" style="margin:2px 0 6px;color:#ff6b6b;font-weight:800">DO NOT PLAY - a leg is gone and this strategy\'s rule is to skip the slip (no substitute, no smaller slip).</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div></div>';
+  }
+  if(s._legGoneShrink)s={...s,stake_label:(s.stake_label?s.stake_label+' • ':'')+'leg gone - played one pick smaller (this strategy\'s rule)'};
   const meta=[s.track_label?esc(s.track_label):'',s.place_by_pt?'<b>Place by '+esc(s.place_by_pt)+'</b>'+(s.place_by_game?' ('+esc(s.place_by_game)+' tips)':' (first tip)'):'',s.stake_label?'<b>'+esc(s.stake_label)+'</b>':(s.status?esc(String(s.status).replace(/_/g,' ')):''),s.quote_note?(s.quote_failed?'<span style="color:#ff6b6b;font-weight:700">'+esc(s.quote_note)+'</span>':esc(s.quote_note)):'',s.stake_weight!=null&&s.stake_weight!==1?'stake '+esc(s.stake_weight)+'u':'',s.result?('result '+esc(s.result.hits)+'/'+esc(s.slip_size-(s.result.pushes||0))+' hit'+(s.result.pushes?' ('+esc(s.result.pushes)+' push, paid as a '+esc(s.slip_size-s.result.pushes)+'-pick)':'')+' • paid '+esc(Math.round(Number(s.result.payout||0)*100)/100)+'x'):''].filter(Boolean).join(' • ');
   return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+slipTitleHtml(s,idx)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(multValue)+'</span></div>'+(meta?'<div class="small" style="margin:2px 0 6px">'+meta+'</div>':'')+(s.streak_note?'<div class="small" style="margin:0 0 6px;color:#b45309">'+esc(s.streak_note)+'</div>':'')+backtestLineHtml(s)+'<div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+fieldsHtml+'</div>'
 }
