@@ -1273,3 +1273,11 @@ honest_live_slip_engine.compose(): PrizePicks a player in at most 2 slips (later
 slip; Sleeper / Fliff drop a slip sharing 4+ players; Betr as built. Test 2026-11-18 (HL_TEST, rolled back, run 45295970243): 16 slips (PP 4, UD 1, Sleeper 4, Fliff 5, Betr 2).
 Season replay with the rule (run 45295988009): 15.3 slips/day, +392 u, ROI +77.5%, w/o 5 best days +5%, drawdown 78 u; by period +167% / +89% / -13%.
 Per app: PP +56% (dd 15), UD +54% (dd 7), Sleeper +62% (dd 30), Fliff +87% (dd 34), Betr +160% (dd 11). Last 7 days +17.2 u on 114 slips. First live slate: 2026-11-24.
+
+### 2026-11-23 23:10 PT - bad-day signs tested on all three seasons (research_bad_days.py, research_spread_check.py; runs 45337309886, 45340765487, 45340783090)
+2026-27 live-set legs: bad days = legs from big-spread games, close games, OT, minutes above average, small slates; drought Nov 10-22 = rebounds / blocks / steals collapse.
+Three seasons (universe loader, live PP / UD daily codes, spreads matched 93-100%):
+- Leg level: the top-30 Unders hit the SAME in big-spread games in 2024-25 (49.5% vs 50.2%) and MORE in 2025-26 (56.1% vs 54.7%) - the 2026-27 drop (41% vs 58%) does not repeat.
+- Props (no rebounds / no blocks-steals), line >= 3 / >= 8: worse in every season, both apps. Slate > 5 / > 8 games: mixed.
+- Only lean that repeats: PrizePicks slip skipped when its legs' games average |spread| > 8.5: +32 / +48 / +109% vs +26 / +31 / +97% as built, units about the same
+  (95 / 207 / 109 vs 104 / 195 / 113), 28% fewer slips; > 7.5: +41 / +48 / +135%, fewer units. Underdog: better in 2 of 3 seasons only. Not deployed - owner decides.
