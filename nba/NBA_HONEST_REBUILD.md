@@ -1292,3 +1292,12 @@ Slip skip by the legs' games' average |spread| (luck p = random skip of the same
   UD  better only in 2025-26 / 2026-27; 2024-25 worse at every threshold (p ~.7) - does not hold.
   Sleeper / Fliff main-ranking families (not the live codes): > 7 and > 7.5 better in all 3 seasons (Fliff > 7 p .03 / .21 / .01).
 Not deployed - owner decides.
+
+### 2026-11-24 01:00 PT - spread rule LIVE on PrizePicks (owner 22:49 PT "Go"); Sleeper / Fliff live-code test
+- honest_live_slip_engine: SPREAD_SKIP {"prizepicks": 8.0} - a PrizePicks slip whose legs' games average |spread| > 8 (median of the books' latest snapshot) is not
+  played (step before the player cap). HL_TEST 2026-11-18 (run 45343467325): 16 slips, no PrizePicks slip over 8 that day. Season replay with the rule (run 45343469927):
+  PrizePicks 87 slips +68.6 u ROI +79% (was 112, +62.4 u, +56%); all apps 481 slips +398.3 u ROI +82.8% (was 506, +392.1 u, +77.5%). First live slate 2026-11-24.
+- research_spread_sf.py (live S4-S13 / F4-F12, pass-29 boards; 2024-25 / 2025-26 derived prices, 2026-27 real): skip > 8, all codes
+  Sleeper -27 / +51 / +137% vs -19 / +32 / +84% (units -136 / +454 / +272 vs -147 / +408 / +230; luck p .89 / .00 / .00)
+  Fliff   -35 / +66 / +173% vs -30 / +43 / +108% (units -157 / +521 / +307 vs -206 / +493 / +267; luck p .77 / .00 / .00)
+  Better in 2025-26 and 2026-27 (the seasons the Sleeper / Fliff selection rule uses), ROI worse in 2024-25 but fewer units lost. Owner decides.
