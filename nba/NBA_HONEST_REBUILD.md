@@ -1281,3 +1281,14 @@ Three seasons (universe loader, live PP / UD daily codes, spreads matched 93-100
 - Props (no rebounds / no blocks-steals), line >= 3 / >= 8: worse in every season, both apps. Slate > 5 / > 8 games: mixed.
 - Only lean that repeats: PrizePicks slip skipped when its legs' games average |spread| > 8.5: +32 / +48 / +109% vs +26 / +31 / +97% as built, units about the same
   (95 / 207 / 109 vs 104 / 195 / 113), 28% fewer slips; > 7.5: +41 / +48 / +135%, fewer units. Underdog: better in 2 of 3 seasons only. Not deployed - owner decides.
+
+### 2026-11-24 00:10 PT - spread rule refinements + luck test (research_spread_refine.py; runs 45341936028 PP, 45341954288 UD, 45341971396 Sleeper, 45341988801 Fliff)
+Public work (DataStreak 40,856 props, Propline, RotoGrinders, OddsIndex): big spread -> favourite starters lose minutes, bench gains garbage time. NOT in our data:
+top-30 Unders of favourite starters in 11+ spread games hit 43.8 / 52.7 / 36.9% (PP), underdog bench 49 / 59 / 67% - no stable role x spread pattern (the books price it).
+Role / favourite / underdog leg rules: no rule better in all seasons on PP or UD. Totals: no.
+Slip skip by the legs' games' average |spread| (luck p = random skip of the same number of as-built slips):
+  PP  > 7.5: +41 / +48 / +135% vs +26 / +31 / +97%, p .09 / .02 / .03 (combined ~.003); > 8: +36 / +50 / +121%, units 93 / 202 / 108 vs 104 / 195 / 113, p .13 / .01 / .07;
+      > 8.5: +33 / +48 / +109%, p .18 / .01 / .19.
+  UD  better only in 2025-26 / 2026-27; 2024-25 worse at every threshold (p ~.7) - does not hold.
+  Sleeper / Fliff main-ranking families (not the live codes): > 7 and > 7.5 better in all 3 seasons (Fliff > 7 p .03 / .21 / .01).
+Not deployed - owner decides.
