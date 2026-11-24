@@ -6280,6 +6280,19 @@
       "team_abbreviation": "ATL"
     },
     {
+      "id": 1629216,
+      "full_name": "Gabe Vincent",
+      "last_comma_first": "Vincent, Gabe",
+      "roster_status": 1,
+      "from_year": "2019",
+      "to_year": "2026",
+      "player_code": "gabe_vincent",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
+    },
+    {
       "id": 1641774,
       "full_name": "Tristan Vuk\u010devi\u0107",
       "last_comma_first": "Vuk\u010devi\u0107, Tristan",
