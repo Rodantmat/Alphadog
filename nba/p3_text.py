@@ -213,7 +213,9 @@ def main():
             print("text alert: no reply address for", who, "- skipped")
             return
         if day:
-            if c.execute("SELECT 1 FROM nba_control.text_alert_log WHERE day=%s AND who=%s", (day, who)).fetchone():
+            prev = c.execute("SELECT body FROM nba_control.text_alert_log WHERE day=%s AND who=%s", (day, who)).fetchone()
+            # 2026-11-24: an earlier ALERT never blocks the day's READY text (a P3 that failed and was re-run still says the slips are ready)
+            if prev and not (str(prev[0] or "").startswith("AlphaDog ALERT") and body.startswith("AlphaDog Slips are ready")):
                 print("text alert: already sent today to", who)
                 return
         # 2026-11-09: the Google Voice email bridge flattens \n to a space; U+2028 (line separator) is the one that survives as a real line break
@@ -224,13 +226,14 @@ def main():
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as s:
             s.login(user, pw)
             s.sendmail(user, [addr], msg.as_string())
-        c.execute("INSERT INTO nba_control.text_alert_log (day, who, body) VALUES (COALESCE(%s::date, current_date), %s, %s) "
-                  "ON CONFLICT DO NOTHING", (day, who, body))
+        c.execute("INSERT INTO nba_control.text_alert_log (day, who, body) VALUES (COALESCE(%s::date, (now() AT TIME ZONE 'America/Los_Angeles')::date), %s, %s) "
+                  "ON CONFLICT (day, who) DO UPDATE SET body = EXCLUDED.body, sent_at = now()", (day, who, body))
         print("text alert sent to", who, "-", body)
 
 
-try:
-    main()
-except Exception as e:
-    print("text alert FAILED:", type(e).__name__, e)
-sys.exit(0)
+if __name__ == "__main__":         # 2026-11-24: importing this module (results_block in a check) must never send a text
+    try:
+        main()
+    except Exception as e:
+        print("text alert FAILED:", type(e).__name__, e)
+    sys.exit(0)
