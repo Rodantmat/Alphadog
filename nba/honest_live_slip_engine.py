@@ -115,7 +115,50 @@ PICKED = {}
 COMPOSE = {"prizepicks": ("playercap", 2), "underdog": ("overlap", 1), "sleeper": ("overlap", 3), "fliff": ("overlap", 3)}
 
 
-def compose(plan, notes):
+# SPREAD RULE (owner 2026-11-23 22:49 PT "Go"; research_spread_check.py / research_spread_refine.py, three seasons, real prices): a PrizePicks slip whose legs'
+# games average a point spread above 8 (absolute, the books' latest pre-game spread) is not played - ROI +36 / +50 / +121% vs +26 / +31 / +97% as built in
+# 2024-25 / 2025-26 / 2026-27, units about the same (93 / 202 / 108 vs 104 / 195 / 113), ~35% fewer slips; random skips of as many slips do as well
+# 13% / 1% / 7% of the time. Underdog did not hold (2024-25 worse); Sleeper / Fliff under test on their live codes.
+SPREAD_SKIP = {"prizepicks": 8.0}
+TEAM_NAME = {"ATL": "Atlanta Hawks", "BOS": "Boston Celtics", "BKN": "Brooklyn Nets", "CHA": "Charlotte Hornets", "CHI": "Chicago Bulls", "CLE": "Cleveland Cavaliers",
+        "DAL": "Dallas Mavericks", "DEN": "Denver Nuggets", "DET": "Detroit Pistons", "GSW": "Golden State Warriors", "HOU": "Houston Rockets", "IND": "Indiana Pacers",
+        "LAC": "Los Angeles Clippers", "LAL": "Los Angeles Lakers", "MEM": "Memphis Grizzlies", "MIA": "Miami Heat", "MIL": "Milwaukee Bucks",
+        "MIN": "Minnesota Timberwolves", "NOP": "New Orleans Pelicans", "NYK": "New York Knicks", "OKC": "Oklahoma City Thunder", "ORL": "Orlando Magic",
+        "PHI": "Philadelphia 76ers", "PHX": "Phoenix Suns", "POR": "Portland Trail Blazers", "SAC": "Sacramento Kings", "SAS": "San Antonio Spurs",
+        "TOR": "Toronto Raptors", "UTA": "Utah Jazz", "WAS": "Washington Wizards"}
+
+
+def game_spreads(conn, day):
+    """{home team id: |spread|} - median over the books of the latest spreads snapshot of the day's games"""
+    out = {}
+    try:
+        tc = dict(conn.execute("SELECT home_team_tricode, home_team_id::text FROM nba_calendar.slate_games WHERE game_date = %s", (day,)).fetchall())
+        rows = conn.execute("""WITH l AS (SELECT home_team, max(snapshot_ts) ts FROM nba_market.game_lines_snapshots
+                                          WHERE game_date = %s AND market = 'spreads' AND lower(outcome) = lower(home_team) GROUP BY 1)
+                               SELECT s.home_team, percentile_cont(0.5) WITHIN GROUP (ORDER BY s.point)::float8 FROM nba_market.game_lines_snapshots s JOIN l
+                                 ON s.home_team = l.home_team AND s.snapshot_ts = l.ts
+                               WHERE s.game_date = %s AND s.market = 'spreads' AND lower(s.outcome) = lower(s.home_team) GROUP BY 1""", (day, day)).fetchall()
+        name_to_id = {TEAM_NAME.get(t): hid for t, hid in tc.items()}
+        for name, sp in rows:
+            if name in name_to_id and sp is not None:
+                out[name_to_id[name]] = abs(float(sp))
+    except Exception:  # noqa: BLE001 - no spreads: the rule simply does not act
+        conn.rollback()
+    return out
+
+
+def compose(plan, notes, spreads=None):
+    spreads = spreads or {}
+    for app, cut in SPREAD_SKIP.items():
+        if not spreads or not plan.get(app):
+            continue
+        kept = []
+        for code, k, st, s, cand in plan[app]:
+            v = [spreads[r["game"]] for r in s if r.get("game") in spreads]
+            if v and sum(v) / len(v) > cut:
+                notes.append(f"{app}: {code} not played - its games average a {sum(v) / len(v):.1f}-point spread (limit {cut:g})"); continue
+            kept.append((code, k, st, s, cand))
+        plan[app] = kept
     for app, (rule, x) in COMPOSE.items():
         slips = plan.get(app) or []
         kept = []; used = {}
@@ -430,7 +473,7 @@ def build(conn, day, apps, weights=None):
     #   sub from the strategy's OWN list: P3 (+0.20; shrink +0.20, the same), P10 (+0.15; shrink +0.02), P11 (+0.49), U9 (+0.04; shrink -0.01),
     #     U10 (+0.06), U1 (+0.14), P9 (-0.01, drop 0 - kept on its own list: the owner's never-skip rule of 2026-11-13; the gap is 0.01 u)
     #   shrinking or dropping never beat the best sub on a daily code.
-    plan = compose(plan, notes)
+    plan = compose(plan, notes, game_spreads(conn, day))
     plan = {a: v for a, v in plan.items() if v}
     MAINPOOL = {"P1": P, "P4": P, "U11": U, "U2": U}
     for app_, slips_ in plan.items():
