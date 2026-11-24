@@ -47,7 +47,9 @@ def spreads(conn):
                        FROM nba_market.game_lines_closing WHERE home_spread IS NOT NULL GROUP BY 1,2""", conn)
     b = pd.read_sql("""SELECT game_date::text gd, home_team home, percentile_cont(0.5) WITHIN GROUP (ORDER BY point)::float8 sp
                        FROM nba_market.game_lines_snapshots WHERE market='spreads' AND lower(outcome)=lower(home_team) AND game_date >= '2026-07-01' GROUP BY 1,2""", conn)
-    sp = pd.concat([a, b]).drop_duplicates(["gd", "home"], keep="last")
+    # closing lines carry the UTC date: a late tip lands on the next day - match the home team on the same day first, then the day after
+    a1 = a.copy(); a1["gd"] = (pd.to_datetime(a1["gd"]) - pd.Timedelta(days=1)).dt.strftime("%Y-%m-%d")
+    sp = pd.concat([b, a, a1]).drop_duplicates(["gd", "home"], keep="first")
     lg = lg.merge(sp, on=["gd", "home"], how="left")
     lg["asp"] = lg["sp"].abs()
     games = lg.groupby("gd")["home"].nunique().to_dict()
@@ -61,7 +63,8 @@ def main():
     L = U.layers(d)
     asp, games, gsp = spreads(conn)
     d["asp"] = [asp.get((g, p), np.nan) for g, p in zip(d["gd"].values, d["player_id"].values)]
-    print(f"SP|{U.APP}: legs {len(d):,}, with a spread {np.isfinite(d['asp'].values).mean():.0%}", flush=True)
+    print(f"SP|{U.APP}: legs {len(d):,}, with a spread {np.isfinite(d['asp'].values).mean():.0%}; regular Unders with a spread by season: " +
+          ", ".join(f"{s_} {np.isfinite(d['asp'].values[(d['season'].values == s_) & (d['easy'].values == 0) & d['under'].values]).mean():.0%}" for s_ in U.SEAS), flush=True)
     reg = d["easy"].values == 0; und = d["under"].values
     # 1. leg level
     bk = pd.cut(d["asp"], [-1, 4, 7, 10, 40], labels=["<4", "4-7", "7-10", "10+"])
