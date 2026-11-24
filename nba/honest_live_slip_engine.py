@@ -149,8 +149,35 @@ def game_spreads(conn, day):
     return out
 
 
-def compose(plan, notes, spreads=None):
-    spreads = spreads or {}
+# REST RULE (owner 2026-11-24 10:41 PT "A"; research_filter_battery.py -> research_rest_check.py, three seasons, real prices, on top of the spread rule):
+# a slip whose legs' players average this many days or more since their last game (capped at 7; 1 = back-to-back) is not played - tired legs hit their Unders more.
+#   PrizePicks >= 2.8: +46 / +61 / +129% vs +36 / +52 / +121%, units 98 / 208 / 111 vs 93 / 212 / 108, ~17% fewer slips, luck p .08 / .06 / .06
+#   Underdog   >= 3.6: +29 / +40 / +42% vs +25 / +32 / +37%, units 118 / 219 / 46 vs 111 / 192 / 42, ~7% fewer slips, luck p .16 / .01 / .38
+#   Sleeper / Fliff: no help - not applied.
+REST_SKIP = {"prizepicks": 2.8, "underdog": 3.6}
+
+
+def rest_days(conn, day, pids):
+    """{player: days since his last game-log row this season (capped 7)} - the research's `rest` (research_leg_model_h)"""
+    try:
+        f = season_form(conn, day, pids)
+    except Exception:  # noqa: BLE001 - no rest data: the rule does not act
+        conn.rollback(); return {}
+    return {p: min((day - v[2]).days, 7) for p, v in f.items() if v[2] is not None}
+
+
+def compose(plan, notes, spreads=None, rest=None):
+    spreads = spreads or {}; rest = rest or {}
+    for app, cut in REST_SKIP.items():
+        if not rest or not plan.get(app):
+            continue
+        kept = []
+        for code, k, st, s, cand in plan[app]:
+            v = [rest[r["pid"]] for r in s if r["pid"] in rest]
+            if v and sum(v) / len(v) >= cut:
+                notes.append(f"{app}: {code} not played - its players average {sum(v) / len(v):.1f} days of rest (limit {cut:g})"); continue
+            kept.append((code, k, st, s, cand))
+        plan[app] = kept
     for app, cut in SPREAD_SKIP.items():
         if not spreads or not plan.get(app):
             continue
@@ -475,7 +502,8 @@ def build(conn, day, apps, weights=None):
     #   sub from the strategy's OWN list: P3 (+0.20; shrink +0.20, the same), P10 (+0.15; shrink +0.02), P11 (+0.49), U9 (+0.04; shrink -0.01),
     #     U10 (+0.06), U1 (+0.14), P9 (-0.01, drop 0 - kept on its own list: the owner's never-skip rule of 2026-11-13; the gap is 0.01 u)
     #   shrinking or dropping never beat the best sub on a daily code.
-    plan = compose(plan, notes, game_spreads(conn, day))
+    rp = {r["pid"] for a in REST_SKIP for x in plan.get(a, []) for r in x[3]}
+    plan = compose(plan, notes, game_spreads(conn, day), rest_days(conn, day, rp))
     plan = {a: v for a, v in plan.items() if v}
     MAINPOOL = {"P1": P, "P4": P, "U11": U, "U2": U}
     for app_, slips_ in plan.items():
