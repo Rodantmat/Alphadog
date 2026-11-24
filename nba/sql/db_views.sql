@@ -1,4 +1,4 @@
--- DUMP OF THE NBA DATABASE VIEWS (2026-11-17, nba/dump_db_sql.py). The database is the running copy; this file is the
+-- DUMP OF THE NBA DATABASE VIEWS (2026-11-24, nba/dump_db_sql.py). The database is the running copy; this file is the
 -- record (round-2 P3#16: critical-path SQL must be certifiable from source and recoverable from git).
 -- Do not hand-edit: change the database (or the hand-maintained source files in this folder), then re-dump.
 
@@ -272,6 +272,65 @@ UNION ALL
     d.p_tie
    FROM nba_score.final_hp_derived d;
 
+CREATE OR REPLACE VIEW nba_score.final_hp_all_v2 AS
+ SELECT f.season,
+    f.game_date,
+    f.game_id,
+    f.player_id,
+    f.prop,
+    f.line,
+    f.side,
+    f.ladder_offset,
+    f.anchor,
+    f.baseline_hp,
+    f.final_hp,
+    f.cal_shift,
+    f.score,
+    f.confidence,
+    f.conf_tier,
+    f.c_exist,
+    f.c_quality,
+    f.c_market,
+    f.prop_tier,
+    f.band,
+    f.phase,
+    f.n_uncertain,
+    f.built_at,
+    f.edge,
+    f.cal_chain,
+    NULL::text AS derivation,
+    NULL::numeric AS p_tie
+   FROM nba_score.final_hp_v2 f
+UNION ALL
+ SELECT d.season,
+    d.game_date,
+    d.game_id,
+    d.player_id,
+    d.prop,
+    d.line,
+    d.side,
+    d.ladder_offset,
+    d.anchor,
+    d.baseline_hp,
+    d.final_hp,
+    d.cal_shift,
+    d.score,
+    d.confidence,
+    d.conf_tier,
+    d.c_exist,
+    d.c_quality,
+    d.c_market,
+    d.prop_tier,
+    d.band,
+    d.phase,
+    d.n_uncertain,
+    d.built_at,
+    d.edge,
+    d.cal_chain,
+    d.derivation,
+    d.p_tie
+   FROM nba_score.final_hp_derived_v2 d;
+
 CREATE OR REPLACE VIEW nba_score.paper_results AS
  WITH s AS (
          SELECT paper_picks.strategy,
@@ -366,3 +425,51 @@ CREATE OR REPLACE VIEW nba_score.sim_results AS
     round((sum(returned) / sum(slips)), 3) AS realized_payout_per_unit
    FROM nightly
   GROUP BY strategy, ROLLUP(season);
+
+CREATE OR REPLACE VIEW nba_score.v_legs_honest AS
+ SELECT l.app,
+    l.season,
+    l.game_date,
+    l.player_id,
+    l.prop,
+    l.side,
+    (lower("left"(l.side, 1)) <> ALL (ARRAY['o'::text, 'm'::text, 'h'::text])) AS is_under,
+    l.line,
+        CASE
+            WHEN (l.kind = ANY (ARRAY['standard'::text, 'R'::text, 'main'::text])) THEN 'regular'::text
+            WHEN (l.kind = ANY (ARRAY['goblin'::text, 'F'::text])) THEN 'goblin'::text
+            WHEN (l.kind = ANY (ARRAY['demon'::text, 'B'::text])) THEN 'demon'::text
+            ELSE 'alt'::text
+        END AS kind,
+    l.tier,
+        CASE
+            WHEN ((l.app = 'prizepicks'::text) AND (l.kind = ANY (ARRAY['goblin'::text, 'demon'::text]))) THEN 'modelled'::text
+            ELSE l.src
+        END AS price_source,
+        CASE
+            WHEN (l.app = 'prizepicks'::text) THEN (l.m / (0.542)::double precision)
+            ELSE l.m
+        END AS multiplier,
+    ((1.0)::double precision /
+        CASE
+            WHEN (l.app = 'prizepicks'::text) THEN (l.m / (0.542)::double precision)
+            ELSE l.m
+        END) AS break_even,
+    l.hit,
+    l.ph AS p_honest_baseline,
+    p.p_blend,
+    p.p_gbm_s AS p_small_gbm,
+    p.p_gbm,
+    ((p.p_blend *
+        CASE
+            WHEN (l.app = 'prizepicks'::text) THEN (l.m / (0.542)::double precision)
+            ELSE l.m
+        END) - (1)::double precision) AS predicted_return,
+    (((l.hit)::double precision *
+        CASE
+            WHEN (l.app = 'prizepicks'::text) THEN (l.m / (0.542)::double precision)
+            ELSE l.m
+        END) - (1)::double precision) AS realised_return
+   FROM (nba_score._lr_legs_h l
+     LEFT JOIN nba_score._lr_legs_hp p ON (((p.app = l.app) AND (p.game_date = l.game_date) AND (p.player_id = l.player_id) AND (p.prop = l.prop) AND (p.side = l.side) AND (p.line = l.line) AND (p.kind = l.kind) AND (NOT (p.tier IS DISTINCT FROM l.tier)))))
+  WHERE ((l.hit IS NOT NULL) AND (l.m > (0)::double precision) AND (NOT ((l.app = 'prizepicks'::text) AND (l.tier ~~ '%-u'::text))));
