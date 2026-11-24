@@ -1321,3 +1321,11 @@ The one sign that agrees across apps and with the 2026-27 bad-day study (back-to
 REST_SKIP {"prizepicks": 2.8, "underdog": 3.6}: slip skipped when its players average that many days since their last game (capped 7), after the spread skip.
 HL_TEST 2026-11-18 (run 45462458342): 16 slips written and rolled back. Season replay through 11-23 (run 45462479707): 395 slips (11.6/day), +443 u, ROI +112%,
 w/o 5 best days +23%, drawdown 50 u; PrizePicks 80 slips +79.8 u (+100%), Underdog +53%, Sleeper +102%, Fliff +127%, Betr +172%. First live slate 2026-11-24.
+
+### 2026-11-24 12:00 PT - stake reset: $1, +$1 every 25 units (owner 11:44 PT)
+stake_unit.per_app.linear {from 2026-11-24, start 1, every_units 25}: ONE unit for every app (PrizePicks, Underdog, Sleeper, Fliff, Betr), $1 on 11-24, $2 once the
+units won since 11-24 (all apps) reach 25, $3 at 50, ... same steps going down, floor $1 (unit_per_app.update / unit_for). per_app.units set to $1 now. The text's
+"Accumulated" counts only slates from 11-24 (today's READY text: "Accumulated: $0"). Dry check audit_unit_linear_dry.py run 45474107827 (rolled back): every app $1
+for 11-24, text block "Accumulated: $0"; simulated from 10-20 the unit walks $1 -> $2 at +25 u -> ... with step-downs.
+Incident: the first dry run (45473774698) imported p3_text.py, whose module body ran main() and texted the owner "AlphaDog ALERT: P3 status unknown" (11:47 PT) and
+logged it for the day. Fixed (b8fbb698): p3_text runs only as a script; an earlier ALERT no longer blocks the day's READY text; log day in Pacific time.
