@@ -19,7 +19,7 @@ const pricingFrom = cfg => ({ pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sle
 const J = v => (typeof v === "string" ? JSON.parse(v) : v);
 
 const TIER1_N = 4;   // owner 2026-11-18: Tier 1 = the 4 strongest slips per app (always open), Tier 2 = the rest (always collapsed, not pre-checked for Save)
-const VERSION = "alphadog-v2-nba-friend-v1.10.1";   // v1.10.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then the page pool. // prior: v1.9.8 v1.9.8 (2026-11-23): ships the shared Slips client (same-side substitutes). // prior: v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
+const VERSION = "alphadog-v2-nba-friend-v1.10.2";   // v1.10.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then the page pool. // prior: v1.9.8 v1.9.8 (2026-11-23): ships the shared Slips client (same-side substitutes). // prior: v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
 // prior:
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
@@ -58,14 +58,14 @@ function autoSwap(out, now) {
       const rule = s.leg_gone_rule || "sub";
       if (rule === "drop") { l.off = true; s.drop = true; return; }
       if (rule === "shrink") { l.off = true; return; }
-      const legal = c => c.source_key === s.source_key && !(startedMs(c) != null && startedMs(c) <= now) && !isBad(c)
+      const legal = c => c.source_key === s.source_key && String(c.selected_side) === String(l.selected_side) && !(startedMs(c) != null && startedMs(c) <= now) && !isBad(c)
         && !kept.some(x => x.player_name === c.player_name)
         && !(sidesOf.has(c.player_name + "|" + c.canonical_prop_key) && sidesOf.get(c.player_name + "|" + c.canonical_prop_key) !== c.selected_side)
         && kept.filter(x => x.matchup === c.matchup).length < gcap
         && new Set([...kept.map(x => x.team_abbr), c.team_abbr]).size >= 2;
       const nx = (s.next || []).findIndex(legal);
       if (nx >= 0) { const c = s.next.splice(nx, 1)[0]; c.sub = true; s.legs[i] = c; return; }
-      const k = pool.findIndex(c => c.source_key === s.source_key && !(startedMs(c) != null && startedMs(c) <= now)
+      const k = pool.findIndex(c => c.source_key === s.source_key && String(c.selected_side) === String(l.selected_side) && !(startedMs(c) != null && startedMs(c) <= now)
         && !kept.some(x => x.player_name === c.player_name)
         && !(sidesOf.has(c.player_name + "|" + c.canonical_prop_key) && sidesOf.get(c.player_name + "|" + c.canonical_prop_key) !== c.selected_side)
         && kept.filter(x => x.matchup === c.matchup).length < gcap
@@ -278,12 +278,12 @@ function alive(s){return s.legs.filter(function(l){return !l.dropped&&!l.removed
 function lidUrl(app,ls){var ids=ls.map(function(l){return l.lid});if(ids.length<2||ids.some(function(x){return !x}))return null;
   if(app==='prizepicks')return 'https://app.prizepicks.com/board?projections='+ids.join(',');
   if(app==='sleeper')return 'https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1='+ids.join(',');return null}
-function canTake(s,c,extra){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return false;
+function canTake(s,c,side){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return false;if(side&&String(c.side)!==String(side))return false;
   if(k.some(function(x){return x.player===c.player}))return false;
-  if(k.filter(function(x){return x.matchup&&x.matchup===c.matchup}).length>=(s.gcap||1)+(extra||0))return false;
+  if(k.filter(function(x){return x.matchup&&x.matchup===c.matchup}).length>=(s.gcap||1))return false;
   var tm=k.map(function(x){return x.team}).concat([c.team]);if(tm.every(Boolean)&&new Set(tm).size<2)return false;return true}
-function pickSub(s){if(s.rule==='drop'){s.drop=true;return null}if(s.rule==='shrink')return null;var N=s.next||[];for(var j=0;j<N.length;j++){if(canTake(s,N[j]))return N.splice(j,1)[0]}var P=window.PD.pool||[];for(var pass=0;pass<2;pass++){for(var i=0;i<P.length;i++){if(canTake(s,P[i],pass))return P.splice(i,1)[0]}}return null}
-function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
+function pickSub(s,l){if(s.rule==='drop'){s.drop=true;return null}if(s.rule==='shrink')return null;var sd=l&&l.side;var N=s.next||[];for(var j=0;j<N.length;j++){if(canTake(s,N[j],sd))return N.splice(j,1)[0]}var P=window.PD.pool||[];for(var i=0;i<P.length;i++){if(canTake(s,P[i],sd))return P.splice(i,1)[0]}return null}
+function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s,l);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}if(alive(s).length<2)s.drop=true;s.changed=true}
 function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
 function sweep(s){var ch=false;if(s.saved)return false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped||l.removed)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
 var SV=true,SAVEUI=false;

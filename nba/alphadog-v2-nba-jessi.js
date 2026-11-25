@@ -9,7 +9,7 @@ import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
 const TOP_N = 4;   // owner 2026-11-18: only the 4 strongest slips per app, best first, no tiers
 const UNIT_MAX = 3, UNIT_CAP_FROM = "2026-11-18";   // owner 2026-11-18 14:15 PT "limit her slips at $3 max per app": the unit never goes above $3 on any app, from this date on
-const VERSION = "alphadog-v2-nba-jessi-v1.4.1";   // v1.4.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then her pool. // prior: v1.3.0 v1.3.0 (owner 2026-11-24 11:51 PT): reset from 2026-11-24, stakes like the owner - one unit for all apps, $1, +$1 every 25 units won, same steps down, no cap. // prior: v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.4.2";   // v1.4.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then her pool. // prior: v1.3.0 v1.3.0 (owner 2026-11-24 11:51 PT): reset from 2026-11-24, stakes like the owner - one unit for all apps, $1, +$1 every 25 units won, same steps down, no cap. // prior: v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -51,14 +51,14 @@ function autoSwap(out, now) {
       const rule = s.leg_gone_rule || "sub";
       if (rule === "drop") { l.off = true; s.drop = true; return; }
       if (rule === "shrink") { l.off = true; return; }
-      const legal = c => c.source_key === s.source_key && !(startedMs(c) != null && startedMs(c) <= now) && !isBad(c)
+      const legal = c => c.source_key === s.source_key && String(c.selected_side) === String(l.selected_side) && !(startedMs(c) != null && startedMs(c) <= now) && !isBad(c)
         && !kept.some(x => x.player_name === c.player_name)
         && !(sidesOf.has(c.player_name + "|" + c.canonical_prop_key) && sidesOf.get(c.player_name + "|" + c.canonical_prop_key) !== c.selected_side)
         && kept.filter(x => x.matchup === c.matchup).length < gcap
         && new Set([...kept.map(x => x.team_abbr), c.team_abbr]).size >= 2;
       const nx = (s.next || []).findIndex(legal);
       if (nx >= 0) { const c = s.next.splice(nx, 1)[0]; c.sub = true; s.legs[i] = c; return; }
-      const k = pool.findIndex(c => c.source_key === s.source_key && !(startedMs(c) != null && startedMs(c) <= now)
+      const k = pool.findIndex(c => c.source_key === s.source_key && String(c.selected_side) === String(l.selected_side) && !(startedMs(c) != null && startedMs(c) <= now)
         && !kept.some(x => x.player_name === c.player_name)
         && !(sidesOf.has(c.player_name + "|" + c.canonical_prop_key) && sidesOf.get(c.player_name + "|" + c.canonical_prop_key) !== c.selected_side)
         && kept.filter(x => x.matchup === c.matchup).length < gcap
@@ -206,12 +206,12 @@ function alive(s){return s.legs.filter(function(l){return !l.dropped})}
 function lidUrl(app,ls){var ids=ls.map(function(l){return l.lid});if(ids.length<2||ids.some(function(x){return !x}))return null;
   if(app==='prizepicks')return 'https://app.prizepicks.com/board?projections='+ids.join(',');
   if(app==='sleeper')return 'https://sleeper.onelink.me/GF91?deep_link_value=entry_prefill&af_dp=sleeper://&deep_link_sub1='+ids.join(',');return null}
-function canTake(s,c){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return false;
+function canTake(s,c,side){var k=alive(s);if(c.app!==s.app||started(c)||c.bad)return false;if(side&&String(c.side)!==String(side))return false;
   if(k.some(function(x){return x.player===c.player}))return false;
   if(k.filter(function(x){return x.matchup&&x.matchup===c.matchup}).length>=(s.gcap||1))return false;
   var tm=k.map(function(x){return x.team}).concat([c.team]);if(tm.every(Boolean)&&new Set(tm).size<2)return false;return true}
-function pickSub(s){if(s.rule==='drop'){s.drop=true;return null}if(s.rule==='shrink')return null;var N=s.next||[];for(var j=0;j<N.length;j++){if(canTake(s,N[j]))return N.splice(j,1)[0]}var P=window.PD.pool||[];for(var i=0;i<P.length;i++){if(canTake(s,P[i]))return P.splice(i,1)[0]}return null}
-function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}s.changed=true}
+function pickSub(s,l){if(s.rule==='drop'){s.drop=true;return null}if(s.rule==='shrink')return null;var sd=l&&l.side;var N=s.next||[];for(var j=0;j<N.length;j++){if(canTake(s,N[j],sd))return N.splice(j,1)[0]}var P=window.PD.pool||[];for(var i=0;i<P.length;i++){if(canTake(s,P[i],sd))return P.splice(i,1)[0]}return null}
+function dropLeg(s,l,why){l.dropped=true;l.why=why||null;var c=pickSub(s,l);if(c){c.sub=true;l.sub_in=c;s.legs.push(c)}if(alive(s).length<2)s.drop=true;s.changed=true}
 function restoreLeg(s,l){l.dropped=false;l.why=null;if(l.sub_in){var i=s.legs.indexOf(l.sub_in);if(i>=0)s.legs.splice(i,1);window.PD.pool.unshift(l.sub_in);l.sub_in=null}}
 function sweep(s){var ch=false;for(var i=0;i<s.legs.length;i++){var l=s.legs[i];if(l.dropped)continue;if(l.off||l.started||started(l)){dropLeg(s,l,l.off?'off the board':'game started');ch=true}}return ch}
 function initSwap(d){window.PD=d;d.pool=(d.pool||[]).slice();d.slips.forEach(function(s){sweep(s)})}
