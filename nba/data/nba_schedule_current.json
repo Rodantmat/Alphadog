@@ -25886,8 +25886,8 @@
       "away_team_tricode": "DET",
       "arena_name": "Kia Center",
       "arena_city": "Orlando",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25901,8 +25901,8 @@
       "away_team_tricode": "BOS",
       "arena_name": "Capital One Arena",
       "arena_city": "Washington",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
@@ -25916,8 +25916,8 @@
       "away_team_tricode": "DAL",
       "arena_name": "Ball Arena",
       "arena_city": "Denver",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Emirates NBA Cup"
     },
     {
