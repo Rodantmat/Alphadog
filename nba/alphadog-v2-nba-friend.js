@@ -19,7 +19,7 @@ const pricingFrom = cfg => ({ pp: cfg.pp, ud: cfg.ui.ud_payout, sleeper: cfg.sle
 const J = v => (typeof v === "string" ? JSON.parse(v) : v);
 
 const TIER1_N = 4;   // owner 2026-11-18: Tier 1 = the 4 strongest slips per app (always open), Tier 2 = the rest (always collapsed, not pre-checked for Save)
-const VERSION = "alphadog-v2-nba-friend-v1.10.0";   // v1.10.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then the page pool. // prior: v1.9.8 v1.9.8 (2026-11-23): ships the shared Slips client (same-side substitutes). // prior: v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
+const VERSION = "alphadog-v2-nba-friend-v1.10.1";   // v1.10.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then the page pool. // prior: v1.9.8 v1.9.8 (2026-11-23): ships the shared Slips client (same-side substitutes). // prior: v1.9.0 (owner 2026-11-11): Full board + Player profile buttons - the ROI board, dossier and player profile for Jon (no menu, no builder), served under his own link;   // v1.8.1: X on a swapped-out leg is hidden, undo re-checks started legs. // v1.8.0 (owner 2026-11-11): save system from 11-12 + slip history. // v1.7.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.7.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub comes in; started / off-board legs swap themselves. //   // owner 2026-11-10: unconfirmed legs are missing; tip-offs filled.
 // prior:
 const HEAD_ICONS = `<link rel="icon" type="image/png" href="/icon.png"><link rel="apple-touch-icon" href="/icon.png"><link rel="manifest" href="/{{T}}/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JStacks"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0e1116">`;
 const BRAND = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px"><img src="/icon.png" width="36" height="36" style="border-radius:8px" alt=""><h1 style="margin:0">AlphaDog-JStacks</h1></div>`;
@@ -40,7 +40,7 @@ async function tokenOk(sql, token) {
 const legF = l => { const g = l._g || {}; const f = Number(g.factor != null ? g.factor : g.m); return Number.isFinite(f) && f > 0 ? f : 1; };
 const legLid = l => { const i = l.link && l.link.ids; if (!i) return null; if (l.source_key === "prizepicks") return i.projection_id ? i.projection_id + "-" + (l.selected_side === "less" ? "u" : "o") + "-" + l.line_value : null; return l.source_key === "sleeper" && i.line_id ? String(i.line_id) : null; };
 const startedMs = l => { const t = Date.parse((l.link && l.link.tip_utc) || l.official_game_time_utc || ""); return Number.isFinite(t) ? t : null; };
-const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok"));
+const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok" && l.live_now !== "adjusted"));   // 2026-11-25: a leg kept at a better moved line (LINE ADJUSTED) is not bad
 
 // replace a drifted / started leg from the friend's own pool: same app, other player, never the opposite side of a player already on the day's slips,
 // the slip's game cap, >= 2 teams, best edge first
@@ -73,6 +73,8 @@ function autoSwap(out, now) {
       if (k >= 0) { const c = pool.splice(k, 1)[0]; c.sub = true; s.legs[i] = c; used.add(c.player_name + "|" + c.canonical_prop_key + "|" + c.selected_side); }
       else l.off = true;
     });
+    // 2026-11-25 (owner: "there are no single leg slips"): a slip left with fewer than 2 playable legs is not played
+    if (s.legs.filter(l => !l.off).length < 2) s.drop = true;
   }
   out.backup_pool = pool;
 }

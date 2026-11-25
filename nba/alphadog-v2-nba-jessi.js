@@ -9,7 +9,7 @@ import LOGO_B64 from "./main_ui/client/logo.png.b64.txt";
 
 const TOP_N = 4;   // owner 2026-11-18: only the 4 strongest slips per app, best first, no tiers
 const UNIT_MAX = 3, UNIT_CAP_FROM = "2026-11-18";   // owner 2026-11-18 14:15 PT "limit her slips at $3 max per app": the unit never goes above $3 on any app, from this date on
-const VERSION = "alphadog-v2-nba-jessi-v1.4.0";   // v1.4.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then her pool. // prior: v1.3.0 v1.3.0 (owner 2026-11-24 11:51 PT): reset from 2026-11-24, stakes like the owner - one unit for all apps, $1, +$1 every 25 units won, same steps down, no cap. // prior: v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
+const VERSION = "alphadog-v2-nba-jessi-v1.4.1";   // v1.4.0 (owner 2026-11-24 15:08 PT): leg-gone rule like the owner - shrink / drop / sub from the strategy's own next legs, then her pool. // prior: v1.3.0 v1.3.0 (owner 2026-11-24 11:51 PT): reset from 2026-11-24, stakes like the owner - one unit for all apps, $1, +$1 every 25 units won, same steps down, no cap. // prior: v1.2.2: no PrizePicks goblin/demon in the sub bank. // prior:   // v1.2.0 (owner 2026-11-10): every leg has a checkbox - untick it and a sub from her pool comes in; started / off-board legs swap themselves. //   // v1.1.5: unconfirmed legs are missing; tip-offs filled. //   // v1.1.4 (owner 2026-11-10): subs also come from the app pairing list (best hit-chance legs), live-checked. // v1.1.3 prior;   // v1.1.2 (owner 2026-11-07): Sleeper pairings re-resolved against the live board, Fliff pairings listed without a link. // v1.1.0 (owner 2026-11-07): FLIFF added (PrizePicks, Sleeper, Fliff)
 const APP_LABEL = { prizepicks: "PrizePicks", sleeper: "Sleeper", fliff: "Fliff" };
 const APP_ORDER = ["prizepicks", "sleeper", "fliff"];
 // the unit ladder (owner 2026-11-01): rung n starts at UPX x n(n-1)/2 of accumulated dollars ($2 at UPX, $3 at 3 UPX, $4 at 6 UPX ...), the same points going down.
@@ -31,7 +31,7 @@ async function tokenOk(sql, token) {
 
 const legLid = l => { const i = l.link && l.link.ids; if (!i) return null; if (l.source_key === "prizepicks") return i.projection_id ? i.projection_id + "-" + (l.selected_side === "less" ? "u" : "o") + "-" + l.line_value : null; return l.source_key === "sleeper" && i.line_id ? String(i.line_id) : null; };
 const startedMs = l => { const t = Date.parse((l.link && l.link.tip_utc) || l.official_game_time_utc || ""); return Number.isFinite(t) ? t : null; };
-const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok"));
+const isBad = l => (l.source_key === "prizepicks" ? (l.pp_now && l.pp_now !== (l.want_odds || "standard")) : (l.live_now && l.live_now !== "ok" && l.live_now !== "adjusted"));   // 2026-11-25: a leg kept at a better moved line (LINE ADJUSTED) is not bad
 
 // replace a drifted / started leg from her own pool: same app, other player, never the opposite side of a player already on the day's slips, the slip's game cap, >= 2 teams
 function autoSwap(out, now) {
@@ -66,6 +66,8 @@ function autoSwap(out, now) {
       if (k >= 0) { const c = pool.splice(k, 1)[0]; c.sub = true; s.legs[i] = c; }
       else l.off = true;
     });
+    // 2026-11-25 (owner: "there are no single leg slips"): a slip left with fewer than 2 playable legs is not played
+    if (s.legs.filter(l => !l.off).length < 2) s.drop = true;
   }
   out.backup_pool = pool.filter(c => !c._pair);
 }

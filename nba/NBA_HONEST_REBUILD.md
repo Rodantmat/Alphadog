@@ -1377,3 +1377,5 @@ In-sample: the strategies were chosen on this season.
 - New rule (owner): a slip left with fewer than 2 legs is DO NOT PLAY; a sub slip left short shows "no substitute left - N-pick".
 - Fixed: every leg takes its tip-off from the slate schedule (the Fliff 6-pick kept Tyrese Maxey after MIA@PHI tipped; now STARTED -> sub Josh Giddey).
 - Open: the same line-adjust / Fliff-list logic on Jessi's and Jon's pages.
+- 2026-11-25 14:40 PT: Jessi (v1.4.1) / Jon (v1.10.1) pages: a leg the live check keeps at a better moved line ("adjusted") is no longer swapped; a slip left with fewer than 2 legs is DO NOT PLAY. (Fliff next legs already came from friend_engine's own list.)
+- 2026-11-25 placed by the owner: Underdog U11 + U9 ($1, 6.17x each); Fliff 6-pick (Keegan Murray and Maxey subbed: Keldon Johnson, Josh Giddey), 5-pick, 4-pick, 3-pick, 2-pick ($1 each); F10 not played (drop rule). Fliff pulled SAC@GSW before 2:25 PM.
