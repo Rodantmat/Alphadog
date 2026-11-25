@@ -1366,3 +1366,14 @@ OWNER: no drift 395 slips +444 u (+112%), $+3,574 (ends $18); with drift (median
 JESSI (PP / Sleeper / Fliff, max 4 per app): no drift +311 u (+118%), $+1,783; with drift +235 u (+94%) [+194..+281], $+1,015 [$677..$1,435], worst drop $371.
 JON (PP / UD / Sleeper / Fliff, max 4 per app, units): no drift +338 u (+108%); with drift +260 u (+87%) [+211..+301].
 In-sample: the strategies were chosen on this season.
+
+### 2026-11-25 14:20 PT - Slips screen v1.6.1 / v1.6.2 (owner 13:56 PT: Fliff "over the place", single-leg slips, Bridges 12.5 -> 13.5 should be kept)
+- Found: the Fliff slips had NO substitute list (the board holds no 'fliff' rows, so slip_next_legs never matched) and the Fliff pool held only More legs, so a gone leg could not be replaced and slips shrank, down to one leg.
+  Charles Bassey 8.5 rebounds was really off Fliff (not on the 1:26 PM Fliff capture); Mikal Bridges 12.5 points was a failed Fliff card read (it is on Fliff, Under 1.90x).
+- Fixed: Fliff candidates of each slip's own strategy are taken from the Fliff Pick'Em board (line, side, multiplier, game) - F11 / F4 / F9 / F8 now sub (SGA, Kris Murray, Myles Turner, Coby White).
+- Fixed: a Fliff card read retries up to 3 times; the Sleeper board read waits 25 s and retries once (it timed out at 1:43 PM).
+- New rule (owner): a leg whose line moved is kept at the closest BETTER line on its own app (higher for a Less, lower for a More) - "LINE ADJUSTED x -> y", multiplier
+  from the new line (Fliff); a worse line is not taken (the strategy's leg-gone rule applies). PrizePicks / Underdog (main lines) / Betr / Fliff.
+- New rule (owner): a slip left with fewer than 2 legs is DO NOT PLAY; a sub slip left short shows "no substitute left - N-pick".
+- Fixed: every leg takes its tip-off from the slate schedule (the Fliff 6-pick kept Tyrese Maxey after MIA@PHI tipped; now STARTED -> sub Josh Giddey).
+- Open: the same line-adjust / Fliff-list logic on Jessi's and Jon's pages.
