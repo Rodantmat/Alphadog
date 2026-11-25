@@ -5305,19 +5305,6 @@
       "team_abbreviation": "BOS"
     },
     {
-      "id": 1631115,
-      "full_name": "Orlando Robinson",
-      "last_comma_first": "Robinson, Orlando",
-      "roster_status": 1,
-      "from_year": "2022",
-      "to_year": "2026",
-      "player_code": "orlando_robinson",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
-    },
-    {
       "id": 1631157,
       "full_name": "Ryan Rollins",
       "last_comma_first": "Rollins, Ryan",
