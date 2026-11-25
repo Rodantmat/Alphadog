@@ -379,7 +379,7 @@ const autoSwapped=new Set(); // 'slipIdx|legIdx' of the legs swapped out because
 let slipsLive=false;         // only a live slate swaps (a replay slate's games all started long ago)
 // LIVE LINE CHECK (2026-11-04): the server re-reads PrizePicks' newest board on every load and sets pp_now on each PrizePicks leg; a leg that is
 // not standard any more (goblin / demon / moved / off the board) is unchecked and swapped for a confirmed-standard pool leg, like a started leg.
-function ppChanged(l,slip){if(l&&l.ud_prediction&&slip&&String(slip.source_key||'')==='underdog'&&String(slip.entry_mode||'')==='flex')return true;if(!l)return false;if(String(l.source_key||'')==='prizepicks')return !!l.pp_now&&l.pp_now!=='standard';return !!l.live_now&&l.live_now!=='ok'}
+function ppChanged(l,slip){if(l&&l.ud_prediction&&slip&&String(slip.source_key||'')==='underdog'&&String(slip.entry_mode||'')==='flex')return true;if(!l)return false;if(String(l.source_key||'')==='prizepicks')return !!l.pp_now&&l.pp_now!=='standard';return !!l.live_now&&l.live_now!=='ok'&&l.live_now!=='adjusted'}
 function ppNowLabel(l){if(l&&l.ud_prediction&&String(l.source_key||'')==='underdog')return 'PREDICTION - NO FLEX';const n=String(l&&(String(l.source_key||'')==='prizepicks'?l.pp_now:l.live_now)||'');return n==='goblin'?'NOW GOBLIN':n==='demon'?'NOW DEMON':n==='moved'?'LINE MOVED':n==='missing'?'OFF BOARD':n==='side'?'MORE ONLY':'CHANGED'}
 function legStarted(l,nowMs){
   const t=(l&&l.link&&l.link.tip_utc)||(l&&l.official_game_time_utc)||null;
@@ -458,9 +458,10 @@ function legRowHtml(leg,slipIdx,legIdx){
   const isSub=isLegSubstitute(slipIdx,leg);
   const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
   const stTag=autoSwapped.has(slipIdx+'|'+legIdx)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">'+(ppChanged(leg)&&!legStarted(leg,Date.now())?ppNowLabel(leg):'STARTED')+'</span>':(ppChanged(leg)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">'+ppNowLabel(leg)+'</span>':'');
+  const adjTag=leg.line_from!=null&&Number(leg.line_from)!==Number(leg.line_value)?'<span class="subTag" style="font-size:10px;font-weight:800;color:#16a34a;margin-right:6px">LINE ADJUSTED '+esc(String(leg.line_from))+' → '+esc(String(leg.line_value))+'</span>':'';
   const hi=String(leg.dnp_risk||'')==='HIGH';
   const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
-  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+stTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+cellTag(leg)+resultTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+stTag+adjTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+cellTag(leg)+resultTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
 }
 function legLine(l){
   let variant='';
@@ -513,13 +514,16 @@ function slipCardHtml(s,idx){
   const kept=keptLegsOf(s,idx);
   if(kept.length!==(s.legs||[]).length){
     const sel0=slipDeselected.has(String(idx))?'':' checked';
+    // owner 2026-11-25 13:56 PT ("there are slips with a single leg ... drop that slip, there are no single leg slips"): a slip left with fewer than 2 legs is NOT PLAYED
+    if(kept.length<2)return slipCardShell({...s,_legGoneDrop:true,_dropReason:'DO NOT PLAY - its legs are gone and no valid substitute is left (a slip needs at least 2 legs).'},idx,'',null,'');
+    if(kept.length<Number(s.slip_size)&&!s._legGoneShrink)s={...s,stake_label:(s.stake_label?s.stake_label+' • ':'')+'no substitute left - '+kept.length+'-pick instead of '+s.slip_size};
     const mult=kept.length>=2?recomputeMultiplier(s.source_key,s.entry_mode,kept.length,kept):null;
     const fields=kept.length>=2?realMultFieldsHtmlForSize({...s,legs:kept},idx,kept.length):'<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
     return slipCardShell(s,idx,sel0,mult,fields);
   }
   // 2026-11-09 (Betr: a leg left the slip but the multiplier stayed): whenever the legs in the card are not the slip's original size, price the legs that are there
   const nLegs=(s.legs||[]).length;
-  if(nLegs>=2&&nLegs!==Number(s.slip_size)){
+  if(nLegs>=2&&(nLegs!==Number(s.slip_size)||(s.legs||[]).some(l=>l.line_from!=null))){
     const m=recomputeMultiplier(s.source_key,s.entry_mode,nLegs,s.legs);
     return slipCardShell(s,idx,slipDeselected.has(String(idx))?'':' checked',m||s.estimated_multiplier,realMultFieldsHtmlForSize(s,idx,nLegs));
   }
@@ -528,7 +532,7 @@ function slipCardHtml(s,idx){
 function slipCardShell(s,idx,sel,multValue,fieldsHtml){
   if(s._legGoneDrop){
     // the DROP rule: a leg is gone, so this slip is not played (its strategy earned more by skipping than by substituting)
-    return '<div class="slipCard" style="opacity:0.75"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'" disabled><b>'+slipTitleHtml(s,idx)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">—</span></div><div class="small" style="margin:2px 0 6px;color:#ff6b6b;font-weight:800">DO NOT PLAY - a leg is gone and this strategy\'s rule is to skip the slip (no substitute, no smaller slip).</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div></div>';
+    return '<div class="slipCard" style="opacity:0.75"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'" disabled><b>'+slipTitleHtml(s,idx)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">—</span></div><div class="small" style="margin:2px 0 6px;color:#ff6b6b;font-weight:800">'+esc(s._dropReason||'DO NOT PLAY - a leg is gone and this strategy\'s rule is to skip the slip (no substitute, no smaller slip).')+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div></div>';
   }
   if(s._legGoneShrink)s={...s,stake_label:(s.stake_label?s.stake_label+' • ':'')+'leg gone - played one pick smaller (this strategy\'s rule)'};
   const meta=[s.track_label?esc(s.track_label):'',s.place_by_pt?'<b>Place by '+esc(s.place_by_pt)+'</b>'+(s.place_by_game?' ('+esc(s.place_by_game)+' tips)':' (first tip)'):'',s.stake_label?'<b>'+esc(s.stake_label)+'</b>':(s.status?esc(String(s.status).replace(/_/g,' ')):''),s.quote_note?(s.quote_failed?'<span style="color:#ff6b6b;font-weight:700">'+esc(s.quote_note)+'</span>':esc(s.quote_note)):'',s.stake_weight!=null&&s.stake_weight!==1?'stake '+esc(s.stake_weight)+'u':'',s.result?('result '+esc(s.result.hits)+'/'+esc(s.slip_size-(s.result.pushes||0))+' hit'+(s.result.pushes?' ('+esc(s.result.pushes)+' push, paid as a '+esc(s.slip_size-s.result.pushes)+'-pick)':'')+' • paid '+esc(Math.round(Number(s.result.payout||0)*100)/100)+'x'):''].filter(Boolean).join(' • ');
@@ -563,7 +567,7 @@ async function highHitSlips(){
     NBA_PRICING=j.pricing||NBA_PRICING;NBA_MAX_PER_GAME=j.max_per_game||NBA_MAX_PER_GAME;
     {const pl=j.pp_live;
       if(pl&&pl.checked_at){const t=new Date(pl.checked_at);const hm=t.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Los_Angeles'});
-        ppLiveNoteHtml='<div class="small" style="margin:0 0 8px;'+((pl.flagged||[]).length?'color:#ff6b6b;font-weight:700':'opacity:0.85')+'">Legs checked against each app&#39;s own board at '+esc(hm)+' PT'+(pl.total_ms?' ('+(pl.total_ms/1000).toFixed(1)+' s)':'')+': '+((pl.flagged||[]).length?esc((pl.flagged||[]).length+' leg(s) changed and were swapped out - '+(pl.flagged||[]).join('; ')):'every leg is still on the board as built')+(pl.apps?' | '+Object.keys(pl.apps).map(a=>esc(a)+(pl.apps[a].ok?' ok':' FAILED')).join(', '):'')+'</div>'}
+        ppLiveNoteHtml='<div class="small" style="margin:0 0 8px;'+((pl.flagged||[]).length?'color:#ff6b6b;font-weight:700':'opacity:0.85')+'">Legs checked against each app&#39;s own board at '+esc(hm)+' PT'+(pl.total_ms?' ('+(pl.total_ms/1000).toFixed(1)+' s)':'')+': '+((pl.flagged||[]).length?esc((pl.flagged||[]).length+' leg(s) changed and were swapped out - '+(pl.flagged||[]).join('; ')):'every leg is still on the board as built')+((pl.adjusted||[]).length?' | line moved to a better line and kept: '+esc((pl.adjusted||[]).join('; ')):'')+(pl.apps?' | '+Object.keys(pl.apps).map(a=>esc(a)+(pl.apps[a].ok?' ok':' FAILED')).join(', '):'')+'</div>'}
       else if(pl&&pl.error){ppLiveNoteHtml='<div class="small" style="margin:0 0 8px;color:#ff6b6b;font-weight:700">PrizePicks live line check did not run ('+esc(pl.error)+') - verify each PrizePicks leg in the app.</div>'}
       else ppLiveNoteHtml=''}
     const slips=j.generated_slips||[];

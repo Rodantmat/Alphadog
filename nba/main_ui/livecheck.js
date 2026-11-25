@@ -42,6 +42,23 @@ async function betrToken(sql) {
 
 const sideOf = l => (String(l.selected_side || (l.link && l.link.side) || "").toLowerCase().startsWith("l") || String(l.selected_side || "").toLowerCase() === "under" || (l.link && l.link.side === "u")) ? "less" : "more";
 const near = (a, b) => Math.abs(Number(a) - Number(b)) < 1e-9;
+// LINE DRIFT (owner 2026-11-25 13:56 PT: "bridges 12.5 points less drifted to 13.5 less, which is even better, instead of dropping, it should be just readjusted
+// and used ... for more and less legs accordingly"): when the leg's own line is gone but the app offers the SAME player / stat / side at another line, a line on the
+// leg's favourable side (a higher line for a Less, a lower line for a More) is taken - the closest one - and the leg is kept at that line (live_now "adjusted",
+// line_from = the line it was built at). A line on the unfavourable side is not taken (the leg is "moved" and the strategy's leg-gone rule applies).
+function favLine(l, lines) {
+  const old = Number(l.line_value), less = sideOf(l) === "less";
+  const ok = lines.filter(x => Number.isFinite(Number(x.line)) && (less ? Number(x.line) > old : Number(x.line) < old));
+  if (!ok.length) return null;
+  ok.sort((a, b) => Math.abs(Number(a.line) - old) - Math.abs(Number(b.line) - old));
+  return ok[0];
+}
+function adjustTo(l, row) {
+  if (l.line_from == null) l.line_from = Number(l.line_value);
+  l.line_value = Number(row.line); l.live_now = "adjusted";
+  if (row.m != null && Number(row.m) > 1) l.leg_factor = Number(row.m);
+  if (l.link) l.link = { ...l.link, line: Number(row.line) };
+}
 
 function indexPP(doc) {
   const names = new Map();
@@ -79,6 +96,11 @@ function markPP(l, ix) {
   else if (res) { l.pp_now = want; l.live_now = "ok"; }
   else {
     const same = cand.find(r => near(r.line, line));
+    const fav = !same || same.odds !== "standard" ? favLine(l, cand.filter(r => r.odds === want)) : null;
+    if (fav && want === "standard") { adjustTo(l, fav); l.pp_now = "standard"; l.live_now = "adjusted";
+      const tip = (l.link && l.link.tip_utc) || l.official_game_time_utc || null;
+      l.link = { ids: { odds_type: want, projection_id: fav.id }, line: fav.line, side: sideOf(l) === "less" ? "u" : "o", tip_utc: tip };
+      return; }
     l.pp_now = same ? same.odds : (cand.length ? "moved" : "missing");
     l.live_now = l.pp_now === "standard" ? "ok" : (l.pp_now === "moved" ? "moved" : l.pp_now === "missing" ? "missing" : "moved");
   }
@@ -107,7 +129,10 @@ function markBetr(l, map) {
   const es = map.get(String(ids.player_id) + "|" + String(ids.stat)) || [];
   const line = Number(l.line_value), less = sideOf(l) === "less";
   const exact = es.filter(e => near(e.line, line));
-  if (exact.length) l.live_now = exact.some(e => less ? e.under : e.over) ? "ok" : "side";
+  if (exact.length && exact.some(e => less ? e.under : e.over)) { l.live_now = "ok"; return; }
+  const fav = favLine(l, es.filter(e => less ? e.under : e.over));
+  if (fav) { adjustTo(l, fav); return; }
+  if (exact.length) l.live_now = "side";
   else l.live_now = es.length ? "moved" : "missing";
 }
 function markSleeper(l, idset) {
@@ -224,7 +249,10 @@ async function udCheck(legs) {
     if (!byName.has(nm)) { unresolved++; if (unres.length < 60) unres.push(nm + "@" + String((l.link && l.link.tip_utc) || l.official_game_time_utc || l.game_time_utc || "?").slice(5, 16)); if (byName.size > 30) l.live_now = "missing"; continue; }   // Underdog no longer lists the player (game started / pulled): off the board
     const es = entries.get(nm + "|" + l.canonical_prop_key) || [];
     const ex = es.filter(e => near(e.line, l.line_value)), less = sideOf(l) === "less";
-    l.live_now = ex.length ? (ex.some(e => less ? e.lower : e.higher) ? "ok" : "side") : (es.length ? "moved" : "missing");
+    if (ex.length && ex.some(e => less ? e.lower : e.higher)) { l.live_now = "ok"; continue; }
+    const fav = favLine(l, es.filter(e => !e.alt && (less ? e.lower : e.higher)));
+    if (fav) { adjustTo(l, fav); continue; }
+    l.live_now = ex.length ? "side" : (es.length ? "moved" : "missing");
   }
   return { unresolved, ...dbg };
 }
@@ -266,17 +294,24 @@ async function fliffCheck(legs) {
   const need = new Map();   // gameId|cat -> true
   for (const l of legs) { const cat = FLIFF_CAT[l.canonical_prop_key]; const g = fGame(l); if (cat && g) need.set(g.id + "|" + cat, [g.id, cat]); }
   const rows = new Map();   // name|prop -> [{line, type}]
+  const failed = new Set();
   await pool([...need.values()], 6, async ([gid, cat]) => {
-    try { const c = await post(host, { __object_class_name: "FCM__Skipper_GetCards__Request", variables: { filter: { league: nba, games: [gid], prop_categories: ["fkey__sk_prop_category__" + cat] } } });
+    for (let attempt = 0; attempt < 3; attempt++) try { const c = await post(host, { __object_class_name: "FCM__Skipper_GetCards__Request", variables: { filter: { league: nba, games: [gid], prop_categories: ["fkey__sk_prop_category__" + cat] } } });
       const prop = Object.keys(FLIFF_CAT).find(k => FLIFF_CAT[k] === cat);
       for (const pk of ((c.result || {}).response || {}).cards_packs || []) for (const cd of pk.cards || []) { const pr = cd.player_prop_render_data || {}; if (!pr.name) continue;
         for (const o of ((cd.betting_options || {}).options) || []) if (o.is_main_line && (o.option_type === 0 || o.option_type === 1) && o.status === 0 && o.eu_odds) {
-          const k = normName(pr.name) + "|" + prop; if (!rows.has(k)) rows.set(k, []); rows.get(k).push({ line: Number(o.line), type: o.option_type }); } } } catch (_e) { /* those legs stay unchecked */ }
+          const k = normName(pr.name) + "|" + prop; if (!rows.has(k)) rows.set(k, []); rows.get(k).push({ line: Number(o.line), type: o.option_type, m: Number(o.eu_odds) }); } }
+      failed.delete(gid + "|" + cat); break; } catch (_e) { failed.add(gid + "|" + cat); /* retried; a card that fails 3 times leaves its legs unchecked */ }
   });
   for (const l of legs) {
     const cat = FLIFF_CAT[l.canonical_prop_key]; const g = fGame(l); if (!cat || !g || !need.has(g.id + "|" + cat)) continue;
+    if (failed.has(g.id + "|" + cat)) { l.live_unchecked = true; continue; }
     const rs = rows.get(normName(l.player_name) + "|" + l.canonical_prop_key) || [], t = sideOf(l) === "less" ? 1 : 0;
-    l.live_now = rs.some(r => near(r.line, l.line_value) && r.type === t) ? "ok" : (rs.length ? "moved" : "missing");
+    const ex = rs.find(r => near(r.line, l.line_value) && r.type === t);
+    if (ex) { l.live_now = "ok"; if (ex.m > 1) l.live_m = ex.m; continue; }
+    const fav = favLine(l, rs.filter(r => r.type === t));
+    if (fav) { adjustTo(l, fav); continue; }
+    l.live_now = rs.length ? "moved" : "missing";
   }
   return { games: games.length, cards: need.size, teams: games.map(g => g.teams.join("@")).join(","), sample: [...rows.entries()].slice(0, 6).map(([k, v]) => k + "=" + v.map(x => x.line + "/" + x.type).join(";")).join(" | "), n_rows: rows.size };
 }
@@ -353,7 +388,8 @@ export async function overlayLive(sql, out, ppFallback) {
   if (want.prizepicks.length && !ppFresh) jobs.push(getText("https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
     { headers: { "user-agent": UA, accept: "application/json, text/plain, */*", referer: "https://app.prizepicks.com/", origin: "https://app.prizepicks.com" } }).then(r => ({ app: "prizepicks", r })));
   if (want.sleeper.length) jobs.push(getText("https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
-    { headers: { "user-agent": UA, accept: "application/json", referer: "https://sleeper.com/" } }, 15000).then(r => ({ app: "sleeper", r })));
+    { headers: { "user-agent": UA, accept: "application/json", referer: "https://sleeper.com/" } }, 25000).then(async r => (r.status === 200 ? { app: "sleeper", r } : { app: "sleeper", r: await getText("https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
+    { headers: { "user-agent": UA, accept: "application/json", referer: "https://sleeper.com/" } }, 25000) })));   // 2026-11-25: one retry - the 15 s read timed out at 1:43 PM
   if (want.betr.length) jobs.push((async () => {
     const tok = await betrToken(sql); if (!tok) return { app: "betr", r: { status: 0, text: "", ms: 0, error: "no valid Betr session token" } };
     const r = await getText("https://api.fantasy.betr.app/graphql", { method: "POST", headers: { "content-type": "application/json", accept: "application/json", authorization: tok,
@@ -417,19 +453,22 @@ export async function overlayLive(sql, out, ppFallback) {
   // a pool leg that is not confirmed on its own app's board is never offered as a substitute
   out.backup_pool = pool.filter(l => {
     if (l.source_key === "prizepicks" && apps.prizepicks && apps.prizepicks.ok) return l.pp_now === "standard";
-    if (l.live_now && l.live_now !== "ok") return false;
+    if (l.live_now && l.live_now !== "ok" && l.live_now !== "adjusted") return false;
     // a Sleeper / Betr leg with no id of its own cannot be checked against the app's board, so it is never offered as a substitute (owner 2026-11-07)
     if ((l.source_key === "sleeper" || l.source_key === "betr") && apps[l.source_key] && apps[l.source_key].ok && !l.live_now) return false;
     return true;
   });
-  const flagged = [];
+  const flagged = [], adjusted = [];
   for (const s of slips) {
-    const bad = (s.legs || []).filter(l => (l.source_key === "prizepicks" ? l.pp_now && l.pp_now !== "standard" : l.live_now && l.live_now !== "ok"));
+    const adj = (s.legs || []).filter(l => l.live_now === "adjusted");
+    if (adj.length) { s.line_adjusted = adj.map(l => `${l.player_name} ${l.canonical_prop_key} ${sideOf(l) === "less" ? "Less" : "More"} ${l.line_from} -> ${l.line_value}`);
+      adjusted.push(...s.line_adjusted.map(a => `${s.structure_label || s.slip_type}: ${a}`)); }
+    const bad = (s.legs || []).filter(l => (l.source_key === "prizepicks" ? l.pp_now && l.pp_now !== "standard" : l.live_now && l.live_now !== "ok" && l.live_now !== "adjusted"));
     if (bad.length) {
       s.pp_alert = bad.map(l => `${l.player_name} ${l.line_value} ${l.canonical_prop_key} is ${LABEL[l.source_key === "prizepicks" ? l.pp_now : l.live_now] || "changed"}`);
       flagged.push(...s.pp_alert.map(a => `${s.structure_label || s.slip_type}: ${a}`));
     }
   }
-  out.pp_live = { checked_at: new Date().toISOString(), legs_checked: legs.length, flagged, apps, total_ms: Date.now() - t0, live: true, demon_kept: demonKeptNotes };
+  out.pp_live = { checked_at: new Date().toISOString(), legs_checked: legs.length, flagged, adjusted, apps, total_ms: Date.now() - t0, live: true, demon_kept: demonKeptNotes };
   return out;
 }

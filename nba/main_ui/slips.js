@@ -1091,6 +1091,29 @@ async function buildHighHit(sql, cfg, url, version) {
       for (const l of pool) poolIdx.set(l.source_key + "|" + nrm2(l.player_name) + "|" + nrm2(l.canonical_prop_key) + "|" + nrm2(sideIn(l.selected_side)) + "|" + Number(l.line_value), l);
       const grp = new Map();
       for (const r of nx) { const key = r.strategy + "|" + r.k; if (!grp.has(key)) grp.set(key, []); grp.get(key).push(typeof r.leg === "string" ? JSON.parse(r.leg) : r.leg); }
+      // FLIFF (owner 2026-11-25 13:56 PT: Fliff slips showed off-board legs with no substitute and slips left with one leg): the board holds no 'fliff' rows (Fliff legs read the
+      // Underdog row), so a Fliff candidate never matched and every Fliff slip had an empty list. A Fliff candidate is now taken from the Fliff Pick'Em board itself (latest
+      // capture: its line, side, multiplier and game must still be posted there) and becomes a pool leg; the live check then confirms it on Fliff's own feed like any leg.
+      const fliffOn = new Map();
+      if (slips.some(x => x.source_key === "fliff")) {
+        try {
+          const fr = await q(sql, `SELECT nm.player_id::text pid, b.prop, b.line::float8 line, b.option_type ot, b.multiplier::float8 m, b.matchup FROM nba_market.fliff_pickem_board b
+            JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+            WHERE b.game_date = $1::date AND b.snapshot_ts = (SELECT max(snapshot_ts) FROM nba_market.fliff_pickem_board WHERE game_date = $1::date)`, [slate.date], 6000);
+          for (const r of fr) fliffOn.set([r.pid, r.prop, Number(r.ot) === 1 ? "u" : "o", Number(r.line)].join("|"), r);
+        } catch (_e) { /* no Fliff board: Fliff lists stay empty */ }
+      }
+      const fliffLeg = bl => {
+        const side = String(bl.side || "").toLowerCase().startsWith("u") || String(bl.side || "").toLowerCase().startsWith("l") ? "u" : "o";
+        const r = bl.player_id != null ? fliffOn.get([String(bl.player_id), bl.prop, side, Number(bl.line)].join("|")) : null;
+        if (!r || !(Number(r.m) > 1)) return null;
+        const id = `${slate.date}~fliff~${bl.player_id}~${bl.prop}~${Number(bl.line)}~${side === "u" ? "Under" : "Over"}~nx`;
+        const p = bl.p != null ? r1(100 * Number(bl.p)) : null;
+        return { board_row_id: id, final_board_row_id: id, player_name: bl.player, player_id: String(bl.player_id), mlb_player_id: String(bl.player_id), canonical_prop_key: bl.prop,
+          prop_label: propLabel(bl.prop), line_value: Number(bl.line), selected_side: side === "u" ? "less" : "more", source_key: "fliff", line_type: "regular", tier: "R", is_goblin: 0, is_demon: 0,
+          leg_factor: Number(r.m), hit_probability_0_100: p, estimated_hit_probability_0_100: p, edge_0_100: null, game_pk: bl.event_id || null,
+          game_label: r.matchup ? String(r.matchup).replace("@", " @ ") : undefined, app_multiplier: null, link: null, from_next_list: true };
+      };
       let nSlips = 0;
       for (const s of slips) {
         const lst = grp.get(String(s.strategy) + "|" + s.k);
@@ -1109,6 +1132,10 @@ async function buildHighHit(sql, cfg, url, version) {
                 pool.push(pl); poolById.set(String(pl.board_row_id), pl);
               }
             }
+          }
+          if (!pl && app === "fliff") {
+            const fl = fliffLeg(bl);
+            if (fl) { pl = poolById.get(String(fl.board_row_id)); if (!pl) { pl = fl; pool.push(pl); poolById.set(String(pl.board_row_id), pl); } }
           }
           if (!pl || seen.has(String(pl.board_row_id))) continue;
           seen.add(String(pl.board_row_id)); ids.push(String(pl.board_row_id));
