@@ -1114,6 +1114,32 @@ async function buildHighHit(sql, cfg, url, version) {
           leg_factor: Number(r.m), hit_probability_0_100: p, estimated_hit_probability_0_100: p, edge_0_100: null, game_pk: bl.event_id || null,
           game_label: r.matchup ? String(r.matchup).replace("@", " @ ") : undefined, app_multiplier: null, link: null, from_next_list: true };
       };
+      // BETR (2026-11-25 full check: B7 / B8 had no substitute at all - the board holds no 'betr' rows): a Betr candidate is taken from the latest Betr board capture of the day
+      // (player, stat, side, line still posted) with its deep-link ids, so the live check can confirm it on Betr's own board.
+      const betrOn = new Set();
+      if (slips.some(x => x.source_key === "betr")) {
+        try {
+          const BMK = { player_points: "points", player_rebounds: "rebounds", player_assists: "assists", player_threes: "threes_made", player_steals: "steals", player_blocks: "blocks",
+            player_turnovers: "turnovers", player_blocks_steals: "stocks", player_points_rebounds: "pts_reb", player_points_assists: "pts_ast", player_rebounds_assists: "reb_ast", player_points_rebounds_assists: "pra" };
+          const br = await q(sql, `SELECT nm.player_id::text pid, b.market_key mk, b.side, b.line::float8 line FROM nba_market.board_snapshots b
+            JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+            WHERE b.bookmaker = 'betr' AND b.game_date = $1::date AND b.snapshot_ts = (SELECT max(snapshot_ts) FROM nba_market.board_snapshots WHERE bookmaker = 'betr' AND game_date = $1::date)`, [slate.date], 6000);
+          for (const r of br) if (BMK[r.mk]) betrOn.add([r.pid, BMK[r.mk], sideIn(r.side), Number(r.line)].join("|"));
+        } catch (_e) { /* no Betr board: Betr lists stay empty */ }
+      }
+      const teamOf = new Map(); for (const l of board) if (l.player_id != null && l.team_abbr && !teamOf.has(String(l.player_id)))
+        teamOf.set(String(l.player_id), { team_id: l.team_id, team_abbr: l.team_abbr, opponent_abbr: l.opponent_abbr, game_pk: l.game_pk, official_game_time_utc: l.official_game_time_utc });
+      const betrLeg = bl => {
+        if (bl.player_id == null || !betrOn.has([String(bl.player_id), bl.prop, sideIn(bl.side), Number(bl.line)].join("|"))) return null;
+        const side = sideIn(bl.side) === "Under" ? "less" : "more";
+        const id = `${slate.date}~betr~${bl.player_id}~${bl.prop}~${Number(bl.line)}~${sideIn(bl.side)}~nx`;
+        const p = bl.p != null ? r1(100 * Number(bl.p)) : null;
+        return { board_row_id: id, final_board_row_id: id, player_name: bl.player, player_id: String(bl.player_id), mlb_player_id: String(bl.player_id), canonical_prop_key: bl.prop,
+          prop_label: propLabel(bl.prop), line_value: Number(bl.line), selected_side: side, source_key: "betr", line_type: "regular", tier: "REGULAR", is_goblin: 0, is_demon: 0,
+          ...(teamOf.get(String(bl.player_id)) || {}),
+          leg_factor: 1, hit_probability_0_100: p, estimated_hit_probability_0_100: p, edge_0_100: null, app_multiplier: null, from_next_list: true,
+          link: linkLegFor("betr", { player: bl.player, prop: bl.prop, side: bl.side, line: bl.line }, linkMap, null) };
+      };
       let nSlips = 0;
       for (const s of slips) {
         const lst = grp.get(String(s.strategy) + "|" + s.k);
@@ -1132,6 +1158,10 @@ async function buildHighHit(sql, cfg, url, version) {
                 pool.push(pl); poolById.set(String(pl.board_row_id), pl);
               }
             }
+          }
+          if (!pl && app === "betr") {
+            const bt = betrLeg(bl);
+            if (bt) { pl = poolById.get(String(bt.board_row_id)); if (!pl) { pl = bt; pool.push(pl); poolById.set(String(pl.board_row_id), pl); } }
           }
           if (!pl && app === "fliff") {
             const fl = fliffLeg(bl);
