@@ -1152,7 +1152,11 @@ async function buildHighHit(sql, cfg, url, version) {
     const gk = l => { const t = String(l.matchup || l.game_label || "").toUpperCase().match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/); return t ? t[1] + "@" + t[2] : null; };
     const all = [...slips.flatMap(x => x.legs || []), ...pool], tm = new Map();
     for (const l of all) { const k = gk(l); if (k && l.official_game_time_utc && !tm.has(k)) tm.set(k, l.official_game_time_utc); }
-    for (const l of all) { const k = gk(l); if (k && !l.official_game_time_utc && tm.has(k)) l.official_game_time_utc = tm.get(k); }
+    // 2026-11-25 (owner: the Fliff 6-pick kept Tyrese Maxey after MIA@PHI tipped - no other leg of that game carried a tip-off): the slate's own schedule fills every game
+    try { for (const g of await q(sql, "SELECT away_team_tricode a, home_team_tricode h, game_datetime_utc t FROM nba_calendar.slate_games WHERE game_date = $1::date", [slate.date], 4000))
+      if (g.t) { const t = new Date(g.t).toISOString(); tm.set(g.a + "@" + g.h, t); tm.set("pair:" + [g.a, g.h].sort().join("-"), t); } } catch (_e) { /* other legs' times only */ }
+    const pairOf = l => { const t = String(l.matchup || l.game_label || "").toUpperCase().match(/([A-Z]{2,3})\s*(?:@|VS\.?)\s*([A-Z]{2,3})/); return t ? "pair:" + [t[1], t[2]].sort().join("-") : null; };
+    for (const l of all) { const k = gk(l); if (!l.official_game_time_utc) { const t = (k && tm.get(k)) || tm.get(pairOf(l)); if (t) l.official_game_time_utc = t; } }
     for (const l of all) if (!l.game_label && l.matchup) l.game_label = String(l.matchup).replace(/\s*@\s*/, "  @  ");   // every leg shows its game (Fliff / Betr bank legs came without one)
     // EVERY APP shows the game on every leg (owner 2026-11-10: "without the game I cannot find the leg"): the away @ home label when any leg of that game carries one, else TEAM vs OPP
     const pk = l => (l.team_abbr && l.opponent_abbr) ? [l.team_abbr, l.opponent_abbr].sort().join("-") : null, lab = new Map();
