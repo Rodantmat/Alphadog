@@ -200,6 +200,8 @@ def predict(df, X, need):
     Zall = np.c_[LM.lg(np.nan_to_num(X["ph"].values, nan=.5)), np.isnan(X["ph"].values), LM.lg(np.nan_to_num(X["pb"].values, nan=.5)), np.isnan(X["pb"].values), LM.lg(X["be"].values), X["under"].values]
     b = LM.fit_blend(Zall[tr], y[tr], w); out["blend"][te] = 1 / (1 + np.exp(-(np.c_[np.ones(te.sum()), Zall[te]] @ b)))
     out["weights"] = [float(v) for v in np.round(b, 4)]
+    if os.environ.get("FL_DROPNPL") == "1":                       # the research counts only the day's graded legs per player; live cannot know that -> leave the feature out of fit and prediction
+        X = X.drop(columns=["n_player_legs"])
     cat = ["prop", "kind"]; off = LM.lg(X["be"].values.astype(float))
     par = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=400, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1, num_threads=4, seed=7)
     if "gbm" in need:
