@@ -74,7 +74,7 @@ def live_frame(conn, day, FL):
     n0 = len(d)
     d = d[~d["gid"].isin(st)].reset_index(drop=True)
     log(f"FINAL|{FL.APP} {gd}: {n0} legs, {n0 - len(d)} in games that have started, {len(d)} left")
-    ev = {(str(r.player_id), r.prop, str(r.side).lower().startswith("u"), round(float(r.line), 3)): r.event_id for r in legs.itertuples()}
+    ev = {(str(r.player_id), r.prop, str(r.side).lower().startswith("u"), round(float(r.line), 3)): getattr(r, 'event_id', None) for r in legs.itertuples()}
     return d, ev
 
 
