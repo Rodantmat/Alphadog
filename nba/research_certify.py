@@ -45,7 +45,7 @@ def stage_b3(d, A, slp, L, T):
     X = A[~A.rk.str.contains("rnd")].copy()
     bs = float(os.environ.get("UA_BROAD") or 0)
     if bs > 0:
-        nn = X[X.layer == "none"].set_index(["tier", "side", "rk", "gcap", "st", "k"])["n"]
+        nn = X[X.layer == "none"].groupby(["tier", "side", "rk", "gcap", "st", "k"])["n"].max()
         key = list(zip(X.tier, X.side, X.rk, X.gcap, X.st, X.k))
         base = np.array([nn.get(k_, np.nan) for k_ in key], dtype=float)
         X = X[(X.n.values >= bs * base) | (X.layer.values == "none")].copy()
