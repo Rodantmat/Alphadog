@@ -488,8 +488,11 @@ export async function overlayLive(sql, out, ppFallback) {
     if (!(l.source_key === "fliff" || l.source_key === "sleeper") || l.live_now !== "ok") continue;
     const m0 = Number(l.leg_factor), m1 = Number(l.live_m);
     if (!(m0 > 1) || !(m1 > 1) || Math.abs(m1 - m0) < 1e-9) continue;
-    if (m1 >= m0 * (1 - MULT_WIGGLE)) { l.mult_from = m0; l.leg_factor = m1; }
-    else { l.mult_from = m0; l.live_m_now = m1; l.live_now = "mult_down"; }
+    // 2026-11-25 research_drift_rules (36 days, every capture-to-capture move, the model's top 25% legs = what the strategies pick): a leg whose price DROPPED at the same
+    // line earned as much as a leg that did not move - Fliff -4..-8%: EV +0.5% vs stable, below -8%: +0.5%; Sleeper +1.1% / +0.7% (its hit rate rises as the price falls -
+    // the market moving toward our Under). A substitute (a lower-ranked leg) cannot beat that, so a price move never costs the leg: it is kept at the live price, whatever
+    // the size, and the card is repriced. MULT_WIGGLE stays only as the label threshold.
+    l.mult_from = m0; l.leg_factor = m1; if (m1 < m0 * (1 - MULT_WIGGLE)) l.mult_big_drop = true;
   }
   // OWNER RULE (2026-11-10): on EVERY screen (owner, Jessi, Jon) and for every app, a leg that is not confirmed on its app's own board - slip leg, pairing or sub - is not shown
   // as playable. An app whose board was read leaves no leg unchecked: a leg it did not find is "missing" and the screen scratches it and subs.

@@ -1399,3 +1399,16 @@ In-sample: the strategies were chosen on this season.
     original leg's chance (tier study: 61.9 / 68.7 / 74.1% vs haircuts 40-53% - it rarely passes). A demon at the same line stays kept (More only). A Less leg can never be a
     goblin / demon on PrizePicks (More only) - it always goes to its strategy's rule.
   - Started games: every leg has its tip-off from the slate schedule; on open and every 60 s a started leg is handled exactly like a pulled leg (sub / shrink / drop).
+- 2026-11-25 18:00 PT research_drift_rules (run 45736308162; Underdog / Sleeper / Fliff Unders, 2026-10-20 .. 11-24, every early-to-later capture before tip, box-score graded;
+  EV = hit x later multiplier vs the legs that did not move; "top25" = the model's top 25% legs per app and day = what the strategies pick):
+  | top25            | Fliff  | Sleeper | Underdog |
+  | price up         | -1.1%  | -1.1%   | +0.9%    |
+  | price -0..-4%    | -0.1%  | -0.6%   | -4.1%    |
+  | price -4..-8%    | +0.5%  | +1.1%   | -4.3%    |
+  | price below -8%  | +0.5%  | +0.7%   | -2.4%    |
+  | line UP (better) | +2.4%  | +8.6%   | +1.1% (n 5) |
+  | line DOWN        | -6.3%  | -2.6%   | -9.5%    |
+  | pulled           | -2.4%  | -8.4%   | -5.9%    |
+  -> keep a leg at a better line: HOLDS; a worse line / pulled -> strategy rule: HOLDS; a price drop -> NOT a reason to sub (top legs earn the same, their hit rate rises
+  as the price falls), so v1.6.7 keeps every repriced leg at the live price. PrizePicks / Betr: no per-leg price (fixed payout tables) - nothing to drift. Underdog:
+  per-pick factor exists, a drop is -2..-4% vs stable but a substitute is a lower-ranked leg - no sub rule; legs kept.
