@@ -404,6 +404,10 @@ def replay_check(conn, dates, mode):
                 continue
             theirs = [frozenset(str(x) for x in legs) for _, legs in rd.get(gd, [])]
             eq = sum(1 for a, b in zip(mine, theirs) if a == b); tot["slips"] += len(theirs); tot["equal"] += eq; tot["mine"] += len(mine)
+            if mine != theirs and os.environ.get("FL_DIAG"):
+                v = pd.Series(ranker(d, sg["rk"]), index=d["player_id"].values); v = v.groupby(level=0).max()
+                f = lambda S: " | ".join("[" + ",".join(f"{p}:{v.get(p, float('nan')):.3f}" for p in sorted(x)) + "]" for x in S)
+                log(f"C4D|{APP} {gd} {sg['code']} ranker {sg['rk']} nsl {sg['nsl']} gcap {sg['gcap']} pdif {sg['pdif']} start {sg['start']}: mine {f(mine)} || research {f(theirs)}")
             if mine != theirs:
                 log(f"C4|{APP} {gd} {sg['code']}: mine {len(mine)} slips, research {len(theirs)}, identical in order {eq}; same sets any order {len(set(mine) & set(theirs))}")
         log(f"C4|{APP} {gd}: legs {len(d)}, set slips {len(merged)}: " + " ".join(f"{m['code']}" for m in merged))
