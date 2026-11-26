@@ -1431,3 +1431,9 @@ In-sample: the strategies were chosen on this season.
 - Season weighting test (equal, 1/2/3, 1/2/4, 1/3/9, current only, prior only...): ALL rank correlations with Nov 8+ ROI are negative (-0.14 to -0.19). No weighting fixes it; prior ROI does not predict Nov 8+.
 - Leg pulled (per-leg rate 5/10/20%): shrink > sub > drop in cost; ROI falls ~15-25% relative at 10-20% pulls. Player exposure cap 2 per day halves drawdown (46u vs 86u uncapped) at equal ROI.
 - Nothing is live-changed. Underdog validation is not clean (selected on 2026-27 before Nov 8).
+
+## 2026-11-26 best of the best (research_best.py, clean `-n` rows, Betr included)
+Worth-it = all prior seasons positive, 2026-27 ROI >=25%, Nov 8+ positive, n26>=10, losing days <=62%. Strategies passing: Betr 29, Fliff 125, PP 42, Sleeper 57, Underdog 108.
+Best per app (best player cap): Underdog cap none 12.2/day +79% dd 7u 29% losing; Fliff cap 3 8.3/day +40% dd 4u 34%; Betr cap 1 1.8/day +26% dd 14u 59%; PP cap 2 5.0/day +55% dd 23u 54%; Sleeper cap 2 5.2/day +32% dd 20u 45%.
+Union (35 strategies): cap none 19.4/day +1565u dd 52u 47% losing; cap 2 9.4/day +720u dd 41u 48%; cap 1 5.0/day +442u dd 43u 52%.
+Caveats: Fliff/Underdog have 2026-27 only; selection uses 2026-27 and Nov 8+ (in-sample).
