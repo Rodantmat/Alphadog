@@ -239,8 +239,8 @@ def build_frame(conn, df, X, P):
         d[c] = np.nan
     if APP == "prizepicks":
         reg = (d["kind"] == "standard").values
-        d["val"] = math.sqrt(3); d["alt"] = ~reg; d["est"] = False; d["logy"] = 0.0; d["logf"] = 0.0; d["easy"] = np.where(reg, 0, 1)
-        d = d[reg].copy()                                           # the final set plays regular PrizePicks lines only (Goblins / Demons are never regular lines)
+        d["val"] = np.where(reg, math.sqrt(3), d["m_lr"] / 0.542); d["alt"] = ~reg; d["est"] = False; d["logy"] = 0.0; d["logf"] = 0.0
+        d["easy"] = np.where(reg, 0, np.where(d["val"] < math.sqrt(3), 1, 2))   # the final set plays regular lines only (tier mask); the others stay in the frame so the day's composite ranks cover the same rows as the research
     elif APP == "underdog":
         lm = d["m_lr"].values / 1.8708
         d["logf"] = np.log(lm); d["val"] = np.where(d["gd"] >= "2026-07-01", math.sqrt(3.5), math.sqrt(3.0)) * lm
@@ -362,6 +362,36 @@ def legs_check(conn, dates, mode):
     log(f"C1|{APP}: total {tot['found']}/{tot['ref']} research legs reproduced")
 
 
+def attach_hits(conn, d, gd):
+    """replay only: the result of each leg of the day (the research's certified grading: leg card result, else the graded table)"""
+    h = pd.read_sql("""SELECT player_id::text player_id, prop, lower(side) side, line::float8 line, hit::int hit FROM nba_score._lr_legs_h WHERE app = %s AND game_date = %s AND hit IS NOT NULL""",
+                    conn, params=(APP, gd))
+    h["under"] = ~h["side"].str[0].isin(["o", "m", "h"])
+    lc = pd.read_sql("""SELECT player_id::text player_id, prop, lower(side) side, line::float8 line, result FROM nba_score.leg_card_v2 WHERE app = %s AND game_date = %s""", conn, params=(APP, gd))
+    lc["under"] = ~lc["side"].str[0].isin(["o", "m", "h"]); lc["cw"] = lc["result"].map({"won": 1, "lost": 0})
+    k = ["player_id", "prop", "under", "line"]
+    d = d.merge(h.drop_duplicates(k)[k + ["hit"]], on=k, how="left").merge(lc.drop_duplicates(k)[k + ["cw"]], on=k, how="left")
+    d["w"] = np.where(d["cw"].notna(), d["cw"], d["hit"]); return d
+
+
+def grade(rows, st, k, slp):
+    """profit (payout - 1) of one slip the way the research prices it (research_universe2.stage_b); None when a leg has no result"""
+    import research_universe2 as RU2
+    if any(r.get("w") is None or r["w"] != r["w"] for r in rows):
+        return None
+    w = int(sum(r["w"] for r in rows)); av = np.array([bool(r["alt"]) for r in rows]); a = int(av.sum())
+    ly = np.array([r["logy"] for r in rows]); lf = np.array([r["logf"] for r in rows]); wv = np.array([r["w"] for r in rows]); old = rows[0]["gd"] < "2026-07-01"
+    pw, fx = RU2.payouts(k, np.array([w]), np.array([a]), np.array([ly[av].sum()]), np.array([lf.sum()]), np.array([lf[wv == 1].sum()]), np.array([(np.exp(lf) - 1).sum()]),
+                         np.array([old]), slp[0] if slp else {})
+    if APP == "sleeper" and k >= 3:
+        import sleeper_live_slip_engine as SL
+        tiers = SL.flex_tiers(list(np.exp(lf)), slp[1], slp[2]); fx = np.array([float(tiers.get(w, 0.0))])
+    if st == "flex" and APP == "prizepicks" and a > 0:
+        return None
+    pv = (pw if st == "power" else fx)[0]
+    return float(pv - 1) if np.isfinite(pv) else None
+
+
 def frame_for(conn, gd, mode):
     """the slate's frame exactly as the research builds it (models fitted on the months before), legs without a result"""
     import research_leg_model_h as LM
@@ -372,7 +402,8 @@ def frame_for(conn, gd, mode):
     P = predict(df, X, NEED.get(APP, set()))
     if "weights" in P:
         P.pop("weights")
-    return build_frame(conn, df, X, P)
+    d = build_frame(conn, df, X, P)
+    return attach_hits(conn, d, gd)
 
 
 def ref_days(conn, sg):
@@ -391,7 +422,10 @@ def replay_check(conn, dates, mode):
     """C4: the strategies rebuilt from the live pipeline on past slates against the research's slips (the same players in the same slips)"""
     ref = {sg["code"]: ref_days(conn, sg) for sg in SET}
     log("C4|reference rows: " + ", ".join(f"{c} {'yes' if v is not None else 'NO'}" for c, v in ref.items()))
-    tot = defaultdict(int)
+    tot = defaultdict(float); slp = None
+    if APP == "sleeper":
+        import sleeper_live_slip_engine as SL
+        slp = SL.pricing(conn)
     for gd in dates:
         d = frame_for(conn, gd, mode)
         if d is None or not len(d):
@@ -403,6 +437,8 @@ def replay_check(conn, dates, mode):
             if rd is None:
                 continue
             theirs = [frozenset(str(x) for x in legs) for _, legs in rd.get(gd, [])]
+            gm = [grade(r, sg["st"], sg["k"], slp) for r in per.get(sg["code"], [])]
+            tot["u_mine"] += sum(x for x in gm if x is not None); tot["u_res"] += sum(p for p, _ in rd.get(gd, [])); tot["n_ungraded"] += sum(1 for x in gm if x is None)
             eq = sum(1 for a, b in zip(mine, theirs) if a == b); tot["slips"] += len(theirs); tot["equal"] += eq; tot["mine"] += len(mine)
             if mine != theirs and os.environ.get("FL_DIAG"):
                 v = pd.Series(ranker(d, sg["rk"]), index=d["player_id"].values); v = v.groupby(level=0).max()
@@ -411,6 +447,7 @@ def replay_check(conn, dates, mode):
             if mine != theirs:
                 log(f"C4|{APP} {gd} {sg['code']}: mine {len(mine)} slips, research {len(theirs)}, identical in order {eq}; same sets any order {len(set(mine) & set(theirs))}")
         log(f"C4|{APP} {gd}: legs {len(d)}, set slips {len(merged)}: " + " ".join(f"{m['code']}" for m in merged))
+    log(f"C4|{APP}: units on these slates, strategy by strategy: rebuilt {tot['u_mine']:+.2f} vs research {tot['u_res']:+.2f} (ungraded rebuilt slips {int(tot['n_ungraded'])})")
     log(f"C4|{APP}: research slips {tot['slips']}, rebuilt {tot['mine']}, identical (same players, same slip) {tot['equal']} = {100 * tot['equal'] / max(1, tot['slips']):.1f}%")
 
 
