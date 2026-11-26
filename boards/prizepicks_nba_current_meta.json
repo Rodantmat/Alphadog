@@ -3,31 +3,30 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-11-25T21:18:30Z",
+  "fetched_at": "2026-11-26T21:18:12Z",
   "egress": {
-    "ip": "72.199.115.167",
-    "hostname": "ip72-199-115-167.sd.sd.cox.net",
-    "city": "San Diego",
+    "ip": "216.44.51.17",
+    "city": "Los Angeles",
     "region": "California",
     "country": "US",
-    "loc": "32.7157,-117.1647",
-    "org": "AS22773 Cox Communications, LLC",
-    "postal": "92101",
+    "loc": "34.0522,-118.2437",
+    "org": "AS2914 NTT America, Inc.",
+    "postal": "90013",
     "timezone": "America/Los_Angeles",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
-  "rows": 8378,
-  "row_count": 8378,
+  "rows": 3461,
+  "row_count": 3461,
   "total_pages": 1,
-  "future_pickable": 8378,
+  "future_pickable": 3461,
   "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
   "candidates": [
     {
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 403,
-      "bytes": 496,
+      "bytes": 501,
       "error": "blocked"
     },
     {
@@ -41,22 +40,22 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 9584754,
+      "bytes": 3864097,
       "total_pages": 1,
       "ok": true,
-      "rows": 8378,
-      "future_pickable": 8378
+      "rows": 3461,
+      "future_pickable": 3461
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 9584733,
+      "bytes": 3864075,
       "total_pages": 1,
       "ok": true,
-      "rows": 8378,
-      "future_pickable": 8378
+      "rows": 3461,
+      "future_pickable": 3461
     }
   ],
-  "github_run_id": "45702884999"
+  "github_run_id": "45897036671"
 }
