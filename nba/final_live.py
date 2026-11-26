@@ -233,7 +233,7 @@ def build_frame(conn, df, X, P):
     for c in XCOLS:
         d[c] = X[c].values[k] if c in X.columns else np.nan
     d["blend"] = P["blend"][k]; d["gbm"] = P["gbm"][k]; d["gbm_s"] = P["gbm_s"][k]
-    bs = pd.read_sql("""SELECT player_id, prop, line::float8 line, lower(side) side, final_hp::float8 fhp, score::float8 score, confidence::float8 conf
+    bs = pd.read_sql("""SELECT player_id, player, prop, line::float8 line, lower(side) side, final_hp::float8 fhp, score::float8 score, confidence::float8 conf
                         FROM nba_score.""" + ("board_scored_v2" if os.environ.get("FL_BS") == "v2" else "board_scored") + """ WHERE game_date = %s AND app = %s""", conn, params=(gd, APP))
     bs["under"] = ~bs["side"].str[0].isin(["o", "m", "h"])
     d = d.merge(bs.drop_duplicates(["player_id", "prop", "under", "line"]).drop(columns=["side"]), on=["player_id", "prop", "under", "line"], how="left")
@@ -291,6 +291,9 @@ def build_slips(lst, alt, k, nsl, start, altcap):
     return out
 
 
+LAST = {}                                                  # code -> the strategy's ranked candidate rows of the day (the bank for sub / shrink)
+
+
 def materialize(d, sg):
     """one strategy of final_set.json on the day's frame -> list of slips (lists of frame row numbers), exactly research_universe2.stage_b"""
     v = ranker(d, sg["rk"])
@@ -300,6 +303,7 @@ def materialize(d, sg):
     elif sg["side"] == "Over":
         m &= ~d["under"].values
     if not m.any():
+        LAST[sg["code"]] = []
         return []
     x = d[m].copy(); x["_v"] = v[m]
     x = x.sort_values(["_v", "player_id", "prop", "line"], ascending=[False, True, True, True], kind="mergesort").drop_duplicates("player_id")
@@ -313,10 +317,11 @@ def materialize(d, sg):
         if len(lst) >= 40:
             break
     altcap = None if sg["altcap"] == -1 else sg["altcap"]
+    LAST[sg["code"]] = [int(idx[j]) for j in lst]
     return [[int(idx[j]) for j in s] for s in build_slips(lst, av, sg["k"], nsl, sg["start"], altcap)]
 
 
-def merge_set(app, per):
+def merge_set(app, per, skip=None, notes=None):
     """the app's day: strategies in the final set's order (main, then fallback), each one's slips in turn, a slip kept while the app is under its slot count and none of its
     players is already in `cap` kept slips (research_best.merge)"""
     cap = CAPS[app]; N = SLOTS[app]; cnt = defaultdict(int); out = []
@@ -325,6 +330,11 @@ def merge_set(app, per):
             if len(out) >= N:
                 return out
             pl = [r["player_id"] for r in rows]
+            why = skip(rows) if skip else None
+            if why:
+                if notes is not None:
+                    notes.append(f"{app}: {sg['code']} not played - {why}")
+                continue
             if cap < 99 and any(cnt[p] >= cap for p in pl):
                 continue
             for p in pl:
@@ -333,12 +343,12 @@ def merge_set(app, per):
     return out
 
 
-def day_slips(d):
+def day_slips(d, skip=None, notes=None):
     per = {}
     for sg in SET:
         sl = materialize(d, sg)
         per[sg["code"]] = [[d.loc[i].to_dict() | {"_i": i} for i in s] for s in sl]
-    return per, merge_set(APP, per)
+    return per, merge_set(APP, per, skip, notes)
 
 
 def legs_check(conn, dates, mode):
