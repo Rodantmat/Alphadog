@@ -91,21 +91,29 @@ def main():
     seldays = [g for g in alld if season(g) != "2026-27"]
     rng = random.Random(int(os.environ.get("PF_SEED") or 7))
     ranked = {}
+    ORDER = ["P2", "F3", "F4", "F5", "F6"]
     for a in apps:
-        cand = sorted([s for s in S if s["app"] == a], key=lambda s: -s["sc"])
-        pick = []
-        for s in cand:
-            v = np.array([sum(p for p, _ in s["day"].get(g, [])) for g in seldays]); s["_v"] = v
-            if any(np.std(v) > 0 and np.std(p_["_v"]) > 0 and abs(np.corrcoef(v, p_["_v"])[0, 1]) > RHO for p_ in pick):
-                continue
-            pick.append(s)
-            if len(pick) >= 8:
-                break
-        ranked[a] = pick
-        print(f"P3|{a.upper()} pool:", flush=True)
-        for i, s in enumerate(pick, 1):
-            print(f"P3|  {i}. {s['label']} | prior min {100*s['sc']:+.0f}%", flush=True)
-
+        bys = {}
+        for st_ in ORDER:
+            cand = sorted([s for s in S if s["app"] == a and f"{'P' if s['st'] == 'power' else 'F'}{s['k']}" == st_], key=lambda s: -s["sc"])
+            pick = []
+            for s in cand:
+                v = np.array([sum(p for p, _ in s["day"].get(g, [])) for g in seldays]); s["_v"] = v
+                if any(np.std(v) > 0 and np.std(p_["_v"]) > 0 and abs(np.corrcoef(v, p_["_v"])[0, 1]) > RHO for p_ in pick):
+                    continue
+                pick.append(s)
+                if len(pick) >= 3:
+                    break
+            bys[st_] = pick
+        pool = []
+        for i in range(3):
+            for st_ in ORDER:
+                if i < len(bys[st_]):
+                    pool.append(bys[st_][i])
+        ranked[a] = pool
+        print(f"P3|{a.upper()} pool (small slips first, 3 per structure):", flush=True)
+        for i, s in enumerate(pool, 1):
+            print(f"P3|  {i}. {s['label']} | weighted {100*s['sc']:+.0f}%", flush=True)
     f = lambda x, n=None: ("-" if x != x else f"{100*x:+.0f}%") + (f" ({int(n)})" if n == n and n is not None else "")
     for a in apps:
         A_ = sorted([x for x in S if x["app"] == a], key=lambda x: -x["sc"])
@@ -123,10 +131,10 @@ def main():
 
     def run(cfg, q=0.0, pol=None, daysub=None):
         """cfg: dict n[app], cap[app], tot, expo. Returns per-season/late stats."""
-        seas = defaultdict(lambda: [0.0, 0]); late = [0.0, 0]; dayu = []; per_day = {}
+        seas = defaultdict(lambda: [0.0, 0]); late = [0.0, 0]; dayu = []; per_day = {}; ks_ = []
         for g in (daysub or alld):
             used = 0; per = defaultdict(int); pl = defaultdict(int); du = 0.0; ns = 0
-            queue = sorted([(i, a, s) for a in apps for i, s in enumerate(ranked[a][:cfg["n"][a]])], key=lambda t: t[0])
+            queue = [(i, a, s) for a in apps for i, s in enumerate([x for x in ranked[a] if x["k"] <= cfg.get("kmax", 6)][:cfg["n"][a]])]
             for i, a, s in queue:
                 for p, legs in s["day"].get(g, []):
                     if per[a] >= cfg["cap"][a] or used >= cfg["tot"]:
@@ -137,7 +145,7 @@ def main():
                         kk = s["k"]; base = s["gb"]; alt = 0.0 if pol == "drop" else (s["gs"] if pol == "sub" else s["gh"])
                         if alt == alt and base == base:
                             p = p + kk * q * (1 - q) ** (kk - 1) * (alt - base)
-                    per[a] += 1; used += 1; du += p; ns += 1
+                    per[a] += 1; used += 1; du += p; ns += 1; ks_.append(s["k"])
                     for x in legs:
                         pl[x] += 1
                     seas[season(g)][0] += p; seas[season(g)][1] += 1
@@ -157,18 +165,18 @@ def main():
         rec["r26a"] = sum(x[1] for x in ea) / max(1, sum(x[2] for x in ea)); rec["n26a"] = sum(x[2] for x in ea)
         for ss in SEAS:
             rec["r" + ss[2:4]] = seas[ss][0] / seas[ss][1] if seas[ss][1] else np.nan; rec["n" + ss[2:4]] = seas[ss][1]; rec["u" + ss[2:4]] = seas[ss][0]
-        rec["rlate"] = late[0] / late[1] if late[1] else np.nan
+        rec["rlate"] = late[0] / late[1] if late[1] else np.nan; rec["avgk"] = float(np.mean(ks_)) if ks_ else np.nan
         return rec
 
     def rnd():
-        n = {a: rng.choice([0, 1, 2, 3, 4, 5, 6]) for a in apps}
+        n = {a: rng.choice([0, 1, 2, 3, 4, 5, 6, 8]) for a in apps}
         if sum(n.values()) == 0:
             n[rng.choice(apps)] = 2
         for kv in (os.environ.get("PF_REQ") or "").split(","):
             if ":" in kv and kv.split(":")[0] in n:
                 n[kv.split(":")[0]] = max(n[kv.split(":")[0]], int(kv.split(":")[1]))
         cap = {a: rng.choice([1, 2, 3, 4, 6, 99]) for a in apps}
-        return dict(n=n, cap=cap, tot=rng.choice([4, 6, 8, 10, 12, 15, 20, 999]), expo=rng.choice([1, 2, 3, 99]))
+        return dict(n=n, cap=cap, tot=rng.choice([4, 6, 8, 10, 12, 15, 20, 999]), expo=rng.choice([1, 2, 3, 99]), kmax=rng.choice([3, 4, 5, 6]))
 
     cfgs = [rnd() for _ in range(NCFG)]
     # fixed references: same count / cap for every app
@@ -187,7 +195,7 @@ def main():
     print(f"P3|configs evaluated {len(R):,}", flush=True)
 
     def desc(c):
-        return "per-app n " + "/".join(f"{a[:2]}{c['n'][a]}" for a in apps) + " cap " + "/".join(f"{a[:2]}{c['cap'][a] if c['cap'][a] < 99 else '-'}" for a in apps) + f" tot {c['tot'] if c['tot'] < 999 else '-'} expo {c['expo'] if c['expo'] < 99 else '-'}"
+        return f"max {c.get('kmax', 6)}-pick | per-app n " + "/".join(f"{a[:2]}{c['n'][a]}" for a in apps) + " cap " + "/".join(f"{a[:2]}{c['cap'][a] if c['cap'][a] < 99 else '-'}" for a in apps) + f" tot {c['tot'] if c['tot'] < 999 else '-'} expo {c['expo'] if c['expo'] < 99 else '-'}"
 
     def line(r):
         return (f"{desc(r.cfg)}: {r.slips/r.days:.1f}/day | " + " / ".join(f"{100*getattr(r, 'r'+s[2:4]):+.0f}% ({getattr(r, 'n'+s[2:4])})" for s in SEAS)
@@ -206,8 +214,8 @@ def main():
         for r in X.head(8).itertuples():
             print("P3|  " + line(r), flush=True)
     # choose: best by prior seasons + validation, then final test on Nov 8+ untouched
-    sel = G.copy()
-    sel["pick"] = sel["sel"].rank(pct=True) + sel["r26a"].rank(pct=True) - sel["dd"].rank(pct=True) - sel["lshare"].rank(pct=True)
+    sel = G[(G.r25 > 0) & (G.r26 > 0) & (G.rlate > 0)].copy()
+    sel["pick"] = 2 * (1 - sel["dd"].rank(pct=True)) + 2 * (1 - sel["lshare"].rank(pct=True)) + sel["sel"].rank(pct=True) + sel["r26a"].rank(pct=True) + (1 - sel["avgk"].rank(pct=True))
     best = sel.sort_values("pick", ascending=False).head(5)
     print("P3|== CHOSEN (prior seasons + validation + drawdown + losing days; Nov 8+ is the untouched final test) ==", flush=True)
     for r in best.itertuples():
