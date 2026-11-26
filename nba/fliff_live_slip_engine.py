@@ -21,6 +21,7 @@ Fliff. Modes: FL_MODE=pick (FL_DATE or today PT) | grade (FL_DATE or every ungra
 """
 import datetime as dt
 import json
+import math
 import os
 import sys
 from zoneinfo import ZoneInfo
@@ -215,7 +216,7 @@ def grade(conn, day):
         if not st:
             print(f"FLIFF_GRADE|{d}: no box scores yet - left ungraded")
             continue
-        for name, lj, stake, kk in conn.execute("SELECT strategy, legs_json, stake, k FROM nba_score.fliff_live_slips WHERE game_date = %s AND graded_at IS NULL", (d,)).fetchall():
+        for name, lj, stake, kk, structure in conn.execute("SELECT strategy, legs_json, stake, k, structure FROM nba_score.fliff_live_slips WHERE game_date = %s AND graded_at IS NULL", (d,)).fetchall():
             legs = lj if isinstance(lj, list) else json.loads(lj)
             for l in legs:
                 h = AF.outcome(st, l)
@@ -223,6 +224,9 @@ def grade(conn, day):
             live = [l for l in legs if l["hit"] is not None]
             if len(live) < 2:
                 pay = 1.0   # a void drops the pick; fewer than two picks left = refunded
+            elif structure == "flex":           # Flex Entry: paid with at most one miss among the live legs (3+ live picks); coefficient prod(m) / (1 + sum(m - 1)) - ESTIMATE until verified on a live quote
+                ms = [float(l["factor"]) for l in live]; miss = sum(1 for l in live if not l["hit"])
+                pay = floor2(math.prod(ms) / (1 + sum(x - 1 for x in ms))) if (miss <= 1 and len(live) >= 3) else (0.0 if len(live) >= 3 else (floor2(math.prod(ms)) if all(l["hit"] for l in live) else 0.0))
             elif all(l["hit"] for l in live):
                 prod = 1.0
                 for l in live:

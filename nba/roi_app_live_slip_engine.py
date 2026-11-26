@@ -172,7 +172,7 @@ def insert(conn, app, day, name, rule, k, s, pr):
                           model_multiplier = EXCLUDED.model_multiplier, flex_tiers = EXCLUDED.flex_tiers, built_at = now()
                         WHERE nba_score.sleeper_live_slips.graded_at IS NULL""", (day, name, size, structure, k, json.dumps(lj), round(model, 4), extra))
     else:
-        model = floor2(math.prod(ms))
+        model = floor2(math.prod(ms) / (1 + sum(x - 1 for x in ms))) if structure == "flex" else floor2(math.prod(ms))     # Flex Entry (<= 1 miss): ESTIMATE until verified on a live quote
         conn.execute("""INSERT INTO nba_score.fliff_live_slips (game_date, strategy, size, structure, k, legs_json, stake, status, model_multiplier)
                         VALUES (%s,%s,%s,%s,%s,%s,1,'live',%s)
                         ON CONFLICT (game_date, strategy, k) DO UPDATE SET legs_json = EXCLUDED.legs_json, status = EXCLUDED.status,

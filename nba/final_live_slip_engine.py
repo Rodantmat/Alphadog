@@ -150,7 +150,8 @@ def to_plan(app, merged, per_rows, d, legd):
                              side="Under" if r["under"] else "Over", leg=dict(legd[i], p=float(r["blend"]) if r["blend"] == r["blend"] else legd[i].get("p"))))
             if len(bank) >= 12:
                 break
-        plan.append((name_of(sg, j), sg["k"], sg["st"], rows, bank, sg))
+        st = "max" if (app in ("sleeper", "fliff") and sg["st"] == "power") else sg["st"]
+        plan.append((name_of(sg, j), sg["k"], st, rows, bank, sg))
     return plan
 
 
