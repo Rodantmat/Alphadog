@@ -207,7 +207,7 @@ def check(conn, dates):
                     s_ = take(c, sg["k"], gc, bool(df_), sg["start"])
                     got = {frozenset(r["player_id"] for r in s_)} if s_ else set()
                     tot[(sg["code"], gc, df_)][0] += int(got == want); tot[(sg["code"], gc, df_)][1] += 1
-                    if gc == 1 and df_ == 0 and got != want and sg["code"] in ("NB1", "NB3", "NB9"):
+                    if gc == 1 and df_ == 0 and got != want and sg["code"] in ("NB1", "NB2", "NB7", "NB9"):
                         pool_ids = [(r["player_id"], r["prop"], r["line"]) for r in c][:8]
                         wp = [x for g_ in want for x in g_]
                         pos = {x: ([i for i, r in enumerate(c) if r["player_id"] == x] or ["absent"], [(r["prop"], r["line"]) for r in c if r["player_id"] == x][:1]) for x in wp}
