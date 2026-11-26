@@ -121,3 +121,48 @@ def write(conn, day, plan):
         NL.store(conn, day, name, 1, [dict(b["leg"]) for b in bank], exclude_players={r["leg"]["player"] for r in rows})
         n += 1
     return n
+
+
+def check(conn, dates):
+    """certification: Betr's strategies rebuilt on past slates from the stored PrizePicks / Underdog lists against the research's own slips; every (game cap, different-prop) variant tried,
+    the variant that reproduces the research is the one the research used (ua3 does not store them for Betr)"""
+    import research_best as RB
+    ref = {}
+    for sg in [s for s in FL.FINAL["set"] if s["app"] == "betr"]:
+        r = conn.execute("""SELECT days FROM nba_score.ua3 WHERE tag LIKE '%%-n' AND app = 'betr' AND rk = %s AND layer = %s AND st = %s AND k = %s AND start = %s AND nsl = %s LIMIT 1""",
+                         (sg["rk"], sg["layer"], sg["st"], sg["k"], sg["start"], sg["nsl"])).fetchone()
+        ref[sg["code"]] = RB.parse(r[0]) if r else None
+    log = FL.log
+    log("BC|reference rows: " + ", ".join(f"{c} {'yes' if v is not None else 'NO'}" for c, v in ref.items()))
+    tot = defaultdict(lambda: [0, 0])
+    for gd in dates:
+        U, P = lists(conn, gd)
+        if not P:
+            log(f"BC|{gd}: no stored lists"); continue
+        import betr_live_slip_engine as BE
+        legs = BE.board_legs(conn, gd, guard=False)[0]
+        T = defaultdict(list)
+        for l in legs:
+            if str(l["side"]).lower().startswith("u") and l["prop"] in SINGLE:
+                T[(str(l["player_id"]), l["prop"])].append(l)
+        S = {k: onto(T, v) for k, v in sources(U, P).items()}
+        for sg in [s for s in FL.FINAL["set"] if s["app"] == "betr"]:
+            rd = ref.get(sg["code"])
+            if not rd or gd not in rd:
+                continue
+            want = {frozenset(str(x) for x in legs_) for _, legs_ in rd[gd]}
+            c = [r for r in S.get(sg["rk"], []) if pool_fn(sg["layer"])(r)]
+            for gc in (1, 2):
+                for df_ in (0, 1):
+                    s_ = take(c, sg["k"], gc, bool(df_), sg["start"])
+                    got = {frozenset(r["player_id"] for r in s_)} if s_ else set()
+                    tot[(sg["code"], gc, df_)][0] += int(got == want); tot[(sg["code"], gc, df_)][1] += 1
+    for (code, gc, df_), (a, b) in sorted(tot.items()):
+        log(f"BC|{code} gcap {gc} diff {df_}: {a}/{b} days identical to the research")
+
+
+if __name__ == "__main__":
+    import os
+    import psycopg
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        check(conn, [d for d in (os.environ.get("FL_DATES") or "").split(",") if d])
