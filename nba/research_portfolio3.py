@@ -50,7 +50,7 @@ def parse(s):
 def weight_test():
     """Which season weighting predicts the unseen Nov 8+ best? Per strategy: weighted score of (2024-25, 2025-26, 2026-27 before Nov 8); outcome = its Nov 8+ ROI."""
     conn = psycopg.connect(os.environ["DATABASE_URL"])
-    d = pd.read_sql("SELECT app, st, k, r24, r25, r26a, r26b, n24, n25, n26a, n26b FROM nba_score.ua3 WHERE NOT (app='underdog' AND tier <> 'regular')", conn)
+    d = pd.read_sql("SELECT app, st, k, r24, r25, r26a, r26b, n24, n25, n26a, n26b FROM nba_score.ua3 WHERE tag NOT LIKE '%-b' AND NOT (app='underdog' AND tier <> 'regular')", conn)
     conn.close()
     d = d[(d.n26b >= 15) & (d.n26a >= 15)].copy()
     print(f"P3W|strategies with 15+ slips before and after Nov 8: {len(d)}", flush=True)
@@ -67,7 +67,7 @@ def weight_test():
 
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
-    df = pd.read_sql("SELECT app, tag, sid, st, k, tier, side, rk, layer, nsl, start, sup, r24, r25, r26, n24, n25, n26, r26a, r26b, n26a, n26b, gone_base, gone_sub, gone_shrink, days FROM nba_score.ua3", conn)
+    df = pd.read_sql("SELECT app, tag, sid, st, k, tier, side, rk, layer, nsl, start, sup, r24, r25, r26, n24, n25, n26, r26a, r26b, n26a, n26b, gone_base, gone_sub, gone_shrink, days FROM nba_score.ua3 WHERE tag " + ("LIKE '%-b'" if os.environ.get("PF_BROAD") else "NOT LIKE '%-b'"), conn)
     conn.close()
     df["k"] = df["k"].astype(int)
     S = []

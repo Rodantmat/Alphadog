@@ -42,7 +42,15 @@ def load_cells(tiers):
 def stage_b3(d, A, slp, L, T):
     if APP == "sleeper":
         import sleeper_live_slip_engine as SL
-    X = A[~A.rk.str.contains("rnd")].copy(); X["sc"] = U2.support(X)
+    X = A[~A.rk.str.contains("rnd")].copy()
+    bs = float(os.environ.get("UA_BROAD") or 0)
+    if bs > 0:
+        nn = X[X.layer == "none"].set_index(["tier", "side", "rk", "gcap", "st", "k"])["n"]
+        key = list(zip(X.tier, X.side, X.rk, X.gcap, X.st, X.k))
+        base = np.array([nn.get(k_, np.nan) for k_ in key], dtype=float)
+        X = X[(X.n.values >= bs * base) | (X.layer.values == "none")].copy()
+        log(f"broad filter: layers must keep {int(100*bs)}%+ of the unfiltered slips -> {len(X)} cells")
+    X["sc"] = U2.support(X)
     X = X[X["sc"] > 0].sort_values("sc", ascending=False)
     nshort = int(os.environ.get("UA_SHORT") or 260)
     sel = X.groupby(["st", "k"], group_keys=False).head(max(8, nshort // 7)).drop_duplicates(["tier", "side", "rk", "layer", "gcap"])
@@ -154,14 +162,14 @@ def stage_b3(d, A, slp, L, T):
         return B
     B = B.sort_values("sup", ascending=False)
     B = B.groupby(["st", "k"], group_keys=False).head(KEEP).reset_index(drop=True)
-    B["sid"] = [f"{APP}|{os.environ.get('UA_TIERS') or 'all'}|{i}" for i in range(len(B))]
+    B["sid"] = [f"{APP}|{os.environ.get('UA_TIERS') or 'all'}{os.environ.get('UA_SUFFIX') or ''}|{i}" for i in range(len(B))]
     log(f"kept {len(B)} strategies (prior-season selection only)")
     return B
 
 
 def write(B):
     wc = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
-    B = B.copy(); B.insert(0, "app", APP); B.insert(1, "tag", os.environ.get("UA_TIERS") or "all")
+    B = B.copy(); B.insert(0, "app", APP); B.insert(1, "tag", (os.environ.get("UA_TIERS") or "all") + (os.environ.get("UA_SUFFIX") or ""))
     cols = list(B.columns)
     typ = {c: ("float8" if pd.api.types.is_numeric_dtype(B[c]) else "text") for c in cols}
     for t_ in range(6):
