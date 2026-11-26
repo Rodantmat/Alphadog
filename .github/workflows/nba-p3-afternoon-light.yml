@@ -765,6 +765,17 @@ jobs:
           EXP_APPS: "prizepicks"
         run: python -u nba/slip_exposure_coordinator.py
 
+      # FINAL SET (owner 2026-11-26): gate classification_config final_live; when on for an app, the honest-rebuild step below skips it.
+      - name: Final-set strategies (PrizePicks)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FL_DATE: ${{ steps.d.outputs.asof }}
+          FL_APP: "prizepicks"
+        run: python -u nba/final_live_slip_engine.py
+
       # HONEST-REBUILD STRATEGIES, PRIZEPICKS (owner 2026-11-19 23:11 PT "disable the current strategies and wire the new ones"; NBA_HONEST_REBUILD.md 8ab).
       # Gate classification_config honest_live. Soft: if it fails or the gate is off, the slips built above stand exactly as before.
       - name: Honest-rebuild strategies (PrizePicks)
@@ -900,6 +911,47 @@ jobs:
           EXP_DATE: ${{ steps.d.outputs.asof }}
           EXP_APPS: "underdog,sleeper,fliff,betr"
         run: python -u nba/slip_exposure_coordinator.py
+
+      # FINAL SET, the other four apps (Betr last: it reads the PrizePicks / Underdog lists the first two store)
+      - name: Final-set strategies (Underdog)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FL_DATE: ${{ steps.d.outputs.asof }}
+          FL_APP: "underdog"
+        run: python -u nba/final_live_slip_engine.py
+
+      - name: Final-set strategies (Sleeper)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FL_DATE: ${{ steps.d.outputs.asof }}
+          FL_APP: "sleeper"
+        run: python -u nba/final_live_slip_engine.py
+
+      - name: Final-set strategies (Fliff)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FL_DATE: ${{ steps.d.outputs.asof }}
+          FL_APP: "fliff"
+        run: python -u nba/final_live_slip_engine.py
+
+      - name: Final-set strategies (Betr)
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FL_DATE: ${{ steps.d.outputs.asof }}
+          FL_APP: "betr"
+        run: python -u nba/final_live_slip_engine.py
 
       # HONEST-REBUILD STRATEGIES, THE OTHER FOUR APPS (same gate, soft; after every app's engine and the exposure step, before the screen is precomputed)
       - name: Honest-rebuild strategies (Underdog, Sleeper, Fliff, Betr)
