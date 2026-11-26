@@ -115,10 +115,12 @@ def leg_dicts(conn, day, app, d, ev):
             if l is not None:
                 out[i] = dict(l)
         return out
+    evn = {r[0]: r[1] for r in conn.execute("""SELECT DISTINCT ON (player) player, event_id FROM nba_market.board_snapshots
+                                                WHERE game_date = %s AND bookmaker = %s AND snapshot_label = 'window' ORDER BY player, snapshot_ts DESC""", (day, app)).fetchall()}
     for i, r in d.iterrows():
         nm = r.get("player")
         out[i] = {"player": nm if isinstance(nm, str) else str(r["player_id"]), "player_id": r["player_id"], "prop": r["prop"], "line": float(r["line"]),
-                  "side": "Under" if r["under"] else "Over", "event_id": ev.get((r["player_id"], r["prop"], bool(r["under"]), round(float(r["line"]), 3))),
+                  "side": "Under" if r["under"] else "Over", "event_id": ev.get((r["player_id"], r["prop"], bool(r["under"]), round(float(r["line"]), 3))) or evn.get(nm),
                   "tier": "R", "factor": 1.0, "p": None}
     return out
 
