@@ -73,9 +73,41 @@ def onto(T, src):
     return out
 
 
+def board_unders(conn, day, guard=True):
+    """every Under on Betr's board of the day (all of the day's archived snapshots, newest line first), mapped to a player id; no model probability is needed at Betr's line (the research mapped the
+    PrizePicks / Underdog lists onto the board the same way); the game must not have started before the board was read"""
+    import betr_live_slip_engine as BE
+    rows = conn.execute("""SELECT nm.player_id::text, b.player, b.market_key, b.side, b.line::float, b.event_id, b.snapshot_ts
+                           FROM nba_market.board_snapshots b JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+                           WHERE b.bookmaker IN ('betr', 'betr_us_dfs') AND b.game_date = %s AND b.market_key = ANY(%s) AND lower(left(b.side, 1)) NOT IN ('o', 'm', 'h')
+                           ORDER BY b.snapshot_ts DESC""", (day, list(BE.RSD.MK))).fetchall()
+    if not rows:
+        return [], None
+    last = max(r[6] for r in rows)
+    evs = dict(conn.execute("""SELECT DISTINCT ON (nm.player_id) nm.player_id::text, b.event_id FROM nba_market.board_snapshots b
+                               JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
+                               WHERE b.bookmaker = 'underdog' AND b.game_date = %s ORDER BY nm.player_id, b.snapshot_ts DESC""", (day,)).fetchall())
+    tip = dict(conn.execute("SELECT event_id, min(commence_time) FROM nba_market.board_snapshots WHERE bookmaker = 'underdog' AND game_date = %s GROUP BY 1", (day,)).fetchall())
+    tm = BE.SL.teams_of(conn, {r[0] for r in rows}, day)
+    out, seen = [], set()
+    for pid, nm, mkey, side, line, bev, ts in rows:
+        if mkey.endswith("_alternate") or mkey not in BE.RSD.MK:
+            continue
+        prop = BE.RSD.MK[mkey]
+        if (pid, prop) in seen:
+            continue
+        seen.add((pid, prop))
+        ev = evs.get(pid) or bev
+        t0 = tip.get(evs.get(pid))
+        if guard and t0 is not None and t0 <= last:
+            continue
+        out.append({"player": nm, "player_id": pid, "prop": prop, "side": "Under", "line": line, "event_id": ev, "team": tm.get(pid)})
+    return out, last
+
+
 def build(conn, day, gc=1, diff=0):
     import betr_live_slip_engine as BE
-    legs = BE.board_legs(conn, day)[0]
+    legs = board_unders(conn, day)[0]
     notes = []
     T = defaultdict(list)
     for l in legs:
@@ -143,7 +175,7 @@ def check(conn, dates):
         import betr_live_slip_engine as BE
         played = {str(r[0]) for r in conn.execute("SELECT nba_player_id FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall()}
         U = [r for r in U if str(r["player_id"]) in played]; P = [r for r in P if str(r["player_id"]) in played]      # the research only holds graded (played) legs: hindsight, check mode only
-        legs = [l for l in BE.board_legs(conn, gd, guard=False)[0] if str(l["player_id"]) in played]
+        legs = [l for l in board_unders(conn, gd, guard=False)[0] if str(l["player_id"]) in played]
         if os.environ.get("FL_RLIST") == "1":                # the research's own lists (v_legs_honest blend / model, leg_card_v2 score, game ids from the box scores): isolates Betr's logic from the lists
             import pandas as pd
             gm = dict(conn.execute("SELECT nba_player_id::text, game_id::text FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall())
@@ -154,6 +186,9 @@ def check(conn, dates):
                                WHERE v.game_date = %s AND v.is_under AND v.kind = 'regular' AND v.app IN ('underdog', 'prizepicks') AND v.p_blend IS NOT NULL ORDER BY v.p_blend DESC""", conn, params=(gd,))
             q["game_id"] = [gm.get(str(x), "g" + str(x)) for x in q["player_id"]]; q["home"] = [hm.get(str(x)) for x in q["player_id"]]
             U = q[q["app"] == "underdog"].to_dict("records"); P = q[(q["app"] == "prizepicks") & (q["line"] % 1 != 0)].to_dict("records")
+            cols = {"points": "pts", "rebounds": "reb", "assists": "ast", "threes_made": "fg3m", "steals": "stl", "blocks": "blk", "turnovers": "tov"}
+            stt = {(str(r[0])): dict(zip(cols.values(), r[1:])) for r in conn.execute("SELECT nba_player_id::text, pts::float8, reb::float8, ast::float8, fg3m::float8, stl::float8, blk::float8, tov::float8 FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall()}
+            legs = [l for l in legs if (stt.get(str(l["player_id"])) or {}).get(cols[l["prop"]]) != l["line"]]      # the research drops pushes (hindsight)
             for l in legs:
                 l["game_id"] = gm.get(str(l["player_id"]), "g" + str(l["player_id"])); l["home"] = hm.get(str(l["player_id"]))
         T = defaultdict(list)
