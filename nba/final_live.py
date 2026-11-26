@@ -232,7 +232,7 @@ def build_frame(conn, df, X, P):
         d[c] = X[c].values[k] if c in X.columns else np.nan
     d["blend"] = P["blend"][k]; d["gbm"] = P["gbm"][k]; d["gbm_s"] = P["gbm_s"][k]
     bs = pd.read_sql("""SELECT player_id, prop, line::float8 line, lower(side) side, final_hp::float8 fhp, score::float8 score, confidence::float8 conf
-                        FROM nba_score.board_scored WHERE game_date = %s AND app = %s""", conn, params=(gd, APP))
+                        FROM nba_score.""" + ("board_scored_v2" if os.environ.get("FL_BS") == "v2" else "board_scored") + """ WHERE game_date = %s AND app = %s""", conn, params=(gd, APP))
     bs["under"] = ~bs["side"].str[0].isin(["o", "m", "h"])
     d = d.merge(bs.drop_duplicates(["player_id", "prop", "under", "line"]).drop(columns=["side"]), on=["player_id", "prop", "under", "line"], how="left")
     for c in ("hr", "hcal", "roi", "roi_cal", "roi_best"):
