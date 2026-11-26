@@ -38,6 +38,24 @@ def parse(s):
     return out
 
 
+def weight_test():
+    """Which season weighting predicts the unseen Nov 8+ best? Per strategy: weighted score of (2024-25, 2025-26, 2026-27 before Nov 8); outcome = its Nov 8+ ROI."""
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    d = pd.read_sql("SELECT app, st, k, r24, r25, r26a, r26b, n24, n25, n26a, n26b FROM nba_score.ua3 WHERE NOT (app='underdog' AND tier <> 'regular')", conn)
+    conn.close()
+    d = d[(d.n26b >= 15) & (d.n26a >= 15)].copy()
+    print(f"P3W|strategies with 15+ slips before and after Nov 8: {len(d)}", flush=True)
+    schemes = {"equal 1/1/1": (1, 1, 1), "prior only 1/1/0": (1, 1, 0), "mild 1/2/3": (1, 2, 3), "mild 1/2/4": (1, 2, 4), "strong 1/3/9": (1, 3, 9),
+               "current only 0/0/1": (0, 0, 1), "2025-26 only 0/1/0": (0, 1, 0), "2024-25 only 1/0/0": (1, 0, 0), "past two 1/2/0": (1, 2, 0)}
+    print("P3W|scheme | rank corr with Nov 8+ ROI | Nov 8+ ROI of top 10% | top 25% | all (baseline) | top 10% share positive", flush=True)
+    for nm, (a, b, c) in schemes.items():
+        sc = (a * d.r24.fillna(0) + b * d.r25.fillna(0) + c * d.r26a.fillna(0)) / max(1e-9, a + b + c)
+        cor = sc.rank().corr(d.r26b.rank())
+        o = d.assign(sc=sc).sort_values("sc", ascending=False)
+        w = lambda x: float((x.r26b * x.n26b).sum() / x.n26b.sum())
+        print(f"P3W|{nm:20s} | {cor:+.2f} | {100*w(o.head(max(3, len(o)//10))):+.0f}% | {100*w(o.head(max(5, len(o)//4))):+.0f}% | {100*w(o):+.0f}% | {100*float((o.head(max(3, len(o)//10)).r26b > 0).mean()):.0f}%", flush=True)
+
+
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     df = pd.read_sql("SELECT app, tag, sid, st, k, tier, side, rk, layer, nsl, start, sup, r24, r25, r26a, r26b, n26, gone_base, gone_sub, gone_shrink, days FROM nba_score.ua3", conn)
@@ -195,6 +213,7 @@ def main():
         r = run(c2)
         if r:
             print(f"P3|  {a}: n {c2['n'][a]} cap {c2['cap'][a] if c2['cap'][a] < 99 else '-'}: {r['slips']/r['days']:.1f}/day | " + " / ".join(f"{100*r['r'+s[2:4]]:+.0f}% ({r['n'+s[2:4]]})" for s in SEAS) + f" | Nov 8+ {100*r['rlate']:+.0f}% ({r['rn']}) | dd {r['dd']:.0f}u", flush=True)
+    weight_test()
     print("P3|DONE", flush=True)
 
 
