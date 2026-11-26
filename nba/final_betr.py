@@ -2,6 +2,7 @@
 """Betr's final-set slips: the research's source orders (research_pass31_small.py) on the live lists the PrizePicks / Underdog runs stored (nba_score.fl_ranked), mapped onto Betr's own board
 (same player and prop, the line nearest the source's), pool layers, take() with start offset. Power 2 = Perfect, 6-pick Flex = Dynamic (Betr's own tables, nba_config.pp_slip_rules betr_payout_v1)."""
 import json
+import os
 from collections import defaultdict
 
 import final_live as FL
@@ -143,6 +144,17 @@ def check(conn, dates):
         played = {str(r[0]) for r in conn.execute("SELECT nba_player_id FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall()}
         U = [r for r in U if str(r["player_id"]) in played]; P = [r for r in P if str(r["player_id"]) in played]      # the research only holds graded (played) legs: hindsight, check mode only
         legs = [l for l in BE.board_legs(conn, gd, guard=False)[0] if str(l["player_id"]) in played]
+        if os.environ.get("FL_RLIST") == "1":                # the research's own lists (v_legs_honest blend / model, leg_card_v2 score, game ids from the box scores): isolates Betr's logic from the lists
+            import pandas as pd
+            gm = dict(conn.execute("SELECT nba_player_id::text, game_id::text FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall())
+            q = pd.read_sql("""SELECT v.app, v.player_id, v.prop, v.line::float8 line, v.p_blend::float8 blend, v.p_honest_baseline::float8 ph, l.score::float8 score
+                               FROM nba_score.v_legs_honest v LEFT JOIN nba_score.leg_card_v2 l ON l.app = v.app AND l.game_date = v.game_date AND l.player_id = v.player_id AND l.prop = v.prop AND l.line = v.line AND l.side = 'Under'
+                                    AND ((l.app = 'underdog' AND l.leg_mult = 1) OR (l.app = 'prizepicks' AND l.kind = 'standard'))
+                               WHERE v.game_date = %s AND v.is_under AND v.kind = 'regular' AND v.app IN ('underdog', 'prizepicks') AND v.p_blend IS NOT NULL ORDER BY v.p_blend DESC""", conn, params=(gd,))
+            q["game_id"] = [gm.get(str(x), "g" + str(x)) for x in q["player_id"]]
+            U = q[q["app"] == "underdog"].to_dict("records"); P = q[(q["app"] == "prizepicks") & (q["line"] % 1 != 0)].to_dict("records")
+            for l in legs:
+                l["game_id"] = gm.get(str(l["player_id"]), "g" + str(l["player_id"]))
         T = defaultdict(list)
         for l in legs:
             if str(l["side"]).lower().startswith("u") and l["prop"] in SINGLE:
