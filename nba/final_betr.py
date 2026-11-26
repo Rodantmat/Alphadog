@@ -147,14 +147,15 @@ def check(conn, dates):
         if os.environ.get("FL_RLIST") == "1":                # the research's own lists (v_legs_honest blend / model, leg_card_v2 score, game ids from the box scores): isolates Betr's logic from the lists
             import pandas as pd
             gm = dict(conn.execute("SELECT nba_player_id::text, game_id::text FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall())
+            hm = dict(conn.execute("SELECT nba_player_id::text, (matchup LIKE '%%vs.%%')::int::float8 FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall())
             q = pd.read_sql("""SELECT v.app, v.player_id, v.prop, v.line::float8 line, v.p_blend::float8 blend, v.p_honest_baseline::float8 ph, l.score::float8 score
                                FROM nba_score.v_legs_honest v LEFT JOIN nba_score.leg_card_v2 l ON l.app = v.app AND l.game_date = v.game_date AND l.player_id = v.player_id AND l.prop = v.prop AND l.line = v.line AND l.side = 'Under'
                                     AND ((l.app = 'underdog' AND l.leg_mult = 1) OR (l.app = 'prizepicks' AND l.kind = 'standard'))
                                WHERE v.game_date = %s AND v.is_under AND v.kind = 'regular' AND v.app IN ('underdog', 'prizepicks') AND v.p_blend IS NOT NULL ORDER BY v.p_blend DESC""", conn, params=(gd,))
-            q["game_id"] = [gm.get(str(x), "g" + str(x)) for x in q["player_id"]]
+            q["game_id"] = [gm.get(str(x), "g" + str(x)) for x in q["player_id"]]; q["home"] = [hm.get(str(x)) for x in q["player_id"]]
             U = q[q["app"] == "underdog"].to_dict("records"); P = q[(q["app"] == "prizepicks") & (q["line"] % 1 != 0)].to_dict("records")
             for l in legs:
-                l["game_id"] = gm.get(str(l["player_id"]), "g" + str(l["player_id"]))
+                l["game_id"] = gm.get(str(l["player_id"]), "g" + str(l["player_id"])); l["home"] = hm.get(str(l["player_id"]))
         T = defaultdict(list)
         for l in legs:
             if str(l["side"]).lower().startswith("u") and l["prop"] in SINGLE:
@@ -171,7 +172,7 @@ def check(conn, dates):
                     s_ = take(c, sg["k"], gc, bool(df_), sg["start"])
                     got = {frozenset(r["player_id"] for r in s_)} if s_ else set()
                     tot[(sg["code"], gc, df_)][0] += int(got == want); tot[(sg["code"], gc, df_)][1] += 1
-                    if gc == 1 and df_ == 0 and got != want and sg["code"] in ("NB3", "NB8"):
+                    if gc == 1 and df_ == 0 and got != want and sg["code"] in ("NB1", "NB3", "NB9"):
                         pool_ids = [(r["player_id"], r["prop"], r["line"]) for r in c][:8]
                         wp = [x for g_ in want for x in g_]
                         pos = {x: ([i for i, r in enumerate(c) if r["player_id"] == x] or ["absent"], [(r["prop"], r["line"]) for r in c if r["player_id"] == x][:1]) for x in wp}
