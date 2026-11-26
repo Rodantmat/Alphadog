@@ -75,7 +75,9 @@ def main():
             s["sc"] = r25 if s["st"]["2025-26"][1] >= 40 else np.nan; s["oos"] = "2026-27"
         else:
             s["sc"] = min(r24, r25) if min(s["st"]["2024-25"][1], s["st"]["2025-26"][1]) >= 30 else np.nan; s["oos"] = "2026-27"
-    S = [s for s in S if s["sc"] == s["sc"] and s["sc"] > 0]
+    # Underdog Flex with goblin/demon alternates multiplies alternate-line factors Underdog does not pay on Flex (prices of +400,000% = artifact): regular legs only
+    S = [s for s in S if not (s["app"] == "underdog" and " regular " not in s["label"])]
+    S = [s for s in S if s["sc"] == s["sc"] and s["sc"] > 0 and s["st"]["2026-27"][1] >= 10]
     apps = sorted({s["app"] for s in S})
     print(f"PF|candidates (selected on prior seasons, positive): " + " | ".join(f"{a} {sum(1 for s in S if s['app'] == a)}" for a in apps), flush=True)
     alld = sorted({g for s in S for g in s["day"]})
