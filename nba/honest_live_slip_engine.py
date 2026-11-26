@@ -64,7 +64,7 @@ NAMES = {"U1": "U1 top 2 Unders, main ranking", "U2": "U2 top 2 Unders, model-on
          "B7": "H_B7_5perfect_model_props", "B8": "H_B8_3perfect_pp_noast_2g", "B9": "H_B9_3perfect_score_props"}                                                                   # +75.0% (+49 / +59 / +322), back-to-back slates only
 # owner 2026-11-23: daily = the codes above 25% ROI, fallback = below (thin board only). PrizePicks daily P1 P3 P4 P10 P11, fallback P9;
 # Underdog daily U9 U10 U11 (U12 once the daily certified hit rate exists), fallback U2 U1. P2 P5 P6 P7, U3-U8 and the old fallbacks retired.
-TARGET = {"underdog": 3, "prizepicks": 4, "sleeper": 10, "fliff": 9, "betr": 2}      # the number of elected (daily) strategies an app has
+TARGET = {"underdog": 2, "prizepicks": 4, "sleeper": 9, "fliff": 8, "betr": 2}      # 2026-11-25: U10, P11, S8, F6 dropped (negative on the real 2026-27 boards)      # the number of elected (daily) strategies an app has
 
 
 def log(m):
@@ -415,7 +415,7 @@ def build(conn, day, apps, weights=None):
             ukey.setdefault((r["pid"], r["prop"]), r)
         # owner 2026-11-23 09:24 / 09:30 PT: daily U9 U10 U11 (+ U12 when the daily certified hit rate exists), fallback U2 U1 (thin board only)
         add("underdog", "U9", 3, "standard", [r for r in U if r["prop"] != "assists"], gcap=2)
-        add("underdog", "U10", 3, "standard", U, gcap=2)
+        # U10 dropped 2026-11-25 (owner 20:19 PT "remove the negative ones"): standalone on the real 2026-27 boards -28% (9 slips)
         try:
             form = season_form(conn, day, {r["pid"] for r in U})
         except Exception as e:  # noqa: BLE001 - the form layer never costs the slate
@@ -423,7 +423,7 @@ def build(conn, day, apps, weights=None):
         add("underdog", "U11", 3, "standard", sorted([r for r in U if r["pb"] is not None and (hot(form, r) or -9) >= 0.10],
                                                      key=lambda r: (-r["pb"], r["pid"], r["prop"], r["line"])))
         later("underdog", "U2", 2, "standard", sorted(U, key=lambda r: (-r["ph"], r["pid"], r["prop"], r["line"])))
-        later("underdog", "U1", 2, "standard", U)
+        # U1 fallback dropped 2026-11-25: -34% (16 slips) on the real 2026-27 boards
         fill("underdog")
     if "prizepicks" in apps:
         # owner 2026-11-23 09:24 / 09:30 PT: daily P1 P3 P4 P10 P11, fallback P9 (thin board only)
@@ -432,20 +432,22 @@ def build(conn, day, apps, weights=None):
         add("prizepicks", "P3", 5, "flex", P)
         add("prizepicks", "P4", 5, "flex", avg)
         add("prizepicks", "P10", 3, "power", P)
-        # P11: back-to-back players (their last game was yesterday), every prop, half-point lines, by the board score, up to two a game (5-pick Flex).
-        # Only on slates with enough such players (research: 66 / 64 / 11 slips a season) - on the others it is simply not built (not a thin board).
-        try:
-            sc = board_score(conn, day); fm = season_form(conn, day, {r["pid"] for r in ctx["pp_all"]})
-            b2b = [dict(r, bscore=sc.get((r["pid"], r["prop"], round(r["line"], 2)))) for r in ctx["pp_all"]
-                   if fm.get(r["pid"]) and (day - fm[r["pid"]][2]).days == 1]
-            b2b = sorted([r for r in b2b if r["bscore"] is not None], key=lambda r: (-r["bscore"], r["pid"], r["prop"], r["line"]))
-            s11 = pick(b2b, 5, gcap=2)
-            if s11 is not None:
-                plan.setdefault("prizepicks", []).append(("P11", 5, "flex", s11, b2b))
-            else:
-                notes.append(f"P11: {len(b2b)} back-to-back Unders with a board score - no slip today")
-        except Exception as e:  # noqa: BLE001
-            conn.rollback(); notes.append(f"P11: skipped ({type(e).__name__}: {str(e)[:120]})")
+        # P11 dropped 2026-11-25 (owner 20:19 PT): standalone on the real 2026-27 boards -56% Flex (9 slips); the old certified-universe study was +70 / +65 / +330%.
+        if False:
+            # P11: back-to-back players (their last game was yesterday), every prop, half-point lines, by the board score, up to two a game (5-pick Flex).
+            # Only on slates with enough such players (research: 66 / 64 / 11 slips a season) - on the others it is simply not built (not a thin board).
+            try:
+                sc = board_score(conn, day); fm = season_form(conn, day, {r["pid"] for r in ctx["pp_all"]})
+                b2b = [dict(r, bscore=sc.get((r["pid"], r["prop"], round(r["line"], 2)))) for r in ctx["pp_all"]
+                       if fm.get(r["pid"]) and (day - fm[r["pid"]][2]).days == 1]
+                b2b = sorted([r for r in b2b if r["bscore"] is not None], key=lambda r: (-r["bscore"], r["pid"], r["prop"], r["line"]))
+                s11 = pick(b2b, 5, gcap=2)
+                if s11 is not None:
+                    plan.setdefault("prizepicks", []).append(("P11", 5, "flex", s11, b2b))
+                else:
+                    notes.append(f"P11: {len(b2b)} back-to-back Unders with a board score - no slip today")
+            except Exception as e:  # noqa: BLE001
+                conn.rollback(); notes.append(f"P11: skipped ({type(e).__name__}: {str(e)[:120]})")
         later("prizepicks", "P9", 4, "flex", P)
         fill("prizepicks")
     tight = sorted(first(U, 2) + first(P, 5), key=lambda r: (-r["blend"], r["pid"]))
@@ -479,13 +481,13 @@ def build(conn, day, apps, weights=None):
         mx = "perfect" if app == "betr" else "max"
         if app == "sleeper":       # 2026-27 real ROI (2025-26 derived): S4 +61 (+6), S5 +84 (+8), S6 +78 (+31), S7 +200 (+59), S8 +110 (+41), S9 +36 (+9),
             add(app, "S4", 4, "flex", tl); add(app, "S5", 4, "max", tl); add(app, "S6", 5, "flex", tl)          # S10 +42 (+21), S11 +25 (+24)
-            add(app, "S7", 5, "max", ppo); add(app, "S8", 4, "max", ppo); add(app, "S9", 2, "max", noast)
+            add(app, "S7", 5, "max", ppo); add(app, "S9", 2, "max", noast)   # S8 dropped 2026-11-25: -100% (4 slips) on the real 2026-27 boards
             add(app, "S10", 3, "max", dp); add(app, "S11", 2, "max", rebo)
             add(app, "S12", 5, "max", ppo, diff_prop=True)                       # NEW +169% (+70%), w/o best +72%
             add(app, "S13", 6, "flex", onto(tg, avg_p, ctx))                       # NEW +158% (+66%), w/o best +57%
         elif app == "fliff":       # F4 +99 (+17), F5 +122 (+61), F6 +127 (+53), F7 +206 (+63), F8 +44 (+16), F9 +43 (+22), F10 +32 (+31)
             add(app, "F4", 4, "max", tl); add(app, "F5", 5, "max", tl)
-            add(app, "F6", 4, "max", ppo); add(app, "F7", 5, "max", ppo); add(app, "F8", 2, "max", noast)
+            add(app, "F7", 5, "max", ppo); add(app, "F8", 2, "max", noast)   # F6 dropped 2026-11-25: -100% (4 slips) on the real 2026-27 boards
             add(app, "F9", 3, "max", dp); add(app, "F10", 2, "max", rebo)
             add(app, "F11", 5, "max", ppo, diff_prop=True)                       # NEW +175% (+75%), w/o best +75%
             add(app, "F12", 6, "max", [r for r in ppo if float(r["leg"].get("m") or 0) >= 1.8])   # NEW +272% (+72%), w/o best +81%

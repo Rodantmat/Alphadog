@@ -1412,3 +1412,7 @@ In-sample: the strategies were chosen on this season.
   -> keep a leg at a better line: HOLDS; a worse line / pulled -> strategy rule: HOLDS; a price drop -> NOT a reason to sub (top legs earn the same, their hit rate rises
   as the price falls), so v1.6.7 keeps every repriced leg at the live price. PrizePicks / Betr: no per-leg price (fixed payout tables) - nothing to drift. Underdog:
   per-pick factor exists, a drop is -2..-4% vs stable but a substitute is a lower-ranked leg - no sub rule; legs kept.
+- 2026-11-25 20:45 PT (owner 20:19 PT: "check the ones in fallback as well, remove the negative ones, the ones under 25% make them fallback only and only if they hold
+  positive ROI as a fallback"): every live code replayed STANDALONE on the real 2026-27 boards (run 45754576730: the live engine, no overlap, every fallback built
+  every slate). DROPPED (negative): P11 -56% Flex (9 slips), U10 -28% (9), U1 fallback -34% (16), S8 -100% (4), F6 -100% (4). No daily code is under 25%
+  (U11 is exactly +25%, 8 slips - kept daily). Fallbacks kept (positive): P9 +83% Flex, U2 +35%, B1 +83%, B9 +38%. TARGET now UD 2, PP 4, Sleeper 9, Fliff 8, Betr 2.
