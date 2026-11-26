@@ -19,6 +19,10 @@ RHO = float(os.environ.get("PF_RHO") or 0.7)
 NS = {a.split(":")[0]: int(a.split(":")[1]) for a in (os.environ.get("FN_N") or "underdog:6,fliff:6,prizepicks:6,sleeper:5,betr:4").split(",")}
 
 
+def ni(x):
+    return -9 if x != x else int(x)
+
+
 def order(S):
     return sorted(S, key=lambda s: (s["k"], -s["J"]))
 
@@ -38,7 +42,7 @@ def load():
         day = parse(r.days); m = stats(day)
         if not m:
             continue
-        S.append(dict(app=r.app, k=int(r.k), st=r.st, tier=r.tier, side=r.side, rk=r.rk, gcap=int(r.gcap), pdif=int(r.pdif), altcap=int(r.altcap), start=int(r.start), nsl=r.nsl,
+        S.append(dict(app=r.app, k=int(r.k), st=r.st, tier=r.tier, side=r.side, rk=r.rk, gcap=ni(r.gcap), pdif=ni(r.pdif), altcap=ni(r.altcap), start=ni(r.start), nsl=r.nsl,
                       label=f"{'P' if r.st == 'power' else 'F'}{int(r.k)} {r.tier} {r.side} {r.rk} #{int(r.start)} x{r.nsl}", day=day, m=m, gb=r.gone_base, gs=r.gone_sub, gh=r.gone_shrink))
     return S
 
