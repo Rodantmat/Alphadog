@@ -211,6 +211,9 @@ def check(conn, dates):
                         pool_ids = [(r["player_id"], r["prop"], r["line"]) for r in c][:8]
                         wp = [x for g_ in want for x in g_]
                         pos = {x: ([i for i, r in enumerate(c) if r["player_id"] == x] or ["absent"], [(r["prop"], r["line"]) for r in c if r["player_id"] == x][:1]) for x in wp}
+                        if sg["code"] == "NB1":
+                            tt = sources(U, P)["tight (live)"]
+                            log(f"BCT|{gd} tight pre-onto {[(r['player_id'], r['prop'], r['line'], str(r['game_id'])[-4:]) for r in tt]} | research players on my board: {[(x, [(k[1], v[0]['line']) for k, v in T.items() if k[0] == x]) for x in wp]} | U top {[(r['player_id'], r['prop'], r['line'], round(r['blend'], 3)) for r in U[:4]]} P top {[(r['player_id'], r['prop'], r['line'], round(r['blend'], 3)) for r in P[:6]]}")
                         log(f"BCW|{gd} {sg['code']} research players in my pool: {pos}")
                         log(f"BCD|{gd} {sg['code']} start {sg['start']} k {sg['k']}: mine {sorted(x for g_ in got for x in g_)} research {sorted(x for g_ in want for x in g_)} | my pool top12 {pool_ids} | on-board source rows {len(S.get(sg['rk'], []))} pool {len(c)}")
     for (code, gc, df_), (a, b) in sorted(tot.items()):
