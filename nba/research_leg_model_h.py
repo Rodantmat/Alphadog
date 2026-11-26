@@ -45,6 +45,8 @@ ROUNDS = int(os.environ.get("LM_ROUNDS") or 300)
 TRAIL = (os.environ.get("LM_TRAIL") or "0") == "1"
 SEAS = ["2024-25", "2025-26", "2026-27"]
 SW = {0: 1.0, 1: 0.6, 2: 0.35}
+# LIVE (final_live.py): {"gd": date, "legs": frame of the day's board legs (hit empty), "hb": baseline rows, "gl": placeholder game-log rows}. None = research as always.
+LIVE = None
 T0 = time.time()
 rng = np.random.default_rng(53)
 
@@ -62,6 +64,8 @@ def load(conn):
             df = pd.concat([df, pu], ignore_index=True); log(f"{APP}: + {len(pu):,} pushed regular legs (prediction only)")
     except Exception as ex:
         conn.rollback(); log(f"no pushed-leg table ({str(ex)[:80]})")
+    if LIVE is not None:                                     # the slate being built: history strictly before it + today's legs (no result)
+        df = pd.concat([df[df["gd"] < LIVE["gd"]], LIVE["legs"]], ignore_index=True)
     if APP == "prizepicks":
         df = df[~df["tier"].astype(str).str.endswith("-u")].copy(); df["mm"] = df["m"] / 0.542
         df["kindc"] = df["kind"].map({"standard": 0, "goblin": 1, "demon": 2}).fillna(0).astype(int)
@@ -70,6 +74,8 @@ def load(conn):
     df["under"] = ~df["side"].str.lower().str[0].isin(["o", "m", "h"]); sgn = np.where(df["under"], 1.0, -1.0); den = np.maximum(1.0, df["line"].values)
     log(f"{APP}: legs {len(df):,} on {df['gd'].nunique()} slates; by season {df.groupby('season').size().to_dict()}; by kind {df.groupby('kind').size().to_dict()}; by src {df.groupby('src').size().to_dict()}")
     hb = pd.read_sql("SELECT game_date::text gd, player_id, prop, anchor::float8 anchor, role_tier, var_band, proj_min::float8 proj_min FROM nba_score.baseline_history_h", conn)
+    if LIVE is not None:
+        hb = pd.concat([hb[hb["gd"] < LIVE["gd"]], LIVE["hb"]], ignore_index=True)
     df = df.merge(hb.drop_duplicates(["gd", "player_id", "prop"]), on=["gd", "player_id", "prop"], how="left")
     ids = dict(conn.execute("SELECT norm_name, player_id::text FROM nba_ref.player_name_map").fetchall())
     mc = pd.read_sql("""SELECT game_date::text gd, nba_ref.norm_name(player) nm, market_key, line::float8 line, books, p_over_mean::float8 po
@@ -94,6 +100,8 @@ def load(conn):
     df = df.merge(ol, on=["gd", "player_id", "prop"], how="left")
     gl = pd.read_sql("""SELECT nba_player_id::text player_id, game_date::text gd, season, matchup, team_id::text team_id, game_id::text game_id, min::float8 mn, pts::float8 pts, reb::float8 reb,
                                ast::float8 ast, fg3m::float8 fg3m, stl::float8 stl, blk::float8 blk, tov::float8 tov FROM nba_stats.player_game_log WHERE game_date >= '2024-10-01'""", conn)
+    if LIVE is not None:
+        gl = pd.concat([gl[gl["gd"] < LIVE["gd"]], LIVE["gl"]], ignore_index=True)
     gl = gl.sort_values(["player_id", "gd"]).drop_duplicates(["player_id", "gd"]); gl["played"] = (gl["mn"] > 0).astype(int)
     g = gl.groupby(["player_id", "season"], sort=False)
     gl["gp"] = g["played"].cumsum() - gl["played"]
