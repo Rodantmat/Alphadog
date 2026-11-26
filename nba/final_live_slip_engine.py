@@ -53,8 +53,7 @@ def leg_gone_rule(app, sg):
 
 def name_of(sg, j):
     """strategy / composition name of the j-th slip of a strategy on the day; starts with the code so the pages' rule lookup (^(?:H_)?([A-Z]+\\d+)) finds it"""
-    base = f"{sg['code']} {sg['k']}-pick {sg['st']}" if sg["app"] == "underdog" else f"H_{sg['code']}_{sg['k']}{sg['st'][0]}"
-    return base + (f" #{j + 1}" if sg["app"] == "underdog" and j else (f"_{j + 1}" if j else ""))
+    return f"H_{sg['code']}_{sg['k']}{sg['st'][0]}" + (f"_{j + 1}" if j else "")
 
 
 def started_games(conn, day):
@@ -167,8 +166,8 @@ def write_pp_ud(conn, day, app, plan):
         conn.execute("DELETE FROM nba_score.live_slips WHERE game_date = %s AND strategy LIKE 'H\\_N%%' AND hits IS NULL", (day,))
         conn.execute("""UPDATE nba_score.live_slips SET status = 'placed_shadow' WHERE game_date = %s AND strategy NOT LIKE 'H\\_NP%%' AND status NOT LIKE '%%shadow%%' AND status <> 'dup' AND hits IS NULL""", (day,))
     else:
-        conn.execute("DELETE FROM nba_score.ud_live_slips WHERE game_date = %s AND portfolio = 'H' AND composition LIKE 'NU%%' AND hits IS NULL", (day,))
-        conn.execute("""UPDATE nba_score.ud_live_slips SET status = 'shadow' WHERE game_date = %s AND NOT (portfolio = 'H' AND composition LIKE 'NU%%') AND status NOT LIKE 'shadow%%' AND hits IS NULL""", (day,))
+        conn.execute("DELETE FROM nba_score.ud_live_slips WHERE game_date = %s AND portfolio = 'H' AND composition LIKE 'H\\_NU%%' AND hits IS NULL", (day,))
+        conn.execute("""UPDATE nba_score.ud_live_slips SET status = 'shadow' WHERE game_date = %s AND NOT (portfolio = 'H' AND composition LIKE 'H\\_NU%%') AND status NOT LIKE 'shadow%%' AND hits IS NULL""", (day,))
     for name, k, st, rows, bank, sg in plan:
         lj = [{"cell": f"{sg['code']}", "player": r["leg"]["player"], "player_id": r["pid"], "prop": r["prop"], "tier": "R", "side": r["side"], "line": r["line"], "factor": 1.0,
                "event_id": r["leg"].get("event_id"), "p" if app == "prizepicks" else "p_hat": round(r["blend"], 4)} for r in rows]

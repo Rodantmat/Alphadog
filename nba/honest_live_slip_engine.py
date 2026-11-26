@@ -607,6 +607,16 @@ def main():
             log(f"HONEST_LIVE|disabled (classification_config honest_live.enabled) - nothing built for {day}; the other engines' slips stand"); return
         want = [a.strip() for a in (os.environ.get("HL_APPS") or ",".join(g.get("apps") or ALL_APPS)).split(",") if a.strip()]
         apps = [a for a in want if a in (g.get("apps") or ALL_APPS) or dry or os.environ.get("HL_TEST") == "1"]
+        try:                                                 # the FINAL SET engine (final_live_slip_engine.py) serves the apps of its own gate; this engine leaves them alone
+            r_ = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'final_live'").fetchone()
+            fg = (r_[0] if isinstance(r_[0], dict) else json.loads(r_[0])) if r_ else {}
+            if fg.get("enabled") and not dry:
+                served = set(fg.get("apps") or ALL_APPS)
+                if served & set(apps):
+                    log(f"HONEST_LIVE|final_live serves {sorted(served & set(apps))} - this engine skips them")
+                apps = [a for a in apps if a not in served]
+        except Exception:  # noqa: BLE001
+            conn.rollback()
         weights = dict(WEIGHTS)
         try:                                                 # the latest month the nightly walk-forward fit stored (never a later month than the slate's)
             for a_, w_ in conn.execute("""SELECT DISTINCT ON (app) app, weights FROM nba_score.honest_blend_weights WHERE month <= %s ORDER BY app, month DESC""", (day.strftime("%Y-%m"),)).fetchall():

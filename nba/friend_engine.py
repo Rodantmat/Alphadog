@@ -837,7 +837,7 @@ def pick():
 
 
 # the owner's leg-gone rule per strategy (main UI client LEG_GONE_RULE; research_set_check.py / pass 29) - the copies on Jessi's / Jon's pages follow it too
-LEG_GONE_RULE = {"S7": "shrink", "S8": "shrink", "F6": "shrink", "F7": "shrink", "S9": "drop", "S11": "drop", "F10": "drop"}
+LEG_GONE_RULE = {"S7": "shrink", "S8": "shrink", "F6": "shrink", "F7": "shrink", "S9": "drop", "S11": "drop", "F10": "drop", "NU6": "shrink", "NF1": "shrink", "NF2": "shrink", "NF3": "shrink", "NF4": "shrink", "NF5": "shrink", "NF6": "shrink", "NF7": "shrink", "NF8": "shrink", "NF9": "shrink"}
 
 
 def mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used):
