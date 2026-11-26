@@ -108,7 +108,7 @@ def main():
                 for share in (0.25, 0.4, 0.6, 1.0):
                     if tot == 999 and share < 1.0:
                         continue
-                    seas = defaultdict(lambda: [0.0, 0]); dayu = []
+                    seas = defaultdict(lambda: [0.0, 0]); dayu = []; late = [0.0, 0]; ldays = 0
                     for g in alld:
                         used = 0; per = defaultdict(int); du = 0.0
                         # round-robin across apps by rank so no app crowds the others out
@@ -123,8 +123,12 @@ def main():
                                 continue
                             per[a] += n; used += n; du += u
                             seas[season(g)][0] += u; seas[season(g)][1] += n
+                            if g >= SPLIT:
+                                late[0] += u; late[1] += n
                         if used:
                             dayu.append(du)
+                            if du < 0:
+                                ldays += 1
                     if not dayu:
                         continue
                     cum = np.cumsum(dayu); dd = float(np.max(np.maximum.accumulate(np.r_[0, cum])[1:] - cum))
@@ -132,7 +136,7 @@ def main():
                     for z in dayu:
                         run = run + 1 if z < 0 else 0; best = max(best, run)
                     rec = dict(nper=nper, appcap=appcap, tot=tot, share=share, slips=sum(v[1] for v in seas.values()), days=len(dayu),
-                               units=float(sum(v[0] for v in seas.values())), dd=dd, drought=best, winday=float(np.mean(np.array(dayu) > 0)))
+                               units=float(sum(v[0] for v in seas.values())), ldays=ldays, lshare=ldays / len(dayu), ru=late[0], rn=late[1], dd=dd, drought=best, winday=float(np.mean(np.array(dayu) > 0)))
                     for ss in SEAS:
                         rec["r" + ss[2:4]] = seas[ss][0] / seas[ss][1] if seas[ss][1] else np.nan; rec["u" + ss[2:4]] = seas[ss][0]; rec["n" + ss[2:4]] = seas[ss][1]
                     rows.append(rec)
@@ -146,6 +150,19 @@ def main():
             print(f"PF|  {r.nper} per app, app cap {r.appcap if r.appcap < 99 else 'none'}, total cap {r.tot if r.tot < 999 else 'none'}, share {100*r.share:.0f}%: "
                   f"{r.slips} slips ({r.slips/r.days:.1f}/day) {r.units:+.1f}u | " + " / ".join(f"{100*getattr(r, 'r'+s[2:4]):+.1f}% ({getattr(r, 'n'+s[2:4])}, {getattr(r, 'u'+s[2:4]):+.1f}u)" for s in SEAS)
                   + f" | dd {r.dd:.1f}u drought {r.drought} days, winning days {100*r.winday:.0f}%", flush=True)
+    R["rlate"] = R["ru"] / R["rn"].clip(lower=1)
+    def show(title, X, n=12):
+        print(f"PF2|== {title} ==", flush=True)
+        for r in X.head(n).itertuples():
+            print(f"PF2|  {r.nper} per app, app cap {r.appcap if r.appcap < 99 else 'none'}, total cap {r.tot if r.tot < 999 else 'none'}, share {100*r.share:.0f}%: {r.slips/r.days:.1f} slips/day | "
+                  + " / ".join(f"{100*getattr(r, 'r'+s[2:4]):+.0f}% ({getattr(r, 'n'+s[2:4])})" for s in SEAS) + f" | Nov 8+ {100*r.rlate:+.0f}% ({r.rn}) {r.ru:+.1f}u | 26-27 units {r.u26:+.1f} | dd {r.dd:.1f}u | losing days {r.ldays} of {r.days} ({100*r.lshare:.0f}%) | longest losing run {r.drought}", flush=True)
+    G = R[(R.r24 > 0.3) & (R.r25 > 0.3) & (R.r26 > 0.3)]
+    show("lowest losing-day share (ROI above 30% in every season)", G.sort_values("lshare"))
+    show("lowest drawdown (ROI above 30% in every season)", G.sort_values("dd"))
+    show("best 2026-27 ROI with drawdown 30u or less", G[G.dd <= 30].sort_values("r26", ascending=False))
+    show("best Nov 8+ ROI with drawdown 40u or less and losing days under 62%", G[(G.dd <= 40) & (G.lshare < 0.62)].sort_values("rlate", ascending=False))
+    G["score"] = G["units"] / (G["dd"].clip(lower=1) * G["lshare"].clip(lower=.05))
+    show("balanced: units / (drawdown x losing-day share)", G.sort_values("score", ascending=False))
     print("PF|DONE", flush=True)
 
 
