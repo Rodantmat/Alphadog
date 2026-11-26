@@ -140,7 +140,9 @@ def check(conn, dates):
         if not P:
             log(f"BC|{gd}: no stored lists"); continue
         import betr_live_slip_engine as BE
-        legs = BE.board_legs(conn, gd, guard=False)[0]
+        played = {str(r[0]) for r in conn.execute("SELECT nba_player_id FROM nba_stats.player_game_log WHERE game_date = %s AND min > 0", (gd,)).fetchall()}
+        U = [r for r in U if str(r["player_id"]) in played]; P = [r for r in P if str(r["player_id"]) in played]      # the research only holds graded (played) legs: hindsight, check mode only
+        legs = [l for l in BE.board_legs(conn, gd, guard=False)[0] if str(l["player_id"]) in played]
         T = defaultdict(list)
         for l in legs:
             if str(l["side"]).lower().startswith("u") and l["prop"] in SINGLE:
