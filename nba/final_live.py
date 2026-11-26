@@ -362,6 +362,26 @@ def legs_check(conn, dates, mode):
     log(f"C1|{APP}: total {tot['found']}/{tot['ref']} research legs reproduced")
 
 
+def model_check(conn, dates, mode):
+    """C2: the month models refitted for a slate against the research's stored predictions (_lr_legs_hp), leg by leg"""
+    import research_leg_model_h as LM
+    for gd in dates:
+        legs = set_live(conn, gd, mode)
+        if legs is None:
+            continue
+        df, X = LM.load(conn); P = predict(df, X, NEED.get(APP, set())); P.pop("weights", None)
+        k = (df["gd"].values == gd)
+        d = pd.DataFrame({"player_id": df["player_id"].astype(str).values[k], "prop": df["prop"].values[k], "side": df["side"].str.lower().values[k], "line": df["line"].values[k],
+                          "kind": df["kind"].astype(str).values[k], "n_blend": P["blend"][k], "n_gbm": P["gbm"][k], "n_gbm_s": P["gbm_s"][k]})
+        st = pd.read_sql("SELECT player_id::text player_id, prop, lower(side) side, line::float8 line, kind, p_blend::float8 s_blend, p_gbm::float8 s_gbm, p_gbm_s::float8 s_gbm_s FROM nba_score._lr_legs_hp WHERE app = %s AND game_date = %s", conn, params=(APP, gd))
+        j = d.merge(st.drop_duplicates(["player_id", "prop", "side", "line", "kind"]), on=["player_id", "prop", "side", "line", "kind"], how="inner")
+        for c in ("blend", "gbm", "gbm_s"):
+            a = j["n_" + c]; b = j["s_" + c]; v = a.notna() & b.notna()
+            if v.any():
+                rk = a[v].rank().corr(b[v].rank())
+                log(f"C2|{APP} {gd} {c}: {int(v.sum())} legs, mean abs diff {float((a[v] - b[v]).abs().mean()):.5f}, max {float((a[v] - b[v]).abs().max()):.4f}, rank corr {rk:.4f}, bias {float((a[v] - b[v]).mean()):+.5f}")
+
+
 def attach_hits(conn, d, gd):
     """replay only: the result of each leg of the day (the research's certified grading: leg card result, else the graded table)"""
     h = pd.read_sql("""SELECT player_id::text player_id, prop, lower(side) side, line::float8 line, hit::int hit FROM nba_score._lr_legs_h WHERE app = %s AND game_date = %s AND hit IS NOT NULL""",
@@ -459,5 +479,7 @@ if __name__ == "__main__":
         conn.execute("SET statement_timeout = 0")
         if mode == "legs-check":
             legs_check(conn, dates, ph_mode)
+        elif mode == "c2":
+            model_check(conn, dates, ph_mode)
         elif mode == "c4":
             replay_check(conn, dates, ph_mode)
