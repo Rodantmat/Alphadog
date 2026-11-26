@@ -217,7 +217,7 @@ def main():
                                         made.append(s_); used |= {x["player_id"] for x in s_}
                                         for nsl in range(j + 1, 4):
                                             u = payf(app, st, k, s_) - 1
-                                            acc[(sn, pn, gcap, diff, start, st, k, nsl)].append((s_[0]["season"], u, np.mean([x["hit"] for x in s_]), gd))
+                                            acc[(sn, pn, gcap, diff, start, st, k, nsl)].append((s_[0]["season"], u, np.mean([x["hit"] for x in s_]), gd, ".".join(str(x["player_id"]) for x in s_)))
                                     if False:
                                         key = code or f"{sn}|{pn}|{st}{k}"
                                         for x in s_:
@@ -230,7 +230,7 @@ def main():
                                             gone[key]["drop"].append(0.0)
         rows = []
         for key, v in acc.items():
-            t = pd.DataFrame(v, columns=["s", "u", "h", "gd"])
+            t = pd.DataFrame(v, columns=["s", "u", "h", "gd", "lg"])
             rec = dict(zip(("src", "pool", "gcap", "diff", "start", "st", "k", "nsl"), key)); rec["rand"] = key[0].startswith("RANDOM")
             for s in SEAS:
                 x = t[t["s"] == s]
@@ -287,7 +287,7 @@ def main():
             dl = []
             for r in keep.itertuples():
                 key = (r.src, r.pool, r.gcap, r.diff, r.start, r.st, r.k, r.nsl)
-                t = pd.DataFrame(acc[key], columns=["s", "u", "h", "gd"]).groupby("gd")["u"].agg(["sum", "size"])
+                t = pd.DataFrame(acc[key], columns=["s", "u", "h", "gd", "lg"]).groupby("gd")["u"].agg(["sum", "size"])
                 dl.append((app, f"{app}|p31|{r.Index}", f"{r.k}{r.st} | {r.src} | {r.pool} | g{r.gcap}{' pd' if r.diff else ''} #{r.start} x{r.nsl}",
                            ";".join(f"{g}:{v['sum']:.3f}:{int(v['size'])}" for g, v in t.iterrows())))
             wc = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
@@ -296,6 +296,32 @@ def main():
             with wc.cursor() as cur_:
                 cur_.executemany("INSERT INTO nba_score.p31_days VALUES (%s, %s, %s, %s)", dl)
             print(f"P31|  day results kept for {len(dl)} cells", flush=True)
+        if os.environ.get("P31_UA3") == "1":          # certification rows for the portfolio pass (own prior season only; current season strong incl. Nov 8+)
+            import io
+            SP = os.environ.get("UA_SPLIT") or "2026-11-08"
+            cand_ = R[~R["rand"] & (R["n25"] >= 15) & (R["r25"] > 0) & (R["n26"] >= 8) & (R["r26"] > 0)].copy()
+            cand_["w"] = cand_["r25"] + 2 * cand_["r26"]
+            cand_ = cand_.sort_values("w", ascending=False).groupby(["st", "k"], group_keys=False).head(int(os.environ.get("UA_KEEP") or 150))
+            rowsu = []
+            for r in cand_.itertuples():
+                key = (r.src, r.pool, r.gcap, r.diff, r.start, r.st, r.k, r.nsl)
+                t = pd.DataFrame(acc[key], columns=["s", "u", "h", "gd", "lg"])
+                a_ = t[(t["s"] == "2026-27") & (t["gd"] < SP)]; b_ = t[t["gd"] >= SP]
+                byd = []
+                for g_, x_ in t.groupby("gd"):
+                    byd.append(f"{g_}#{x_['u'].sum():.3f}#{len(x_)}#" + "/".join(f"{u_:.3f}@{l_}" for u_, l_ in zip(x_["u"], x_["lg"])))
+                rowsu.append(dict(app=app, tag="regular-n", sid=f"{app}|p31n|{r.Index}", st="power" if r.st == "P" else "flex", k=float(r.k), tier="regular", side="Under", rk=r.src, layer=r.pool,
+                                  nsl=str(r.nsl), start=float(r.start), sup=float(r.r25), r24=np.nan, r25=float(r.r25), r26=float(r.r26), n24=0.0, n25=float(r.n25), n26=float(r.n26),
+                                  r26a=float(a_["u"].mean()) if len(a_) else np.nan, r26b=float(b_["u"].mean()) if len(b_) else np.nan, n26a=float(len(a_)), n26b=float(len(b_)),
+                                  gone_base=np.nan, gone_sub=np.nan, gone_shrink=np.nan, days="|".join(byd)))
+            if rowsu:
+                U_ = pd.DataFrame(rowsu); cols_ = list(U_.columns)
+                wc = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
+                wc.execute("DELETE FROM nba_score.ua3 WHERE app = %s AND tag = 'regular-n'", (app,))
+                buf = io.StringIO(); U_.to_csv(buf, index=False, header=False, na_rep=""); buf.seek(0)
+                with wc.cursor().copy("COPY nba_score.ua3 (" + ", ".join(f'"{c}"' for c in cols_) + ") FROM STDIN WITH (FORMAT csv)") as cp:
+                    cp.write(buf.read())
+                print(f"P31|  UA3: wrote {len(U_)} {app} strategies (prior 2025-26 positive, 2026-27 positive)", flush=True)
         R["struct"] = R["st"] + R["k"].astype(str)
         print(f"P31|  PER STRUCTURE (real order; cells / daily / fallback / best daily 2026-27 with its cash share, drawdown, losing streak):", flush=True)
         for stk, X in R[~R["rand"]].groupby("struct"):
