@@ -28,6 +28,7 @@ import research_universe2 as U2                               # noqa: E402
 
 APP = U.APP; SEAS = U.SEAS; SPLIT = U2.SPLIT; log = U.log
 KEEP = int(os.environ.get("UA_KEEP") or 40)
+ONLY_ = bool(os.environ.get("UA_ONLY"))
 
 
 def load_cells(tiers):
@@ -45,6 +46,13 @@ def stage_b3(d, A, slp, L, T):
     X = A[~A.rk.str.contains("rnd")].copy()
     if os.environ.get("UA_NOLAYER"):
         X = X[X.layer == "none"].copy(); log(f"NO filters: only unfiltered cells -> {len(X)}")
+    ONLY = bool(os.environ.get("UA_ONLY"))
+    if ONLY:
+        cc = psycopg.connect(os.environ["DATABASE_URL"])
+        F = pd.read_sql("SELECT * FROM nba_score.ua_final WHERE app = %s", cc, params=(APP,)); cc.close()
+        cells = {(r.tier, r.side, r.rk, int(r.gcap)) for r in F.itertuples()}
+        X = X[[(a_, b_, c_, int(d_)) in cells for a_, b_, c_, d_ in zip(X.tier, X.side, X.rk, X.gcap)]].copy()
+        log(f"ONLY final cells: {len(cells)} cells x layers -> {len(X)}")
     bs = float(os.environ.get("UA_BROAD") or 0)
     if bs > 0:
         nn = X[X.layer == "none"].groupby(["tier", "side", "rk", "gcap", "st", "k"])["n"].max()
@@ -52,10 +60,14 @@ def stage_b3(d, A, slp, L, T):
         base = np.array([nn.get(k_, np.nan) for k_ in key], dtype=float)
         X = X[(X.n.values >= bs * base) | (X.layer.values == "none")].copy()
         log(f"broad filter: layers must keep {int(100*bs)}%+ of the unfiltered slips -> {len(X)} cells")
-    X["sc"] = U2.support(X)
-    X = X[X["sc"] > 0].sort_values("sc", ascending=False)
-    nshort = int(os.environ.get("UA_SHORT") or 260)
-    sel = X.groupby(["st", "k"], group_keys=False).head(max(8, nshort // 7)).drop_duplicates(["tier", "side", "rk", "layer", "gcap"])
+    if ONLY:
+        SIG = {(r.tier, r.side, r.rk, int(r.gcap), int(r.pdif), int(r.altcap), int(r.start), str(r.nsl), r.st, int(r.k)) for r in F.itertuples()}
+        sel = X.drop_duplicates(["tier", "side", "rk", "layer", "gcap"])
+    else:
+        X["sc"] = U2.support(X)
+        X = X[X["sc"] > 0].sort_values("sc", ascending=False)
+        nshort = int(os.environ.get("UA_SHORT") or 260)
+        sel = X.groupby(["st", "k"], group_keys=False).head(max(8, nshort // 7)).drop_duplicates(["tier", "side", "rk", "layer", "gcap"])
     log(f"shortlist {len(sel)} cells")
     av_all = d["alt"].values.astype(bool)
     out = []
@@ -77,7 +89,7 @@ def stage_b3(d, A, slp, L, T):
         if c.side != "both":
             m &= d["under"].values if c.side == "Under" else ~d["under"].values
         sub = d[m]
-        res = defaultdict(list); gone = defaultdict(lambda: [0.0, 0.0, 0.0, 0])      # base u, sub u, shrink u, legs
+        res = defaultdict(list); gone = defaultdict(lambda: [0.0] * 11)      # base u, sub u, shrink u, legs
         for gd, x in sub.groupby("gd"):
             x = x.sort_values(c.rk, ascending=False).drop_duplicates("player_id")
             pid = x.player_id.values; gid = x.gid.values; prp = x.prop.values; wv = x.w.values; av = x.alt.values.astype(bool); ly = x.logy.values; lf = x.logf.values
@@ -102,12 +114,14 @@ def stage_b3(d, A, slp, L, T):
                                 inuse = {i for s_ in slips for i in s_}
                                 for legs in slips:
                                     for st in sts:
+                                        if ONLY and (c.tier, c.side, c.rk, int(c.gcap), pdif, -1 if altcap is None else altcap, start, nlab, st, k) not in SIG:
+                                            continue
                                         r = pay(legs, st, k, wv, av, ly, lf, old)
                                         if r is None:
                                             continue
                                         key = (pdif, -1 if altcap is None else altcap, start, nlab, st, k)
                                         res[key].append((season, gd, r[0], r[1], k, ".".join(pid[i] for i in legs)))
-                                        if nlab in ("1", "g15") and True:
+                                        if nlab in ("1", "g15") or ONLY:
                                             g = gone[key]
                                             spare = [i for i in lst if i not in inuse]
                                             for pos in range(k):
@@ -116,6 +130,19 @@ def stage_b3(d, A, slp, L, T):
                                                 if spare:
                                                     rs = pay(rest + [spare[0]], st, k, wv, av, ly, lf, old)
                                                     g[1] += rs[0] if rs else 0.0
+                                                if ONLY:
+                                                    for si, gi in ((1, 4), (2, 5)):
+                                                        if len(spare) > si:
+                                                            rs = pay(rest + [spare[si]], st, k, wv, av, ly, lf, old)
+                                                            g[gi] += rs[0] if rs else 0.0
+                                                    if k >= 3:
+                                                        rest2 = [legs[j] for j in range(k) if j != pos and j != (pos + 1) % k]
+                                                        g[10] += 1; g[6] += r[0]
+                                                        if len(spare) > 1:
+                                                            r2 = pay(rest2 + [spare[0], spare[1]], st, k, wv, av, ly, lf, old); g[7] += r2[0] if r2 else 0.0
+                                                        k2 = k - 2
+                                                        if k2 >= 2:
+                                                            r3 = pay(rest2, "flex" if k2 >= 3 else "power", k2, wv, av, ly, lf, old); g[8] += r3[0] if r3 else 0.0
                                                 kk = k - 1
                                                 sh = ("flex", kk) if kk >= 3 else ("power", 2)
                                                 if kk >= 2:
@@ -140,10 +167,14 @@ def stage_b3(d, A, slp, L, T):
             for nm, mm in (("26a", cu & (gds < SPLIT)), ("26b", cu & (gds >= SPLIT))):
                 rec["n" + nm] = int(mm.sum()); rec["r" + nm] = float(u[mm].mean()) if mm.any() else np.nan
             g = gone.get(key)
+            if g and g[10]:
+                rec["gone_s1"] = g[4] / g[3]; rec["gone_s2"] = g[5] / g[3]; rec["gone2_base"] = g[6] / g[10]; rec["gone2_sub"] = g[7] / g[10]; rec["gone2_shrink"] = g[8] / g[10]
             if g and g[3]:
                 rec["gone_n"] = g[3]; rec["gone_base"] = g[0] / g[3]; rec["gone_sub"] = g[1] / g[3]; rec["gone_shrink"] = g[2] / g[3]
             # selection by PRIOR seasons only
-            if not math.isnan(rec["r24"]) and not math.isnan(rec["r25"]):
+            if ONLY:
+                ok = True; rec["sup"] = 0.0
+            elif not math.isnan(rec["r24"]) and not math.isnan(rec["r25"]):
                 ok = rec["r24"] > 0 and rec["r25"] > 0 and rec["n24"] >= 30 and rec["n25"] >= 30; rec["sup"] = min(rec["r24"], rec["r25"])
             elif math.isnan(rec["r24"]) and math.isnan(rec["r25"]):
                 ok = rec["r26a"] == rec["r26a"] and rec["r26a"] > 0 and rec["n26a"] >= 8; rec["sup"] = rec["r26a"] if ok else np.nan
@@ -163,7 +194,7 @@ def stage_b3(d, A, slp, L, T):
     if not len(B):
         return B
     B = B.sort_values("sup", ascending=False)
-    B = B.groupby(["st", "k"], group_keys=False).head(KEEP).reset_index(drop=True)
+    B = B.groupby(["st", "k"], group_keys=False).head(KEEP if not ONLY_ else 9999).reset_index(drop=True)
     B["sid"] = [f"{APP}|{os.environ.get('UA_TIERS') or 'all'}{os.environ.get('UA_SUFFIX') or ''}|{i}" for i in range(len(B))]
     log(f"kept {len(B)} strategies (prior-season selection only)")
     return B
