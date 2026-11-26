@@ -24,6 +24,15 @@ def season(g):
     return "2024-25" if g < "2025-07-01" else "2025-26" if g < "2026-07-01" else "2026-27"
 
 
+W = tuple(float(x) for x in (os.environ.get("PF_W") or "1,2,4").split(","))
+
+
+def wscore(r):
+    v = [(W[0], r.r24, r.n24), (W[1], r.r25, r.n25), (W[2], r.r26a, r.n26a)]
+    v = [(w, x) for w, x, n in v if x == x and n and n >= 8]
+    return sum(w * x for w, x in v) / sum(w for w, _ in v) if v else float("nan")
+
+
 def parse(s):
     out = {}
     for t in s.split("|"):
@@ -58,7 +67,7 @@ def weight_test():
 
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
-    df = pd.read_sql("SELECT app, tag, sid, st, k, tier, side, rk, layer, nsl, start, sup, r24, r25, r26a, r26b, n26, gone_base, gone_sub, gone_shrink, days FROM nba_score.ua3", conn)
+    df = pd.read_sql("SELECT app, tag, sid, st, k, tier, side, rk, layer, nsl, start, sup, r24, r25, r26, n24, n25, n26, r26a, r26b, n26a, n26b, gone_base, gone_sub, gone_shrink, days FROM nba_score.ua3", conn)
     conn.close()
     df["k"] = df["k"].astype(int)
     S = []
@@ -66,8 +75,10 @@ def main():
         if r.app == "underdog" and r.tier != "regular":
             continue
         S.append(dict(app=r.app, sid=r.sid, st=r.st, k=r.k, label=f"{'P' if r.st == 'power' else 'F'}{r.k} {r.tier} {r.side} {r.rk} [{r.layer}] #{int(r.start)} x{r.nsl}",
-                      sc=r.sup, gb=r.gone_base, gs=r.gone_sub, gh=r.gone_shrink, day=parse(r.days)))
+                      sc=wscore(r), r24=r.r24, r25=r.r25, r26=r.r26, n26=r.n26, r26a=r.r26a, r26b=r.r26b, n26b=r.n26b, n24=r.n24, n25=r.n25, gb=r.gone_base, gs=r.gone_sub, gh=r.gone_shrink, day=parse(r.days)))
+    S = [s for s in S if s["sc"] == s["sc"]]
     apps = sorted({s["app"] for s in S})
+    print(f"P3|season weights 2024-25/2025-26/2026-27 before Nov 8 = {W}", flush=True)
     print("P3|strategies per app (prior-season selected): " + " | ".join(f"{a} {sum(1 for s in S if s['app'] == a)}" for a in apps), flush=True)
     alld = sorted({g for s in S for g in s["day"]})
     seldays = [g for g in alld if season(g) != "2026-27"]
@@ -87,6 +98,21 @@ def main():
         print(f"P3|{a.upper()} pool:", flush=True)
         for i, s in enumerate(pick, 1):
             print(f"P3|  {i}. {s['label']} | prior min {100*s['sc']:+.0f}%", flush=True)
+
+    f = lambda x, n=None: ("-" if x != x else f"{100*x:+.0f}%") + (f" ({int(n)})" if n == n and n is not None else "")
+    for a in apps:
+        A_ = sorted([x for x in S if x["app"] == a], key=lambda x: -x["sc"])
+        seen = set(); rows_ = []
+        for x in A_:
+            key = (x["label"], round(x["sc"], 4))
+            if key in seen:
+                continue
+            seen.add(key); rows_.append(x)
+        for title, cond in (("MAIN (weighted >= 25%)", lambda x: x["sc"] >= 0.25), ("FALLBACK (weighted 0-25%, 2026-27 positive)", lambda x: 0 < x["sc"] < 0.25 and x["r26"] == x["r26"] and x["r26"] > 0)):
+            L_ = [x for x in rows_ if cond(x)]
+            print(f"P3Q|{a.upper()} {title}: {len(L_)} (top 12 shown)", flush=True)
+            for x in L_[:12]:
+                print(f"P3Q|  {x['label']} | 24-25 {f(x['r24'], x['n24'])} | 25-26 {f(x['r25'], x['n25'])} | 26-27 {f(x['r26'], x['n26'])} | Nov 8+ {f(x['r26b'], x['n26b'])} | weighted {100*x['sc']:+.0f}%", flush=True)
 
     def run(cfg, q=0.0, pol=None, daysub=None):
         """cfg: dict n[app], cap[app], tot, expo. Returns per-season/late stats."""
