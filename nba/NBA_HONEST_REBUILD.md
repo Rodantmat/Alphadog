@@ -1455,3 +1455,10 @@ C1 legs parity PASSED: 35,091 / 35,091 research legs reproduced by the live load
 Chunk 2 written: month models (blend/gbm/gbm_s), frame (board_scored fhp/score), stage_b materialization, per-app merge (slots, player caps, main then fallback), grading (research payouts).
 FINDING: the research's fhp/score come from nba_score.board_scored_v2 (parallel-store replay), NOT production board_scored. Same builder; corr 0.99 but 80% of legs differ >0.005 (mean abs diff 0.023 fhp). C3 certification: FL_BS=v2 reproduces research; FL_BS=prod (default, what live sees) is the live reality.
 UD first rebuild (2 slates, v2 numbers): 31/40 slips identical, rest tie-order cascades (ranker ties broken arbitrarily in research). Units compared per strategy next.
+
+## 2026-11-26 14:00-16:00 PT final-set live engine: Betr parity, certification so far
+- Betr rebuilt with its own board loader (final_betr.board_unders: every Under on the day's archived Betr snapshots, newest line, single stats only, no model probability needed at Betr's line - the research mapped the PrizePicks / Underdog lists onto the board the same way). The lists keep only the seven single stats before "tight" takes its first picks (the research's lists held only those).
+- Betr certification on the research's own lists (research_fl_betr.py FL_RLIST=1, 5 slates, played players only and pushes removed = the research's graded-only board): NB1 2/2, NB2 2/2, NB3 5/5, NB4 4/4, NB5 4/4, NB6 4/4, NB7 4/4, NB8 5/5, NB9 3/3 days identical. The per-strategy (game cap, different-prop) rule was not stored for Betr and is identified by reproduction: NB1/NB2/NB4/NB5/NB6/NB8 = 1 per game, NB3/NB7 = 2 per game, NB9 = 2 per game and different props.
+- With the lists the live pipeline produces (production numbers) the picks differ from the research's (same documented gap as the other apps: production board_scored vs the research's board_scored_v2).
+- Leg-gone policy certified for all 49 codes: engine rule == page rule (friend_engine LEG_GONE_RULE) == client rule; names H_{code}_{k}{p|f|d} parse on both page regexes.
+- Mirror pages read the owner's slips in the final set's order (NP2 before NP10).
