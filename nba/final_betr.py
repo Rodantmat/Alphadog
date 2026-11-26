@@ -157,6 +157,9 @@ def check(conn, dates):
                     s_ = take(c, sg["k"], gc, bool(df_), sg["start"])
                     got = {frozenset(r["player_id"] for r in s_)} if s_ else set()
                     tot[(sg["code"], gc, df_)][0] += int(got == want); tot[(sg["code"], gc, df_)][1] += 1
+                    if gc == 1 and df_ == 0 and got != want and sg["code"] in ("NB3", "NB8"):
+                        pool_ids = [r["player_id"] for r in c][:12]
+                        log(f"BCD|{gd} {sg['code']} start {sg['start']} k {sg['k']}: mine {sorted(x for g_ in got for x in g_)} research {sorted(x for g_ in want for x in g_)} | my pool top12 {pool_ids} | on-board source rows {len(S.get(sg['rk'], []))} pool {len(c)}")
     for (code, gc, df_), (a, b) in sorted(tot.items()):
         log(f"BC|{code} gcap {gc} diff {df_}: {a}/{b} days identical to the research")
 
