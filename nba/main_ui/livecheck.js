@@ -101,6 +101,10 @@ function markPP(l, ix) {
       const tip = (l.link && l.link.tip_utc) || l.official_game_time_utc || null;
       l.link = { ids: { odds_type: want, projection_id: fav.id }, line: fav.line, side: sideOf(l) === "less" ? "u" : "o", tip_utc: tip };
       return; }
+    // GOBLIN (owner 2026-11-25 16:09 PT: "for a goblin, see if the multiplier still holds positive ROI; if it does, keep that leg"): a More leg whose standard line is gone but
+    // which has a goblin (easier, lower line) is a candidate; overlayLive prices it from the goblin's own factor and keeps it only if p x factor still beats the original leg.
+    // (A Less leg cannot become a goblin or demon - PrizePicks offers those on More only - so a Less leg always goes to its strategy's rule.)
+    if (sideOf(l) === "more" && want === "standard") { const gb = cand.filter(r => r.odds === "goblin" && Number(r.line) < line).sort((a, b) => b.line - a.line)[0]; if (gb) l._goblinCand = gb; }
     l.pp_now = same ? same.odds : (cand.length ? "moved" : "missing");
     l.live_now = l.pp_now === "standard" ? "ok" : (l.pp_now === "moved" ? "moved" : l.pp_now === "missing" ? "missing" : "moved");
   }
@@ -452,6 +456,29 @@ export async function overlayLive(sql, out, ppFallback) {
       }
     }
   } catch (_e) { /* the legs stay kept and linked; only their factor is left as is */ }
+  // goblin candidates (see markPP): kept only if the goblin's hit chance x its payout factor is not worse than the original leg (tier hit rates from the
+  // prizepicks goblin tier study: one / two / three+ steps easier = 61.9 / 68.7 / 74.1%, never below the leg's own chance)
+  try {
+    const gc = want.prizepicks.filter(l => l._goblinCand);
+    if (gc.length) {
+      const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+      const rows = await q(sql, "SELECT nm, line::float8 AS line, factor::float8 AS factor FROM nba_market.pp_leg_price WHERE game_date >= $1::date - 1 AND kind = 'goblin' AND side = 'Over' AND nm = ANY($2) ORDER BY game_date DESC, price_id DESC",
+        [day, [...new Set(gc.map(l => normName(l.player_name)))]], 6000);
+      for (const l of gc) {
+        const g = l._goblinCand; delete l._goblinCand;
+        const r = rows.find(x => x.nm === normName(l.player_name) && near(x.line, g.line)); if (!r || !(Number(r.factor) > 0)) continue;
+        const p0 = Number(l.hit_probability_0_100 ?? l.estimated_hit_probability_0_100) / 100; if (!(p0 > 0)) continue;
+        const steps = Math.max(1, Math.round(Number(l.line_value) - Number(g.line)));
+        const pg = Math.max(p0, steps >= 3 ? 0.741 : steps === 2 ? 0.687 : 0.619);
+        if (pg * Number(r.factor) >= p0) {
+          if (l.line_from == null) l.line_from = Number(l.line_value);
+          l.line_value = Number(g.line); l.pp_now = "standard"; l.live_now = "adjusted"; l.goblin_kept = true; l.is_goblin = 1; l.line_type = "goblin"; l.leg_factor = Number(r.factor);
+          const tip = (l.link && l.link.tip_utc) || l.official_game_time_utc || null;
+          l.link = { ids: { odds_type: "goblin", projection_id: g.id }, line: g.line, side: "o", tip_utc: tip };
+        }
+      }
+    }
+  } catch (_e) { /* no goblin price: the leg follows its strategy's rule */ }
   // MULTIPLIER DRIFT (owner 2026-11-25 16:09 PT: "for the other apps that treat multipliers ... give a wiggle room for marginal drifting ... find the sweet spot"): Sleeper and
   // Fliff price every leg. A leg still posted at its line but at a different multiplier: higher = kept at the new price; lower by up to MULT_WIGGLE (4% = one price
   // step: Fliff moves in 0.05 steps, 2.6-3.4% at 1.45-1.90x; Sleeper in 0.01-0.07 steps) = kept at the new price; lower by more (two steps or more) = the leg counts as moved

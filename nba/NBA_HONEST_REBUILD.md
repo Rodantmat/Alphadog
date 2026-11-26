@@ -1391,3 +1391,11 @@ In-sample: the strategies were chosen on this season.
   Jon v1.10.3 - a slip its strategy drops (or left under 2 legs) is not shown, not counted, never saved. Sleeper now also keeps a moved line at a better line (it only
   re-found the same line before). Every app: validate on its own board (PP partner board, UD lines, Sleeper lines/available, Betr board, Fliff game cards with retry),
   adjust to a better line, replace from the strategy's own list (all 5 apps) then the backup pool.
+- 2026-11-25 16:40 PT (owner: every app must validate / adjust / replace; started games = gone legs; goblin kept if +ROI; multiplier wiggle): main screen v1.6.5 / v1.6.6.
+  - Multiplier drift (Sleeper, Fliff - the apps that price each leg): live price read for every leg (Sleeper payout_multiplier by line id, Fliff eu_odds per game card).
+    Higher = kept at the new price; lower by up to 4% (one price step: Fliff moves 0.05 = 2.6-3.4% at 1.45-1.90x) = kept at the new price; lower by more = "MULTIPLIER DOWN"
+    and the strategy's rule applies. First live read: 120 of 140 Sleeper/Fliff legs priced, 85 kept at a new price, 10 multiplier-down (all in games already started).
+  - PrizePicks: a More leg whose standard line is gone but has a goblin is kept at the goblin only if goblin hit chance x the goblin's own factor (pp_leg_price) >= the
+    original leg's chance (tier study: 61.9 / 68.7 / 74.1% vs haircuts 40-53% - it rarely passes). A demon at the same line stays kept (More only). A Less leg can never be a
+    goblin / demon on PrizePicks (More only) - it always goes to its strategy's rule.
+  - Started games: every leg has its tip-off from the slate schedule; on open and every 60 s a started leg is handled exactly like a pulled leg (sub / shrink / drop).
