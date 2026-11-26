@@ -231,7 +231,7 @@ def stage_b(d, A, slp, L, T):
             cu = s == "2026-27"
             for nm, mm in (("26a", cu & (gds < SPLIT)), ("26b", cu & (gds >= SPLIT))):
                 rec["n" + nm] = int(mm.sum()); rec["r" + nm] = float(u[mm].mean()) if mm.any() else np.nan
-            rec["sid"] = f"{APP}|{TAG}|{len(out)}"
+            rec["sid"] = f"{APP}|{TAG}|{os.environ.get('UA_TIERS') or 'all'}|{len(out)}"
             out.append(rec)
             ok_sel = (rec["r24"] > 0 and rec["r25"] > 0) if not (math.isnan(rec["r24"]) and math.isnan(rec["r25"])) else (rec["r26a"] == rec["r26a"] and rec["r26a"] > 0)
             if ok_sel and rec["r26"] == rec["r26"] and rec["r26"] > 0:
