@@ -291,6 +291,7 @@ def build_slips(lst, alt, k, nsl, start, altcap):
     return out
 
 
+HALF_ONLY = False
 LAST = {}                                                  # code -> the strategy's ranked candidate rows of the day (the bank for sub / shrink)
 
 
@@ -298,6 +299,8 @@ def materialize(d, sg):
     """one strategy of final_set.json on the day's frame -> list of slips (lists of frame row numbers), exactly research_universe2.stage_b"""
     v = ranker(d, sg["rk"])
     m = tier_mask(d, sg["tier"]) & np.isfinite(v)
+    if HALF_ONLY and APP == "prizepicks":                    # standing rule: PrizePicks half-point lines only (live; the research replay leaves it off)
+        m &= (d["line"].values % 1 != 0)
     if sg["side"] == "Under":
         m &= d["under"].values
     elif sg["side"] == "Over":

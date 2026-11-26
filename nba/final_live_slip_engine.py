@@ -226,6 +226,7 @@ def main():
             log(f"FINAL|gate off for {APP_RUN} ({day}) - nothing built, the old engine stands"); return
         import final_live as FL
         app = APP_RUN
+        FL.HALF_ONLY = True
         if app == "betr":
             FL.log = log
         if app == "betr":
