@@ -43,6 +43,8 @@ def stage_b3(d, A, slp, L, T):
     if APP == "sleeper":
         import sleeper_live_slip_engine as SL
     X = A[~A.rk.str.contains("rnd")].copy()
+    if os.environ.get("UA_NOLAYER"):
+        X = X[X.layer == "none"].copy(); log(f"NO filters: only unfiltered cells -> {len(X)}")
     bs = float(os.environ.get("UA_BROAD") or 0)
     if bs > 0:
         nn = X[X.layer == "none"].groupby(["tier", "side", "rk", "gcap", "st", "k"])["n"].max()
