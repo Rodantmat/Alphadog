@@ -923,7 +923,7 @@ def mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used):
                         note = f" (variant: {out.get('player')} -> {new.get('player')} {new.get('prop')} {new.get('line')})"
             except Exception as e:  # noqa: BLE001 - a variant failure leaves the exact copy
                 log(f"variant failed ({e}) - exact copy")
-        st = "max" if FAPP == "FLIFF" else ("flex" if owner_st == "flex" else "power")
+        st = ("flex" if owner_st == "flex" else "max") if FAPP == "FLIFF" else ("flex" if owner_st == "flex" else "power")
         size = len(s)
         titles[size] += 1
         n += 1
@@ -991,7 +991,7 @@ def mirror_owner_new_2026_11_11(conn, ctx, d, legs, slips, rows, titles, used):
         if frozenset(lk(x) for x in s) in have:
             log(f"owner copy {strat}: already on this page - skipped")
             continue
-        st = "max" if FAPP == "FLIFF" else ("flex" if owner_st == "flex" else "power")
+        st = ("flex" if owner_st == "flex" else "max") if FAPP == "FLIFF" else ("flex" if owner_st == "flex" else "power")
         size = len(s)
         titles[size] += 1
         n += 1
