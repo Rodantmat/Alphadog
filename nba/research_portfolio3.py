@@ -78,7 +78,7 @@ def main():
                       sc=wscore(r), r24=r.r24, r25=r.r25, r26=r.r26, n26=r.n26, r26a=r.r26a, r26b=r.r26b, n26b=r.n26b, n24=r.n24, n25=r.n25, gb=r.gone_base, gs=r.gone_sub, gh=r.gone_shrink, day=parse(r.days)))
     if os.environ.get("PF_FILT"):
         mk = int(os.environ.get("PF_MAXK") or 4)
-        S = [s for s in S if s["k"] <= mk and s["r26"] == s["r26"] and s["r26"] > 0.10 and s["r26b"] == s["r26b"] and s["r26b"] > 0 and s["n26b"] >= 4 and s["n26"] >= 10
+        S = [s for s in S if s["k"] <= mk and s["r26"] == s["r26"] and s["r26"] > 0.10 and s["r26b"] == s["r26b"] and s["r26b"] > 0 and s["n26b"] >= 4 and s["n26"] >= int(os.environ.get("PF_MIN26") or 10)
              and (s["r25"] != s["r25"] or s["r25"] > 0) and (s["r24"] != s["r24"] or s["r24"] > 0)]
         for s in S:
             s["sc"] = (W[0] * (s["r24"] if s["r24"] == s["r24"] else 0) + W[1] * (s["r25"] if s["r25"] == s["r25"] else 0) + W[2] * s["r26"]) / sum(W)
@@ -164,6 +164,9 @@ def main():
         n = {a: rng.choice([0, 1, 2, 3, 4, 5, 6]) for a in apps}
         if sum(n.values()) == 0:
             n[rng.choice(apps)] = 2
+        for kv in (os.environ.get("PF_REQ") or "").split(","):
+            if ":" in kv and kv.split(":")[0] in n:
+                n[kv.split(":")[0]] = max(n[kv.split(":")[0]], int(kv.split(":")[1]))
         cap = {a: rng.choice([1, 2, 3, 4, 6, 99]) for a in apps}
         return dict(n=n, cap=cap, tot=rng.choice([4, 6, 8, 10, 12, 15, 20, 999]), expo=rng.choice([1, 2, 3, 99]))
 
