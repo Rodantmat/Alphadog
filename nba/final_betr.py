@@ -50,6 +50,7 @@ def firstk(rows, k):
 def lists(conn, day):
     import pandas as pd
     x = pd.read_sql("SELECT app, player_id, player, prop, line, gid game_id, blend, ph, score, home FROM nba_score.fl_ranked WHERE game_date = %s AND blend IS NOT NULL ORDER BY blend DESC", conn, params=(day,))
+    x = x[x["prop"].isin(SINGLE)]                          # Betr's board only carries the seven single stats; the research's lists held only those, so the first picks of "tight" are taken among them
     U = x[x["app"] == "underdog"].to_dict("records")
     P = x[(x["app"] == "prizepicks") & (x["line"] % 1 != 0)].to_dict("records")
     return U, P
@@ -183,7 +184,7 @@ def check(conn, dates):
             q = pd.read_sql("""SELECT v.app, v.player_id, v.prop, v.line::float8 line, v.p_blend::float8 blend, v.p_honest_baseline::float8 ph, l.score::float8 score
                                FROM nba_score.v_legs_honest v LEFT JOIN nba_score.leg_card_v2 l ON l.app = v.app AND l.game_date = v.game_date AND l.player_id = v.player_id AND l.prop = v.prop AND l.line = v.line AND l.side = 'Under'
                                     AND ((l.app = 'underdog' AND l.leg_mult = 1) OR (l.app = 'prizepicks' AND l.kind = 'standard'))
-                               WHERE v.game_date = %s AND v.is_under AND v.kind = 'regular' AND v.app IN ('underdog', 'prizepicks') AND v.p_blend IS NOT NULL ORDER BY v.p_blend DESC""", conn, params=(gd,))
+                               WHERE v.game_date = %s AND v.is_under AND v.kind = 'regular' AND v.prop = ANY(%s) AND v.app IN ('underdog', 'prizepicks') AND v.p_blend IS NOT NULL ORDER BY v.p_blend DESC""", conn, params=(gd, list(SINGLE)))
             q["game_id"] = [gm.get(str(x), "g" + str(x)) for x in q["player_id"]]; q["home"] = [hm.get(str(x)) for x in q["player_id"]]
             U = q[q["app"] == "underdog"].to_dict("records"); P = q[(q["app"] == "prizepicks") & (q["line"] % 1 != 0)].to_dict("records")
             cols = {"points": "pts", "rebounds": "reb", "assists": "ast", "threes_made": "fg3m", "steals": "stl", "blocks": "blk", "turnovers": "tov"}
