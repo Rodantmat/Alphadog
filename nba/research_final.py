@@ -2,7 +2,7 @@
 """
 FINAL SET, step A (owner 2026-11-26 00:50 PT): per app a MAIN set for good days (N slips/day: 5-6 for the better apps, fewer for weaker), small slips first
 (at least one 2-pick Power or 3-pick Flex, bigger slips Flex only), low drawdown / few losing days; then a FALLBACK set that only fills the slots the main
-set leaves empty on thin days. Reads clean '-n' rows of nba_score.ua3. Writes the chosen signatures to nba_score.ua_final (scratch) for step B.
+set leaves empty on thin days. Reads clean '-n' rows of nba_score.ua3. Writes the chosen signatures to a scratch table (ua_final; ua_final_live with FN_LIVE=1) for step B.
 Env: DATABASE_URL, FN_N ("underdog:6,fliff:6,prizepicks:6,sleeper:5,betr:4"), PF_RHO (0.7), PF_SPLIT.
 """
 import os
@@ -16,6 +16,7 @@ import research_best as RB
 from research_best import parse, stats, J, merge, fmt
 
 RHO = float(os.environ.get("PF_RHO") or 0.7)
+FT = "ua_final_live" if os.environ.get("FN_LIVE") == "1" else "ua_final"
 NS = {a.split(":")[0]: int(a.split(":")[1]) for a in (os.environ.get("FN_N") or "underdog:6,fliff:6,prizepicks:6,sleeper:5,betr:4").split(",")}
 
 
@@ -44,6 +45,18 @@ def load():
             continue
         S.append(dict(app=r.app, layer=r.layer, k=int(r.k), st=r.st, tier=r.tier, side=r.side, rk=r.rk, gcap=ni(r.gcap), pdif=ni(r.pdif), altcap=ni(r.altcap), start=ni(r.start), nsl=r.nsl,
                       label=f"{'P' if r.st == 'power' else 'F'}{int(r.k)} {r.tier} {r.side} {r.rk} #{int(r.start)} x{r.nsl}", day=day, m=m, gb=r.gone_base, gs=r.gone_sub, gh=r.gone_shrink))
+    if os.environ.get("FN_LIVE") == "1":
+        LIVE = {"ph", "pb", "blend", "fhp", "geo", "avg", "pb_ret", "ph_ret", "ret_blend", "bline_d", "score"}
+        def live_ok(s):
+            if s["app"] == "betr":
+                return True
+            if s["side"] != "Under" or s["tier"] != "regular":
+                return False
+            comps = s["rk"].split(":")[-1].split("+")
+            if "score" in comps and s["app"] != "prizepicks":
+                return False
+            return all(c in LIVE for c in comps)
+        S = [s for s in S if live_ok(s)]
     return S
 
 
@@ -148,10 +161,10 @@ def main():
         for s in add:
             rows.append((a, "fallback", s))
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
-    conn.execute("DROP TABLE IF EXISTS nba_score.ua_final")
-    conn.execute("CREATE TABLE nba_score.ua_final (app text, role text, layer text, tier text, side text, rk text, gcap int, pdif int, altcap int, start int, nsl text, st text, k int, label text)")
+    conn.execute(f"DROP TABLE IF EXISTS nba_score.{FT}")
+    conn.execute(f"CREATE TABLE nba_score.{FT} (app text, role text, layer text, tier text, side text, rk text, gcap int, pdif int, altcap int, start int, nsl text, st text, k int, label text)")
     for a, role, s in rows:
-        conn.execute("INSERT INTO nba_score.ua_final VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        conn.execute(f"INSERT INTO nba_score.{FT} VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                      (a, role, s["layer"], s["tier"], s["side"], s["rk"], s["gcap"], s["pdif"], s["altcap"], s["start"], str(s["nsl"]), s["st"], s["k"], s["label"]))
     conn.close()
     print(f"FN|wrote {len(rows)} signatures", flush=True)
