@@ -76,6 +76,13 @@ def main():
             continue
         S.append(dict(app=r.app, sid=r.sid, st=r.st, k=r.k, label=f"{'P' if r.st == 'power' else 'F'}{r.k} {r.tier} {r.side} {r.rk} [{r.layer}] #{int(r.start)} x{r.nsl}",
                       sc=wscore(r), r24=r.r24, r25=r.r25, r26=r.r26, n26=r.n26, r26a=r.r26a, r26b=r.r26b, n26b=r.n26b, n24=r.n24, n25=r.n25, gb=r.gone_base, gs=r.gone_sub, gh=r.gone_shrink, day=parse(r.days)))
+    if os.environ.get("PF_FILT"):
+        mk = int(os.environ.get("PF_MAXK") or 4)
+        S = [s for s in S if s["k"] <= mk and s["r26"] == s["r26"] and s["r26"] > 0.10 and s["r26b"] == s["r26b"] and s["r26b"] > 0 and s["n26b"] >= 4 and s["n26"] >= 10
+             and (s["r25"] != s["r25"] or s["r25"] > 0) and (s["r24"] != s["r24"] or s["r24"] > 0)]
+        for s in S:
+            s["sc"] = (W[0] * (s["r24"] if s["r24"] == s["r24"] else 0) + W[1] * (s["r25"] if s["r25"] == s["r25"] else 0) + W[2] * s["r26"]) / sum(W)
+        print(f"P3|FILTER small slips k<={mk}: positive 2026-27 (full, incl. Nov 8+), Nov 8+ positive, 2025-26 and 2024-25 not negative: {len(S)} strategies", flush=True)
     S = [s for s in S if s["sc"] == s["sc"]]
     apps = sorted({s["app"] for s in S})
     print(f"P3|season weights 2024-25/2025-26/2026-27 before Nov 8 = {W}", flush=True)
@@ -184,19 +191,19 @@ def main():
                 + f" | 26-27 before Nov 8 {100*r.r26a:+.0f}% ({r.n26a}) | Nov 8+ {100*r.rlate:+.0f}% ({r.rn}) | dd {r.dd:.0f}u | losing days {100*r.lshare:.0f}% | run {r.drought}")
 
     # eligible: positive in both prior seasons, enough slips, and validated before Nov 8
-    G = R[(R.r24 > 0.2) & (R.r25 > 0.2) & (R.n26a > 30)].copy()
+    G = (R[(R.r26 > 0.1) & (R.rlate > 0) & ((R.r25 > 0) | R.r25.isna())] if os.environ.get("PF_FILT") else R[(R.r24 > 0.2) & (R.r25 > 0.2) & (R.n26a > 30)]).copy()
     G["calm"] = G["units"] / G["dd"].clip(lower=1)
     print(f"P3|eligible (both prior seasons > 20%): {len(G):,}", flush=True)
     for title, X in (("best by prior seasons only (weaker season)", G.sort_values("sel", ascending=False)),
-                     ("best validation (2026-27 before Nov 8) with prior min 30%", G[G.sel > 0.3].sort_values("r26a", ascending=False)),
-                     ("lowest drawdown with prior min 30% and validation positive", G[(G.sel > 0.3) & (G.r26a > 0)].sort_values("dd")),
-                     ("lowest losing-day share, same filter", G[(G.sel > 0.3) & (G.r26a > 0)].sort_values("lshare")),
-                     ("calmest (units per unit of drawdown), same filter", G[(G.sel > 0.3) & (G.r26a > 0)].sort_values("calm", ascending=False))):
+                     ("best validation (2026-27 before Nov 8) with prior min 30%", G[G.rlate > -9].sort_values("r26a", ascending=False)),
+                     ("lowest drawdown with prior min 30% and validation positive", G[G.rlate > -9].sort_values("dd")),
+                     ("lowest losing-day share, same filter", G[G.rlate > -9].sort_values("lshare")),
+                     ("calmest (units per unit of drawdown), same filter", G[G.rlate > -9].sort_values("calm", ascending=False))):
         print(f"P3|== {title} ==", flush=True)
         for r in X.head(8).itertuples():
             print("P3|  " + line(r), flush=True)
     # choose: best by prior seasons + validation, then final test on Nov 8+ untouched
-    sel = G[(G.r26a > 0)].copy()
+    sel = G.copy()
     sel["pick"] = sel["sel"].rank(pct=True) + sel["r26a"].rank(pct=True) - sel["dd"].rank(pct=True) - sel["lshare"].rank(pct=True)
     best = sel.sort_values("pick", ascending=False).head(5)
     print("P3|== CHOSEN (prior seasons + validation + drawdown + losing days; Nov 8+ is the untouched final test) ==", flush=True)
