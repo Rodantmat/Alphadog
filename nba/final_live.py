@@ -181,6 +181,164 @@ def set_live(conn, gd, mode):
     return legs
 
 
+# ---------------------------------------------------------------------------------------------------------------- the month's models
+_MODELS = {}
+
+
+def predict(df, X, need):
+    """blend / gbm / gbm_s of the legs of the slate being built: fitted exactly as research_leg_model_h.main fits the slate's month (everything strictly before the month,
+    season weights 1.0 / 0.6 / 0.35, the app's price as the starting point), predicting only the slate's rows"""
+    import lightgbm as lgb
+    import research_leg_model_h as LM
+    y = df["hit"].values.astype(float); ym = df["gd"].str[:7].values; gd = LM.LIVE["gd"]; mth = gd[:7]
+    sidx = df["season"].map({s: i for i, s in enumerate(LM.SEAS)}).values
+    te = (df["gd"].values == gd); tr = (ym < mth) & ~np.isnan(y)
+    out = {k: np.full(len(df), np.nan) for k in ("blend", "gbm", "gbm_s")}
+    if tr.sum() < 60000 or len(set(df["gd"].values[tr])) < 20:
+        log(f"FL|not enough history to fit {mth}: {int(tr.sum())} legs"); return out
+    cur = sidx[te][0]; w = np.array([LM.SW.get(int(cur - s), 0.35) for s in sidx[tr]])
+    Zall = np.c_[LM.lg(np.nan_to_num(X["ph"].values, nan=.5)), np.isnan(X["ph"].values), LM.lg(np.nan_to_num(X["pb"].values, nan=.5)), np.isnan(X["pb"].values), LM.lg(X["be"].values), X["under"].values]
+    b = LM.fit_blend(Zall[tr], y[tr], w); out["blend"][te] = 1 / (1 + np.exp(-(np.c_[np.ones(te.sum()), Zall[te]] @ b)))
+    out["weights"] = [float(v) for v in np.round(b, 4)]
+    cat = ["prop", "kind"]; off = LM.lg(X["be"].values.astype(float))
+    par = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=400, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1, num_threads=4, seed=7)
+    if "gbm" in need:
+        m_ = lgb.train(par, lgb.Dataset(X[tr], label=y[tr], weight=w, categorical_feature=cat, free_raw_data=False, init_score=off[tr]), num_boost_round=LM.ROUNDS)
+        out["gbm"][te] = 1 / (1 + np.exp(-(m_.predict(X[te], raw_score=True) + off[te])))
+    if "gbm_s" in need:
+        par_s = dict(par, num_leaves=7, min_data_in_leaf=2000, lambda_l2=20.0)
+        ms_ = lgb.train(par_s, lgb.Dataset(X[tr], label=y[tr], weight=w, categorical_feature=cat, init_score=off[tr]), num_boost_round=max(100, LM.ROUNDS // 2))
+        out["gbm_s"][te] = 1 / (1 + np.exp(-(ms_.predict(X[te], raw_score=True) + off[te])))
+    log(f"FL|{APP} {gd}: models fitted on {int(tr.sum()):,} legs before {mth} (blend weights {out['weights']}; gbm {'gbm' in need}, gbm_s {'gbm_s' in need})")
+    return out
+
+
+NEED = {"prizepicks": {"gbm"}, "sleeper": {"gbm_s"}}
+
+
+# ---------------------------------------------------------------------------------------------------------------- the day's frame
+XCOLS = ("ph", "pb", "books", "bline_d", "oline_d", "avs_d", "av5_d", "hot", "avs_z", "gp", "mn_trend", "rest", "home", "lean", "min_out", "opp_out", "own_status",
+         "tr_pl10", "tr_plall10", "tr_slate7", "tr_slate21", "ph_ret", "pb_ret", "proj_min")
+
+
+def build_frame(conn, df, X, P):
+    import research_leg_model_h as LM
+    gd = LM.LIVE["gd"]; k = (df["gd"].values == gd)
+    d = pd.DataFrame({"season": df["season"].values[k], "gd": df["gd"].values[k], "player_id": df["player_id"].astype(str).values[k], "prop": df["prop"].values[k],
+                      "under": df["under"].values[k].astype(bool), "line": df["line"].values[k], "kind": df["kind"].astype(str).values[k], "src": df["src"].astype(str).values[k],
+                      "m_lr": df["m"].values[k], "w": 0, "gid": df["game_id"].astype(str).fillna("g").values[k], "role": df["role_tier"].astype(str).values[k],
+                      "tier_raw": df["tier"].astype(str).values[k]})
+    for c in XCOLS:
+        d[c] = X[c].values[k] if c in X.columns else np.nan
+    d["blend"] = P["blend"][k]; d["gbm"] = P["gbm"][k]; d["gbm_s"] = P["gbm_s"][k]
+    bs = pd.read_sql("""SELECT player_id, prop, line::float8 line, lower(side) side, final_hp::float8 fhp, score::float8 score, confidence::float8 conf
+                        FROM nba_score.board_scored WHERE game_date = %s AND app = %s""", conn, params=(gd, APP))
+    bs["under"] = ~bs["side"].str[0].isin(["o", "m", "h"])
+    d = d.merge(bs.drop_duplicates(["player_id", "prop", "under", "line"]).drop(columns=["side"]), on=["player_id", "prop", "under", "line"], how="left")
+    for c in ("hr", "hcal", "roi", "roi_cal", "roi_best"):
+        d[c] = np.nan
+    if APP == "prizepicks":
+        reg = (d["kind"] == "standard").values
+        d["val"] = math.sqrt(3); d["alt"] = ~reg; d["est"] = False; d["logy"] = 0.0; d["logf"] = 0.0; d["easy"] = np.where(reg, 0, 1)
+        d = d[reg].copy()                                           # the final set plays regular PrizePicks lines only (Goblins / Demons are never regular lines)
+    elif APP == "underdog":
+        lm = d["m_lr"].values / 1.8708
+        d["logf"] = np.log(lm); d["val"] = np.where(d["gd"] >= "2026-07-01", math.sqrt(3.5), math.sqrt(3.0)) * lm
+        d["alt"] = np.abs(lm - 1) > 1e-6; d["est"] = False; d["easy"] = np.where(~d["alt"], 0, np.where(lm < 1, 1, 2)); d["logy"] = 0.0
+    else:
+        d["logf"] = np.log(d["m_lr"].values); d["val"] = d["m_lr"].values
+        d["alt"] = d["kind"].str.lower().isin(["alt", "f", "b"]).values; d["est"] = d["src"] != "real"
+        d["easy"] = np.where(~d["alt"], 0, 1); d["logy"] = 0.0
+    d["ret_hr"] = d["hr"] * d["val"] - 1; d["ret_blend"] = d["blend"] * d["val"] - 1; d["ret_gbms"] = d["gbm_s"] * d["val"] - 1
+    d["avg"] = (d["blend"] + d["ph"]) / 2; d["geo"] = np.sqrt(d["ph"] * d["pb"])
+    return d.reset_index(drop=True)
+
+
+# ---------------------------------------------------------------------------------------------------------------- strategies
+def tier_mask(d, tier):
+    e = d["easy"].values
+    if APP in ("sleeper", "fliff"):
+        return {"regular": e == 0, "all": np.ones(len(d), bool), "alt": e > 0}[tier]
+    return {"regular": e == 0, "all": np.ones(len(d), bool)}[tier]
+
+
+def ranker(d, rk):
+    """a single column, or the research's composites: `a+b` = mean of the day's percentile ranks, `bal3:a+b+c` the mean of three (computed over the app's whole day, as
+    research_universe2.combos does)"""
+    name = rk.split(":")[-1]
+    cols = name.split("+")
+    if len(cols) == 1:
+        return d[cols[0]].values.astype(float)
+    pr = [d[c].rank(pct=True).values for c in cols]
+    return np.mean(pr, axis=0)
+
+
+def build_slips(lst, alt, k, nsl, start, altcap):
+    """research_universe2.build: consecutive slips from the list, the first `start - 1` legs skipped, at most `altcap` alternates a slip"""
+    rem = list(lst[start - 1:]); out = []
+    for _ in range(nsl):
+        s = []; na = 0; left = []
+        for i in rem:
+            if len(s) < k and (altcap is None or not alt[i] or na < altcap):
+                s.append(i); na += int(alt[i])
+            else:
+                left.append(i)
+        if len(s) < k:
+            break
+        out.append(s); rem = left
+    return out
+
+
+def materialize(d, sg):
+    """one strategy of final_set.json on the day's frame -> list of slips (lists of frame row numbers), exactly research_universe2.stage_b"""
+    v = ranker(d, sg["rk"])
+    m = tier_mask(d, sg["tier"]) & np.isfinite(v)
+    if sg["side"] == "Under":
+        m &= d["under"].values
+    elif sg["side"] == "Over":
+        m &= ~d["under"].values
+    if not m.any():
+        return []
+    x = d[m].copy(); x["_v"] = v[m]
+    x = x.sort_values(["_v", "player_id", "prop", "line"], ascending=[False, True, True, True], kind="mergesort").drop_duplicates("player_id")
+    gid = x["gid"].values; prp = x["prop"].values; av = x["alt"].values.astype(bool); idx = x.index.values
+    ngames = len(set(gid)); nlab = str(sg["nsl"]); nsl = int(nlab) if nlab.isdigit() else max(1, round(ngames * int(nlab[1:]) / 100))
+    lst = []; ug = defaultdict(int); upr = set()
+    for i in range(len(x)):
+        if ug[gid[i]] >= sg["gcap"] or (sg["pdif"] and prp[i] in upr):
+            continue
+        lst.append(i); ug[gid[i]] += 1; upr.add(prp[i])
+        if len(lst) >= 40:
+            break
+    altcap = None if sg["altcap"] == -1 else sg["altcap"]
+    return [[int(idx[j]) for j in s] for s in build_slips(lst, av, sg["k"], nsl, sg["start"], altcap)]
+
+
+def merge_set(app, per):
+    """the app's day: strategies in the final set's order (main, then fallback), each one's slips in turn, a slip kept while the app is under its slot count and none of its
+    players is already in `cap` kept slips (research_best.merge)"""
+    cap = CAPS[app]; N = SLOTS[app]; cnt = defaultdict(int); out = []
+    for sg in [s for s in FINAL["set"] if s["app"] == app]:
+        for j, rows in enumerate(per.get(sg["code"], [])):
+            if len(out) >= N:
+                return out
+            pl = [r["player_id"] for r in rows]
+            if cap < 99 and any(cnt[p] >= cap for p in pl):
+                continue
+            for p in pl:
+                cnt[p] += 1
+            out.append(dict(code=sg["code"], j=j, role=sg["role"], k=sg["k"], st=sg["st"], rows=rows))
+    return out
+
+
+def day_slips(d):
+    per = {}
+    for sg in SET:
+        sl = materialize(d, sg)
+        per[sg["code"]] = [[d.loc[i].to_dict() | {"_i": i} for i in s] for s in sl]
+    return per, merge_set(APP, per)
+
+
 def legs_check(conn, dates, mode):
     """C1: the live loaders' legs of a past date against the research table: every graded research leg is there with the same price and model chance"""
     tot = defaultdict(int)
@@ -204,6 +362,54 @@ def legs_check(conn, dates, mode):
     log(f"C1|{APP}: total {tot['found']}/{tot['ref']} research legs reproduced")
 
 
+def frame_for(conn, gd, mode):
+    """the slate's frame exactly as the research builds it (models fitted on the months before), legs without a result"""
+    import research_leg_model_h as LM
+    legs = set_live(conn, gd, mode)
+    if legs is None:
+        return None
+    df, X = LM.load(conn)
+    P = predict(df, X, NEED.get(APP, set()))
+    if "weights" in P:
+        P.pop("weights")
+    return build_frame(conn, df, X, P)
+
+
+def ref_days(conn, sg):
+    """the research's own day results of one strategy: {date: [(profit, {players})]} from ua3 (rows '-n'), matched on every signature field"""
+    q = """SELECT days FROM nba_score.ua3 WHERE tag LIKE '%%-n' AND app = %s AND tier = %s AND side = %s AND rk = %s AND layer = %s AND st = %s AND k = %s AND start = %s AND nsl = %s
+           AND (gcap = %s OR %s < 0) AND (pdif = %s OR %s < 0) AND (altcap = %s OR %s < 0) LIMIT 1"""
+    r = conn.execute(q, (sg["app"], sg["tier"], sg["side"], sg["rk"], sg["layer"], sg["st"], sg["k"], sg["start"], sg["nsl"], sg["gcap"], sg["gcap"], sg["pdif"], sg["pdif"],
+                         sg["altcap"], sg["altcap"])).fetchone()
+    if not r:
+        return None
+    import research_best as RB
+    return RB.parse(r[0])
+
+
+def replay_check(conn, dates, mode):
+    """C4: the strategies rebuilt from the live pipeline on past slates against the research's slips (the same players in the same slips)"""
+    ref = {sg["code"]: ref_days(conn, sg) for sg in SET}
+    log("C4|reference rows: " + ", ".join(f"{c} {'yes' if v is not None else 'NO'}" for c, v in ref.items()))
+    tot = defaultdict(int)
+    for gd in dates:
+        d = frame_for(conn, gd, mode)
+        if d is None or not len(d):
+            log(f"C4|{APP} {gd}: no live legs"); continue
+        per, merged = day_slips(d)
+        for sg in SET:
+            mine = [frozenset(r["player_id"] for r in s) for s in per.get(sg["code"], [])]
+            rd = ref.get(sg["code"])
+            if rd is None:
+                continue
+            theirs = [frozenset(str(x) for x in legs) for _, legs in rd.get(gd, [])]
+            eq = sum(1 for a, b in zip(mine, theirs) if a == b); tot["slips"] += len(theirs); tot["equal"] += eq; tot["mine"] += len(mine)
+            if mine != theirs:
+                log(f"C4|{APP} {gd} {sg['code']}: mine {len(mine)} slips, research {len(theirs)}, identical in order {eq}; same sets any order {len(set(mine) & set(theirs))}")
+        log(f"C4|{APP} {gd}: legs {len(d)}, set slips {len(merged)}: " + " ".join(f"{m['code']}" for m in merged))
+    log(f"C4|{APP}: research slips {tot['slips']}, rebuilt {tot['mine']}, identical (same players, same slip) {tot['equal']} = {100 * tot['equal'] / max(1, tot['slips']):.1f}%")
+
+
 if __name__ == "__main__":
     mode = os.environ.get("FL_MODE") or "legs-check"
     dates = [d for d in (os.environ.get("FL_DATES") or "").split(",") if d]
@@ -212,3 +418,5 @@ if __name__ == "__main__":
         conn.execute("SET statement_timeout = 0")
         if mode == "legs-check":
             legs_check(conn, dates, ph_mode)
+        elif mode == "c4":
+            replay_check(conn, dates, ph_mode)
