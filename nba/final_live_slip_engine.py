@@ -70,7 +70,7 @@ def live_frame(conn, day, FL):
     df, X = LM.load(conn)
     P = FL.predict(df, X, FL.NEED.get(FL.APP, set())); P.pop("weights", None)
     d = FL.build_frame(conn, df, X, P)
-    st = started_games(conn, day)
+    st = set() if os.environ.get("FL_NOSTART") == "1" else started_games(conn, day)       # FL_NOSTART=1: a replay of a past slate
     n0 = len(d)
     d = d[~d["gid"].isin(st)].reset_index(drop=True)
     log(f"FINAL|{FL.APP} {gd}: {n0} legs, {n0 - len(d)} in games that have started, {len(d)} left")
