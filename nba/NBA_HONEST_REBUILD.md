@@ -1437,3 +1437,9 @@ Worth-it = all prior seasons positive, 2026-27 ROI >=25%, Nov 8+ positive, n26>=
 Best per app (best player cap): Underdog cap none 12.2/day +79% dd 7u 29% losing; Fliff cap 3 8.3/day +40% dd 4u 34%; Betr cap 1 1.8/day +26% dd 14u 59%; PP cap 2 5.0/day +55% dd 23u 54%; Sleeper cap 2 5.2/day +32% dd 20u 45%.
 Union (35 strategies): cap none 19.4/day +1565u dd 52u 47% losing; cap 2 9.4/day +720u dd 41u 48%; cap 1 5.0/day +442u dd 43u 52%.
 Caveats: Fliff/Underdog have 2026-27 only; selection uses 2026-27 and Nov 8+ (in-sample).
+
+## 2026-11-26 final strategy set (research_final.py, research_final2.py; certify UA_ONLY layers + bank depth)
+Main (good days) + fallback (fills empty slots only) per app, slots UD 6 / Fliff 6 / PP 6 / Sleeper 5 / Betr 4, small slips first (>=1 P2 or F3), bigger slips Flex.
+Filters/layers: 0 of 21 (UD), 66 (Fliff), 70 (PP), 74 (Sleeper) hold (better ROI every season + units >=90% + dd not worse) on the chosen strategies; b2b, tmout24, line>book, hot/cold, starter, gp20, noast all cut units and raise drawdown. Final set stays clean (no layers).
+Pulled legs: drop is worst everywhere; sub (1st spare, depth 2) best on PP/Sleeper, shrink best on Fliff, Underdog F4/F6 sub, F5 shrink; two legs pulled: shrink on UD/Fliff, sub on PP/Sleeper.
+Union (each app at own cap): cap none 12.4/day +23/+16/+46%, Nov 8+ +31%, +1063u, dd 33u, 41% losing; cap 2: 8.6/day, +593u, dd 24u, 47%.
