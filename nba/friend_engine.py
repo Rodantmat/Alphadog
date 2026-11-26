@@ -857,6 +857,12 @@ def mirror_owner_new(conn, ctx, d, legs, slips, rows, titles, used):
         src = conn.execute("SELECT composition, legs_json, structure FROM nba_score.ud_live_slips WHERE game_date=%s AND portfolio IN ('T','C','H') AND status='live' ORDER BY composition, k", (d,)).fetchall()
     else:
         return
+    try:                                                     # the final set's own order (best first): NP2 before NP10, not the alphabetical order of the names
+        _fs = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "final_set.json")))
+        _ord = {x["code"]: x["ord"] for x in _fs["set"]}
+        src = sorted(src, key=lambda r: (_ord.get((re.match(r"^(?:H_)?([A-Z]+\d+)", str(r[0] or "")) or [None, None])[1], 10 ** 6), str(r[0])))
+    except Exception as e:  # noqa: BLE001 - old-name rows keep the query's order
+        log(f"final-set order not applied ({e})")
     board = {}
     if FAPP != "FLIFF":
         for l in legs:
