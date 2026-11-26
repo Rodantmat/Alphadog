@@ -42,7 +42,7 @@ def load():
         day = parse(r.days); m = stats(day)
         if not m:
             continue
-        S.append(dict(app=r.app, k=int(r.k), st=r.st, tier=r.tier, side=r.side, rk=r.rk, gcap=ni(r.gcap), pdif=ni(r.pdif), altcap=ni(r.altcap), start=ni(r.start), nsl=r.nsl,
+        S.append(dict(app=r.app, layer=r.layer, k=int(r.k), st=r.st, tier=r.tier, side=r.side, rk=r.rk, gcap=ni(r.gcap), pdif=ni(r.pdif), altcap=ni(r.altcap), start=ni(r.start), nsl=r.nsl,
                       label=f"{'P' if r.st == 'power' else 'F'}{int(r.k)} {r.tier} {r.side} {r.rk} #{int(r.start)} x{r.nsl}", day=day, m=m, gb=r.gone_base, gs=r.gone_sub, gh=r.gone_shrink))
     return S
 
@@ -149,10 +149,10 @@ def main():
             rows.append((a, "fallback", s))
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
     conn.execute("DROP TABLE IF EXISTS nba_score.ua_final")
-    conn.execute("CREATE TABLE nba_score.ua_final (app text, role text, tier text, side text, rk text, gcap int, pdif int, altcap int, start int, nsl text, st text, k int, label text)")
+    conn.execute("CREATE TABLE nba_score.ua_final (app text, role text, layer text, tier text, side text, rk text, gcap int, pdif int, altcap int, start int, nsl text, st text, k int, label text)")
     for a, role, s in rows:
-        conn.execute("INSERT INTO nba_score.ua_final VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                     (a, role, s["tier"], s["side"], s["rk"], s["gcap"], s["pdif"], s["altcap"], s["start"], str(s["nsl"]), s["st"], s["k"], s["label"]))
+        conn.execute("INSERT INTO nba_score.ua_final VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                     (a, role, s["layer"], s["tier"], s["side"], s["rk"], s["gcap"], s["pdif"], s["altcap"], s["start"], str(s["nsl"]), s["st"], s["k"], s["label"]))
     conn.close()
     print(f"FN|wrote {len(rows)} signatures", flush=True)
     print("FN|DONE", flush=True)

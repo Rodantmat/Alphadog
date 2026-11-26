@@ -34,10 +34,10 @@ def main():
         s["J"] = J(s["m"])
     bysig = {}
     for s in S:
-        bysig[(s["app"], s["tier"], s["side"], s["rk"], s["gcap"], s["pdif"], s["altcap"], s["start"], str(s["nsl"]), s["st"], s["k"])] = s
+        bysig[(s["app"], s["layer"], s["tier"], s["side"], s["rk"], s["gcap"], s["pdif"], s["altcap"], s["start"], str(s["nsl"]), s["st"], s["k"])] = s
     main_s = defaultdict(list); fb_s = defaultdict(list)
     for r in fin.itertuples():
-        k_ = (r.app, r.tier, r.side, r.rk, int(r.gcap), int(r.pdif), int(r.altcap), int(r.start), str(r.nsl), r.st, int(r.k))
+        k_ = (r.app, r.layer, r.tier, r.side, r.rk, int(r.gcap), int(r.pdif), int(r.altcap), int(r.start), str(r.nsl), r.st, int(r.k))
         s = bysig.get(k_)
         if s is None:
             print(f"FF|missing in -n: {r.label}", flush=True); continue
