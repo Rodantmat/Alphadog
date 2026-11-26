@@ -80,7 +80,7 @@ def board_unders(conn, day, guard=True):
     rows = conn.execute("""SELECT nm.player_id::text, b.player, b.market_key, b.side, b.line::float, b.event_id, b.snapshot_ts
                            FROM nba_market.board_snapshots b JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
                            WHERE b.bookmaker IN ('betr', 'betr_us_dfs') AND b.game_date = %s AND b.market_key = ANY(%s) AND lower(left(b.side, 1)) NOT IN ('o', 'm', 'h')
-                           ORDER BY b.snapshot_ts DESC""", (day, list(BE.RSD.MK))).fetchall()
+                           ORDER BY """ + ("b.line ASC" if os.environ.get("FL_LOWLINE") == "1" else "b.snapshot_ts DESC"), (day, list(BE.RSD.MK))).fetchall()
     if not rows:
         return [], None
     last = max(r[6] for r in rows)
