@@ -14,6 +14,11 @@ POOLS = {"every single stat": lambda r: True, "no assists": lambda r: r["prop"] 
          "home": lambda r: r.get("home") == 1.0, "away": lambda r: r.get("home") == 0.0}
 
 
+# the (game cap, different-prop) rule of each Betr strategy: ua3 does not store them for Betr, so they were identified by reproducing the research's own slips on the research's lists
+# (research_fl_betr.py FL_RLIST=1, 2026-11-26: every strategy 100% of the days with the variant below; NB1, NB2 and NB8 reproduce under both game caps - the stricter 1 is used)
+VARIANT = {"NB1": (1, 0), "NB2": (1, 0), "NB3": (2, 0), "NB4": (1, 0), "NB5": (1, 0), "NB6": (1, 0), "NB7": (2, 0), "NB8": (1, 0), "NB9": (2, 1)}
+
+
 def pool_fn(layer):
     fs = [POOLS[x.strip()] for x in layer.split(" & ")]
     return lambda r: all(f(r) for f in fs)
@@ -122,7 +127,7 @@ def build(conn, day, gc=1, diff=0):
         if len(plan) >= N:
             break
         c = [r for r in S.get(sg["rk"], []) if pool_fn(sg["layer"])(r)]
-        g_ = sg["gcap"] if sg["gcap"] > 0 else gc; d_ = sg["pdif"] if sg["pdif"] >= 0 else diff
+        g_ = sg["gcap"] if sg["gcap"] > 0 else VARIANT.get(sg["code"], (gc, diff))[0]; d_ = sg["pdif"] if sg["pdif"] >= 0 else VARIANT.get(sg["code"], (gc, diff))[1]
         s_ = take(c, sg["k"], g_, bool(d_), sg["start"])
         if not s_:
             notes.append(f"betr: {sg['code']} could not be built from today's board"); continue
