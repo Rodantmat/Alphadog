@@ -94,7 +94,7 @@ def board_unders(conn, day, guard=True):
         if mkey.endswith("_alternate") or mkey not in BE.RSD.MK:
             continue
         prop = BE.RSD.MK[mkey]
-        if (pid, prop) in seen:
+        if prop not in SINGLE or (pid, prop) in seen:
             continue
         seen.add((pid, prop))
         ev = evs.get(pid) or bev
