@@ -326,8 +326,11 @@ function applySlipSourceFilter(){
   bindLegKeepBoxDelegation();
   autoSwapStartedLegs();
   if(!lastRawSlips.length){return}
-  const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
-  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
+  // owner 2026-11-25 16:03 PT ("Instead of do not play, remove it, does not even show"): a slip its strategy drops (a leg gone under the drop rule) or that is left with fewer than
+  // 2 legs is not shown at all, not counted, and never saved as selected.
+  const gone=x=>{let k=0;try{const now=Date.now();k=(x.s.legs||[]).filter(l=>!ppChanged(l)&&!legStarted(l,now)).length}catch(_e){k=(x.s.legs||[]).length}const out=!!x.s._legGoneDrop||k<2;if(out)slipDeselected.add(String(x.i));return out};
+  const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase())).filter(x=>!gone(x));
+  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+ppLiveNoteHtml+'<div class="empty">No playable slips for the selected apps.</div>';return}
   results.innerHTML=lastSlipsNoteHtml+ppLiveNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>'+pairsHtml();
   restoreRealMultInputs();
   bindSlipSelectBoxes();
@@ -515,7 +518,7 @@ function slipCardHtml(s,idx){
   if(kept.length!==(s.legs||[]).length){
     const sel0=slipDeselected.has(String(idx))?'':' checked';
     // owner 2026-11-25 13:56 PT ("there are slips with a single leg ... drop that slip, there are no single leg slips"): a slip left with fewer than 2 legs is NOT PLAYED
-    if(kept.length<2)return slipCardShell({...s,_legGoneDrop:true,_dropReason:'DO NOT PLAY - its legs are gone and no valid substitute is left (a slip needs at least 2 legs).'},idx,'',null,'');
+    if(kept.length<2)return slipCardShell({...s,_legGoneDrop:true,_manual:true,_dropReason:'Tick at least 2 legs - a slip needs 2 or more.'},idx,'',null,'');   // only when the owner unticks legs himself
     if(kept.length<Number(s.slip_size)&&!s._legGoneShrink)s={...s,stake_label:(s.stake_label?s.stake_label+' • ':'')+'no substitute left - '+kept.length+'-pick instead of '+s.slip_size};
     const mult=kept.length>=2?recomputeMultiplier(s.source_key,s.entry_mode,kept.length,kept):null;
     const fields=kept.length>=2?realMultFieldsHtmlForSize({...s,legs:kept},idx,kept.length):'<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
@@ -530,6 +533,7 @@ function slipCardHtml(s,idx){
   return slipCardShell(s,idx,slipDeselected.has(String(idx))?'':' checked',s.estimated_multiplier,realMultFieldsHtml(s,idx));
 }
 function slipCardShell(s,idx,sel,multValue,fieldsHtml){
+  if(s._legGoneDrop&&!s._manual)return '';   // not shown (owner 2026-11-25 16:03 PT)
   if(s._legGoneDrop){
     // the DROP rule: a leg is gone, so this slip is not played (its strategy earned more by skipping than by substituting)
     return '<div class="slipCard" style="opacity:0.75"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'" disabled><b>'+slipTitleHtml(s,idx)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">—</span></div><div class="small" style="margin:2px 0 6px;color:#ff6b6b;font-weight:800">'+esc(s._dropReason||'DO NOT PLAY - a leg is gone and this strategy\'s rule is to skip the slip (no substitute, no smaller slip).')+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div></div>';

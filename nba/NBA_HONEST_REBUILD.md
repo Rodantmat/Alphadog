@@ -1387,3 +1387,7 @@ In-sample: the strategies were chosen on this season.
   - Jessi (v1.4.2) / Jon (v1.10.2) pages: a sub keeps the replaced leg's side (was not enforced), the strategy's game cap is never relaxed (Jon's page relaxed it by one on a second
     pass), fewer than 2 legs = DO NOT PLAY on the server swap and on the page; 13 / 13 node simulations pass on both pages.
   - Known: the engine's Fliff legs come from the 'window' board capture; a player Fliff pulls minutes later (Bassey today) is caught by the screen's live check and replaced.
+- 2026-11-25 16:10 PT (owner: "Instead of do not play, remove it, does not even show"; "all apps need a leg validator / adjuster / replacer"): main screen v1.6.4, Jessi v1.4.3,
+  Jon v1.10.3 - a slip its strategy drops (or left under 2 legs) is not shown, not counted, never saved. Sleeper now also keeps a moved line at a better line (it only
+  re-found the same line before). Every app: validate on its own board (PP partner board, UD lines, Sleeper lines/available, Betr board, Fliff game cards with retry),
+  adjust to a better line, replace from the strategy's own list (all 5 apps) then the backup pool.

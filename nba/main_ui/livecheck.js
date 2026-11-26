@@ -137,7 +137,7 @@ function markBetr(l, map) {
 }
 function markSleeper(l, idset) {
   const id = l.link && l.link.ids && l.link.ids.line_id; if (!id) return;
-  l.live_now = idset.has(String(id)) ? "ok" : "missing";
+  l.live_now = idset.has(String(id)) ? (l._slAdjusted ? "adjusted" : "ok") : "missing";
 }
 
 // ---------------------------------------------------------------------------------------------------------------- Underdog (scoped)
@@ -354,9 +354,13 @@ async function refreshSleeperPairs(sql, legs, doc, idset) {
   for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) idLine.set(String(o.line_id), ln.subject_id);
   const subj = {}; for (const r of rows) { if (!subj[r.pn] && idLine.has(String(r.lid))) subj[r.pn] = idLine.get(String(r.lid)); }
   const cur = new Map();   // subject|wager|line|outcome -> current line id
+  const alts = new Map();  // subject|wager|outcome -> [{line, id, m}] (2026-11-25: a moved Sleeper line is kept at a better line, like the other apps)
   for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) {
     const lv = Number(o.outcome_value != null ? o.outcome_value : (o.line != null ? o.line : ln.line)); if (!Number.isFinite(lv) || o.line_id == null) continue;
-    cur.set(ln.subject_id + "|" + ln.wager_type + "|" + lv + "|" + String(o.outcome || "").toLowerCase(), String(o.line_id));
+    const oc = String(o.outcome || "").toLowerCase();
+    cur.set(ln.subject_id + "|" + ln.wager_type + "|" + lv + "|" + oc, String(o.line_id));
+    const ak = ln.subject_id + "|" + ln.wager_type + "|" + oc; if (!alts.has(ak)) alts.set(ak, []);
+    alts.get(ak).push({ line: lv, id: String(o.line_id), m: Number(o.payout_multiplier) });
   }
   let nmap = null; const boardSubj = new Set();
   if (stale.some(l => !subj[l._g && l._g.player])) {
@@ -368,7 +372,12 @@ async function refreshSleeperPairs(sql, legs, doc, idset) {
     if (!sj && nmap) { const c = (nmap.get(slKey(l.player_name)) || []).filter(i => boardSubj.has(i)); if (c.length) sj = c[0]; }
     if (!sj) continue;
     const prop = l.canonical_prop_key; const side = l.selected_side === "less" ? "under" : "over";
-    for (const w of SL_WAGER[prop] || [prop]) { const id = cur.get(sj + "|" + w + "|" + Number(l.line_value) + "|" + side); if (id) { l.link.ids.line_id = id; break; } }
+    let hit = false;
+    for (const w of SL_WAGER[prop] || [prop]) { const id = cur.get(sj + "|" + w + "|" + Number(l.line_value) + "|" + side); if (id) { l.link.ids.line_id = id; hit = true; break; } }
+    if (!hit) for (const w of SL_WAGER[prop] || [prop]) {
+      const fav = favLine(l, alts.get(sj + "|" + w + "|" + side) || []);
+      if (fav) { l.link.ids.line_id = fav.id; adjustTo(l, fav); l._slAdjusted = true; break; }
+    }
   }
 }
 
