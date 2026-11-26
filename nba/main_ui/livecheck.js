@@ -320,7 +320,7 @@ export async function fliffTest() {   // TEMP: Fliff feed reachability + shape f
   try { const d = await fliffCheck(legs); return { ok: true, ms: Date.now() - t0, ...d }; } catch (e) { return { ok: false, ms: Date.now() - t0, error: String(e && e.message || e).slice(0, 200) }; }
 }
 
-const LABEL = { moved: "line moved", missing: "off the board", side: "more only now", goblin: "now a goblin", demon: "now a demon" };
+const LABEL = { mult_down: "multiplier dropped more than one step", moved: "line moved", missing: "off the board", side: "more only now", goblin: "now a goblin", demon: "now a demon" };
 
 
 // SLEEPER PAIRINGS (owner 2026-11-07, "no easy pairings for Sleeper"): Sleeper re-issues a line's id whenever its multiplier moves, so the ids stored at pick time are
@@ -421,7 +421,9 @@ export async function overlayLive(sql, out, ppFallback) {
       const doc = JSON.parse(r.text); r.text = "";
       if (app === "prizepicks") { const ix = indexPP(doc); PP_IX = ix; PP_AT = Date.now(); want.prizepicks.forEach(l => markPP(l, ix)); }
       else if (app === "betr") { const mp = indexBetr(doc); want.betr.forEach(l => markBetr(l, mp)); }
-      else { const set = new Set(); for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) set.add(String(o.line_id)); try { await refreshSleeperPairs(sql, want.sleeper, doc, set); } catch (_e) { /* a pairing that cannot be refreshed is marked missing below */ } want.sleeper.forEach(l => markSleeper(l, set)); }
+      else { const set = new Set(), mOf = new Map(); for (const ln of Array.isArray(doc) ? doc : []) for (const o of ln.options || []) if (o.line_id != null) { set.add(String(o.line_id)); if (Number(o.payout_multiplier) > 1) mOf.set(String(o.line_id), Number(o.payout_multiplier)); }
+        try { await refreshSleeperPairs(sql, want.sleeper, doc, set); } catch (_e) { /* a pairing that cannot be refreshed is marked missing below */ }
+        want.sleeper.forEach(l => { markSleeper(l, set); const id = l.link && l.link.ids && String(l.link.ids.line_id); if (l.live_now === "ok" && mOf.has(id)) l.live_m = mOf.get(id); }); }
       info.ok = true;
     } catch (e) {
       info.error = String(e && e.message || e).slice(0, 100) + (r.text ? " | " + String(r.text).slice(0, 80) : "");
@@ -450,6 +452,18 @@ export async function overlayLive(sql, out, ppFallback) {
       }
     }
   } catch (_e) { /* the legs stay kept and linked; only their factor is left as is */ }
+  // MULTIPLIER DRIFT (owner 2026-11-25 16:09 PT: "for the other apps that treat multipliers ... give a wiggle room for marginal drifting ... find the sweet spot"): Sleeper and
+  // Fliff price every leg. A leg still posted at its line but at a different multiplier: higher = kept at the new price; lower by up to MULT_WIGGLE (4% = one price
+  // step: Fliff moves in 0.05 steps, 2.6-3.4% at 1.45-1.90x; Sleeper in 0.01-0.07 steps) = kept at the new price; lower by more (two steps or more) = the leg counts as moved
+  // ("mult_down") and the strategy's own rule applies (sub / shrink / drop). The card's multiplier is recomputed from the live prices.
+  const MULT_WIGGLE = 0.04;
+  for (const l of legs) {
+    if (!(l.source_key === "fliff" || l.source_key === "sleeper") || l.live_now !== "ok") continue;
+    const m0 = Number(l.leg_factor), m1 = Number(l.live_m);
+    if (!(m0 > 1) || !(m1 > 1) || Math.abs(m1 - m0) < 1e-9) continue;
+    if (m1 >= m0 * (1 - MULT_WIGGLE)) { l.mult_from = m0; l.leg_factor = m1; }
+    else { l.mult_from = m0; l.live_m_now = m1; l.live_now = "mult_down"; }
+  }
   // OWNER RULE (2026-11-10): on EVERY screen (owner, Jessi, Jon) and for every app, a leg that is not confirmed on its app's own board - slip leg, pairing or sub - is not shown
   // as playable. An app whose board was read leaves no leg unchecked: a leg it did not find is "missing" and the screen scratches it and subs.
   for (const l of legs) { const a = l.source_key; if (!l.live_now && apps[a] && apps[a].ok) l.live_now = "missing"; }

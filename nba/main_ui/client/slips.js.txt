@@ -383,7 +383,7 @@ let slipsLive=false;         // only a live slate swaps (a replay slate's games 
 // LIVE LINE CHECK (2026-11-04): the server re-reads PrizePicks' newest board on every load and sets pp_now on each PrizePicks leg; a leg that is
 // not standard any more (goblin / demon / moved / off the board) is unchecked and swapped for a confirmed-standard pool leg, like a started leg.
 function ppChanged(l,slip){if(l&&l.ud_prediction&&slip&&String(slip.source_key||'')==='underdog'&&String(slip.entry_mode||'')==='flex')return true;if(!l)return false;if(String(l.source_key||'')==='prizepicks')return !!l.pp_now&&l.pp_now!=='standard';return !!l.live_now&&l.live_now!=='ok'&&l.live_now!=='adjusted'}
-function ppNowLabel(l){if(l&&l.ud_prediction&&String(l.source_key||'')==='underdog')return 'PREDICTION - NO FLEX';const n=String(l&&(String(l.source_key||'')==='prizepicks'?l.pp_now:l.live_now)||'');return n==='goblin'?'NOW GOBLIN':n==='demon'?'NOW DEMON':n==='moved'?'LINE MOVED':n==='missing'?'OFF BOARD':n==='side'?'MORE ONLY':'CHANGED'}
+function ppNowLabel(l){if(l&&l.ud_prediction&&String(l.source_key||'')==='underdog')return 'PREDICTION - NO FLEX';const n=String(l&&(String(l.source_key||'')==='prizepicks'?l.pp_now:l.live_now)||'');return n==='goblin'?'NOW GOBLIN':n==='demon'?'NOW DEMON':n==='moved'?'LINE MOVED':n==='missing'?'OFF BOARD':n==='side'?'MORE ONLY':n==='mult_down'?('MULTIPLIER DOWN '+Number(l.mult_from).toFixed(2)+' → '+Number(l.live_m_now).toFixed(2)):'CHANGED'}
 function legStarted(l,nowMs){
   const t=(l&&l.link&&l.link.tip_utc)||(l&&l.official_game_time_utc)||null;
   const ms=t?Date.parse(t):NaN;
@@ -526,7 +526,7 @@ function slipCardHtml(s,idx){
   }
   // 2026-11-09 (Betr: a leg left the slip but the multiplier stayed): whenever the legs in the card are not the slip's original size, price the legs that are there
   const nLegs=(s.legs||[]).length;
-  if(nLegs>=2&&(nLegs!==Number(s.slip_size)||(s.legs||[]).some(l=>l.line_from!=null))){
+  if(nLegs>=2&&(nLegs!==Number(s.slip_size)||(s.legs||[]).some(l=>l.line_from!=null||l.mult_from!=null))){
     const m=recomputeMultiplier(s.source_key,s.entry_mode,nLegs,s.legs);
     return slipCardShell(s,idx,slipDeselected.has(String(idx))?'':' checked',m||s.estimated_multiplier,realMultFieldsHtmlForSize(s,idx,nLegs));
   }
