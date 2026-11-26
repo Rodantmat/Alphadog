@@ -145,7 +145,7 @@ def stage_b3(d, A, slp, L, T):
             byday = defaultdict(list)
             for t in v:
                 byday[t[1]].append(t)
-            rec["days"] = "|".join(f"{g_}#{sum(x_[2] for x_ in xs):.3f}#{len(xs)}#" + "/".join(x_[5] for x_ in xs) for g_, xs in byday.items())
+            rec["days"] = "|".join(f"{g_}#{sum(x_[2] for x_ in xs):.3f}#{len(xs)}#" + "/".join(f"{x_[2]:.3f}@{x_[5]}" for x_ in xs) for g_, xs in byday.items())
             out.append(rec)
         if ci % 20 == 0:
             log(f"shortlist cell {ci}/{len(sel)}: kept {len(out):,}")
