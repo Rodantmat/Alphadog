@@ -38,6 +38,8 @@ T0 = time.time()
 SEAS = ("2024-25", "2025-26", "2026-27")
 PP_P = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
 PP_F = {(3, 0): 3.0, (3, 1): 1.0, (4, 0): 6.0, (4, 1): 1.5, (5, 0): 10.0, (5, 1): 2.0, (5, 2): 0.4, (6, 0): 25.0, (6, 1): 2.0, (6, 2): 0.4}
+if os.environ.get("UA_PP2FLEX") == "1":
+    PP_F.update({(2, 0): 2.0, (2, 1): 0.5})
 UD_P = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}
 UD_F = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 7.2, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5, (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25}
 UD_P_OLD = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0}
@@ -185,7 +187,7 @@ def payouts(k, w, a, sly, slf, slfh, old, slp_bonus):
             Y = np.exp(sly - (np.maximum(a, 1) - 1) * math.log(LB))
             pw = np.where(a > 0, law(k, Y), pw)
         pw = np.where(allh, pw, np.where(np.isnan(pw), np.nan, 0.0))
-        fx = np.where(a == 0, np.array([PP_F.get((k, int(x)), 0.0) for x in (k - w)]), np.nan) if k >= 3 else np.full(len(w), np.nan)
+        fx = np.where(a == 0, np.array([PP_F.get((k, int(x)), 0.0) for x in (k - w)]), np.nan) if (k >= 3 or (k, 0) in PP_F) else np.full(len(w), np.nan)
         return pw, fx
     if APP == "underdog":
         base = np.where(old, UD_P_OLD.get(k, np.nan), UD_P[k])
@@ -326,7 +328,7 @@ def stage_b(d, A, slp, nshort):
                 run = run + 1 if z < 0 else 0; best = max(best, run)
             top = np.sort(u)[::-1]
             rec = dict(tier=c.tier, side=c.side, rk=c.rk, layer=c.layer, gcap=c.gcap, pdif=key[0], start=key[1], nsl=key[2], st=key[3], k=key[4],
-                       n=len(u), slates=len(days), roi=u.mean(), units=u.sum(), wo5=(u.sum() - top[:5].sum()) / len(u), dd=dd, drought=best,
+                       n=len(u), slates=len(days), roi=u.mean(), cash=float((u >= 0).mean()), ret=float((u > -1).mean()), units=u.sum(), wo5=(u.sum() - top[:5].sum()) / len(u), dd=dd, drought=best,
                        hit=sum(t[3] for t in v) / sum(t[4] for t in v))
             for ss in SEAS:
                 mm = s == ss; rec[f"n{ss[2:4]}"] = int(mm.sum()); rec[f"r{ss[2:4]}"] = float(u[mm].mean()) if mm.any() else np.nan
@@ -369,7 +371,7 @@ def main():
                   f"| dd {r.dd:.1f} u drought {r.drought} | legs {100*r.hit:.1f}%", flush=True)
     
     # research scratch tables (nothing reads them; beside the other _lr_ / research tables) - so every cell can be queried afterwards
-    tag = f"{APP}|{os.environ.get('UA_TIERS') or 'all-tiers'}|{os.environ.get('UA_LAYERS') or 'all-layers'}"
+    tag = f"{APP}|{os.environ.get('UA_TIERS') or 'all-tiers'}|{os.environ.get('UA_LAYERS') or 'all-layers'}" + (f"|{os.environ['UA_TAG']}" if os.environ.get("UA_TAG") else "")
     import io
     wc = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
     for name, df_ in (("ua_cells", A), ("ua_strats", B)):
