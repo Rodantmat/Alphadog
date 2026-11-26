@@ -210,6 +210,7 @@ def store_lists(conn, day, app, d):
                 nm = getattr(r, "player", None)
                 cp.write_row((day, app, r.player_id, nm if isinstance(nm, str) else None, r.prop, float(r.line), True, r.gid, None if r.blend != r.blend else float(r.blend),
                               None if r.ph != r.ph else float(r.ph), None if r.score != r.score else float(r.score), None if r.fhp != r.fhp else float(r.fhp), None if r.home != r.home else float(r.home)))
+    conn.commit()                                           # a scratch list for Betr's run only (nothing reads it elsewhere); kept even when the slip write is a test that rolls back
     log(f"FINAL|stored {len(x)} {app} regular Unders for Betr")
 
 
