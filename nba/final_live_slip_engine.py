@@ -200,15 +200,16 @@ def write_other(conn, day, app, plan):
 def store_lists(conn, day, app, d):
     """the PrizePicks / Underdog regular lists of the day (blend, model, score) for Betr's runs"""
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.fl_ranked (game_date date, app text, player_id text, player text, prop text, line float8, under boolean, gid text,
-                    blend float8, ph float8, score float8, fhp float8, built_at timestamptz DEFAULT now())""")
+                    blend float8, ph float8, score float8, fhp float8, home float8, built_at timestamptz DEFAULT now())""")
+    conn.execute("ALTER TABLE nba_score.fl_ranked ADD COLUMN IF NOT EXISTS home float8")
     conn.execute("DELETE FROM nba_score.fl_ranked WHERE game_date = %s AND app = %s", (day, app))
     x = d[(d["easy"] == 0) & d["under"]]
     with conn.cursor() as cur:
-        with cur.copy("COPY nba_score.fl_ranked (game_date, app, player_id, player, prop, line, under, gid, blend, ph, score, fhp) FROM STDIN") as cp:
+        with cur.copy("COPY nba_score.fl_ranked (game_date, app, player_id, player, prop, line, under, gid, blend, ph, score, fhp, home) FROM STDIN") as cp:
             for r in x.itertuples():
                 nm = getattr(r, "player", None)
                 cp.write_row((day, app, r.player_id, nm if isinstance(nm, str) else None, r.prop, float(r.line), True, r.gid, None if r.blend != r.blend else float(r.blend),
-                              None if r.ph != r.ph else float(r.ph), None if r.score != r.score else float(r.score), None if r.fhp != r.fhp else float(r.fhp)))
+                              None if r.ph != r.ph else float(r.ph), None if r.score != r.score else float(r.score), None if r.fhp != r.fhp else float(r.fhp), None if r.home != r.home else float(r.home)))
     log(f"FINAL|stored {len(x)} {app} regular Unders for Betr")
 
 
@@ -222,6 +223,8 @@ def main():
             log(f"FINAL|gate off for {APP_RUN} ({day}) - nothing built, the old engine stands"); return
         import final_live as FL
         app = APP_RUN
+        if app == "betr":
+            FL.log = log
         if app == "betr":
             import final_betr as FB
             plan, notes = FB.build(conn, day)
@@ -242,7 +245,11 @@ def main():
         log(f"FINAL|{day} {app}: {len(plan)} slips (slots {FL.SLOTS[app]})")
         if dry or not plan:
             conn.rollback(); log("FINAL|dry run or nothing to write"); return
-        n = write_pp_ud(conn, day, app, plan) if app in ("prizepicks", "underdog") else write_other(conn, day, app, plan)
+        if app == "betr":
+            import final_betr as FB
+            n = FB.write(conn, day, plan)
+        else:
+            n = write_pp_ud(conn, day, app, plan) if app in ("prizepicks", "underdog") else write_other(conn, day, app, plan)
         if os.environ.get("FL_TEST") == "1":
             conn.rollback(); log(f"FINAL|write-path test: {n} slips written and rolled back"); return
         conn.commit(); log(f"FINAL|{day} {app}: {n} slips written")
