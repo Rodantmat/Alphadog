@@ -60,6 +60,8 @@ def replay():
     import audit_honest_live_replay as RP
     import sleeper_live_slip_engine as SL
     import betr_live_slip_engine as BE
+    if os.environ.get("FP_STANDALONE") == "1":     # every code on its own: no overlap / player caps, every fallback built every slate (spread / rest skips kept)
+        HL.COMPOSE = {}; HL.TARGET = {a: 99 for a in HL.TARGET}
     conn = psycopg.connect(os.environ["DATABASE_URL"]); conn.execute("SET statement_timeout = 0")
     pr = SL.pricing(conn); rj = BE.rules(conn)
     BR = conn.execute("SELECT rule_json FROM nba_config.pp_slip_rules WHERE rule_key='betr_payout_v1'").fetchone()[0]
@@ -100,7 +102,7 @@ def replay():
                     pw = math.prod(ms) if h == n else 0.0; fx = None
                 res[f"{app:10s} {code:4s} {k}-pick (live: {st})"]["2026-27"].append((pw - 1, None if fx is None else fx - 1))
         print(f"FP|{day} built", flush=True)
-    summary("2026-27 REPLAY - the live engine, real boards, every app", res)
+    summary("2026-27 REPLAY - the live engine, real boards, every app" + (" - STANDALONE (no overlap, fallbacks every slate)" if os.environ.get("FP_STANDALONE") == "1" else ""), res)
 
 
 def universe():
