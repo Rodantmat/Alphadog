@@ -61,6 +61,21 @@ def table(name, byday):
         log(r)
 
 
+def candidates(conn, app, min_slips=60):
+    """every research strategy of the app (honest-rebuild rows) with its fields, day results and stats (player cap 2 inside a strategy)"""
+    rows = conn.execute("SELECT DISTINCT ON (tier, side, rk, layer, st, k, start, gcap, pdif, altcap, nsl) tier, side, rk, layer, st, k, start, gcap, pdif, altcap, nsl, days FROM nba_score.ua3 WHERE app = %s AND tag LIKE '%%-n'", (app,)).fetchall()
+    out = []
+    for r in rows:
+        d = RB.parse(r[11])
+        s = RB.stats(d, cap=2)
+        if not s or s["slips"] < min_slips:
+            continue
+        out.append(dict(sig=f"{r[4]} k{r[5]} {r[1]} {r[0]} {r[2]} {r[3]} st{r[6]} g{r[7]} p{r[8]} n{r[10]}", day=d,
+                        sg=dict(app=app, role="main", tier=r[0], side=r[1], rk=r[2], layer=r[3], st=r[4], k=r[5], start=r[6], gcap=r[7], pdif=r[8], altcap=r[9], nsl=r[10]),
+                        **{k: v for k, v in s.items() if k != "dayu"}))
+    return out
+
+
 def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
     conn.execute("SET statement_timeout = 0")
@@ -81,14 +96,7 @@ def main():
             run_u += sum(by[g]); run_n += len(by[g]); acc[g[:7]] = [run_u, run_n]
         log(f"{app} accumulated ROI at month end: " + ", ".join(f"{m} {100*u/n:+.1f}% ({u:+.0f}u)" for m, (u, n) in sorted(acc.items())))
     # ---- Sleeper search
-    rows = conn.execute("SELECT DISTINCT ON (tier, side, rk, layer, st, k, start, gcap, pdif, altcap, nsl) tier, side, rk, layer, st, k, start, gcap, pdif, altcap, nsl, days FROM nba_score.ua3 WHERE app = 'sleeper' AND tag LIKE '%%-n'").fetchall()
-    cands = []
-    for r in rows:
-        d = RB.parse(r[11])
-        s = RB.stats(d, cap=2)
-        if not s or s["slips"] < 60:
-            continue
-        cands.append(dict(sig=f"{r[4]} k{r[5]} {r[1]} {r[0]} {r[2]} {r[3]} st{r[6]} g{r[7]} p{r[8]} n{r[10]}", day=d, **{k: v for k, v in s.items() if k != "dayu"}))
+    cands = candidates(conn, "sleeper")
     log(f"sleeper candidates with >=60 slips: {len(cands)}")
 
     def period_ok(by, upto=None):
