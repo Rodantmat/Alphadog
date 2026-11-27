@@ -629,3 +629,29 @@ function pairsInner(secs){
       return hd+'<div class="legRow"><span class="legRowText">'+nm+' &mdash; '+esc(l.line??'')+' '+esc(displayPropLabel(l.prop))+' '+(String(l.side||'').toLowerCase()==='less'||String(l.side||'').toLowerCase()==='under'?'LESS':'MORE')+tag+(l.matchup||tip?' <span class="small" style="opacity:.85">('+esc([l.matchup,tip].filter(Boolean).join(' · '))+')</span>':'')+'</span><b class="legRowPct">'+(Number(l.p)*100).toFixed(1)+'%</b></div>'}).join('')+'</details>'}).join('');
 }
 bindSlipSourceFilters();
+
+// COPY SCREEN (owner 2026-11-27 14:43 PT): one tap puts everything on the slips screen on the clipboard as text - every slip with its legs, scratched legs, substitutes, started-game swaps,
+// typed multipliers, the leg check note, the unit table and every "Best pairings of the day" section (opened for the copy) - so what he sees can be read exactly.
+function copyScreenText(){
+  const r=$('autoCreateResults');if(!r)return '';
+  const dets=[...r.querySelectorAll('details')];const was=dets.map(d=>d.open);dets.forEach(d=>{d.open=true});
+  let vis='';try{vis=r.innerText}finally{dets.forEach((d,i)=>{d.open=was[i]})}
+  const ser=x=>x instanceof Map?[...x.entries()].map(([k,v])=>[k,ser(v)]):x instanceof Set?[...x]:x;
+  const inputs=[...r.querySelectorAll('input,select,textarea')].filter(e=>e.type!=='checkbox'&&String(e.value||'').length).map(e=>(e.id||e.name||e.className||e.type)+'='+e.value);
+  const checks=[...r.querySelectorAll('input[type=checkbox]')].filter(e=>e.closest('.slipCard')).length;
+  const flt=['filterPrizepicks','filterSleeper','filterUnderdog','filterFliff','filterBetr'].map(id=>id.slice(6)+':'+(($(id)||{}).checked?'on':'off')).join(' ');
+  const st={scratched_legs:ser(slipUnchecked),substitutes:ser(slipSubs),auto_swapped_started_games:[...autoSwapped],backup_pool_legs:(backupPool||[]).length,pairings:pairsData,raw_slips:lastRawSlips};
+  let js='';try{js=JSON.stringify(st)}catch(e){js='(state not serializable: '+e.message+')'}
+  const when=new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles',hour12:true})+' PT';
+  return '=== ALPHADOG SLIPS SCREEN COPY ('+when+') ===\nfilters: '+flt+'\nslip cards with a leg checkbox: '+checks+'\ntyped fields: '+(inputs.join(' | ')||'none')+'\n\n--- AS SHOWN (pairings opened) ---\n'+vis+'\n\n--- STATE (scratched = unchecked legs by slip index, substitutes, auto-swapped, raw slips, pairings) ---\n'+js+'\n=== END ===';
+}
+async function copyScreenClick(){
+  const b=$('copyScreenBtn');if(!b)return;const old=b.textContent;
+  try{
+    const t=copyScreenText();
+    try{await navigator.clipboard.writeText(t)}catch(_e){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand('copy');document.body.removeChild(ta);if(!ok)throw Error('clipboard blocked')}
+    b.textContent='Copied ('+Math.round(t.length/1000)+'k chars)';
+  }catch(e){b.textContent='Copy failed: '+(e.message||e)}
+  setTimeout(()=>{b.textContent=old},2500);
+}
+{const cb=$('copyScreenBtn');if(cb&&!cb._bound){cb._bound=true;cb.onclick=copyScreenClick}}
