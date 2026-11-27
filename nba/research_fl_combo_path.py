@@ -14,7 +14,7 @@ C = load(conn)
 S = [c for c in C if c["desc"].startswith("flex k6 both regular pb_ret+bline_d none st1 g1 p0 n1")][:1] + [c for c in C if c["desc"].startswith("flex k6 Under regular score+geo none st1 g1 p0 n1")][:1]
 print("CP|found", len(S), flush=True)
 show("OPTION B", S)
-for step in range(8):
+for step in range(int(os.environ.get("CP_STEPS") or 13)):
     top = (-1e9, None)
     for c in C:
         if c in S: continue
