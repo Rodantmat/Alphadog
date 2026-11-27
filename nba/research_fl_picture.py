@@ -71,7 +71,7 @@ def candidates(conn, app, min_slips=60):
         if not s or s["slips"] < min_slips:
             continue
         out.append(dict(sig=f"{r[4]} k{r[5]} {r[1]} {r[0]} {r[2]} {r[3]} st{r[6]} g{r[7]} p{r[8]} n{r[10]}", day=d,
-                        sg=dict(app=app, role="main", tier=r[0], side=r[1], rk=r[2], layer=r[3], st=r[4], k=r[5], start=r[6], gcap=r[7], pdif=r[8], altcap=r[9], nsl=r[10]),
+                        sg=dict(app=app, role="main", tier=r[0], side=r[1], rk=r[2], layer=r[3], st=r[4], k=int(r[5]), start=int(r[6]), gcap=int(r[7]), pdif=int(r[8]), altcap=int(r[9]), nsl=str(r[10])),
                         **{k: v for k, v in s.items() if k != "dayu"}))
     return out
 
