@@ -107,7 +107,8 @@ jobs:
     # still leaves the 13:15 PT cutoff with room; if it is not done by then something is wrong and a
     # visible failure beats a late slate. 45 since 2026-10-15: the bounded P2B wait (never past first tip - 10 min) must not be
     # cut off by the job deadline - a job killed mid-wait would place no pick at all.
-    timeout-minutes: 45
+    # 90 since 2026-11-27: the 84-strategy final set (12 slips x 5 apps) needs ~15 min more than the 49-strategy set; at 45 the job was cancelled before Fliff / Betr
+    timeout-minutes: 90
     outputs:
       soft_failed: ${{ steps.soft.outputs.list }}
     steps:
