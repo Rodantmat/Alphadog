@@ -14,10 +14,15 @@ def load(conn):
     rows = conn.execute("SELECT tier,side,rk,layer,st,k,start,gcap,pdif,nsl,gone_base,gone_sub,gone_shrink,days FROM nba_score.ua3 WHERE app='prizepicks' AND tag LIKE '%-n'").fetchall()
     seen = set(); C = []
     for r in rows:
-        if r[13] in seen or not r[10] or r[10] <= 0 or r[11] is None: continue
-        seen.add(r[13]); a = r[11] / r[10]
-        if a <= 0: continue
-        a = min(a, 1.0); d = RB.parse(r[13])
+        if r[13] in seen: continue
+        seen.add(r[13])
+        if os.environ.get("CB_RAW") == "1": a = 1.0
+        else:
+            if not r[10] or r[10] <= 0 or r[11] is None: continue
+            a = r[11] / r[10]
+            if a <= 0: continue
+            a = min(a, 1.0)
+        d = RB.parse(r[13])
         C.append(dict(desc=f"{r[4]} k{int(r[5])} {r[1]} {r[0]} {r[2]} {r[3]} st{int(r[6])} g{int(r[7])} p{int(r[8])} n{r[9]}", a=a, day={g: [(p * a, frozenset(l)) for p, l in v] for g, v in d.items()}))
     return C
 
@@ -47,7 +52,7 @@ def metrics(by):
 
 def score(m):
     if not m["26"] or not m["25"] or not m["24"]: return -9
-    if m["26"]["lose"] > 3: return -9 + 0.01 * (3 - m["26"]["lose"])
+    if m["26"]["lose"] > 3: return -9 - m["26"]["lose"] - 0.5 * m["26"]["loseP"] + 0.1 * m["26"]["roi"]
     pen = max(0, m["25"]["loseP"] - (m["26"]["loseP"] + 0.05)) + 0.5 * max(0, m["24"]["loseP"] - (m["26"]["loseP"] + 0.12))
     if min(m["24"]["roi"], m["25"]["roi"], m["26"]["roi"]) <= 0: return -5
     return float(np.mean([m[x]["roi"] for x in ("24", "25", "26")])) - 2.0 * pen
