@@ -328,6 +328,7 @@ def merge_set(app, per, skip=None, notes=None):
     """the app's day: strategies in the final set's order (main, then fallback), each one's slips in turn, a slip kept while the app is under its slot count and none of its
     players is already in `cap` kept slips (research_best.merge)"""
     cap = CAPS[app]; N = SLOTS[app]; cnt = defaultdict(int); out = []
+    gcap = (FINAL.get("gcaps") or {}).get(app, 99); gcnt = defaultdict(int)       # app-level game cap: at most gcap legs of the app's day from one game
     for sg in [s for s in FINAL["set"] if s["app"] == app]:
         for j, rows in enumerate(per.get(sg["code"], [])):
             if len(out) >= N:
@@ -340,8 +341,13 @@ def merge_set(app, per, skip=None, notes=None):
                 continue
             if cap < 99 and any(cnt[p] >= cap for p in pl):
                 continue
+            gs = [str(r.get("gid")) for r in rows]
+            if gcap < 99 and any(gcnt[z] + gs.count(z) > gcap for z in set(gs)):
+                continue
             for p in pl:
                 cnt[p] += 1
+            for z in gs:
+                gcnt[z] += 1
             out.append(dict(code=sg["code"], j=j, role=sg["role"], k=sg["k"], st=sg["st"], rows=rows))
     return out
 
