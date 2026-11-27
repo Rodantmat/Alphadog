@@ -18,8 +18,8 @@ while len(S) < 25:
 print(f"CT|path built {len(S)}", flush=True)
 # game map
 GM = {}
-for g, p, gid in conn.execute("SELECT game_date::text, player_id::text, game_id FROM nba_score.board_scored_v2 WHERE app='prizepicks' AND game_id IS NOT NULL").fetchall():
-    GM[(g, p)] = gid
+for g, p, q, gid in conn.execute("SELECT game_date::text, player_id, nba_player_id::text, game_id FROM nba_stats.player_game_log WHERE game_id IS NOT NULL AND game_date >= '2024-10-01'").fetchall():
+    GM[(g, p)] = gid; GM[(g, q)] = gid
 legs_all = {(g, x) for s in S for g, v in s["day"].items() for _, l in v for x in l}
 cov = sum(1 for k in legs_all if k in GM) / max(1, len(legs_all))
 print(f"CT|game map coverage {cov:.3f} of {len(legs_all)} day-legs (sample leg {next(iter(legs_all))})", flush=True)
