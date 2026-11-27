@@ -19,12 +19,12 @@ def log(s):
     print("C5|" + s, flush=True)
 
 
-def jscore(by, need_both=True):
-    ds = sorted(by)
+def jscore(by, upto=None):
+    ds = [g for g in sorted(by) if upto is None or g < upto]
     if not ds:
         return -9.0
     u = np.array([sum(by[g]) for g in ds]); cum = np.cumsum(u); dd = float(np.max(np.maximum.accumulate(np.r_[0, cum])[1:] - cum))
-    for f in (lambda g: g < SPLIT, lambda g: g >= SPLIT):
+    for f in ((lambda g: g < SPLIT, lambda g: g >= SPLIT) if upto is None else (lambda g: True,)):
         sel = [g for g in ds if f(g)]
         n = sum(len(by[g]) for g in sel)
         if n >= 8 and sum(sum(by[g]) for g in sel) <= 0:
@@ -76,6 +76,8 @@ def main():
                     ung[sg["code"]] += 1; continue
                 res[sg["code"]][gd].append((float(p), {r["player_id"] for r in rows}))
         log(f"{gd}: done")
+    for sg in strategies:
+        log("DAYS " + sg["code"] + " " + json.dumps({g: [[round(p, 4), sorted(l)] for p, l in v] for g, v in res[sg["code"]].items()}, separators=(",", ":")))
     log("production-number results per strategy, current season (units, slips, ROI) | research same strategy (units, slips, ROI) over the same slates")
     rows = []
     for sg in strategies:
@@ -93,7 +95,7 @@ def main():
 
     log("FINAL SET (NS1..) on production numbers:")
     PIC.table("final-set", merged(list(fin)))
-    for label, ok in (("any strategy of the pool", lambda c: True), ("only strategies positive on production numbers alone", lambda c: sum(p for g in by_code[c] for p, _ in by_code[c][g]) > 0)):
+    def search(label, ok, upto):
         chosen, cur = [], -9.0
         for _ in range(FL.SLOTS[APP]):
             best = (None, cur)
@@ -101,7 +103,7 @@ def main():
                 c = sg["code"]
                 if c in chosen or c in fin or not ok(c) or not by_code[c]:
                     continue
-                j = jscore(merged(chosen + [c]))
+                j = jscore(merged(chosen + [c]), upto)
                 if j > best[1]:
                     best = (c, j)
             if best[0] is None:
@@ -111,7 +113,14 @@ def main():
         for c in chosen:
             log("   " + c + " " + sig[c])
         PIC.table("search", merged(chosen))
-        log("   JSON " + json.dumps([{k: v for k, v in next(s for s in strategies if s['code'] == c).items() if k not in ('res',)} for c in chosen]))
+        return chosen
+
+    pos = lambda c, upto=None: sum(p for g in by_code[c] if upto is None or g < upto for p, _ in by_code[c][g]) > 0
+    search("in-sample, any strategy of the pool", lambda c: True, None)
+    search("in-sample, only strategies positive on production numbers alone", lambda c: pos(c), None)
+    ch = search("WALK-FORWARD: chosen on slates before Nov 8 only", lambda c: pos(c, SPLIT), SPLIT)
+    log("   the same strategies on Nov 8+ (never seen when chosen): rows 'Nov 8+' above")
+    log("FINAL SET walk-forward reference: " + "see 'final-set' rows")
     log("done")
 
 
