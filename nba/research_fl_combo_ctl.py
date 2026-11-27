@@ -18,7 +18,7 @@ while len(S) < 25:
 print(f"CT|path built {len(S)}", flush=True)
 # game map
 GM = {}
-for g, p, gid in conn.execute("SELECT game_date::text, player, game_id FROM nba_score.board_scored_v2 WHERE app='prizepicks' AND game_id IS NOT NULL").fetchall():
+for g, p, gid in conn.execute("SELECT game_date::text, player_id::text, game_id FROM nba_score.board_scored_v2 WHERE app='prizepicks' AND game_id IS NOT NULL").fetchall():
     GM[(g, p)] = gid
 legs_all = {(g, x) for s in S for g, v in s["day"].items() for _, l in v for x in l}
 cov = sum(1 for k in legs_all if k in GM) / max(1, len(legs_all))
