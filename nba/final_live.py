@@ -32,7 +32,7 @@ APP = (os.environ.get("FL_APP") or "underdog").lower()
 os.environ["LM_APP"] = APP; os.environ["LM_TRAIL"] = "1"; os.environ["UA_APP"] = APP
 os.environ["APP"] = "UD"; os.environ["SW_APP"] = APP if APP in ("sleeper", "fliff") else "sleeper"
 
-FINAL = json.loads((HERE / "final_set.json").read_text())
+FINAL = json.loads(Path(os.environ.get("FL_SET_PATH") or (HERE / "final_set.json")).read_text())   # FL_SET_PATH: replay a candidate set without touching the live one
 SLOTS = FINAL["slots"]; CAPS = FINAL["caps"]
 SET = [s for s in FINAL["set"] if s["app"] == APP]
 SINGLE_PROPS = {"points", "rebounds", "assists", "threes_made", "steals", "blocks", "turnovers"}
