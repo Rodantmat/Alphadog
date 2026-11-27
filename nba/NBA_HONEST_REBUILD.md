@@ -1462,8 +1462,3 @@ UD first rebuild (2 slates, v2 numbers): 31/40 slips identical, rest tie-order c
 - With the lists the live pipeline produces (production numbers) the picks differ from the research's (same documented gap as the other apps: production board_scored vs the research's board_scored_v2).
 - Leg-gone policy certified for all 49 codes: engine rule == page rule (friend_engine LEG_GONE_RULE) == client rule; names H_{code}_{k}{p|f|d} parse on both page regexes.
 - Mirror pages read the owner's slips in the final set's order (NP2 before NP10).
-
-## 2026-11-27 Sleeper set replaced (positive ROI, low drawdown on the live pipeline's own numbers)
-- Final-set Sleeper on production numbers, 36 slates of 2026-27: +5.5u, ROI +3.5%, max drawdown 22.4u (NS2 -2.1u, NS4 -10.1u, NS8 -9.3u lose; the Power-2 strategies NS1/NS6/NS7 win).
-- A search over 70 research strategies positive in every research period, rebuilt on production numbers: picking on slates before Nov 8 and testing on Nov 8+ FAILED (-1.9u, drawdown 12.7u) - flex sets do not hold. Power-2 on ret_gbms+geo does: research 308 slates ROI +11-14%, positive in 24-25, 25-26, 26-27 before Nov 8 and after; production +34% on 36 slips.
-- Live Sleeper set now: NS10 (Power 2, ret_gbms+geo, top pick, one a game) + NS1, NS7, NS6 (Power 2 variants). Production numbers, 36 slates: +20.2u ROI +18.3% max drawdown 10.0u, positive both before and after Nov 8. Retired entries kept in nba/final_set_retired_sleeper.json.
