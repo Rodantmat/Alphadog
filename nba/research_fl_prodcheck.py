@@ -1,4 +1,4 @@
-"""Production-number replay of a candidate set (FL_SET_PATH) for ONE app (FL_APP), dates FL_DATES, FL_PH=prod: rebuild every strategy from the live pipeline's legs and models, merge the app's
+"""Production-number replay of a candidate set (FL_SET_NAME) for ONE app (FL_APP), dates FL_DATES, FL_PH=prod: rebuild every strategy from the live pipeline's legs and models, merge the app's
 day with the set's player cap / game cap / slots, grade on the box scores, and compare with the research's own day for the same strategies. Prefix PC|."""
 import os, sys, json
 from collections import defaultdict
