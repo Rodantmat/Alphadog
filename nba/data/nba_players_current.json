@@ -4902,6 +4902,19 @@
       "team_abbreviation": "CLE"
     },
     {
+      "id": 1629645,
+      "full_name": "Kevin Porter Jr.",
+      "last_comma_first": "Porter Jr., Kevin",
+      "roster_status": 1,
+      "from_year": "2019",
+      "to_year": "2026",
+      "player_code": "kevin_porter_jr",
+      "team_id": 1610612753,
+      "team_city": "Orlando",
+      "team_name": "Magic",
+      "team_abbreviation": "ORL"
+    },
+    {
       "id": 1629008,
       "full_name": "Michael Porter Jr.",
       "last_comma_first": "Porter Jr., Michael",
