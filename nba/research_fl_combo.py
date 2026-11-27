@@ -51,6 +51,12 @@ def metrics(by):
     return m
 
 def score(m):
+    if os.environ.get("CB_MODE") == "streak":
+        if not m["26"] or not m["25"] or not m["24"] or not m["N8"]: return -99
+        v = max(0, .7 - m["26"]["roi"]) + max(0, .5 - m["N8"]["roi"]) + max(0, .5 - m["25"]["roi"]) + max(0, -m["24"]["roi"])
+        run = max(m[x]["run"] for x in ("24", "25", "26"))
+        if v > 0: return -10 * v - 0.01 * run
+        return 100 - run - 0.1 * m["26"]["run"] + 0.01 * (m["26"]["roi"] + m["25"]["roi"])
     if not m["26"] or not m["25"] or not m["24"]: return -9
     if m["26"]["lose"] > 3: return -9 - m["26"]["lose"] - 0.5 * m["26"]["loseP"] + 0.1 * m["26"]["roi"]
     pen = max(0, m["25"]["loseP"] - (m["26"]["loseP"] + 0.05)) + 0.5 * max(0, m["24"]["loseP"] - (m["26"]["loseP"] + 0.12))
