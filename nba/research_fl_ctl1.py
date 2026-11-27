@@ -3,6 +3,9 @@ import os, sys, json, itertools
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "research_fl_app.py")).read()
 exec(compile(src[:src.index("solo = sorted")], "app", "exec"))
+def fmt(m):
+    f = lambda k: f"{m[k]['roi']*100:+.0f}%/run{m[k]['run']}/L{m[k]['loseP']*100:.0f}/dd{m[k]['dd']:.0f}" if m[k] else "-"
+    return f"24 {f('24')} | 25 {f('25')} | 26 {f('26')} | N8 {f('N8')}"
 N = int(os.environ.get("N") or 12)
 S = [max(C, key=lambda c: sc([c]))]
 while len(S) < N:
