@@ -83,6 +83,7 @@ def board_unders(conn, day, guard=True):
     """every Under on Betr's board of the day (all of the day's archived snapshots, newest line first), mapped to a player id; no model probability is needed at Betr's line (the research mapped the
     PrizePicks / Underdog lists onto the board the same way); the game must not have started before the board was read"""
     import betr_live_slip_engine as BE
+    guard = guard and os.environ.get("FL_NOSTART") != "1"
     rows = conn.execute("""SELECT nm.player_id::text, b.player, b.market_key, b.side, b.line::float, b.event_id, b.snapshot_ts
                            FROM nba_market.board_snapshots b JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(b.player)
                            WHERE b.bookmaker IN ('betr', 'betr_us_dfs') AND b.game_date = %s AND b.market_key = ANY(%s) AND lower(left(b.side, 1)) NOT IN ('o', 'm', 'h')
