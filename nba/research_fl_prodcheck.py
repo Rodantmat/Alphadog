@@ -45,6 +45,10 @@ def main():
                     rows = [d.loc[i].to_dict() for i in s]
                     out.append(dict(rows=rows, st=sg["st"], k=sg["k"], legs=[dict(p=str(r["player_id"]), g=str(r.get("gid"))) for r in rows]))
                 per[sg["code"]] = out
+            for c_, sls in per.items():
+                for j_, sl_ in enumerate(sls):
+                    v_ = FL.grade(sl_["rows"], sl_["st"], sl_["k"], slp)
+                    print("PS|" + json.dumps([APP, gd, c_, j_, None if v_ is None else round(float(v_), 4), [x["p"] for x in sl_["legs"]], [x["g"] for x in sl_["legs"]]]), flush=True)
             mine = merge(per, order, pcap, gcap, slots, None)
             gu = []; ng = 0
             for sl in mine:
