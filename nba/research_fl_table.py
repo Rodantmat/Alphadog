@@ -42,20 +42,21 @@ def run(conn, app):
         n = sum(len(v) for v in dayp.values())
         if n < 30:
             continue
-        adj = 0.0; gn = r[15]
-        if gn and r[16] is not None:
+        # stored gone_base == the strategy's own ROI; gone_sub / gone_shrink = its ROI under that leg-gone policy -> scale factor on every profit
+        adj = 1.0; gn = r[15]; has = False
+        if gn and r[16] and r[16] > 0:
             pv = r[17] if pol(app, k) == "sub" else r[18]
             if pv is not None:
-                adj = (pv - r[16]) * gn / max(1, s0["slips"])   # per-slip delta, spread evenly
-        res = dict(app=app, code="", desc=f"{r[4]} k{k} {r[1]} {r[0]} {r[2]} {r[3]} st{r[6]} g{r[7]} p{r[8]} n{r[10]}", pol=pol(app, k), adj=round(adj, 4), gone_n=gn)
+                adj = pv / r[16]; has = True
+        res = dict(app=app, code="", desc=f"{r[4]} k{k} {r[1]} {r[0]} {r[2]} {r[3]} st{r[6]} g{r[7]} p{r[8]} n{r[10]}", pol=pol(app, k), adj=round(adj, 4), has=has)
         allu = []
         for lab, f in PER:
             ds = [g for g in dayp if f(g)]
-            nn = sum(len(dayp[g]) for g in ds); uu = sum(sum(dayp[g]) + adj * len(dayp[g]) for g in ds)
-            du = np.array([sum(dayp[g]) + adj * len(dayp[g]) for g in sorted(ds)])
+            nn = sum(len(dayp[g]) for g in ds); uu = sum(sum(dayp[g]) * adj for g in ds)
+            du = np.array([sum(dayp[g]) * adj for g in sorted(ds)])
             res["n" + lab] = nn; res["u" + lab] = round(uu, 2); res["r" + lab] = round(uu / nn, 4) if nn else None
             res["days" + lab] = len(ds); res["lose" + lab] = round(float((du < 0).mean()), 3) if len(du) else None
-        D = np.array([sum(dayp[g]) + adj * len(dayp[g]) for g in sorted(dayp)])
+        D = np.array([sum(dayp[g]) * adj for g in sorted(dayp)])
         cum = np.cumsum(D); res["dd"] = round(float(np.max(np.maximum.accumulate(np.r_[0, cum])[1:] - cum)), 2)
         run_ = best = 0
         for z in D:
