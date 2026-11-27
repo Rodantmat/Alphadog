@@ -59,7 +59,8 @@ pbs AS (SELECT * FROM (VALUES ('Points','points'),('Pts+Rebs','pts_reb'),('Pts+R
        ('Turnovers','turnovers'),('Free Throws Attempted','fta'),('Personal Fouls','personal_fouls'),('Defensive Rebounds','dreb')) v(stat, prop)),
 pbr AS MATERIALIZED (SELECT DISTINCT ON (p.player, s.prop, p.line) p.player, s.prop, p.line, p.odds
        FROM nba_market.pp_board_row p JOIN pbs s ON s.stat = p.stat
-       WHERE (p.start_time::timestamptz AT TIME ZONE 'America/Los_Angeles')::date = $1::date AND p.odds IN ('standard', 'goblin', 'demon')
+       WHERE p.run_file >= 'pp_payout_map_' || to_char($1::date - 3, 'YYYYMMDD') AND p.run_file < 'pp_payout_map_' || to_char($1::date + 3, 'YYYYMMDD')
+         AND (p.start_time::timestamptz AT TIME ZONE 'America/Los_Angeles')::date = $1::date AND p.odds IN ('standard', 'goblin', 'demon')
          AND p.player IN (SELECT DISTINCT player FROM ${src} WHERE app = 'prizepicks')
        ORDER BY p.player, s.prop, p.line, p.run_file DESC),
 pk AS (SELECT x.player, x.prop, x.side, x.line, x.kind, x.tier, x.anchor_line, concat_ws('|', x.player, x.prop, x.side, (x.line::float8)::text) k
@@ -565,7 +566,8 @@ export async function apiFilters(sql, cfg, slate, version) {
            ('Turnovers','turnovers'),('Free Throws Attempted','fta'),('Personal Fouls','personal_fouls'),('Defensive Rebounds','dreb')) v(stat, prop)),
     pbr AS MATERIALIZED (SELECT DISTINCT ON (p.player, s.prop, p.line) p.player, s.prop, p.line, p.odds
            FROM nba_market.pp_board_row p JOIN pbs s ON s.stat = p.stat
-           WHERE (p.start_time::timestamptz AT TIME ZONE 'America/Los_Angeles')::date = $1::date AND p.odds IN ('standard', 'goblin', 'demon')
+           WHERE p.run_file >= 'pp_payout_map_' || to_char($1::date - 3, 'YYYYMMDD') AND p.run_file < 'pp_payout_map_' || to_char($1::date + 3, 'YYYYMMDD')
+         AND (p.start_time::timestamptz AT TIME ZONE 'America/Los_Angeles')::date = $1::date AND p.odds IN ('standard', 'goblin', 'demon')
            ORDER BY p.player, s.prop, p.line, p.run_file DESC),
     um AS (SELECT DISTINCT ON (s.bookmaker, s.player, mk.prop, s.side, s.line) s.bookmaker, s.player, mk.prop, s.side, s.line, s.multiplier
            FROM nba_market.board_snapshots s JOIN mk ON mk.market_key = regexp_replace(s.market_key, '_(alternate|promo)$', '')
