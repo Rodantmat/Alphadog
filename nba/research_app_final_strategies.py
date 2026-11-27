@@ -119,7 +119,7 @@ def load_ud(conn, day, st):
     for r in rows:
         k = (r["player"], r["prop"], r["side"], float(r["line"]))
         b = by.setdefault(k, {"player": r["player"], "player_id": r["player_id"], "prop": r["prop"], "side": r["side"], "line": float(r["line"]),
-                              "tier": r["tier"], "m": float(r["factor"]), "event_id": r["event_id"]})
+                              "tier": r["tier"], "m": float(r["factor"]), "event_id": r["event_id"], "pred": bool(r.get("pred"))})
         b[{"final_hp": "p", "baseline_hp": "base", "final_score": "score"}[r["rank_key"]]] = r["score"]
     legs = []
     for b in by.values():

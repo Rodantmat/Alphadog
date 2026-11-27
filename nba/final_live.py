@@ -113,6 +113,10 @@ def legs_ud(conn, gd, H):
     import research_app_final_strategies as AF
     import research_legs_h_build as LH
     legs = [b for b in AF.load_ud(conn, gd, {})[0]]
+    # PREDICTION LEGS (owner 2026-11-14, deployed 2026-11-27 after the Copy screen showed 38 of 243 legs scratched): Underdog refuses a Flex with a Prediction pick (udx / prediction_market)
+    # and every deployed Underdog strategy is a Flex -> a Prediction leg never enters the live frame (history has no flags, so replays are unchanged)
+    if os.environ.get("FL_KEEP_PRED") != "1":
+        legs = [b for b in legs if not b.get("pred")]
     rows = [(str(l.get("player_id") or l.get("player") or ""), l["prop"], str(l["side"]), float(l.get("line") or 0), str(l.get("tier") or ""), float(l["m"]),
              float(l["p"]), l.get("event_id")) for l in legs if l.get("m")]
     df = pd.DataFrame(rows, columns=["player_id", "prop", "side", "line", "tier", "m0", "p_stored", "event_id"])
