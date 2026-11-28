@@ -132,6 +132,20 @@ def load(conn):
                                ast::float8 ast, fg3m::float8 fg3m, stl::float8 stl, blk::float8 blk, tov::float8 tov FROM nba_stats.player_game_log WHERE game_date >= '2024-10-01'""", conn)
     if LIVE is not None:
         gl = pd.concat([gl[gl["gd"] < LIVE["gd"]], LIVE["gl"]], ignore_index=True)
+    elif SRC == "frame":                                      # live gives EVERY player of the slate a stat-less game-log row; the real log has none for a player who did not play -> same placeholders here
+        import final_live as _FL
+        have = set(zip(gl["player_id"].astype(str), gl["gd"]))
+        miss = df[["gd", "player_id"]].drop_duplicates(); miss["player_id"] = miss["player_id"].astype(str)
+        miss = miss[[(p_, g_) not in have for p_, g_ in zip(miss["player_id"], miss["gd"])]]
+        add = []
+        for g_, x_ in miss.groupby("gd"):
+            try:
+                ph_ = _FL.placeholders(conn, g_, set(x_["player_id"]))
+            except Exception as ex:
+                log(f"placeholders {g_} failed {str(ex)[:80]}"); continue
+            add.append(ph_[~ph_["player_id"].str.startswith("slate_")])
+        if add:
+            gl = pd.concat([gl] + add, ignore_index=True); log(f"frame: {sum(len(x) for x in add):,} placeholder game-log rows for players without a played game")
     gl = gl.sort_values(["player_id", "gd"]).drop_duplicates(["player_id", "gd"]); gl["played"] = (gl["mn"] > 0).astype(int)
     g = gl.groupby(["player_id", "season"], sort=False)
     gl["gp"] = g["played"].cumsum() - gl["played"]
