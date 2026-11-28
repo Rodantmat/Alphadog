@@ -143,7 +143,7 @@ def load(conn):
                 ph_ = _FL.placeholders(conn, g_, set(x_["player_id"]))
             except Exception as ex:
                 log(f"placeholders {g_} failed {str(ex)[:80]}"); continue
-            add.append(ph_[~ph_["player_id"].str.startswith("slate_")])
+            if len(ph_): add.append(ph_[~ph_["player_id"].str.startswith("slate_")])
         if add:
             gl = pd.concat([gl] + add, ignore_index=True); log(f"frame: {sum(len(x) for x in add):,} placeholder game-log rows for players without a played game")
     gl = gl.sort_values(["player_id", "gd"]).drop_duplicates(["player_id", "gd"]); gl["played"] = (gl["mn"] > 0).astype(int)
