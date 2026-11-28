@@ -38,6 +38,20 @@ def main():
         P = FL.predict(df, X, {"prizepicks": {"gbm"}, "underdog": {"gbm"}, "sleeper": {"gbm_s"}, "fliff": {"gbm_s"}}.get(FL.APP, set()))
         P.pop("weights", None)
         d = FL.build_frame(conn, df, X, P)
+        try:                                   # the model numbers the live way vs the stored ones, leg by leg
+            sp = pd.read_sql("""SELECT player_id, prop, lower(side) side, line::float8 line, kind, p_blend::float8 sb, p_gbm::float8 sg, p_gbm_s::float8 sgs
+                                FROM nba_score.frame_legs_p WHERE app = %s AND game_date = %s""", conn, params=(FL.APP, gd))
+            sp["under"] = ~sp["side"].str[0].isin(["o", "m", "h"]); sp["player_id"] = sp["player_id"].astype(str)
+            cm = d.merge(sp.drop_duplicates(["player_id", "prop", "under", "line", "kind"]), on=["player_id", "prop", "under", "line", "kind"], how="left")
+            for nm, a_, b_ in (("blend", "blend", "sb"), ("gbm", "gbm", "sg"), ("gbm_s", "gbm_s", "sgs")):
+                v = cm[a_].notna() & cm[b_].notna()
+                if v.any():
+                    df_ = (cm.loc[v, a_] - cm.loc[v, b_]).abs()
+                    FL.log(f"PAR|{FL.APP} {gd} model {nm}: {int(v.sum())} legs, max |live - stored| {df_.max():.4f}, > 0.005 on {100 * (df_ > .005).mean():.1f}%; live NaN {int(cm[a_].isna().sum())}, stored NaN {int(cm[b_].isna().sum())}")
+        except Exception as ex:
+            FL.log(f"PAR|model compare failed {str(ex)[:100]}")
+        for c_ in ("fhp", "score", "conf"):
+            FL.log(f"PAR|{FL.APP} {gd} {c_}: live frame has {int(d[c_].notna().sum())} of {len(d)}")
         per, merged = FL.day_slips(d)
         for sg in FL.SET:
             mine = [frozenset(r["player_id"] for r in s) for s in per.get(sg["code"], [])]
