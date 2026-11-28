@@ -208,7 +208,8 @@ def predict(df, X, need):
     if os.environ.get("FL_DROPNPL") == "1":                       # the research counts only the day's graded legs per player; live cannot know that -> leave the feature out of fit and prediction
         X = X.drop(columns=["n_player_legs"])
     cat = ["prop", "kind"]; off = LM.lg(X["be"].values.astype(float))
-    par = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=400, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1, num_threads=4, seed=7)
+    par = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=400, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1, num_threads=4, seed=7,
+               deterministic=(LM.SRC == "frame"), force_row_wise=(LM.SRC == "frame"))
     if "gbm" in need:
         m_ = lgb.train(par, lgb.Dataset(X[tr], label=y[tr], weight=w, categorical_feature=cat, free_raw_data=False, init_score=off[tr]), num_boost_round=LM.ROUNDS)
         out["gbm"][te] = 1 / (1 + np.exp(-(m_.predict(X[te], raw_score=True) + off[te])))

@@ -55,6 +55,9 @@ def log(m):
     print(f"[{time.time() - T0:6.0f}s] {m}", flush=True)
 
 
+FIXED_PROPS = ["points", "rebounds", "assists", "threes_made", "steals", "blocks", "turnovers", "stocks", "pts_reb", "pts_ast", "reb_ast", "pra", "double_double", "fantasy_score", "fg3a"]
+FIXED_ROLES = ["BENCH", "FRINGE", "HIGH_USAGE_STARTER", "IRON_MAN", "ROTATION", "STARTER"]
+FIXED_BANDS = ["HIGH", "LOW", "MID"]
 SRC = (os.environ.get("LM_SRC") or "").lower()            # "frame" = the shared frame (nba_score.frame_legs: the live engine's own legs, void legs kept, baseline from baseline_history_v2)
 
 
@@ -88,6 +91,8 @@ def load(conn):
             df = pd.concat([df, pu], ignore_index=True); log(f"{APP}: + {len(pu):,} pushed regular legs (prediction only)")
     except Exception as ex:
         conn.rollback(); log(f"no pushed-leg table ({str(ex)[:80]})")
+    if SRC == "frame":                                       # one canonical row order: the fit (bagging) must not depend on how the database happened to return the rows
+        df = df.sort_values(["gd", "player_id", "prop", "side", "line", "kind"], kind="mergesort").reset_index(drop=True)
     if LIVE is not None:                                     # the slate being built: history strictly before it + today's legs (no result)
         df = pd.concat([df[df["gd"] < LIVE["gd"]], LIVE["legs"]], ignore_index=True)
     if APP == "prizepicks":
@@ -147,9 +152,17 @@ def load(conn):
             sds[k] = np.sqrt(sum(df.loc[k, c + "_sd"].values ** 2 for c in cols))
     X = pd.DataFrame(index=df.index)
     X["ph"] = df["ph"]; X["under"] = df["under"].astype(float); X["line"] = df["line"]; X["be"] = 1 / df["mm"]; X["kind"] = df["kindc"]
-    X["prop"] = df["prop"].astype("category").cat.codes
+    if SRC == "frame":                                       # codes from fixed lists, not from whichever values the loaded window happens to contain
+        X["prop"] = pd.Categorical(df["prop"], categories=sorted(set(FIXED_PROPS) | set(df["prop"].dropna().unique()))).codes
+    else:
+        X["prop"] = df["prop"].astype("category").cat.codes
     X["lean"] = sgn * (df["line"] - df["anchor"]) / den
-    X["role"] = df["role_tier"].astype("category").cat.codes.replace(-1, np.nan); X["band"] = df["var_band"].astype("category").cat.codes.replace(-1, np.nan)
+    if SRC == "frame":
+        X["role"] = pd.Categorical(df["role_tier"], categories=sorted(set(FIXED_ROLES) | set(df["role_tier"].dropna().unique()))).codes
+        X["band"] = pd.Categorical(df["var_band"], categories=sorted(set(FIXED_BANDS) | set(df["var_band"].dropna().unique()))).codes
+        X["role"] = X["role"].replace(-1, np.nan); X["band"] = X["band"].replace(-1, np.nan)
+    else:
+        X["role"] = df["role_tier"].astype("category").cat.codes.replace(-1, np.nan); X["band"] = df["var_band"].astype("category").cat.codes.replace(-1, np.nan)
     X["proj_min"] = df["proj_min"]
     X["ph_rank"] = df.groupby(["gd", "under"])["ph"].rank(pct=True)
     X["ph_ret"] = df["ph"] * df["mm"] - 1
@@ -237,7 +250,8 @@ def main():
             continue
         cur = sidx[te][0]; w = np.array([SW.get(int(cur - s), 0.35) for s in sidx[tr]])
         b = fit_blend(Zall[tr], y[tr], w); P["blend"][te] = 1 / (1 + np.exp(-(np.c_[np.ones(te.sum()), Zall[te]] @ b)))
-        par = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=400, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1, num_threads=4, seed=7)
+        par = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=400, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1, num_threads=4, seed=7,
+                   deterministic=(SRC == "frame"), force_row_wise=(SRC == "frame"))
         # the app's own price is the starting point (init score = log-odds of the break-even): the trees learn only the DEVIATION from the price, so a
         # multiplier never seen in training (this season's deeper demons) starts from its own break-even instead of an extrapolated guess.
         off = lg(X["be"].values.astype(float))
