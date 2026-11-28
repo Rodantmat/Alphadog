@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-11-27T11:35:02Z",
+  "fetched_at": "2026-11-28T11:47:27Z",
   "seasons_attempted": [
     "2025-26",
     "2026-27"
@@ -13,11 +13,11 @@
     },
     "2026-27": {
       "http_status": 200,
-      "raw_count": 1274,
-      "real_count": 1267,
+      "raw_count": 1296,
+      "real_count": 1293,
       "error": null
     }
   },
-  "total_game_count": 2667,
+  "total_game_count": 2693,
   "error": null
 }
