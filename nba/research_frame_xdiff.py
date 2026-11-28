@@ -36,6 +36,13 @@ def main():
                     d = a.astype(str).values != b.astype(str).values
                     d = pd.Series(d, index=common)
                 if d.sum(): bad.append((c, int(d.sum()), round(100 * d.mean(), 2)))
+            if lab == "today" and "gp" in xl.columns:
+                dd = ~((xl.loc[common, "gp"] == xr.loc[common, "gp"]) | (xl.loc[common, "gp"].isna() & xr.loc[common, "gp"].isna()))
+                for kk in list(common[dd.values])[:8]:
+                    FL.log(f"XD|ex {kk} live gp/rest/home {xl.loc[kk, ['gp','rest','home']].tolist()} replay {xr.loc[kk, ['gp','rest','home']].tolist()}")
+                pl = {k.split('|')[1] for k in common[dd.values]}
+                mn = dfr[(dfr['gd'] == gd) & dfr['player_id'].astype(str).isin(pl)]
+                FL.log(f"XD|{len(pl)} differing players; hit values of their legs {mn['hit'].value_counts(dropna=False).to_dict()}")
             FL.log(f"XD|{FL.APP} {gd} {lab}: differing columns {sorted(bad, key=lambda t: -t[1])[:14]}")
 
 if __name__ == "__main__":
