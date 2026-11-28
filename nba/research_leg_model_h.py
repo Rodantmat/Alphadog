@@ -55,10 +55,18 @@ def log(m):
     print(f"[{time.time() - T0:6.0f}s] {m}", flush=True)
 
 
+SRC = (os.environ.get("LM_SRC") or "").lower()            # "frame" = the shared frame (nba_score.frame_legs: the live engine's own legs, void legs kept, baseline from baseline_history_v2)
+
+
 def load(conn):
     q = "SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, kind, tier, src, m::float8 m, hit::int hit, ph::float8 ph FROM nba_score._lr_legs_h WHERE app = %s AND hit IS NOT NULL AND m > 0"
+    if SRC == "frame":
+        q = ("SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, kind, tier, 'real' src, m::float8 m, hit::int hit, ph::float8 ph "
+             "FROM nba_score.frame_legs WHERE app = %s AND m > 0")
     df = pd.read_sql(q, conn, params=(APP,))
     try:                                                     # pushed regular legs: scored out of sample, never trained on (hit stays empty)
+        if SRC == "frame":
+            raise RuntimeError("frame: void legs are already in the table")
         pu = pd.read_sql(q.replace("_lr_legs_h", "_lr_legs_push").replace("hit IS NOT NULL AND ", ""), conn, params=(APP,))
         if len(pu):
             df = pd.concat([df, pu], ignore_index=True); log(f"{APP}: + {len(pu):,} pushed regular legs (prediction only)")
@@ -73,7 +81,8 @@ def load(conn):
         df["mm"] = df["m"]; df["kindc"] = df["kind"].map({"R": 0, "F": 1, "B": 2, "main": 0, "alt": 3}).fillna(0).astype(int)
     df["under"] = ~df["side"].str.lower().str[0].isin(["o", "m", "h"]); sgn = np.where(df["under"], 1.0, -1.0); den = np.maximum(1.0, df["line"].values)
     log(f"{APP}: legs {len(df):,} on {df['gd'].nunique()} slates; by season {df.groupby('season').size().to_dict()}; by kind {df.groupby('kind').size().to_dict()}; by src {df.groupby('src').size().to_dict()}")
-    hb = pd.read_sql("SELECT game_date::text gd, player_id, prop, anchor::float8 anchor, role_tier, var_band, proj_min::float8 proj_min FROM nba_score.baseline_history_h", conn)
+    hb = pd.read_sql("SELECT game_date::text gd, player_id, prop, anchor::float8 anchor, role_tier, var_band, proj_min::float8 proj_min FROM nba_score."
+                     + ("baseline_history_v2 WHERE period = 'FULL'" if SRC == "frame" else "baseline_history_h"), conn)
     if LIVE is not None:
         hb = pd.concat([hb[hb["gd"] < LIVE["gd"]], LIVE["hb"]], ignore_index=True)
     df = df.merge(hb.drop_duplicates(["gd", "player_id", "prop"]), on=["gd", "player_id", "prop"], how="left")
@@ -261,14 +270,26 @@ def main():
                     tt = t.groupby("gd").head(K); lo, hi = boot(tt["r"].values, tt["gd"].values)
                     out.append(f"top {K}: hit {tt['h'].mean():.3f} REAL {100 * tt['r'].mean():+.1f}% [{100 * lo:+.1f} .. {100 * hi:+.1f}] n{len(tt):,}")
                 print(f"LM|  {nm:8s} best a slate by predicted return, one per player: " + " | ".join(out), flush=True)
-    if WRITE and BW:                                         # the month's blend weights for the live engine (honest_live_slip_engine.py reads the latest month)
+    if WRITE and BW and SRC != "frame":                                         # the month's blend weights for the live engine (honest_live_slip_engine.py reads the latest month)
         with psycopg.connect(os.environ["DATABASE_URL"]) as c_:
             c_.execute("CREATE TABLE IF NOT EXISTS nba_score.honest_blend_weights (app text, month text, weights jsonb, built_at timestamptz DEFAULT now(), PRIMARY KEY (app, month))")
             for m_, w_ in BW.items():
                 c_.execute("""INSERT INTO nba_score.honest_blend_weights (app, month, weights) VALUES (%s, %s, %s::jsonb)
                               ON CONFLICT (app, month) DO UPDATE SET weights = EXCLUDED.weights, built_at = now()""", (APP, m_, json.dumps(w_)))
             c_.commit()
-    if WRITE:
+    if WRITE and SRC == "frame":
+        conn = psycopg.connect(os.environ["DATABASE_URL"])
+        conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.frame_legs_p (app text, game_date date, player_id text, prop text, side text, line float8, kind text, tier text,
+                        p_blend float4, p_gbm float4, p_gbm_s float4, built_at timestamptz DEFAULT now())""")
+        conn.execute("DELETE FROM nba_score.frame_legs_p WHERE app = %s", (APP,))
+        with conn.cursor() as cur:
+            with cur.copy("COPY nba_score.frame_legs_p (app, game_date, player_id, prop, side, line, kind, tier, p_blend, p_gbm, p_gbm_s) FROM STDIN") as cp:
+                for i in np.where(ok_all)[0]:
+                    cp.write_row((APP, df["gd"].values[i], df["player_id"].values[i], df["prop"].values[i], df["side"].values[i], float(df["line"].values[i]), df["kind"].values[i],
+                                  df["tier"].values[i], float(P["blend"][i]), float(P["gbm"][i]), float(P["gbm_s"][i])))
+        conn.execute("CREATE INDEX IF NOT EXISTS frame_legs_p_i ON nba_score.frame_legs_p (app, game_date, player_id, prop)")
+        conn.commit(); conn.close(); log(f"wrote {int(ok_all.sum()):,} rows to nba_score.frame_legs_p")
+    elif WRITE:
         conn = psycopg.connect(os.environ["DATABASE_URL"])
         conn.execute("""CREATE TABLE IF NOT EXISTS nba_score._lr_legs_hp (app text, game_date date, player_id text, prop text, side text, line float8, kind text, tier text,
                         p_blend float4, p_gbm float4, p_placebo float4, built_at timestamptz DEFAULT now())""")
