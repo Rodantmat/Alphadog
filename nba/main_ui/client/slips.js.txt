@@ -321,6 +321,32 @@ function restoreRealMultInputs(){
   });
   bindRealMultCapture();
 }
+// COLLAPSED LAYOUT (owner 2026-11-27 16:21 PT): the leg-check note and the backup pool sit under one closed line; slips are one closed section per app, and every slip inside is closed too.
+var slipOpenApps=new Set(),slipOpenOne=new Set(),slipOpenNotes=false;
+function collapsedNotesHtml(){
+  const strip=h=>String(h||'').replace(/<[^>]*>/g,'').replace(/&#39;/g,"'").replace(/&mdash;/g,'-').replace(/&amp;/g,'&');
+  const live=String(ppLiveNoteHtml||'');
+  const nm=(strip(live).match(/(\d+) leg\(s\) changed/)||[])[1];
+  const when=(strip(live).match(/at ([0-9:]+ [AP]M) PT/)||[])[1];
+  const bad=/FAILED|did not run/.test(live);
+  const head='Leg check'+(when?' at '+when+' PT':'')+(nm?' - '+nm+' leg(s) changed':' - ok')+(bad?' - SOME APPS FAILED':'');
+  let pool='';try{pool=poolStatusHtml()}catch(_e){}
+  if(!live&&!pool)return '';
+  return '<details class="slipNotes" id="slipNotesBox"'+(slipOpenNotes?' open':'')+' style="margin:0 0 8px"><summary style="cursor:pointer;font-weight:700'+(bad?';color:#ff6b6b':'')+'">'+esc(head)+' <span class="small" style="opacity:.7">(tap for details and backup pool)</span></summary>'+live+pool+'</details>';
+}
+function groupedSlipsHtml(filtered){
+  const res=$('autoCreateResults');
+  if(res&&!res._slipOpenBound){res._slipOpenBound=true;res.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.classList)return;if(d.classList.contains('slipApp')){if(d.open)slipOpenApps.add(d.dataset.app);else slipOpenApps.delete(d.dataset.app)}else if(d.classList.contains('slipOne')){if(d.open)slipOpenOne.add(d.dataset.k);else slipOpenOne.delete(d.dataset.k)}else if(d.id==='slipNotesBox'){slipOpenNotes=d.open}},true)}
+  const order=['prizepicks','underdog','sleeper','fliff','betr'];
+  const by=new Map();for(const x of filtered){const k=String(x.s.source_key||'').toLowerCase();if(!by.has(k))by.set(k,[]);by.get(k).push(x)}
+  const keys=[...order.filter(k=>by.has(k)),...[...by.keys()].filter(k=>!order.includes(k))];
+  return keys.map(k=>{
+    const xs=by.get(k);
+    return '<details class="slipApp" data-app="'+esc(k)+'"'+(slipOpenApps.has(k)?' open':'')+' style="margin:8px 0"><summary style="cursor:pointer;font-weight:900;font-size:1.05em">'+esc(appLabel(k))+' <span class="small" style="opacity:.75">('+xs.length+' slip'+(xs.length===1?'':'s')+')</span></summary>'
+      +xs.map(x=>{const s=x.s;const no=(()=>{try{return slipTitleNo(s,x.i)}catch(_e){return ''}})();const t=(s.track_label?s.track_label+' - ':'')+(s.structure_label||s.slip_type||'')+(no?' '+no:'');
+        return '<details class="slipOne" data-k="'+x.i+'"'+(slipOpenOne.has(String(x.i))?' open':'')+' style="margin:4px 0 4px 8px"><summary style="cursor:pointer;font-weight:700">'+esc(t)+'</summary>'+slipCardHtml(s,x.i)+'</details>'}).join('')
+      +'</details>'}).join('');
+}
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
   bindLegKeepBoxDelegation();
@@ -331,7 +357,7 @@ function applySlipSourceFilter(){
   const gone=x=>{let k=0;try{const now=Date.now();k=(x.s.legs||[]).filter(l=>!ppChanged(l)&&!legStarted(l,now)).length}catch(_e){k=(x.s.legs||[]).length}const out=!!x.s._legGoneDrop||k<2;if(out)slipDeselected.add(String(x.i));return out};
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase())).filter(x=>!gone(x));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+ppLiveNoteHtml+'<div class="empty">No playable slips for the selected apps.</div>';return}
-  results.innerHTML=lastSlipsNoteHtml+ppLiveNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>'+pairsHtml();
+  results.innerHTML=lastSlipsNoteHtml+collapsedNotesHtml()+slipSummaryHtml(filtered)+groupedSlipsHtml(filtered)+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>'+pairsHtml();
   restoreRealMultInputs();
   bindSlipSelectBoxes();
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
