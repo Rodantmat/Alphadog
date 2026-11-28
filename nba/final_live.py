@@ -56,7 +56,8 @@ def ladders_day(conn, gd, mode):
             H[(g, pid, prop)] = (np.asarray(lines, float), np.asarray(pm, float))
         return H
     tmp = defaultdict(dict)
-    for g, pid, prop, line, pm in conn.execute("""SELECT game_date::text, player_id, prop, line::float8, p_more::float8 FROM nba_score.baseline_history
+    tb = "baseline_history_v2" if mode == "v2" else "baseline_history"     # v2 = the production day builder replayed with the honest recipe (parallel store)
+    for g, pid, prop, line, pm in conn.execute(f"""SELECT game_date::text, player_id, prop, line::float8, p_more::float8 FROM nba_score.{tb}
                                                   WHERE game_date = %s AND period = 'FULL' AND p_more IS NOT NULL""", (gd,)).fetchall():
         tmp[(g, pid, prop)][line] = pm
     for k, d in tmp.items():
@@ -65,7 +66,7 @@ def ladders_day(conn, gd, mode):
 
 
 def hb_day(conn, gd, mode):
-    t = "baseline_history_h" if mode == "h" else "baseline_history"
+    t = "baseline_history_h" if mode == "h" else "baseline_history_v2" if mode == "v2" else "baseline_history"
     extra = "" if mode == "h" else " AND period = 'FULL'"
     q = f"""SELECT DISTINCT ON (player_id, prop) game_date::text gd, player_id, prop, anchor::float8 anchor, role_tier, var_band, proj_min::float8 proj_min
             FROM nba_score.{t} WHERE game_date = %s{extra} ORDER BY player_id, prop"""
