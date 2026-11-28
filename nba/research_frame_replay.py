@@ -69,7 +69,8 @@ def main():
     if APP == "sleeper":
         import sleeper_live_slip_engine as SL
         slp = SL.pricing(conn)
-    dates = [g for g in sorted(set(df["gd"])) if D0 <= g <= D1 and np.isfinite(P["gbm"][df["gd"].values == g]).any()]
+    real_ = df["src"].astype(str).values == "real"          # derived earlier-season legs (Sleeper / Fliff) are training rows only
+    dates = [g for g in sorted(set(df["gd"].values[real_])) if D0 <= g <= D1 and np.isfinite(P["gbm"][df["gd"].values == g]).any()]
     log(f"{APP}: {len(dates)} slates with predictions {dates[0] if dates else ''} .. {dates[-1] if dates else ''}, set {TAG} ({len(FL.SET)} strategies)")
     rows = []
     for i, gd in enumerate(dates):

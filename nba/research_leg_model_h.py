@@ -64,6 +64,22 @@ def load(conn):
         q = ("SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, kind, tier, 'real' src, m::float8 m, hit::int hit, ph::float8 ph "
              "FROM nba_score.frame_legs WHERE app = %s AND m > 0")
     df = pd.read_sql(q, conn, params=(APP,))
+    if SRC == "frame" and APP in ("sleeper", "fliff"):
+        # Sleeper / Fliff earlier seasons have no stored real boards: their legs are PRICED from sportsbook lines (src 'derived', nba_score._lr_legs_h). They are TRAINING
+        # rows only here (no slip is ever graded on them); their baseline chance is re-read from the shared frame's baseline (baseline_history_v2) so every row of the
+        # model comes from one baseline. The real boards of this season (frame_legs) are what the slips are built and graded on.
+        import research_legs_h_build as _LH
+        dv = pd.read_sql("SELECT season, game_date::text gd, player_id, prop, side, line::float8 line, kind, tier, src, m::float8 m, hit::int hit FROM nba_score._lr_legs_h "
+                         "WHERE app = %s AND src = 'derived' AND hit IS NOT NULL AND m > 0", conn, params=(APP,))
+        if len(dv):
+            Hs = {}
+            for gd_, pid_, prop_, lines_, pm_ in conn.execute("""SELECT game_date::text, player_id, prop, array_agg(line::float8 ORDER BY line), array_agg(p_more::float8 ORDER BY line)
+                                                              FROM nba_score.baseline_history_v2 WHERE period = 'FULL' AND p_more IS NOT NULL
+                                                              AND game_date < '2026-07-01' GROUP BY 1, 2, 3""").fetchall():
+                Hs[(gd_, pid_, prop_)] = (np.asarray(lines_, float), np.asarray(pm_, float))
+            ov_ = dv["side"].str.lower().str[0].isin(["o", "m", "h"]).values
+            dv["ph"] = _LH.attach(dv["gd"].values, dv["player_id"].astype(str).values, dv["prop"].values, dv["line"].values, ov_, Hs); del Hs
+            df = pd.concat([dv, df[df["gd"] >= "2026-07-01"]], ignore_index=True); log(f"{APP}: + {len(dv):,} derived earlier-season legs (training only, baseline v2)")
     try:                                                     # pushed regular legs: scored out of sample, never trained on (hit stays empty)
         if SRC == "frame":
             raise RuntimeError("frame: void legs are already in the table")
