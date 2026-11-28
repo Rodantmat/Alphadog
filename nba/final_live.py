@@ -228,9 +228,10 @@ XCOLS = ("ph", "pb", "books", "bline_d", "oline_d", "avs_d", "av5_d", "hot", "av
          "tr_pl10", "tr_plall10", "tr_slate7", "tr_slate21", "ph_ret", "pb_ret", "proj_min")
 
 
-def build_frame(conn, df, X, P):
+def build_frame(conn, df, X, P, gd=None, bs=None):
+    """one slate's frame. Live: gd = the slate being built (LM.LIVE), scores from board_scored. Replay on the shared frame (research_frame_replay.py): gd and the day's scores are passed in."""
     import research_leg_model_h as LM
-    gd = LM.LIVE["gd"]; k = (df["gd"].values == gd)
+    gd = gd or LM.LIVE["gd"]; k = (df["gd"].values == gd)
     d = pd.DataFrame({"season": df["season"].values[k], "gd": df["gd"].values[k], "player_id": df["player_id"].astype(str).values[k], "prop": df["prop"].values[k],
                       "under": df["under"].values[k].astype(bool), "line": df["line"].values[k], "kind": df["kind"].astype(str).values[k], "src": df["src"].astype(str).values[k],
                       "m_lr": df["m"].values[k], "w": 0, "gid": df["game_id"].astype(str).fillna("g").values[k], "role": df["role_tier"].astype(str).values[k],
@@ -238,7 +239,9 @@ def build_frame(conn, df, X, P):
     for c in XCOLS:
         d[c] = X[c].values[k] if c in X.columns else np.nan
     d["blend"] = P["blend"][k]; d["gbm"] = P["gbm"][k]; d["gbm_s"] = P["gbm_s"][k]
-    bs = pd.read_sql("""SELECT player_id, player, prop, line::float8 line, lower(side) side, final_hp::float8 fhp, score::float8 score, confidence::float8 conf
+    d["hit_raw"] = df["hit"].values[k].astype(float)
+    if bs is None:
+        bs = pd.read_sql("""SELECT player_id, player, prop, line::float8 line, lower(side) side, final_hp::float8 fhp, score::float8 score, confidence::float8 conf
                         FROM nba_score.""" + ("board_scored_v2" if os.environ.get("FL_BS") == "v2" else "board_scored") + """ WHERE game_date = %s AND app = %s""", conn, params=(gd, APP))
     bs["under"] = ~bs["side"].str[0].isin(["o", "m", "h"])
     d = d.merge(bs.drop_duplicates(["player_id", "prop", "under", "line"]).drop(columns=["side"]), on=["player_id", "prop", "under", "line"], how="left")
