@@ -145,8 +145,10 @@ def load(conn):
                 log(f"placeholders {g_} failed {str(ex)[:80]}"); continue
             if len(ph_): add.append(ph_[~ph_["player_id"].str.startswith("slate_")])
         if add:
-            gl = pd.concat([gl] + add, ignore_index=True); log(f"frame: {sum(len(x) for x in add):,} placeholder game-log rows for players without a played game")
+            add = [a.assign(_ph=True) for a in add]; gl = pd.concat([gl] + add, ignore_index=True); log(f"frame: {sum(len(x) for x in add):,} placeholder game-log rows for players without a played game")
     gl = gl.sort_values(["player_id", "gd"]).drop_duplicates(["player_id", "gd"]); gl["played"] = (gl["mn"] > 0).astype(int)
+    if "_ph" not in gl.columns: gl["_ph"] = False
+    gl["_ph"] = gl["_ph"].fillna(False).astype(bool); PH_ROWS = gl[gl["_ph"]].copy(); gl = gl[~gl["_ph"]].copy()   # placeholders are never history: live has one only for TODAY
     g = gl.groupby(["player_id", "season"], sort=False)
     gl["gp"] = g["played"].cumsum() - gl["played"]
     gl["prev_gd"] = g["gd"].shift(1); gl["rest"] = (pd.to_datetime(gl["gd"]) - pd.to_datetime(gl["prev_gd"])).dt.days
@@ -156,6 +158,22 @@ def load(conn):
         gl[c + "_s"] = g[c].transform(lambda x: x.shift(1).expanding().mean()); gl[c + "_5"] = g[c].transform(lambda x: x.shift(1).rolling(5, min_periods=3).mean())
         gl[c + "_sd"] = g[c].transform(lambda x: x.shift(1).expanding(min_periods=5).std())
     gl["home"] = (~gl["matchup"].fillna("").str.contains("@")).astype(float)
+    if len(PH_ROWS):                                          # a placeholder row sees the REAL rows strictly before it (what live has), via the state AFTER each real row
+        post = gl[["player_id", "season", "gd", "mn", "played"]].copy()
+        g2 = gl.groupby(["player_id", "season"], sort=False)
+        post["gp"] = g2["played"].cumsum(); post["last_gd"] = gl["gd"]
+        post["mn_s"] = g2["mn"].transform(lambda x: x.expanding().mean()); post["mn_5"] = g2["mn"].transform(lambda x: x.rolling(5, min_periods=3).mean())
+        for c in cols7:
+            post[c + "_s"] = g2[c].transform(lambda x: x.expanding().mean()); post[c + "_5"] = g2[c].transform(lambda x: x.rolling(5, min_periods=3).mean())
+            post[c + "_sd"] = g2[c].transform(lambda x: x.expanding(min_periods=5).std())
+        post["_t"] = pd.to_datetime(post["gd"]); post = post.drop(columns=["mn", "played", "gd"]).sort_values("_t")
+        ph = PH_ROWS.drop(columns=[c for c in PH_ROWS.columns if c in post.columns and c not in ("player_id", "season")]).copy()
+        ph["_t"] = pd.to_datetime(ph["gd"]); ph = ph.sort_values("_t")
+        ph = pd.merge_asof(ph, post, on="_t", by=["player_id", "season"], direction="backward", allow_exact_matches=False)
+        ph["rest"] = (ph["_t"] - pd.to_datetime(ph["last_gd"])).dt.days
+        ph["gp"] = ph["gp"].fillna(0)
+        ph["home"] = (~ph["matchup"].fillna("").str.contains("@")).astype(float)
+        gl = pd.concat([gl, ph.drop(columns=["_t", "last_gd"])], ignore_index=True).sort_values(["player_id", "gd"])
     INJ = CS.injury_context(conn, gl)
     df = df.merge(gl[["player_id", "gd", "gp", "rest", "mn_s", "mn_5", "home", "team_id", "game_id"] + [c + s for c in cols7 for s in ("_s", "_5", "_sd")]], on=["player_id", "gd"], how="left")
     avs = np.full(len(df), np.nan); av5 = np.full(len(df), np.nan); sds = np.full(len(df), np.nan)
